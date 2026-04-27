@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
@@ -240,7 +240,7 @@ internal static class A2AActivity
 
         var activity = new Activity()
         {
-            Type = ActivityTypes.Message,
+            Type = ActivityType.Message,
             Id = Guid.NewGuid().ToString("N"),
             ChannelId = Channels.A2A,
             DeliveryMode = isStreaming ? DeliveryModes.Stream : DeliveryModes.ExpectReplies,

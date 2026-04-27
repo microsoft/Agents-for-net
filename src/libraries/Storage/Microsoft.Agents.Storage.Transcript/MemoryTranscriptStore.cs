@@ -46,9 +46,9 @@ namespace Microsoft.Agents.Storage.Transcript
                     channel[activity.Conversation.Id] = transcript;
                 }
 
-                switch (activity.Type)
+                switch ((string)activity.Type)
                 {
-                    case ActivityTypes.MessageDelete:
+                    case ActivityType.Names.MessageDelete:
                         // if message delete comes in, delete the message from the transcript
                         for (int i = 0; i < transcript.Count; i++)
                         {
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Storage.Transcript
                                 // tombstone the original message
                                 transcript[i] = new Activity()
                                 {
-                                    Type = ActivityTypes.MessageDelete,
+                                    Type = ActivityType.MessageDelete,
                                     Id = originalActivity.Id,
                                     From = new ChannelAccount(id: "deleted", role: originalActivity.From.Role),
                                     Recipient = new ChannelAccount(id: "deleted", role: originalActivity.Recipient.Role),
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Storage.Transcript
 
                         break;
 
-                    case ActivityTypes.MessageUpdate:
+                    case ActivityType.Names.MessageUpdate:
                         for (int i = 0; i < transcript.Count; i++)
                         {
                             var originalActivity = transcript[i];

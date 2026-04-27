@@ -239,17 +239,17 @@ namespace Microsoft.Agents.Client.Compat
                 activity.ApplyConversationReference(skillConversationReference.ConversationReference);
                 turnContext.Activity.Id = replyToActivityId;
                 turnContext.Activity.CallerId = $"{CallerIdConstants.AgentPrefix}{AgentClaims.GetOutgoingAppIdClaim(claimsIdentity)}";
-                switch (activity.Type)
+                switch ((string)activity.Type)
                 {
-                    case ActivityTypes.EndOfConversation:
+                    case ActivityType.Names.EndOfConversation:
                         await _agentHost.DeleteConversationAsync(turnContext, conversationId, cancellationToken).ConfigureAwait(false);
                         await SendToAgentAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
-                    case ActivityTypes.Event:
+                    case ActivityType.Names.Event:
                         await SendToAgentAsync(activity, turnContext, ct).ConfigureAwait(false);
                         break;
-                    case ActivityTypes.Command:
-                    case ActivityTypes.CommandResult:
+                    case ActivityType.Names.Command:
+                    case ActivityType.Names.CommandResult:
                         if (activity.Name.StartsWith("application/", StringComparison.Ordinal))
                         {
                             // Send to channel and capture the resource response for the SendActivityCall so we can return it.

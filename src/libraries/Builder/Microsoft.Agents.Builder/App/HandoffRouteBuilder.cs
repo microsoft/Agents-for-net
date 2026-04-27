@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Builder.App
             Task<bool> routeSelector(ITurnContext context, CancellationToken _) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Invoke)
+                    && context.Activity.IsType(ActivityType.Invoke)
                     && string.Equals(context.Activity?.Name, "handoff/action", System.StringComparison.OrdinalIgnoreCase)
                 );
 

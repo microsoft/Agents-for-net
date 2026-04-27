@@ -170,7 +170,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             var choices = options.Choices ?? new List<Choice>();
 
             var result = new PromptRecognizerResult<FoundChoice>();
-            if (turnContext.Activity.Type == ActivityTypes.Message)
+            if (turnContext.Activity.Type == ActivityType.Message)
             {
                 var activity = turnContext.Activity;
                 var utterance = activity.Text;

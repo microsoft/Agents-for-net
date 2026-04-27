@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 async (stepContext, cancellationToken) =>
                 {
-                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityTypes.Message } }, cancellationToken);
+                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityType.Message } }, cancellationToken);
                 },
                 async (stepContext, cancellationToken) =>
                 {
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 async (stepContext, cancellationToken) =>
                 {
-                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityTypes.Message } }, cancellationToken);
+                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityType.Message } }, cancellationToken);
                 },
                 async (stepContext, cancellationToken) =>
                 {
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 async (stepContext, cancellationToken) =>
                 {
-                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityTypes.Message } }, cancellationToken);
+                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityType.Message } }, cancellationToken);
                 },
                 async (stepContext, cancellationToken) =>
                 {

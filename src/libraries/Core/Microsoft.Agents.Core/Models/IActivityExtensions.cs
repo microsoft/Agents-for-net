@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>The array of mentions; or an empty array, if none are found.</returns>
         /// <remarks>This method is defined on the <see cref="Microsoft.Agents.Core.Models.Activity"/> class, but is only intended
         /// for use with a message activity, where the activity <see cref="Microsoft.Agents.Core.Models.Activity.Type"/> is set to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Message"/>.</remarks>
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.Message"/>.</remarks>
         /// <seealso cref="Microsoft.Agents.Core.Models.Mention"/>
         public static Mention[] GetMentions(this IActivity activity)
         {

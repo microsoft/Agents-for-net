@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             var skillConversationId = dc.ActiveDialog.State[SkillConversationIdStateKey]?.ToString();
 
             // Handle EndOfConversation from the skill (this will be sent to the this dialog by the SkillHandler if received from the Skill)
-            if (dc.Context.Activity.Type == ActivityTypes.EndOfConversation)
+            if (dc.Context.Activity.Type == ActivityType.EndOfConversation)
             {
                 await DialogOptions.AgentHost.DeleteConversationAsync(dc.Context, skillConversationId, cancellationToken).ConfigureAwait(false);
                 return await dc.EndDialogAsync(dc.Context.Activity.Value, cancellationToken).ConfigureAwait(false);
@@ -231,7 +231,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         private async Task<IActivity> SendToSkillAsync(ITurnContext context, IActivity activity, string skillConversationId, CancellationToken cancellationToken)
         {
-            if (activity.Type == ActivityTypes.Invoke)
+            if (activity.Type == ActivityType.Invoke)
             {
                 // Force ExpectReplies for invoke activities so we can get the replies right away and send them back to the channel if needed.
                 // This makes sure that the dialog will receive the Invoke response from the skill and any other activities sent, including EoC.
@@ -259,7 +259,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 // Process replies in the response.Body.
                 foreach (var activityFromSkill in response.Body.Activities)
                 {
-                    if (activityFromSkill.Type == ActivityTypes.EndOfConversation)
+                    if (activityFromSkill.Type == ActivityType.EndOfConversation)
                     {
                         // Capture the EndOfConversation activity if it was sent from skill
                         eocActivity = activityFromSkill;
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                     }
                     else
                     {
-                        if (activityFromSkill.Type == ActivityTypes.InvokeResponse)
+                        if (activityFromSkill.Type == ActivityType.InvokeResponse)
                         {
                             // An invoke respones has already been sent.  This is a bug in the skill.  Multiple invoke responses
                             // are not possible.
@@ -353,7 +353,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         private async Task<bool> SendTokenExchangeInvokeToSkillAsync(IActivity incomingActivity, string id, string connectionName, string token, CancellationToken cancellationToken)
         {
             var activity = incomingActivity.CreateReply();
-            activity.Type = ActivityTypes.Invoke;
+            activity.Type = ActivityType.Invoke;
             activity.Name = SignInConstants.TokenExchangeOperationName;
             activity.Value = new TokenExchangeInvokeRequest
             {

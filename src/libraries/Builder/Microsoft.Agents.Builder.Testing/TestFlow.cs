@@ -446,7 +446,7 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Dequeues the next activity and asserts it is a typing indicator (<see cref="ActivityTypes.Typing"/>).
+        /// Dequeues the next activity and asserts it is a typing indicator (<see cref="ActivityType.Typing"/>).
         /// Chain this before the reply assertions to match the agent's send order.
         /// </summary>
         /// <param name="description">Optional label included in the error message on failure.</param>
@@ -467,7 +467,7 @@ namespace Microsoft.Agents.Builder.Testing
                     cts.CancelAfter((int)timeout);
                     IActivity activity = await _adapter.GetNextReplyAsync(cts.Token).ConfigureAwait(false);
 
-                    if (activity?.Type != ActivityTypes.Typing)
+                    if (activity?.Type != ActivityType.Typing)
                     {
                         throw new InvalidOperationException(
                             $"Expected typing indicator{(description != null ? $" [{description}]" : "")}, but got activity of type '{activity?.Type}'.");

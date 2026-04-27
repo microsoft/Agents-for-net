@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             var activity = new Activity()
             {
-                Type = ActivityTypes.Typing,
+                Type = ActivityType.Typing,
                 Entities = [new StreamInfo() { StreamType = "streamType", StreamId = "streamId", StreamResult = "streamResult", StreamSequence = 1 }]
             };
 

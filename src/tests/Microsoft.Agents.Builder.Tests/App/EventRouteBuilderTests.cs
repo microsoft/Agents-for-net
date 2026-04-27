@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "MYEVENT"
             });
 
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "differentEvent"
             });
 
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Name = "myEvent"
             });
 
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = null
             });
 
@@ -214,7 +214,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "tokens/response"
             });
 
@@ -238,7 +238,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "otherEvent"
             });
 
@@ -262,7 +262,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "tokens/response"
             });
 
@@ -302,7 +302,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = null
             });
 
@@ -352,7 +352,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "customEvent"
             });
 
@@ -384,7 +384,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message
+                Type = ActivityType.Message
             });
 
             var selectorCalled = false;
@@ -426,7 +426,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "tokens/response",
                 Value = new { token = "abc123" }
             });
@@ -552,7 +552,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticContext = new Mock<ITurnContext>();
             agenticContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent",
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
@@ -561,7 +561,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var nonAgenticContext = new Mock<ITurnContext>();
             nonAgenticContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent"
             });
 
@@ -588,7 +588,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchingContext = new Mock<ITurnContext>();
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent",
                 ChannelId = Channels.Msteams
             });
@@ -597,7 +597,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var nonMatchingContext = new Mock<ITurnContext>();
             nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent",
                 ChannelId = Channels.Directline
             });
@@ -625,7 +625,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticContext = new Mock<ITurnContext>();
             agenticContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent",
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
@@ -634,7 +634,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var nonAgenticContext = new Mock<ITurnContext>();
             nonAgenticContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent"
             });
 
@@ -661,7 +661,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchingContext = new Mock<ITurnContext>();
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent",
                 ChannelId = Channels.Msteams
             });
@@ -670,7 +670,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var nonMatchingContext = new Mock<ITurnContext>();
             nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent",
                 ChannelId = Channels.Directline
             });
@@ -728,7 +728,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "tokens/response",
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
@@ -766,7 +766,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "tokens/response",
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
@@ -804,7 +804,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "tokens/response",
                 ChannelId = Channels.Msteams,
                 Value = new { token = "abc123" }
@@ -889,7 +889,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "  myEvent  " // Activity name with spaces (unlikely but possible)
             });
 
@@ -913,7 +913,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "continueConversation/123-abc"
             });
 
@@ -937,7 +937,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchingContext = new Mock<ITurnContext>();
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "myEvent",
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
@@ -947,7 +947,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var wrongNameContext = new Mock<ITurnContext>();
             wrongNameContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "wrongEvent",
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }

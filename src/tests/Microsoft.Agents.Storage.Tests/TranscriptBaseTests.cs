@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var activity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Timestamp = DateTime.UtcNow,
                 Id = Guid.NewGuid().ToString(),
                 Text = "text",
@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Storage.Tests
             var updateActivity = ProtocolJsonSerializer.ToObject<Activity>(ProtocolJsonSerializer.ToJson(activities[0]));
             var type = updateActivity.Type;
             updateActivity.Text = "updated";
-            updateActivity.Type = ActivityTypes.MessageUpdate;
+            updateActivity.Type = ActivityType.MessageUpdate;
             await Store.LogActivityAsync(updateActivity);
             activities[0].Text = "updated";
             activities[0].Type = type;
@@ -95,7 +95,7 @@ namespace Microsoft.Agents.Storage.Tests
             // modify delete second record
             var deleteActivity = new Activity()
             {
-                Type = ActivityTypes.MessageDelete,
+                Type = ActivityType.MessageDelete,
                 Timestamp = DateTime.Now,
                 Id = activities[1].Id,
                 ChannelId = activities[1].ChannelId,
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Storage.Tests
             // tombstone the deleted record
             activities[1] = new Activity()
             {
-                Type = ActivityTypes.MessageDelete,
+                Type = ActivityType.MessageDelete,
                 Id = activities[1].Id,
                 From = new ChannelAccount(id: "deleted", role: activities[1].From.Role),
                 Recipient = new ChannelAccount(id: "deleted", role: activities[1].Recipient.Role),
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = "test",
                 From = new ChannelAccount { Id = "User-1" },
                 Conversation = new ConversationAccount(id: conversationId),
@@ -381,7 +381,7 @@ namespace Microsoft.Agents.Storage.Tests
             {
                 var activity = new Activity()
                 {
-                    Type = ActivityTypes.Message,
+                    Type = ActivityType.Message,
                     Timestamp = ts,
                     Id = Guid.NewGuid().ToString(),
                     Text = i.ToString(),
@@ -396,7 +396,7 @@ namespace Microsoft.Agents.Storage.Tests
 
                 activity = new Activity()
                 {
-                    Type = ActivityTypes.Message,
+                    Type = ActivityType.Message,
                     Timestamp = ts,
                     Id = Guid.NewGuid().ToString(),
                     Text = i.ToString(),

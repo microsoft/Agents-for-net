@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Value = "10"
             };
 
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Value = 10
             };
 
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Value = true
             };
 
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Value = new { key1 = "1", key2 = 1 }
             };
 
@@ -94,7 +94,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 ChannelData = "testData"
             };
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 ChannelData = "{\"stringProperty\":\"stringValue\",\"numberProperty\":10}"
             };
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 ChannelData = 1
             };
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 ChannelData = true
             };
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 ChannelData = new { key1 = "1", key2 = 1 }
             };
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 ChannelData = new[] { "test1", "test2" }
             };
@@ -236,7 +236,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 SuggestedActions = suggestedActions
             };
@@ -261,7 +261,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 SuggestedActions = suggestedActions
             };
@@ -286,7 +286,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 SuggestedActions = suggestedActions
             };
@@ -311,7 +311,7 @@ namespace Microsoft.Agents.Model.Tests
 
             var outActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test",
                 SuggestedActions = suggestedActions
             };

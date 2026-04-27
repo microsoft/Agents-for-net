@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.Tests
             var channelId = "channel-id";
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 From = new ChannelAccount { Id = userId },
                 ChannelId = channelId,
                 Text = "logout",
@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name= SignInConstants.VerifyStateOperationName,
                 From = new ChannelAccount { Id = "user-id" },
                 ChannelId = "channel-id",
@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.VerifyStateOperationName,
                 From = new ChannelAccount { Id = "user-id" },
                 ChannelId = "channel-id",
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 Value = new TokenResponse(Channels.Msteams, _flow.Settings.AzureBotOAuthConnectionName, "token", DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM")),
                 From = new ChannelAccount { Id = "user-id" },

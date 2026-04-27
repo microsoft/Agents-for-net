@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ChannelId = Channels.Msteams,
@@ -156,7 +156,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message, // Not Invoke
+                Type = ActivityType.Message, // Not Invoke
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ChannelId = Channels.Msteams,
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/someOtherAction", // Not submitAction
                 Value = feedbackValue,
                 ChannelId = Channels.Msteams,
@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ChannelId = Channels.Msteams,
@@ -246,7 +246,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ChannelId = Channels.Msteams,
@@ -272,7 +272,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = null, // Null value
                 ChannelId = Channels.Msteams,
@@ -311,7 +311,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ReplyToId = "activity123",
@@ -337,7 +337,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(sentActivity);
-            Assert.Equal(ActivityTypes.InvokeResponse, sentActivity.Type);
+            Assert.Equal(ActivityType.InvokeResponse, sentActivity.Type);
             Assert.NotNull(capturedData);
             Assert.Equal("feedback", capturedData.ActionName);
             Assert.Equal("activity123", capturedData.ReplyToId);
@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ChannelId = Channels.Msteams,
@@ -380,7 +380,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             mockContext.Verify(c => c.SendActivityAsync(
-                It.Is<IActivity>(a => a.Type == ActivityTypes.InvokeResponse),
+                It.Is<IActivity>(a => a.Type == ActivityType.InvokeResponse),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -399,7 +399,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ReplyToId = "specificReplyToId",
@@ -426,7 +426,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(sentActivity);
-            Assert.Equal(ActivityTypes.InvokeResponse, sentActivity.Type);
+            Assert.Equal(ActivityType.InvokeResponse, sentActivity.Type);
             Assert.NotNull(capturedData);
             Assert.Equal("specificReplyToId", capturedData.ReplyToId);
         }
@@ -445,7 +445,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ChannelId = Channels.Msteams,
@@ -559,7 +559,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ChannelId = Channels.Emulator, // Different channel

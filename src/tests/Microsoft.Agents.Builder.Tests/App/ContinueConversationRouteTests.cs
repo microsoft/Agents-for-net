@@ -402,7 +402,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var b = new TestAdapter();
             var a = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = "EmptyContext",
                 From = new ChannelAccount
                 {

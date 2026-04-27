@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.Tests
                     }
                 });
 
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, DeliveryMode = deliveryMode, ChannelId = channelId });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, DeliveryMode = deliveryMode, ChannelId = channelId });
 
             context.StreamingResponse.QueueTextChunk("this");
             await Task.Delay(delay);
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Builder.Tests
                     }
                 });
 
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, DeliveryMode = deliveryMode, ChannelId = channelId });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, DeliveryMode = deliveryMode, ChannelId = channelId });
 
             context.StreamingResponse.QueueTextChunk("this");
             await Task.Delay(600);
@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.Tests
                     }
                 });
 
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
 
             context.StreamingResponse.QueueTextChunk("this");
             await Task.Delay(600);
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Builder.Tests
                     };
                 });
 
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
 
             context.StreamingResponse.QueueTextChunk("this");
             await Task.Delay(600);
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.Builder.Tests
         public async Task TestStreamingResponseEndStreamTwice()
         {
             // streaming
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
             context.StreamingResponse.QueueTextChunk("chunk");
             var result = await context.StreamingResponse.EndStreamAsync();
             Assert.Equal(StreamingResponseResult.Success, result);
@@ -188,7 +188,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal(StreamingResponseResult.AlreadyEnded, result);
 
             // non-streaming
-            context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
             context.StreamingResponse.QueueTextChunk("chunk");
             result = await context.StreamingResponse.EndStreamAsync();
             Assert.Equal(StreamingResponseResult.Success, result);
@@ -202,7 +202,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
 
             await context.StreamingResponse.QueueInformativeUpdateAsync("Thinking...");
             await Task.Delay(600);
@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Builder.Tests
             var informativeActivity = responses.FirstOrDefault(a => a.GetStreamingEntity()?.StreamType == StreamTypes.Informative);
             Assert.NotNull(informativeActivity);
             Assert.Equal("Thinking...", informativeActivity.Text);
-            Assert.Equal(ActivityTypes.Typing, informativeActivity.Type);
+            Assert.Equal(ActivityType.Typing, informativeActivity.Type);
         }
 
         [Fact]
@@ -221,7 +221,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
             int delay = 550;
 
             await context.StreamingResponse.QueueInformativeUpdateAsync("Thinking...");
@@ -241,31 +241,31 @@ namespace Microsoft.Agents.Builder.Tests
             
             Assert.True(responses[0].GetStreamingEntity()?.StreamType == StreamTypes.Informative);
             Assert.Equal("Thinking...", responses[0].Text);
-            Assert.Equal(ActivityTypes.Typing, responses[0].Type);
+            Assert.Equal(ActivityType.Typing, responses[0].Type);
 
             Assert.True(responses[1].GetStreamingEntity()?.StreamType == StreamTypes.Streaming);
             Assert.Equal("this", responses[1].Text);
-            Assert.Equal(ActivityTypes.Typing, responses[1].Type);
+            Assert.Equal(ActivityType.Typing, responses[1].Type);
 
             Assert.True(responses[2].GetStreamingEntity()?.StreamType == StreamTypes.Informative);
             Assert.Equal("Still thinking...", responses[2].Text);
-            Assert.Equal(ActivityTypes.Typing, responses[2].Type);
+            Assert.Equal(ActivityType.Typing, responses[2].Type);
 
             Assert.True(responses[3].GetStreamingEntity()?.StreamType == StreamTypes.Streaming);
             Assert.Equal("this is a ", responses[3].Text);
-            Assert.Equal(ActivityTypes.Typing, responses[3].Type);
+            Assert.Equal(ActivityType.Typing, responses[3].Type);
 
             Assert.True(responses[4].GetStreamingEntity()?.StreamType == StreamTypes.Streaming);
             Assert.Equal("this is a longer ", responses[4].Text);
-            Assert.Equal(ActivityTypes.Typing, responses[4].Type);
+            Assert.Equal(ActivityType.Typing, responses[4].Type);
 
             Assert.True(responses[5].GetStreamingEntity()?.StreamType == StreamTypes.Streaming);
             Assert.Equal("this is a longer test", responses[5].Text);
-            Assert.Equal(ActivityTypes.Typing, responses[5].Type);
+            Assert.Equal(ActivityType.Typing, responses[5].Type);
 
             Assert.True(responses[6].GetStreamingEntity()?.StreamType == StreamTypes.Final);
             Assert.Equal("this is a longer test", responses[6].Text);
-            Assert.Equal(ActivityTypes.Message, responses[6].Type);
+            Assert.Equal(ActivityType.Message, responses[6].Type);
         }
 
         [Fact]
@@ -273,7 +273,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
 
             await context.StreamingResponse.QueueInformativeUpdateAsync("Thinking...");
             context.StreamingResponse.QueueTextChunk("hello");
@@ -282,13 +282,13 @@ namespace Microsoft.Agents.Builder.Tests
 
             // Non-streaming: no informative activities, only the final message
             Assert.Single(responses);
-            Assert.Equal(ActivityTypes.Message, responses[0].Type);
+            Assert.Equal(ActivityType.Message, responses[0].Type);
         }
 
         [Fact]
         public async Task QueueInformativeUpdate_AfterStreamEnded_ThrowsInvalidOperationException()
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
             context.StreamingResponse.QueueTextChunk("chunk");
             await context.StreamingResponse.EndStreamAsync();
 
@@ -299,7 +299,7 @@ namespace Microsoft.Agents.Builder.Tests
         [Fact]
         public async Task QueueTextChunk_AfterStreamEnded_ThrowsInvalidOperationException()
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
             context.StreamingResponse.QueueTextChunk("chunk");
             await context.StreamingResponse.EndStreamAsync();
 
@@ -312,7 +312,7 @@ namespace Microsoft.Agents.Builder.Tests
         [InlineData(null)]
         public void QueueTextChunk_WithEmptyOrNullText_SilentlyIgnored(string text)
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
 
             // Should not throw
             context.StreamingResponse.QueueTextChunk(text);
@@ -322,7 +322,7 @@ namespace Microsoft.Agents.Builder.Tests
         [Fact]
         public void AddCitation_WithCitationAndPosition_AddsCitationAtPosition()
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
             var citation = new Citation("Some content", "My Doc", "https://example.com");
 
             context.StreamingResponse.AddCitation(citation, 1);
@@ -336,7 +336,7 @@ namespace Microsoft.Agents.Builder.Tests
         [Fact]
         public void AddCitations_WithCitationList_AddsAllCitationsInOrder()
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
             var citations = new List<Citation>
             {
                 new("Content 1", "Doc 1", "https://example.com/1"),
@@ -353,7 +353,7 @@ namespace Microsoft.Agents.Builder.Tests
         [Fact]
         public void AddCitation_WithClientCitation_AddedToList()
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
             var citation = new ClientCitation { Position = 5, Appearance = new ClientCitationAppearance { Name = "Test" } };
 
             context.StreamingResponse.AddCitation(citation);
@@ -365,7 +365,7 @@ namespace Microsoft.Agents.Builder.Tests
         [Fact]
         public void AddCitations_WithClientCitationList_AddsAll()
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
             var citations = new List<ClientCitation>
             {
                 new() { Position = 1 },
@@ -383,7 +383,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
             context.StreamingResponse.EnableGeneratedByAILabel = true;
 
             context.StreamingResponse.QueueTextChunk("hello");
@@ -400,7 +400,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
             context.StreamingResponse.AddCitation(new ClientCitation { Position = 1, Appearance = new ClientCitationAppearance { Name = "Ref Doc" } });
 
             context.StreamingResponse.QueueTextChunk("See [1] for details.");
@@ -418,7 +418,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
 
             var customFinal = new Activity { Text = "Custom final text" };
             context.StreamingResponse.FinalMessage = customFinal;
@@ -435,7 +435,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
             context.StreamingResponse.EnableGeneratedByAILabel = true;
             context.StreamingResponse.SensitivityLabel = new SensitivityUsageInfo { Name = "Confidential" };
 
@@ -452,7 +452,7 @@ namespace Microsoft.Agents.Builder.Tests
         [Fact]
         public async Task EndStreamAsync_OnStreamingChannel_WithNothingQueued_ReturnsNotStarted()
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Webchat });
 
             var result = await context.StreamingResponse.EndStreamAsync();
 
@@ -464,7 +464,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
 
             var result = await context.StreamingResponse.EndStreamAsync();
 
@@ -478,7 +478,7 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
-            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
 
             context.StreamingResponse.QueueTextChunk("first");
             await context.StreamingResponse.EndStreamAsync();
@@ -497,7 +497,7 @@ namespace Microsoft.Agents.Builder.Tests
         [Fact]
         public void QueueTextChunk_AccumulatesMessageText()
         {
-            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var context = new TurnContext(new Mock<IChannelAdapter>().Object, new Activity() { Type = ActivityType.Message, ChannelId = Channels.Test });
 
             context.StreamingResponse.QueueTextChunk("Hello");
             context.StreamingResponse.QueueTextChunk(", ");
@@ -514,7 +514,7 @@ namespace Microsoft.Agents.Builder.Tests
             // ExpectReplies keeps _isTeamsChannel=true but IsStreamingChannel=false (no timing delays needed)
             var context = new TurnContext(adapter.Object, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 DeliveryMode = DeliveryModes.ExpectReplies,
                 ChannelId = Channels.Msteams
             });
@@ -537,7 +537,7 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = CreateMockAdapter(responses);
             var context = new TurnContext(adapter.Object, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 DeliveryMode = DeliveryModes.ExpectReplies,
                 ChannelId = Channels.Msteams
             });
@@ -560,7 +560,7 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = CreateMockAdapter(responses);
             var context = new TurnContext(adapter.Object, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 DeliveryMode = DeliveryModes.ExpectReplies,
                 ChannelId = Channels.Msteams
             });
@@ -588,7 +588,7 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = CreateMockAdapter(responses);
             var context = new TurnContext(adapter.Object, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = Channels.Test
             });
             context.StreamingResponse.FeedbackLoopEnabled = true;

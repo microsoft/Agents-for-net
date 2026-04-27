@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Builder.Tests
             var context = new TurnContext(adapter, new Activity());
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.InvokeResponse, value: "invoke response")
+                new Activity(type: ActivityType.InvokeResponse, value: "invoke response")
             };
 
             //Act
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.Message, value: "reply activity", replyToId: "replyToId")
+                new Activity(type: ActivityType.Message, value: "reply activity", replyToId: "replyToId")
             };
 
             //Act
@@ -296,7 +296,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.Message, value: "message activity")
+                new Activity(type: ActivityType.Message, value: "message activity")
             };
 
             //Act
@@ -323,7 +323,7 @@ namespace Microsoft.Agents.Builder.Tests
             // Arrange
             _callbackInvoked = false;
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
-            var activity = new Activity(type: ActivityTypes.Message)
+            var activity = new Activity(type: ActivityType.Message)
             {
                 Conversation = new ConversationAccount(id: "conv-id"),
                 ServiceUrl = "http://mybot.com"
@@ -344,7 +344,7 @@ namespace Microsoft.Agents.Builder.Tests
             _callbackInvoked = false;
             var factory = CreateMockChannelServiceClientFactory();
             var adapter = new TestChannelAdapter(factory.Object);
-            var activity = new Activity(type: ActivityTypes.Message)
+            var activity = new Activity(type: ActivityType.Message)
             {
                 Conversation = new ConversationAccount(id: "conv-id"),
                 DeliveryMode = DeliveryModes.ExpectReplies
@@ -405,7 +405,7 @@ namespace Microsoft.Agents.Builder.Tests
             // Arrange
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
             var identity = new ClaimsIdentity();
-            var activityWithNoConversation = new Activity(type: ActivityTypes.Event); // Conversation is null
+            var activityWithNoConversation = new Activity(type: ActivityType.Event); // Conversation is null
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
@@ -423,7 +423,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.Message, text: "reply")
+                new Activity(type: ActivityType.Message, text: "reply")
             };
 
             // Act

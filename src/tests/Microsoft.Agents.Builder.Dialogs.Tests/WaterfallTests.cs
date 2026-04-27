@@ -341,7 +341,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 async (stepContext, cancellationToken) =>
                 {
-                    return await stepContext.PromptAsync("dateTimePrompt", new PromptOptions { Prompt = new Activity { Text = "Provide a date", Type = ActivityTypes.Message } });
+                    return await stepContext.PromptAsync("dateTimePrompt", new PromptOptions { Prompt = new Activity { Text = "Provide a date", Type = ActivityType.Message } });
                 },
                 async (stepContext, cancellationToken) =>
                 {

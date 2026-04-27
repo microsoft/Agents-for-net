@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Client
             {
                 if (received is IActivity receivedActivity)
                 {
-                    if (receivedActivity.Type == ActivityTypes.EndOfConversation)
+                    if (receivedActivity.Type == ActivityType.EndOfConversation)
                     {
                         if (!string.IsNullOrEmpty(receivedActivity.Code) && receivedActivity.Code != EndOfConversationCodes.CompletedSuccessfully)
                         {
@@ -345,7 +345,7 @@ namespace Microsoft.Agents.Client
         {
             return new Activity()
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 Id = Guid.NewGuid().ToString(),
                 ChannelId = turnContext.Activity.ChannelId,
                 DeliveryMode = streamed ? DeliveryModes.Stream : DeliveryModes.Normal,

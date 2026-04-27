@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             if (string.IsNullOrEmpty(activity.Type))
             {
-                activity.Type = ActivityTypes.Message;
+                activity.Type = ActivityType.Message;
             }
 
             var conversation = await GetConversationAsync(conversationId, cancellationToken).ConfigureAwait(false)
@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             if (string.IsNullOrEmpty(activity.Type))
             {
-                activity.Type = ActivityTypes.Message;
+                activity.Type = ActivityType.Message;
             }
 
             ExceptionDispatchInfo exceptionInfo = null;

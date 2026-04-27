@@ -236,7 +236,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                     await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                    if (turnContext.Activity.IsType(ActivityTypes.Invoke))
+                    if (turnContext.Activity.IsType(ActivityType.Invoke))
                     {
                         if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
                         {
@@ -245,7 +245,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                             // For Invoke activities, set the InvokeResponse since the user won't seen any sent activities.
                             await turnContext.SendActivityAsync(new Activity
                             {
-                                Type = ActivityTypes.InvokeResponse,
+                                Type = ActivityType.InvokeResponse,
                                 Value = new InvokeResponse
                                 {
                                     Status = 500,
@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             }
             else if (!flowContinuation)
             {
-                if (turnContext.Activity.IsType(ActivityTypes.Invoke)
+                if (turnContext.Activity.IsType(ActivityType.Invoke)
                     && (turnContext.Activity.Name == SignInConstants.TokenExchangeOperationName || turnContext.Activity.Name == SignInConstants.VerifyStateOperationName))
                 {
                     _app.Logger.LogWarning("UserAuthorization: Received Invoke:{Invoke.Name} but an OAuthFlow is not active for user '{User.Id}' using handler '{Handler.Name}'", 
@@ -319,7 +319,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     // For Invoke activities, set the InvokeResponse since the user won't seen any sent activities.
                     await turnContext.SendActivityAsync(new Activity
                     {
-                        Type = ActivityTypes.InvokeResponse,
+                        Type = ActivityType.InvokeResponse,
                         Value = new InvokeResponse
                         {
                             Status = (int)HttpStatusCode.BadRequest,

@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // The Activity for the turn. 
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
@@ -146,7 +146,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // The Activity for the turn. 
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             Assert.Single(adapter.SentActivities);
 
             var sentActivity = adapter.SentActivities.First();
-            Assert.Equal(ActivityTypes.Message, sentActivity.Type);
+            Assert.Equal(ActivityType.Message, sentActivity.Type);
             Assert.Single(sentActivity.Attachments);
 
             var sentActivityAttachment = sentActivity.Attachments.First();
@@ -229,7 +229,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // The Activity for the turn. 
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
@@ -246,7 +246,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             Assert.Single(adapter.SentActivities);
 
             var sentActivity = adapter.SentActivities.First();
-            Assert.Equal(ActivityTypes.Message, sentActivity.Type);
+            Assert.Equal(ActivityType.Message, sentActivity.Type);
             Assert.Single(sentActivity.Attachments);
 
             var sentActivityAttachment = sentActivity.Attachments.First();
@@ -305,7 +305,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // The Activity for the turn.
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 From = new ChannelAccount { Id = "from-id" },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = "hi",
@@ -388,7 +388,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // The Activity for the turn. 
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 Text = magicCode,
@@ -476,7 +476,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = SignInConstants.TokenResponseEventName,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
@@ -561,7 +561,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // The Activity for the turn. 
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.VerifyStateOperationName,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
@@ -655,7 +655,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
@@ -721,7 +721,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // The Activity for the turn.
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 From = new ChannelAccount { Id = userId },
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 ChannelId = channelId,

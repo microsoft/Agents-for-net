@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             AssertionHelpers.ThrowIfNull(dc, nameof(dc));
 
             // Don't do anything for non-message activities.
-            if (dc.Context.Activity.Type != ActivityTypes.Message)
+            if (dc.Context.Activity.Type != ActivityType.Message)
             {
                 return EndOfTurn;
             }

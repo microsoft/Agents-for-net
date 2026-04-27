@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Builder.Testing
             var addedIds = new List<string>();
             await new TestFlow(new TestAdapter(), (turnContext, cancellationToken) =>
                 {
-                    if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate)
+                    if (turnContext.Activity.Type == ActivityType.ConversationUpdate)
                     {
                         foreach (var member in turnContext.Activity.MembersAdded)
                             addedIds.Add(member.Id);
@@ -131,7 +131,7 @@ namespace Microsoft.Agents.Builder.Testing
             var adapter = new TestAdapter();
             await new TestFlow(adapter, (turnContext, cancellationToken) =>
                 {
-                    if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate
+                    if (turnContext.Activity.Type == ActivityType.ConversationUpdate
                         && turnContext.Activity.MembersAdded?.Count > 0)
                     {
                         addedId = turnContext.Activity.MembersAdded[0].Id;
@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Builder.Testing
             await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
                 {
                     await turnContext.SendActivityAsync(
-                        new Microsoft.Agents.Core.Models.Activity { Type = ActivityTypes.Typing },
+                        new Microsoft.Agents.Core.Models.Activity { Type = ActivityType.Typing },
                         cancellationToken: cancellationToken);
                     await turnContext.SendActivityAsync("done", cancellationToken: cancellationToken);
                 })

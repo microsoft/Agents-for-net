@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Client
 
             agentApplication.AddRoute(
                 TypeRouteBuilder.Create()
-                    .WithType(ActivityTypes.EndOfConversation)
+                    .WithType(ActivityType.EndOfConversation)
                     .WithHandler(eocHandler)
                     .WithOrderRank(rank)
                     .Build()

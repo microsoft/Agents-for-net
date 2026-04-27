@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "task/fetch",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "task/fetch",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -144,7 +144,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "task/fetch",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -191,7 +191,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "task/submit",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -253,7 +253,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "task/submit",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -302,7 +302,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "task/submit",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },

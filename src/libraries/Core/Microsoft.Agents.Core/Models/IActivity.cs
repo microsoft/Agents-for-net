@@ -269,12 +269,12 @@ namespace Microsoft.Agents.Core.Models
         string TopicName { get; set; }
 
         /// <summary>
-        /// The type field controls the meaning of each Activity, and are by convention short strings (e.g. "message"). 
-        /// Senders may define their own application-layer types, although they are encouraged to choose values that are 
-        /// unlikely to collide with future well-defined values. If senders use URIs as type values, they SHOULD NOT 
+        /// The type field controls the meaning of each Activity, and are by convention short strings (e.g. "message").
+        /// Senders may define their own application-layer types, although they are encouraged to choose values that are
+        /// unlikely to collide with future well-defined values. If senders use URIs as type values, they SHOULD NOT
         /// implement URI ladder comparisons to establish equivalence.
         /// </summary>
-        string Type { get; set; }
+        ActivityType Type { get; set; }
 
         /// <summary>
         /// The value field contains a programmatic payload specific to the Activity being sent. Its meaning and format 

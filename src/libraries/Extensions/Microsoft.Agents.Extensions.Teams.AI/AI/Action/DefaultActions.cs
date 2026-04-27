@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
 
             await turnContext.SendActivityAsync(new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = contentText,
                 ChannelData = channelData,
                 Entities = new List<Entity>() { entity },

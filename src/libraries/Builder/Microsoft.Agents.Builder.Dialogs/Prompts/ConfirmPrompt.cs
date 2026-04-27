@@ -173,7 +173,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var result = new PromptRecognizerResult<bool>();
-            if (turnContext.Activity.Type == ActivityTypes.Message)
+            if (turnContext.Activity.Type == ActivityType.Message)
             {
                 // Recognize utterance
                 var utterance = turnContext.Activity.Text;

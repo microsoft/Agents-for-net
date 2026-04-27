@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "testInvoke",
                 ChannelId = "testChannel"
             };
@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "TESTINVOKE",
                 ChannelId = "testChannel"
             };
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "differentInvoke",
                 ChannelId = "testChannel"
             };
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Name = "testInvoke",
                 ChannelId = "testChannel"
             };
@@ -154,7 +154,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var pattern = new Regex("^test.*");
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "testInvoke123",
                 ChannelId = "testChannel"
             };
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var pattern = new Regex("^test.*");
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "invoke123",
                 ChannelId = "testChannel"
             };
@@ -230,7 +230,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "customInvoke",
                 ChannelId = "testChannel"
             };
@@ -256,7 +256,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Message, // Not invoke type
+                Type = ActivityType.Message, // Not invoke type
                 Name = "customInvoke",
                 ChannelId = "testChannel"
             };
@@ -380,7 +380,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "testInvoke",
                 ChannelId = "testChannel",
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
@@ -406,7 +406,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "testInvoke",
                 ChannelId = "testChannel"
             };
@@ -431,7 +431,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "testInvoke",
                 ChannelId = "msteams"
             };
@@ -456,7 +456,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "testInvoke",
                 ChannelId = "webchat"
             };
@@ -520,7 +520,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "testInvoke",
                 Recipient = new ChannelAccount { Id = "recipientId" },
                 Conversation = new ConversationAccount { Id = "conversationId" },
@@ -560,7 +560,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Recipient = new ChannelAccount { Id = "recipientId" },
                 Conversation = new ConversationAccount { Id = "conversationId" },

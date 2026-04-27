@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync();
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "What date would you like?" } };
+                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "What date would you like?" } };
                     await dc.PromptAsync("DateTimePrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "What date would you like?" } };
+                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "What date would you like?" } };
                     await dc.PromptAsync("DateTimePrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "What date would you like?" } };
+                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "What date would you like?" } };
                     await dc.PromptAsync("DateTimePrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)

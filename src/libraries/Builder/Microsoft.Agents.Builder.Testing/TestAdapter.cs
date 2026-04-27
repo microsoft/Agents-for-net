@@ -197,7 +197,7 @@ namespace Microsoft.Agents.Builder.Testing
                 // ready for next reply
                 if (activity.Type == null)
                 {
-                    activity.Type = ActivityTypes.Message;
+                    activity.Type = ActivityType.Message;
                 }
 
                 if (activity.ChannelId == null)
@@ -296,7 +296,7 @@ namespace Microsoft.Agents.Builder.Testing
                     activity.Timestamp = DateTime.UtcNow;
                 }
 
-                if (activity.Type == ActivityTypes.Trace)
+                if (activity.Type == ActivityType.Trace)
                 {
                     if (_sendTraceActivity)
                     {
@@ -462,7 +462,7 @@ namespace Microsoft.Agents.Builder.Testing
         {
             Activity activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Locale = this.Locale ?? "en-us",
                 From = Conversation.User,
                 Recipient = Conversation.Agent,

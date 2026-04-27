@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Builder.Testing
             var adapter = new TestAdapter(TestAdapter.CreateConversation("TestAdapter_Say"));
             await new TestFlow(adapter, MyBotLogic)
                 .Test("foo", "echo:foo", "say with string works")
-                .Test("foo", new Activity(ActivityTypes.Message, text: "echo:foo"), "say with activity works")
+                .Test("foo", new Activity(ActivityType.Message, text: "echo:foo"), "say with activity works")
                 .Test("foo", (activity) => Assert.Equal("echo:foo", activity.Text), "say with validator works")
                 .StartTestAsync();
         }
@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Builder.Testing
             var adapter = new TestAdapter(TestAdapter.CreateConversation("TestAdapter_SendReply"));
             await new TestFlow(adapter, MyBotLogic)
                 .Send("foo").AssertReply("echo:foo", "send/reply with string works")
-                .Send("foo").AssertReply(new Activity(ActivityTypes.Message, text: "echo:foo"), "send/reply with activity works")
+                .Send("foo").AssertReply(new Activity(ActivityType.Message, text: "echo:foo"), "send/reply with activity works")
                 .Send("foo").AssertReply((activity) => Assert.Equal("echo:foo", activity.Text), "send/reply with validator works")
                 .StartTestAsync();
         }

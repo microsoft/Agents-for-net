@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "Test message"
             };
 
@@ -305,7 +305,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             await _proactive.SendActivityAsync(_mockAdapter.Object, _conversationRef.Conversation.Id, activity);
 
             // Assert
-            Assert.Equal(ActivityTypes.Message, activity.Type);
+            Assert.Equal(ActivityType.Message, activity.Type);
         }
 
         [Fact]
@@ -520,7 +520,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversation = new Conversation(_claims, _conversationRef);
             var customActivity = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "CustomEvent"
             };
 
@@ -543,7 +543,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(capturedActivity);
-            Assert.Equal(ActivityTypes.Event, capturedActivity.Type);
+            Assert.Equal(ActivityType.Event, capturedActivity.Type);
             Assert.Equal("CustomEvent", capturedActivity.Name);
         }
 

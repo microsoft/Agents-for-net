@@ -162,12 +162,12 @@ namespace Microsoft.Agents.Storage.Transcript
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
 
-            switch (activity.Type)
+            switch ((string)activity.Type)
             {
-                case ActivityTypes.MessageUpdate:
+                case ActivityType.Names.MessageUpdate:
                     {
                         var updatedActivity = activity.Clone();
-                        updatedActivity.Type = ActivityTypes.Message; // fixup original type (should be Message)
+                        updatedActivity.Type = ActivityType.Message; // fixup original type (should be Message)
 
                         var activityAndBlob = await InnerReadBlobAsync(activity).ConfigureAwait(false);
                         if (activityAndBlob != default && activityAndBlob.Item1 != null)
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Storage.Transcript
                         return;
                     }
 
-                case ActivityTypes.MessageDelete:
+                case ActivityType.Names.MessageDelete:
                     {
                         var activityAndBlob = await InnerReadBlobAsync(activity).ConfigureAwait(false);
                         if (activityAndBlob != default && activityAndBlob.Item1 != null)
@@ -193,7 +193,7 @@ namespace Microsoft.Agents.Storage.Transcript
                             // tombstone the original message
                             var tombstonedActivity = new Activity()
                             {
-                                Type = ActivityTypes.MessageDelete,
+                                Type = ActivityType.MessageDelete,
                                 Id = activityAndBlob.Item1.Id,
                                 From = new ChannelAccount(id: "deleted", role: activityAndBlob.Item1.From.Role),
                                 Recipient = new ChannelAccount(id: "deleted", role: activityAndBlob.Item1.Recipient.Role),

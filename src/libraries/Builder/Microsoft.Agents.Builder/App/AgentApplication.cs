@@ -165,7 +165,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="autoSignInHandlers"></param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActivity(string type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public AgentApplication OnActivity(ActivityType type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             return AddRoute(TypeRouteBuilder.Create()
                 .WithType(type)
@@ -286,7 +286,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles conversation update events using a custom selector.
         /// </summary>
-        /// <param name="conversationUpdateSelector">This will be used in addition the checking for Activity.Type == ActivityTypes.ConversationUpdate.</param>
+        /// <param name="conversationUpdateSelector">This will be used in addition the checking for Activity.Type == ActivityType.ConversationUpdate.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
@@ -299,7 +299,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> ensureConversationUpdate(ITurnContext turnContext, CancellationToken cancellationToken)
             {
-                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(turnContext)) && turnContext.Activity.IsType(ActivityTypes.ConversationUpdate) && await conversationUpdateSelector(turnContext, cancellationToken);
+                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(turnContext)) && turnContext.Activity.IsType(ActivityType.ConversationUpdate) && await conversationUpdateSelector(turnContext, cancellationToken);
             }
 
             return AddRoute(
@@ -413,7 +413,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> ensureMessage(ITurnContext context, CancellationToken cancellationToken)
             {
-                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)) && context.Activity.IsType(ActivityTypes.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
+                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)) && context.Activity.IsType(ActivityType.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
             return AddRoute(
@@ -675,7 +675,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="turnContext">The turn context.</param>
         public void StartTypingTimer(ITurnContext turnContext)
         {
-            if (turnContext.Activity.Type != ActivityTypes.Message)
+            if (turnContext.Activity.Type != ActivityType.Message)
             {
                 return;
             }
@@ -739,7 +739,7 @@ namespace Microsoft.Agents.Builder.App
                 };
 
                 // Handle @mentions
-                if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
+                if (ActivityType.Message == turnContext.Activity.Type)
                 {
                     if (Options.NormalizeMentions)
                     {

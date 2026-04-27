@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Core.Models
         /// <param name="listenFor"> List of phrases and references that speech and language priming systems should listen for. </param>
         /// <param name="textHighlights"> The collection of text fragments to highlight when the activity contains a ReplyToId value. </param>
         /// <param name="semanticAction"> Represents a reference to a programmatic action. </param>
-        public Activity(string type = default, string id = default, System.DateTimeOffset? timestamp = default, System.DateTimeOffset? localTimestamp = default, string serviceUrl = default, string channelId = default, ChannelAccount from = default, ConversationAccount conversation = default, ChannelAccount recipient = default, string textFormat = default, string attachmentLayout = default, IList<ChannelAccount> membersAdded = default, IList<ChannelAccount> membersRemoved = default, IList<MessageReaction> reactionsAdded = default, IList<MessageReaction> reactionsRemoved = default, string topicName = default, string locale = default, string text = default, string speak = default, string inputHint = default, string summary = default, SuggestedActions suggestedActions = default, IList<Attachment> attachments = default, IList<Entity> entities = default, object channelData = default, string action = default, string replyToId = default, string label = default, string valueType = default, object value = default, string name = default, ConversationReference relatesTo = default, string code = default, System.DateTimeOffset? expiration = default, string importance = default, string deliveryMode = default, IList<string> listenFor = default, IList<TextHighlight> textHighlights = default, SemanticAction semanticAction = default, string localTimezone = default, string callerId = default)
+        public Activity(ActivityType type = default, string id = default, System.DateTimeOffset? timestamp = default, System.DateTimeOffset? localTimestamp = default, string serviceUrl = default, string channelId = default, ChannelAccount from = default, ConversationAccount conversation = default, ChannelAccount recipient = default, string textFormat = default, string attachmentLayout = default, IList<ChannelAccount> membersAdded = default, IList<ChannelAccount> membersRemoved = default, IList<MessageReaction> reactionsAdded = default, IList<MessageReaction> reactionsRemoved = default, string topicName = default, string locale = default, string text = default, string speak = default, string inputHint = default, string summary = default, SuggestedActions suggestedActions = default, IList<Attachment> attachments = default, IList<Entity> entities = default, object channelData = default, string action = default, string replyToId = default, string label = default, string valueType = default, object value = default, string name = default, ConversationReference relatesTo = default, string code = default, System.DateTimeOffset? expiration = default, string importance = default, string deliveryMode = default, IList<string> listenFor = default, IList<TextHighlight> textHighlights = default, SemanticAction semanticAction = default, string localTimezone = default, string callerId = default)
         {
             Type = type;
             Id = id;
@@ -139,11 +139,12 @@ namespace Microsoft.Agents.Core.Models
 
         public bool IsType(string type)
         {
-            return string.Equals(type, Type, StringComparison.OrdinalIgnoreCase);
+            return Type == (ActivityType)type;
         }
 
         /// <inheritdoc/>
-        public string Type { get; set; }
+        [JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+        public ActivityType Type { get; set; }
 
         /// <inheritdoc/>
         public string Id { get; set; }
@@ -277,7 +278,7 @@ namespace Microsoft.Agents.Core.Models
         {
             return new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Attachments = [],
                 Entities = [],
             };
@@ -285,7 +286,7 @@ namespace Microsoft.Agents.Core.Models
 
         public static IActivity CreateMessageActivity()
         {
-            return new Activity(ActivityTypes.Message)
+            return new Activity(ActivityType.Message)
             {
                 Attachments = [],
                 Entities = [],
@@ -298,7 +299,7 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>The new typing activity.</returns>
         public static IActivity CreateTypingActivity()
         {
-            return new Activity(ActivityTypes.Typing);
+            return new Activity(ActivityType.Typing);
         }
 
         /// <summary>
@@ -309,7 +310,7 @@ namespace Microsoft.Agents.Core.Models
         {
             return new Activity()
             {
-                Type = ActivityTypes.EndOfConversation
+                Type = ActivityType.EndOfConversation
             };
         }
 
@@ -317,7 +318,7 @@ namespace Microsoft.Agents.Core.Models
         {
             return new Activity()
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded = [],
                 MembersRemoved = [],
             };
@@ -329,7 +330,7 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>The new handoff activity.</returns>
         public static IActivity CreateHandoffActivity()
         {
-            return new Activity(ActivityTypes.Handoff);
+            return new Activity(ActivityType.Handoff);
         }
 
         /// <summary>
@@ -338,14 +339,14 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>The new invoke activity.</returns>
         public static IActivity CreateInvokeActivity()
         {
-            return new Activity(ActivityTypes.Invoke);
+            return new Activity(ActivityType.Invoke);
         }
 
         public static IActivity CreateInvokeResponseActivity(object body = default, int status = (int)HttpStatusCode.OK)
         {
             Activity activity = new()
             {
-                Type = ActivityTypes.InvokeResponse,
+                Type = ActivityType.InvokeResponse,
                 Value = new InvokeResponse { Status = status, Body = body }
             };
             return activity;
@@ -357,7 +358,7 @@ namespace Microsoft.Agents.Core.Models
         {
             var reference = new ConversationReference
             {
-                ActivityId = !string.Equals(Type, ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
+                ActivityId = !string.Equals(Type, ActivityType.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 User = From,
                 Agent = Recipient,
                 Conversation = Conversation,
@@ -423,11 +424,11 @@ namespace Microsoft.Agents.Core.Models
         {
             var reply = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Timestamp = DateTime.UtcNow,
                 From = new ChannelAccount(id: Recipient?.Id, name: Recipient?.Name),
                 Recipient = new ChannelAccount(id: From?.Id, name: From?.Name),
-                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
+                ReplyToId = !string.Equals(Type, ActivityType.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 ServiceUrl = ServiceUrl,
                 ChannelId = ChannelId,
                 Conversation = new ConversationAccount(isGroup: Conversation.IsGroup, id: Conversation.Id, name: Conversation.Name),
@@ -452,7 +453,7 @@ namespace Microsoft.Agents.Core.Models
         {
             return new Activity()
             {
-                Type = ActivityTypes.Trace,
+                Type = ActivityType.Trace,
                 Name = name,
                 Label = label,
                 ValueType = valueType ?? value?.GetType().Name,
@@ -466,11 +467,11 @@ namespace Microsoft.Agents.Core.Models
         {
             var trace = new Activity
             {
-                Type = ActivityTypes.Trace,
+                Type = ActivityType.Trace,
                 Timestamp = DateTime.UtcNow,
                 From = new ChannelAccount { Id = Recipient?.Id, Name = Recipient?.Name },
                 Recipient = new ChannelAccount { Id = From?.Id, Name = From?.Name },
-                ReplyToId = !string.Equals(Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
+                ReplyToId = !string.Equals(Type, ActivityType.ConversationUpdate, StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 ServiceUrl = ServiceUrl,
                 ChannelId = ChannelId,
                 Conversation = Conversation,
@@ -499,7 +500,7 @@ namespace Microsoft.Agents.Core.Models
              * "pseudo-cast" the activity based on its type.
              */
 
-            var type = Type;
+            var type = (string)Type;
 
             // If there's no type set then we can't tell if it's the type they're looking for
             if (type == null)

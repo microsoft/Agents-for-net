@@ -66,7 +66,7 @@ public class ProactiveAgent : AgentApplication
         }
     }
 
-    [Route(Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+    [Route(Type = ActivityType.Names.Message, Rank = RouteRank.Last)]
     public async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // This demonstrates using a Conversation instance to perform ContinueConversation with a custom 

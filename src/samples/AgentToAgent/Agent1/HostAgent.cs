@@ -51,7 +51,7 @@ public class HostAgent : AgentApplication
     }
 
     // Handles messages sent by the user.
-    [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+    [Route(RouteType = RouteType.Activity, Type = ActivityType.Names.Message, Rank = RouteRank.Last)]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);

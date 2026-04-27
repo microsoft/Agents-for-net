@@ -33,7 +33,7 @@ namespace Microsoft.Agents.State.Tests
                 var convCount = convState.GetValue("convCount", () => CONVERSATION_INITIAL_COUNT);
 
                 // System.Diagnostics.Debug.WriteLine($"{context.Activity.Id} UserCount({context.Activity.From.Id}):{userCount} convCount({context.Activity.Conversation.Id}):{convCount}");
-                if (context.Activity.Type == ActivityTypes.Message)
+                if (context.Activity.Type == ActivityType.Message)
                 {
                     if (context.Activity.Text == "get userCount")
                     {
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.State.Tests
                 var userCount = userState.GetValue("userCount", () => USER_INITITAL_COUNT);
                 var convCount = convState.GetValue("convCount", () => CONVERSATION_INITIAL_COUNT);
 
-                if (context.Activity.Type == ActivityTypes.Message)
+                if (context.Activity.Type == ActivityType.Message)
                 {
                     if (context.Activity.Text == "get userCount")
                     {

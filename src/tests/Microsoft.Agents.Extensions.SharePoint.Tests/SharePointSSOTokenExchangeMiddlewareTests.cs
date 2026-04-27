@@ -33,7 +33,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
 
         private readonly Activity _activity = new ()
         {
-            Type = ActivityTypes.Invoke,
+            Type = ActivityType.Invoke,
             Name = "cardExtension/token",
             ChannelId = Channels.M365,
             From = new ChannelAccount(UserId, UserName),
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "cardExtension/token",
                 ChannelId = Channels.Directline,
                 From = new ChannelAccount(UserId, UserName),
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
 
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "cardExtension/token",
                 ChannelId = Channels.M365,
                 From = new ChannelAccount(UserId, UserName),

@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             if (shouldSendEoc)
             {
                 Assert.NotNull(_eocSent);
-                Assert.Equal(ActivityTypes.EndOfConversation, _eocSent.Type);
+                Assert.Equal(ActivityType.EndOfConversation, _eocSent.Type);
                 Assert.Equal(EndOfConversationCodes.CompletedSuccessfully, _eocSent.Code);
                 Assert.Equal("SomeName", _eocSent.Value);
                 Assert.Equal("en-GB", _eocSent.Locale);
@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var testFlow = CreateTestFlow(dialog, FlowTestCase.LeafSkill);
             await testFlow.Send("Hi")
                 .AssertReply("Hello, what is your name?")
-                .Send(new Activity(ActivityTypes.EndOfConversation) { CallerId = _parentBotId })
+                .Send(new Activity(ActivityType.EndOfConversation) { CallerId = _parentBotId })
                 .StartTestAsync();
 
             Assert.Null(_eocSent);
@@ -119,7 +119,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var testFlow = CreateTestFlow(dialog, FlowTestCase.LeafSkill);
             await testFlow.Send("Hi")
                 .AssertReply("Hello, what is your name?")
-                .Send(new Activity(ActivityTypes.Event)
+                .Send(new Activity(ActivityType.Event)
                 {
                     CallerId = _parentBotId,
                     Name = DialogEvents.RepromptDialog
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             _context.SetupGet(e => e.Services)
                 .Returns([]);
             _context.SetupGet(e => e.Activity)
-                .Returns(new Activity { Type = ActivityTypes.EndOfConversation })
+                .Returns(new Activity { Type = ActivityType.EndOfConversation })
                 .Verifiable(Times.Once);
             _context.Setup(e => e.Identity)
                 .Returns(claims);
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             _context.SetupGet(e => e.Services)
                 .Returns([]);
             _context.SetupGet(e => e.Activity)
-                .Returns(new Activity { Type = ActivityTypes.Event, Name = DialogEvents.RepromptDialog })
+                .Returns(new Activity { Type = ActivityType.Event, Name = DialogEvents.RepromptDialog })
                 .Verifiable(Times.Exactly(3));
             _context.Setup(e => e.Identity)
                 .Returns(claims);
@@ -264,7 +264,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 // Interceptor to capture the EoC activity if it was sent so we can assert it in the tests.
                 turnContext.OnSendActivities(async (tc, activities, next) =>
                 {
-                    _eocSent = activities.FirstOrDefault(activity => activity.Type == ActivityTypes.EndOfConversation);
+                    _eocSent = activities.FirstOrDefault(activity => activity.Type == ActivityType.EndOfConversation);
                     return await next().ConfigureAwait(false);
                 });
 

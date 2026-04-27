@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using EmptyAgent;
@@ -82,7 +82,7 @@ namespace Microsoft.Agents.SampleTest
                 .AssertReplySatisfies(reply =>
                 {
                     Assert.Equal("You said: hello", reply.Text);
-                    Assert.Equal(ActivityTypes.Message, reply.Type);
+                    Assert.Equal(ActivityType.Message, reply.Type);
                     return Task.CompletedTask;
                 })
 

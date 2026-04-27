@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -178,7 +178,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -259,7 +259,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -363,7 +363,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?", Attachments = new List<Attachment> { attachment } },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?", Attachments = new List<Attachment> { attachment } },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -414,7 +414,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -456,7 +456,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             {
                                 Prompt = new Activity
                                 {
-                                    Type = ActivityTypes.Message,
+                                    Type = ActivityType.Message,
                                     Text = "favorite color?",
                                     Speak = "spoken prompt",
                                 },
@@ -499,7 +499,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -546,8 +546,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
-                                RetryPrompt = new Activity { Type = ActivityTypes.Message, Text = "your favorite color, please?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
+                                RetryPrompt = new Activity { Type = ActivityType.Message, Text = "your favorite color, please?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -595,7 +595,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -632,7 +632,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?" },
                                 Choices = _colorChoices,
                                 Style = ListStyle.SuggestedAction,
                             },
@@ -682,7 +682,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         "ChoicePrompt",
                         new PromptOptions
                         {
-                            Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?", Locale = testCulture },
+                            Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?", Locale = testCulture },
                             Choices = _colorChoices,
                         },
                         cancellationToken);
@@ -733,7 +733,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         "ChoicePrompt",
                         new PromptOptions
                         {
-                            Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?", Locale = activityLocale },
+                            Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?", Locale = activityLocale },
                             Choices = _colorChoices,
                         },
                         cancellationToken);
@@ -796,7 +796,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         "ChoicePrompt",
                         new PromptOptions
                         {
-                            Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?", Locale = culture.Locale },
+                            Prompt = new Activity { Type = ActivityType.Message, Text = "favorite color?", Locale = culture.Locale },
                             Choices = _colorChoices,
                         },
                         cancellationToken);

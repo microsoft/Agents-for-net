@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    await dc.PromptAsync("ConfirmPrompt", new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Please confirm." } }, cancellationToken);
+                    await dc.PromptAsync("ConfirmPrompt", new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "Please confirm." } }, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
@@ -98,12 +98,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         Prompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm.",
                         },
                         RetryPrompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                     };
@@ -206,12 +206,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         Prompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm.",
                         },
                         RetryPrompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                     };
@@ -269,12 +269,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         Prompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm.",
                         },
                         RetryPrompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                     };
@@ -333,12 +333,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         Prompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm.",
                         },
                         RetryPrompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                     };
@@ -392,12 +392,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         Prompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm.",
                         },
                         RetryPrompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                         RecognizeLanguage = "es-es"
@@ -452,7 +452,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ConfirmPrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "is it true?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "is it true?" },
                             },
                             cancellationToken);
                     }
@@ -491,7 +491,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ConfirmPrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "is it true?" },
+                                Prompt = new Activity { Type = ActivityType.Message, Text = "is it true?" },
                                 Style = ListStyle.None
                             },
                             cancellationToken);

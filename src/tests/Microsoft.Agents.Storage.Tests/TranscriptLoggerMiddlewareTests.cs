@@ -36,12 +36,12 @@ namespace Microsoft.Agents.Storage.Tests
                     var activities = await transcriptStore.GetTranscriptActivitiesAsync(activity.ChannelId, conversationId);
                     Assert.Equal(2, activities.Items.Count);
                 })
-                .Send(new Activity(ActivityTypes.Event) { Name = ActivityEventNames.ContinueConversation })
+                .Send(new Activity(ActivityType.Event) { Name = ActivityEventNames.ContinueConversation })
                 .AssertReply(async activity =>
                 {
                     // Ensure the event hasn't been added to the transcript.
                     var activities = await transcriptStore.GetTranscriptActivitiesAsync(activity.ChannelId, conversationId);
-                    Assert.DoesNotContain(activities.Items, a => ((Activity)a).Type == ActivityTypes.Event && ((Activity)a).Name == ActivityEventNames.ContinueConversation);
+                    Assert.DoesNotContain(activities.Items, a => ((Activity)a).Type == ActivityType.Event && ((Activity)a).Name == ActivityEventNames.ContinueConversation);
                     Assert.Equal(3, activities.Items.Count);
                 })
                 .StartTestAsync();
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Storage.Tests
                 Assert.Equal("assert", activity.Text);
                 Assert.Equal(3, activities.Items.Count);
                 Assert.Equal("Start", activities.Items[0].Text);
-                Assert.Equal(ActivityTypes.MessageDelete, activities.Items[1].Type);
+                Assert.Equal(ActivityType.MessageDelete, activities.Items[1].Type);
                 Assert.Equal("created", activities.Items[1].Text);
             })
             .StartTestAsync();

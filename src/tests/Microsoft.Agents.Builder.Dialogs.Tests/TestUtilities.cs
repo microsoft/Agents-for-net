@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var b = new TestAdapter();
             var a = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = "EmptyContext",
                 From = new ChannelAccount
                 {

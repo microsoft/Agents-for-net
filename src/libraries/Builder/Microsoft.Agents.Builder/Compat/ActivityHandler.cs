@@ -66,60 +66,60 @@ namespace Microsoft.Agents.Builder.Compat
 
             await OnTurnBeginAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
-            switch (turnContext.Activity.Type)
+            switch ((string)turnContext.Activity.Type)
             {
-                case ActivityTypes.Message:
+                case ActivityType.Names.Message:
                     await OnMessageActivityAsync(new TypedTurnContext<IMessageActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.MessageUpdate:
+                case ActivityType.Names.MessageUpdate:
                     await OnMessageUpdateActivityAsync(new TypedTurnContext<IMessageUpdateActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.MessageDelete:
+                case ActivityType.Names.MessageDelete:
                     await OnMessageDeleteActivityAsync(new TypedTurnContext<IMessageDeleteActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.ConversationUpdate:
+                case ActivityType.Names.ConversationUpdate:
                     await OnConversationUpdateActivityAsync(new TypedTurnContext<IConversationUpdateActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.MessageReaction:
+                case ActivityType.Names.MessageReaction:
                     await OnMessageReactionActivityAsync(new TypedTurnContext<IMessageReactionActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.Event:
+                case ActivityType.Names.Event:
                     await OnEventActivityAsync(new TypedTurnContext<IEventActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.Invoke:
+                case ActivityType.Names.Invoke:
                     var invokeResponse = await OnInvokeActivityAsync(new TypedTurnContext<IInvokeActivity>(turnContext), cancellationToken).ConfigureAwait(false);
 
                     // If OnInvokeActivityAsync has already sent an InvokeResponse, do not send another one.
                     if (invokeResponse != null && turnContext.StackState.Get<Activity>(ChannelAdapter.InvokeResponseKey) == null)
                     {
-                        await turnContext.SendActivityAsync(new Activity { Value = invokeResponse, Type = ActivityTypes.InvokeResponse }, cancellationToken).ConfigureAwait(false);
+                        await turnContext.SendActivityAsync(new Activity { Value = invokeResponse, Type = ActivityType.InvokeResponse }, cancellationToken).ConfigureAwait(false);
                     }
 
                     break;
 
-                case ActivityTypes.EndOfConversation:
+                case ActivityType.Names.EndOfConversation:
                     await OnEndOfConversationActivityAsync(new TypedTurnContext<IEndOfConversationActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.Typing:
+                case ActivityType.Names.Typing:
                     await OnTypingActivityAsync(new TypedTurnContext<ITypingActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.InstallationUpdate:
+                case ActivityType.Names.InstallationUpdate:
                     await OnInstallationUpdateActivityAsync(new TypedTurnContext<IInstallationUpdateActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.Command:
+                case ActivityType.Names.Command:
                     await OnCommandActivityAsync(new TypedTurnContext<ICommandActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
-                case ActivityTypes.CommandResult:
+                case ActivityType.Names.CommandResult:
                     await OnCommandResultActivityAsync(new TypedTurnContext<ICommandResultActivity>(turnContext), cancellationToken).ConfigureAwait(false);
                     break;
 
@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Builder.Compat
 
         /// <summary>
         /// Override this in a derived class to provide logic specific to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Message"/> activities, such as the conversational logic.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.Message"/> activities, such as the conversational logic.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Builder.Compat
 
         /// <summary>
         /// Override this in a derived class to provide logic specific to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.MessageUpdate"/> activities, such as the conversational logic.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.MessageUpdate"/> activities, such as the conversational logic.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Builder.Compat
 
         /// <summary>
         /// Override this in a derived class to provide logic specific to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.MessageDelete"/> activities, such as the conversational logic.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.MessageDelete"/> activities, such as the conversational logic.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -590,7 +590,7 @@ namespace Microsoft.Agents.Builder.Compat
 
         /// <summary>
         /// Override this in a derived class to provide logic specific to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.EndOfConversation"/> activities, such as the conversational logic.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.EndOfConversation"/> activities, such as the conversational logic.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -608,7 +608,7 @@ namespace Microsoft.Agents.Builder.Compat
 
         /// <summary>
         /// Override this in a derived class to provide logic specific to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Typing"/> activities, such as the conversational logic.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.Typing"/> activities, such as the conversational logic.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -626,7 +626,7 @@ namespace Microsoft.Agents.Builder.Compat
 
         /// <summary>
         /// Override this in a derived class to provide logic specific to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.InstallationUpdate"/> activities.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.InstallationUpdate"/> activities.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -654,7 +654,7 @@ namespace Microsoft.Agents.Builder.Compat
 
         /// <summary>
         /// Override this in a derived class to provide logic specific to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.InstallationUpdate"/> activities with 'action' set to 'add'.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.InstallationUpdate"/> activities with 'action' set to 'add'.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -672,7 +672,7 @@ namespace Microsoft.Agents.Builder.Compat
 
         /// <summary>
         /// Override this in a derived class to provide logic specific to
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.InstallationUpdate"/> activities with 'action' set to 'remove'.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.InstallationUpdate"/> activities with 'action' set to 'remove'.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -754,7 +754,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// Invoked when an activity other than a message, conversation update, or event is received when the base behavior of
         /// <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/> is used.
         /// If overridden, this could potentially respond to any of the other activity types like
-        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.ContactRelationUpdate"/> or <see cref="Microsoft.Agents.Core.Models.ActivityTypes.EndOfConversation"/>.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityType.ContactRelationUpdate"/> or <see cref="Microsoft.Agents.Core.Models.ActivityType.EndOfConversation"/>.
         /// By default, this method does nothing.
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>

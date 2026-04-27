@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
-            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.Equal(ActivityType.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
             var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
             Assert.Equal(200, invokeResponse.Status);
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext1 = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Single(activitiesToSend);
-            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.Equal(ActivityType.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
             var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
             Assert.Equal(400, invokeResponse.Status);
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -228,7 +228,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Single(activitiesToSend);
-            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.Equal(ActivityType.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
             var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
             Assert.Equal(400, invokeResponse.Status);
@@ -245,7 +245,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
                     verb = "test-verb",
@@ -287,7 +287,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
                     verb = "test-verb",
@@ -328,7 +328,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "test-text",
                 Recipient = new("test-id"),
                 Conversation = new() { Id = "conversationId" },
@@ -370,7 +370,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -441,7 +441,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -491,7 +491,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Recipient = new("test-id"),
                 Conversation = new() { Id = "conversationId" },
@@ -539,7 +539,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Recipient = new("test-id"),
                 Conversation = new() { Id = "conversationId" },
@@ -563,7 +563,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Single(activitiesToSend);
-            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.Equal(ActivityType.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
             var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
             Assert.Equal(400, invokeResponse.Status);
@@ -584,7 +584,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Recipient = new("test-id"),
                 Conversation = new() { Id = "conversationId" },
@@ -619,7 +619,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Single(activitiesToSend);
-            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.Equal(ActivityType.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
             var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
             Assert.Equal(400, invokeResponse.Status);
@@ -643,7 +643,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "application/search",
                 Recipient = new("test-id"),
                 Conversation = new() { Id = "conversationId" },
@@ -678,7 +678,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Single(activitiesToSend);
-            Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
+            Assert.Equal(ActivityType.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
             var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
             Assert.Equal(400, invokeResponse.Status);

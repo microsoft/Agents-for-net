@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Builder
 
             var activityToSend = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = textReplyToSend
             };
 
@@ -255,7 +255,7 @@ namespace Microsoft.Agents.Builder
 
                     activity.Id = responses[index].Id;
 
-                    sentNonTraceActivity |= activity.Type != ActivityTypes.Trace;
+                    sentNonTraceActivity |= activity.Type != ActivityType.Trace;
                 }
 
                 if (sentNonTraceActivity)

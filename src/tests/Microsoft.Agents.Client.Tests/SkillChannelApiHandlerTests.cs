@@ -61,12 +61,12 @@ namespace Microsoft.Agents.Client.Tests
 
 
         [Theory]
-        [InlineData(ActivityTypes.Message, null)]
-        [InlineData(ActivityTypes.Message, "replyToId")]
-        [InlineData(ActivityTypes.Event, null)]
-        [InlineData(ActivityTypes.Event, "replyToId")]
-        [InlineData(ActivityTypes.EndOfConversation, null)]
-        [InlineData(ActivityTypes.EndOfConversation, "replyToId")]
+        [InlineData(ActivityType.Names.Message, null)]
+        [InlineData(ActivityType.Names.Message, "replyToId")]
+        [InlineData(ActivityType.Names.Event, null)]
+        [InlineData(ActivityType.Names.Event, "replyToId")]
+        [InlineData(ActivityType.Names.EndOfConversation, null)]
+        [InlineData(ActivityType.Names.EndOfConversation, "replyToId")]
         public async Task TestSendAndReplyToConversationAsync(string activityType, string replyToId)
         {
             // Arrange
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.NotNull(mockObjects.TurnContext.StackState.Get<ChannelConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
 
             // Assert based on activity type,
-            if (activityType == ActivityTypes.Message)
+            if (activityType == ActivityType.Message)
             {
                 // Should be sent to the channel and not to the bot.
                 Assert.NotNull(mockObjects.ChannelActivity);
@@ -114,14 +114,14 @@ namespace Microsoft.Agents.Client.Tests
         }
 
         [Theory]
-        [InlineData(ActivityTypes.Command, "application/myApplicationCommand", null)]
-        [InlineData(ActivityTypes.Command, "application/myApplicationCommand", "replyToId")]
-        [InlineData(ActivityTypes.Command, "other/myBotCommand", null)]
-        [InlineData(ActivityTypes.Command, "other/myBotCommand", "replyToId")]
-        [InlineData(ActivityTypes.CommandResult, "application/myApplicationCommandResult", null)]
-        [InlineData(ActivityTypes.CommandResult, "application/myApplicationCommandResult", "replyToId")]
-        [InlineData(ActivityTypes.CommandResult, "other/myBotCommand", null)]
-        [InlineData(ActivityTypes.CommandResult, "other/myBotCommand", "replyToId")]
+        [InlineData(ActivityType.Names.Command, "application/myApplicationCommand", null)]
+        [InlineData(ActivityType.Names.Command, "application/myApplicationCommand", "replyToId")]
+        [InlineData(ActivityType.Names.Command, "other/myBotCommand", null)]
+        [InlineData(ActivityType.Names.Command, "other/myBotCommand", "replyToId")]
+        [InlineData(ActivityType.Names.CommandResult, "application/myApplicationCommandResult", null)]
+        [InlineData(ActivityType.Names.CommandResult, "application/myApplicationCommandResult", "replyToId")]
+        [InlineData(ActivityType.Names.CommandResult, "other/myBotCommand", null)]
+        [InlineData(ActivityType.Names.CommandResult, "other/myBotCommand", "replyToId")]
         public async Task TestCommandActivities(string commandActivityType, string name, string replyToId)
         {
             // Arrange
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             // Arrange
             var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);
-            var activity = new Activity(ActivityTypes.Message);
+            var activity = new Activity(ActivityType.Message);
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
             var activityToDelete = Guid.NewGuid().ToString();
 
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             // Arrange
             var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);
-            var activity = new Activity(ActivityTypes.Message) { Text = $"TestUpdate {DateTime.Now}." };
+            var activity = new Activity(ActivityType.Message) { Text = $"TestUpdate {DateTime.Now}." };
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
             var activityToUpdate = Guid.NewGuid().ToString();
 
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             // Arrange
             var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);            
-            var activity = new Activity(ActivityTypes.Message) { Text = $"Get Member." };
+            var activity = new Activity(ActivityType.Message) { Text = $"Get Member." };
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act

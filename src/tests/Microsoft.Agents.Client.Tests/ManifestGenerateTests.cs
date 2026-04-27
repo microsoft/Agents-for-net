@@ -42,9 +42,9 @@ namespace Microsoft.Agents.Client.Tests
                             if (routeAttribute.RouteType == RouteType.Activity)
                                 type = routeAttribute.Type;
                             else if (routeAttribute.RouteType == RouteType.Event)
-                                type = ActivityTypes.Event;
+                                type = ActivityType.Event;
                             else if (routeAttribute.RouteType == RouteType.Conversation)
-                                type = ActivityTypes.ConversationUpdate;
+                                type = ActivityType.ConversationUpdate;
 
                             activities.Add(camelName, new ActivityInfo() { Name = methodName, Type = type });
                         }
@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Client.Tests
         {
         }
 
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Names.Message, Rank = RouteRank.Last)]
         protected Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;

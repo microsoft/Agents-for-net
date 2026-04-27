@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action"
             });
 
@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             var mockActivity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Value = new { Continuation = expectedContinuation }
             };
@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             var mockActivity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Value = new { SomeOtherProperty = "value" }
             };
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             var mockActivity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Value = null
             };
@@ -220,7 +220,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             var mockActivity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Value = new { Continuation = "test-token" }
             };
@@ -243,7 +243,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(sentActivity);
-            Assert.Equal(ActivityTypes.InvokeResponse, sentActivity.Type);
+            Assert.Equal(ActivityType.InvokeResponse, sentActivity.Type);
             Assert.True(handlerExecuted);
         }
 
@@ -258,7 +258,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action"
             });
 
@@ -280,7 +280,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "HANDOFF/ACTION"
             });
 
@@ -302,7 +302,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Name = "handoff/action"
             });
 
@@ -324,7 +324,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "other/action"
             });
 
@@ -346,7 +346,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = null
             });
 
@@ -368,7 +368,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchingContext = new Mock<ITurnContext>();
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 ChannelId = Channels.Msteams
             });
@@ -377,7 +377,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var nonMatchingContext = new Mock<ITurnContext>();
             nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 ChannelId = Channels.Directline
             });
@@ -403,7 +403,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticContext = new Mock<ITurnContext>();
             agenticContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
@@ -412,7 +412,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var nonAgenticContext = new Mock<ITurnContext>();
             nonAgenticContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Recipient = new ChannelAccount()
             });
@@ -577,7 +577,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             var mockActivity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser },
@@ -621,7 +621,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             var mockActivity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Value = new { Continuation = "test" }
             };

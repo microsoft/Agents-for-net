@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Storage.Transcript
 
             var transcriptFile = GetTranscriptFile(activity.ChannelId, activity.Conversation.Id);
 
-            if (System.Diagnostics.Debugger.IsAttached && activity.Type == ActivityTypes.Message)
+            if (System.Diagnostics.Debugger.IsAttached && activity.Type == ActivityType.Message)
             {
                 System.Diagnostics.Trace.TraceInformation($"{activity.From.Name ?? activity.From.Id ?? activity.From.Role} [{activity.Type}] {activity.Text}");
             }
@@ -90,13 +90,13 @@ namespace Microsoft.Agents.Storage.Transcript
                         return;
                     }
 
-                    switch (activity.Type)
+                    switch ((string)activity.Type)
                     {
-                        case ActivityTypes.MessageDelete:
+                        case ActivityType.Names.MessageDelete:
                             await MessageDeleteAsync(activity, transcriptFile).ConfigureAwait(false);
                             return;
 
-                        case ActivityTypes.MessageUpdate:
+                        case ActivityType.Names.MessageUpdate:
                             await MessageUpdateAsync(activity, transcriptFile).ConfigureAwait(false);
                             return;
 
@@ -245,7 +245,7 @@ namespace Microsoft.Agents.Storage.Transcript
                     // tombstone the original message
                     transcript[index] = new Activity()
                     {
-                        Type = ActivityTypes.MessageDelete,
+                        Type = ActivityType.MessageDelete,
                         Id = originalActivity.Id,
                         From = new ChannelAccount(id: "deleted", role: originalActivity.From.Role),
                         Recipient = new ChannelAccount(id: "deleted", role: originalActivity.Recipient.Role),

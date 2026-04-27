@@ -21,8 +21,8 @@ public class MyAgent : AgentApplication, IAgentCardHandler
     {
         OnMessage("-stream", OnStreamAsync);
         OnMessage("-multi", OnMultiTurnAsync);
-        OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity(ActivityType.EndOfConversation, OnEndOfConversationAsync);
+        OnActivity(ActivityType.Message, OnMessageAsync, rank: RouteRank.Last);
     }
 
     private async Task OnStreamAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

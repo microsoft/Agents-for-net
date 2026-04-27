@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageUpdate, StringComparison.OrdinalIgnoreCase)
+                    turnContext.Activity.Type == ActivityType.MessageUpdate
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "editMessage"));
             };
@@ -130,7 +130,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageUpdate, StringComparison.OrdinalIgnoreCase)
+                    turnContext.Activity.Type == ActivityType.MessageUpdate
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "undeleteMessage"));
             };
@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             {
                 TeamsChannelData teamsChannelData;
                 return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.MessageDelete, StringComparison.OrdinalIgnoreCase)
+                    turnContext.Activity.Type == ActivityType.MessageDelete
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "softDeleteMessage"));
             };
@@ -174,7 +174,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.Event
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.readReceipt")
             );
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
@@ -198,7 +198,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
-                string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                turnContext.Activity.Type == ActivityType.Invoke
                 && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
-                string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                turnContext.Activity.Type == ActivityType.Invoke
                 && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
@@ -274,7 +274,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 FileConsentCardResponse? fileConsentCardResponse;
                 return Task.FromResult
                 (
-                    string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                    context.Activity?.Type == ActivityType.Invoke
                     && string.Equals(context.Activity?.Name, "fileConsent/invoke")
                     && (fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(context.Activity!.Value)) != null
                     && string.Equals(fileConsentCardResponse.Action, fileConsentAction)
@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.Invoke
                 && string.Equals(context.Activity?.Name, "actionableMessage/executeAction")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>

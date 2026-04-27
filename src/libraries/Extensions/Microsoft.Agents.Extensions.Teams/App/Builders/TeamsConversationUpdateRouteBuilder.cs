@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
                             var teamChannelData = context.Activity.GetChannelData<TeamsChannelData>();
                             return Task.FromResult
                             (
-                                string.Equals(context.Activity.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                                context.Activity.Type == ActivityType.ConversationUpdate
                                 && _route.IsChannelIdMatch(context.Activity.ChannelId)
                                 && string.Equals(teamChannelData?.EventType, eventName)
                                 && teamChannelData?.Channel != null
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
                     {
                         _route.Selector = (context, _) => Task.FromResult
                         (
-                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            context.Activity?.Type == ActivityType.ConversationUpdate
                             && context.Activity?.MembersAdded != null
                             && context.Activity.MembersAdded.Count > 0
                         );
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
                     {
                         _route.Selector = (context, _) => Task.FromResult
                         (
-                            string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                            context.Activity?.Type == ActivityType.ConversationUpdate
                             && context.Activity?.MembersRemoved != null
                             && context.Activity.MembersRemoved.Count > 0
                         );
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
                             var teamChannelData = context.Activity.GetChannelData<TeamsChannelData>();
                             return Task.FromResult
                             (
-                                string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                                context.Activity?.Type == ActivityType.ConversationUpdate
                                 && _route.IsChannelIdMatch(context.Activity.ChannelId)
                                 && string.Equals(teamChannelData?.EventType, eventName)
                                 && teamChannelData?.Team != null
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
                             var teamChannelData = context.Activity.GetChannelData<TeamsChannelData>();
                             return Task.FromResult
                             (
-                                string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
+                                context.Activity?.Type == ActivityType.ConversationUpdate
                                 && _route.IsChannelIdMatch(context.Activity.ChannelId)
                                 && string.Equals(teamChannelData?.EventType, eventName)
                             );

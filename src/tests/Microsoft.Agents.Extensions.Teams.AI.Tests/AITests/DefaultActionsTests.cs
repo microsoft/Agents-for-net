@@ -193,7 +193,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
             // Arrange
             IActionCollection<ITurnState> actions = ImportDefaultActions<ITurnState>();
             var turnContextMock = new Mock<ITurnContext>();
-            turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityTypes.Message });
+            turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityType.Message });
             turnContextMock.Setup(tc => tc.SendActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(new ResourceResponse()));
             var turnState = new TurnState();
             var command = new PredictedSayCommand("hello");

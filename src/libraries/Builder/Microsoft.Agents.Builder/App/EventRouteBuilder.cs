@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> ensureEvent(ITurnContext context, CancellationToken cancellationToken)
             {
-                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Event) && await selector(context, cancellationToken).ConfigureAwait(false);
+                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityType.Event) && await selector(context, cancellationToken).ConfigureAwait(false);
             }
 
             _route.Selector = ensureEvent;
@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Builder.App
                     var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(ActivityTypes.Event)
+                        && context.Activity.IsType(ActivityType.Event)
                         && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _eventRegex.IsMatch(context.Activity.Name))
                         && await existingSelector(context, ct);
                 }
@@ -165,7 +165,7 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Event)
+                    && context.Activity.IsType(ActivityType.Event)
                     && context.Activity.Name != null
                     && (_eventName != null ? _eventName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _eventRegex.IsMatch(context.Activity.Name))
                 );

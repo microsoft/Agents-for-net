@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter some text." } };
+                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "Enter some text." } };
                     await dc.PromptAsync("TextPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         var results = await dc.ContinueDialogAsync(cancellationToken);
                         if (results.Status == DialogTurnStatus.Empty)
                         {
-                            var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter some text." } };
+                            var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "Enter some text." } };
                             await dc.PromptAsync("TextPrompt", options, cancellationToken);
                         }
                         else if (results.Status == DialogTurnStatus.Complete)
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter some text." } };
+                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "Enter some text." } };
                     await dc.PromptAsync("TextPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -220,8 +220,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter some text." },
-                        RetryPrompt = new Activity { Type = ActivityTypes.Message, Text = "Make sure the text is greater than three characters." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter some text." },
+                        RetryPrompt = new Activity { Type = ActivityType.Message, Text = "Make sure the text is greater than three characters." },
                     };
                     await dc.PromptAsync("TextPrompt", options, cancellationToken);
                 }
@@ -278,8 +278,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity { Type = ActivityTypes.Message, Text = "Enter some text." },
-                        RetryPrompt = new Activity { Type = ActivityTypes.Message, Text = "Make sure the text is greater than three characters." },
+                        Prompt = new Activity { Type = ActivityType.Message, Text = "Enter some text." },
+                        RetryPrompt = new Activity { Type = ActivityType.Message, Text = "Make sure the text is greater than three characters." },
                     };
                     await dc.PromptAsync("TextPrompt", options);
                 }

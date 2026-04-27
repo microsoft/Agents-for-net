@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext = new Mock<ITurnContext>();
             turnContext
                 .Setup(c => c.Activity)
-                .Returns(new Activity() { Type = ActivityTypes.Message });
+                .Returns(new Activity() { Type = ActivityType.Message });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var turnContext = new Mock<ITurnContext>();
             turnContext
                 .Setup(c => c.Activity)
-                .Returns(new Activity() { Type = ActivityTypes.Message, Text = "test_selector" });
+                .Returns(new Activity() { Type = ActivityType.Message, Text = "test_selector" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -81,14 +81,14 @@ namespace Microsoft.Agents.Builder.Tests.App
     {
         public List<string> calls = [];
 
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Names.Message, Rank = RouteRank.Last)]
         public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnMessageAsync");
             return Task.CompletedTask;
         }
 
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Names.Message, Rank = RouteRank.Last)]
         public Task OnMessageDuplicateAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add("OnMessageDuplicateAsync");

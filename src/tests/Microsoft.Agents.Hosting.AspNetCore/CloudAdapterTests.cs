@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -312,7 +312,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) =>
             {
                 var agent = new TestApplication(new TestApplicationOptions(record.Storage));
-                agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+                agent.OnActivity(ActivityType.Message, async (context, state, ct) =>
                 {
                     await context.SendActivityAsync($"Outer: {context.Activity.Text}", cancellationToken: ct);
                     await context.Adapter.ContinueConversationAsync(
@@ -367,7 +367,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) =>
             {
                 var agent = new TestApplication(new TestApplicationOptions(record.Storage));
-                agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+                agent.OnActivity(ActivityType.Message, async (context, state, ct) =>
                 {
                     await context.SendActivityAsync($"Outer: {context.Activity.Text}", cancellationToken: ct);
                     await context.Adapter.ContinueConversationAsync(
@@ -420,7 +420,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) =>
             {
                 var agent = new TestApplication(new TestApplicationOptions(record.Storage));
-                agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+                agent.OnActivity(ActivityType.Message, async (context, state, ct) =>
                 {
                     await context.SendActivityAsync($"Original Conversation: {context.Activity.Text}", cancellationToken: ct);
                     await context.Adapter.CreateConversationAsync(
@@ -501,7 +501,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var record = UseRecord((record) =>
             {
                 var agent = new TestApplication(new TestApplicationOptions(record.Storage));
-                agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+                agent.OnActivity(ActivityType.Message, async (context, state, ct) =>
                 {
                     await context.SendActivityAsync($"Original Conversation: {context.Activity.Text}", cancellationToken: ct);
                     await context.Adapter.ContinueConversationAsync(
@@ -618,7 +618,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         public async Task ProcessAsync_ShouldLogMissingConversationId()
         {
             var record = UseRecord((record) => new ActivityHandler());
-            var context = CreateHttpContext(new(ActivityTypes.Message));
+            var context = CreateHttpContext(new(ActivityType.Message));
 
             /*
             record.QueueLogger.Setup(e => e.Log(
@@ -803,7 +803,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var activity = new Activity
             {
                 ChannelId = Channels.Test,
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 DeliveryMode = deliveryMode,
                 Conversation = new(id: conversationId ?? Guid.NewGuid().ToString()),
                 Recipient = new(id: "recipientId", role: RoleTypes.Agent),
@@ -823,7 +823,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var activity = new Activity
             {
                 ChannelId = Channels.Test,
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "invoke",
                 DeliveryMode = deliveryMode,
                 Conversation = new(id: conversationId ?? Guid.NewGuid().ToString()),

@@ -295,7 +295,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "invoke.1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -304,7 +304,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "invoke.2",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -346,7 +346,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "invoke.1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -401,7 +401,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "invoke.1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -448,7 +448,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "invoke.1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -503,7 +503,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -511,7 +511,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -519,7 +519,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -541,14 +541,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticTypes = new List<string>();
 
             // Agentic
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 agenticTypes.Add(context.Activity.Type);
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
 
             // Non-agentic
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 types.Add(context.Activity.Type);
                 return Task.CompletedTask;
@@ -561,10 +561,10 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Single(types);
-            Assert.Equal(ActivityTypes.Message, types[0]);
+            Assert.Equal(ActivityType.Message, types[0]);
 
             Assert.Single(agenticTypes);
-            Assert.Equal(ActivityTypes.Message, agenticTypes[0]);
+            Assert.Equal(ActivityType.Message, agenticTypes[0]);
         }
 
         [Fact]
@@ -573,7 +573,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -581,7 +581,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.MessageDelete,
+                Type = ActivityType.MessageDelete,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -589,7 +589,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -631,10 +631,10 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Single(types);
-            Assert.Equal(ActivityTypes.Message, types[0]);
+            Assert.Equal(ActivityType.Message, types[0]);
 
             Assert.Single(agenticTypes);
-            Assert.Equal(ActivityTypes.Message, agenticTypes[0]);
+            Assert.Equal(ActivityType.Message, agenticTypes[0]);
         }
 
         [Fact]
@@ -643,7 +643,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Name = "Message",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -652,7 +652,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -660,7 +660,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Name = "Message",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -707,10 +707,10 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Single(types);
-            Assert.Equal(ActivityTypes.Message, types[0]);
+            Assert.Equal(ActivityType.Message, types[0]);
 
             Assert.Single(agenticTypes);
-            Assert.Equal(ActivityTypes.Message, agenticTypes[0]);
+            Assert.Equal(ActivityType.Message, agenticTypes[0]);
         }
 
         [Fact]
@@ -719,7 +719,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -727,7 +727,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.MessageDelete,
+                Type = ActivityType.MessageDelete,
                 Name = "Delete",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -736,7 +736,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -757,7 +757,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 #pragma warning disable CS0618 // Type or member is obsolete
             app.OnActivity(new MultipleRouteSelector
             {
-                Strings = new[] { ActivityTypes.Invoke },
+                Strings = new[] { ActivityType.Names.Invoke },
                 Regexes = new[] { new Regex("^message$") },
                 RouteSelectors = new RouteSelector[] { (context, _) => Task.FromResult(context.Activity?.Name != null) },
             },
@@ -775,9 +775,9 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.Equal(3, types.Count);
-            Assert.Equal(ActivityTypes.Message, types[0]);
-            Assert.Equal(ActivityTypes.MessageDelete, types[1]);
-            Assert.Equal(ActivityTypes.Invoke, types[2]);
+            Assert.Equal(ActivityType.Message, types[0]);
+            Assert.Equal(ActivityType.MessageDelete, types[1]);
+            Assert.Equal(ActivityType.Invoke, types[2]);
         }
 
         [Fact]
@@ -786,7 +786,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new() },
                 Name = "1",
                 Recipient = new() { Id = "recipientId" },
@@ -796,7 +796,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -804,7 +804,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -812,7 +812,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new() },
                 Name = "agentic1",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
@@ -870,7 +870,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersRemoved = new List<ChannelAccount> { new() },
                 Name = "1",
                 Recipient = new() { Id = "recipientId" },
@@ -880,7 +880,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -888,7 +888,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -896,7 +896,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 MembersRemoved = new List<ChannelAccount> { new() },
                 Name = "agentic1",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
@@ -954,7 +954,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.ConversationUpdate,
                 Name = "1",
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
@@ -991,7 +991,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1000,7 +1000,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "HELLO",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1009,7 +1009,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1018,7 +1018,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1027,7 +1027,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var nullTextActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1081,7 +1081,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello a",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1090,7 +1090,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "welcome",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1099,7 +1099,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "i say hello b",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1139,7 +1139,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1148,7 +1148,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "welcome",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1157,7 +1157,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1166,7 +1166,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "agentic hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1223,7 +1223,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1232,7 +1232,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1240,7 +1240,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "agentic hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1299,7 +1299,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1308,7 +1308,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "welcome",
                 Name = "hello",
                 Recipient = new() { Id = "recipientId" },
@@ -1318,7 +1318,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello world",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1369,7 +1369,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.MessageReaction,
+                Type = ActivityType.MessageReaction,
                 ReactionsAdded = new List<MessageReaction> { new() },
                 Name = "1",
                 Recipient = new() { Id = "recipientId" },
@@ -1379,7 +1379,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.MessageReaction,
+                Type = ActivityType.MessageReaction,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1387,7 +1387,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1395,7 +1395,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.MessageReaction,
+                Type = ActivityType.MessageReaction,
                 ReactionsAdded = new List<MessageReaction> { new() },
                 Name = "agentic1",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
@@ -1453,7 +1453,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity1 = new Activity
             {
-                Type = ActivityTypes.MessageReaction,
+                Type = ActivityType.MessageReaction,
                 ReactionsRemoved = new List<MessageReaction> { new() },
                 Name = "1",
                 Recipient = new() { Id = "recipientId" },
@@ -1463,7 +1463,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.MessageReaction,
+                Type = ActivityType.MessageReaction,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1471,7 +1471,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1479,7 +1479,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.MessageReaction,
+                Type = ActivityType.MessageReaction,
                 ReactionsRemoved = new List<MessageReaction> { new() },
                 Name = "agentic1",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
@@ -1543,7 +1543,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter(CaptureSend);
             var activity1 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Value = new { Continuation = "test" },
                 Id = "test",
@@ -1554,7 +1554,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity2 = new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Event,
                 Name = "actionableMessage/executeAction",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1563,7 +1563,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var activity3 = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "composeExtension/queryLink",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1572,7 +1572,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "handoff/action",
                 Value = new { Continuation = "test" },
                 Id = "agentic test",
@@ -1640,7 +1640,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // not by a competing non-agentic route registered first.
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1660,14 +1660,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             string handlerCalled = null;
 
             // Register non-agentic route first
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 handlerCalled = "nonAgentic";
                 return Task.CompletedTask;
             }, isAgenticOnly: false);
 
             // Register agentic route second
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 handlerCalled = "agentic";
                 return Task.CompletedTask;
@@ -1686,7 +1686,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange - Two agentic routes with the same rank; first matching selector wins.
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1706,13 +1706,13 @@ namespace Microsoft.Agents.Builder.Tests.App
             string handlerCalled = null;
 
             // Both agentic, same rank, both match - first registered wins
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 handlerCalled = "first";
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
 
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 handlerCalled = "second";
                 return Task.CompletedTask;
@@ -1732,7 +1732,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // and should fall through to the non-agentic handler.
             var normalActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1752,14 +1752,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             string handlerCalled = null;
 
             // Agentic route registered first (higher priority in ordering)
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 handlerCalled = "agentic";
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
 
             // Non-agentic route registered second
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 handlerCalled = "nonAgentic";
                 return Task.CompletedTask;
@@ -1780,7 +1780,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // This is the pattern used by A365 Notifications and other extensions.
             var agenticActivity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1800,7 +1800,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             string handlerCalled = null;
 
             // Register non-agentic route directly on the app first
-            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            app.OnActivity(ActivityType.Message, (context, _, _) =>
             {
                 handlerCalled = "nonAgentic";
                 return Task.CompletedTask;
@@ -1810,7 +1810,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var extension = new TestExtension("testChannel");
             extension.AddRoute(
                 app,
-                (context, _) => Task.FromResult(context.Activity.Type == ActivityTypes.Message),
+                (context, _) => Task.FromResult(context.Activity.Type == ActivityType.Message),
                 (context, _, _) =>
                 {
                     handlerCalled = "extensionAgentic";

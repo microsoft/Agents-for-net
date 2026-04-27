@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -117,7 +117,7 @@ namespace Microsoft.Agents.Builder.Testing
         {
             public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
             {
-                if (turnContext.Activity.Type == ActivityTypes.Message)
+                if (turnContext.Activity.Type == ActivityType.Message)
                 {
                     await turnContext.SendActivityAsync(
                         $"Echo: {turnContext.Activity.Text}",

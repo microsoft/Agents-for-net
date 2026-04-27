@@ -94,6 +94,21 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                         }
                     }
 #endif
+                    // Skip value-type properties decorated with [JsonIgnore(Condition = WhenWritingDefault)]
+                    // when the current value equals the type's default (ConnectorConverter only natively handles WhenWritingNull).
+                    if (property.PropertyType.IsValueType && propertyValue != null)
+                    {
+                        var ignoreAttr = property.GetCustomAttribute<JsonIgnoreAttribute>();
+                        if (ignoreAttr?.Condition == JsonIgnoreCondition.WhenWritingDefault)
+                        {
+                            var defaultValue = Activator.CreateInstance(property.PropertyType);
+                            if (defaultValue.Equals(propertyValue))
+                            {
+                                continue;
+                            }
+                        }
+                    }
+
                     if (propertyValue != null || !(options.DefaultIgnoreCondition == JsonIgnoreCondition.WhenWritingNull))
 
                     {

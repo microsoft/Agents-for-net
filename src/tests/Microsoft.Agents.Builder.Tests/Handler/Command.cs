@@ -21,14 +21,14 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Create mock Activity for testing.
             var commandActivity = new Activity
             {
-                Type = ActivityTypes.Command,
+                Type = ActivityType.Command,
                 Name = "channel/vnd.microsoft.test.multiply",
                 Value = new MathCommand { First = 2, Second = 2 }
             };
 
             var unknownCommandActivity = new Activity
             {
-                Type = ActivityTypes.Command,
+                Type = ActivityType.Command,
                 Name = "channel/vnd.microsoft.test.divide",
                 Value = new MathCommand { First = 10, Second = 2 }
             };

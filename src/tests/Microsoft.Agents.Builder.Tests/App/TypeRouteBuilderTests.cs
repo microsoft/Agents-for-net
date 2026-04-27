@@ -168,11 +168,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke
+                Type = ActivityType.Invoke
             });
 
             var builder = TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Invoke)
                 .WithHandler((context, state, token) => Task.CompletedTask);
 
             var route = builder.Build();
@@ -388,14 +388,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 Value = new { action = "submit" }
             });
 
             RouteSelector selector = (context, token) =>
             {
-                var hasValue = context.Activity.Type == ActivityTypes.Invoke && context.Activity.Value != null;
+                var hasValue = context.Activity.Type == ActivityType.Invoke && context.Activity.Value != null;
                 return Task.FromResult(hasValue);
             };
 
@@ -460,7 +460,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.Same(builder, result);
             var route = builder
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Invoke)
                 .WithHandler((context, state, token) => Task.CompletedTask)
                 .Build();
 
@@ -494,7 +494,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Act
             var route = builder
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Invoke)
                 .WithHandler((context, state, token) => Task.CompletedTask)
                 .Build();
 
@@ -653,7 +653,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange & Act
             var route = TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Invoke)
                 .WithHandler((context, state, token) => Task.CompletedTask)
                 .WithChannelId(Channels.Msteams)
                 .WithOrderRank(10)
@@ -681,13 +681,13 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
             var route = TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Invoke)
                 .WithHandler((context, state, token) =>
                 {
                     handlerExecuted = true;
@@ -757,7 +757,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action",
                 ChannelId = Channels.Msteams,
                 Value = new { action = "submit" }
@@ -766,7 +766,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = TypeRouteBuilder.Create()
                 .WithSelector((context, token) =>
                 {
-                    var hasValue = context.Activity.Type == ActivityTypes.Invoke && context.Activity.Value != null;
+                    var hasValue = context.Activity.Type == ActivityType.Invoke && context.Activity.Value != null;
                     return Task.FromResult(hasValue);
                 })
                 .WithHandler((context, state, token) =>
@@ -866,7 +866,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchingContext = new Mock<ITurnContext>();
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
@@ -875,13 +875,13 @@ namespace Microsoft.Agents.Builder.Tests.App
             var wrongTypeContext = new Mock<ITurnContext>();
             wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
             var route = TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Invoke)
                 .WithChannelId(Channels.Msteams)
                 .AsAgentic()
                 .WithHandler((context, state, token) => Task.CompletedTask)
@@ -926,7 +926,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" } // No agentic role
             });
@@ -964,12 +964,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "adaptiveCard/action"
             });
 
             var route = TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Invoke)
                 .AsInvoke()
                 .WithHandler((context, state, token) => Task.CompletedTask)
                 .Build();
@@ -989,11 +989,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message
+                Type = ActivityType.Message
             });
 
             var route = TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.Message)
+                .WithType(ActivityType.Message)
                 .AsInvoke()
                 .WithHandler((context, state, token) => Task.CompletedTask)
                 .Build();

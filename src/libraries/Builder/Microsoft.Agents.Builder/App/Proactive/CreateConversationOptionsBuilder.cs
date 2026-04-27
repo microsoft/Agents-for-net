@@ -302,7 +302,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             if (_record.Parameters.Activity != null && string.IsNullOrWhiteSpace(_record.Parameters.Activity.Type))
             {
-                _record.Parameters.Activity.Type = ActivityTypes.Message;
+                _record.Parameters.Activity.Type = ActivityType.Message;
             }
 
             return _record;

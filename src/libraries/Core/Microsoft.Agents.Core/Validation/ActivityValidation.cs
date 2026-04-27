@@ -45,12 +45,12 @@ namespace Microsoft.Agents.Core.Validation
 
         private static bool IsNamedType(this IActivity activity)
         {
-            return activity.IsType(ActivityTypes.Invoke) || activity.IsType(ActivityTypes.Event) || activity.IsType(ActivityTypes.Command) || activity.IsType(ActivityTypes.CommandResult);
+            return activity.IsType(ActivityType.Invoke) || activity.IsType(ActivityType.Event) || activity.IsType(ActivityType.Command) || activity.IsType(ActivityType.CommandResult);
         }
 
         private static bool AllValidation(IActivity activity)
         {
-            if (string.IsNullOrEmpty(activity.Type?.ToString()))
+            if (string.IsNullOrEmpty(activity.Type))
             {
                 System.Diagnostics.Trace.WriteLine("A2010: Activities MUST include a type field");
                 return false;

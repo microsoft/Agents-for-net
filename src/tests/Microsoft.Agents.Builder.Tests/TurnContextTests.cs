@@ -558,7 +558,7 @@ namespace Microsoft.Agents.Builder.Tests
             var context = new TurnContext(adapter, new Activity() { DeliveryMode = DeliveryModes.ExpectReplies });
             var message = new Activity
             {
-                Type = ActivityTypes.InvokeResponse,
+                Type = ActivityType.InvokeResponse,
                 Id = "expect replies message",
                 Text = "test",
             };

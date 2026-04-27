@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Builder.App
                 return Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.Type == ActivityTypes.Invoke
+                    && context.Activity.Type == ActivityType.Invoke
                     && context.Activity.Name == "message/submitAction"
                     && actionName == "feedback"
                 );

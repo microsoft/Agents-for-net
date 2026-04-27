@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Message)
+                    && context.Activity.IsType(ActivityType.Message)
                     && text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase)
                 );
 
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Message)
+                    && context.Activity.IsType(ActivityType.Message)
                     && context.Activity.Text != null
                     && textPattern.IsMatch(context.Activity.Text)
                 );
@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> ensureMessage(ITurnContext context, CancellationToken cancellationToken)
             {
-                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Message) && await selector(context, cancellationToken).ConfigureAwait(false);
+                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityType.Message) && await selector(context, cancellationToken).ConfigureAwait(false);
             }
 
             _route.Selector = ensureMessage;

@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var eventPrompt = new EventActivityPrompt("EventActivityPrompt", Validator);
             
             // Create mock Activity for testing.
-            var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
+            var eventActivity = new Activity { Type = ActivityType.Event, Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "please send an event." } };
+                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "please send an event." } };
                     await dc.PromptAsync("EventActivityPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -91,7 +91,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var eventPrompt = new EventActivityPrompt("EventActivityPrompt", validator);
 
-            var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
+            var eventActivity = new Activity { Type = ActivityType.Event, Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
@@ -108,12 +108,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         Prompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "please send an event.",
                         },
                         RetryPrompt = new Activity
                         {
-                            Type = ActivityTypes.Message,
+                            Type = ActivityType.Message,
                             Text = "Retrying - please send an event.",
                         },
                     };
@@ -164,12 +164,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         {
                             Prompt = new Activity
                             {
-                                Type = ActivityTypes.Message,
+                                Type = ActivityType.Message,
                                 Text = "please send an event.",
                             },
                             RetryPrompt = new Activity
                             {
-                                Type = ActivityTypes.Message,
+                                Type = ActivityType.Message,
                                 Text = "Retrying - please send an event.",
                             },
                         };
@@ -214,7 +214,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var eventPrompt = new EventActivityWithoutRetryPrompt("EventActivityWithoutRetryPrompt", Validator);
 
             // Create mock Activity for testing.
-            var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
+            var eventActivity = new Activity { Type = ActivityType.Event, Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
@@ -228,7 +228,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "please send an event." } };
+                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "please send an event." } };
                     await dc.PromptAsync("EventActivityWithoutRetryPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 var eventPrompt = new EventActivityPrompt("EventActivityPrompt", Validator);
 
-                var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "please send an event." } };
+                var options = new PromptOptions { Prompt = new Activity { Type = ActivityType.Message, Text = "please send an event." } };
 
                 await eventPrompt.OnPromptNullContext(options);
             });
@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             Assert.True(promptContext.AttemptCount > 0);
 
             var activity = promptContext.Recognized.Value;
-            if (activity.Type == ActivityTypes.Event)
+            if (activity.Type == ActivityType.Event)
             {
                 if ((int)activity.Value == 2)
                 {

@@ -63,11 +63,11 @@ namespace Microsoft.Agents.Builder
                 activity.Id = null;
                 var response = default(ResourceResponse);
 
-                if (activity.Type == ActivityTypes.InvokeResponse)
+                if (activity.Type == ActivityType.InvokeResponse)
                 {
                     turnContext.StackState.Set(InvokeResponseKey, activity);
                 }
-                else if (activity.Type == ActivityTypes.Trace && activity.ChannelId != Channels.Emulator)
+                else if (activity.Type == ActivityType.Trace && activity.ChannelId != Channels.Emulator)
                 {
                     // no-op
                 }

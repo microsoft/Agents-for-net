@@ -24,14 +24,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Create mock Activity for testing.
             var commandActivity = new Activity
             {
-                Type = ActivityTypes.Command,
+                Type = ActivityType.Command,
                 Name = "channel/vnd.microsoft.test.multiply",
                 Value = new MathCommand { First = 2, Second = 2 }
             };
 
             var unknownCommandActivity = new Activity
             {
-                Type = ActivityTypes.Command,
+                Type = ActivityType.Command,
                 Name = "channel/vnd.microsoft.test.divide",
                 Value = new MathCommand { First = 10, Second = 2 }
             };
@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Builder.Tests.App
     {
         public CommandBot(AgentApplicationOptions options) : base(options) 
         {
-            OnActivity(ActivityTypes.Command, OnCommandAsync);
+            OnActivity(ActivityType.Command, OnCommandAsync);
         }
 
         public static async Task OnCommandAsync(ITurnContext turnContext, ITurnState state, CancellationToken cancellationToken)

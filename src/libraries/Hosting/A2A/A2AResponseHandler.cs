@@ -76,11 +76,11 @@ internal class A2AResponseHandler : IChannelResponseHandler
         {
             await OnStreamingResponse(httpResponse, activity, entity, cancellationToken).ConfigureAwait(false);
         }
-        else if (activity.IsType(ActivityTypes.Message))
+        else if (activity.IsType(ActivityType.Message))
         {
             await OnMessageResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
-        else if (activity.IsType(ActivityTypes.EndOfConversation))
+        else if (activity.IsType(ActivityType.EndOfConversation))
         {
             await OnEndOfConversationResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }

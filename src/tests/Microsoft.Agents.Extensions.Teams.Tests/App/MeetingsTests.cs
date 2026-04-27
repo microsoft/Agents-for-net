@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             {
                 new(adapter, new Activity
                 {
-                    Type = ActivityTypes.Event,
+                    Type = ActivityType.Event,
                     ChannelId = Channels.Msteams,
                     Name = activityName,
                     Id = "test.id",
@@ -169,7 +169,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 }),
                 new(adapter, new Activity
                 {
-                    Type = ActivityTypes.Event,
+                    Type = ActivityType.Event,
                     ChannelId = Channels.Msteams,
                     Name = "fake.name",
                     Recipient = new() { Id = "recipientId" },
@@ -178,7 +178,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 }),
                 new(adapter, new Activity
                 {
-                    Type = ActivityTypes.Invoke,
+                    Type = ActivityType.Invoke,
                     ChannelId = Channels.Msteams,
                     Name = activityName,
                     Recipient = new() { Id = "recipientId" },
@@ -187,7 +187,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 }),
                 new(adapter, new Activity
                 {
-                    Type = ActivityTypes.Event,
+                    Type = ActivityType.Event,
                     ChannelId = Channels.Webchat,
                     Name = activityName,
                     Recipient = new() { Id = "recipientId" },

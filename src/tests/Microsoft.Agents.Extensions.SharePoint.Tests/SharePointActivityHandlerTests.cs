@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "cardExtension/getCardView",
                 Value = new JsonObject()
             };
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "cardExtension/getQuickView",
                 Value = new JsonObject()
             };
@@ -88,7 +88,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "cardExtension/getPropertyPaneConfiguration",
                 Value = new JsonObject()
             };
@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "cardExtension/setPropertyPaneConfiguration",
                 Value = new JsonObject()
             };
@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Invoke,
                 Name = "cardExtension/handleAction",
                 Value = new JsonObject()
             };

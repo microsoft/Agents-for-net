@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Builder.App
                 _route.Selector = (context, ct) => Task.FromResult
                     (
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(ActivityTypes.ConversationUpdate)
+                        && context.Activity.IsType(ActivityType.ConversationUpdate)
                         && context.Activity.MembersAdded?.Count > 0
                     );
             }
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Builder.App
                 _route.Selector = (context, ct) => Task.FromResult
                     (
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(ActivityTypes.ConversationUpdate)
+                        && context.Activity.IsType(ActivityType.ConversationUpdate)
                         && context.Activity.MembersRemoved?.Count > 0
                     );
             }
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Builder.App
                 _route.Selector = (context, ct) => Task.FromResult
                     (
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(ActivityTypes.ConversationUpdate)
+                        && context.Activity.IsType(ActivityType.ConversationUpdate)
                     );
             }
 
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> ensureConversationUpdate(ITurnContext context, CancellationToken cancellationToken)
             {
-                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.ConversationUpdate) && await selector(context, cancellationToken).ConfigureAwait(false);
+                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityType.ConversationUpdate) && await selector(context, cancellationToken).ConfigureAwait(false);
             }
 
             _route.Selector = ensureConversationUpdate;

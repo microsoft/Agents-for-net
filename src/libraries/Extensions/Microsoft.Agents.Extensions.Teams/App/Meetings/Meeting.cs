@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.Event
                 && context.Activity?.ChannelId == Channels.Msteams
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingStart")
             );
@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.Event
                 && context.Activity?.ChannelId == Channels.Msteams
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingEnd")
             );
@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.Event
                 && context.Activity?.ChannelId == Channels.Msteams
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingParticipantJoin")
             );
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));;
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
-                string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
+                context.Activity?.Type == ActivityType.Event
                 && context.Activity?.ChannelId == Channels.Msteams
                 && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingParticipantLeave")
             );

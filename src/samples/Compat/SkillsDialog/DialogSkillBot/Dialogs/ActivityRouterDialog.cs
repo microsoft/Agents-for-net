@@ -29,12 +29,12 @@ namespace DialogSkillBot.Dialogs
             // A skill can send trace activities, if needed.
             await stepContext.Context.TraceActivityAsync($"{GetType().Name}.ProcessActivityAsync()", label: $"Got ActivityType: {stepContext.Context.Activity.Type}", cancellationToken: cancellationToken);
 
-            switch (stepContext.Context.Activity.Type)
+            switch ((string)stepContext.Context.Activity.Type)
             {
-                case ActivityTypes.Event:
+                case ActivityType.Names.Event:
                     return await OnEventActivityAsync(stepContext, cancellationToken);
 
-                case ActivityTypes.Message:
+                case ActivityType.Names.Message:
                     return await OnMessageActivityAsync(stepContext, cancellationToken);
 
                 default:

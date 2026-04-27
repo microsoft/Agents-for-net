@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Model.Tests
         {
             var outActivity = new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Entities = [new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted }]
             };
 

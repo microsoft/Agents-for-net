@@ -349,7 +349,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "Test message"
             };
 
@@ -362,7 +362,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.NotNull(result.Parameters.Activity);
             Assert.Equal("Test message", result.Parameters.Activity.Text);
-            Assert.Equal(ActivityTypes.Message, result.Parameters.Activity.Type);
+            Assert.Equal(ActivityType.Message, result.Parameters.Activity.Type);
         }
 
         [Fact]
@@ -381,7 +381,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Build();
 
             // Assert
-            Assert.Equal(ActivityTypes.Message, result.Parameters.Activity.Type);
+            Assert.Equal(ActivityType.Message, result.Parameters.Activity.Type);
         }
 
         #endregion
@@ -618,7 +618,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Message,
                 Text = "Hello Teams!"
             };
             var teamsChannelData = new { teamsChannelId = "19:123@thread.skype" };

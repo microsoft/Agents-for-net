@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Define values for common event names used by activities of type <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/>.
+    /// Define values for common event names used by activities of type <see cref="Microsoft.Agents.Core.Models.ActivityType.Event"/>.
     /// </summary>
     public static class ActivityEventNames
     {

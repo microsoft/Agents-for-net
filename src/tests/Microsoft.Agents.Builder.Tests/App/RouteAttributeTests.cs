@@ -34,9 +34,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 await app.OnTurnAsync(turnContext, cancellationToken);
             })
             // type
-            .Send(new Activity() { Type = ActivityTypes.Event })
+            .Send(new Activity() { Type = ActivityType.Event })
             // selector
-            .Send(new Activity() { Type = ActivityTypes.Event, Name = "test" })
+            .Send(new Activity() { Type = ActivityType.Event, Name = "test" })
             // regex
             .Send(new Activity() { Type = "test1" })
             .Send(new Activity() { Type = "test2" })
@@ -146,7 +146,7 @@ namespace Microsoft.Agents.Builder.Tests.App
     {
         public List<string> calls = [];
 
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Event)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Names.Event)]
         protected Task ActivityTypeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(ActivityTypeAsync));
@@ -155,7 +155,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         protected Task<bool> ActivitySelector(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            return Task.FromResult(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == "test");
+            return Task.FromResult(turnContext.Activity.Type == ActivityType.Event && turnContext.Activity.Name == "test");
         }
 
         [Route(RouteType = RouteType.Activity, Selector = "ActivitySelector", Rank = RouteRank.First)]
@@ -187,7 +187,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         // improper signature intentional
         protected Task<bool> BadActivitySelector(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            return Task.FromResult(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == "test");
+            return Task.FromResult(turnContext.Activity.Type == ActivityType.Event && turnContext.Activity.Name == "test");
         }
 
         [Route(RouteType = RouteType.Activity, Selector = "BadActivitySelector")]

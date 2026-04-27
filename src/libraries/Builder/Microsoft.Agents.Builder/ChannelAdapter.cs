@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Builder
         protected static InvokeResponse ProcessTurnResults(TurnContext turnContext)
         {
             // Handle Invoke scenarios where the Agent will return a specific body and return code.
-            if (turnContext.Activity.Type == ActivityTypes.Invoke)
+            if (turnContext.Activity.Type == ActivityType.Invoke)
             {
                 var activityInvokeResponse = turnContext.StackState.Get<Activity>(InvokeResponseKey);
                 if (activityInvokeResponse == null)

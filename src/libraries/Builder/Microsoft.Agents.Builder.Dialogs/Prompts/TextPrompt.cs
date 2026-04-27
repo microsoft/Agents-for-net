@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var result = new PromptRecognizerResult<string>();
-            if (turnContext.Activity.Type == ActivityTypes.Message)
+            if (turnContext.Activity.Type == ActivityType.Message)
             {
                 var message = turnContext.Activity;
                 if (message.Text != null)

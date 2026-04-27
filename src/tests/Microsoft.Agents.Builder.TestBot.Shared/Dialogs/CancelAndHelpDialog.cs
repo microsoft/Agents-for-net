@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Builder.TestBot.Shared.Dialogs
 
         private static async Task<DialogTurnResult> InterruptAsync(DialogContext innerDc, CancellationToken cancellationToken)
         {
-            if (innerDc.Context.Activity.Type == ActivityTypes.Message)
+            if (innerDc.Context.Activity.Type == ActivityType.Message)
             {
                 var text = innerDc.Context.Activity.Text.ToLowerInvariant();
 

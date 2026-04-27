@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
             await turnContext.SendActivityAsync(
                 new Activity
                 {
-                    Type = ActivityTypes.InvokeResponse,
+                    Type = ActivityType.InvokeResponse,
                     Value = new InvokeResponse
                     {
                         Status = (int)httpStatusCode,

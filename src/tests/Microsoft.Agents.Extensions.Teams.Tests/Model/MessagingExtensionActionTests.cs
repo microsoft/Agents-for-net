@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
                 CommandContext = "commandContext",
                 BotMessagePreviewAction = "botMessagePreviewAction",
                 BotActivityPreview = [
-                        new Activity() { Type = ActivityTypes.Message }
+                        new Activity() { Type = ActivityType.Message }
                     ],
                 MessagePayload = new MessageActionsPayload()
                 {
