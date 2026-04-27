@@ -352,6 +352,11 @@ namespace Microsoft.Agents.Core.Models
         public static readonly string MicrosoftWhiteboard = "Microsoft Whiteboard";
 
         /// <summary>
+        /// Represents the Microsoft SharePoint icon name.
+        /// </summary>
+        public static readonly string MicrosoftSharePoint = "Microsoft SharePoint";
+
+        /// <summary>
         /// Represents the Adobe Illustrator icon name.
         /// </summary>
         public static readonly string AdobeIllustrator = "Adobe Illustrator";
@@ -458,6 +463,12 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         [EnumMember(Value = "Microsoft Whiteboard")]
         MicrosoftWhiteboard,
+
+        /// <summary>
+        /// Represents the Microsoft SharePoint icon name.
+        /// </summary>
+        [EnumMember(Value = "Microsoft SharePoint")]
+        MicrosoftSharePoint,
 
         /// <summary>
         /// Represents the Adobe Illustrator icon name.
