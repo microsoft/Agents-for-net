@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI
         /// returned by the model.
         /// </summary>
         /// <remarks>
-        /// The default value is an instance of <see cref="DefaultModerator{TState}"/>
+        /// The default value is an instance of <see cref="Microsoft.Agents.Extensions.Teams.AI.Moderator.DefaultModerator{TState}"/>
         /// </remarks>
         public IModerator<ITurnState>? Moderator { get; set; }
 
@@ -64,12 +64,12 @@ namespace Microsoft.Agents.Extensions.Teams.AI
 
         /// <summary>
         /// Represents the type of feedback loop. Set to "default" by default. It can be set to one of "default" or "custom".
-        /// The <see cref="AIOptions{TState}.EnableFeedbackLoop"/> property should be set to true to use this property.
+        /// The <see cref="Microsoft.Agents.Extensions.Teams.AI.AIOptions{TState}.EnableFeedbackLoop"/> property should be set to true to use this property.
         /// </summary>
         public string FeedbackLoopType { get; set; } = "default";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AIOptions{TState}"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.AIOptions{TState}"/> class.
         /// </summary>
         /// <param name="planner">The planner to use for generating plans.</param>
         public AIOptions(IPlanner<ITurnState> planner)

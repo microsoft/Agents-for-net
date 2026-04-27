@@ -9,11 +9,11 @@ namespace Microsoft.Agents.Core.Errors
     /// <summary>
     /// This class describes the error definition
     /// 
-    /// Each Error should be created as as an AgentAuthErrorDefinition and added to the ErrorHelper class
+    /// Each Error should be created as an AgentAuthErrorDefinition and added to the ErrorHelper class
     /// Each definition should include an error code as a - from the base error code, a description sorted in the Resource.resx file to support localization, and a help link pointing to an AKA link to get help for the given error. 
     /// 
     /// 
-    /// when used, there are is 2 methods in used in the general space. 
+    /// when used, there are 2 methods used in the general space.
     /// Method 1: 
     /// Throw a new exception with the error code, description and helplink
     ///     throw new IndexOutOfRangeException(ErrorHelper.MissingAuthenticationConfiguration.description)

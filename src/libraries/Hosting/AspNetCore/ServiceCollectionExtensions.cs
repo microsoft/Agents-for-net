@@ -11,9 +11,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
+using Microsoft.Agents.Builder.App.Proactive;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
+    /// <summary>
+    /// Provides extension methods for registering agent-related services, adapters, and middleware with dependency
+    /// injection containers and application builders.
+    /// </summary>
+    /// <remarks>These extension methods simplify the setup of agent applications by enabling the registration
+    /// of agents, adapters, options, and supporting middleware. They are intended to be used during application startup
+    /// to configure required services for agent-based architectures, such as those using CloudAdapter and
+    /// AgentApplication. Methods in this class support both default and custom agent/adapters, and facilitate
+    /// integration with ASP.NET Core's dependency injection and middleware pipelines.</remarks>
     public static class ServiceCollectionExtensions
     {
         /// <summary>
@@ -25,7 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>
-        /// This will also call <see cref="AddAgentCore(IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
+        /// This will also call <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgentCore(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
         /// The Agent is registered as Transient.
         /// </remarks>
         /// <typeparam name="TAgent"></typeparam>
@@ -37,7 +47,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Same as <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/> but allows for use of
+        /// Same as <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> but allows for use of
         /// any <c>CloudAdapter</c> subclass.
         /// </summary>
         /// <typeparam name="TAgent"></typeparam>
@@ -87,7 +97,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>
-        /// This will also calls <see cref="AddAgentCore(IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
+        /// This will also calls <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgentCore(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
         /// The Agent is registered as Transient.
         /// </remarks>
         /// <param name="builder"></param>
@@ -98,7 +108,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// This is the same as <see cref="AddAgent(IHostApplicationBuilder, Func{IServiceProvider, IAgent})"/>, except allows the
+        /// This is the same as <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent(Microsoft.Extensions.Hosting.IHostApplicationBuilder, System.Func{System.IServiceProvider, Microsoft.Agents.Builder.IAgent})"/>, except allows the
         /// use of any <c>CloudAdapter</c> subclass.
         /// </summary>
         /// <typeparam name="TAdapter"></typeparam>
@@ -122,7 +132,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// added as a singleton.
         /// </remarks>
         /// <param name="builder"></param>
-        /// <param name="fileDownloaders"></param>
         /// <param name="autoSignIn"></param>
         /// <returns></returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(
@@ -143,7 +152,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Add the default CloudAdapter.
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="async"></param>
         public static void AddCloudAdapter(this IServiceCollection services)
         {
             services.AddCloudAdapter<CloudAdapter>();
@@ -153,7 +161,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Add a derived CloudAdapter.
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="async"></param>
         public static void AddCloudAdapter<T>(this IServiceCollection services) where T : CloudAdapter
         {
             AddAsyncAdapterSupport(services);
@@ -169,7 +176,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <summary>
         /// Adds a middleware that collects headers to be propagated.
         /// </summary>
-        /// <param name="app">The <see cref="IApplicationBuilder"/> to add the middleware to.</param>
+        /// <param name="app">The <see cref="Microsoft.AspNetCore.Builder.IApplicationBuilder"/> to add the middleware to.</param>
         /// <returns>A reference to the <paramref name="app"/> after the operation has completed.</returns>
         public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app)
         {
@@ -192,6 +199,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder.AddAgentCore<CloudAdapter>();
         }
 
+        /// <summary>
+        /// Adds core services required for Bot Framework Agent functionality, including the specified cloud adapter, to
+        /// the application's dependency injection container.
+        /// </summary>
+        /// <remarks>This method registers essential services such as IConnections and
+        /// IChannelServiceClientFactory if they are not already present. It also adds the specified CloudAdapter
+        /// implementation, enabling integration with Azure Bot Service and Activity Protocol Agents.</remarks>
+        /// <typeparam name="TAdapter">The type of cloud adapter to register. Must inherit from CloudAdapter.</typeparam>
+        /// <param name="builder">The host application builder to which the agent core services will be added.</param>
+        /// <returns>The same IHostApplicationBuilder instance for chaining further configuration.</returns>
         public static IHostApplicationBuilder AddAgentCore<TAdapter>(this IHostApplicationBuilder builder)
             where TAdapter : CloudAdapter
         {
@@ -213,6 +230,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return builder;
         }
 
+        /// <summary>
+        /// Adds background task and activity processing support to the specified service collection, enabling
+        /// asynchronous task execution via hosted services and task queues.
+        /// </summary>
+        /// <remarks>This method registers hosted services and singleton task queues required for
+        /// background and activity processing. It is safe to call multiple times; services are only added if not
+        /// already present. Use this method to enable asynchronous task and activity handling in applications that
+        /// require background processing.</remarks>
+        /// <param name="services">The service collection to which the background task and activity processing services will be added. Cannot
+        /// be null.</param>
         public static void AddAsyncAdapterSupport(this IServiceCollection services)
         {
             if (!services.Any(x => x.ServiceType == typeof(IActivityTaskQueue)))

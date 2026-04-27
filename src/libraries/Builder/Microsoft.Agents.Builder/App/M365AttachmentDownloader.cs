@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Builder.App
                     }
                 }
 
-                accessToken = await accessTokenProvider.GetAccessTokenAsync(AgentClaims.GetTokenAudience(turnContext.Identity), _options.Scopes).ConfigureAwait(false);
+                accessToken = await accessTokenProvider.GetAccessTokenAsync(turnContext.Identity.GetOutgoingAudience(), _options.Scopes).ConfigureAwait(false);
             }
 
             List<InputFile> files = [];

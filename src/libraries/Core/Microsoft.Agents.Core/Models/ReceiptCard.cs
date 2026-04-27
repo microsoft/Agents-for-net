@@ -41,14 +41,14 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// The content type value of a <see cref="ReceiptCard"/>.
+        /// The content type value of a <see cref="Microsoft.Agents.Core.Models.ReceiptCard"/>.
         /// </summary>
         public const string ContentType = "application/vnd.microsoft.card.receipt";
 
         /// <summary>
-        /// Creates a new attachment from <see cref="ReceiptCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.ReceiptCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="ReceiptCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.ReceiptCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public Attachment ToAttachment()
         {

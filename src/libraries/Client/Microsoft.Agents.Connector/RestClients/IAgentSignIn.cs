@@ -27,13 +27,13 @@ namespace Microsoft.Agents.Connector.RestClients
         /// Get the raw signin link to be sent to the user for signin for a connection name.
         /// </summary>
         /// <param name="connectionName">Name of the auth connection to use.</param>
-        /// <param name="activity">The <see cref="Activity"/> from which to derive the token exchange state.</param>
+        /// <param name="activity">The <see cref="Microsoft.Agents.Core.Models.Activity"/> from which to derive the token exchange state.</param>
         /// <param name="finalRedirect">The final URL that the OAuth flow will redirect to.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <param name="codeChallenge"></param>
         /// <param name="emulatorUrl"></param>
         /// <param name="state"></param>
-        /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task{TResult}"/> representing the result of the asynchronous operation.</returns>
         Task<SignInResource> GetSignInResourceAsync(string state, string codeChallenge = null, string emulatorUrl = null, string finalRedirect = null, CancellationToken cancellationToken = default);
     }
 }

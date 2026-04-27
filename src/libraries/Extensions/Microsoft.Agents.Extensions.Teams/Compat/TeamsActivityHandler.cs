@@ -896,7 +896,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
 
         /// <summary>
         /// Invoked when an message update activity is received.
-        /// <see cref="ActivityTypes.MessageUpdate"/> activities, such as the conversational logic.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.MessageUpdate"/> activities, such as the conversational logic.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -932,7 +932,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
 
         /// <summary>
         /// Invoked when an message delete activity is received.
-        /// <see cref="ActivityTypes.MessageDelete"/> activities, such as the conversational logic.
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.MessageDelete"/> activities, such as the conversational logic.
         /// </summary>
         /// <param name="turnContext">A strongly-typed context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects

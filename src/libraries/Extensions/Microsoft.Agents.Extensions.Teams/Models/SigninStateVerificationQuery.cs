@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class SigninStateVerificationQuery
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SigninStateVerificationQuery"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.SigninStateVerificationQuery"/> class.
         /// </summary>
         public SigninStateVerificationQuery()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SigninStateVerificationQuery"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.SigninStateVerificationQuery"/> class.
         /// </summary>
         /// <param name="state"> The state string originally received when the
         /// signin web flow is finished with a state posted back to client via

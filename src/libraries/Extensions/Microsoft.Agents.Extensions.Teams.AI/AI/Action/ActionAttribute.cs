@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         public bool IsDefault { get; private set; }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="ActionAttribute"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Action.ActionAttribute"/> class.
         /// </summary>
         /// <param name="name">The name of the action.</param>
         /// <param name="isDefault">Whether this action is default.</param>

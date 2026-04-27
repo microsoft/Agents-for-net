@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SuggestedActions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.SuggestedActions"/> class.
         /// </summary>
         /// <param name="to">Ids of the recipients that the actions should be
         /// shown to. These Ids are relative to the channelId and a subset of

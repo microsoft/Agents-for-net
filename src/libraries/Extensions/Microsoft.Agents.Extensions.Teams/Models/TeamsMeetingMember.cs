@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TeamsMeetingMember
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsMeetingMember"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsMeetingMember"/> class.
         /// </summary>
         /// <param name="user">The channel user data.</param>
         /// <param name="meeting">The user meeting details.</param>

@@ -6,6 +6,7 @@
 using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -22,7 +23,7 @@ namespace Microsoft.Agents.Core.Models
         {
         }
 
-        /// <summary>Initializes a new instance of the <see cref="ConversationAccount"/> class.</summary>
+        /// <summary>Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.ConversationAccount"/> class.</summary>
         /// <param name="isGroup">Indicates whether the conversation contains more than two participants at the time the activity was generated.</param>
         /// <param name="conversationType">Indicates the type of the conversation in channels that distinguish between conversation types.</param>
         /// <param name="id">Channel id for the user or Agent on this channel (Example: joe@smith.com, or @joesmith or 123456).</param>
@@ -43,7 +44,7 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary> Indicates whether the conversation contains more than two participants at the time the activity was generated. </summary>
         public bool? IsGroup { get; set; }
-        /// <summary> Indicates the type of the conversation in channels that distinguish between conversation types. See <see cref="ConversationTypes"/></summary>
+        /// <summary> Indicates the type of the conversation in channels that distinguish between conversation types. See <see cref="Microsoft.Agents.Core.Models.ConversationTypes"/></summary>
         public string ConversationType { get; set; }
         /// <summary> This conversation's tenant ID. </summary>
         public string TenantId { get; set; }
@@ -57,13 +58,14 @@ namespace Microsoft.Agents.Core.Models
         public string Role { get; set; }
 
         /// <summary>
-        /// Gets properties that are not otherwise defined by the <see cref="Activity"/> type but that
+        /// Gets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Core.Models.Activity"/> type but that
         /// might appear in the serialized REST JSON object.
         /// </summary>
         /// <value>The extended properties for the object.</value>
         /// <remarks>With this, properties not represented in the defined type are not dropped when
         /// the JSON object is deserialized, but are instead stored in this property. Such properties
         /// will be written to a JSON object when the instance is serialized.</remarks>
+        [JsonExtensionData]
         public IDictionary<string, JsonElement> Properties { get; set; } = new Dictionary<string, JsonElement>();
     }
 }

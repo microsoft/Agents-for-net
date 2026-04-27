@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -25,26 +25,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     public class ChannelResponseQueue(ILogger logger)
     {
         private readonly ConcurrentDictionary<string, ChannelInfo> _conversations = new();
-        private static readonly TimeSpan HandlerWaitTimeout = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Processes queued responses.  This blocks until CompleteHandlerForRequest is called.
         /// </summary>
         /// <param name="requestId"></param>
-        /// <param name="action">Action to call when an Activity is received.</param>
+        /// <param name="action">Async action to call when an Activity is received.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task HandleResponsesAsync(string requestId, Action<IActivity> action, CancellationToken cancellationToken)
+        public async Task HandleResponsesAsync(string requestId, Func<IActivity, Task> action, CancellationToken cancellationToken)
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
-                channelInfo.readStarted.Set();
                 try
                 {
                     while (await channelInfo.channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
                     {
                         var activity = await channelInfo.channel.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-                        action(activity);
+                        await action(activity).ConfigureAwait(false);
                     }
                 }
                 catch (OperationCanceledException)
@@ -54,26 +52,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 }
                 finally
                 {
-                    channelInfo.readDone.Set();
+                    channelInfo.readDone.Release();
                 }
             }
             else
             {
                 logger.LogWarning("ChannelResponseQueue received unknown requestId '{RequestId}' in HandleResponsesAsync.", requestId);
-            }
-        }
-
-        public void ReadAllResponsesAsync(string requestId, Action<IActivity> action)
-        {
-            if (_conversations.TryGetValue(requestId, out var channelInfo))
-            {
-
-                while (channelInfo.channel.Reader.TryRead(out var activity))
-                {
-                    action(activity);
-                }
-
-                channelInfo.readDone.Set();
             }
         }
 
@@ -87,25 +71,39 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Completes channel response handling.  This will wait for all reads to complete.  Once called,
-        /// any subsequent SendActivitiesAsync are ignored.
+        /// Completes channel response handling synchronously. Blocks until all reads complete.
+        /// Prefer <see cref="Microsoft.Agents.Hosting.AspNetCore.ChannelResponseQueue.CompleteHandlerForRequestAsync(string)"/> when calling from an async context.
         /// </summary>
         /// <param name="requestId"></param>
         public void CompleteHandlerForRequest(string requestId)
         {
             if (_conversations.TryGetValue(requestId, out var channelInfo))
             {
-                // need to wait for HandleResponsesAsync to start
-                channelInfo.readStarted.WaitOne(HandlerWaitTimeout);
-
                 if (channelInfo.channel.Writer.TryComplete())
                 {
+                    // Wait for HandleResponsesAsync to finish BEFORE removing the entry.
+                    // Removing first would cause HandleResponsesAsync to find no entry and skip reading.
+                    channelInfo.readDone.Wait();
                     _conversations.Remove(requestId, out _);
+                    channelInfo.readDone.Dispose();
+                }
+            }
+        }
 
-                    channelInfo.readStarted.Dispose();
-
-                    // wait for reads to be done
-                    channelInfo.readDone.WaitOne();
+        /// <summary>
+        /// Completes channel response handling asynchronously. Waits without blocking a thread pool thread.
+        /// </summary>
+        /// <param name="requestId"></param>
+        public async Task CompleteHandlerForRequestAsync(string requestId)
+        {
+            if (_conversations.TryGetValue(requestId, out var channelInfo))
+            {
+                if (channelInfo.channel.Writer.TryComplete())
+                {
+                    // Wait for HandleResponsesAsync to finish BEFORE removing the entry.
+                    // Removing first would cause HandleResponsesAsync to find no entry and skip reading.
+                    await channelInfo.readDone.WaitAsync().ConfigureAwait(false);
+                    _conversations.Remove(requestId, out _);
                     channelInfo.readDone.Dispose();
                 }
             }
@@ -145,14 +143,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
     }
 
-    struct ChannelInfo
+    sealed class ChannelInfo
     {
-        public ChannelInfo()
-        {
-        }
-
-        public EventWaitHandle readDone = new(false, EventResetMode.ManualReset);
-        public EventWaitHandle readStarted = new(false, EventResetMode.ManualReset);
+        public SemaphoreSlim readDone = new(0, 1);
         public Channel<IActivity> channel = Channel.CreateUnbounded<IActivity>();
     }
 }

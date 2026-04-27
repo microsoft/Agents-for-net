@@ -232,3 +232,4 @@ src/samples/ModelContextProtocol/GitHubMCPServer/Properties/ServiceDependencies/
 
 # Claude Code temporary files
 tmpclaude*
+settings.local.json

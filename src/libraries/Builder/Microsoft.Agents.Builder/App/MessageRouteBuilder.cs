@@ -17,11 +17,11 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing Message activities in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="MessageRouteBuilder"/> to create and configure routes that respond to message
-    /// activities. This builder allows matching event activities by text value or regular expression, and supports 
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method 
-    /// and further configured using one of <see cref="WithText(string)"/> or <see cref="WithText(Regex)"/> 
-    /// or <see cref="WithSelector(RouteSelector)"/>.<br/><br/>
+    /// Use <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder"/> to create and configure routes that respond to message
+    /// activities. This builder allows matching event activities by text value or regular expression, and supports
+    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder.Create"/> method
+    /// and further configured using one of <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder.WithText(string)"/> or <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder.WithText(System.Text.RegularExpressions.Regex)"/>
+    /// or <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/>.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = MessageRouteBuilder.Create()
@@ -101,7 +101,7 @@ namespace Microsoft.Agents.Builder.App
         /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "message" is enforced.</param>
-        /// <returns>The current instance of <see cref="MessageRouteBuilder"/> with the specified selector applied.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder"/> with the specified selector applied.</returns>
         public override MessageRouteBuilder WithSelector(RouteSelector selector)
         {
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
@@ -145,7 +145,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>Messages cannot be configured as invoke routes. This method always returns the
         /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
         /// <param name="isInvoke">Ignored</param>
-        /// <returns>The current instance of <see cref="MessageRouteBuilder"/>.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder"/>.</returns>
         public override MessageRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;

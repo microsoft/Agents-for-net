@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using System.Text.Json.Serialization;
 using Microsoft;
 
 namespace Microsoft.Agents.Core.Models
@@ -19,6 +20,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary> Callback parameter specified in the Value field of the MediaCard that originated this event. </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object CardValue { get; }
     }
 }

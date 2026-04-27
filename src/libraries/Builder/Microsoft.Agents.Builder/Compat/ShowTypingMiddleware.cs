@@ -56,8 +56,8 @@ namespace Microsoft.Agents.Builder.Compat
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>Spawns a thread that sends the periodic typing activities until the turn ends.
         /// </remarks>
-        /// <seealso cref="ITurnContext"/>
-        /// <seealso cref="Activity"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.Activity"/>
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken)
         {
             turnContext.OnSendActivities(async (ctx, activities, nextSend) =>

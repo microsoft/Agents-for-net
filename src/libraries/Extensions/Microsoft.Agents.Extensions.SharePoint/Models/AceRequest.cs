@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class AceRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="AceRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.AceRequest"/> class.
         /// </summary>
         public AceRequest()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AceRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.AceRequest"/> class.
         /// </summary>
         /// <param name="data">ACE request data.</param>
         /// <param name="properties">ACE properties data.</param>

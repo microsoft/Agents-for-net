@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class PropertyPaneChoiceGroupProperties : IPropertyPaneFieldProperties
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PropertyPaneChoiceGroupProperties"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneChoiceGroupProperties"/> class.
         /// </summary>
         public PropertyPaneChoiceGroupProperties()
         {
@@ -19,13 +19,13 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets the label of type <see cref="string"/>.
+        /// Gets or Sets the label of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the label of the choice group.</value>
         public string Label { get; set; }
 
         /// <summary>
-        /// Gets or Sets the collection of options for this choice group of type <see cref="PropertyPaneChoiceGroupOption"/>.
+        /// Gets or Sets the collection of options for this choice group of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneChoiceGroupOption"/>.
         /// </summary>
         /// <value>This value is the icon properties of the choice group.</value>
         public IEnumerable<PropertyPaneChoiceGroupOption> Options { get; set; }

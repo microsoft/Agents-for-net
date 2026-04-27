@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Telemetry.Authorization.Scopes;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,6 +71,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeAzureBotSignIn(Name, exchangeConnection, exchangeScopes, turnContext);
+
             if (forceSignIn || await IsValidActivity(turnContext, cancellationToken).ConfigureAwait(false))
             {
                 var token = await OnFlowTurn(turnContext, cancellationToken).ConfigureAwait(false);
@@ -96,6 +100,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeAzureBotSignOut(Name, _settings.AzureBotOAuthConnectionName, turnContext);
             await ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken);
         }
@@ -103,6 +108,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeAzureBotToken(Name, exchangeConnection, exchangeScopes);
             var response = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, null, cancellationToken).ConfigureAwait(false);
             return await HandleOBO(turnContext, response, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }

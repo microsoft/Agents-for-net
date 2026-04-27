@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Client
     public class AgentResponses(AgentApplication agentApplication, IAgentHost agentHost) : IAgentExtension
     {
         /// <summary>
-        /// Provides a handler for replies from another Agent when an Activity when <see cref="Activity.DeliveryMode"/> is <see cref="DeliveryModes.Normal"/> was used.
+        /// Provides a handler for replies from another Agent when an Activity when <see cref="Microsoft.Agents.Core.Models.Activity.DeliveryMode"/> is <see cref="Microsoft.Agents.Core.Models.DeliveryModes.Normal"/> was used.
         /// </summary>
         /// <remarks>
         /// </remarks>

@@ -13,21 +13,21 @@ namespace Microsoft.Agents.Hosting.A2A;
 /// <remarks>
 /// This exception is used to represent failures to do with protocol-level concerns, such as invalid JSON-RPC requests,
 /// invalid parameters, or internal errors. It is not intended to be used for application-level errors.
-/// <see cref="Exception.Message"/> or <see cref="ErrorCode"/> from a <see cref="A2AException"/> may be
+/// <see cref="System.Exception.Message"/> or <see cref="Microsoft.Agents.Hosting.A2A.A2AException.ErrorCode"/> from a <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> may be
 /// propagated to the remote endpoint; sensitive information should not be included. If sensitive details need
 /// to be included, a different exception type should be used.
 /// </remarks>
 internal class A2AException : Exception
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="A2AException"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> class.
     /// </summary>
     public A2AException()
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="A2AException"/> class with a specified error message.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> class with a specified error message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
     public A2AException(string message) : base(message)
@@ -35,7 +35,7 @@ internal class A2AException : Exception
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="A2AException"/> class with a specified error message and a reference to the inner exception that is the cause of this exception.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> class with a specified error message and a reference to the inner exception that is the cause of this exception.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
     /// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
@@ -44,20 +44,20 @@ internal class A2AException : Exception
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="A2AException"/> class with a specified error message and JSON-RPC error code.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> class with a specified error message and JSON-RPC error code.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    /// <param name="errorCode">A <see cref="A2AErrorCode"/>.</param>
+    /// <param name="errorCode">A <see cref="Microsoft.Agents.Hosting.A2A.Protocol.A2AErrors"/>.</param>
     public A2AException(string message, int errorCode) : this(message, null, errorCode)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="A2AException"/> class with a specified error message, inner exception, and JSON-RPC error code.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> class with a specified error message, inner exception, and JSON-RPC error code.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
     /// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
-    /// <param name="errorCode">A <see cref="A2AErrorCode"/>.</param>
+    /// <param name="errorCode">A <see cref="Microsoft.Agents.Hosting.A2A.Protocol.A2AErrors"/>.</param>
     public A2AException(string message, Exception? innerException, int errorCode) : base(message, innerException)
     {
        ErrorCode = errorCode;
@@ -86,14 +86,14 @@ internal class A2AException : Exception
     private const string RequestIdKey = "RequestId";
 
     /// <summary>
-    /// Associates a request ID with the specified <see cref="A2AException"/>.
+    /// Associates a request ID with the specified <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/>.
     /// </summary>
-    /// <param name="exception">The <see cref="A2AException"/> to associate the request ID with.</param>
+    /// <param name="exception">The <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> to associate the request ID with.</param>
     /// <param name="requestId">The request ID to associate with the exception. Can be null.</param>
-    /// <returns>The same <see cref="A2AException"/> instance with the request ID stored in its Data collection.</returns>
+    /// <returns>The same <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> instance with the request ID stored in its Data collection.</returns>
     /// <remarks>
     /// This method stores the request ID in the exception's Data collection using the key "RequestId".
-    /// The request ID can be later retrieved using the <see cref="GetRequestId"/> method.
+    /// The request ID can be later retrieved using the <see cref="Microsoft.Agents.Hosting.A2A.A2AException.GetRequestId()"/> method.
     /// This is useful for correlating exceptions with specific HTTP requests in logging and debugging scenarios.
     /// </remarks>
     public A2AException WithRequestId(string? requestId)
@@ -103,14 +103,14 @@ internal class A2AException : Exception
     }
 
     /// <summary>
-    /// Associates a request ID with the specified <see cref="A2AException"/>.
+    /// Associates a request ID with the specified <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/>.
     /// </summary>
-    /// <param name="exception">The <see cref="A2AException"/> to associate the request ID with.</param>
+    /// <param name="exception">The <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> to associate the request ID with.</param>
     /// <param name="requestId">The request ID to associate with the exception.</param>
-    /// <returns>The same <see cref="A2AException"/> instance with the request ID stored in its Data collection.</returns>
+    /// <returns>The same <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> instance with the request ID stored in its Data collection.</returns>
     /// <remarks>
     /// This method stores the request ID in the exception's Data collection using the key "RequestId".
-    /// The request ID can be later retrieved using the <see cref="GetRequestId"/> method.
+    /// The request ID can be later retrieved using the <see cref="Microsoft.Agents.Hosting.A2A.A2AException.GetRequestId()"/> method.
     /// This is useful for correlating exceptions with specific HTTP requests in logging and debugging scenarios.
     /// </remarks>
     public A2AException WithRequestId(JsonRpcId requestId)
@@ -120,11 +120,11 @@ internal class A2AException : Exception
     }
 
     /// <summary>
-    /// Retrieves the request ID associated with the specified <see cref="A2AException"/>.
+    /// Retrieves the request ID associated with the specified <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/>.
     /// </summary>
-    /// <param name="exception">The <see cref="A2AException"/> to retrieve the request ID from.</param>
+    /// <param name="exception">The <see cref="Microsoft.Agents.Hosting.A2A.A2AException"/> to retrieve the request ID from.</param>
     /// <returns>
-    /// The request ID associated with the exception if one was previously set using <see cref="WithRequestId(A2AException, string?)"/>,
+    /// The request ID associated with the exception if one was previously set using <see cref="Microsoft.Agents.Hosting.A2A.A2AException.WithRequestId(string?)"/>,
     /// or null if no request ID was set or if the stored value is not a string.
     /// </returns>
     /// <remarks>

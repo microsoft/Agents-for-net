@@ -16,11 +16,11 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing Event activities in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="EventRouteBuilder"/> to create and configure routes that respond to event
-    /// activities. This builder allows matching event activities by name or regular expression, and supports 
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method 
-    /// and further configured using one of <see cref="WithName(string)"/> or <see cref="WithName(Regex)"/> 
-    /// or <see cref="WithSelector(RouteSelector)"/>.<br/><br/>
+    /// Use <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder"/> to create and configure routes that respond to event
+    /// activities. This builder allows matching event activities by name or regular expression, and supports
+    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder.Create"/> method
+    /// and further configured using one of <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder.WithName(string)"/> or <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder.WithName(System.Text.RegularExpressions.Regex)"/>
+    /// or <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/>.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = EventRouteBuilder.Create()
@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>Events cannot be configured as invoke routes. This method always returns the
         /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
         /// <param name="isInvoke">Ignored</param>
-        /// <returns>The current instance of <see cref="EventRouteBuilder"/>.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.EventRouteBuilder"/>.</returns>
         public override EventRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;

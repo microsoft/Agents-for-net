@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TaskModuleMessageResponse : TaskModuleResponseBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleMessageResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleMessageResponse"/> class.
         /// </summary>
         public TaskModuleMessageResponse()
             : base("message")
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleMessageResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleMessageResponse"/> class.
         /// </summary>
         /// <param name="value">Teams will display the value of value in a popup message box.</param>
         public TaskModuleMessageResponse(string value = default)

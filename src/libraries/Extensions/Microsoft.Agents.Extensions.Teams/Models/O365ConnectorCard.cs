@@ -16,14 +16,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public const string ContentType = "application/vnd.microsoft.teams.card.o365connector";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCard"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCard"/> class.
         /// </summary>
         public O365ConnectorCard()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCard"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCard"/> class.
         /// </summary>
         /// <param name="title">Title of the item.</param>
         /// <param name="text">Text for the card.</param>

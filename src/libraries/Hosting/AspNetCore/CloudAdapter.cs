@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -20,7 +21,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
     /// <summary>
-    /// The <see cref="CloudAdapter"/> will queue the incoming request to be 
+    /// The <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> will queue the incoming request to be
     /// processed by the configured background service if possible.
     /// </summary>
     /// <remarks>
@@ -34,7 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly ChannelResponseQueue _responseQueue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CloudAdapter"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> class.
         /// </summary>
         /// <param name="channelServiceClientFactory"></param>
         /// <param name="activityTaskQueue"></param>
@@ -128,6 +129,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ArgumentNullException.ThrowIfNull(httpResponse);
             ArgumentNullException.ThrowIfNull(agent);
 
+            using var telemetryScope = new ScopeProcess();
+
             if (httpRequest.Method != HttpMethods.Post)
             {
                 httpResponse.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
@@ -141,6 +144,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     return;
                 }
                 activity.RequestId ??= httpRequest.HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
+                telemetryScope.Share(activity);
 
                 var claimsIdentity = HttpHelper.GetClaimsIdentity(httpRequest);
 
@@ -227,13 +231,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     Logger.LogError(ex, "Unexpected exception in CloudAdapter.ProcessAsync");
                     httpResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
                     _responseQueue.CompleteHandlerForRequest(activity.RequestId);
+                    telemetryScope.SetError(ex);
                 }
             }
         }
 
         /// <summary>
         /// CloudAdapter handles this override asynchronously if the Activity uses DeliverModes.Normal.  Otherwise
-        /// as <see cref="ProcessActivityAsync(ClaimsIdentity, IActivity, AgentCallbackHandler, CancellationToken)"/> using
+        /// as <see cref="Microsoft.Agents.Builder.ChannelServiceAdapterBase.ProcessActivityAsync(System.Security.Claims.ClaimsIdentity, Microsoft.Agents.Core.Models.IActivity, Microsoft.Agents.Builder.AgentCallbackHandler, System.Threading.CancellationToken)"/> using
         /// `agent.OnTurnAsync`.
         /// </summary>
         /// <param name="claimsIdentity"></param>
@@ -254,6 +259,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return base.ProcessProactiveAsync(claimsIdentity, continuationActivity, agent, cancellationToken, audience);
         }
 
+        /// <summary>
+        /// Processes an outgoing activity in response to an incoming activity, handling delivery modes that require
+        /// immediate response from the host.
+        /// </summary>
+        /// <remarks>This method handles activities with delivery modes <see cref="Microsoft.Agents.Core.Models.DeliveryModes.Stream"/>
+        /// and <see cref="Microsoft.Agents.Core.Models.DeliveryModes.ExpectReplies"/> by sending the response activity through the response queue.
+        /// For other delivery modes, the method returns <see langword="false"/> and does not process the
+        /// response.</remarks>
+        /// <param name="incomingActivity">The incoming activity that triggered the response. The delivery mode of this activity determines how the
+        /// response is handled.</param>
+        /// <param name="outActivity">The activity to be sent as a response to the incoming activity.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result is <see langword="true"/> if the response
+        /// was handled by the host; otherwise, <see langword="false"/>.</returns>
         protected override async Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
         {
             // CloudAdapter handles Stream and ExpectReplies.  According to spec, any other values are treated as Normal and

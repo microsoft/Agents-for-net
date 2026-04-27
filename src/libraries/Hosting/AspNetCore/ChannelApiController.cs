@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <summary>
     /// This contains the routes for the ChannelAPI.  These are the endpoints that
     /// ConnectorClient uses in the case of a Agent-to-Agent.
-    /// The implementation of this is via <see cref="IChannelApiHandler"/>.
+    /// The implementation of this is via <see cref="Microsoft.Agents.Builder.IChannelApiHandler"/>.
     /// See the Microsoft.Agents.Builder.ProxyChannelApiHandler class for an example of this for Dialogs.SkillDialog and Agent-to-Agent.
-    /// <see cref="IConnectorClient"/>
+    /// <see cref="Microsoft.Agents.Connector.IConnectorClient"/>
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="ChannelApiController"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.ChannelApiController"/> class.
     /// </remarks>
-    /// <param name="handler">A <see cref="IChannelResponseHandler"/> that will handle the incoming request.</param>
+    /// <param name="handler">A <see cref="Microsoft.Agents.Builder.IChannelApiHandler"/> that will handle the incoming request.</param>
     // Note: this class is marked as abstract to prevent the ASP runtime from registering it as a controller.
     [ChannelServiceExceptionFilterAttribute]
     public class ChannelApiController(IChannelApiHandler handler) : Controller
@@ -30,7 +30,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// SendToConversation.
         /// </summary>
         /// <param name="conversationId">Conversation ID.</param>
-        /// <param name="activity">Activity to send.</param>
         /// <returns>Task representing result of sending activity to conversation.</returns>
         [HttpPost("v3/conversations/{conversationId}/activities")]
         public virtual async Task<IActionResult> SendToConversationAsync(string conversationId)
@@ -51,7 +50,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="conversationId">Conversation ID.</param>
         /// <param name="activityId">activityId the reply is to (OPTIONAL).</param>
-        /// <param name="activity">Activity to send.</param>
         /// <returns>Task representing result of replying to activity.</returns>
         [HttpPost("v3/conversations/{conversationId}/activities/{activityId}")]
         public virtual async Task<IActionResult> ReplyToActivityAsync(string conversationId, string activityId)
@@ -72,7 +70,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         /// <param name="conversationId">Conversation ID.</param>
         /// <param name="activityId">activityId to update.</param>
-        /// <param name="activity">replacement Activity.</param>
         /// <returns>Task representing result of updating activity.</returns>
         [HttpPut("v3/conversations/{conversationId}/activities/{activityId}")]
         public virtual async Task<IActionResult> UpdateActivityAsync(string conversationId, string activityId)
@@ -227,6 +224,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return new JsonResult(result);
         }
 
+        /// <summary>
+        /// Asynchronously retrieves the activity from the current HTTP request.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the <see cref="Microsoft.Agents.Core.Models.Activity"/>
+        /// deserialized from the HTTP request body.</returns>
         protected async Task<Activity> GetActivityAsync()
         {
             return await HttpHelper.ReadRequestAsync<Activity>(Request).ConfigureAwait(false);

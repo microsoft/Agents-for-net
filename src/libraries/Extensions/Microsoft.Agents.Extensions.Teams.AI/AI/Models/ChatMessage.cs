@@ -361,7 +361,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         public string Type { get; } = ActionCallType.Function;
 
         /// <summary>
-        /// Creates an instance of <see cref="ActionCall"/>
+        /// Creates an instance of <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ActionCall"/>
         /// </summary>
         /// <param name="id"></param>
         /// <param name="function"></param>
@@ -372,7 +372,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         }
 
         /// <summary>
-        /// Creates an instance of <see cref="ActionCall"/>.
+        /// Creates an instance of <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ActionCall"/>.
         /// 
         /// Used to create the object when deserializing.
         /// </summary>
@@ -380,7 +380,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         internal ActionCall() {}
 
         /// <summary>
-        /// Creates an instance of <see cref="ActionCall"/> from <see cref="ChatToolCall"/>
+        /// Creates an instance of <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ActionCall"/> from <see cref="OpenAI.Chat.ChatToolCall"/>
         /// </summary>
         /// <param name="toolCall"></param>
         /// <exception cref="TeamsAIException">Thrown if `toolCall` has an invalid type</exception>
@@ -396,7 +396,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         }
 
         /// <summary>
-        /// Creates an instance of <see cref="ActionCall"/> from <see cref="StreamingChatToolCallUpdate"/>
+        /// Creates an instance of <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ActionCall"/> from <see cref="OpenAI.Chat.StreamingChatToolCallUpdate"/>
         /// </summary>
         /// <param name="toolCall"></param>
         /// <exception cref="TeamsAIException">Thrown if `toolCall` has an invalid type</exception>

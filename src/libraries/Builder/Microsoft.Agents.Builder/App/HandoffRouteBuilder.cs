@@ -14,10 +14,10 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing Handoff activities in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="HandoffRouteBuilder"/> to create and configure routes that respond to activities of type 'invoke' with 
-    /// name "handoff/action". This builder allows matching event activities by name or regular expression, and supports 
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method 
-    /// and further configured using <see cref="WithHandler(HandoffHandler)"/>.<br/><br/>
+    /// Use <see cref="Microsoft.Agents.Builder.App.HandoffRouteBuilder"/> to create and configure routes that respond to activities of type 'invoke' with
+    /// name "handoff/action". This builder allows matching event activities by name or regular expression, and supports
+    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Microsoft.Agents.Builder.App.HandoffRouteBuilder.Create"/> method
+    /// and further configured using <see cref="Microsoft.Agents.Builder.App.HandoffRouteBuilder.WithHandler(Microsoft.Agents.Builder.App.HandoffHandler)"/>.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = HandoffRouteBuilder.Create()
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Builder.App
         /// maintaining consistency with the route's initial setup.</remarks>
         /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
         /// route is always configured for Invoke routing.</param>
-        /// <returns>The current instance of <see cref="HandoffRouteBuilder"/> with Invoke routing enabled.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.HandoffRouteBuilder"/> with Invoke routing enabled.</returns>
         public override HandoffRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;

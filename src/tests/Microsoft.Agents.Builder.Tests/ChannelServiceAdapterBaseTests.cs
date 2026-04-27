@@ -118,10 +118,12 @@ namespace Microsoft.Agents.Builder.Tests
             // Arrange
             _callbackInvoked = false;
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
-                  
+
             //Act
+#pragma warning disable CS0618 // Type or member is obsolete
             await adapter.ContinueConversationAsync("MyBot", _reference, ContinueCallback, default);
-            
+#pragma warning restore CS0618 // Type or member is obsolete
+
             //Assert
             Assert.True(_callbackInvoked);
         }
@@ -174,7 +176,9 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
 
             //Act
+#pragma warning disable CS0618 // Type or member is obsolete
             await adapter.ContinueConversationAsync("MyBot", _activity, ContinueCallback, default);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             //Assert
             Assert.True(_callbackInvoked);
@@ -320,6 +324,127 @@ namespace Microsoft.Agents.Builder.Tests
             await Assert.ThrowsAsync<ArgumentException>(async () => await adapter.SendActivitiesAsync(context, [], default));
         }
 
+        [Fact]
+        public async Task ProcessActivityAsync_ShouldInvokeCallback()
+        {
+            // Arrange
+            _callbackInvoked = false;
+            var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
+            var activity = new Activity(type: ActivityTypes.Message)
+            {
+                Conversation = new ConversationAccount(id: "conv-id"),
+                ServiceUrl = "http://mybot.com"
+            };
+            var identity = new ClaimsIdentity();
+
+            // Act
+            await adapter.ProcessActivityAsync(identity, activity, ContinueCallback, CancellationToken.None);
+
+            // Assert
+            Assert.True(_callbackInvoked);
+        }
+
+        [Fact]
+        public async Task ProcessActivityAsync_ShouldNotCreateConnectorClientForExpectRepliesWithoutServiceUrl()
+        {
+            // Arrange
+            _callbackInvoked = false;
+            var factory = CreateMockChannelServiceClientFactory();
+            var adapter = new TestChannelAdapter(factory.Object);
+            var activity = new Activity(type: ActivityTypes.Message)
+            {
+                Conversation = new ConversationAccount(id: "conv-id"),
+                DeliveryMode = DeliveryModes.ExpectReplies
+                // no ServiceUrl
+            };
+            var identity = new ClaimsIdentity();
+
+            // Act
+            await adapter.ProcessActivityAsync(identity, activity, ContinueCallback, CancellationToken.None);
+
+            // Assert - connector client should not have been created (no ServiceUrl + ExpectReplies)
+            factory.Verify(
+                f => f.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task ProcessProactiveAsync_ShouldInvokeCallback()
+        {
+            // Arrange
+            _callbackInvoked = false;
+            var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
+            var identity = new ClaimsIdentity();
+
+            // Act
+            await adapter.ProcessProactiveAsync(identity, _activity, audience: null, ContinueCallback, CancellationToken.None);
+
+            // Assert
+            Assert.True(_callbackInvoked);
+        }
+
+        [Fact]
+        public async Task ProcessProactiveAsync_ShouldPassAudienceToConnectorClientFactory()
+        {
+            // Arrange
+            const string expectedAudience = "my-audience";
+            var factory = CreateMockChannelServiceClientFactory();
+            var adapter = new TestChannelAdapter(factory.Object);
+            var identity = new ClaimsIdentity();
+
+            // Act
+            await adapter.ProcessProactiveAsync(identity, _activity, expectedAudience, ContinueCallback, CancellationToken.None);
+
+            // Assert - audience must be forwarded to CreateConnectorClientAsync (regression test)
+            factory.Verify(
+                f => f.CreateConnectorClientAsync(
+                    It.IsAny<ITurnContext>(),
+                    expectedAudience,
+                    It.IsAny<IList<string>>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessProactiveAsync_ShouldThrowWhenConversationIsNull()
+        {
+            // Arrange
+            var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
+            var identity = new ClaimsIdentity();
+            var activityWithNoConversation = new Activity(type: ActivityTypes.Event); // Conversation is null
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                () => adapter.ProcessProactiveAsync(identity, activityWithNoConversation, audience: null, ContinueCallback, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task SendActivitiesAsync_ShouldNotUseConnectorForExpectReplies()
+        {
+            // Arrange
+            var connectorClient = CreateMockConnectorClient();
+            var adapter = new TestChannelAdapter(new Mock<IChannelServiceClientFactory>().Object);
+            var incomingActivity = new Activity { DeliveryMode = DeliveryModes.ExpectReplies };
+            var context = new TurnContext(adapter, incomingActivity);
+            context.Services.Set<IConnectorClient>(connectorClient.Object);
+            var activities = new Activity[]
+            {
+                new Activity(type: ActivityTypes.Message, text: "reply")
+            };
+
+            // Act
+            var responses = await adapter.SendActivitiesAsync(context, activities, CancellationToken.None);
+
+            // Assert - connector should never be called for ExpectReplies delivery mode
+            connectorClient.Verify(
+                c => c.Conversations.ReplyToActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+            connectorClient.Verify(
+                c => c.Conversations.SendToConversationAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
         private Task ContinueCallback(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             _callbackInvoked = true;
@@ -381,10 +506,10 @@ namespace Microsoft.Agents.Builder.Tests
 
             var mockChannelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateConnectorClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                x => x.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateMockConnectorClient().Object);
             mockChannelServiceClientFactory.Setup(
-                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+                x => x.CreateUserTokenClientAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockUserTokenClient.Object);
 
             return mockChannelServiceClientFactory;

@@ -3,7 +3,7 @@
 namespace Microsoft.Agents.Extensions.Teams.AI.Moderator
 {
     /// <summary>
-    /// Text analyze category for <see cref="AzureContentSafetyModeratorOptions"/>.
+    /// Text analyze category for <see cref="Microsoft.Agents.Extensions.Teams.AI.Moderator.AzureContentSafetyModeratorOptions"/>.
     /// </summary>
     public enum AzureContentSafetyTextCategory
     {

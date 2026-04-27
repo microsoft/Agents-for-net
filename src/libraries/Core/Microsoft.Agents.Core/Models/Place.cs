@@ -3,6 +3,7 @@
 
 #nullable disable
 
+using System.Text.Json.Serialization;
 using Microsoft;
 
 namespace Microsoft.Agents.Core.Models
@@ -31,10 +32,13 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary> Address of the place (may be `string` or complex object of type `PostalAddress`). </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Address { get; set; }
         /// <summary> Geo coordinates of the place (may be complex object of type `GeoCoordinates` or `GeoShape`). </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Geo { get; set; }
         /// <summary> Map to the place (may be `string` (URL) or complex object of type `Map`). </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object HasMap { get; set; }
         /// <summary> The name of the thing. </summary>
         public string Name { get; set; }

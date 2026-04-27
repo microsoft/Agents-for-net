@@ -23,8 +23,11 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
+		<ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
 		<ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
+		<ProjectReference Include="..\..\libraries\Client\Microsoft.Agents.Connector\Microsoft.Agents.Connector.csproj" />
 		<ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
+		<ProjectReference Include="..\Microsoft.Agents.TestSupport\Microsoft.Agents.TestSupport.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

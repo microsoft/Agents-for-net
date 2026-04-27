@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TaskModuleRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleRequest"/> class.
         /// </summary>
         public TaskModuleRequest()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleRequest"/> class.
         /// </summary>
         /// <param name="data">User input data. Free payload with key-value pairs.</param>
         /// <param name="context">Current user context, i.e., the current theme.</param>

@@ -5,7 +5,7 @@ namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
     /// DeliveryModes define how an Agent receiving an Activity replies to the sender.
-    /// <see cref="IActivity.DeliveryMode"/>
+    /// <see cref="Microsoft.Agents.Core.Models.IActivity.DeliveryMode"/>
     /// </summary>
     public static class DeliveryModes
     {

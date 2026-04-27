@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.State
     /// <summary>
     /// Base class for AgentState key/value state.
     /// </summary>
-    /// <seealso cref="IStorage"/>
+    /// <seealso cref="Microsoft.Agents.Storage.IStorage"/>
     public abstract class AgentState : IPropertyManager, IAgentState
     {
         private readonly IStorage _storage;
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Builder.State
         /// </remarks>
         /// <exception cref="System.ArgumentNullException"><paramref name="storage"/> or <paramref name="stateName"/>
         /// is <c>null</c>.</exception>
-        /// <seealso cref="ITurnContext"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
         public AgentState(IStorage storage, string stateName)
         {
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));

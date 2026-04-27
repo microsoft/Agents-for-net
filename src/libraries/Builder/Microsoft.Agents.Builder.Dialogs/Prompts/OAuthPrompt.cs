@@ -195,7 +195,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                         // recreate a ConnectorClient and set it in TurnState so replies use the correct one
                         var serviceUrl = dc.Context.Activity.ServiceUrl;
                         var audience = callerInfo.Scope;
-                        var connectorClient = await CreateConnectorClientAsync(dc.Context, serviceUrl, dc.Context.Identity, audience, cancellationToken).ConfigureAwait(false);
+                        var connectorClient = await CreateConnectorClientAsync(dc.Context, audience, cancellationToken).ConfigureAwait(false);
                         dc.Context.Services.Set<IConnectorClient>(connectorClient);
                     }
                 }
@@ -271,12 +271,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken).ConfigureAwait(false);
         }
 
-        public static async Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string serviceUrl, ClaimsIdentity claimsIdentity, string audience, CancellationToken cancellationToken)
+        private static async Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience, CancellationToken cancellationToken)
         {
             var clientFactory = turnContext.Services.Get<IChannelServiceClientFactory>();
             if (clientFactory != null)
             {
-                return await clientFactory.CreateConnectorClientAsync(claimsIdentity, serviceUrl, audience, cancellationToken).ConfigureAwait(false);
+                return await clientFactory.CreateConnectorClientAsync(turnContext, audience, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             throw new NotSupportedException("OAuthFlow: IChannelServiceClientFactory is not supported. Was an IChannelServiceClientFactory registered?");
         }
@@ -294,7 +294,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 return new CallerInfo
                 {
                     CallerServiceUrl = turnContext.Activity.ServiceUrl,
-                    Scope = AgentClaims.GetOutgoingAppId(turnContext.Identity),
+                    Scope = AgentClaims.GetOutgoingAppIdClaim(turnContext.Identity),
                 };
             }
 

@@ -17,18 +17,19 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage.Telemetry.Scopes;
 
 namespace Microsoft.Agents.Storage.Blobs
 {
     /// <summary>
-    /// Implements <see cref="IStorage"/> using Azure Storage Blobs.
+    /// Implements <see cref="Microsoft.Agents.Storage.IStorage"/> using Azure Storage Blobs.
     /// </summary>
     /// <remarks>
     /// This class uses a single Azure Storage Blob Container.
-    /// Each entity or <see cref="IStoreItem"/> is serialized into a JSON string and stored in an individual text blob.
+    /// Each entity or <see cref="Microsoft.Agents.Storage.IStoreItem"/> is serialized into a JSON string and stored in an individual text blob.
     /// Each blob is named after the store item key,  which is encoded so that it conforms a valid blob name.
-    /// If an entity is an <see cref="IStoreItem"/>, the storage object will set the entity's <see cref="IStoreItem.ETag"/>
-    /// property value to the blob's ETag upon read. Afterward, an <see cref="BlobRequestConditions"/> with the ETag value
+    /// If an entity is an <see cref="Microsoft.Agents.Storage.IStoreItem"/>, the storage object will set the entity's <see cref="Microsoft.Agents.Storage.IStoreItem.ETag"/>
+    /// property value to the blob's ETag upon read. Afterward, an <see cref="Azure.Storage.Blobs.Models.BlobRequestConditions"/> with the ETag value
     /// will be generated during Write. New entities start with a null ETag.
     /// </remarks>
     public class BlobsStorage : IStorage
@@ -42,11 +43,11 @@ namespace Microsoft.Agents.Storage.Blobs
         private readonly StorageTransferOptions _storageTransferOptions;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlobsStorage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Blobs.BlobsStorage"/> class.
         /// </summary>
         /// <param name="dataConnectionString">Azure Storage connection string.</param>
         /// <param name="containerName">Name of the Blob container where entities will be stored.</param>
-        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
+        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="Azure.Storage.StorageTransferOptions"/>.</param>
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
         public BlobsStorage(string dataConnectionString, string containerName, StorageTransferOptions storageTransferOptions = default, JsonSerializerOptions jsonSerializerOptions = null)
         {
@@ -63,11 +64,11 @@ namespace Microsoft.Agents.Storage.Blobs
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlobsStorage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Blobs.BlobsStorage"/> class.
         /// </summary>
         /// <param name="blobContainerUri">Azure blob storage container Uri.</param>
         /// <param name="tokenCredential">The token credential to authenticate to the Azure storage.</param>
-        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
+        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="Azure.Storage.StorageTransferOptions"/>.</param>
         /// <param name="options">Client options that define the transport pipeline policies for authentication, retries, etc., that are applied to every request.</param>
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
         public BlobsStorage(Uri blobContainerUri, TokenCredential tokenCredential, StorageTransferOptions storageTransferOptions = default, BlobClientOptions options = default, JsonSerializerOptions jsonSerializerOptions = null)
@@ -86,11 +87,11 @@ namespace Microsoft.Agents.Storage.Blobs
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlobsStorage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Blobs.BlobsStorage"/> class.
         /// </summary>
         /// <param name="containerClient">The custom implementation of BlobContainerClient.</param>
         /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>
-        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
+        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="Azure.Storage.StorageTransferOptions"/>.</param>
         public BlobsStorage(BlobContainerClient containerClient, StorageTransferOptions storageTransferOptions = default, JsonSerializerOptions jsonSerializerOptions = null)
         {
             AssertionHelpers.ThrowIfNull(containerClient, nameof(containerClient));
@@ -106,6 +107,8 @@ namespace Microsoft.Agents.Storage.Blobs
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
 
+            using var telemetryScope = new ScopeDelete(keys.Length);
+
             foreach (var key in keys)
             {
                 var blobName = GetBlobName(key);
@@ -118,6 +121,8 @@ namespace Microsoft.Agents.Storage.Blobs
         public async Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            using var telemetryScope = new ScopeRead(keys.Length);
 
             // this should only happen once - assuming this is a singleton
             if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
@@ -176,6 +181,8 @@ namespace Microsoft.Agents.Storage.Blobs
                 // No-op for no changes.
                 return;
             }
+
+            using var telemetryScope = new ScopeWrite(changes.Count);
 
             // this should only happen once - assuming this is a singleton
             if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)

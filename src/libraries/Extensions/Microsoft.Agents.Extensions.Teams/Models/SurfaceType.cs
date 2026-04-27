@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Extensions.Teams.Models
 {
     /// <summary>
-    /// Defines Teams Surface type for use with a <see cref="Surface"/> object.
+    /// Defines Teams Surface type for use with a <see cref="Microsoft.Agents.Extensions.Teams.Models.Surface"/> object.
     /// </summary>
     public enum SurfaceType
     {

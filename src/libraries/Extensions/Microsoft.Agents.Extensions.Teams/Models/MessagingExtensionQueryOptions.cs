@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessagingExtensionQueryOptions
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionQueryOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionQueryOptions"/> class.
         /// </summary>
         public MessagingExtensionQueryOptions()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionQueryOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionQueryOptions"/> class.
         /// </summary>
         /// <param name="skip">Number of entities to skip.</param>
         /// <param name="count">Number of entities to fetch.</param>

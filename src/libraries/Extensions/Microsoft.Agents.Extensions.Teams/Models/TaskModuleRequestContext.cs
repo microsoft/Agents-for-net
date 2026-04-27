@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TaskModuleRequestContext
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleRequestContext"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleRequestContext"/> class.
         /// </summary>
         public TaskModuleRequestContext()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleRequestContext"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleRequestContext"/> class.
         /// </summary>
         /// <param name="theme">The theme.</param>
         public TaskModuleRequestContext(string theme = default)

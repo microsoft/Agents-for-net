@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Models.Entities;
@@ -70,6 +71,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
     /// <returns></returns>
     public async Task OnResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
     {
+        using var telemetryScope = new ScopeWriteResponse(activity);
         var entity = activity.GetStreamingEntity();
         if (entity != null)
         {
@@ -79,9 +81,9 @@ internal class A2AResponseHandler : IChannelResponseHandler
         {
             await OnMessageResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
         }
-        else if (activity.IsType(ActivityTypes.EndOfConversation))
+        else if (activity is IEndOfConversationActivity endOfConversationActivity)
         {
-            await OnEndOfConversationResponse(httpResponse, activity, cancellationToken).ConfigureAwait(false);
+            await OnEndOfConversationResponse(httpResponse, endOfConversationActivity, cancellationToken).ConfigureAwait(false);
         }
         else
         {
@@ -155,7 +157,7 @@ internal class A2AResponseHandler : IChannelResponseHandler
         }
     }
 
-    private async Task OnEndOfConversationResponse(HttpResponse httpResponse, IActivity activity, CancellationToken cancellationToken = default)
+    private async Task OnEndOfConversationResponse(HttpResponse httpResponse, IEndOfConversationActivity activity, CancellationToken cancellationToken = default)
     {
         var task = await _taskStore.GetTaskAsync(activity.Conversation.Id, cancellationToken).ConfigureAwait(false);
         if (task.IsTerminal())
@@ -196,11 +198,11 @@ internal class A2AResponseHandler : IChannelResponseHandler
         };
 
         // ResponseEnd sends status
-        IActivity statusMessage = null;
+        IMessageActivity statusMessage = null;
         if (activity.HasA2AMessageContent())
         {
             // Clone to avoid altering input Activity
-            statusMessage = ProtocolJsonSerializer.CloneTo<IActivity>(activity);
+            statusMessage = ProtocolJsonSerializer.CloneTo<IMessageActivity>(activity);
 
             // Value was set as Artifact on Task
             statusMessage.Value = null;

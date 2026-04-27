@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage.Telemetry.Scopes;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Options;
 using System;
@@ -35,7 +36,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         private bool _disposed;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CosmosDbPartitionedStorage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage"/> class.
         /// using the provided CosmosDB credentials, database ID, and container ID.
         /// </summary>
         /// <param name="jsonSerializerOptions"></param>
@@ -48,7 +49,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CosmosDbPartitionedStorage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage"/> class.
         /// using the provided CosmosDB credentials, database ID, and collection ID.
         /// </summary>
         /// <param name="client">The custom implementation of CosmosClient.</param>
@@ -77,6 +78,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
             await InitializeAsync().ConfigureAwait(false);
 
             var storeItems = new Dictionary<string, object>(keys.Length);
+
+            using var telemetryScope = new ScopeRead(keys.Length);
 
             foreach (var key in keys)
             {
@@ -165,6 +168,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
                 return;
             }
 
+            using var telemetryScope = new ScopeWrite(changes.Count);
+
             // Ensure Initialization has been run
             await InitializeAsync().ConfigureAwait(false);
 
@@ -240,6 +245,8 @@ namespace Microsoft.Agents.Storage.CosmosDb
                 // Nothing to delete is a no-op.
                 return;
             }
+
+            using var telemetryScope = new ScopeDelete(keys.Length);
 
             await InitializeAsync().ConfigureAwait(false);
 
@@ -448,7 +455,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
             private readonly JsonSerializerOptions _serializerSettings;
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="CosmosJsonSerializer"/> class that uses the JSON.net serializer.
+            /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorage.CosmosJsonSerializer"/> class that uses the JSON.net serializer.
             /// </summary>
             /// <param name="jsonSerializerSettings">The JSON.net serializer.</param>
             public CosmosJsonSerializer(JsonSerializerOptions jsonSerializerSettings)

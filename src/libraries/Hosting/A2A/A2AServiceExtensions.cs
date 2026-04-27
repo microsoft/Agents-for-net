@@ -41,7 +41,7 @@ public static class A2AServiceExtensions
     /// </summary>
     /// <param name="endpoints"></param>
     /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
-    /// <param name="pattern">Indicate the route patter, defaults to "/a2a"</param>
+    /// <param name="pattern">Indicate the route pattern, defaults to "/a2a"</param>
     /// <returns></returns>
     public static IEndpointConventionBuilder MapA2AEndpoints(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string pattern = "/a2a")
     {

@@ -10,14 +10,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class ReadReceiptInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReadReceiptInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ReadReceiptInfo"/> class.
         /// </summary>
         public ReadReceiptInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReadReceiptInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ReadReceiptInfo"/> class.
         /// </summary>
         /// <param name="lastReadMessageId">The id of the last read message.</param>
         public ReadReceiptInfo(string lastReadMessageId)

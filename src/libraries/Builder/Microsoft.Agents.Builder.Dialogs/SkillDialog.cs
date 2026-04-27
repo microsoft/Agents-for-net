@@ -8,8 +8,6 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Linq;
@@ -301,7 +299,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Tells is if we should intercept the OAuthCard message.
+        /// Tells us if we should intercept the OAuthCard message.
         /// </summary>
         /// <remarks>
         /// The SkillDialog only attempts to intercept OAuthCards when the following criteria are met:

@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Authentication
     /// 
     /// If 'ConnectionsMap' is not specified, the first Connection is used as the default.
     /// </remarks>
-    public class ConfigurationConnections : IConnections
+    public partial class ConfigurationConnections : IConnections
     {
         private readonly Dictionary<string, ConnectionDefinition> _connections;
         private readonly IServiceProvider _serviceProvider;
@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Authentication
                 return GetDefaultConnection();
             }
 
-            var audience = AgentClaims.GetAppId(claimsIdentity);
+            var audience = claimsIdentity.GetIncomingAudience();
 
             // Find a match, in document order.
             foreach (var mapItem in _map)

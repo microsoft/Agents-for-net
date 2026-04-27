@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingTabIconSurface : Surface
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingTabIconSurface"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingTabIconSurface"/> class.
         /// </summary>
         public MeetingTabIconSurface()
             : base(SurfaceType.MeetingTabIcon)
@@ -17,10 +17,10 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         }
 
         /// <summary>
-        /// Gets or sets optional field tab entity Id of this <see cref="MeetingTabIconSurface"/>.
+        /// Gets or sets optional field tab entity Id of this <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingTabIconSurface"/>.
         /// </summary>
         /// <value>
-        /// The tab entity Id of this <see cref="MeetingTabIconSurface"/>.
+        /// The tab entity Id of this <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingTabIconSurface"/>.
         /// </value>
         public string TabEntityId { get; set; }
     }

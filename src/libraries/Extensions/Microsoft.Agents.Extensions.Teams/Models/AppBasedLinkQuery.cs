@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class AppBasedLinkQuery
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="AppBasedLinkQuery"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.AppBasedLinkQuery"/> class.
         /// </summary>
         public AppBasedLinkQuery()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the  <see cref="AppBasedLinkQuery"/> class.
+        /// Initializes a new instance of the  <see cref="Microsoft.Agents.Extensions.Teams.Models.AppBasedLinkQuery"/> class.
         /// </summary>
         /// <param name="url">Url queried by user.</param>
         public AppBasedLinkQuery(string url = default)

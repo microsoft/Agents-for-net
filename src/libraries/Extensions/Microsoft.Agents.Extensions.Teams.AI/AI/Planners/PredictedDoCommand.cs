@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         private static readonly JsonSerializerOptions _serializerOptions = _CreateJsonSerializerOptions();
 
         /// <summary>
-        /// Creates a new instance of the <see cref="PredictedDoCommand"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.PredictedDoCommand"/> class.
         /// </summary>
         /// <param name="action">The action name.</param>
         /// <param name="parameters">Any parameters that the AI system should use to perform the action.</param>
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="PredictedDoCommand"/> class where parameters is a valid JSON string.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.PredictedDoCommand"/> class where parameters is a valid JSON string.
         /// </summary>
         /// <param name="action">The action name.</param>
         /// <param name="parameters">Any parameters that the AI system should use to perform the action as a JSON string.</param>
@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="PredictedDoCommand"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.PredictedDoCommand"/> class.
         /// </summary>
         /// <param name="action"></param>
         [JsonConstructor]

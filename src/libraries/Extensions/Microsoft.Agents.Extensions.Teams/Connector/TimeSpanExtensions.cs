@@ -6,7 +6,7 @@ using System;
 namespace Microsoft.Agents.Extensions.Teams.Connector
 {
     /// <summary>
-    /// Extension methods for the <see cref="TimeSpan"/> class.
+    /// Extension methods for the <see cref="System.TimeSpan"/> class.
     /// </summary>
     internal static class TimeSpanExtensions
     {

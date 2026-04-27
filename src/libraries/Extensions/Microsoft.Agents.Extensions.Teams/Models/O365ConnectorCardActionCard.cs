@@ -16,14 +16,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public new const string Type = "ActionCard";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardActionCard"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardActionCard"/> class.
         /// </summary>
         public O365ConnectorCardActionCard()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardActionCard"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardActionCard"/> class.
         /// </summary>
         /// <param name="type">Type of the action. Possible values include:
         /// 'ViewAction', 'OpenUri', 'HttpPOST', 'ActionCard'.</param>

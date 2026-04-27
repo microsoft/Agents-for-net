@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Embeddings
         public string? Organization { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OpenAIEmbeddingsOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Embeddings.OpenAIEmbeddingsOptions"/> class.
         /// </summary>
         /// <param name="apiKey">API key to use when calling the OpenAI API.</param>
         /// <param name="model">Model to use for embeddings.</param>

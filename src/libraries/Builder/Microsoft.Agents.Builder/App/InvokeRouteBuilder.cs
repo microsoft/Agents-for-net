@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Builder.App
         /// also called, this selector is in addition to the Name selector.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "invoke" is enforced.</param>
-        /// <returns>The current instance of <see cref="InvokeRouteBuilder"/> with the specified selector applied.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.InvokeRouteBuilder"/> with the specified selector applied.</returns>
         public override InvokeRouteBuilder WithSelector(RouteSelector selector)
         {
             if (_route.Selector != null)
@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Builder.App
         /// maintaining consistency with the route's initial setup.</remarks>
         /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
         /// route is always configured for Invoke routing.</param>
-        /// <returns>The current instance of <see cref="InvokeRouteBuilder"/> with Invoke routing enabled.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.InvokeRouteBuilder"/> with Invoke routing enabled.</returns>
         public override InvokeRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;

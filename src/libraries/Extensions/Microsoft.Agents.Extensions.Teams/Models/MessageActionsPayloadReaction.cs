@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayloadReaction
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadReaction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadReaction"/> class.
         /// </summary>
         public MessageActionsPayloadReaction()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadReaction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadReaction"/> class.
         /// </summary>
         /// <param name="reactionType">The type of reaction given to the
         /// message. Possible values include: 'like', 'heart', 'laugh',

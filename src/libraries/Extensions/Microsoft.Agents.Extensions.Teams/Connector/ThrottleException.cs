@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
     internal class ThrottleException : Exception
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ThrottleException"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Connector.ThrottleException"/> class.
         /// </summary>
         public ThrottleException()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ThrottleException"/> class with an exception message.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Connector.ThrottleException"/> class with an exception message.
         /// </summary>
         /// <param name="message">The exception message.</param>
         public ThrottleException(string message)
@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ThrottleException"/> class with an exception message and inner exception.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Connector.ThrottleException"/> class with an exception message and inner exception.
         /// </summary>
         /// <param name="message">The exception message.</param>
         /// <param name="innerException">The inner exception.</param>

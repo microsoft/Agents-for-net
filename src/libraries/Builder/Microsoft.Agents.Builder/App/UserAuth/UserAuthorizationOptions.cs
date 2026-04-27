@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// </summary>
     /// <remarks>
     /// AutoSignIn is determined by a call to a delegate that will return a bool.  This allow for control over which Activities
-    /// will enable AutoSignIn.  <see cref="AutoSignInOnForAny"/> and <see cref="AutoSignInOff"/> can be used to provide a simple boolean result.
+    /// will enable AutoSignIn.  <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions.AutoSignInOnForAny"/> and <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions.AutoSignInOff"/> can be used to provide a simple boolean result.
     /// </remarks>
     /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -53,8 +53,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// }
         /// </code>
         /// 
-        /// <para>The "AutoSignIn" property will map to <see cref="AutoSignInOnForAny"/> or <see cref="AutoSignInOff"/>.  To provide a
-        /// a custom selector, DI a <see cref="AutoSignInSelector"/>.</para>
+        /// <para>The "AutoSignIn" property will map to <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions.AutoSignInOnForAny"/> or <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions.AutoSignInOff"/>.  To provide a
+        /// a custom selector, DI a <see cref="Microsoft.Agents.Builder.App.UserAuth.AutoSignInSelector"/>.</para>
         /// 
         /// The default Handler:Settings are mapped to <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthSettings"/>.  These
         /// setting can be included in config:
@@ -159,12 +159,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// If the selector is not provided, the default selector returns true.
         /// </summary>
         /// <remarks>
-        /// Auto SignIn will use the value of <see cref="DefaultHandlerName"/> for the UserAuthorization handler to use.
+        /// Auto SignIn will use the value of <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions.DefaultHandlerName"/> for the UserAuthorization handler to use.
         /// </remarks>
         public AutoSignInSelector? AutoSignIn { get; set; }
 
         /// <summary>
-        /// Optional sign in failure message.  This is only used if the <see cref="UserAuthorization.OnUserSignInFailure"/> is not set.
+        /// Optional sign in failure message.  This is only used if the <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
             (flowName, response) => [new MessageActivity(string.Format("Sign in for '{0}' completed without a token. Status={1}/{2}", flowName, response.Cause, response.Error?.Message))];

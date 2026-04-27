@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         public ChatMessage Response { get; set; }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="PredictedSayCommand"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.PredictedSayCommand"/> class.
         /// </summary>
         /// <param name="response">The response that the AI system should say.</param>
         [JsonConstructor]
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="PredictedSayCommand"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.PredictedSayCommand"/> class.
         /// </summary>
         /// <param name="response">The response that the AI system should say.</param>
         public PredictedSayCommand(string response)

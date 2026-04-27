@@ -26,8 +26,8 @@ namespace Microsoft.Agents.Builder
     /// an array of <see cref="ResourceResponse"/> objects containing the IDs that
     /// the receiving channel assigned to the activities. Use this array as the return value of this handler.</para>
     /// </remarks>
-    /// <seealso cref="IChannelAdapter"/>
-    /// <seealso cref="ITurnContext.OnSendActivities(SendActivitiesHandler)"/>
+    /// <seealso cref="Microsoft.Agents.Builder.IChannelAdapter"/>
+    /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
     public delegate Task<ResourceResponse[]> SendActivitiesHandler(ITurnContext turnContext, List<IActivity> activities, Func<Task<ResourceResponse[]>> next);
 
     /// <summary>
@@ -47,10 +47,10 @@ namespace Microsoft.Agents.Builder
     /// a <see cref="ResourceResponse"/> object containing the ID that the receiving
     /// channel assigned to the activity. Use this response object as the return value of this handler.</para>
     /// </remarks>
-    /// <seealso cref="IChannelAdapter"/>
-    /// <seealso cref="SendActivitiesHandler"/>
-    /// <seealso cref="DeleteActivityHandler"/>
-    /// <seealso cref="ITurnContext.OnUpdateActivity(UpdateActivityHandler)"/>
+    /// <seealso cref="Microsoft.Agents.Builder.IChannelAdapter"/>
+    /// <seealso cref="Microsoft.Agents.Builder.SendActivitiesHandler"/>
+    /// <seealso cref="Microsoft.Agents.Builder.DeleteActivityHandler"/>
+    /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.OnUpdateActivity(Microsoft.Agents.Builder.UpdateActivityHandler)"/>
     public delegate Task<ResourceResponse> UpdateActivityHandler(ITurnContext turnContext, IActivity activity, Func<Task<ResourceResponse>> next);
 
     /// <summary>
@@ -67,10 +67,10 @@ namespace Microsoft.Agents.Builder
     /// <para>The conversation reference's <see cref="ConversationReference.ActivityId"/>
     /// indicates the activity in the conversation to replace.</para>
     /// </remarks>
-    /// <seealso cref="IChannelAdapter"/>
-    /// <seealso cref="SendActivitiesHandler"/>
-    /// <seealso cref="UpdateActivityHandler"/>
-    /// <seealso cref="ITurnContext.OnDeleteActivity(DeleteActivityHandler)"/>
+    /// <seealso cref="Microsoft.Agents.Builder.IChannelAdapter"/>
+    /// <seealso cref="Microsoft.Agents.Builder.SendActivitiesHandler"/>
+    /// <seealso cref="Microsoft.Agents.Builder.UpdateActivityHandler"/>
+    /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
     public delegate Task DeleteActivityHandler(ITurnContext turnContext, ConversationReference reference, Func<Task> next);
 
     /// <summary>
@@ -79,9 +79,9 @@ namespace Microsoft.Agents.Builder
     /// <typeparam name="T">The activity type for this turn of the Agent.</typeparam>
     /// <remarks>The <see cref="IActivity"/> interface defines properties shared by every type of activity.
     /// The interfaces that derive from <see cref="IActivity"/> include properties specific to a specific
-    /// <seealso cref="IActivity"/>
-    /// <seealso cref="IAgent"/>
-    /// <seealso cref="ITurnContext"/>
+    /// <seealso cref="Microsoft.Agents.Core.Models.IActivity"/>
+    /// <seealso cref="Microsoft.Agents.Builder.IAgent"/>
+    /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
     /// </remarks>
     public interface ITurnContext<out T> : ITurnContext
         where T : IActivity
@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Builder
     /// <remarks>Context provides information needed to process an incoming <see cref="IActivity"/>.
     /// The context object is created by a <see cref="IChannelAdapter"/> and persists for the
     /// length of the turn.</remarks>
-    /// <seealso cref="IAgent"/>
+    /// <seealso cref="Microsoft.Agents.Builder.IAgent"/>
     public interface ITurnContext
     {
         /// <summary>
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Builder
         /// Gets a value indicating whether at least one response was sent for the current turn.
         /// </summary>
         /// <value><c>true</c> if at least one response was sent for the current turn; otherwise, <c>false</c>.</value>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         bool Responded { get; }
 
         ClaimsIdentity Identity { get; }
@@ -151,9 +151,9 @@ namespace Microsoft.Agents.Builder
         /// <para>To control various characteristics of your Agent's speech such as voice,
         /// rate, volume, pronunciation, and pitch, specify <paramref name="speak"/> in
         /// Speech Synthesis Markup Language (SSML) format.</para></returns>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
+        /// <seealso cref="OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
         Task<ResourceResponse> SendActivityAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -165,9 +165,9 @@ namespace Microsoft.Agents.Builder
         /// <returns>If the activity is successfully sent, the task result contains
         /// a <see cref="ResourceResponse"/> object containing the ID that the receiving
         /// channel assigned to the activity.</returns>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
+        /// <seealso cref="OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="SendActivityAsync(string, string, string, System.Threading.CancellationToken)"/>
+        /// <seealso cref="SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
         Task<ResourceResponse> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -179,9 +179,9 @@ namespace Microsoft.Agents.Builder
         /// <returns>If the activities are successfully sent, the task result contains
         /// an array of <see cref="ResourceResponse"/> objects containing the IDs that
         /// the receiving channel assigned to the activities.</returns>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="SendActivityAsync(string, string, string, System.Threading.CancellationToken)"/>
+        /// <seealso cref="SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -196,9 +196,9 @@ namespace Microsoft.Agents.Builder
         /// <para>Before calling this, set the ID of the replacement activity to the ID
         /// of the activity to replace.</para>
         /// <para>Not all channels support this operation. For channels that don't, this call may throw an exception.</para></returns>
-        /// <seealso cref="OnUpdateActivity(UpdateActivityHandler)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
+        /// <seealso cref="OnUpdateActivity(Microsoft.Agents.Builder.UpdateActivityHandler)"/>
+        /// <seealso cref="SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
         Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -208,10 +208,10 @@ namespace Microsoft.Agents.Builder
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <remarks>Not all channels support this operation. For channels that don\'t, this call may throw an exception.</remarks>
-        /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
+        /// <seealso cref="DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
+        /// <seealso cref="SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         Task DeleteActivityAsync(string activityId, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -223,10 +223,10 @@ namespace Microsoft.Agents.Builder
         /// <returns>The conversation reference's <see cref="ConversationReference.ActivityId"/>
         /// indicates the activity in the conversation to delete.
         /// <para>Not all channels support this operation. For channels that don't, this call may throw an exception.</para></returns>
-        /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
-        /// <seealso cref="DeleteActivityAsync(string, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
+        /// <seealso cref="DeleteActivityAsync(string, System.Threading.CancellationToken)"/>
+        /// <seealso cref="SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         Task DeleteActivityAsync(ConversationReference conversationReference, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -239,10 +239,10 @@ namespace Microsoft.Agents.Builder
         /// added to the context object.
         /// </remarks>
         /// <returns>The updated context object.</returns>
-        /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="SendActivitiesHandler"/>
+        /// <seealso cref="SendActivityAsync(string, string, string, System.Threading.CancellationToken)"/>
+        /// <seealso cref="SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.SendActivitiesHandler"/>
         ITurnContext OnSendActivities(SendActivitiesHandler handler);
 
         /// <summary>
@@ -254,10 +254,10 @@ namespace Microsoft.Agents.Builder
         /// the adapter calls the registered handlers in the order in which they were
         /// added to the context object.
         /// </remarks>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="UpdateActivityHandler"/>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
+        /// <seealso cref="UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.UpdateActivityHandler"/>
+        /// <seealso cref="OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
         ITurnContext OnUpdateActivity(UpdateActivityHandler handler);
 
         /// <summary>
@@ -270,11 +270,11 @@ namespace Microsoft.Agents.Builder
         /// the adapter calls the registered handlers in the order in which they were
         /// added to the context object.
         /// </remarks>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
-        /// <seealso cref="DeleteActivityAsync(string, CancellationToken)"/>
-        /// <seealso cref="DeleteActivityHandler"/>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="OnUpdateActivity(UpdateActivityHandler)"/>
+        /// <seealso cref="DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
+        /// <seealso cref="DeleteActivityAsync(string, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.DeleteActivityHandler"/>
+        /// <seealso cref="OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="OnUpdateActivity(Microsoft.Agents.Builder.UpdateActivityHandler)"/>
         ITurnContext OnDeleteActivity(DeleteActivityHandler handler);
 
 

@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Client
         }
 
         /// <summary>
-        /// Adds multi-Agent functionality for use with the specified <see cref="IChannelApiHanlder"/>.
+        /// Adds multi-Agent functionality for use with the specified <see cref="Microsoft.Agents.Builder.IChannelApiHandler"/>.
         /// </summary>
         /// <param name="builder"></param>
         /// <param name="storage">Used for IAgentHost.  If null, the registered IStorage will be used.</param>

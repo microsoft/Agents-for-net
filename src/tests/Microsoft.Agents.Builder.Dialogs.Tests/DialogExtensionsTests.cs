@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     {
                         // Simulate the SkillConversationReference with a channel OAuthScope stored in TurnState.
                         // This emulates a response coming to a root bot through SkillHandler. 
-                        turnContext.StackState.Set(SkillChannelApiHandler.SkillConversationReferenceKey, new ChannelConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkScope });
+                        turnContext.StackState.Set(SkillChannelApiHandler.SkillConversationReferenceKey, new ChannelConversationReference { OAuthScope = AuthenticationConstants.BotFrameworkAudience });
                     }
 
                     if (testCase == FlowTestCase.MiddleSkill)

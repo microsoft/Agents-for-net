@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Storage.Transcript
         private readonly HashSet<string> _started = [];
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileTranscriptLogger"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Transcript.FileTranscriptLogger"/> class.
         /// </summary>
         /// <param name="folder">folder to place the transcript files (Default current folder).</param>
         /// <param name="unitTestMode">unitTestMode will overwrite transcript files.</param>

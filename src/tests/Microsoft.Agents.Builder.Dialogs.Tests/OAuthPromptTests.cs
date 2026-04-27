@@ -14,8 +14,6 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
-using Microsoft.Agents.Core.Models.Activities;
-using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {

@@ -26,14 +26,14 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// The content type value of a <see cref="SigninCard"/>.
+        /// The content type value of a <see cref="Microsoft.Agents.Core.Models.SigninCard"/>.
         /// </summary>
         public const string ContentType = Models.ContentTypes.SignInCard;
 
         /// <summary>
-        /// Creates a new attachment from <see cref="SigninCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.SigninCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="SigninCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.SigninCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public Attachment ToAttachment()
         {
@@ -50,9 +50,9 @@ namespace Microsoft.Agents.Core.Models
         public IList<CardAction> Buttons { get; set; }
 
         /// <summary>
-        /// Creates a <see cref="SigninCard"/>.
+        /// Creates a <see cref="Microsoft.Agents.Core.Models.SigninCard"/>.
         /// </summary>
-        /// <param name="text"> The <see cref="Text"/>text.</param>
+        /// <param name="text"> The <see cref="Microsoft.Agents.Core.Models.SigninCard.Text"/>text.</param>
         /// <param name="buttonLabel"> The signin button label.</param>
         /// <param name="url"> The sigin url.</param>
         /// <returns> The created sigin card.</returns>

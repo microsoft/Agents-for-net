@@ -16,21 +16,21 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing activities of a specific type in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="TypeRouteBuilder"/> to create and configure routes that respond to event
-    /// activities. This builder allows matching event activities by name or regular expression, and supports 
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/> method 
-    /// and further configured using one of <see cref="WithType(string)"/> or <see cref="WithType(Regex)"/> 
-    /// or <see cref="WithSelector(RouteSelector)"/>.<br/><br/>
+    /// Use <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder"/> to create and configure routes that respond to event
+    /// activities. This builder allows matching event activities by name or regular expression, and supports
+    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.Create"/> method
+    /// and further configured using one of <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.WithType(string)"/> or <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.WithType(System.Text.RegularExpressions.Regex)"/>
+    /// or <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/>.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = TypeRouteBuilder.Create()
     ///    .WithName("myInvoke")
     ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Invoke received!", cancellationToken: ct)))
     ///    .Build();
-    ///    
+    ///
     /// app.AddRoute(route);
     /// </code>
-    /// Since this builder can't determine if this is for an Invoke Activity, the method <see cref="TypeRouteBuilder.AsInvoke(bool)"/> should be called if appropriate.
+    /// Since this builder can't determine if this is for an Invoke Activity, the method <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.AsInvoke(bool)"/> should be called if appropriate.
     /// </remarks>
     public class TypeRouteBuilder : RouteBuilderBase<TypeRouteBuilder>
     {

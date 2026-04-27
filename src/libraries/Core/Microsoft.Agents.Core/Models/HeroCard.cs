@@ -36,14 +36,14 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// The content type value of a <see cref="HeroCard"/>.
+        /// The content type value of a <see cref="Microsoft.Agents.Core.Models.HeroCard"/>.
         /// </summary>
         public const string ContentType = Models.ContentTypes.HeroCard;
 
         /// <summary>
-        /// Creates a new attachment from <see cref="HeroCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.HeroCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="HeroCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.HeroCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public Attachment ToAttachment()
         {

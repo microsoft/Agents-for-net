@@ -5,13 +5,13 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
 {
     /// <summary>
-    /// <see cref="BackgroundService"/> implementation used to process activities with claims.
+    /// <see cref="Microsoft.Extensions.Hosting.BackgroundService"/> implementation used to process activities with claims.
     ///  <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.hosting.backgroundservice">More information.</see>
     /// </summary>
     internal class HostedActivityService : BackgroundService
@@ -32,15 +32,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
-        /// Create a <see cref="HostedActivityService"/> instance for processing Activities
+        /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedActivityService"/> instance for processing Activities
         /// on background threads.
         /// </summary>
         /// <remarks>
-        /// It is important to note that exceptions on the background thread are only logged in the <see cref="ILogger"/>.
+        /// It is important to note that exceptions on the background thread are only logged in the <see cref="Microsoft.Extensions.Logging.ILogger"/>.
         /// </remarks>
         /// <param name="provider"></param>
-        /// <param name="config"><see cref="IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
-        /// <param name="activityTaskQueue"><see cref="ActivityTaskQueue"/>Queue of activities to be processed.  This class
+        /// <param name="config"><see cref="Microsoft.Extensions.Configuration.IConfiguration"/> used to retrieve ShutdownTimeoutSeconds from appsettings.</param>
+        /// <param name="activityTaskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
         /// <param name="options"></param>
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <summary>
         /// Called by BackgroundService when the hosting service is shutting down.
         /// </summary>
-        /// <param name="stoppingToken"><see cref="CancellationToken"/> sent from BackgroundService for shutdown.</param>
+        /// <param name="stoppingToken"><see cref="System.Threading.CancellationToken"/> sent from BackgroundService for shutdown.</param>
         /// <returns>The Task to be executed asynchronously.</returns>
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
@@ -91,33 +91,30 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 var activityWithClaims = await _activityQueue.WaitForActivityAsync(stoppingToken).ConfigureAwait(false);
                 if (activityWithClaims != null)
                 {
-                    try
+                    // The read lock will not be acquirable if the app is shutting down.
+                    // New tasks should not be starting during shutdown.
+                    if (_lock.TryEnterReadLock(500))
                     {
-                        // The read lock will not be acquirable if the app is shutting down.
-                        // New tasks should not be starting during shutdown.
-                        if (_lock.TryEnterReadLock(500))
+                        try
                         {
                             // Create the task which will execute the work item.
+                            // CancellationToken.None: cleanup must always run regardless of shutdown state.
                             var task = GetTaskFromWorkItem(activityWithClaims, stoppingToken)
                                 .ContinueWith(t =>
                                 {
-                                    // After the work item completes, clear the running tasks of all completed tasks.
-                                    foreach (var kv in _activitiesProcessing.Where(tsk => tsk.Value.IsCompleted))
-                                    {
-                                        _activitiesProcessing.TryRemove(kv.Key, out Task removed);
-                                    }
-                                }, stoppingToken);
+                                    _activitiesProcessing.TryRemove(activityWithClaims, out _);
+                                }, CancellationToken.None);
 
                             _activitiesProcessing.TryAdd(activityWithClaims, task);
                         }
-                        else
+                        finally
                         {
-                            _logger.LogError("Work item for '{ConversationId}' not processed.  Server is shutting down?", activityWithClaims.Activity.Conversation.Id);
+                            _lock.ExitReadLock();
                         }
                     }
-                    finally
+                    else
                     {
-                        _lock.ExitReadLock();
+                        _logger.LogError("Work item for '{ConversationId}' not processed.  Server is shutting down?", activityWithClaims.Activity.Conversation.Id);
                     }
                 }
             }
@@ -142,7 +139,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         await activityWithClaims.ChannelAdapter.ProcessProactiveAsync(
                             activityWithClaims.ClaimsIdentity,
                             activityWithClaims.Activity,
-                            activityWithClaims.ProactiveAudience ?? AgentClaims.GetTokenAudience(activityWithClaims.ClaimsIdentity),
+                            activityWithClaims.ProactiveAudience ?? activityWithClaims.ClaimsIdentity.GetOutgoingAudience(),
                             ((IAgent)agent).OnTurnAsync,
                             stoppingToken).ConfigureAwait(false);
                     }

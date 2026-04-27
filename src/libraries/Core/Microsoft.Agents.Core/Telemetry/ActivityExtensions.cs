@@ -8,27 +8,38 @@ namespace Microsoft.Agents.Core.Telemetry
     public static class ActivityExtensions
     {
         /// <summary>
-        /// Creates a new <see cref="Activity"/> that clones the specified source activity.
+        /// Creates a new <see cref="System.Diagnostics.Activity"/> that clones the specified source activity.
         /// This is intended for scenarios such as cross-thread telemetry propagation, where
         /// a new activity instance is needed while preserving correlation with the original.
         /// </summary>
         /// <param name="source">
-        /// The source <see cref="Activity"/> to clone. Its operation name, ID format, parent ID (if any),
+        /// The source <see cref="System.Diagnostics.Activity"/> to clone. Its operation name, ID format, parent ID (if any),
         /// tags, baggage, links, events, and start time are copied to the cloned activity.
         /// </param>
         /// <param name="start">
-        /// If <c>true</c>, the cloned activity is started by calling <see cref="Activity.Start()"/>;
+        /// If <c>true</c>, the cloned activity is started by calling <see cref="System.Diagnostics.Activity.Start()"/>;
         /// if <c>false</c>, the cloned activity is returned in a non-started state.
         /// </param>
         /// <returns>
-        /// A new <see cref="Activity"/> instance that mirrors the source activity's metadata while
+        /// A new <see cref="System.Diagnostics.Activity"/> instance that mirrors the source activity's metadata while
         /// preserving its logical parent-child relationship via the copied parent ID and links.
         /// The returned activity is independent of the source and has its own lifecycle.
         /// </returns>
-        public static Activity CloneActivity(this Activity source, bool start = false)
+        public static Activity? CloneActivity(this Activity source, bool start = false)
         {
-            var clone = new Activity(source.OperationName)
-                .SetIdFormat(source.IdFormat);
+            Activity? clone;
+            if (source.Parent?.Context != null)
+            {
+                clone = source.Source.CreateActivity(source.OperationName, source.Kind, source.Parent.Context);
+            }
+            else
+            {
+                clone = source.Source.CreateActivity(source.OperationName, source.Kind);
+            }
+
+            if (clone == null) return null;
+
+            clone.SetIdFormat(source.IdFormat);
 
             if (source.ParentId != null)
             {

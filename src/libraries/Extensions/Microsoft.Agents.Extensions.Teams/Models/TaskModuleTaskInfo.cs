@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TaskModuleTaskInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleTaskInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleTaskInfo"/> class.
         /// </summary>
         public TaskModuleTaskInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleTaskInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleTaskInfo"/> class.
         /// </summary>
         /// <param name="title">Appears below the app name and to the right of the app icon.</param>
         /// <param name="height">This can be a number, representing the task module's height in pixels, or a string, one of: small, medium, large.</param>

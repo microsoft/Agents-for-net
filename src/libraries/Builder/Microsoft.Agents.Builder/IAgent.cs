@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Builder
     /// to the Agent's <see cref="OnTurnAsync(ITurnContext, CancellationToken)"/> method
     /// after the Middleware registered with the Adapter have executed.
     /// </remarks>
-    /// <seealso cref="AgentCallbackHandler"/>
+    /// <seealso cref="Microsoft.Agents.Builder.AgentCallbackHandler"/>
     public interface IAgent
     {
         /// <summary>
@@ -24,6 +24,8 @@ namespace Microsoft.Agents.Builder
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <remarks>The <paramref name="turnContext"/> provides information about the
         /// incoming Activity, and other data needed to process the activity.</remarks>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default);
     }
 }

@@ -35,14 +35,14 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// The content type value of a <see cref="ThumbnailCard"/>.
+        /// The content type value of a <see cref="Microsoft.Agents.Core.Models.ThumbnailCard"/>.
         /// </summary>
         public const string ContentType = Models.ContentTypes.ThumbnailCard;
 
         /// <summary>
-        /// Creates a new attachment from <see cref="ThumbnailCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.ThumbnailCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="ThumbnailCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.ThumbnailCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public Attachment ToAttachment()
         {

@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Builder.App
     /// <remarks>
     /// This is optional if there is a single AgentApplication in the project.  If there are multiple 
     /// AgentApplications, this attribute must be used to specify the transport protocol and path for each AgentApplication.<br/><br/>
-    /// The <c>protocol</c> argument is host and protocol specific.  In Agents SDK, see <see cref="AgentTransportProtocol"/>.
+    /// The <c>protocol</c> argument is host and protocol specific.  In Agents SDK, see <see cref="Microsoft.Agents.Builder.App.AgentTransportProtocol"/>.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public class AgentInterfaceAttribute(string protocol, string path, string? processDelegate = null) : Attribute

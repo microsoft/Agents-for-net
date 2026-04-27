@@ -10,14 +10,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class FileConsentCardResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileConsentCardResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileConsentCardResponse"/> class.
         /// </summary>
         public FileConsentCardResponse()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileConsentCardResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileConsentCardResponse"/> class.
         /// </summary>
         /// <param name="action">The action the user took. Possible values
         /// include: 'accept', 'decline'.</param>

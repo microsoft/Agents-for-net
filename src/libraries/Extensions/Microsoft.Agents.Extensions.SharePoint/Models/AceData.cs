@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class AceData
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="AceData"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.AceData"/> class.
         /// </summary>
         public AceData()
         {
@@ -34,38 +34,38 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets the card size of the adaptive card extension of type <see cref="AceCardSize"/> enum.
+        /// Gets or Sets the card size of the adaptive card extension of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.AceData.AceCardSize"/> enum.
         /// </summary>
         /// <value>This value is the size of the adaptive card extension.</value>
         public AceCardSize CardSize { get; set; }
 
         /// <summary>
-        /// Gets or Sets the version of the data of type <see cref="string"/>.
+        /// Gets or Sets the version of the data of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the version of the adaptive card extension.</value>
         /// <remarks>Although there is no restriction on the format of this property, it is recommended to use semantic versioning.</remarks>
         public string DataVersion { get; set; }
 
         /// <summary>
-        /// Gets or Sets the unique id (Guid) of type <see cref="string"/>.
+        /// Gets or Sets the unique id (Guid) of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the ID of the adaptive card extension.</value>
         public string Id { get; set; }
 
         /// <summary>
-        /// Gets or Sets the title of type <see cref="string"/>.
+        /// Gets or Sets the title of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the title of the adaptive card extension.</value>
         public string Title { get; set; }
 
         /// <summary>
-        /// Gets or Sets the description of type <see cref="string"/>.
+        /// Gets or Sets the description of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the description of the adaptive card extension.</value>
         public string Description { get; set; }
 
         /// <summary>
-        /// Gets or Sets the icon property of type <see cref="string"/>.
+        /// Gets or Sets the icon property of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the icon of the adaptive card extension.</value>
         public string IconProperty { get; set; }

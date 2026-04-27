@@ -14,8 +14,6 @@ using Microsoft.Agents.Storage;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
-using Microsoft.Agents.Core.Models.Activities;
-using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
@@ -145,7 +143,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -180,7 +178,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -221,7 +219,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -261,7 +259,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -311,7 +309,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -365,7 +363,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?", Attachments = new List<Attachment> { attachment } },
+                                Prompt = new MessageActivity { Text = "favorite color?", Attachments = new List<Attachment> { attachment } },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -416,7 +414,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -456,9 +454,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity
+                                Prompt = new MessageActivity
                                 {
-                                    Type = ActivityTypes.Message,
                                     Text = "favorite color?",
                                     Speak = "spoken prompt",
                                 },
@@ -501,7 +498,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -548,8 +545,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
-                                RetryPrompt = new Activity { Type = ActivityTypes.Message, Text = "your favorite color, please?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
+                                RetryPrompt = new MessageActivity { Text = "your favorite color, please?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -597,7 +594,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                             },
                             cancellationToken);
@@ -634,7 +631,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ChoicePrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?" },
+                                Prompt = new MessageActivity { Text = "favorite color?" },
                                 Choices = _colorChoices,
                                 Style = ListStyle.SuggestedAction,
                             },
@@ -684,7 +681,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         "ChoicePrompt",
                         new PromptOptions
                         {
-                            Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?", Locale = testCulture },
+                            Prompt = new MessageActivity { Text = "favorite color?", Locale = testCulture },
                             Choices = _colorChoices,
                         },
                         cancellationToken);
@@ -735,7 +732,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         "ChoicePrompt",
                         new PromptOptions
                         {
-                            Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?", Locale = activityLocale },
+                            Prompt = new MessageActivity { Text = "favorite color?", Locale = activityLocale },
                             Choices = _colorChoices,
                         },
                         cancellationToken);
@@ -798,7 +795,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                         "ChoicePrompt",
                         new PromptOptions
                         {
-                            Prompt = new Activity { Type = ActivityTypes.Message, Text = "favorite color?", Locale = culture.Locale },
+                            Prompt = new MessageActivity { Text = "favorite color?", Locale = culture.Locale },
                             Choices = _colorChoices,
                         },
                         cancellationToken);
@@ -870,7 +867,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         {
             return activity =>
             {
-                Assert.StartsWith(expected, activity.Text);
+                if (activity is IMessageActivity messageActivity)
+                {
+                    Assert.StartsWith(expected, messageActivity.Text);
+                }
+                else
+                {
+                    Assert.Fail();
+                }
             };
         }
 
@@ -878,13 +882,20 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         {
             return activity =>
             {
-                Assert.Equal(expectedText, activity.Text);
-                Assert.Equal(expectedSuggestedActions.Actions.Count, activity.SuggestedActions.Actions.Count);
-                for (var i = 0; i < expectedSuggestedActions.Actions.Count; i++)
+                if (activity is IMessageActivity messageActivity)
                 {
-                    Assert.Equal(expectedSuggestedActions.Actions[i].Type, activity.SuggestedActions.Actions[i].Type);
-                    Assert.Equal(expectedSuggestedActions.Actions[i].Value, activity.SuggestedActions.Actions[i].Value);
-                    Assert.Equal(expectedSuggestedActions.Actions[i].Title, activity.SuggestedActions.Actions[i].Title);
+                    Assert.Equal(expectedText, messageActivity.Text);
+                    Assert.Equal(expectedSuggestedActions.Actions.Count, messageActivity.SuggestedActions.Actions.Count);
+                    for (var i = 0; i < expectedSuggestedActions.Actions.Count; i++)
+                    {
+                        Assert.Equal(expectedSuggestedActions.Actions[i].Type, messageActivity.SuggestedActions.Actions[i].Type);
+                        Assert.Equal(expectedSuggestedActions.Actions[i].Value, messageActivity.SuggestedActions.Actions[i].Value);
+                        Assert.Equal(expectedSuggestedActions.Actions[i].Title, messageActivity.SuggestedActions.Actions[i].Title);
+                    }
+                }
+                else
+                {
+                    Assert.Fail();
                 }
             };
         }
@@ -893,15 +904,22 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         {
             return activity =>
             {
-                var attachedHeroCard = (HeroCard)activity.Attachments[index].Content;
-
-                Assert.Equal(expectedHeroCard.Title, attachedHeroCard.Title);
-                Assert.Equal(expectedHeroCard.Buttons.Count, attachedHeroCard.Buttons.Count);
-                for (var i = 0; i < expectedHeroCard.Buttons.Count; i++)
+                if (activity is IMessageActivity messageActivity)
                 {
-                    Assert.Equal(expectedHeroCard.Buttons[i].Type, attachedHeroCard.Buttons[i].Type);
-                    Assert.Equal(expectedHeroCard.Buttons[i].Value, attachedHeroCard.Buttons[i].Value);
-                    Assert.Equal(expectedHeroCard.Buttons[i].Title, attachedHeroCard.Buttons[i].Title);
+                    var attachedHeroCard = (HeroCard)messageActivity.Attachments[index].Content;
+
+                    Assert.Equal(expectedHeroCard.Title, attachedHeroCard.Title);
+                    Assert.Equal(expectedHeroCard.Buttons.Count, attachedHeroCard.Buttons.Count);
+                    for (var i = 0; i < expectedHeroCard.Buttons.Count; i++)
+                    {
+                        Assert.Equal(expectedHeroCard.Buttons[i].Type, attachedHeroCard.Buttons[i].Type);
+                        Assert.Equal(expectedHeroCard.Buttons[i].Value, attachedHeroCard.Buttons[i].Value);
+                        Assert.Equal(expectedHeroCard.Buttons[i].Title, attachedHeroCard.Buttons[i].Title);
+                    }
+                }
+                else
+                {
+                    Assert.Fail();
                 }
             };
         }
@@ -910,8 +928,15 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         {
             return activity =>
             {
-                Assert.Equal(expectedText, activity.Text);
-                Assert.Equal(expectedSpeak, activity.Speak);
+                if (activity is IMessageActivity messageActivity)
+                {
+                    Assert.Equal(expectedText, messageActivity.Text);
+                    Assert.Equal(expectedSpeak, messageActivity.Speak);
+                }
+                else
+                {
+                    Assert.Fail();
+                }
             };
         }
     }

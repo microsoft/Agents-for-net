@@ -3,6 +3,8 @@
 
 #nullable disable
 
+using System.Text.Json.Serialization;
+
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> Defines the structure that arrives in the Activity.Value.Action for Invoke activity with Name of 'adaptiveCard/action'. </summary>
@@ -33,6 +35,7 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> The Verb of this adaptive card action invoke. </summary>
         public string Verb { get; set; }
         /// <summary> The Data of this adaptive card action invoke. </summary>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Data { get; set; }
     }
 }

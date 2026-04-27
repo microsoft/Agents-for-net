@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class FileUploadInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileUploadInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileUploadInfo"/> class.
         /// </summary>
         public FileUploadInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileUploadInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileUploadInfo"/> class.
         /// </summary>
         /// <param name="name">Name of the file.</param>
         /// <param name="uploadUrl">URL to an upload session that the bot can

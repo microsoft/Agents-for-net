@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Moderator
         ///
         /// To approve a prompt, simply return null. Returning a new plan bypasses the planner and
         /// redirects to a new set of actions. Typically the moderator will return a new plan with a
-        /// single DO command that calls <see cref="AIConstants.FlaggedInputActionName"/> to flag the input for review.
+        /// single DO command that calls <see cref="Microsoft.Agents.Extensions.Teams.AI.AIConstants.FlaggedInputActionName"/> to flag the input for review.
         ///
         /// The moderator can pass any parameters that make sense to the redirected action.
         /// </remarks>
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Moderator
         ///
         /// To approve a plan simply return the plan that was passed in. A new plan can be returned to
         /// redirect to a new set of actions. Typically the moderator will return a new plan with a
-        /// single DO command that calls <see cref="AIConstants.FlaggedOutputActionName"/> to flag the output for review.
+        /// single DO command that calls <see cref="Microsoft.Agents.Extensions.Teams.AI.AIConstants.FlaggedOutputActionName"/> to flag the output for review.
         ///
         /// The moderator can pass any parameters that make sense to the redirected action.
         /// </remarks>

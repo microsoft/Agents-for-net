@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class OnBehalfOf
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="OnBehalfOf"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.OnBehalfOf"/> class.
         /// </summary>
         public OnBehalfOf()
         {

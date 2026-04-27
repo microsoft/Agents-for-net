@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Core.Models
         public string? SubChannel { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelId"/> class by parsing the specified channel ID string.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.ChannelId"/> class by parsing the specified channel ID string.
         /// </summary>
         /// <param name="channelId">The channel ID string, optionally in the format "Channel:SubChannel".</param>
         /// <param name="fullNotation">Indicates whether to use full notation (include sub-channel in string representation).</param>
@@ -66,10 +66,10 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Determines whether two <see cref="ChannelId"/> instances are equal.
+        /// Determines whether two <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instances are equal.
         /// </summary>
-        /// <param name="obj1">The first <see cref="ChannelId"/> instance.</param>
-        /// <param name="obj2">The second <see cref="ChannelId"/> instance.</param>
+        /// <param name="obj1">The first <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instance.</param>
+        /// <param name="obj2">The second <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instance.</param>
         /// <returns><c>true</c> if the instances are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(ChannelId? obj1, ChannelId? obj2)
         {
@@ -77,10 +77,10 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Determines whether two <see cref="ChannelId"/> instances are not equal.
+        /// Determines whether two <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instances are not equal.
         /// </summary>
-        /// <param name="obj1">The first <see cref="ChannelId"/> instance.</param>
-        /// <param name="obj2">The second <see cref="ChannelId"/> instance.</param>
+        /// <param name="obj1">The first <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instance.</param>
+        /// <param name="obj2">The second <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instance.</param>
         /// <returns><c>true</c> if the instances are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(ChannelId? obj1, ChannelId? obj2)
         {
@@ -88,10 +88,10 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Determines whether the specified <see cref="ChannelId"/> is equal to the current instance.
+        /// Determines whether the specified <see cref="Microsoft.Agents.Core.Models.ChannelId"/> is equal to the current instance.
         /// </summary>
-        /// <param name="other">The <see cref="ChannelId"/> to compare with the current instance.</param>
-        /// <returns><c>true</c> if the specified <see cref="ChannelId"/> is equal to the current instance; otherwise, <c>false</c>.</returns>
+        /// <param name="other">The <see cref="Microsoft.Agents.Core.Models.ChannelId"/> to compare with the current instance.</param>
+        /// <returns><c>true</c> if the specified <see cref="Microsoft.Agents.Core.Models.ChannelId"/> is equal to the current instance; otherwise, <c>false</c>.</returns>
         public bool Equals(ChannelId? other)
         {
             return string.Equals(ToString(), other?.ToString(), StringComparison.OrdinalIgnoreCase);
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Implicitly converts a string to a <see cref="ChannelId"/> instance.
+        /// Implicitly converts a string to a <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instance.
         /// </summary>
         /// <param name="value">The channel ID string.</param>
         public static implicit operator ChannelId(string? value)
@@ -117,9 +117,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Implicitly converts a <see cref="ChannelId"/> instance to a string.
+        /// Implicitly converts a <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instance to a string.
         /// </summary>
-        /// <param name="channelId">The <see cref="ChannelId"/> instance.</param>
+        /// <param name="channelId">The <see cref="Microsoft.Agents.Core.Models.ChannelId"/> instance.</param>
         public static implicit operator string?(ChannelId? channelId)
         {
             return channelId?.ToString();

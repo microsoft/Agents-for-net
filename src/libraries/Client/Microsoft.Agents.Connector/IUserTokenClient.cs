@@ -30,10 +30,10 @@ namespace Microsoft.Agents.Connector
         /// Get the raw signin link to be sent to the user for signin for a connection name.
         /// </summary>
         /// <param name="connectionName">Name of the auth connection to use.</param>
-        /// <param name="activity">The <see cref="Activity"/> from which to derive the token exchange state.</param>
+        /// <param name="activity">The <see cref="Microsoft.Agents.Core.Models.Activity"/> from which to derive the token exchange state.</param>
         /// <param name="finalRedirect">The final URL that the OAuth flow will redirect to.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A <see cref="Task{TResult}"/> representing the result of the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task{TResult}"/> representing the result of the asynchronous operation.</returns>
         Task<SignInResource> GetSignInResourceAsync(string connectionName, IActivity activity, string finalRedirect, CancellationToken cancellationToken);
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Connector
         /// <param name="connectionName">Name of the auth connection to use.</param>
         /// <param name="channelId">The channel Id that will be associated with the token.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the result of the asynchronous operation.</returns>
         Task SignOutUserAsync(string userId, string connectionName, ChannelId channelId, CancellationToken cancellationToken);
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Microsoft.Agents.Connector
         /// <param name="finalRedirect">The final URL that the OAuth flow will redirect to.</param>
         /// <param name="fwdUrl"></param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the result of the asynchronous operation.</returns>
         Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string connectionName, IActivity activity, string code, string finalRedirect = null, string fwdUrl = null, CancellationToken cancellationToken = default);
     }
 }
