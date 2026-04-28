@@ -47,7 +47,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<A2AServer> _a2aServerLogger;
 
-    public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null) : this(new StorageTaskStore(storage), loggerFactory, a2aNotifier)
+    public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null) : this(new InMemoryTaskStore(), loggerFactory, a2aNotifier)
     {
     }
 
