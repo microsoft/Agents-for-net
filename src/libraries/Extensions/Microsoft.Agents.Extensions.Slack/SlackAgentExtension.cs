@@ -11,30 +11,62 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Slack;
 
+/// <summary>
+/// Provides Slack-specific extensions for an agent application, enabling message and event routing, Slack API calls,
+/// and stream management for the Slack channel.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Use this extension to integrate Slack channel support into an agent application. It offers methods to
+/// register message and event handlers that are scoped to Slack, as well as utilities for interacting with the Slack
+/// API and managing Slack conversation streams. All routes and handlers registered through this extension are limited
+/// to activities originating from the Slack channel.
+/// </para>
+/// <para>
+/// The preferred way to enable the Slack extension is via the <see cref="SlackExtensionAttribute"/> on a
+/// <c>partial</c> <see cref="AgentApplication"/> subclass, which causes a source generator to expose a
+/// <c>SlackExtension</c> property of this type automatically.
+/// Use this constructor directly only when manually calling
+/// <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/>.
+/// </para>
+/// </remarks>
 public class SlackAgentExtension : AgentExtension
 {
+    private static readonly Task<bool> _completedTrue = Task.FromResult(true);
+
 #if !NETSTANDARD
     protected AgentApplication AgentApplication { get; init; }
 #else
     protected AgentApplication AgentApplication { get; set;}
 #endif
 
-    public SlackAgentExtension(AgentApplication application) 
+    public SlackAgentExtension(AgentApplication application)
     {
         ChannelId = Channels.Slack;
         AgentApplication = application;
 
+        var slackApi = new SlackApi(application.Options.HttpClientFactory);
         application.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
             if (turnContext.Activity.ChannelId == ChannelId)
             {
-                var slackApi = new SlackApi(application.Options.HttpClientFactory);
                 turnContext.Services.Set(slackApi);
             }
-            return Task.FromResult(true);
+            return _completedTrue;
         });
     }
 
+    /// <summary>
+    /// Invokes a Slack Web API method asynchronously using the specified context and parameters.
+    /// </summary>
+    /// <param name="turnContext">The turn context that provides access to the Slack API service and conversation state. Cannot be null.</param>
+    /// <param name="method">The name of the Slack Web API method to call. Must be a valid Slack API method name.</param>
+    /// <param name="options">An optional object containing parameters to include in the API request. May be null if no additional options are
+    /// required.</param>
+    /// <param name="token">An optional Slack authentication token to use for the API call. If empty, the request is sent without
+    /// an Authorization header.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the response from the Slack API.</returns>
     public Task<SlackResponse> CallAsync(ITurnContext turnContext, string method, object? options = null, string token = "", CancellationToken cancellationToken = default)
     {
         return turnContext.Services.Get<SlackApi>().CallAsync(method, options, token, cancellationToken);

@@ -39,12 +39,20 @@ public class SlackChannelData
     /// the ability to access protected resources.</remarks>
     public string ApiToken { get; set; }
 
-    public string Channel => Envelope != null 
-        ? Envelope?.Get<string>("event.channel") 
+    /// <summary>
+    /// Gets the Slack channel ID from the event envelope or action payload.
+    /// </summary>
+    public string Channel => Envelope != null
+        ? Envelope.Get<string>("event.channel")
         : Payload?.Get<string>("channel");
 
-    public string ThreadTs => Envelope != null 
-        ? (Envelope?.Get<string>("event.thread_ts") ?? Envelope?.Get<string>("event.ts")) 
+    /// <summary>
+    /// Gets the thread timestamp used to identify or continue a Slack thread.
+    /// For envelope events, prefers <c>event.thread_ts</c> and falls back to <c>event.ts</c>.
+    /// For action payloads, prefers <c>message.thread_ts</c> and falls back to <c>message.ts</c>.
+    /// </summary>
+    public string ThreadTs => Envelope != null
+        ? (Envelope.Get<string>("event.thread_ts") ?? Envelope.Get<string>("event.ts"))
         : (Payload?.Get<string>("message.thread_ts") ?? Payload?.Get<string>("message.ts"));
 
     /// <summary>

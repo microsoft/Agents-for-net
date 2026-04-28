@@ -62,7 +62,11 @@ public class SlackApi
         {
             Content = content
         };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
             
         using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
         var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);

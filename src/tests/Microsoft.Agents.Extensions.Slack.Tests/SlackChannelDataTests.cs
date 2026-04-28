@@ -4,13 +4,14 @@
 using Microsoft.Agents.Extensions.Slack.Api;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Slack.Tests;
 
 /// <summary>
 /// Tests for <see cref="SlackChannelData"/>, <see cref="EventEnvelope"/>,
-/// <see cref="EventContent"/>, and <see cref="SlackAuthorization"/> deserialization
+/// and <see cref="EventContent"/> deserialization
 /// and path-navigation helpers.
 ///
 /// Test JSON payloads mirror the real Slack Events API examples shown at
@@ -194,19 +195,19 @@ public class SlackChannelDataTests
     {
         var envelope = Deserialize(MessageEventJson).Envelope;
         Assert.NotNull(envelope.authorizations);
-        Assert.Single(envelope.authorizations);
+        Assert.Single(envelope.Get<JsonArray>("authorizations"));
     }
 
     [Fact]
     public void Deserialize_MessageEvent_Authorization_Fields()
     {
-        var auth = Deserialize(MessageEventJson).Envelope.authorizations[0];
+        var auth = Deserialize(MessageEventJson).Envelope.Get<List<JsonObject>>("authorizations")[0];
 
-        Assert.Null(auth.enterprise_id);
-        Assert.Equal("T0AT0TZM9GD", auth.team_id);
-        Assert.Equal("U0AT1AL4C5T", auth.user_id);
-        Assert.True(auth.is_bot);
-        Assert.False(auth.is_enterprise_install);
+        Assert.Null(auth["enterprise_id"]);
+        Assert.Equal("T0AT0TZM9GD", auth["team_id"].ToString());
+        Assert.Equal("U0AT1AL4C5T", auth["user_id"].ToString());
+        Assert.True((bool)auth["is_bot"]);
+        Assert.False((bool)auth["is_enterprise_install"]);
     }
 
     // ── EventContent named properties — message event ─────────────────────────

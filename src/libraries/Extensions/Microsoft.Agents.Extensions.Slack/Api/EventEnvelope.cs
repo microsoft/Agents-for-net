@@ -72,7 +72,12 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         /// Installation authorizations visible to this app for this event.
         /// Each element represents one installation in the scope of this event.
         /// </summary>
-        public List<SlackAuthorization> authorizations { get; set; }
+        /// <remarks>
+        /// Access via <see cref="SlackModel.Get{T}"/>: <c>envelope.Get&lt;JsonArray&gt;("authorizations")</c>
+        /// or <c>envelope.Get&lt;List&lt;JsonObject&gt;&gt;("authorizations")</c> for typed access.
+        /// See https://docs.slack.dev/apis/events-api/#callback-field
+        /// </remarks>
+        public object authorizations { get; set; }
 
         /// <summary>Whether the event occurred in an externally shared channel.</summary>
         public bool is_ext_shared_channel { get; set; }
