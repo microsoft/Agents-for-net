@@ -12,13 +12,12 @@
     <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
   </PropertyGroup>
   <PropertyGroup>
-    <Microsoft_Extentions_PkgVer>10.0.5</Microsoft_Extentions_PkgVer>
-	<Microsoft_Bcl_PkgVer>10.0.5</Microsoft_Bcl_PkgVer>
-	<Microsoft_System_PkgVer>10.0.5</Microsoft_System_PkgVer>
+    <Microsoft_Extentions_PkgVer>10.0.7</Microsoft_Extentions_PkgVer>
+	<Microsoft_Bcl_PkgVer>10.0.7</Microsoft_Bcl_PkgVer>
+	<Microsoft_System_PkgVer>10.0.7</Microsoft_System_PkgVer>
     <Microsoft_AspNetCore_PkgVer>8.0.23</Microsoft_AspNetCore_PkgVer>
 	<Microsoft_IdentityModel_PkgVer>8.15.0</Microsoft_IdentityModel_PkgVer>
 	<Microsoft_IdentityClient_PkgVer>4.83.3</Microsoft_IdentityClient_PkgVer>
-	<OpenTelemetry_PkgVer>1.14.0</OpenTelemetry_PkgVer>
 	<Xunit_PackageVersion>2.9.3</Xunit_PackageVersion>
 	<Xunit_v3_PackageVersion>3.0.1</Xunit_v3_PackageVersion>  </PropertyGroup>
   <ItemGroup>
@@ -139,14 +138,14 @@
 	<PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
 
 	  <!-- OpenTelemetry packages -->
-	  <PackageVersion Include="OpenTelemetry" Version="$(OpenTelemetry_PkgVer)" />
-	  <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetry_PkgVer)" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OpenTelemetry_PkgVer)" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OpenTelemetry_PkgVer)" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetry_PkgVer)" />
-	  <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="1.14.0-beta.2" />
-	  <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="$(OpenTelemetry_PkgVer)" />
-	  <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetry_PkgVer)" />
+	  <PackageVersion Include="OpenTelemetry" Version="1.15.3" />
+	  <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+	  <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="1.15.1-beta.1" />
+	  <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
+	  <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
 
 	  <!-- Azure Monitor (Application Insights) Exporter -->
 	  <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.5.0" />
