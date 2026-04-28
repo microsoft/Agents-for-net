@@ -29,7 +29,7 @@ public class SlackChannelData
     /// The Action (Interactive Message) payload from slack.
     /// </summary>
     [JsonPropertyName("Payload")]
-    public object Payload { get; set; }
+    public ActionPayload Payload { get; set; }
 
     /// <summary>
     /// Gets or sets the API authentication token used to authorize response by the agent using <see cref="SlackAgentExtension.CallAsync(Builder.ITurnContext, string, object?, string, System.Threading.CancellationToken)"/> 
@@ -38,6 +38,14 @@ public class SlackChannelData
     /// <remarks>The API token should be kept secure and not shared publicly. Changing this value may affect
     /// the ability to access protected resources.</remarks>
     public string ApiToken { get; set; }
+
+    public string Channel => Envelope != null 
+        ? Envelope?.Get<string>("event.channel") 
+        : Payload?.Get<string>("channel");
+
+    public string ThreadTs => Envelope != null 
+        ? (Envelope?.Get<string>("event.thread_ts") ?? Envelope?.Get<string>("event.ts")) 
+        : (Payload?.Get<string>("message.thread_ts") ?? Payload?.Get<string>("message.ts"));
 
     /// <summary>
     /// Gets or sets the collection of additional properties not mapped to class members during JSON serialization or

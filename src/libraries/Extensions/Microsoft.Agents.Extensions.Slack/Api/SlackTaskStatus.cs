@@ -10,4 +10,3 @@ public static class SlackTaskStatus
     public const string Complete = "complete";
     public const string Error = "error";
 }
-

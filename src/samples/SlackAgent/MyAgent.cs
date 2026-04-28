@@ -20,7 +20,9 @@ public partial class MyAgent : AgentApplication
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
         SlackExtension.OnMessage("-stream", OnSlackStreamMessageAsync);
+        SlackExtension.OnMessage("-buttons", OnSlackButtonsAsync);
         SlackExtension.OnMessage(OnSlackMessageAsync, rank: RouteRank.Last);
+        SlackExtension.OnEvent(OnSlackEventAsync, rank: RouteRank.Last);
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
     }
 
@@ -41,12 +43,62 @@ public partial class MyAgent : AgentApplication
 
         var message = $$"""
         {
-            "channel": "{{channelData.Envelope?.Get<string>("event.channel")}}",
+            "channel": "{{channelData.Channel}}",
             "text": "You said: {{turnContext.Activity.Text}}"
         }
         """;
 
         await SlackExtension.CallAsync(turnContext, "chat.postMessage", message, channelData.ApiToken, cancellationToken);
+    }
+
+    private async Task OnSlackEventAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
+
+        var message = $$"""
+        {
+            "channel": "{{channelData.Channel}}",
+            "text": "Agent got: {{turnContext.Activity.Name}}"
+        }
+        """;
+
+        await SlackExtension.CallAsync(turnContext, "chat.postMessage", message, channelData.ApiToken, cancellationToken);
+    }
+
+    private async Task OnSlackButtonsAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
+        var buttons = $$"""
+        {
+            "channel": "{{channelData.Channel}}",
+            "thread_ts": "{{channelData.ThreadTs}}",
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": { "type": "mrkdwn", "text": "Pick an option:" },
+                },
+                {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": { "type": "plain_text", "text": "Yes" },
+                            "action_id": "button_yes",
+                            "value": "yes",
+                        },
+                        {
+                            "type": "button",
+                            "text": { "type": "plain_text", "text": "No" },
+                            "action_id": "button_no",
+                            "value": "no",
+                        },
+                    ],
+                },
+            ],
+        }
+        """;
+
+        await SlackExtension.CallAsync(turnContext, "chat.postMessage", buttons, channelData.ApiToken, cancellationToken);
     }
 
     private async Task OnSlackStreamMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
