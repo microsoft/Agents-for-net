@@ -156,8 +156,8 @@ public class SlackChannelDataTests
             }
             """;
         var cd = Deserialize(json);
-        Assert.True(cd.Properties.ContainsKey("custom_field"));
-        Assert.Equal("hello", cd.Properties["custom_field"].GetString());
+        Assert.True(cd.AdditionalProperties.ContainsKey("custom_field"));
+        Assert.Equal("hello", cd.AdditionalProperties["custom_field"].GetString());
     }
 
     // ── EventEnvelope fields (message event) ──────────────────────────────────

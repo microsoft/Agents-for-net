@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace SlackAgent;
 
-[Agent(name: "MyAgent", description: "Echo user messages back on slack", version: "1.0")]
+[Agent(name: "MyAgent", description: "Demonstrates slack functionality", version: "1.0")]
 [SlackExtension]
 public partial class MyAgent : AgentApplication
 {
@@ -37,6 +37,8 @@ public partial class MyAgent : AgentApplication
         }
     }
 
+    // Demonstrates using the Slack API to reply to a message with the text "You said: {message text}" instead of
+    // the typical ITurnContext.SendActivityAsync response.
     private async Task OnSlackMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
