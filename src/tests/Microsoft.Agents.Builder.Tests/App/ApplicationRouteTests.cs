@@ -1,10 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -64,6 +69,128 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal("4", values[2]);
             Assert.Equal("1", values[3]);
         }
+
+        [Fact]
+        public void Test_RouteList_Count_Empty()
+        {
+            RouteList routes = new();
+            Assert.Equal(0, routes.FormatRouteList().Count);
+        }
+
+        [Fact]
+        public void Test_RouteList_Count_WithRoutes()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler((ctx, ts, ct) => Task.CompletedTask)
+                .Build());
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler((ctx, ts, ct) => Task.CompletedTask)
+                .Build());
+            Assert.Equal(2, routes.FormatRouteList().Count);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_Empty()
+        {
+            RouteList routes = new();
+            string result = routes.FormatRouteList().Formatted;
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NoFlags()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("[0]", result);
+            Assert.Contains("MyNamedHandler", result);
+            Assert.Contains("flags=None", result);
+            Assert.Contains($"rank={RouteRank.Unspecified}", result);
+            Assert.DoesNotContain("channel=", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_InvokeAndAgenticFlags()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .AsAgentic(true)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("flags=Invoke,Agentic", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NonTerminalFlag()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsNonTerminal()
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("flags=NonTerminal", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithChannel()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithChannelId(Channels.Msteams)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("channel=msteams", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_MultipleRoutes_OrderedByIndex()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .Build());
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            // Invoke route comes first (higher priority)
+            int idx0 = result.IndexOf("[0]");
+            int idx1 = result.IndexOf("[1]");
+            Assert.True(idx0 >= 0);
+            Assert.True(idx1 >= 0);
+            Assert.True(idx0 < idx1);
+            Assert.Contains("flags=Invoke", result);
+        }
+
+        private static Task MyNamedHandler(ITurnContext ctx, ITurnState state, CancellationToken ct)
+            => Task.CompletedTask;
 
         [Fact]
         public async Task Test_RouteList_ByAgenticThenInvokeThenRank()
@@ -1831,6 +1958,90 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 ChannelId = new ChannelId(channelId);
             }
+        }
+
+        [Fact]
+        public async Task Test_AgentApplication_LogsRouteList_WhenDebugEnabled()
+        {
+            // Arrange: create a logger that captures debug messages
+            var logMessages = new List<string>();
+            var loggerFactory = LoggerFactory.Create(builder =>
+                builder
+                    .AddProvider(new CaptureLoggerProvider(logMessages))
+                    .SetMinimumLevel(LogLevel.Debug));
+
+            var adapter = new SimpleAdapter();
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Text = "hi",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+
+            var options = new AgentApplicationOptions((IStorage)null, loggerFactory)
+            {
+                StartTypingTimer = false,
+            };
+            var app = new AgentApplication(options);
+            app.OnActivity(ActivityTypes.Message, (ctx, ts, ct) => Task.CompletedTask);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert: at least one debug message contains route evaluation order text
+            Assert.Contains(logMessages, m => m.Contains("route evaluation order"));
+        }
+
+        [Fact]
+        public async Task Test_AgentApplication_DoesNotLogRouteList_WhenDebugDisabled()
+        {
+            var logMessages = new List<string>();
+            var loggerFactory = LoggerFactory.Create(builder =>
+                builder
+                    .AddProvider(new CaptureLoggerProvider(logMessages))
+                    .SetMinimumLevel(LogLevel.Information));
+
+            var adapter = new SimpleAdapter();
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Text = "hi",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+
+            var options = new AgentApplicationOptions((IStorage)null, loggerFactory)
+            {
+                StartTypingTimer = false,
+            };
+            var app = new AgentApplication(options);
+            app.OnActivity(ActivityTypes.Message, (ctx, ts, ct) => Task.CompletedTask);
+
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            Assert.DoesNotContain(logMessages, m => m.Contains("route evaluation order"));
+        }
+
+        private class CaptureLoggerProvider(List<string> messages) : ILoggerProvider
+        {
+            public ILogger CreateLogger(string categoryName) => new CaptureLogger(messages);
+            public void Dispose() { }
+        }
+
+        private class CaptureLogger(List<string> messages) : ILogger
+        {
+            private static readonly IDisposable _noopScope = new NoopDisposable();
+            public IDisposable BeginScope<TState>(TState state) where TState : notnull => _noopScope;
+            public bool IsEnabled(LogLevel logLevel) => true;
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+                Exception exception, Func<TState, Exception, string> formatter)
+                => messages.Add(formatter(state, exception));
+            private sealed class NoopDisposable : IDisposable { public void Dispose() { } }
         }
     }
 }
