@@ -10,9 +10,6 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
 
-// Add AgentApplicationOptions from appsettings section "AgentApplication".
-builder.AddAgentApplicationOptions();
-
 // Add File downloaders
 builder.Services.AddSingleton<IList<IInputFileDownloader>>(sp =>
 {
@@ -35,11 +32,8 @@ builder.AddAgent<TeamsAgent.TeamsAgent>();
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Configure the HTTP request pipeline.
-
 // Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
 // configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddControllers();
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 WebApplication app = builder.Build();
