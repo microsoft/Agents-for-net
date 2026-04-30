@@ -383,7 +383,7 @@ namespace Microsoft.Agents.Builder
 
             activity.Type = ActivityTypes.Message;
             activity.Entities ??= [];
-            if (string.IsNullOrWhiteSpace(activity.Text))
+            if (FinalMessage == null)
             {
                 activity.Text = !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";   // Teams won't allow Activity.Text changes or empty text
             }

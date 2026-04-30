@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Core.Models
         /// </list>
         /// The resulting citation can be referenced in activity text using the format [position] (e.g., [1], [2]).
         /// </remarks>
-        public ClientCitation(int position, string title, string abstractText, string text, IList<string>? keywords, string? citationLink, ClientCitationsIconNameEnum? imageName, bool useDefaultAdaptiveCard = true)
+        public ClientCitation(int position, string title, string abstractText, string text, IList<string>? keywords, string? citationLink, ClientCitationIconName? imageName, bool useDefaultAdaptiveCard = true)
         {
             Position = position;
             
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Core.Models
             {
                 Appearance.Image = new AppearanceImage
                 {
-                    Name = imageName.Value
+                    Name = imageName
                 };
             }
 
@@ -312,230 +312,347 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>
         /// The image/icon name. It should be one of <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/>
         /// </summary>
-        [JsonConverter(typeof(JsonStringEnumMemberConverter))]
-        public ClientCitationsIconNameEnum Name { get; set; }
+        public ClientCitationIconName? Name { get; set; }
 
     }
 
     /// <summary>
     /// Represents the different possible values for the client citation icon name.
     /// </summary>
-    public static class ClientCitationIconName
+    [System.Text.Json.Serialization.JsonConverter(typeof(ClientCitationIconNameJsonConverter))]
+    public class ClientCitationIconName :  IEquatable<ClientCitationIconName>
     {
-        /// <summary>
-        /// Represents the Microsoft Word icon name.
-        /// </summary>
-        public static readonly string MicrosoftWord = "Microsoft Word";
+        private readonly string? _value;
+
+        /// <summary>Initializes a new <see cref="ClientCitationIconName"/> with the specified string value.</summary>
+        public ClientCitationIconName(string? value) => _value = value;
+
+        /// <summary>Implicitly converts a <see langword="string"/> to an <see cref="ClientCitationIconName"/>.</summary>
+        public static implicit operator ClientCitationIconName(string? s) => new(s);
+
+        /// <summary>Implicitly converts an <see cref="ClientCitationIconName"/> to a <see langword="string"/>.</summary>
+        public static implicit operator string?(ClientCitationIconName? t) => t?._value;
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        public static implicit operator ClientCitationIconName?(ClientCitationsIconNameEnum? e) => e == null ? null : new ClientCitationIconName(((EnumMemberAttribute)e.GetType().GetMember(e.ToString())[0].GetCustomAttributes(typeof(EnumMemberAttribute), false)[0]).Value);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+        /// <inheritdoc/>
+        public bool Equals(ClientCitationIconName? other) =>
+            string.Equals(_value, other?._value, StringComparison.OrdinalIgnoreCase);
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => Equals(obj as ClientCitationIconName);
+
+        /// <inheritdoc/>
+        public override int GetHashCode() =>
+            _value == null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(_value);
+
+        /// <summary>Returns <see langword="true"/> if two <see cref="ClientCitationIconName"/> values are equal (case-insensitive).</summary>
+        public static bool operator ==(ClientCitationIconName? a, ClientCitationIconName? b) =>
+            string.Equals(a?._value, b?._value, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>Returns <see langword="true"/> if two <see cref="ClientCitationIconName"/> values are not equal (case-insensitive).</summary>
+        public static bool operator !=(ClientCitationIconName? a, ClientCitationIconName? b) =>
+            !string.Equals(a?._value, b?._value, StringComparison.OrdinalIgnoreCase);
+
+        /// <inheritdoc/>
+        public override string ToString() => _value ?? string.Empty;
 
         /// <summary>
-        /// Represents the Microsoft Excel icon name.
+        /// Constant string values for each well-known ClientCitationIconName.
+        /// Use these in <c>switch</c> case labels and attribute arguments where a compile-time constant is required.
         /// </summary>
-        public static readonly string MicrosoftExcel = "Microsoft Excel";
+        public static class Names
+        {
+            /// <summary>
+            /// Represents the Microsoft Word icon name.
+            /// </summary>
+            public const string MicrosoftWord = "Microsoft Word";
 
-        /// <summary>
-        /// Represents the Microsoft PowerPoint icon name.
-        /// </summary>
-        public static readonly string MicrosoftPowerPoint = "Microsoft PowerPoint";
+            /// <summary>
+            /// Represents the Microsoft Excel icon name.
+            /// </summary>
+            public const string MicrosoftExcel = "Microsoft Excel";
 
-        /// <summary>
-        /// Represents the Microsoft Visio icon name.
-        /// </summary>
-        public static readonly string MicrosoftVisio = "Microsoft Visio";
+            /// <summary>
+            /// Represents the Microsoft PowerPoint icon name.
+            /// </summary>
+            public const string MicrosoftPowerPoint = "Microsoft PowerPoint";
 
-        /// <summary>
-        /// Represents the Microsoft Loop icon name.
-        /// </summary>
-        public static readonly string MicrosoftLoop = "Microsoft Loop";
+            /// <summary>
+            /// Represents the Microsoft Visio icon name.
+            /// </summary>
+            public const string MicrosoftVisio = "Microsoft Visio";
 
-        /// <summary>
-        /// Represents the Microsoft Whiteboard icon name.
-        /// </summary>
-        public static readonly string MicrosoftWhiteboard = "Microsoft Whiteboard";
+            /// <summary>
+            /// Represents the Microsoft Loop icon name.
+            /// </summary>
+            public const string MicrosoftLoop = "Microsoft Loop";
 
-        /// <summary>
-        /// Represents the Adobe Illustrator icon name.
-        /// </summary>
-        public static readonly string AdobeIllustrator = "Adobe Illustrator";
+            /// <summary>
+            /// Represents the Microsoft Whiteboard icon name.
+            /// </summary>
+            public const string MicrosoftWhiteboard = "Microsoft Whiteboard";
 
-        /// <summary>
-        /// Represents the Adobe Photoshop icon name.
-        /// </summary>
-        public static readonly string AdobePhotoshop = "Adobe Photoshop";
+            /// <summary>
+            /// Represents the Adobe Illustrator icon name.
+            /// </summary>
+            public const string AdobeIllustrator = "Adobe Illustrator";
 
-        /// <summary>
-        /// Represents the Adobe InDesign icon name.
-        /// </summary>
-        public static readonly string AdobeInDesign = "Adobe InDesign";
+            /// <summary>
+            /// Represents the Adobe Photoshop icon name.
+            /// </summary>
+            public const string AdobePhotoshop = "Adobe Photoshop";
 
-        /// <summary>
-        /// Represents the Adobe Flash icon name.
-        /// </summary>
-        public static readonly string AdobeFlash = "Adobe Flash";
+            /// <summary>
+            /// Represents the Adobe InDesign icon name.
+            /// </summary>
+            public const string AdobeInDesign = "Adobe InDesign";
 
-        /// <summary>
-        /// Represents the Sketch icon name.
-        /// </summary>
-        public static readonly string Sketch = "Sketch";
+            /// <summary>
+            /// Represents the Adobe Flash icon name.
+            /// </summary>
+            public const string AdobeFlash = "Adobe Flash";
 
-        /// <summary>
-        /// Represents the Source Code icon name.
-        /// </summary>
-        public static readonly string SourceCode = "Source Code";
+            /// <summary>
+            /// Represents the Sketch icon name.
+            /// </summary>
+            public const string Sketch = "Sketch";
 
-        /// <summary>
-        /// Represents the Image icon name.
-        /// </summary>
-        public static readonly string Image = "Image";
+            /// <summary>
+            /// Represents the Source Code icon name.
+            /// </summary>
+            public const string SourceCode = "Source Code";
 
-        /// <summary>
-        /// Represents the GIF icon name.
-        /// </summary>
-        public static readonly string GIF = "GIF";
+            /// <summary>
+            /// Represents the Image icon name.
+            /// </summary>
+            public const string Image = "Image";
 
-        /// <summary>
-        /// Represents the Video icon name.
-        /// </summary>
-        public static readonly string Video = "Video";
+            /// <summary>
+            /// Represents the GIF icon name.
+            /// </summary>
+            public const string GIF = "GIF";
 
-        /// <summary>
-        /// Represents the Sound icon name.
-        /// </summary>
-        public static readonly string Sound = "Sound";
+            /// <summary>
+            /// Represents the Video icon name.
+            /// </summary>
+            public const string Video = "Video";
 
-        /// <summary>
-        /// Represents the ZIP icon name.
-        /// </summary>
-        public static readonly string ZIP = "ZIP";
+            /// <summary>
+            /// Represents the Sound icon name.
+            /// </summary>
+            public const string Sound = "Sound";
 
-        /// <summary>
-        /// Represents the Text icon name.
-        /// </summary>
-        public static readonly string Text = "Text";
+            /// <summary>
+            /// Represents the ZIP icon name.
+            /// </summary>
+            public const string ZIP = "ZIP";
 
-        /// <summary>
-        /// Represents the PDF icon name.
-        /// </summary>
-        public static readonly string PDF = "PDF";
+            /// <summary>
+            /// Represents the Text icon name.
+            /// </summary>
+            public const string Text = "Text";
+
+            /// <summary>
+            /// Represents the PDF icon name.
+            /// </summary>
+            public const string PDF = "PDF";
+        }
+
+        /// <summary>ClientCitationIconNamee for Microsoft Word.</summary>
+        public static readonly ClientCitationIconName MicrosoftWord = new(Names.MicrosoftWord);
+
+        /// <summary>ClientCitationIconNamee for Microsoft Excel.</summary>
+        public static readonly ClientCitationIconName MicrosoftExcel = new(Names.MicrosoftExcel);
+
+        /// <summary>ClientCitationIconNamee for Microsoft PowerPoint.</summary>
+        public static readonly ClientCitationIconName MicrosoftPowerPoint = new(Names.MicrosoftPowerPoint);
+
+        /// <summary>ClientCitationIconNamee for Microsoft Visio.</summary>
+        public static readonly ClientCitationIconName MicrosoftVisio = new(Names.MicrosoftVisio);
+
+        /// <summary>ClientCitationIconNamee for Microsoft Loop.</summary>
+        public static readonly ClientCitationIconName MicrosoftLoop = new(Names.MicrosoftLoop);
+
+        /// <summary>ClientCitationIconNamee for Microsoft Whiteboard.</summary>
+        public static readonly ClientCitationIconName MicrosoftWhiteboard = new(Names.MicrosoftWhiteboard);
+
+        /// <summary>ClientCitationIconNamee for Microsoft Illustrator.</summary>
+        public static readonly ClientCitationIconName AdobeIllustrator = new(Names.AdobeIllustrator);
+
+        /// <summary>ClientCitationIconNamee for Microsoft Photoshop.</summary>
+        public static readonly ClientCitationIconName AdobePhotoshop = new(Names.AdobePhotoshop);
+
+        /// <summary>ClientCitationIconNamee for Adobe InDesign.</summary>
+        public static readonly ClientCitationIconName AdobeInDesign = new(Names.AdobeInDesign);
+
+        /// <summary>ClientCitationIconNamee for Adobe Flash.</summary>
+        public static readonly ClientCitationIconName AdobeFlash = new(Names.AdobeFlash);
+
+        /// <summary>ClientCitationIconNamee for Sketch.</summary>
+        public static readonly ClientCitationIconName Sketch = new(Names.Sketch);
+
+        /// <summary>ClientCitationIconNamee for Source Code.</summary>
+        public static readonly ClientCitationIconName SourceCode = new(Names.SourceCode);
+
+        /// <summary>ClientCitationIconNamee for Image.</summary>
+        public static readonly ClientCitationIconName Image = new(Names.Image);
+
+        /// <summary>ClientCitationIconNamee for GIF.</summary>
+        public static readonly ClientCitationIconName GIF = new(Names.GIF);
+
+        /// <summary>ClientCitationIconNamee for Video.</summary>
+        public static readonly ClientCitationIconName Video = new(Names.Video);
+
+        /// <summary>ClientCitationIconNamee for Sound.</summary>
+        public static readonly ClientCitationIconName Sound = new(Names.Sound);
+
+        /// <summary>ClientCitationIconNamee for ZIP.</summary>
+        public static readonly ClientCitationIconName ZIP = new(Names.ZIP);
+
+        /// <summary>ClientCitationIconNamee for Text.</summary>
+        public static readonly ClientCitationIconName Text = new(Names.Text);
+
+        /// <summary>ClientCitationIconNamee for PDF.</summary>
+        public static readonly ClientCitationIconName PDF = new(Names.PDF);
+
+        internal sealed class ClientCitationIconNameJsonConverter
+            : System.Text.Json.Serialization.JsonConverter<ClientCitationIconName>
+        {
+            public override ClientCitationIconName? Read(
+                ref System.Text.Json.Utf8JsonReader reader,
+                System.Type typeToConvert,
+                System.Text.Json.JsonSerializerOptions options)
+                => reader.TokenType == System.Text.Json.JsonTokenType.Null ? null : new(reader.GetString());
+
+            public override void Write(
+                System.Text.Json.Utf8JsonWriter writer,
+                ClientCitationIconName value,
+                System.Text.Json.JsonSerializerOptions options)
+                => writer.WriteStringValue(value._value);
+        }
     }
 
     /// <summary>
     /// Represents the different possible values for the client citation icon name as an enum.
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumMemberConverter))]
+    [Obsolete("ClientCitationsIconNameEnum is deprecated. Please use ClientCitationIconName with the predefined static instances or create new instances with custom string values as needed.")]
     public enum ClientCitationsIconNameEnum
     {
         /// <summary>
         /// Represents the Microsoft Word icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Word")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftWord)]
         MicrosoftWord,
 
         /// <summary>
         /// Represents the Microsoft Excel icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Excel")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftExcel)]
         MicrosoftExcel,
 
         /// <summary>
         /// Represents the Microsoft PowerPoint icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft PowerPoint")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftPowerPoint)]
         MicrosoftPowerPoint,
 
         /// <summary>
         /// Represents the Microsoft Visio icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Visio")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftVisio)]
         MicrosoftVisio,
 
         /// <summary>
         /// Represents the Microsoft Loop icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Loop")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftLoop)]
         MicrosoftLoop,
 
         /// <summary>
         /// Represents the Microsoft Whiteboard icon name.
         /// </summary>
-        [EnumMember(Value = "Microsoft Whiteboard")]
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftWhiteboard)]
         MicrosoftWhiteboard,
 
         /// <summary>
         /// Represents the Adobe Illustrator icon name.
         /// </summary>
-        [EnumMember(Value = "Adobe Illustrator")]
+        [EnumMember(Value = ClientCitationIconName.Names.AdobeIllustrator)]
         AdobeIllustrator,
 
         /// <summary>
         /// Represents the Adobe Photoshop icon name.
         /// </summary>
-        [EnumMember(Value = "Adobe Photoshop")]
+        [EnumMember(Value = ClientCitationIconName.Names.AdobePhotoshop)]
         AdobePhotoshop,
 
         /// <summary>
         /// Represents the Adobe InDesign icon name.
         /// </summary>
-        [EnumMember(Value = "Adobe InDesign")]
+        [EnumMember(Value = ClientCitationIconName.Names.AdobeInDesign)]
         AdobeInDesign,
 
         /// <summary>
         /// Represents the Adobe Flash icon name.
         /// </summary>
-        [EnumMember(Value = "Adobe Flash")]
+        [EnumMember(Value = ClientCitationIconName.Names.AdobeFlash)]
         AdobeFlash,
 
         /// <summary>
         /// Represents the Sketch icon name.
         /// </summary>
-        [EnumMember(Value = "Sketch")]
+        [EnumMember(Value = ClientCitationIconName.Names.Sketch)]
         Sketch,
 
         /// <summary>
         /// Represents the Source Code icon name.
         /// </summary>
-        [EnumMember(Value = "Source Code")]
+        [EnumMember(Value = ClientCitationIconName.Names.SourceCode)]
         SourceCode,
 
         /// <summary>
         /// Represents the Image icon name.
         /// </summary>
-        [EnumMember(Value = "Image")]
+        [EnumMember(Value = ClientCitationIconName.Names.Image)]
         Image,
 
         /// <summary>
         /// Represents the GIF icon name.
         /// </summary>
-        [EnumMember(Value = "GIF")]
+        [EnumMember(Value = ClientCitationIconName.Names.GIF)]
         GIF,
 
         /// <summary>
         /// Represents the Video icon name.
         /// </summary>
-        [EnumMember(Value = "Video")]
+        [EnumMember(Value = ClientCitationIconName.Names.Video)]
         Video,
 
         /// <summary>
         /// Represents the Sound icon name.
         /// </summary>
-        [EnumMember(Value = "Sound")]
+        [EnumMember(Value = ClientCitationIconName.Names.Sound)]
         Sound,
 
         /// <summary>
         /// Represents the ZIP icon name.
         /// </summary>
-        [EnumMember(Value = "ZIP")]
+        [EnumMember(Value = ClientCitationIconName.Names.ZIP)]
         ZIP,
 
         /// <summary>
         /// Represents the Text icon name.
         /// </summary>
-        [EnumMember(Value = "Text")]
+        [EnumMember(Value = ClientCitationIconName.Names.Text)]
         Text,
 
         /// <summary>
         /// Represents the PDF icon name.
         /// </summary>
-        [EnumMember(Value = "PDF")]
+        [EnumMember(Value = ClientCitationIconName.Names.PDF)]
         PDF
     }
 }
