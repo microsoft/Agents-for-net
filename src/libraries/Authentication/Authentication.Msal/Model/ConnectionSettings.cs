@@ -33,6 +33,11 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 FederatedClientId = msalConfigurationSection.GetValue<string>("FederatedClientId", string.Empty);
                 FederatedTokenFile = msalConfigurationSection.GetValue<string>("FederatedTokenFile", string.Empty);
                 AssertionRequestOptions = msalConfigurationSection.GetSection("AssertionRequestOptions").Get<AssertionRequestOptions>();
+                AzureRegion = msalConfigurationSection.GetValue<string>("AzureRegion", string.Empty);
+                if (string.IsNullOrEmpty(AzureRegion))
+                {
+                    AzureRegion = msalConfigurationSection.GetValue<string>("RegionalAuthority", string.Empty);
+                }
             }
 
             ValidateConfiguration();
@@ -64,6 +69,9 @@ namespace Microsoft.Agents.Authentication.Msal.Model
 
         /// <inheritdoc/>
         public string FederatedTokenFile { get; set; }
+
+        /// <inheritdoc/>
+        public string AzureRegion { get; set; }
 
         public AssertionRequestOptions AssertionRequestOptions { get; set; }
 

@@ -48,5 +48,10 @@ namespace Microsoft.Agents.Authentication.Msal.Interfaces
         /// Token path used for the workload identity, like the MSAL example for AKS, equal to AZURE_FEDERATED_TOKEN_FILE. 
         /// </summary>
         public string FederatedTokenFile { get; set; }
+
+        /// <summary>
+        /// Azure regional token service. This feature is currently available to first-party applications only.
+        /// </summary>
+        public string AzureRegion { get; set; }
     }
 }
