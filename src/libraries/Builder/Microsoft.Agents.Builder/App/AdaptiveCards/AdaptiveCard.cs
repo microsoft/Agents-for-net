@@ -51,12 +51,10 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="verb">The named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(string verb, ActionExecuteHandler handler)
+        public AgentApplication OnActionExecute(string verb, ActionExecuteHandler<IInvokeActivity> handler)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = CreateActionExecuteSelector((string input) => string.Equals(verb, input));
-            return OnActionExecute(routeSelector, handler);
+            return OnActionExecute((string input) => string.Equals(verb, input), handler);
         }
 
         /// <summary>
@@ -65,71 +63,35 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="verbPattern">Regular expression to match against the named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(Regex verbPattern, ActionExecuteHandler handler)
+        public AgentApplication OnActionExecute(Regex verbPattern, ActionExecuteHandler<IInvokeActivity> handler)
         {
             AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = CreateActionExecuteSelector((string input) => verbPattern.IsMatch(input));
-            return OnActionExecute(routeSelector, handler);
+            return OnActionExecute((string input) => verbPattern.IsMatch(input), handler);
         }
 
-        /// <summary>
-        /// Adds a route to the application for handling Adaptive Card Action.Execute events.
-        /// </summary>
-        /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(RouteSelector routeSelector, ActionExecuteHandler handler)
+        private AgentApplication OnActionExecute(Func<string, bool> isMatch, ActionExecuteHandler<IInvokeActivity> handler)
         {
-            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            async Task routeHandler(ITurnContext turnContext, State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
-            {
-                if (AdaptiveCardInvokeResponseFactory.TryValidateActionInvokeValue(turnContext.Activity, ACTION_EXECUTE_TYPE, out AdaptiveCardInvokeValue invokeValue, out var response))
+            return _app.AddRoute(InvokeRouteBuilder.Create()
+                .WithName(ACTION_EXECUTE_TYPE)
+                .WithSelector((ctx, ct) =>
                 {
-                    response = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
-                }
-
-                var activity = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
-                await turnContext.SendActivityAsync(activity, cancellationToken);
-            }
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return _app;
-        }
-
-        /// <summary>
-        /// Adds a route to the application for handling Adaptive Card Action.Execute events.
-        /// </summary>
-        /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(MultipleRouteSelector routeSelectors, ActionExecuteHandler handler)
-        {
-            AssertionHelpers.ThrowIfNull(routeSelectors,nameof(routeSelectors));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            if (routeSelectors.Strings != null)
-            {
-                foreach (string verb in routeSelectors.Strings)
+                    if (AdaptiveCardInvokeResponseFactory.TryValidateActionInvokeValue(ctx.Activity, ACTION_EXECUTE_TYPE, out AdaptiveCardInvokeValue invokeValue, out var response))
+                    {
+                        return Task.FromResult(isMatch(invokeValue.Action.Verb));
+                    }
+                    return Task.FromResult(false);
+                })
+                .WithHandler(async (turnContext, turnState, cancellationToken) =>
                 {
-                    OnActionExecute(verb, handler);
-                }
-            }
-            if (routeSelectors.Regexes != null)
-            {
-                foreach (Regex verbPattern in routeSelectors.Regexes)
-                {
-                    OnActionExecute(verbPattern, handler);
-                }
-            }
-            if (routeSelectors.RouteSelectors != null)
-            {
-                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
-                {
-                    OnActionExecute(routeSelector, handler);
-                }
-            }
-            return _app;
+                    if (AdaptiveCardInvokeResponseFactory.TryValidateActionInvokeValue(turnContext.Activity, ACTION_EXECUTE_TYPE, out AdaptiveCardInvokeValue invokeValue, out var response))
+                    {
+                        response = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
+                    }
+                    var activity = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
+                    await turnContext.SendActivityAsync(activity, cancellationToken);
+                })
+                .Build()
+            );
         }
 
         /// <summary>
@@ -155,13 +117,10 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="verb">The named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionSubmit(string verb, ActionSubmitHandler handler)
+        public AgentApplication OnActionSubmit(string verb, ActionSubmitHandler<IMessageActivity> handler)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
-            RouteSelector routeSelector = CreateActionSubmitSelector((string input) => string.Equals(verb, input), filter);
-            return OnActionSubmit(routeSelector, handler);
+            return OnActionSubmit((string input) => string.Equals(verb, input), handler);
         }
 
         /// <summary>
@@ -187,106 +146,40 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="verbPattern">Regular expression to match against the named action to be handled.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionSubmit(Regex verbPattern, ActionSubmitHandler handler)
+        public AgentApplication OnActionSubmit(Regex verbPattern, ActionSubmitHandler<IMessageActivity> handler)
         {
             AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
-            RouteSelector routeSelector = CreateActionSubmitSelector((string input) => verbPattern.IsMatch(input), filter);
-            return OnActionSubmit(routeSelector, handler);
+            return OnActionSubmit((string input) => verbPattern.IsMatch(input), handler);
         }
 
-        /// <summary>
-        /// Adds a route to the application for handling Adaptive Card Action.Submit events.
-        /// </summary>
-        /// <remarks>
-        /// The route will be added for the specified verb(s) and will be filtered using the
-        /// `actionSubmitFilter` option. The default filter is to use the `verb` field.
-        /// 
-        /// For outgoing AdaptiveCards you will need to include the verb's name in the cards Action.Submit.
-        /// For example:
-        ///
-        /// ```JSON
-        /// {
-        ///   "type": "Action.Submit",
-        ///   "title": "OK",
-        ///   "data": {
-        ///     "verb": "ok"
-        ///   }
-        /// }
-        /// ```
-        /// </remarks>
-        /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionSubmit(RouteSelector routeSelector, ActionSubmitHandler handler)
+        private AgentApplication OnActionSubmit(Func<string, bool> isMatch, ActionSubmitHandler<IMessageActivity> handler)
         {
-            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                if (!turnContext.Activity.IsType(ActivityTypes.Message)
-                    || !string.IsNullOrEmpty((turnContext.Activity as IMessageActivity)?.Text)
-                    || (turnContext.Activity as IMessageActivity).Value == null)
+            return _app.AddRoute(MessageRouteBuilder.Create()
+                .WithSelector((ctx, ct) =>
                 {
-                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnActionSubmit() triggered for activity type: {turnContext.Activity.Type}");
-                }
-
-                await handler(turnContext, turnState, (turnContext.Activity as IMessageActivity).Value, cancellationToken);
-            };
-            _app.AddRoute(routeSelector, routeHandler);
-            return _app;
-        }
-
-        /// <summary>
-        /// Adds a route to the application for handling Adaptive Card Action.Submit events.
-        /// </summary>
-        /// <remarks>
-        /// The route will be added for the specified verb(s) and will be filtered using the
-        /// `actionSubmitFilter` option. The default filter is to use the `verb` field.
-        /// 
-        /// For outgoing AdaptiveCards you will need to include the verb's name in the cards Action.Submit.
-        /// For example:
-        ///
-        /// ```JSON
-        /// {
-        ///   "type": "Action.Submit",
-        ///   "title": "OK",
-        ///   "data": {
-        ///     "verb": "ok"
-        ///   }
-        /// }
-        /// ```
-        /// </remarks>
-        /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionSubmit(MultipleRouteSelector routeSelectors, ActionSubmitHandler handler)
-        {
-            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            if (routeSelectors.Strings != null)
-            {
-                foreach (string verb in routeSelectors.Strings)
+                    if (ctx.Activity is IMessageActivity message)
+                    {
+                        string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
+                        JsonObject obj = ProtocolJsonSerializer.ToObject<JsonObject>(message.Value);
+                        return Task.FromResult(
+                            string.IsNullOrEmpty(message.Text)
+                            && message.Value != null
+                            && obj[filter] != null
+                            && obj[filter]!.GetValueKind() == System.Text.Json.JsonValueKind.String
+                            && isMatch(obj[filter]!.ToString()!));
+                    }
+                    else
+                    {
+                        return Task.FromResult(false);
+                    }
+                })
+                .WithHandler(async (turnContext, turnState, cancellationToken) =>
                 {
-                    OnActionSubmit(verb, handler);
-                }
-            }
-            if (routeSelectors.Regexes != null)
-            {
-                foreach (Regex verbPattern in routeSelectors.Regexes)
-                {
-                    OnActionSubmit(verbPattern, handler);
-                }
-            }
-            if (routeSelectors.RouteSelectors != null)
-            {
-                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
-                {
-                    OnActionSubmit(routeSelector, handler);
-                }
-            }
-            return _app;
+                    await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                })
+                .Build()
+            );
         }
 
         /// <summary>
@@ -295,12 +188,10 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="dataset">The dataset to be searched.</param>
         /// <param name="handler">Function to call when the search is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(string dataset, SearchHandler handler)
+        public AgentApplication OnSearch(string dataset, SearchHandler<IInvokeActivity> handler)
         {
             AssertionHelpers.ThrowIfNull(dataset, nameof(dataset));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = CreateSearchSelector((string input) => string.Equals(dataset, input));
-            return OnSearch(routeSelector, handler);
+            return OnSearch((string input) => string.Equals(dataset, input), handler);
         }
 
         /// <summary>
@@ -309,131 +200,40 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="datasetPattern">Regular expression to match against the dataset to be searched.</param>
         /// <param name="handler">Function to call when the search is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(Regex datasetPattern, SearchHandler handler)
+        public AgentApplication OnSearch(Regex datasetPattern, SearchHandler<IInvokeActivity> handler)
         {
             AssertionHelpers.ThrowIfNull(datasetPattern, nameof(datasetPattern));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = CreateSearchSelector((string input) => datasetPattern.IsMatch(input));
-            return OnSearch(routeSelector, handler);
+            return OnSearch((string input) => datasetPattern.IsMatch(input), handler);
         }
 
-        /// <summary>
-        /// Adds a route to the application for handling Adaptive Card dynamic search events.
-        /// </summary>
-        /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(RouteSelector routeSelector, SearchHandler handler)
+        private AgentApplication OnSearch(Func<string, bool> isMatch, SearchHandler<IInvokeActivity> handler)
         {
-            AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            async Task routeHandler(ITurnContext turnContext, State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
-            {
-                if (turnContext.Activity is not IInvokeActivity invoke || invoke.Name != SEARCH_INVOKE_NAME)
+            return _app.AddRoute(InvokeRouteBuilder.Create()
+                .WithName(SEARCH_INVOKE_NAME)
+                .WithSelector((ctx, ct) => Task.FromResult(isMatch(ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>((ctx.Activity as IInvokeActivity)?.Value)?.Dataset)))
+                .WithHandler(async (turnContext, turnState, cancellationToken) =>
                 {
-                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnSearch() triggered for activity type: {turnContext.Activity.Type}");
-                }
+                    if (AdaptiveCardInvokeResponseFactory.TryValidateSearchInvokeValue(turnContext.Activity, out var searchInvokeValue, out var response))
+                    {
+                        AdaptiveCardsSearchParams adaptiveCardsSearchParams = new(searchInvokeValue.QueryText, searchInvokeValue.Dataset ?? string.Empty);
+                        Query<AdaptiveCardsSearchParams> query = new(searchInvokeValue.QueryOptions.Top, searchInvokeValue.QueryOptions.Skip, adaptiveCardsSearchParams);
 
-                if (AdaptiveCardInvokeResponseFactory.TryValidateSearchInvokeValue(turnContext.Activity, out var searchInvokeValue, out var response))
-                {
-                    AdaptiveCardsSearchParams adaptiveCardsSearchParams = new(searchInvokeValue.QueryText, searchInvokeValue.Dataset ?? string.Empty);
-                    Query<AdaptiveCardsSearchParams> query = new(searchInvokeValue.QueryOptions.Top, searchInvokeValue.QueryOptions.Skip, adaptiveCardsSearchParams);
+                        IList<AdaptiveCardsSearchResult> results = await handler(turnContext, turnState, query, cancellationToken);
+                        response = AdaptiveCardInvokeResponseFactory.SearchResponse(
+                            new AdaptiveCardsSearchInvokeResponseValue
+                            {
+                                Results = results
+                            }
+                        );
+                    }
 
-                    IList<AdaptiveCardsSearchResult> results = await handler(turnContext, turnState, query, cancellationToken);
-
-                    response = AdaptiveCardInvokeResponseFactory.SearchResponse(
-                        new AdaptiveCardsSearchInvokeResponseValue
-                        {
-                            Results = results
-                        }
-                    );
-                }
-
-                var invokeResponse = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
-                await turnContext.SendActivityAsync(invokeResponse, cancellationToken);
-            }
-
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return _app;
-        }
-
-        /// <summary>
-        /// Adds a route to the application for handling Adaptive Card dynamic search events.
-        /// </summary>
-        /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
-        /// <param name="handler">Function to call when the route is triggered.</param>
-        /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(MultipleRouteSelector routeSelectors, SearchHandler handler)
-        {
-            AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            if (routeSelectors.Strings != null)
-            {
-                foreach (string verb in routeSelectors.Strings)
-                {
-                    OnSearch(verb, handler);
-                }
-            }
-            if (routeSelectors.Regexes != null)
-            {
-                foreach (Regex verbPattern in routeSelectors.Regexes)
-                {
-                    OnSearch(verbPattern, handler);
-                }
-            }
-            if (routeSelectors.RouteSelectors != null)
-            {
-                foreach (RouteSelector routeSelector in routeSelectors.RouteSelectors)
-                {
-                    OnSearch(routeSelector, handler);
-                }
-            }
-            return _app;
-        }
-
-        private static RouteSelector CreateActionExecuteSelector(Func<string, bool> isMatch)
-        {
-            Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-            {
-                return Task.FromResult(
-                    turnContext.Activity is IInvokeActivity invoke && string.Equals(invoke.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
-                    && isMatch(ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(invoke.Value)?.Action?.Verb));
-            }
-            return routeSelector;
-        }
-
-        private static RouteSelector CreateActionSubmitSelector(Func<string, bool> isMatch, string filter)
-        {
-            Task<bool> routeSelector(ITurnContext turnContext, System.Threading.CancellationToken cancellationToken)
-            {
-                if (turnContext.Activity is IMessageActivity message)
-                {
-                    JsonObject obj = ProtocolJsonSerializer.ToObject<JsonObject>(message.Value);
-                    return Task.FromResult(
-                        string.IsNullOrEmpty(message.Text)
-                        && message.Value != null
-                        && obj[filter] != null
-                        && obj[filter]!.GetValueKind() == System.Text.Json.JsonValueKind.String
-                        && isMatch(obj[filter]!.ToString()!));
-                }
-                else
-                {
-                    return Task.FromResult(false);
-                }
-            }
-            return routeSelector;
-        }
-
-        private static RouteSelector CreateSearchSelector(Func<string, bool> isMatch)
-        {
-            Task<bool> routeSelector(ITurnContext turnContext, System.Threading.CancellationToken cancellationToken)
-            {
-                return Task.FromResult(
-                    turnContext.Activity is IInvokeActivity invoke && invoke.Name == SEARCH_INVOKE_NAME
-                    && isMatch(ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(invoke.Value)?.Dataset!));
-            };
-            return routeSelector;
+                    var invokeResponse = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
+                    await turnContext.SendActivityAsync(invokeResponse, cancellationToken);
+                })
+                .Build()
+            );
         }
 
         private class AdaptiveCardsSearchInvokeResponseValue

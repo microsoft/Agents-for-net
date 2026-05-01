@@ -17,9 +17,6 @@ namespace Microsoft.Agents.Builder
 #else
         ChannelId ChannelId { get; set; }
 #endif
-        [Obsolete("This method is deprecated. Please use the overload that includes the 'isAgenticOnly' parameter.")]
-        void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null);
-
         void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null);
 
         void AddRoute(AgentApplication agentApplication, Route route);

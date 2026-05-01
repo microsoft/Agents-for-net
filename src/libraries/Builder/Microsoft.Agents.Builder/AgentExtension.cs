@@ -18,12 +18,7 @@ namespace Microsoft.Agents.Builder
         public virtual ChannelId ChannelId { get; set; } = string.Empty;
 #endif
 
-        [Obsolete("This method is deprecated. Please use the overload that includes the 'isAgenticOnly' parameter.")]
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
-        {
-            AddRoute(agentApplication, routeSelector, routeHandler, isInvokeRoute, false, rank, autoSignInHandlers);
-        }
-
+        [Obsolete("This method is deprecated. Please use the overload that accepts a Route object instead.")]
         public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null) 
         {
             var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {
@@ -40,11 +35,22 @@ namespace Microsoft.Agents.Builder
                 return isForChannel && await routeSelector(turnContext, cancellationToken);
             });
 
-            agentApplication.AddRoute(ensureChannelMatches, routeHandler, isInvokeRoute, rank, autoSignInHandlers, isAgenticOnly);
+            var route = new RouteBuilder()
+                .WithChannelId(ChannelId)
+                .WithSelector(ensureChannelMatches)
+                .WithHandler(routeHandler)
+                .AsInvoke(isInvokeRoute)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+
+            agentApplication.AddRoute(route);
         }
 
         public void AddRoute(AgentApplication agentApplication, Route route)
         {
+            route.ChannelId ??= ChannelId;
             agentApplication.AddRoute(route);
         }
     }

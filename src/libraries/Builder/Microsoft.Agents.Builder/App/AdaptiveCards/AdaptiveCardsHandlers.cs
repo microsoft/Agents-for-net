@@ -62,6 +62,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <returns>An instance of AdaptiveCardInvokeResponse, which can be created using <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCardInvokeResponseFactory"/>.</returns>
     public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
 
+    public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteHandler<T>(ITurnContext<T> turnContext, ITurnState turnState, object data, CancellationToken cancellationToken) where T : IInvokeActivity;
+
     /// <summary>
     /// Function for handling Adaptive Card Action.Submit events.
     /// </summary>
@@ -73,6 +75,8 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <returns>A task that represents the work queued to execute.</returns>
     public delegate Task ActionSubmitHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
 
+    public delegate Task ActionSubmitHandler<T>(ITurnContext<T> turnContext, ITurnState turnState, object data, CancellationToken cancellationToken) where T : IMessageActivity;
+
     /// <summary>
     /// Function for handling Adaptive Card dynamic search events.
     /// </summary>
@@ -83,4 +87,6 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A list of AdaptiveCardsSearchResult.</returns>
     public delegate Task<IList<AdaptiveCardsSearchResult>> SearchHandler(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken);
+
+    public delegate Task<IList<AdaptiveCardsSearchResult>> SearchHandler<T>(ITurnContext<T> turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken) where T : IInvokeActivity;
 }
