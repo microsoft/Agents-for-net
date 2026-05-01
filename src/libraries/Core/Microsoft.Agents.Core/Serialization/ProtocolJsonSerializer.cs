@@ -171,12 +171,7 @@ namespace Microsoft.Agents.Core.Serialization
 
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());
-            //options.Converters.Add(new ObjectTypeConverter());
             options.Converters.Add(new EntityConverter());
-
-            // Move to Dialogs
-            options.Converters.Add(new Array2DConverter());
-            options.Converters.Add(new DictionaryOfObjectConverter());
 
             return options;
         }

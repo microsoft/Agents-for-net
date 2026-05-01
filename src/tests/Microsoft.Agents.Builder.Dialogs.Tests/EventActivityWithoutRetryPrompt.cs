@@ -47,13 +47,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Initialize prompt state
             var state = dc.ActiveDialog.State;
             state[PersistedOptions] = opt;
-            state[PersistedState] = new Dictionary<string, object>
+            state[PersistedState] = new PersistedState
             {
                 { "AttemptCount", 0 },
             };
 
             // Send initial prompt, calling OnPromptAsync() overload that does not have isRetry parameter
-            await OnPromptAsync(dc.Context, (IDictionary<string, object>)state[PersistedState], (PromptOptions)state[PersistedOptions], cancellationToken).ConfigureAwait(false);
+            await OnPromptAsync(dc.Context, (PersistedState)state[PersistedState], (PromptOptions)state[PersistedOptions], cancellationToken).ConfigureAwait(false);
             return EndOfTurn;
         }
     }

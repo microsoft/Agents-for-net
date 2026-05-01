@@ -404,7 +404,12 @@ namespace Microsoft.Agents.Core.Models
             {
                 // Outgoing
                 From = reference.Agent;
-                Recipient = reference.User;
+
+                if (!this.IsTargetedActivity())
+                {
+                    Recipient = reference.User;
+                }
+
                 if (reference.ActivityId != null)
                 {
                     ReplyToId = reference.ActivityId;

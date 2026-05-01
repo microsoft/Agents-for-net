@@ -34,7 +34,7 @@ public class StreamingHostAgent : AgentApplication
         });
     }
 
-    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
+    [MembersAddedRoute]
     protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
@@ -46,7 +46,7 @@ public class StreamingHostAgent : AgentApplication
         }
     }
 
-    [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last)]
+    [MessageRoute(rank: RouteRank.Last)]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);

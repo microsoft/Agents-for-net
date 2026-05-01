@@ -65,6 +65,22 @@ namespace Microsoft.Agents.Core.Models
             };
         }
 
+        /// <summary>
+        /// Creates a new message activity that includes this video card as an attachment.
+        /// </summary>
+        /// <remarks>Use this method to generate a message activity suitable for sending to a user, with
+        /// the current video card included as an attachment. The returned activity has its type set to <see
+        /// langword="ActivityTypes.Message"/>.</remarks>
+        /// <returns>An <see cref="IActivity"/> representing a message activity with the video card attached.</returns>
+        public IActivity ToMessage()
+        {
+            return new Activity
+            {
+                Type = ActivityTypes.Message,
+                Attachments = [ToAttachment()]
+            };
+        }
+
         /// <summary> Title of this card. </summary>
         public string Title { get; set; }
         /// <summary> Subtitle of this card. </summary>
