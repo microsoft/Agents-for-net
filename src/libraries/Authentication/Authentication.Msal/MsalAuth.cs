@@ -171,7 +171,8 @@ namespace Microsoft.Agents.Authentication.Msal
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
-            if (InnerCreateClientApplication(tenantId) is IConfidentialClientApplication msalApplication)
+            var app = InnerCreateClientApplication(tenantId);
+            if (app is IConfidentialClientApplication msalApplication)
             {
                 var tokenResult = await msalApplication
                     .AcquireTokenForClient(["api://AzureAdTokenExchange/.default"]).WithFmiPath(agentAppInstanceId)
@@ -179,8 +180,16 @@ namespace Microsoft.Agents.Authentication.Msal
 
                 return tokenResult.AccessToken;
             }
+            else if (_connectionSettings.EnableContainerIMDS && _connectionSettings.AuthType == AuthTypes.UserManagedIdentity && app is IManagedIdentityApplication msiApp)
+            {
+                var tokenResult = await msiApp
+                    .AcquireTokenForManagedIdentity("api://AzureAdTokenExchange/.default")
+                    .ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-            throw new InvalidOperationException("Only IConfidentialClientApplication is supported for Agentic.");
+                return tokenResult.AccessToken;
+            }
+
+            throw new InvalidOperationException("Only IConfidentialClientApplication or EnableContainerIMDS+UserManagedIdentity is supported for Agentic.");
         }
 
         public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
