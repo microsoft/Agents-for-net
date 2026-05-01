@@ -1,20 +1,24 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A.AspNetCore;
+using A2ATCKAgent;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Extensions.Hosting;
-using A2AAgent;
+using Microsoft.Extensions.Logging;
+using System.Threading;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
+builder.Services.AddHttpClient();
 
 // Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
@@ -44,14 +48,21 @@ WebApplication app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Add endpoints for the AgentApplication registered above.
-app.MapAgentRootEndpoint();
-app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+// This receives incoming messages from Azure Bot Service or other SDK Agents
+var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+{
+    await adapter.ProcessAsync(request, response, agent, cancellationToken);
+});
 
-// Add A2A endpoints.  By default A2A will respond on '/a2a'.
-app.MapA2AEndpoints(requireAuth: !app.Environment.IsDevelopment());
+// Map A2A endpoints.  By default A2A will respond on '/a2a'.
+app.MapA2AJsonRpc(requireAuth: !app.Environment.IsDevelopment());
+app.MapWellKnownAgentCard();
 
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
+{
+    incomingRoute.RequireAuthorization();
+}
+else
 {
     // Hardcoded for brevity and ease of testing. 
     // In production, this should be set in configuration.

@@ -1,26 +1,26 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Hosting.A2A;
-using Microsoft.Agents.Hosting.A2A.Protocol;
-using System.Reflection;
+using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Extensions.A2A;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace A2AAgent;
+namespace A2ATCKAgent;
 
-public class MyAgent : AgentApplication, IAgentCardHandler
+[A2AExtension]
+[A2ASkill("TCK", "tck")]
+public partial class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
+        A2AExtension.OnMessage(OnA2AMessageAsync);
     }
 
-    public Task<AgentCard> GetAgentCard(AgentCard initialCard)
+    private Task OnA2AMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        initialCard.Name = "A2ATCKAgent";
-        initialCard.Description = "Used when running the A2A TCK";
-        initialCard.Version = Assembly.GetExecutingAssembly().GetName().Version!.ToString();
-
-        return Task.FromResult(initialCard);
+        return turnContext.SendActivityAsync($"You sent an A2A message with text: '{turnContext.Activity.Text}'", cancellationToken: cancellationToken);
     }
 }
