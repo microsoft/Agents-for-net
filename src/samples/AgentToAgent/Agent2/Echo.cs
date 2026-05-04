@@ -5,7 +5,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -20,7 +19,7 @@ public class Echo : AgentApplication
         OnTurnError(TurnErrorHandlerAsync);
     }
 
-    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
+    [MembersAddedRoute]
     protected async Task ConversationUpdate(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
@@ -32,7 +31,7 @@ public class Echo : AgentApplication
         }
     }
 
-    [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Message, Rank = RouteRank.Last )]
+    [MessageRoute]
     protected async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var result = turnState.Conversation.GetValue("log", () => new EchoResult());
@@ -59,7 +58,7 @@ public class Echo : AgentApplication
         }
     }
 
-    [Route(RouteType = RouteType.Conversation, EventName = ConversationUpdateEvents.MembersAdded)]
+    [EndOfConversationRoute]
     protected async Task OnEndOfConversationActivityAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // This will be called if Agent1 is ending the conversation.  Sending additional messages should be

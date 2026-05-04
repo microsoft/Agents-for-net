@@ -4,7 +4,6 @@
 using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;
 using Microsoft.Agents.Hosting.A2A.Protocol;

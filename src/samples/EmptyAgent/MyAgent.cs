@@ -13,7 +13,7 @@ namespace EmptyAgent;
 [Agent(name: "MyAgent", description: "Echo user messages back", version: "1.0")]
 public class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    [ConversationUpdate(ConversationUpdateEvents.MembersAdded)]
+    [MembersAddedRoute]
     public static async Task WelcomeMessageAsync(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
@@ -25,7 +25,7 @@ public class MyAgent(AgentApplicationOptions options) : AgentApplication(options
         }
     }
 
-    [Message]
+    [MessageRoute]
     public static async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);

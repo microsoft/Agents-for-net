@@ -7,7 +7,6 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using System.Threading.Tasks;
 using System.Threading;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace MultiAgent;
 
@@ -18,10 +17,10 @@ public class Agent1 : AgentApplication
     public Agent1(AgentApplicationOptions options) : base(options)
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
+        OnActivity<IMessageActivity>(OnMessageAsync, rank: RouteRank.Last);
     }
 
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task WelcomeMessageAsync(ITurnContext<IConversationUpdateActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -32,7 +31,7 @@ public class Agent1 : AgentApplication
         }
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext<IMessageActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"Agent1: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }

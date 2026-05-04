@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.A2A.JsonRpc;
 using Microsoft.Agents.Hosting.A2A.Protocol;
@@ -126,37 +125,40 @@ internal static class A2AActivity
             ArtifactId = artifactId ?? Guid.NewGuid().ToString("N")
         };
 
-        if (activity?.Text != null)
+        if (activity is IMessageActivity messageActivity)
         {
-            artifact.Parts = artifact.Parts.Add(new TextPart()
+            if (messageActivity?.Text != null)
             {
-                Text = activity.Text
-            });
-        }
-
-        if (activity?.Value != null)
-        {
-            artifact.Parts = artifact.Parts.Add(new DataPart()
-            {
-                Data = activity.Value.ToJsonElements()
-            });
-        }
-
-        foreach (var attachment in activity?.Attachments ?? Enumerable.Empty<Attachment>())
-        {
-            if (attachment.ContentUrl == null && attachment.Content is not string)
-            {
-                continue;
+                artifact.Parts = artifact.Parts.Add(new TextPart()
+                {
+                    Text = messageActivity.Text
+                });
             }
 
-            artifact.Parts = artifact.Parts.Add(new FilePart()
+            if (messageActivity?.Value != null)
             {
-                Uri = attachment.ContentUrl,
-                Bytes = attachment.Content as string,
-                MimeType = attachment.ContentType,
-                Name = attachment.Name,
+                artifact.Parts = artifact.Parts.Add(new DataPart()
+                {
+                    Data = messageActivity.Value.ToJsonElements()
+                });
+            }
 
-            });
+            foreach (var attachment in messageActivity?.Attachments ?? Enumerable.Empty<Attachment>())
+            {
+                if (attachment.ContentUrl == null && attachment.Content is not string)
+                {
+                    continue;
+                }
+
+                artifact.Parts = artifact.Parts.Add(new FilePart()
+                {
+                    Uri = attachment.ContentUrl,
+                    Bytes = attachment.Content as string,
+                    MimeType = attachment.ContentType,
+                    Name = attachment.Name,
+
+                });
+            }
         }
 
         if (includeEntities)
@@ -205,23 +207,28 @@ internal static class A2AActivity
 
     public static bool HasA2AMessageContent(this IActivity activity)
     {
-        return !string.IsNullOrEmpty(activity.Text)
-            || (bool) activity.Attachments?.Any();
+        if (activity is IMessageActivity messageActivity)
+        {
+            return !string.IsNullOrEmpty(messageActivity.Text)
+                || (bool) messageActivity.Attachments?.Any();
+        }
+        return false;
     }
 
     public static TaskState GetA2ATaskState(this IActivity activity)
     {
-        TaskState taskState = activity.InputHint switch
+        if (activity is IMessageActivity messageActivity) 
         {
-            InputHints.ExpectingInput => TaskState.InputRequired,
-            InputHints.AcceptingInput => TaskState.Working,
-            _ => TaskState.Working,
-        };
+            if (messageActivity.InputHint == InputHints.ExpectingInput)
+            {
+                return TaskState.InputRequired;
+            }
+        }
 
-        return taskState;
+        return TaskState.Working;
     }
 
-    private static Activity CreateActivity(
+    private static MessageActivity CreateActivity(
         string conversationId,
         ImmutableArray<Part> parts,
         bool isIngress,
@@ -239,7 +246,7 @@ internal static class A2AActivity
             Role = RoleTypes.User,
         };
 
-        var activity = new Activity()
+        var activity = new MessageActivity()
         {
             Type = ActivityTypes.Message,
             Id = Guid.NewGuid().ToString("N"),

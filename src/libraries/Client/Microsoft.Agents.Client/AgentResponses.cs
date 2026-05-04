@@ -97,19 +97,14 @@ namespace Microsoft.Agents.Client
         public ChannelId ChannelId { get; set; } = "*";
 #endif
 
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
-        {
-            AddRoute(agentApplication, routeSelector, routeHandler, isInvokeRoute, false, rank, autoSignInHandlers);
-        }
-
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
-        {
-            agentApplication.AddRoute(routeSelector, routeHandler, isInvokeRoute, rank, autoSignInHandlers, isAgenticOnly);
-        }
-
         public void AddRoute(AgentApplication agentApplication, Route route)
         {
             agentApplication.AddRoute(route);
+        }
+
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = 32767, string[] autoSignInHandlers = null)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

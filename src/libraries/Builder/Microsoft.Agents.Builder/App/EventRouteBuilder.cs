@@ -121,13 +121,6 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <param name="handler">The route handler to associate with the route. Cannot be null.</param>
         /// <returns>The current RouteBuilder instance with the handler set, enabling method chaining.</returns>
-        public EventRouteBuilder WithHandler(RouteHandler handler)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            _route.Handler = handler;
-            return this;
-        }
-
         public EventRouteBuilder WithHandler(RouteHandler<IEventActivity> handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
