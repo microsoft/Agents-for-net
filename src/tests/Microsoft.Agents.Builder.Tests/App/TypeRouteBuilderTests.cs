@@ -791,14 +791,24 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void TypeRouteBuilder_Build_WithoutSelector_ThrowsException()
+        public async Task TypeRouteBuilder_Build_WithoutTypeOrSelector_MatchesAnyActivity()
         {
             // Arrange
-            var builder = TypeRouteBuilder.Create()
-                .WithHandler((context, state, token) => Task.CompletedTask);
+            var mockContext = new Mock<ITurnContext>();
+            mockContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message
+            });
 
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => builder.Build());
+            var route = TypeRouteBuilder.Create()
+                .WithHandler((context, state, token) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
         }
 
         [Fact]
@@ -1004,6 +1014,126 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.True(result); // Matches the type
             Assert.True(route.Flags.HasFlag(RouteFlags.Invoke)); // Flag is still set
+        }
+
+        #endregion
+
+        #region RouteRank.Last Defaulting Tests
+
+        [Fact]
+        public void TypeRouteBuilder_WithoutFilter_DefaultsToRankLast()
+        {
+            var route = TypeRouteBuilder.Create()
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Last, route.Rank);
+        }
+
+        [Fact]
+        public void TypeRouteBuilder_WithType_DoesNotDefaultToRankLast()
+        {
+            var route = TypeRouteBuilder.Create()
+                .WithType(ActivityTypes.Event)
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Unspecified, route.Rank);
+        }
+
+        [Fact]
+        public void TypeRouteBuilder_WithTypeRegex_DoesNotDefaultToRankLast()
+        {
+            var route = TypeRouteBuilder.Create()
+                .WithType(new Regex("event|invoke"))
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Unspecified, route.Rank);
+        }
+
+        [Fact]
+        public void TypeRouteBuilder_WithoutFilter_ExplicitRankPreserved()
+        {
+            var route = TypeRouteBuilder.Create()
+                .WithOrderRank(50)
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal((ushort)50, route.Rank);
+        }
+
+        #endregion
+
+        #region WithType and WithSelector Combined Tests
+
+        [Fact]
+        public async Task TypeRouteBuilder_WithTypeAndSelector_BothMustMatch()
+        {
+            RouteSelector customSelector = (ctx, ct) =>
+                Task.FromResult(ctx.Activity.Name == "specific");
+
+            var matchContext = new Mock<ITurnContext>();
+            matchContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "specific"
+            });
+
+            var wrongNameContext = new Mock<ITurnContext>();
+            wrongNameContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "other"
+            });
+
+            var wrongTypeContext = new Mock<ITurnContext>();
+            wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message,
+                Name = "specific"
+            });
+
+            var route = TypeRouteBuilder.Create()
+                .WithType(ActivityTypes.Invoke)
+                .WithSelector(customSelector)
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.True(await route.Selector(matchContext.Object, CancellationToken.None));
+            Assert.False(await route.Selector(wrongNameContext.Object, CancellationToken.None));
+            Assert.False(await route.Selector(wrongTypeContext.Object, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task TypeRouteBuilder_WithSelectorThenType_BothMustMatch()
+        {
+            // Verify the combination works regardless of call order
+            RouteSelector customSelector = (ctx, ct) =>
+                Task.FromResult(ctx.Activity.Name == "specific");
+
+            var matchContext = new Mock<ITurnContext>();
+            matchContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "specific"
+            });
+
+            var wrongTypeContext = new Mock<ITurnContext>();
+            wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message,
+                Name = "specific"
+            });
+
+            var route = TypeRouteBuilder.Create()
+                .WithSelector(customSelector)
+                .WithType(ActivityTypes.Invoke)
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.True(await route.Selector(matchContext.Object, CancellationToken.None));
+            Assert.False(await route.Selector(wrongTypeContext.Object, CancellationToken.None));
         }
 
         #endregion

@@ -475,14 +475,46 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void Build_NoSelector_ThrowsException()
+        public async Task Build_NoNameOrSelector_MatchesAnyInvoke()
         {
             // Arrange
-            var builder = new InvokeRouteBuilder()
-                .WithHandler((context, state, ct) => Task.CompletedTask);
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "anyInvokeName"
+            };
+            var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
 
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => builder.Build());
+            var route = new InvokeRouteBuilder()
+                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task Build_NoNameOrSelector_DoesNotMatchNonInvoke()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message
+            };
+            var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
+
+            var route = new InvokeRouteBuilder()
+                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
         }
 
         [Fact]

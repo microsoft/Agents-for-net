@@ -4,7 +4,6 @@
 
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Models;
 using System;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -16,44 +15,27 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing activities of a specific type in an AgentApplication.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder"/> to create and configure routes that respond to event
-    /// activities. This builder allows matching event activities by name or regular expression, and supports
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.Create"/> method
-    /// and further configured using one of <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.WithType(string)"/> or <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.WithType(System.Text.RegularExpressions.Regex)"/>
-    /// or <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/>.<br/><br/>
+    /// Use <see cref="TypeRouteBuilder"/> to create and configure routes that respond to activities
+    /// of a particular type. This builder allows matching activities by type string or regular expression,
+    /// and supports channelId and agentic routing scenarios. Instances are created via the <see cref="Create"/>
+    /// method and optionally configured using <see cref="WithType(string)"/>, <see cref="WithType(Regex)"/>,
+    /// or <see cref="WithSelector(RouteSelector)"/>. If neither <see cref="WithType(string)"/> nor
+    /// <see cref="WithType(Regex)"/> is called, the route will match any activity type.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = TypeRouteBuilder.Create()
-    ///    .WithName("myInvoke")
+    ///    .WithType("myInvokeName")
     ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Invoke received!", cancellationToken: ct)))
     ///    .Build();
     ///
     /// app.AddRoute(route);
     /// </code>
-    /// Since this builder can't determine if this is for an Invoke Activity, the method <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder.AsInvoke(bool)"/> should be called if appropriate.
+    /// Since this builder can't determine if this is for an Invoke Activity, the method <see cref="TypeRouteBuilder.AsInvoke(bool)"/> should be called if appropriate.
     /// </remarks>
     public class TypeRouteBuilder : RouteBuilderBase<TypeRouteBuilder>
     {
         private string _type;
         private Regex _typePattern;
-        private Type _activityType;
-
-        /// <summary>
-        /// Specifies the activity type to use for this route builder.
-        /// </summary>
-        /// <remarks>This method can only be called once per TypeRouteBuilder instance. Calling it
-        /// multiple times will result in an exception.</remarks>
-        /// <typeparam name="T">The type of activity to associate with the route. Must implement IActivity.</typeparam>
-        /// <returns>The current instance of TypeRouteBuilder with the specified activity type set.</returns>
-        public TypeRouteBuilder WithType<T>() where T : IActivity
-        {
-            if (_activityType != null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType<{typeof(T).Name}>() with Activity Type already set");
-            }
-            _activityType = typeof(T);
-            return this;
-        }
 
         /// <summary>
         /// Configures the route to match activities of the specified type.
@@ -74,11 +56,6 @@ namespace Microsoft.Agents.Builder.App
             if (_typePattern != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType({type}) with Type Regex already set");
-            }
-
-            if (_activityType != null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType<{_activityType.Name}>() with Activity Type already set");
             }
 
             _type = type;
@@ -106,11 +83,6 @@ namespace Microsoft.Agents.Builder.App
             if (_type != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType(Regex({typePattern})) with Type already set");
-            }
-
-            if (_activityType != null)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"TypeRouteBuilder.WithType<{_activityType.Name}>() with Activity Type already set");
             }
 
             _typePattern = typePattern;
@@ -156,64 +128,42 @@ namespace Microsoft.Agents.Builder.App
             return (TypeRouteBuilder)this;
         }
 
-        public TypeRouteBuilder WithHandler<T>(RouteHandler<T> handler) where T : IActivity
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            _route.Handler = (ct, ts, ctok) => handler(new TypedTurnContext<T>(ct), ts, ctok);
-            return this;
-        }
-
         protected override void PreBuild()
         {
+            // When no type filter is specified the route matches any activity — default to Last so
+            // specific-type routes take priority without callers having to set the rank explicitly.
+            if (_type == null && _typePattern == null && _route.Rank == RouteRank.Unspecified)
+            {
+                _route.Rank = RouteRank.Last;
+            }
+
             if (_route.Selector != null)
             {
-                if (TypeDefined())
+                if (_type != null || _typePattern != null)
                 {
                     // Match on both the existing selector and the Activity.Type
                     var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
-                        && SelectorForType(context)
+                        && (_type != null ? context.Activity.IsType(_type) : context.Activity.Type != null && _typePattern.IsMatch(context.Activity.Type))
                         && await existingSelector(context, ct);
                 }
                 return;
             }
 
-            if (!TypeDefined())
+            if (_type == null && _typePattern == null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Type, ActivityType, or Selector");
+                // If no type or pattern specified, match any activity
+                _route.Selector = (context, ct) => Task.FromResult(IsContextMatch(context, _route));
+                return;
             }
 
             // Just match on Activity.Type value
             _route.Selector = (context, ct) => Task.FromResult
                 (
-                    IsContextMatch(context, _route) && SelectorForType(context)
+                    IsContextMatch(context, _route)
+                    && (_type != null ? context.Activity.IsType(_type) : context.Activity.Type != null && _typePattern.IsMatch(context.Activity.Type))
                 );
-        }
-
-        private bool TypeDefined()
-        {
-            return _type != null || _typePattern != null || _activityType != null;
-        }
-
-        private bool SelectorForType(ITurnContext context)
-        {
-            if (_type != null)
-            {
-                return context.Activity.IsType(_type);
-            }
-
-            if (_typePattern != null)
-            {
-                return context.Activity.Type != null && _typePattern.IsMatch(context.Activity.Type);
-            }
-
-            if (_activityType != null) 
-            {
-                return _activityType.IsInstanceOfType(context.Activity);
-            }
-
-            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, nameof(TypeRouteBuilder), "Type, ActivityType, or Selector");
         }
     }
 }

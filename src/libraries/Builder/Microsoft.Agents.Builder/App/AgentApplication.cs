@@ -68,7 +68,23 @@ namespace Microsoft.Agents.Builder.App
             }
 
             ApplyRouteAttributes();
+            ConfigureExtensions();
         }
+
+        /// <summary>
+        /// Called during construction after route attributes are applied.
+        /// Override (via source-generated code from <c>AgentExtensionAttribute</c>) to eagerly
+        /// initialize agent extensions so their <c>OnBeforeTurn</c> handlers and other
+        /// infrastructure are registered before the first turn arrives.
+        /// </summary>
+        /// <remarks>
+        /// This method is called from the <see cref="AgentApplication"/> constructor via virtual
+        /// dispatch, so derived-class constructor bodies have not yet run when it executes.
+        /// Overrides must only depend on state initialized by <see cref="AgentApplication"/> itself
+        /// (e.g., <see cref="Options"/>, storage, and routing infrastructure) and must not access
+        /// fields or properties set in a derived constructor body.
+        /// </remarks>
+        protected virtual void ConfigureExtensions() { }
 
         #region Application Features
 
