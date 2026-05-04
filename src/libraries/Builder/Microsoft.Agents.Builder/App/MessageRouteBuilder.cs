@@ -3,6 +3,7 @@
 
 
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -126,10 +127,16 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         /// <param name="handler">The route handler to associate with the route. Cannot be null.</param>
         /// <returns>The current MessageRouteBuilder instance with the handler set, enabling method chaining.</returns>
-        public MessageRouteBuilder WithHandler(RouteHandler handler)
+        public MessageRouteBuilder WithHandler(RouteHandler<IMessageActivity> handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            _route.Handler = handler;
+
+            Task typedHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            {
+                return handler(new TypedTurnContext<IMessageActivity>(turnContext), turnState, cancellationToken);
+            }
+
+            _route.Handler = typedHandler;
             return this;
         }
 
@@ -163,7 +170,7 @@ namespace Microsoft.Agents.Builder.App
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
                         && context.Activity.IsType(ActivityTypes.Message)
-                        && (_text != null ? _text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase) : context.Activity.Text != null && _textPattern.IsMatch(context.Activity.Text))
+                        && (_text != null ? _text.Equals((context.Activity as IMessageActivity)?.Text, StringComparison.OrdinalIgnoreCase) : (context.Activity as IMessageActivity)?.Text != null && _textPattern.IsMatch((context.Activity as IMessageActivity).Text))
                         && await existingSelector(context, ct).ConfigureAwait(false);
                 }
                 return;
@@ -181,7 +188,7 @@ namespace Microsoft.Agents.Builder.App
                 (
                     IsContextMatch(context, _route)
                     && context.Activity.IsType(ActivityTypes.Message)
-                    && (_text != null ? _text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase) : context.Activity.Text != null && _textPattern.IsMatch(context.Activity.Text))
+                    && (_text != null ? _text.Equals((context.Activity as IMessageActivity)?.Text, StringComparison.OrdinalIgnoreCase) : (context.Activity as IMessageActivity)?.Text != null && _textPattern.IsMatch((context.Activity as IMessageActivity).Text))
                 );
         }
     }

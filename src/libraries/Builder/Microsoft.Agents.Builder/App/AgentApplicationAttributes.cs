@@ -136,7 +136,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler<IMessageActivity>>(app, method);
             var b = MessageRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
 
