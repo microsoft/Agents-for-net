@@ -5,6 +5,7 @@
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
+using System.Linq;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -88,11 +89,16 @@ namespace Microsoft.Agents.Builder.App
         internal static string[] GetOAuthHandlers(string delimitedHandlers)
         {
 #if !NETSTANDARD
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(delimitedHandlers) ? delimitedHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+            return !string.IsNullOrEmpty(delimitedHandlers) ? delimitedHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
 #else
-            string[] autoSignInHandlers = !string.IsNullOrEmpty(delimitedHandlers) ? delimitedHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+            return !string.IsNullOrEmpty(delimitedHandlers)
+                ? delimitedHandlers
+                    .Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => s.Length > 0)
+                    .ToArray()
+                : null;
 #endif
-            return autoSignInHandlers;
         }
 
         public static bool IsContextMatch(ITurnContext context, Route route)

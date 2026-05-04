@@ -837,14 +837,46 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void EventRouteBuilder_Build_WithoutSelector_ThrowsInvalidOperationException()
+        public async Task EventRouteBuilder_Build_WithoutNameOrSelector_MatchesAnyEvent()
         {
             // Arrange
-            var builder = EventRouteBuilder.Create()
-                .WithHandler((context, state, token) => Task.CompletedTask);
+            var mockContext = new Mock<ITurnContext>();
+            mockContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Event,
+                Name = "anyEventName"
+            });
 
-            // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => builder.Build());
+            var route = EventRouteBuilder.Create()
+                .WithHandler((context, state, token) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task EventRouteBuilder_Build_WithoutNameOrSelector_DoesNotMatchNonEvent()
+        {
+            // Arrange
+            var mockContext = new Mock<ITurnContext>();
+            mockContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Message
+            });
+
+            var route = EventRouteBuilder.Create()
+                .WithHandler((context, state, token) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
         }
 
         [Fact]
@@ -967,6 +999,98 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.True(matchingResult);
             Assert.False(wrongNameResult);
+        }
+
+        #endregion
+
+        #region RouteRank.Last Defaulting Tests
+
+        [Fact]
+        public void EventRouteBuilder_WithoutFilter_DefaultsToRankLast()
+        {
+            var route = EventRouteBuilder.Create()
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Last, route.Rank);
+        }
+
+        [Fact]
+        public void EventRouteBuilder_WithName_DoesNotDefaultToRankLast()
+        {
+            var route = EventRouteBuilder.Create()
+                .WithName("myEvent")
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Unspecified, route.Rank);
+        }
+
+        [Fact]
+        public void EventRouteBuilder_WithNameRegex_DoesNotDefaultToRankLast()
+        {
+            var route = EventRouteBuilder.Create()
+                .WithName(new Regex("my.*Event"))
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal(RouteRank.Unspecified, route.Rank);
+        }
+
+        [Fact]
+        public void EventRouteBuilder_WithoutFilter_ExplicitRankPreserved()
+        {
+            var route = EventRouteBuilder.Create()
+                .WithOrderRank(50)
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.Equal((ushort)50, route.Rank);
+        }
+
+        #endregion
+
+        #region WithName and WithSelector Combined Tests
+
+        [Fact]
+        public async Task EventRouteBuilder_WithNameAndSelector_BothMustMatch()
+        {
+            RouteSelector customSelector = (ctx, ct) =>
+                Task.FromResult(ctx.Activity.Value != null);
+
+            var matchContext = new Mock<ITurnContext>();
+            matchContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Event,
+                Name = "myEvent",
+                Value = new { data = "something" }
+            });
+
+            var wrongNameContext = new Mock<ITurnContext>();
+            wrongNameContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Event,
+                Name = "otherEvent",
+                Value = new { data = "something" }
+            });
+
+            var noValueContext = new Mock<ITurnContext>();
+            noValueContext.Setup(c => c.Activity).Returns(new Activity
+            {
+                Type = ActivityTypes.Event,
+                Name = "myEvent",
+                Value = null
+            });
+
+            var route = EventRouteBuilder.Create()
+                .WithName("myEvent")
+                .WithSelector(customSelector)
+                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .Build();
+
+            Assert.True(await route.Selector(matchContext.Object, CancellationToken.None));
+            Assert.False(await route.Selector(wrongNameContext.Object, CancellationToken.None));
+            Assert.False(await route.Selector(noValueContext.Object, CancellationToken.None));
         }
 
         #endregion

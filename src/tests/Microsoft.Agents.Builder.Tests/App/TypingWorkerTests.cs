@@ -120,8 +120,16 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             worker.Start();
 
-            // With 0ms initial delay and 60ms interval, after 400ms we expect ≥ 5 activities.
-            await Task.Delay(400);
+            // Poll until the expected count accumulates rather than sleeping a fixed amount.
+            // A 10s deadline is far beyond what is needed on any machine; the loop exits as soon
+            // as the condition is met so the test remains fast in the normal case.
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(10);
+            while (adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing) < 4
+                   && DateTimeOffset.UtcNow < deadline)
+            {
+                await Task.Delay(20);
+            }
+
             await worker.DisposeAsync();
 
             var typingCount = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);

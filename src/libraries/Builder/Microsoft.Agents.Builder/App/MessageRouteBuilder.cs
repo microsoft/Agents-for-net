@@ -33,6 +33,9 @@ namespace Microsoft.Agents.Builder.App
     /// </remarks>
     public class MessageRouteBuilder : RouteBuilderBase<MessageRouteBuilder>
     {
+        private string _text;
+        private Regex _textPattern; 
+
         /// <summary>
         /// Adds a selector to the route that matches incoming message activities with text equal to the specified
         /// value, ignoring case.
@@ -48,18 +51,17 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
 
-            if (_route.Selector != null)
+            if (_text != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithText({text})");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithText({text}) with Text already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Message)
-                    && text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase)
-                );
+            if (_textPattern != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithText({text}) with Text Regex already set");
+            }
 
+            _text = text;
             return this;
         }
 
@@ -77,18 +79,17 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(textPattern, nameof(textPattern));
 
-            if (_route.Selector != null)
+            if (_textPattern != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithText(Regex({textPattern}))");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithText(Regex({textPattern})) with Text Regex already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Message)
-                    && context.Activity.Text != null
-                    && textPattern.IsMatch(context.Activity.Text)
-                );
+            if (_text != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"MessageRouteBuilder.WithText(Regex({textPattern})) with Text already set");
+            }
+
+            _textPattern = textPattern;
 
             return this;
         }
@@ -97,7 +98,8 @@ namespace Microsoft.Agents.Builder.App
         /// Sets a custom route selector used to determine how incoming requests are matched to this route builder.
         /// </summary>
         /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
-        /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
+        /// routing scenarios where requests are selected based on custom rules or patterns. If WithText was
+        /// also called, this selector is in addition to the Text selector.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "message" is enforced.</param>
         /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder"/> with the specified selector applied.</returns>
@@ -141,6 +143,46 @@ namespace Microsoft.Agents.Builder.App
         public override MessageRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;
+        }
+
+        protected override void PreBuild()
+        {
+            // When no text filter is specified the route matches any message — default to Last so
+            // specific-text routes take priority without callers having to set the rank explicitly.
+            if (_text == null && _textPattern == null && _route.Rank == RouteRank.Unspecified)
+            {
+                _route.Rank = RouteRank.Last;
+            }
+
+            if (_route.Selector != null)
+            {
+                if (_text != null || _textPattern != null)
+                {
+                    // Match on the existing selector, require a message activity, and apply the configured text/text-pattern filter
+                    var existingSelector = _route.Selector;
+                    _route.Selector = async (context, ct) =>
+                        IsContextMatch(context, _route)
+                        && context.Activity.IsType(ActivityTypes.Message)
+                        && (_text != null ? _text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase) : context.Activity.Text != null && _textPattern.IsMatch(context.Activity.Text))
+                        && await existingSelector(context, ct).ConfigureAwait(false);
+                }
+                return;
+            }
+
+            if (_text == null && _textPattern == null)
+            {
+                // If no text or pattern specified, match any message activity
+                _route.Selector = (context, ct) => Task.FromResult(IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Message));
+                return;
+            }
+
+            // Just match on Activity.Text value
+            _route.Selector = (context, ct) => Task.FromResult
+                (
+                    IsContextMatch(context, _route)
+                    && context.Activity.IsType(ActivityTypes.Message)
+                    && (_text != null ? _text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase) : context.Activity.Text != null && _textPattern.IsMatch(context.Activity.Text))
+                );
         }
     }
 }

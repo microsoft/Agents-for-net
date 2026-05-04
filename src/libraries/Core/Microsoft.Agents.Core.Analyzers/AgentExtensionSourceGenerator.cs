@@ -12,9 +12,10 @@ namespace Microsoft.Agents.Core.Analyzers
 {
     /// <summary>
     /// Generates partial class companions for types decorated with attributes that derive from
-    /// <c>AgentExtensionAttribute&lt;TExtension&gt;</c>. Each matching attribute produces a
-    /// lazily-initialized property of type <c>TExtension</c> named after the extension type
-    /// (e.g. <c>TeamsAgentExtension</c> → <c>Teams</c>).
+    /// <c>AgentExtensionAttribute&lt;TExtension&gt;</c>. Each matching attribute produces an
+    /// eagerly-initialized property of type <c>TExtension</c> named after the extension type
+    /// (e.g. <c>TeamsAgentExtension</c> → <c>TeamsExtension</c>), assigned during construction
+    /// via the generated <c>ConfigureExtensions</c> override.
     /// </summary>
     [Generator]
     public class AgentExtensionSourceGenerator : IIncrementalGenerator
@@ -51,36 +52,50 @@ namespace Microsoft.Agents.Core.Analyzers
                     })
                 .Where(static x => x.classSymbol != null);
 
-            var combined = classDeclarations.Combine(baseAttrTypeProvider);
+            // Collect all candidates before combining so that a partial class split across
+            // multiple files (each declaration part yielding a separate syntax node) is
+            // deduplicated by symbol and only generates one output file.
+            var combined = classDeclarations.Collect().Combine(baseAttrTypeProvider);
 
             context.RegisterSourceOutput(combined, static (spc, item) =>
             {
-                var ((classDecl, classSymbol), baseAttrType) = item;
-                if (classSymbol == null || baseAttrType == null) return;
+                var (classItems, baseAttrType) = item;
+                if (baseAttrType == null) return;
 
-                // Collect all extension types contributed by applied attributes.
-                var extensions = new List<ITypeSymbol>();
-                foreach (var attr in classSymbol.GetAttributes())
+                var processedSymbols = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+                foreach (var (classDecl, classSymbol) in classItems)
                 {
-                    var extensionType = FindExtensionType(attr.AttributeClass, baseAttrType);
-                    if (extensionType != null)
-                        extensions.Add(extensionType);
+                    if (classSymbol == null || !processedSymbols.Add(classSymbol))
+                        continue;
+
+                    // Collect all unique extension types contributed by applied attributes.
+                    var extensions = new List<ITypeSymbol>();
+                    var seenExtensions = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+                    foreach (var attr in classSymbol.GetAttributes())
+                    {
+                        var extensionType = FindExtensionType(attr.AttributeClass, baseAttrType);
+                        if (extensionType != null && seenExtensions.Add(extensionType))
+                            extensions.Add(extensionType);
+                    }
+
+                    if (extensions.Count == 0) continue;
+
+                    bool isPartial = classDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
+                    if (!isPartial)
+                    {
+                        spc.ReportDiagnostic(Diagnostic.Create(
+                            MustBePartialDescriptor,
+                            classSymbol.Locations.IsEmpty ? Location.None : classSymbol.Locations[0],
+                            classSymbol.Name));
+                        continue;
+                    }
+
+                    var source = GenerateSource(classSymbol, extensions);
+                    var hintName = classSymbol.ContainingNamespace.IsGlobalNamespace
+                        ? $"{classSymbol.MetadataName}.AgentExtensions.g.cs"
+                        : $"{classSymbol.ContainingNamespace.ToDisplayString()}.{classSymbol.MetadataName}.AgentExtensions.g.cs";
+                    spc.AddSource(hintName, SourceText.From(source, Encoding.UTF8));
                 }
-
-                if (extensions.Count == 0) return;
-
-                bool isPartial = classDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
-                if (!isPartial)
-                {
-                    spc.ReportDiagnostic(Diagnostic.Create(
-                        MustBePartialDescriptor,
-                        classSymbol.Locations.IsEmpty ? Location.None : classSymbol.Locations[0],
-                        classSymbol.Name));
-                    return;
-                }
-
-                var source = GenerateSource(classSymbol, extensions);
-                spc.AddSource($"{classSymbol.Name}.AgentExtensions.g.cs", SourceText.From(source, Encoding.UTF8));
             });
         }
 
@@ -159,7 +174,7 @@ namespace Microsoft.Agents.Core.Analyzers
             // Emit an auto-property with private set for each extension.
             foreach (var extensionType in extensions)
             {
-                var fullTypeName = $"global::{extensionType.ContainingNamespace}.{extensionType.Name}";
+                var fullTypeName = extensionType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 var propName = DerivePropertyName(extensionType);
 
                 sb.AppendLine($"{indent}    /// <summary>");
@@ -178,7 +193,7 @@ namespace Microsoft.Agents.Core.Analyzers
             sb.AppendLine($"{indent}        base.ConfigureExtensions();");
             foreach (var extensionType in extensions)
             {
-                var fullTypeName = $"global::{extensionType.ContainingNamespace}.{extensionType.Name}";
+                var fullTypeName = extensionType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 var propName = DerivePropertyName(extensionType);
 
                 sb.AppendLine($"{indent}        {propName} = new {fullTypeName}(this);");
