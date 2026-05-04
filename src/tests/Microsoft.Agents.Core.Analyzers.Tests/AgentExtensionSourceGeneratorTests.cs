@@ -98,9 +98,20 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
             var generator = new AgentExtensionSourceGenerator();
-            var driver = (CSharpGeneratorDriver)CSharpGeneratorDriver.Create(generator)
-                .RunGenerators(compilation);
-            return (driver, compilation);
+            var driver = (CSharpGeneratorDriver)CSharpGeneratorDriver.Create(generator);
+            driver = (CSharpGeneratorDriver)driver.RunGeneratorsAndUpdateCompilation(
+                compilation,
+                out var updatedCompilation,
+                out _);
+
+            // Verify the generated source compiles without errors (warnings are allowed).
+            // Generator-level diagnostics (e.g. MAA001) are checked in dedicated tests.
+            var compileErrors = updatedCompilation.GetDiagnostics()
+                .Where(d => d.Severity == DiagnosticSeverity.Error)
+                .ToList();
+            Assert.Empty(compileErrors);
+
+            return (driver, updatedCompilation);
         }
 
         private static string GetSingleGeneratedSource(params string[] sources)
@@ -331,6 +342,46 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         }
 
         [Fact]
+        public void DuplicateExtensionAttribute_GeneratesOnlyOnePropertyAndRegistration()
+        {
+            // Two different attributes that both resolve to the same extension type must not
+            // produce duplicate properties or duplicate initialization statements, which would
+            // cause compilation errors.
+            var source = """
+                namespace MyApp
+                {
+                    public class FooAgentExtension : Microsoft.Agents.Builder.App.IAgentExtension
+                    {
+                        public FooAgentExtension(Microsoft.Agents.Builder.App.AgentApplication app) { }
+                    }
+                    public sealed class FooExtensionAttribute
+                        : Microsoft.Agents.Builder.App.AgentExtensionAttribute<FooAgentExtension> { }
+                    public sealed class FooExtensionAliasAttribute
+                        : Microsoft.Agents.Builder.App.AgentExtensionAttribute<FooAgentExtension> { }
+
+                    [FooExtension]
+                    [FooExtensionAlias]
+                    public partial class MyAgent : Microsoft.Agents.Builder.App.AgentApplication { }
+                }
+                """;
+
+            var text = GetSingleGeneratedSource(StubSource, source);
+
+            // Exactly one property declaration.
+            Assert.Single(
+                text.Split('\n'),
+                l => l.Contains("public global::MyApp.FooAgentExtension FooExtension { get; private set; }"));
+
+            // Exactly one initialization and one registration.
+            Assert.Single(
+                text.Split('\n'),
+                l => l.Contains("FooExtension = new global::MyApp.FooAgentExtension(this);"));
+            Assert.Single(
+                text.Split('\n'),
+                l => l.Contains("RegisterExtension(FooExtension, _ => { });"));
+        }
+
+        [Fact]
         public void NonPartialClass_ProducesDiagnosticAndNoSource()
         {
             var source = """
@@ -409,7 +460,7 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var (driver, _) = RunGenerator(StubSource, SingleExtensionSource);
             var generated = Assert.Single(driver.GetRunResult().Results.Single().GeneratedSources);
 
-            Assert.Equal("MyAgent.AgentExtensions.g.cs", generated.HintName);
+            Assert.Equal("MyApp.MyAgent.AgentExtensions.g.cs", generated.HintName);
         }
 
         [Fact]

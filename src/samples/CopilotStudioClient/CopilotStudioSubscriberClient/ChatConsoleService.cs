@@ -46,6 +46,7 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
         while (!cancellationToken.IsCancellationRequested)
         {
             sw.Restart();
+#pragma warning disable CS0618 // Type or member is obsolete
             await foreach (SubscribeEvent act in copilotClient.SubscribeAsync(conversationId:convo, lastReceivedEventId:string.Empty, cancellationToken:cancellationToken))
             {
                 System.Diagnostics.Trace.WriteLine($">>>>MessageLoop Duration: {sw.Elapsed.ToDurationString()}");
@@ -53,6 +54,7 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
                 PrintActivity(act);
                 sw.Restart();
             }
+#pragma warning restore CS0618 // Type or member is obsolete
         }
         sw.Stop();
     }

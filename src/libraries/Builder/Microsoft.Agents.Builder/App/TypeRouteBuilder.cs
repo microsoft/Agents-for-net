@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.App
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = TypeRouteBuilder.Create()
-    ///    .WithType(ActivityTypes.Invoke)
+    ///    .WithType("myInvokeName")
     ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Invoke received!", cancellationToken: ct)))
     ///    .Build();
     ///
@@ -130,6 +130,13 @@ namespace Microsoft.Agents.Builder.App
 
         protected override void PreBuild()
         {
+            // When no type filter is specified the route matches any activity — default to Last so
+            // specific-type routes take priority without callers having to set the rank explicitly.
+            if (_type == null && _typePattern == null && _route.Rank == RouteRank.Unspecified)
+            {
+                _route.Rank = RouteRank.Last;
+            }
+
             if (_route.Selector != null)
             {
                 if (_type != null || _typePattern != null)

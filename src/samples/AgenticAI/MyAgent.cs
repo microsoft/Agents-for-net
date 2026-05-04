@@ -15,7 +15,7 @@ namespace AgenticAI;
 
 public class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    [MessageRoute(isAgenticOnly:true, signInHandlers: "agentic")]
+    [MessageRoute(isAgenticOnly:true, autoSignInHandlers: "agentic")]
     public async Task OnAgenticMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var aauToken = await UserAuthorization.GetTurnTokenAsync(turnContext, "agentic", cancellationToken);

@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.App
     /// <code>
     /// var route = EventRouteBuilder.Create()
     ///    .WithName("myEvent")
-    ///    .WithHandler(async (context, state, ct) => Task.FromResult(context.SendActivityAsync("Event received!", cancellationToken: ct)))
+    ///    .WithHandler((context, state, ct) => context.SendActivityAsync("Event received!", cancellationToken: ct))
     ///    .Build();
     ///
     /// app.AddRoute(route);
@@ -142,6 +142,13 @@ namespace Microsoft.Agents.Builder.App
 
         protected override void PreBuild()
         {
+            // When no name filter is specified the route matches any event — default to Last so
+            // specific-name routes take priority without callers having to set the rank explicitly.
+            if (_eventName == null && _eventRegex == null && _route.Rank == RouteRank.Unspecified)
+            {
+                _route.Rank = RouteRank.Last;
+            }
+
             if (_route.Selector != null)
             {
                 if (_eventName != null || _eventRegex != null)

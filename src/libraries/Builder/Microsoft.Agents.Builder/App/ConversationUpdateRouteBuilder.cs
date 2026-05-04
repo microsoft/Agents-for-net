@@ -89,6 +89,8 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilder"/> with the specified selector applied.</returns>
         public override ConversationUpdateRouteBuilder WithSelector(RouteSelector selector)
         {
+            AssertionHelpers.ThrowIfNull(selector, nameof(selector));
+
             if (_route.Selector != null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"ConversationUpdateRouteBuilder.WithSelector()");

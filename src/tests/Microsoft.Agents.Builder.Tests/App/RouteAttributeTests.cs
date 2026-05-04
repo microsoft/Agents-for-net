@@ -147,7 +147,9 @@ namespace Microsoft.Agents.Builder.Tests.App
     {
         public List<string> calls = [];
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Event)]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task ActivityTypeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(ActivityTypeAsync));
@@ -159,14 +161,18 @@ namespace Microsoft.Agents.Builder.Tests.App
             return Task.FromResult(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == "test");
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Activity, Selector = "ActivitySelector", Rank = RouteRank.First)]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task ActivityTypeSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(ActivityTypeSelectorAsync));
             return Task.CompletedTask;
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Activity, Regex = "test*.")]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task ActivityTypeRegexAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(ActivityTypeRegexAsync));
@@ -176,7 +182,9 @@ namespace Microsoft.Agents.Builder.Tests.App
 
     class TestSelectorNotFoundApp(AgentApplicationOptions options) : AgentApplication(options)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Activity, Selector = "ActivitySelector")]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task ActivityTypeSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -191,7 +199,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             return Task.FromResult(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == "test");
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Activity, Selector = "BadActivitySelector")]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task ActivityTypeSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -200,7 +210,9 @@ namespace Microsoft.Agents.Builder.Tests.App
 
     class TestMissingArgsApp(AgentApplicationOptions options) : AgentApplication(options)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Activity)]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task ActivityTypeSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -211,7 +223,9 @@ namespace Microsoft.Agents.Builder.Tests.App
     {
         public List<string> calls = [];
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Message, Text = "hi")]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task MessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(MessageAsync));
@@ -223,14 +237,18 @@ namespace Microsoft.Agents.Builder.Tests.App
             return Task.FromResult(turnContext.Activity.Text == "testSelector");
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Activity, Selector = "MessageSelector", Rank = RouteRank.First)]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task MessageSelectorAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(MessageSelectorAsync));
             return Task.CompletedTask;
         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
         [Route(RouteType = RouteType.Message, Regex = "test*.")]
+#pragma warning restore CS0618 // Type or member is obsolete
         protected Task MessageRegexAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
             calls.Add(nameof(MessageRegexAsync));
