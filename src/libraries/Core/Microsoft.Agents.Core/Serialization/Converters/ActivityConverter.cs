@@ -33,7 +33,6 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             }
 
             // TODO: Should use Attributes to pick up a list of Activity subclasses
-            // TODO: Handoff is a bit different (but doesn't have to be).  See Initiation vs Status.  May just collapse back to a single IHandoffActivity instead.
             var toType = typeDiscriminator switch
             {
                 ActivityTypes.Command => typeof(CommandActivity),
@@ -41,6 +40,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 ActivityTypes.ConversationUpdate => typeof(ConversationUpdateActivity),
                 ActivityTypes.EndOfConversation => typeof(EndOfConversationActivity),
                 ActivityTypes.Event => typeof(EventActivity),
+                ActivityTypes.Handoff => typeof(HandoffActivity),
                 ActivityTypes.InstallationUpdate => typeof(InstallationUpdateActivity),
                 ActivityTypes.Invoke => typeof(InvokeActivity),
                 ActivityTypes.Message => typeof(MessageActivity),
@@ -104,27 +104,6 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             }
 
             base.ReadProperty(ref reader, value, propertyName, options, property);
-        }
-
-        /// <inheritdoc/>
-        protected override bool TryReadGenericProperty(ref Utf8JsonReader reader, Activity value, string propertyName, JsonSerializerOptions options)
-        {
-            if (propertyName.Equals(nameof(value.ChannelData)))
-            {
-                SetGenericProperty(ref reader, data => value.ChannelData = data, options);
-            }
-            /* !!!
-            else if (propertyName.Equals(nameof(value.Value)))
-            {
-                SetGenericProperty(ref reader, data => value.Value = data, options);
-            }
-            */
-            else
-            {
-                return false;
-            }
-
-            return true;
         }
 
         /// <inheritdoc/>

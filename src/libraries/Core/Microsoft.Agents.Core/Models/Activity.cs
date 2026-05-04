@@ -102,6 +102,7 @@ namespace Microsoft.Agents.Core.Models
         public IList<Entity> Entities { get; set; }
 
         /// <inheritdoc/>
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object ChannelData { get; set; }
 
         /// <inheritdoc/>

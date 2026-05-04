@@ -23,6 +23,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         //!!!public ConversationReference RelatesTo { get; set; }
+
         public object Value { get; set; }
         public string ValueType { get; set; }
     }

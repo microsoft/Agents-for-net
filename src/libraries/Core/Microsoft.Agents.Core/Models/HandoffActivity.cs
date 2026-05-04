@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -40,6 +41,8 @@ namespace Microsoft.Agents.Core.Models
         public IList<Attachment> Attachments { get; set; } = [];
         public string Name { get; set; } = HandoffEventNames.InitiateHandoff;
         //!!!public ConversationReference RelatesTo { get; set; }
+
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
         public string ValueType { get; set; }
     }

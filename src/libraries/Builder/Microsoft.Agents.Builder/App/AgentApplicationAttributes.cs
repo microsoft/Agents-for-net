@@ -194,7 +194,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler<IEventActivity>>(app, method);
             var b = EventRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
 
@@ -288,7 +288,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler<IConversationUpdateActivity>>(app, method);
             var builder = ConversationUpdateRouteBuilder.Create().WithUpdateEvent(ConversationUpdateEvents.MembersAdded).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
@@ -317,7 +317,7 @@ namespace Microsoft.Agents.Builder.App
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler<IConversationUpdateActivity>>(app, method);
             var builder = ConversationUpdateRouteBuilder.Create().WithUpdateEvent(ConversationUpdateEvents.MembersRemoved).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());

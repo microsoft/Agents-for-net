@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Text.Json.Serialization;
+
 namespace Microsoft.Agents.Core.Models
 {
     public class EndOfConversationActivity : Activity, IEndOfConversationActivity
@@ -13,6 +15,8 @@ namespace Microsoft.Agents.Core.Models
         public string Code { get; set; }
         public string Text { get; set; }
         public string TextFormat { get; set; }
+
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
         public string ValueType { get; set; }
     }

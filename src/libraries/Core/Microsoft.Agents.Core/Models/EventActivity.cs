@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Text.Json.Serialization;
+
 namespace Microsoft.Agents.Core.Models
 {
     public class EventActivity : Activity, IEventActivity
@@ -13,6 +15,8 @@ namespace Microsoft.Agents.Core.Models
 
         public string Name { get; set; }
         //!!!public ConversationReference RelatesTo { get; set; }
+
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
         public string ValueType { get; set; }
     }

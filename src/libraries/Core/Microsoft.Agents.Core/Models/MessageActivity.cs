@@ -2,10 +2,9 @@
 // Licensed under the MIT License.
 
 
-using Microsoft.Agents;
-using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
@@ -34,6 +33,8 @@ namespace Microsoft.Agents.Core.Models
         public string Summary { get; set; }
         public string Text { get; set; }
         public string TextFormat { get; set; }
+
+        [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
         public string ValueType { get; set; }
 
