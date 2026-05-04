@@ -5,4 +5,4 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "So that the method can be called with an instance of the class.", Scope = "member", Target = "~M:Microsoft.Agents.Extensions.Teams.TeamsAgentExtension.GetApiClient(Microsoft.Agents.Builder.ITurnContext)~Microsoft.Teams.Api.Clients.ApiClient")]
+[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "So that the method can be called with an instance of the class.", Scope = "member", Target = "~M:Microsoft.Agents.Extensions.Teams.TeamsAgentExtension.GetTeamsClient(Microsoft.Agents.Builder.ITurnContext)~Microsoft.Teams.Api.Clients.ApiClient")]

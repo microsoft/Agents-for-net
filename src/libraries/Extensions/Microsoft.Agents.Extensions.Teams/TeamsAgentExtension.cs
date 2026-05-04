@@ -106,7 +106,7 @@ public class TeamsAgentExtension : AgentExtension
     /// </summary>
     /// <param name="turnContext">The turn context.</param>
     /// <returns>The Teams API client.</returns>
-    public Microsoft.Teams.Api.Clients.ApiClient GetApiClient(ITurnContext turnContext)
+    public Microsoft.Teams.Api.Clients.ApiClient GetTeamsClient(ITurnContext turnContext)
     {
         return turnContext.GetTeamsApiClient();
     }
