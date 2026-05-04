@@ -87,6 +87,7 @@ public static class AspNetExtensions
     public static void AddAgentAspNetAuthentication(this IServiceCollection services, TokenValidationOptions validationOptions)
     {
         AssertionHelpers.ThrowIfNull(validationOptions, nameof(validationOptions));
+        services.AddControllers();
 
         // Must have at least one Audience.
         if (validationOptions.Audiences == null || validationOptions.Audiences.Count == 0)

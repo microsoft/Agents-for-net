@@ -24,11 +24,9 @@ namespace Microsoft.Agents.Builder.App
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
-    public class AgentApplication : IAgent
+    public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
-        private readonly int _typingTimerDelay = 1000;
-        private TypingTimer? _typingTimer;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
@@ -71,7 +69,23 @@ namespace Microsoft.Agents.Builder.App
             }
 
             ApplyRouteAttributes();
+            ConfigureExtensions();
         }
+
+        /// <summary>
+        /// Called during construction after route attributes are applied.
+        /// Override (via source-generated code from <c>AgentExtensionAttribute</c>) to eagerly
+        /// initialize agent extensions so their <c>OnBeforeTurn</c> handlers and other
+        /// infrastructure are registered before the first turn arrives.
+        /// </summary>
+        /// <remarks>
+        /// This method is called from the <see cref="AgentApplication"/> constructor via virtual
+        /// dispatch, so derived-class constructor bodies have not yet run when it executes.
+        /// Overrides must only depend on state initialized by <see cref="AgentApplication"/> itself
+        /// (e.g., <see cref="Options"/>, storage, and routing infrastructure) and must not access
+        /// fields or properties set in a derived constructor body.
+        /// </remarks>
+        protected virtual void ConfigureExtensions() { }
 
         #region Application Features
 
@@ -165,7 +179,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="autoSignInHandlers"></param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActivity(ActivityType type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public AgentApplication OnActivity(string type, RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             return AddRoute(TypeRouteBuilder.Create()
                 .WithType(type)
@@ -286,7 +300,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles conversation update events using a custom selector.
         /// </summary>
-        /// <param name="conversationUpdateSelector">This will be used in addition the checking for Activity.Type == ActivityType.ConversationUpdate.</param>
+        /// <param name="conversationUpdateSelector">This will be used in addition the checking for Activity.Type == ActivityTypes.ConversationUpdate.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
@@ -299,7 +313,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> ensureConversationUpdate(ITurnContext turnContext, CancellationToken cancellationToken)
             {
-                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(turnContext)) && turnContext.Activity.IsType(ActivityType.ConversationUpdate) && await conversationUpdateSelector(turnContext, cancellationToken);
+                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(turnContext)) && turnContext.Activity.IsType(ActivityTypes.ConversationUpdate) && await conversationUpdateSelector(turnContext, cancellationToken);
             }
 
             return AddRoute(
@@ -413,7 +427,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> ensureMessage(ITurnContext context, CancellationToken cancellationToken)
             {
-                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)) && context.Activity.IsType(ActivityType.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
+                return (!isAgenticOnly || AgenticAuthorization.IsAgenticRequest(context)) && context.Activity.IsType(ActivityTypes.Message) && await routeSelector(context, cancellationToken).ConfigureAwait(false);
             }
 
             return AddRoute(
@@ -675,32 +689,54 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="turnContext">The turn context.</param>
         public void StartTypingTimer(ITurnContext turnContext)
         {
-            if (turnContext.Activity.Type != ActivityType.Message)
+            // Idempotent — if already started for this turn, do nothing.
+            if (turnContext.Services.Get<TypingWorker>() != null)
             {
                 return;
             }
 
-            if (_typingTimer == null)
+            var worker = TypingWorker.Create(turnContext, Options.TypingOptions);
+            if (worker == null)
             {
-                _typingTimer = new TypingTimer(_typingTimerDelay);
+                return;
             }
 
-            if (!_typingTimer.IsRunning())
+            turnContext.Services.Set<TypingWorker>(worker);
+            worker.Start();
+        }
+
+        /// <summary>
+        /// Manually stop the typing timer for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// Stops the typing worker immediately and waits for it to finish. Subsequent calls for
+        /// the same turn are no-ops. The worker is also stopped automatically at end of turn.
+        /// </remarks>
+        /// <param name="turnContext">The turn context.</param>
+#pragma warning disable CA1822 // Method is intentionally an instance member for API symmetry with StartTypingTimer.
+        public async Task StopTypingTimer(ITurnContext turnContext)
+        {
+            var worker = turnContext.Services.Get<TypingWorker>();
+            if (worker != null)
             {
-                _typingTimer.Start(turnContext);
+                await worker.DisposeAsync().ConfigureAwait(false);
+                // Remove the entry so StartTypingTimer can create a new worker if called again.
+                turnContext.Services.TryRemove(typeof(TypingWorker).FullName, out _);
             }
         }
+#pragma warning restore CA1822
 
         /// <summary>
         /// Manually stop the typing timer.
         /// </summary>
         /// <remarks>
         /// If the timer isn't running nothing happens.
+        /// Per-turn workers are definitively stopped in the turn's finally block via DisposeAsync.
         /// </remarks>
+        [Obsolete("Use StopTypingTimer(ITurnContext) instead.")]
         public void StopTypingTimer()
         {
-            _typingTimer?.Dispose();
-            _typingTimer = null;
+            // No-op: use StopTypingTimer(ITurnContext) to stop the per-turn worker explicitly.
         }
 
         #endregion
@@ -739,7 +775,7 @@ namespace Microsoft.Agents.Builder.App
                 };
 
                 // Handle @mentions
-                if (ActivityType.Message == turnContext.Activity.Type)
+                if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
                 {
                     if (Options.NormalizeMentions)
                     {
@@ -796,6 +832,12 @@ namespace Microsoft.Agents.Builder.App
                                 return;
                             }
                         }
+                    }
+
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        var (routeCount, routeListFormatted) = _routes.FormatRouteList();
+                        LogRouteList(Logger, routeCount, routeListFormatted);
                     }
 
                     // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
@@ -873,9 +915,12 @@ namespace Microsoft.Agents.Builder.App
             }
             finally
             {
-                // Stop the timer if configured
-                StopTypingTimer();
-
+                // Stop the typing worker for this turn if one was started.
+                var typingWorker = turnContext.Services?.Get<TypingWorker>();
+                if (typingWorker != null)
+                {
+                    await typingWorker.DisposeAsync().ConfigureAwait(false);
+                }
 
                 if (turnContext.StreamingResponse != null && turnContext.StreamingResponse.IsStreamStarted())
                 {

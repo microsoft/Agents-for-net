@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 var attribute = continuationHandler.GetMethodInfo().GetCustomAttribute<ContinueConversationAttribute>(true);
                 if (attribute != null)
                 {
-                    autoSignInHandlers = RouteAttribute.DelimitedToList(attribute.TokenHandlers);
+                    autoSignInHandlers = RouteAttributeHelper.DelimitedToList(attribute.TokenHandlers);
                 }
             }
 

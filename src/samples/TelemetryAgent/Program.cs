@@ -15,9 +15,6 @@ builder.ConfigureOtelProviders();
 
 builder.Services.AddHttpClient();
 
-// Add AgentApplicationOptions from appsettings section "AgentApplication".
-builder.AddAgentApplicationOptions();
-
 // Add the AgentApplication, which contains the logic for responding to
 // user messages.
 builder.AddAgent<MyAgent>();
@@ -28,11 +25,8 @@ builder.AddAgent<MyAgent>();
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Configure the HTTP request pipeline.
-
 // Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
 // configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddControllers();
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 WebApplication app = builder.Build();

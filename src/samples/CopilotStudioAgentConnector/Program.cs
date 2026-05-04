@@ -12,9 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
 
-// Add AgentApplicationOptions from appsettings section "AgentApplication".
-builder.AddAgentApplicationOptions();
-
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
 // that state survives Agent restarts, and operates correctly
@@ -26,11 +23,8 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 builder.AddAgent<MyAgent>();
 
 
-// Configure the HTTP request pipeline.
-
 // Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
 // configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddControllers();
 builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 WebApplication app = builder.Build();

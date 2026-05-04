@@ -13,6 +13,7 @@ namespace Microsoft.Agents.Model.Tests
         public void AIEntity_Roundtrip()
         {
             // Arrange
+#pragma warning disable CS0618 // Type or member is obsolete
             var entityOut = new AIEntity()
             {
                 Citation = [
@@ -32,6 +33,7 @@ namespace Microsoft.Agents.Model.Tests
                     }
                 ]
             };
+#pragma warning restore CS0618 // Type or member is obsolete
 
             var expected = "{\"@type\":\"Message\",\"@context\":\"https://schema.org\",\"@id\":\"\",\"additionalType\":[],\"citation\":[{\"position\":1,\"appearance\":{\"name\":\"name\",\"text\":\"text\",\"url\":\"url\",\"image\":{\"type\":\"ImageObject\",\"name\":\"Image\"},\"@type\":\"DigitalDocument\"},\"@type\":\"Claim\"}],\"type\":\"https://schema.org/Message\"}";
    

@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <param name="delegateName">The name of the delegate to be used for continuing the conversation. Cannot be null or empty.</param>
         /// <param name="delimitedTokenHandlers">A comma-separated string containing the names of token handlers to associate with the route. If null or
         /// empty, no token handlers are assigned.</param>
-        public ContinueConversationRoute(string delegateName, string delimitedTokenHandlers = null) : this(delegateName, RouteAttribute.DelimitedToList(delimitedTokenHandlers))
+        public ContinueConversationRoute(string delegateName, string delimitedTokenHandlers = null) : this(delegateName, RouteAttributeHelper.DelimitedToList(delimitedTokenHandlers))
         {
         }
 

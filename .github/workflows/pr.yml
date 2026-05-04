@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - rel/**
 
 env:
   AzDevOpsPipelineId: 25676

@@ -230,9 +230,15 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Optional. If true, the Agent will automatically start a typing timer when messages are received.
         /// This allows the Agent to automatically indicate that it's received the message and is processing
-        /// the request. Defaults to true.
+        /// the request. Defaults to false.
         /// </summary>
         public bool StartTypingTimer { get; set; } = false;
+
+        /// <summary>
+        /// Optional. Options for controlling typing indicator timing and per-channel behavior.
+        /// Only used when <see cref="StartTypingTimer"/> is true.
+        /// </summary>
+        public TypingOptions TypingOptions { get; set; } = new TypingOptions();
 
         /// <summary>
         /// Optional. Options used to enable user authorization for the application.
