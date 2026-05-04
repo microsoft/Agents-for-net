@@ -1973,7 +1973,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 Text = "hi",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1986,7 +1986,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             };
             var app = new AgentApplication(options);
-            app.OnActivity(ActivityTypes.Message, (ctx, ts, ct) => Task.CompletedTask);
+            app.OnActivity(ActivityType.Names.Message, (ctx, ts, ct) => Task.CompletedTask);
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
@@ -2007,7 +2007,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var adapter = new SimpleAdapter();
             var turnContext = new TurnContext(adapter, new Activity()
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 Text = "hi",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -2020,7 +2020,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             };
             var app = new AgentApplication(options);
-            app.OnActivity(ActivityTypes.Message, (ctx, ts, ct) => Task.CompletedTask);
+            app.OnActivity(ActivityType.Names.Message, (ctx, ts, ct) => Task.CompletedTask);
 
             await app.OnTurnAsync(turnContext, CancellationToken.None);
 

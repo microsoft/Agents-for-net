@@ -843,7 +843,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Names.Event,
                 Name = "anyEventName"
             });
 
@@ -865,7 +865,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message
+                Type = ActivityType.Names.Message
             });
 
             var route = EventRouteBuilder.Create()
@@ -1061,7 +1061,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchContext = new Mock<ITurnContext>();
             matchContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Names.Event,
                 Name = "myEvent",
                 Value = new { data = "something" }
             });
@@ -1069,7 +1069,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var wrongNameContext = new Mock<ITurnContext>();
             wrongNameContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Names.Event,
                 Name = "otherEvent",
                 Value = new { data = "something" }
             });
@@ -1077,7 +1077,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var noValueContext = new Mock<ITurnContext>();
             noValueContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event,
+                Type = ActivityType.Names.Event,
                 Name = "myEvent",
                 Value = null
             });

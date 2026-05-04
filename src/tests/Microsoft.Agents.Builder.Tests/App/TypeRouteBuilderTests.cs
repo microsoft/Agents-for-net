@@ -797,7 +797,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message
+                Type = ActivityType.Names.Message
             });
 
             var route = TypeRouteBuilder.Create()
@@ -1034,7 +1034,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void TypeRouteBuilder_WithType_DoesNotDefaultToRankLast()
         {
             var route = TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.Event)
+                .WithType(ActivityType.Names.Event)
                 .WithHandler((ctx, state, ct) => Task.CompletedTask)
                 .Build();
 
@@ -1076,26 +1076,26 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchContext = new Mock<ITurnContext>();
             matchContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Names.Invoke,
                 Name = "specific"
             });
 
             var wrongNameContext = new Mock<ITurnContext>();
             wrongNameContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Names.Invoke,
                 Name = "other"
             });
 
             var wrongTypeContext = new Mock<ITurnContext>();
             wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 Name = "specific"
             });
 
             var route = TypeRouteBuilder.Create()
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Names.Invoke)
                 .WithSelector(customSelector)
                 .WithHandler((ctx, state, ct) => Task.CompletedTask)
                 .Build();
@@ -1115,20 +1115,20 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchContext = new Mock<ITurnContext>();
             matchContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Names.Invoke,
                 Name = "specific"
             });
 
             var wrongTypeContext = new Mock<ITurnContext>();
             wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 Name = "specific"
             });
 
             var route = TypeRouteBuilder.Create()
                 .WithSelector(customSelector)
-                .WithType(ActivityTypes.Invoke)
+                .WithType(ActivityType.Names.Invoke)
                 .WithHandler((ctx, state, ct) => Task.CompletedTask)
                 .Build();
 

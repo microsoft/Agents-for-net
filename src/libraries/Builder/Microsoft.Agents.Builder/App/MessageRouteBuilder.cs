@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Builder.App
 
             async Task<bool> ensureMessage(ITurnContext context, CancellationToken cancellationToken)
             {
-                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Message) && await selector(context, cancellationToken).ConfigureAwait(false);
+                return IsContextMatch(context, _route) && context.Activity.IsType(ActivityType.Names.Message) && await selector(context, cancellationToken).ConfigureAwait(false);
             }
 
             _route.Selector = ensureMessage;
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Builder.App
                     var existingSelector = _route.Selector;
                     _route.Selector = async (context, ct) =>
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(ActivityTypes.Message)
+                        && context.Activity.IsType(ActivityType.Names.Message)
                         && (_text != null ? _text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase) : context.Activity.Text != null && _textPattern.IsMatch(context.Activity.Text))
                         && await existingSelector(context, ct).ConfigureAwait(false);
                 }
@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Builder.App
             if (_text == null && _textPattern == null)
             {
                 // If no text or pattern specified, match any message activity
-                _route.Selector = (context, ct) => Task.FromResult(IsContextMatch(context, _route) && context.Activity.IsType(ActivityTypes.Message));
+                _route.Selector = (context, ct) => Task.FromResult(IsContextMatch(context, _route) && context.Activity.IsType(ActivityType.Names.Message));
                 return;
             }
 
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Builder.App
             _route.Selector = (context, ct) => Task.FromResult
                 (
                     IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Message)
+                    && context.Activity.IsType(ActivityType.Names.Message)
                     && (_text != null ? _text.Equals(context.Activity.Text, StringComparison.OrdinalIgnoreCase) : context.Activity.Text != null && _textPattern.IsMatch(context.Activity.Text))
                 );
         }

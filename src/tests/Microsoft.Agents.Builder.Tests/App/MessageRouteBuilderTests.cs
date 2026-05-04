@@ -639,7 +639,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 Text = "anything"
             });
 
@@ -656,7 +656,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Event
+                Type = ActivityType.Names.Event
             });
 
             var route = MessageRouteBuilder.Create()
@@ -726,7 +726,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchContext = new Mock<ITurnContext>();
             matchContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 Text = "hello",
                 ChannelId = Channels.Msteams
             });
@@ -734,7 +734,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var wrongTextContext = new Mock<ITurnContext>();
             wrongTextContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 Text = "goodbye",
                 ChannelId = Channels.Msteams
             });
@@ -742,7 +742,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var wrongChannelContext = new Mock<ITurnContext>();
             wrongChannelContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 Text = "hello",
                 ChannelId = Channels.Directline
             });

@@ -480,7 +480,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Invoke,
+                Type = ActivityType.Names.Invoke,
                 Name = "anyInvokeName"
             };
             var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
@@ -502,7 +502,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var activity = new Activity
             {
-                Type = ActivityTypes.Message
+                Type = ActivityType.Names.Message
             };
             var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
 

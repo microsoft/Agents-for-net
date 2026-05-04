@@ -775,7 +775,7 @@ namespace Microsoft.Agents.Builder.App
                 };
 
                 // Handle @mentions
-                if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
+                if (turnContext.Activity.Type == ActivityType.Message)
                 {
                     if (Options.NormalizeMentions)
                     {

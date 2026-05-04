@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.App
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
             var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
-            var builder = TypeRouteBuilder.Create().WithType(ActivityTypes.InstallationUpdate).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            var builder = TypeRouteBuilder.Create().WithType(ActivityType.Names.InstallationUpdate).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
         }
@@ -253,7 +253,7 @@ namespace Microsoft.Agents.Builder.App
             }
             else
             {
-                var b = TypeRouteBuilder.Create().WithType(ActivityTypes.ConversationUpdate).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank);
+                var b = TypeRouteBuilder.Create().WithType(ActivityType.Names.ConversationUpdate).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank);
                 RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
                 app.AddRoute(b.Build());
             }
@@ -464,7 +464,7 @@ namespace Microsoft.Agents.Builder.App
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
             var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
-            var builder = TypeRouteBuilder.Create().WithType(ActivityTypes.EndOfConversation).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            var builder = TypeRouteBuilder.Create().WithType(ActivityType.Names.EndOfConversation).WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
             app.AddRoute(builder.Build());
         }

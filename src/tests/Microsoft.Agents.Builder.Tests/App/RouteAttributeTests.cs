@@ -34,9 +34,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 await app.OnTurnAsync(turnContext, cancellationToken);
             })
             // type
-            .Send(new Activity() { Type = ActivityTypes.Event })
+            .Send(new Activity() { Type = ActivityType.Names.Event })
             // selector
-            .Send(new Activity() { Type = ActivityTypes.Event, Name = "test" })
+            .Send(new Activity() { Type = ActivityType.Names.Event, Name = "test" })
             // regex
             .Send(new Activity() { Type = "test1" })
             .Send(new Activity() { Type = "test2" })
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public List<string> calls = [];
 
 #pragma warning disable CS0618 // Type or member is obsolete
-        [Route(RouteType = RouteType.Activity, Type = ActivityTypes.Event)]
+        [Route(RouteType = RouteType.Activity, Type = ActivityType.Names.Event)]
 #pragma warning restore CS0618 // Type or member is obsolete
         protected Task ActivityTypeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         protected Task<bool> ActivitySelector(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            return Task.FromResult(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == "test");
+            return Task.FromResult(turnContext.Activity.Type == ActivityType.Names.Event && turnContext.Activity.Name == "test");
         }
 
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -195,7 +195,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         // improper signature intentional
         protected Task<bool> BadActivitySelector(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         {
-            return Task.FromResult(turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == "test");
+            return Task.FromResult(turnContext.Activity.Type == ActivityType.Names.Event && turnContext.Activity.Name == "test");
         }
 
 #pragma warning disable CS0618 // Type or member is obsolete

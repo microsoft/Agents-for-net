@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
             });
 
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount>()
             });
 
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersAdded = null
             });
 
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message,
+                Type = ActivityType.Names.Message,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
             });
 
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersRemoved = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
             });
 
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersRemoved = new List<ChannelAccount>()
             });
 
@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate
+                Type = ActivityType.Names.ConversationUpdate
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
@@ -160,7 +160,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message
+                Type = ActivityType.Names.Message
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
@@ -205,7 +205,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate
+                Type = ActivityType.Names.ConversationUpdate
             });
 
             var selectorCalled = false;
@@ -232,7 +232,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.Message
+                Type = ActivityType.Names.Message
             });
 
             var selectorCalled = false;
@@ -325,7 +325,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticContext = new Mock<ITurnContext>();
             agenticContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } },
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
@@ -333,7 +333,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var nonAgenticContext = new Mock<ITurnContext>();
             nonAgenticContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
             });
 
@@ -353,7 +353,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var matchingContext = new Mock<ITurnContext>();
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } },
                 ChannelId = Channels.Msteams
             });
@@ -361,7 +361,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var nonMatchingContext = new Mock<ITurnContext>();
             nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
             {
-                Type = ActivityTypes.ConversationUpdate,
+                Type = ActivityType.Names.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } },
                 ChannelId = Channels.Directline
             });

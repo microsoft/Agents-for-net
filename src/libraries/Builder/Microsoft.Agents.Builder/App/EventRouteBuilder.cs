@@ -170,7 +170,7 @@ namespace Microsoft.Agents.Builder.App
                 _route.Selector = (context, ct) => Task.FromResult
                     (
                         IsContextMatch(context, _route)
-                        && context.Activity.IsType(ActivityTypes.Event)
+                        && context.Activity.IsType(ActivityType.Names.Event)
                     );
                 return;
             }

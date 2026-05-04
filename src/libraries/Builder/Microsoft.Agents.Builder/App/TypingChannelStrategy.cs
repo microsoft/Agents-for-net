@@ -18,6 +18,6 @@ namespace Microsoft.Agents.Builder.App
         public int IntervalMs => intervalMs;
 
         /// <inheritdoc/>
-        public Func<ITurnContext, ConversationReference, IActivity> TypingFactory => typingFactory ?? ((context, reference) => new Activity(type: ActivityTypes.Typing, relatesTo: reference));
+        public Func<ITurnContext, ConversationReference, IActivity> TypingFactory => typingFactory ?? ((context, reference) => new Activity(type: ActivityType.Typing, relatesTo: reference));
     }
 }

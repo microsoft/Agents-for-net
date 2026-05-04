@@ -15,13 +15,23 @@ namespace Microsoft.Agents.Core.Models
     [System.Text.Json.Serialization.JsonConverter(typeof(ActivityTypeJsonConverter))]
     public class ActivityType : IEquatable<ActivityType>
     {
-        private readonly string? _value;
+        private readonly string _value;
 
-        /// <summary>Initializes a new <see cref="ActivityType"/> with the specified string value.</summary>
-        public ActivityType(string? value) => _value = value;
+        /// <summary>
+        /// Initializes a new <see cref="ActivityType"/> with the specified string value.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> is null, empty, or whitespace.</exception>
+        public ActivityType(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException("Activity type value cannot be null or whitespace.", nameof(value));
+            }
+            _value = value;
+        }
 
-        /// <summary>Implicitly converts a <see langword="string"/> to an <see cref="ActivityType"/>.</summary>
-        public static implicit operator ActivityType(string? s) => new(s);
+        /// <summary>Implicitly converts a <see langword="string"/> to an <see cref="ActivityType"/>, or <see langword="null"/> if the string is null or whitespace.</summary>
+        public static implicit operator ActivityType?(string? s) => string.IsNullOrWhiteSpace(s) ? null : new(s!);
 
         /// <summary>Implicitly converts an <see cref="ActivityType"/> to a <see langword="string"/>.</summary>
         public static implicit operator string?(ActivityType? t) => t?._value;
@@ -30,12 +40,20 @@ namespace Microsoft.Agents.Core.Models
         public bool Equals(ActivityType? other) =>
             string.Equals(_value, other?._value, StringComparison.OrdinalIgnoreCase);
 
-        /// <inheritdoc/>
-        public override bool Equals(object? obj) => Equals(obj as ActivityType);
+        /// <summary>Determines whether this activity type equals the specified string value using the given comparison.</summary>
+        public bool Equals(string? value, StringComparison comparison = StringComparison.OrdinalIgnoreCase) =>
+            string.Equals(_value, value, comparison);
 
         /// <inheritdoc/>
-        public override int GetHashCode() =>
-            _value == null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(_value);
+        public override bool Equals(object? obj) => obj switch
+        {
+            ActivityType other => Equals(other),
+            string s => Equals(s),
+            _ => false
+        };
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => StringComparer.OrdinalIgnoreCase.GetHashCode(_value);
 
         /// <summary>Returns <see langword="true"/> if two <see cref="ActivityType"/> values are equal (case-insensitive).</summary>
         public static bool operator ==(ActivityType? a, ActivityType? b) =>
@@ -45,8 +63,28 @@ namespace Microsoft.Agents.Core.Models
         public static bool operator !=(ActivityType? a, ActivityType? b) =>
             !string.Equals(a?._value, b?._value, StringComparison.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Determines whether this activity type begins with the specified prefix.
+        /// Uses <see cref="StringComparison.OrdinalIgnoreCase"/> by default.
+        /// </summary>
+        public bool StartsWith(string value, StringComparison comparison = StringComparison.OrdinalIgnoreCase) =>
+            _value.StartsWith(value, comparison);
+
+        /// <summary>
+        /// Determines whether this activity type contains the specified value.
+        /// Uses <see cref="StringComparison.OrdinalIgnoreCase"/> by default.
+        /// </summary>
+        public bool Contains(string value, StringComparison comparison = StringComparison.OrdinalIgnoreCase)
+        {
+#if !NETSTANDARD
+            return _value.Contains(value, comparison);
+#else
+            return _value.IndexOf(value, comparison) >= 0;
+#endif
+        }
+
         /// <inheritdoc/>
-        public override string ToString() => _value ?? string.Empty;
+        public override string ToString() => _value;
 
         /// <summary>
         /// Constant string values for each well-known activity type.
@@ -170,7 +208,7 @@ namespace Microsoft.Agents.Core.Models
                 ref System.Text.Json.Utf8JsonReader reader,
                 System.Type typeToConvert,
                 System.Text.Json.JsonSerializerOptions options)
-                => reader.TokenType == System.Text.Json.JsonTokenType.Null ? null : new(reader.GetString());
+                => reader.TokenType == System.Text.Json.JsonTokenType.Null ? null : new(reader.GetString()!);
 
             public override void Write(
                 System.Text.Json.Utf8JsonWriter writer,

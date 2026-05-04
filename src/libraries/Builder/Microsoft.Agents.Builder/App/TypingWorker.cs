@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         public static TypingWorker? Create(ITurnContext turnContext, TypingOptions options)
         {
-            if (turnContext.Activity.Type != ActivityTypes.Message)
+            if (turnContext.Activity.Type != ActivityType.Message)
             {
                 return null;
             }
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.Builder.App
         {
             foreach (var activity in activities)
             {
-                if (activity.Type == ActivityTypes.Typing)
+                if (activity.Type == ActivityType.Typing)
                 {
                     var streamInfo = activity.GetStreamingEntity();
                     if (streamInfo != null && streamInfo.StreamType == StreamTypes.Final)
