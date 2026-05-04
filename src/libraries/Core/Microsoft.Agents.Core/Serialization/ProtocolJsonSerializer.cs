@@ -37,12 +37,19 @@ namespace Microsoft.Agents.Core.Serialization
         /// </summary>
         public static ConcurrentDictionary<string, Type> EntityTypes { get; private set; } = CoreEntities();
 
+        /// <summary>
+        /// Maintains a mapping of activity type discriminators to their registered default type and resolvers.
+        /// </summary>
+        public static ConcurrentDictionary<string, ActivityTypeEntry> ActivityTypeMap { get; private set; } =
+            new ConcurrentDictionary<string, ActivityTypeEntry>(StringComparer.OrdinalIgnoreCase);
+
         private static readonly object _optionsLock = new object();
 
         static ProtocolJsonSerializer()
         {
             SerializationInitAssemblyAttribute.InitSerialization();
             EntityInitAssemblyAttribute.InitSerialization();
+            ActivityInitAssemblyAttribute.InitSerialization();
         }
 
         private static JsonSerializerOptions InitSerializerOptions()
@@ -159,6 +166,47 @@ namespace Microsoft.Agents.Core.Serialization
         public static void AddEntityType(string entityTypeName, Type entityType)
         {
             EntityTypes[entityTypeName] = entityType;
+        }
+
+        /// <summary>
+        /// Registers an <see cref="Models.Activity"/> subclass as the default deserialization target
+        /// for the given activity type string.
+        /// </summary>
+        /// <param name="activityType">The activity type discriminator (e.g. <see cref="Models.ActivityTypes.Message"/>).</param>
+        /// <param name="type">The concrete <see cref="Models.Activity"/> subclass to deserialize to.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="type"/> does not subclass <see cref="Models.Activity"/>.</exception>
+        public static void AddActivityType(string activityType, Type type)
+        {
+            if (!typeof(Models.Activity).IsAssignableFrom(type))
+            {
+                throw new ArgumentException($"Type must be a subclass of Activity.", nameof(type));
+            }
+
+            ActivityTypeMap.GetOrAdd(activityType, _ => new ActivityTypeEntry()).BaseType = type;
+        }
+
+        /// <summary>
+        /// Registers a resolver that provides additional matching logic for the given activity type string.
+        /// Resolvers are evaluated before the default type mapping and ordered by <see cref="IActivityTypeResolver.Priority"/>.
+        /// </summary>
+        /// <param name="activityType">The activity type discriminator used as a pre-filter.</param>
+        /// <param name="targetType">The concrete <see cref="Models.Activity"/> subclass to deserialize to when the resolver matches.</param>
+        /// <param name="resolver">The resolver instance.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="targetType"/> does not subclass <see cref="Models.Activity"/>.</exception>
+        public static void AddActivityResolver(string activityType, Type targetType, IActivityTypeResolver resolver)
+        {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(resolver);
+#else
+            if (resolver == null) throw new ArgumentNullException(nameof(resolver));
+#endif
+
+            if (!typeof(Models.Activity).IsAssignableFrom(targetType))
+            {
+                throw new ArgumentException($"Type must be a subclass of Activity.", nameof(targetType));
+            }
+
+            ActivityTypeMap.GetOrAdd(activityType, _ => new ActivityTypeEntry()).AddResolver(resolver, targetType);
         }
 
         private static JsonSerializerOptions ApplyCoreOptions(this JsonSerializerOptions options)

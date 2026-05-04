@@ -32,23 +32,19 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 throw new JsonException("Type discriminator not found.");
             }
 
-            // TODO: Should use Attributes to pick up a list of Activity subclasses
-            var toType = typeDiscriminator switch
+            var toType = typeToConvert;
+            if (ProtocolJsonSerializer.ActivityTypeMap.TryGetValue(typeDiscriminator, out var entry))
             {
-                ActivityTypes.Command => typeof(CommandActivity),
-                ActivityTypes.CommandResult => typeof(CommandResultActivity),
-                ActivityTypes.ConversationUpdate => typeof(ConversationUpdateActivity),
-                ActivityTypes.EndOfConversation => typeof(EndOfConversationActivity),
-                ActivityTypes.Event => typeof(EventActivity),
-                ActivityTypes.Handoff => typeof(HandoffActivity),
-                ActivityTypes.InstallationUpdate => typeof(InstallationUpdateActivity),
-                ActivityTypes.Invoke => typeof(InvokeActivity),
-                ActivityTypes.Message => typeof(MessageActivity),
-                ActivityTypes.MessageReaction => typeof(MessageReactionActivity),
-                ActivityTypes.Trace => typeof(TraceActivity),
-                ActivityTypes.Typing => typeof(TypingActivity),
-                _ => typeToConvert
-            };
+                toType = entry.BaseType ?? typeToConvert;
+                foreach (var (resolver, resolvedType) in entry.GetResolvers())
+                {
+                    if (resolver.Matches(root))
+                    {
+                        toType = resolvedType;
+                        break;
+                    }
+                }
+            }
 
             var activity = base.Read(ref reader, toType, options);
 

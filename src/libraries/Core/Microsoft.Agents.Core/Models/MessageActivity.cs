@@ -2,12 +2,14 @@
 // Licensed under the MIT License.
 
 
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
+    [ActivityType(ActivityTypes.Message)]
     public class MessageActivity : Activity, IMessageActivity
     {
         public MessageActivity() : base(ActivityTypes.Message)

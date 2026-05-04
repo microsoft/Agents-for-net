@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Serialization;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
+    [ActivityType(ActivityTypes.Invoke)]
     public class InvokeActivity : Activity, IInvokeActivity
     {
         public InvokeActivity() : base(ActivityTypes.Invoke)

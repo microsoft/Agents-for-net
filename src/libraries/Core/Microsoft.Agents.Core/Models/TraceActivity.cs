@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core.Serialization;
 using System;
 using System.Runtime.CompilerServices;
 
 namespace Microsoft.Agents.Core.Models
 {
+    [ActivityType(ActivityTypes.Trace)]
     public class TraceActivity : Activity, ITraceActivity
     {
         public TraceActivity(IActivity activity, string name, object value = null, string valueType = null, [CallerMemberName] string label = null) : base(ActivityTypes.Trace) 
