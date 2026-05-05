@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder
     public abstract class AgentExtension : IAgentExtension
     {
 #if !NETSTANDARD
-        public virtual ChannelId ChannelId { get; init;}
+        public virtual ChannelId ChannelId { get; init; }
 #else
         public virtual ChannelId ChannelId { get; set; } = string.Empty;
 #endif
@@ -21,19 +21,15 @@ namespace Microsoft.Agents.Builder
         [Obsolete("This method is deprecated. Please use the overload that accepts a Route object instead.")]
         public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null) 
         {
-            var ensureChannelMatches = new RouteSelector(async (turnContext, cancellationToken) => {
-                bool isForChannel = false; 
-                if (turnContext.Activity.ChannelId != null && ChannelId != null)
-                {
-                    if (!string.IsNullOrEmpty(ChannelId.SubChannel) && ChannelId.SubChannel.Equals("*"))
-                    {
-                        isForChannel = turnContext.Activity.ChannelId.IsParentChannel(ChannelId.Channel);
-                    }
-                    else
-                        isForChannel = turnContext.Activity.ChannelId.Equals(ChannelId);
-                }
-                return isForChannel && await routeSelector(turnContext, cancellationToken);
-            });
+            var route = RouteBuilder.Create()
+                .WithChannelId(ChannelId)
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(isInvokeRoute)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
 
             var route = new RouteBuilder()
                 .WithChannelId(ChannelId)
