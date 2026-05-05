@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder
     public abstract class AgentExtension : IAgentExtension
     {
 #if !NETSTANDARD
-        public virtual ChannelId ChannelId { get; init;}
+        public virtual ChannelId ChannelId { get; init; }
 #else
         public virtual ChannelId ChannelId { get; set; } = string.Empty;
 #endif
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder
             AddRoute(agentApplication, routeSelector, routeHandler, isInvokeRoute, false, rank, autoSignInHandlers);
         }
 
-        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null) 
+        public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
         {
             var route = RouteBuilder.Create()
                 .WithChannelId(ChannelId)
@@ -33,6 +33,7 @@ namespace Microsoft.Agents.Builder
                 .AsInvoke(isInvokeRoute)
                 .AsAgentic(isAgenticOnly)
                 .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
                 .Build();
 
             agentApplication.AddRoute(route);

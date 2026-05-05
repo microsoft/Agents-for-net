@@ -65,8 +65,7 @@ namespace Microsoft.Agents.Builder.App
         {
             return left != null
                 && right != null
-                && string.Equals(left.Channel, right.Channel, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(left.SubChannel, right.SubChannel, StringComparison.OrdinalIgnoreCase);
+                && left == right;
         }
     }
 }

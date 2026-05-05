@@ -31,7 +31,7 @@ public class Echo : AgentApplication
         }
     }
 
-    [MessageRoute(rank: RouteRank.Last)]
+    [MessageRoute]
     protected async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var result = turnState.Conversation.GetValue("log", () => new EchoResult());

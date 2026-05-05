@@ -38,7 +38,7 @@ public class HostAgent : AgentApplication
         });
     }
 
-    [ConversationUpdateRoute(ConversationUpdateEvents.MembersAdded)]
+    [MembersAddedRoute]
     protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
@@ -51,7 +51,7 @@ public class HostAgent : AgentApplication
     }
 
     // Handles messages sent by the user.
-    [MessageRoute(rank: RouteRank.Last)]
+    [MessageRoute]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);
