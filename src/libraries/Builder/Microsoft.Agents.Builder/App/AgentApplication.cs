@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Builder.App
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
         private readonly ConcurrentQueue<AgentApplicationTurnError> _turnErrorHandlers;
-        
+
         public List<IAgentExtension> RegisteredExtensions { get; private set; } = new List<IAgentExtension>();
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.App
 
             Options = options;
 
-            Logger = options.LoggerFactory?.CreateLogger<AgentApplication>() ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+            Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
 
             if (Options.TurnStateFactory == null)
             {

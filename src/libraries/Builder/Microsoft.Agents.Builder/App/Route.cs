@@ -52,7 +52,20 @@ namespace Microsoft.Agents.Builder.App
 
         public bool IsChannelIdMatch(ChannelId channelId)
         {
-            return ChannelId == null || channelId == ChannelId;
+            return ChannelId == null || IsWildcardChannelId(ChannelId) || ChannelIdsEqual(ChannelId, channelId);
+        }
+
+        private static bool IsWildcardChannelId(ChannelId channelId)
+        {
+            return channelId != null
+                && string.Equals(channelId.Channel, "*", StringComparison.Ordinal)
+                && string.IsNullOrEmpty(channelId.SubChannel);
+        }
+        private static bool ChannelIdsEqual(ChannelId left, ChannelId right)
+        {
+            return left != null
+                && right != null
+                && left == right;
         }
     }
 }
