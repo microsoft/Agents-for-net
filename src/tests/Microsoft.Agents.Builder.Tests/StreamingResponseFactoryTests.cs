@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
 
@@ -43,6 +44,56 @@ namespace Microsoft.Agents.Builder.Tests
 
             registry.TryGet("slack", out var result);
             Assert.Same(factory2, result);
+        }
+
+        [Fact]
+        public void AddStreamingResponseFactory_PopulatesRegistry()
+        {
+            var services = new ServiceCollection();
+            services.AddStreamingResponseFactory<TestFactory>("slack");
+
+            var provider = services.BuildServiceProvider();
+            var registry = provider.GetRequiredService<StreamingResponseFactoryRegistry>();
+
+            Assert.True(registry.TryGet("slack", out var factory));
+            Assert.NotNull(factory);
+        }
+
+        [Fact]
+        public void AddStreamingResponseFactory_TwoChannels_BothInRegistry()
+        {
+            var services = new ServiceCollection();
+            services.AddStreamingResponseFactory<TestFactory>("slack");
+            services.AddStreamingResponseFactory<TestFactory2>("teams");
+
+            var provider = services.BuildServiceProvider();
+            var registry = provider.GetRequiredService<StreamingResponseFactoryRegistry>();
+
+            Assert.True(registry.TryGet("slack", out _));
+            Assert.True(registry.TryGet("teams", out _));
+        }
+
+        [Fact]
+        public void AddStreamingResponseFactory_InstanceOverload_Works()
+        {
+            var services = new ServiceCollection();
+            var factory = new TestFactory();
+            services.AddStreamingResponseFactory("slack", factory);
+
+            var provider = services.BuildServiceProvider();
+            var registry = provider.GetRequiredService<StreamingResponseFactoryRegistry>();
+
+            Assert.True(registry.TryGet("slack", out var resolved));
+            Assert.Same(factory, resolved);
+        }
+
+        private class TestFactory : IStreamingResponseFactory
+        {
+            public IStreamingResponse Create(ITurnContext ctx) => new Mock<IStreamingResponse>().Object;
+        }
+        private class TestFactory2 : IStreamingResponseFactory
+        {
+            public IStreamingResponse Create(ITurnContext ctx) => new Mock<IStreamingResponse>().Object;
         }
     }
 }
