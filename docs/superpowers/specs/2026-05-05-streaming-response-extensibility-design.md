@@ -13,7 +13,7 @@
 - Allow channel extension authors to provide custom streaming implementations per channel
 - Shared buffering + interval timer infrastructure available to all implementations
 - No breaking changes to `IStreamingResponse` or existing app developer code
-- Support both .NET 8 (keyed services) and .NET Framework 4.8 (dictionary registry)
+- Support both .NET 8 (keyed services) and .NET Framework 4.8 / netstandard2.0 (dictionary registry)
 
 ## Non-Goals
 
@@ -25,25 +25,51 @@
 
 ## Architecture Overview
 
-Five components are introduced or modified:
-
 ```
 StreamingResponseBase (abstract, new)
   └── StreamingResponse       ← existing class, refactored to extend base
   └── SlackStreamingResponse  ← in Slack extension (example of extension author usage)
 
 IStreamingResponseFactory (new interface)
-  └── registered as keyed service by channelId
+  └── registered as keyed service by channelId (net8) or via registry (netstandard2.0)
 
 TurnContext (modified)
-  └── resolves factory by channelId, falls back to new StreamingResponse(this)
+  └── _streamingResponse field: no longer readonly, no longer eagerly assigned
+  └── SetStreamingResponse() — internal, called by adapter after construction
 
-Registration helpers (new)
-  └── .NET 8: keyed services
-  └── Framework 4.8: StreamingResponseFactoryRegistry (dictionary)
+ChannelAdapter / ChannelServiceAdapterBase (modified)
+  └── resolves IStreamingResponseFactory, injects into TurnContext before RunPipelineAsync
+
+A2AAdapter — not modified (see A2AAdapter section below)
+
+Registration helpers (new, in Microsoft.Agents.Builder)
+  └── requires Microsoft.Extensions.DependencyInjection (MEDI) — see constraint below
+  └── net8.0:         AddKeyedSingleton<IStreamingResponseFactory>(channelId)
+  └── netstandard2.0: StreamingResponseFactoryRegistry (dictionary, built lazily from registrations)
 ```
 
 `IStreamingResponse` is **unchanged**. All existing app code compiles and runs without modification.
+
+---
+
+## Design Trade-off: Teams-Specific Members on `IStreamingResponse`
+
+`IStreamingResponse` contains Teams-specific members that all implementations must satisfy:
+
+```csharp
+IActivity? FinalMessage { get; set; }
+bool FeedbackLoopEnabled { get; set; }
+string FeedbackLoopType { get; set; }
+bool? EnableGeneratedByAILabel { get; set; }
+SensitivityUsageInfo? SensitivityLabel { get; set; }
+List<ClientCitation>? Citations { get; }
+void AddCitation(...);
+void AddCitations(...);
+```
+
+Since `IStreamingResponse` is unchanged, non-Teams implementations inherit these members. `StreamingResponseBase` provides virtual no-op defaults. On non-Teams channels, `AddCitation()` silently does nothing and `Citations` returns an empty list.
+
+**This is an accepted trade-off.** A future version may split the interface, but that is a separate breaking-change discussion.
 
 ---
 
@@ -54,53 +80,86 @@ Registration helpers (new)
 **Location:** `src/libraries/Builder/Microsoft.Agents.Builder/StreamingResponseBase.cs`
 **Visibility:** `public abstract`
 
-Owns the shared infrastructure: text buffer, interval timer, stream state, and sequence tracking. Extension authors subclass this and implement the abstract hooks.
+Owns shared infrastructure: text buffer, interval timer, stream state, sequence tracking.
+
+#### Internal Queue Model
+
+The current closure-based queue (`List<Func<IActivity>>`) is replaced by a plain text `StringBuilder`. The timer drains accumulated text and passes it to `SendChunksAsync`. Informative updates are sent immediately on the caller's thread via `SendInformativeAsync` — they do not go through the text buffer.
+
+`StreamingResponse`'s `SendChunksAsync` override constructs the Typing activity from the received text string — no closure needed.
+
+#### `IsStreamingChannel`
+
+Changed from abstract get-only to a concrete property with `protected set`. The `protected set` is not visible through `IStreamingResponse { get; }` — this is valid C# and satisfies the interface contract.
+
+```csharp
+public bool IsStreamingChannel { get; protected set; }
+```
+
+Subclasses assign in their constructors. `StreamingResponse` no longer redeclares this property — it is inherited from the base and set in `SetDefaults()`. The base class sets it to `false` when applying `FallbackToNonStreaming`.
+
+#### `Citations`
+
+Declared with a `protected set` in the base class so that `StreamingResponse`'s internal `Citations ??= []` assignment patterns compile:
+
+```csharp
+public virtual List<ClientCitation>? Citations { get; protected set; } = [];
+```
+
+`StreamingResponse` overrides this and re-declares with the same `protected set`, preserving the existing behavior.
+
+#### `_streamStarted` and `IsStreamStarted()`
+
+The current `StreamingResponse.IsStreamStarted()` returns `_timer != null`. The base class replaces this with an explicit `_streamStarted` boolean, set to `true` when the timer is first created (on first `QueueTextChunk` call). This is semantically equivalent — `IsStreamStarted()` returns `_streamStarted`.
+
+#### `EndStreamAsync` Threading
+
+`EndStreamAsync` blocks the calling thread via `WaitHandle.WaitOne` to drain the buffer. This is **preserved**. `FinalizeStreamAsync` is called from this blocked thread context.
+
+#### API
 
 ```csharp
 public abstract class StreamingResponseBase : IStreamingResponse
 {
-    // Shared state
     private readonly StringBuilder _buffer = new();
     private Timer? _timer;
     private int _sequenceNumber;
-    private bool _streamStarted;
+    private bool _streamStarted;   // set true on first QueueTextChunk; IsStreamStarted() returns this
     private bool _streamEnded;
     private readonly object _lock = new();
 
-    // Configurable
-    public int Interval { get; set; }           // ms between sends
-    public int EndStreamTimeout { get; set; }   // default 120000 (2 min)
+    public int Interval { get; set; }
+    public int EndStreamTimeout { get; set; }   // default 120000ms
 
-    // Must be set by subclass
-    public abstract bool IsStreamingChannel { get; }
+    public bool IsStreamingChannel { get; protected set; }
 
-    // IStreamingResponse — implemented here (shared behavior)
     public string StreamId { get; protected set; }
     public string Message { get; protected set; }
-    public void QueueTextChunk(string text) { /* adds to buffer, starts timer */ }
-    public Task QueueInformativeUpdateAsync(string text, CancellationToken ct = default)
-        /* calls SendInformativeAsync if IsStreamingChannel, else no-op */
-    public Task<StreamingResponseResult> EndStreamAsync(CancellationToken ct = default)
-        /* drains buffer, stops timer, calls FinalizeStreamAsync */
+
+    public void QueueTextChunk(string text);
+    public Task QueueInformativeUpdateAsync(string text, CancellationToken ct = default);
+    public Task<StreamingResponseResult> EndStreamAsync(CancellationToken ct = default);
     public bool IsStreamStarted() => _streamStarted;
     public int UpdatesSent() => _sequenceNumber;
-    public Task ResetAsync(CancellationToken ct = default) { /* resets all state */ }
 
-    // Abstract hooks — extension authors implement these
+    public virtual Task ResetAsync(CancellationToken ct = default);
+    // Resets: _buffer, _timer, _sequenceNumber, _streamStarted, _streamEnded, StreamId, Message
+    // Does NOT reset IsStreamingChannel — subclass responsibility
+    // Subclasses must call base.ResetAsync() then reset their own state
+
+    // Abstract hooks
     protected abstract Task SendChunksAsync(string bufferedText, int sequenceNumber, CancellationToken ct);
     protected abstract Task SendInformativeAsync(string text, CancellationToken ct);
     protected abstract Task FinalizeStreamAsync(CancellationToken ct);
-    protected abstract Task HandleSendErrorAsync(Exception ex, CancellationToken ct);
+    protected abstract Task<StreamErrorAction> HandleSendErrorAsync(Exception ex, CancellationToken ct);
 
-    // IStreamingResponse Teams-specific members — virtual no-op defaults
-    // StreamingResponse overrides these with real Teams behavior
-    // Other channel impls ignore them (no-op is correct behavior)
+    // Teams-specific — virtual no-op defaults
     public virtual IActivity? FinalMessage { get; set; }
     public virtual bool FeedbackLoopEnabled { get; set; }
     public virtual string FeedbackLoopType { get; set; } = "default";
     public virtual bool? EnableGeneratedByAILabel { get; set; }
     public virtual SensitivityUsageInfo? SensitivityLabel { get; set; }
-    public virtual List<ClientCitation>? Citations => null;
+    public virtual List<ClientCitation>? Citations { get; protected set; } = [];
     public virtual void AddCitation(ClientCitation citation) { }
     public virtual void AddCitation(Citation citation, int citationPosition) { }
     public virtual void AddCitations(IList<Citation> citations) { }
@@ -108,43 +167,50 @@ public abstract class StreamingResponseBase : IStreamingResponse
 }
 ```
 
-**Timer behavior (unchanged from current `StreamingResponse`):**
-- Starts on first `QueueTextChunk` call
-- Fires every `Interval` ms, calling `SendChunksAsync` with accumulated text
-- Stops when `EndStreamAsync` drains the buffer
+#### `StreamErrorAction`
 
-**Abstract hook responsibilities:**
+```csharp
+public enum StreamErrorAction
+{
+    Continue,                // ignore error, keep streaming
+    FallbackToNonStreaming,  // base sets IsStreamingChannel = false, stops timer; FinalizeStreamAsync still called
+    Cancel,                  // base stops stream, returns StreamingResponseResult.UserCancelled
+}
+```
 
-| Hook | Responsibility |
-|------|---------------|
-| `SendChunksAsync` | Send buffered text as a streaming intermediate message. Channel-specific format. |
-| `SendInformativeAsync` | Send a "thinking/working" update. No-op if channel doesn't support it. |
-| `FinalizeStreamAsync` | Send the final message, call channel stop API, or no-op if no final message required. |
-| `HandleSendErrorAsync` | Handle send failures — e.g., Teams fallback to non-streaming on `ContentStreamNotAllowed`. |
+For `FallbackToNonStreaming`: base sets `IsStreamingChannel = false` (valid via `protected set`), stops the timer. `FinalizeStreamAsync` is still called — `StreamingResponse` checks `IsStreamingChannel` there to decide whether to send a plain vs. streamed final message.
+
+#### Abstract Hook Responsibilities
+
+| Hook | Called from | Responsibility |
+|------|-------------|----------------|
+| `SendChunksAsync(text, seq, ct)` | Timer thread | Send buffered text as channel-specific intermediate message |
+| `SendInformativeAsync(text, ct)` | Caller thread | Send "thinking" update; implement as no-op if unsupported |
+| `FinalizeStreamAsync(ct)` | Blocked EndStreamAsync thread | Send final message / stop API / no-op |
+| `HandleSendErrorAsync(ex, ct)` | Timer thread | Interpret error, return action for base to apply |
 
 ---
 
 ### 2. `StreamingResponse` Refactored
 
-**Location:** `src/libraries/Builder/Microsoft.Agents.Builder/StreamingResponse.cs` (existing)
+**Location:** `src/libraries/Builder/Microsoft.Agents.Builder/StreamingResponse.cs`
 **Change:** Extend `StreamingResponseBase` instead of implementing `IStreamingResponse` directly.
 
-All existing behavior is preserved:
-- Channel detection logic (`SetDefaults()`) moves to the constructor, sets `IsStreamingChannel` and `Interval`
-- `SendChunksAsync` sends Typing activity with `StreamTypes.Streaming` entity
-- `SendInformativeAsync` sends Typing activity with `StreamTypes.Informative` entity
-- `FinalizeStreamAsync` builds and sends the final Message activity (with AI entity, citations, feedback loop, sensitivity label)
-- `HandleSendErrorAsync` implements Teams fallback: catches `ContentStreamNotAllowed` (user cancelled) and `BadArgument`/`"streaming api is not enabled"` (channel fallback), sets `IsStreamingChannel = false`
-- All Teams-specific property overrides (`FeedbackLoopEnabled`, `Citations`, `EnableGeneratedByAILabel`, `SensitivityLabel`, `FinalMessage`) remain
+Key implementation points:
 
-No change to external behavior. Existing tests pass without modification.
+- `IsStreamingChannel` is **no longer redeclared** — it is inherited and set in `SetDefaults()`
+- `Citations` is **overridden** with `protected set` to preserve internal assignment patterns
+- `FinalizeStreamAsync` checks `IsStreamingChannel` to handle fallback mode (if `false`, sends plain Message without streaming entities)
+- `HandleSendErrorAsync` returns `StreamErrorAction.Cancel` for `ContentStreamNotAllowed`, `StreamErrorAction.FallbackToNonStreaming` for "streaming api is not enabled", `StreamErrorAction.Continue` otherwise (logged)
+- `ResetAsync` calls `base.ResetAsync()` then re-runs `SetDefaults()` (resetting `IsStreamingChannel` and `Interval`) and resets Teams-specific fields
+
+All existing tests pass without modification.
 
 ---
 
 ### 3. `IStreamingResponseFactory`
 
 **Location:** `src/libraries/Builder/Microsoft.Agents.Builder/IStreamingResponseFactory.cs`
-**Visibility:** `public interface`
 
 ```csharp
 public interface IStreamingResponseFactory
@@ -153,76 +219,190 @@ public interface IStreamingResponseFactory
 }
 ```
 
-Extension authors implement this to produce their channel-specific `IStreamingResponse`.
-
 ---
 
-### 4. Registration Helpers
+### 4. `StreamingResponseFactoryRegistry`
 
-**Location:** `src/libraries/Hosting/AspNetCore/` (extension methods on `IServiceCollection`)
-
-```csharp
-// Register a factory for a specific channelId
-public static IServiceCollection AddStreamingResponseFactory<TFactory>(
-    this IServiceCollection services, string channelId)
-    where TFactory : class, IStreamingResponseFactory;
-
-public static IServiceCollection AddStreamingResponseFactory(
-    this IServiceCollection services, string channelId, IStreamingResponseFactory factory);
-```
-
-**Implementation strategy:**
-
-- On **net8.0**: registers as `AddKeyedSingleton<IStreamingResponseFactory>(channelId, ...)` AND into `StreamingResponseFactoryRegistry`
-- On **net48**: registers into `StreamingResponseFactoryRegistry` only
-
-`StreamingResponseFactoryRegistry` is a singleton `Dictionary<string, IStreamingResponseFactory>` wrapper registered in DI, used as the Framework 4.8 resolution path.
-
-**Slack extension example:**
-```csharp
-// In Slack extension setup
-services.AddStreamingResponseFactory<SlackStreamingResponseFactory>("slack");
-```
-
----
-
-### 5. `TurnContext` Changes
-
-**Location:** `src/libraries/Builder/Microsoft.Agents.Builder/TurnContext.cs`
-**Change:** Add optional `IServiceProvider` parameter; lazy factory resolution.
+**Location:** `src/libraries/Builder/Microsoft.Agents.Builder/StreamingResponseFactoryRegistry.cs`
 
 ```csharp
-// New overload — existing overloads unchanged
-public TurnContext(IChannelAdapter adapter, IActivity activity, IServiceProvider? services)
-
-// StreamingResponse property becomes lazy
-public IStreamingResponse StreamingResponse =>
-    _streamingResponse ??= ResolveStreamingResponse();
-
-private IStreamingResponse ResolveStreamingResponse()
+public class StreamingResponseFactoryRegistry
 {
-    var channelId = Activity.ChannelId;
+    private readonly Dictionary<string, IStreamingResponseFactory> _factories = new();
 
-#if NET8_0_OR_GREATER
-    if (_services?.GetKeyedService<IStreamingResponseFactory>(channelId) is { } kf)
-        return kf.Create(this);
-#endif
+    public void Register(string channelId, IStreamingResponseFactory factory)
+        => _factories[channelId] = factory;
 
-    var registry = _services?.GetService<StreamingResponseFactoryRegistry>();
-    if (registry?.TryGet(channelId, out var rf) == true)
-        return rf!.Create(this);
-
-    return new StreamingResponse(this); // existing default
+    public bool TryGet(string channelId, out IStreamingResponseFactory? factory)
+        => _factories.TryGetValue(channelId, out factory);
 }
 ```
 
-Adapters that have `IServiceProvider` (e.g., `CloudAdapter`) pass it when constructing `TurnContext`. Adapters using the old constructor get the default `StreamingResponse` — zero behavior change.
+---
+
+### 5. Registration Helpers
+
+**Location:** `src/libraries/Builder/Microsoft.Agents.Builder/ServiceCollectionStreamingExtensions.cs`
+
+**MEDI requirement:** The netstandard2.0 registration path uses `GetServices<StreamingResponseFactoryRegistration>()` returning multiple instances of the same concrete type. This works correctly with `Microsoft.Extensions.DependencyInjection`. Third-party containers (Autofac, Unity, etc.) may not support this pattern. **This design requires MEDI** for the netstandard2.0 path. Document this constraint in the XML doc on the extension method.
+
+#### Pattern
+
+An internal record accumulates per-channel registrations. The registry singleton is built lazily from all accumulated entries at first resolve:
+
+```csharp
+internal record StreamingResponseFactoryRegistration(
+    string ChannelId,
+    Func<IServiceProvider, IStreamingResponseFactory> Factory);
+```
+
+```csharp
+public static IServiceCollection AddStreamingResponseFactory<TFactory>(
+    this IServiceCollection services, string channelId)
+    where TFactory : class, IStreamingResponseFactory
+{
+    services.TryAddTransient<TFactory>();
+
+    // Each call adds a new registration entry — GetServices<T>() returns all of them
+    services.AddSingleton(new StreamingResponseFactoryRegistration(
+        channelId,
+        sp => sp.GetRequiredService<TFactory>()));
+
+    // TryAddSingleton: registered once; factory delegate closes over IEnumerable from DI
+    services.TryAddSingleton<StreamingResponseFactoryRegistry>(sp =>
+    {
+        var registry = new StreamingResponseFactoryRegistry();
+        foreach (var reg in sp.GetServices<StreamingResponseFactoryRegistration>())
+            registry.Register(reg.ChannelId, reg.Factory(sp));
+        return registry;
+    });
+
+#if NET8_0_OR_GREATER
+    services.AddKeyedSingleton<IStreamingResponseFactory, TFactory>(channelId);
+#endif
+
+    return services;
+}
+
+public static IServiceCollection AddStreamingResponseFactory(
+    this IServiceCollection services, string channelId, IStreamingResponseFactory factory)
+{
+    services.AddSingleton(new StreamingResponseFactoryRegistration(channelId, _ => factory));
+    services.TryAddSingleton<StreamingResponseFactoryRegistry>(sp =>
+    {
+        var registry = new StreamingResponseFactoryRegistry();
+        foreach (var reg in sp.GetServices<StreamingResponseFactoryRegistration>())
+            registry.Register(reg.ChannelId, reg.Factory(sp));
+        return registry;
+    });
+#if NET8_0_OR_GREATER
+    services.AddKeyedSingleton<IStreamingResponseFactory>(channelId, factory);
+#endif
+    return services;
+}
+```
+
+---
+
+### 6. `TurnContext` Changes
+
+**Location:** `src/libraries/Builder/Microsoft.Agents.Builder/TurnContext.cs`
+
+#### Field Change
+
+```csharp
+// Before (both constructors eagerly assigned this):
+private readonly IStreamingResponse _streamingResponse;
+
+// After (nullable, non-readonly, lazily assigned):
+private IStreamingResponse? _streamingResponse;
+```
+
+Both existing constructors are updated to **remove** the eager `_streamingResponse = new StreamingResponse(this)` assignment. The constructor signatures are unchanged.
+
+#### `SetStreamingResponse` (internal)
+
+```csharp
+internal void SetStreamingResponse(IStreamingResponse streamingResponse)
+{
+    if (_streamingResponse?.IsStreamStarted() == true)
+        throw new InvalidOperationException(
+            "Cannot set streaming response after the stream has started.");
+    _streamingResponse = streamingResponse;
+}
+```
+
+Guard: if the default `StreamingResponse` was already created and started (i.e., `QueueTextChunk` was called before `SetStreamingResponse`), throw. In normal adapter flow this never happens — `SetStreamingResponse` is called before `RunPipelineAsync`.
+
+#### `StreamingResponse` Property
+
+```csharp
+public IStreamingResponse StreamingResponse =>
+    _streamingResponse ??= new StreamingResponse(this);
+```
+
+#### Copy Constructor
+
+```csharp
+public TurnContext(ITurnContext context, IActivity activity)
+{
+    // ... existing init ...
+    // Carry forward the streaming response from the source context if available
+    _streamingResponse = (context as TurnContext)?._streamingResponse;
+    // If source is null/other type: _streamingResponse = null, default created on first access
+    // TypedTurnContext<T> delegates StreamingResponse to its inner ITurnContext — no change needed
+}
+```
+
+#### Backward Compatibility Note
+
+The constructor **bodies** change (eager assignment removed), but the constructor **signatures** are unchanged. Existing call sites compile and run identically. The only visible behavior change: if code accesses `StreamingResponse` after construction but before a turn handler runs (unusual), it now creates a default `StreamingResponse(this)` lazily rather than using one created at construction time. The result is identical.
+
+---
+
+### 7. Adapter Changes
+
+**Location:** `ChannelAdapter.cs`, `ChannelServiceAdapterBase.cs`
+
+```csharp
+private IStreamingResponseFactory? ResolveFactory(string? channelId, IServiceProvider services)
+{
+    if (channelId is null) return null;
+#if NET8_0_OR_GREATER
+    if (services.GetKeyedService<IStreamingResponseFactory>(channelId) is { } kf)
+        return kf;
+#endif
+    var registry = services.GetService<StreamingResponseFactoryRegistry>();
+    if (registry?.TryGet(channelId, out var rf) == true)
+        return rf;
+    return null;
+}
+```
+
+```csharp
+// In ProcessActivityAsync, ProcessProactiveAsync, etc.:
+var turnContext = new TurnContext(this, activity, claimsIdentity);
+
+var factory = ResolveFactory(activity.ChannelId, _services);
+if (factory is not null)
+    turnContext.SetStreamingResponse(factory.Create(turnContext));
+
+await RunPipelineAsync(turnContext, handler, cancellationToken);
+```
+
+**Adapters without `IServiceProvider`**: No change — `SetStreamingResponse` is never called, default `StreamingResponse` created on first access.
+
+---
+
+### 8. `A2AAdapter` — Not Modified
+
+`A2AAdapter` does not construct `TurnContext` directly in its turn-handling path. It queues activities to a background service that processes them. The `ResolveFactory + SetStreamingResponse` pattern does not apply.
+
+**Decision:** `A2AAdapter` is explicitly out of scope for this change. A2A has its own streaming delivery mechanism (`DeliveryModes.Stream`) that is orthogonal to `IStreamingResponse`. If A2A streaming response extensibility is needed, it is a separate future work item.
 
 ---
 
 ## Extension Author Example: Slack
-
-**`SlackStreamingResponse`** (in `Microsoft.Agents.Extensions.Slack`):
 
 ```csharp
 internal class SlackStreamingResponse : StreamingResponseBase
@@ -233,10 +413,9 @@ internal class SlackStreamingResponse : StreamingResponseBase
     public SlackStreamingResponse(ITurnContext turnContext)
     {
         _turnContext = turnContext;
+        IsStreamingChannel = true;
         Interval = 200;
     }
-
-    public override bool IsStreamingChannel => true;
 
     protected override async Task SendChunksAsync(string text, int seq, CancellationToken ct)
     {
@@ -253,16 +432,27 @@ internal class SlackStreamingResponse : StreamingResponseBase
     protected override Task FinalizeStreamAsync(CancellationToken ct)
         => SlackClient.StopAsync(_turnContext, ct); // no final Activity required
 
-    protected override Task HandleSendErrorAsync(Exception ex, CancellationToken ct)
-        => SlackClient.SendAsync(_turnContext,
-               new TaskUpdateChunk(title: "Error", status: SlackTaskStatus.Error), ct);
+    protected override async Task<StreamErrorAction> HandleSendErrorAsync(Exception ex, CancellationToken ct)
+    {
+        await SlackClient.SendAsync(_turnContext,
+            new TaskUpdateChunk(title: "Error", status: SlackTaskStatus.Error), ct);
+        return StreamErrorAction.Cancel;
+    }
 
-    // Internal: used by Slack-specific extension methods
     internal void QueueTypedChunk(object chunk) => _typedChunks.Enqueue(chunk);
 }
+
+// Factory
+internal class SlackStreamingResponseFactory : IStreamingResponseFactory
+{
+    public IStreamingResponse Create(ITurnContext ctx) => new SlackStreamingResponse(ctx);
+}
+
+// Registration in Slack extension setup
+services.AddStreamingResponseFactory<SlackStreamingResponseFactory>("slack");
 ```
 
-**Extension methods for Slack-specific typed chunks** (optional, channel-specific):
+**Extension methods for typed chunks:**
 
 ```csharp
 public static class SlackStreamingExtensions
@@ -271,20 +461,18 @@ public static class SlackStreamingExtensions
     {
         if (response is SlackStreamingResponse slack)
             slack.QueueTypedChunk(chunk);
-        // silently ignored on non-Slack channels
+        // no-op on non-Slack channels
     }
 }
 ```
 
-**App developer code — no changes required:**
+**App developer code — unchanged:**
 
 ```csharp
-// Works on any channel, including Slack
 await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Working...", ct);
-turnContext.StreamingResponse.QueueTextChunk("Hello world");
+turnContext.StreamingResponse.QueueTextChunk("Hello");
 await turnContext.StreamingResponse.EndStreamAsync(ct);
-
-// Optional Slack-specific typed chunk (only has effect on Slack)
+// Optional Slack-specific:
 turnContext.StreamingResponse.QueueTaskUpdate(new TaskUpdateChunk(...));
 ```
 
@@ -295,10 +483,13 @@ turnContext.StreamingResponse.QueueTaskUpdate(new TaskUpdateChunk(...));
 | Concern | Impact |
 |---------|--------|
 | `IStreamingResponse` interface | No changes |
-| Existing `StreamingResponse` behavior | Preserved exactly — all current tests pass |
-| `TurnContext` existing constructors | Unchanged — new overload is additive |
+| Existing `StreamingResponse` behavior | Preserved — all current tests pass |
+| `TurnContext` constructor signatures | Unchanged |
+| `TurnContext` constructor bodies | Eager `_streamingResponse` assignment removed; lazy default created on first access — behavior identical |
+| `TypedTurnContext<T>` | No changes — delegates to inner `ITurnContext` |
 | App developer code | No changes required |
-| Existing adapter code | No changes required (uses old TurnContext constructor, gets default StreamingResponse) |
+| `A2AAdapter` | Not modified — out of scope |
+| Adapters without `IServiceProvider` | No changes — default `StreamingResponse` on first access |
 
 ---
 
@@ -306,11 +497,14 @@ turnContext.StreamingResponse.QueueTaskUpdate(new TaskUpdateChunk(...));
 
 | File | Change |
 |------|--------|
-| `Microsoft.Agents.Builder/StreamingResponseBase.cs` | New — abstract base class |
-| `Microsoft.Agents.Builder/StreamingResponse.cs` | Refactor to extend `StreamingResponseBase` |
-| `Microsoft.Agents.Builder/IStreamingResponseFactory.cs` | New — factory interface |
-| `Microsoft.Agents.Builder/TurnContext.cs` | Add IServiceProvider overload, lazy resolution |
-| `Microsoft.Agents.Hosting.AspNetCore/` | New registration extension methods |
-| `Microsoft.Agents.Builder/StreamingResponseFactoryRegistry.cs` | New — Framework 4.8 compat dictionary |
-| `Microsoft.Agents.Builder.Tests/StreamingResponseTests.cs` | Add tests for factory resolution |
-| `Microsoft.Agents.Builder.Tests/StreamingResponseBaseTests.cs` | New — base class tests |
+| `Microsoft.Agents.Builder/StreamingResponseBase.cs` | **New** — abstract base class |
+| `Microsoft.Agents.Builder/StreamingResponse.cs` | **Refactor** — extend `StreamingResponseBase` |
+| `Microsoft.Agents.Builder/IStreamingResponseFactory.cs` | **New** — factory interface |
+| `Microsoft.Agents.Builder/StreamingResponseFactoryRegistry.cs` | **New** — dictionary registry |
+| `Microsoft.Agents.Builder/StreamingResponseFactoryRegistration.cs` | **New** — internal registration record |
+| `Microsoft.Agents.Builder/ServiceCollectionStreamingExtensions.cs` | **New** — registration helpers |
+| `Microsoft.Agents.Builder/TurnContext.cs` | **Modify** — field nullable/non-readonly, eager assignment removed from constructors, `SetStreamingResponse`, copy-constructor fix |
+| `Microsoft.Agents.Builder/ChannelAdapter.cs` | **Modify** — `ResolveFactory`, call `SetStreamingResponse` |
+| `Microsoft.Agents.Builder/ChannelServiceAdapterBase.cs` | **Modify** — same |
+| `Microsoft.Agents.Builder.Tests/StreamingResponseTests.cs` | **Update** — add factory resolution tests |
+| `Microsoft.Agents.Builder.Tests/StreamingResponseBaseTests.cs` | **New** — base class contract tests |
