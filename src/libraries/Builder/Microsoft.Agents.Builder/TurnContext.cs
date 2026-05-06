@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Builder
         private readonly IList<DeleteActivityHandler> _onDeleteActivity = [];
 
         private bool _disposed;
-        private readonly IStreamingResponse _streamingResponse;
+        private IStreamingResponse? _streamingResponse;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TurnContext"/> class.
@@ -50,8 +50,6 @@ namespace Microsoft.Agents.Builder
             Identity = identity;
             StackState = [];
             Services = [];
-
-            _streamingResponse = new StreamingResponse(this);
         }
 
         /// <summary>
@@ -68,7 +66,7 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
-            _streamingResponse = new StreamingResponse(this);
+            _streamingResponse = (turnContext as TurnContext)?._streamingResponse;
 
             // all properties should be copied over except for activity.
             Adapter = turnContext.Adapter;
@@ -107,7 +105,20 @@ namespace Microsoft.Agents.Builder
         public IActivity Activity { get; }
 
         /// <inheritdoc/>
-        public IStreamingResponse StreamingResponse { get { return _streamingResponse; } }
+        public IStreamingResponse StreamingResponse => _streamingResponse ??= new StreamingResponse(this);
+
+        /// <summary>
+        /// Sets a custom streaming response implementation, typically called by adapters
+        /// that have resolved an <see cref="IStreamingResponseFactory"/> from DI.
+        /// Must be called before the stream has started.
+        /// </summary>
+        internal void SetStreamingResponse(IStreamingResponse streamingResponse)
+        {
+            if (_streamingResponse?.IsStreamStarted() == true)
+                throw new InvalidOperationException(
+                    "Cannot set streaming response after the stream has started.");
+            _streamingResponse = streamingResponse;
+        }
 
         public ClaimsIdentity Identity { get; internal set; }
 
