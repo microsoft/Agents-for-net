@@ -206,6 +206,11 @@ namespace Microsoft.Agents.Builder
             // Create a turn context and clients
             using var context = new TurnContext(this, continuationActivity, claimsIdentity);
 
+            // Inject channel-specific streaming response if a factory is registered
+            var srFactory = ResolveStreamingResponseFactory(continuationActivity.ChannelId);
+            if (srFactory is not null)
+                context.SetStreamingResponse(srFactory.Create(context));
+
             // Create the connector client to use for outbound requests.
             using var connectorClient = await ChannelServiceFactory.CreateConnectorClientAsync(
                 context,
@@ -248,6 +253,11 @@ namespace Microsoft.Agents.Builder
 
             // Create a turn context and clients
             using var context = new TurnContext(this, activity, claimsIdentity);
+
+            // Inject channel-specific streaming response if a factory is registered
+            var srFactory = ResolveStreamingResponseFactory(activity.ChannelId);
+            if (srFactory is not null)
+                context.SetStreamingResponse(srFactory.Create(context));
 
             // Create the connector client to use for outbound requests.
             using IConnectorClient connectorClient =
