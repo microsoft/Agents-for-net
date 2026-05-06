@@ -525,22 +525,13 @@ namespace Microsoft.Agents.Builder
         /// <summary>Gets the accumulated message text.</summary>
         public string Message { get; protected set; } = string.Empty;
 
-        // ── IStreamingResponse: Teams-specific — virtual no-op defaults ───────
-
-        /// <inheritdoc/>
-        public virtual IActivity? FinalMessage { get; set; }
+        // ── IStreamingResponse: general optional features — virtual no-op defaults (any channel may override) ───
 
         /// <inheritdoc/>
         public virtual bool FeedbackLoopEnabled { get; set; }
 
         /// <inheritdoc/>
         public virtual string FeedbackLoopType { get; set; } = "default";
-
-        /// <inheritdoc/>
-        public virtual bool? EnableGeneratedByAILabel { get; set; }
-
-        /// <inheritdoc/>
-        public virtual SensitivityUsageInfo? SensitivityLabel { get; set; }
 
         /// <inheritdoc/>
         public virtual List<ClientCitation>? Citations { get; protected set; } = [];
@@ -556,6 +547,17 @@ namespace Microsoft.Agents.Builder
 
         /// <inheritdoc/>
         public virtual void AddCitations(IList<ClientCitation> citations) { }
+
+        // ── IStreamingResponse: Teams-specific — virtual no-op defaults ───────
+
+        /// <inheritdoc/>
+        public virtual IActivity? FinalMessage { get; set; }
+
+        /// <inheritdoc/>
+        public virtual bool? EnableGeneratedByAILabel { get; set; }
+
+        /// <inheritdoc/>
+        public virtual SensitivityUsageInfo? SensitivityLabel { get; set; }
 
         // ── IStreamingResponse: shared behavior ───────────────────────────────
 
@@ -844,7 +846,7 @@ Key changes:
    ```csharp
    public override List<ClientCitation>? Citations { get; protected set; } = [];
    ```
-6. **Other Teams properties**: add `override` keyword (`FinalMessage`, `FeedbackLoopEnabled`, etc.) — they were already on `IStreamingResponse`, now they override the virtual no-ops in base
+6. **`FeedbackLoopEnabled`, `FeedbackLoopType`, `Citations`, `AddCitation`, `AddCitations`, `FinalMessage`, `EnableGeneratedByAILabel`, `SensitivityLabel`**: add `override` keyword — they were already on `IStreamingResponse`, now they override the virtual no-ops in base
 7. **`Interval`, `EndStreamTimeout`, `StreamId`, `Message`**: remove — inherited from base
 8. **`UpdatesSent()`**: remove — inherited from base
 9. **`IsStreamStarted()`**: remove — inherited from base
@@ -854,7 +856,7 @@ Key changes:
 
 11. **`QueueInformativeUpdateAsync`**: remove — inherited from base
 12. **`EndStreamAsync`**: remove — inherited from base
-13. **`ResetAsync`**: call `base.ResetAsync()`, then re-run `SetDefaults()` and reset Teams-specific fields:
+13. **`ResetAsync`**: call `base.ResetAsync()`, then re-run `SetDefaults()` and reset Teams-specific and optional fields:
     ```csharp
     public override async Task ResetAsync(CancellationToken cancellationToken = default)
     {

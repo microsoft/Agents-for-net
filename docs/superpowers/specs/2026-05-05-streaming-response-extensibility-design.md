@@ -52,24 +52,31 @@ Registration helpers (new, in Microsoft.Agents.Builder)
 
 ---
 
-## Design Trade-off: Teams-Specific Members on `IStreamingResponse`
+## Optional Channel Features on `IStreamingResponse`
 
-`IStreamingResponse` contains Teams-specific members that all implementations must satisfy:
+`IStreamingResponse` contains members beyond the core streaming API. Some are general optional features that any channel may implement; others are currently Teams-specific. Since `IStreamingResponse` is unchanged, all implementations must satisfy these members. `StreamingResponseBase` provides virtual no-op defaults.
+
+**General optional features** (any channel can implement — not Teams-specific):
 
 ```csharp
-IActivity? FinalMessage { get; set; }
 bool FeedbackLoopEnabled { get; set; }
 string FeedbackLoopType { get; set; }
-bool? EnableGeneratedByAILabel { get; set; }
-SensitivityUsageInfo? SensitivityLabel { get; set; }
 List<ClientCitation>? Citations { get; }
 void AddCitation(...);
 void AddCitations(...);
 ```
 
-Since `IStreamingResponse` is unchanged, non-Teams implementations inherit these members. `StreamingResponseBase` provides virtual no-op defaults. On non-Teams channels, `AddCitation()` silently does nothing and `Citations` returns an empty list.
+For example, a Slack extension could implement `FeedbackLoopEnabled` to trigger Slack reactions/thumbs-up UI. Non-implementing channels get the virtual no-op default — `Citations` returns an empty list, feedback loop properties are ignored.
 
-**This is an accepted trade-off.** A future version may split the interface, but that is a separate breaking-change discussion.
+**Teams-specific members** (no meaningful equivalent on other channels):
+
+```csharp
+IActivity? FinalMessage { get; set; }
+bool? EnableGeneratedByAILabel { get; set; }
+SensitivityUsageInfo? SensitivityLabel { get; set; }
+```
+
+`StreamingResponseBase` provides virtual no-op defaults for all of these. **This is an accepted trade-off.** A future version may split the interface, but that is a separate breaking-change discussion.
 
 ---
 
@@ -153,17 +160,19 @@ public abstract class StreamingResponseBase : IStreamingResponse
     protected abstract Task FinalizeStreamAsync(CancellationToken ct);
     protected abstract Task<StreamErrorAction> HandleSendErrorAsync(Exception ex, CancellationToken ct);
 
-    // Teams-specific — virtual no-op defaults
-    public virtual IActivity? FinalMessage { get; set; }
+    // General optional features — virtual no-op defaults (any channel may override)
     public virtual bool FeedbackLoopEnabled { get; set; }
     public virtual string FeedbackLoopType { get; set; } = "default";
-    public virtual bool? EnableGeneratedByAILabel { get; set; }
-    public virtual SensitivityUsageInfo? SensitivityLabel { get; set; }
     public virtual List<ClientCitation>? Citations { get; protected set; } = [];
     public virtual void AddCitation(ClientCitation citation) { }
     public virtual void AddCitation(Citation citation, int citationPosition) { }
     public virtual void AddCitations(IList<Citation> citations) { }
     public virtual void AddCitations(IList<ClientCitation> citations) { }
+
+    // Teams-specific — virtual no-op defaults
+    public virtual IActivity? FinalMessage { get; set; }
+    public virtual bool? EnableGeneratedByAILabel { get; set; }
+    public virtual SensitivityUsageInfo? SensitivityLabel { get; set; }
 }
 ```
 
@@ -398,82 +407,107 @@ await RunPipelineAsync(turnContext, handler, cancellationToken);
 
 `A2AAdapter` does not construct `TurnContext` directly in its turn-handling path. It queues activities to a background service that processes them. The `ResolveFactory + SetStreamingResponse` pattern does not apply.
 
-**Decision:** `A2AAdapter` is explicitly out of scope for this change. A2A has its own streaming delivery mechanism (`DeliveryModes.Stream`) that is orthogonal to `IStreamingResponse`. If A2A streaming response extensibility is needed, it is a separate future work item.
+**Important distinction:** `DeliveryModes.Stream` in A2A is a **transport-level** concern — it controls how activity responses are delivered back to the parent agent (streamed HTTP vs. async). It is entirely separate from `IStreamingResponse`, which is a **turn-handler-level** tool that lets an agent incrementally produce content. These two mechanisms are orthogonal; `A2AAdapter` already handles the `DeliveryModes.Stream` transport correctly by converting outbound activities to A2A streaming payloads.
+
+**Decision:** `A2AAdapter` is explicitly out of scope for this change. If `IStreamingResponse`-based extensibility is needed for A2A, it is a separate future work item.
 
 ---
 
 ## Extension Author Example: Slack
 
+The Slack extension uses `SlackStream` from `Microsoft.Agents.Extensions.Slack.Api`, which wraps the Slack `chat.startStream`, `chat.appendStream`, and `chat.stopStream` API methods. `SlackStream` is created from `SlackApi` (a DI service) and the channel/thread information from `SlackChannelData` (deserialized from `Activity.ChannelData`).
+
 ```csharp
+// Inside Microsoft.Agents.Extensions.Slack
 internal class SlackStreamingResponse : StreamingResponseBase
 {
     private readonly ITurnContext _turnContext;
-    private readonly Queue<object> _typedChunks = new();
+    private readonly SlackApi _slackApi;
+    private SlackStream? _stream;
 
-    public SlackStreamingResponse(ITurnContext turnContext)
+    public SlackStreamingResponse(ITurnContext turnContext, SlackApi slackApi)
     {
         _turnContext = turnContext;
+        _slackApi = slackApi;
         IsStreamingChannel = true;
         Interval = 200;
     }
 
+    // Lazily starts the Slack stream on first send
+    private async Task<SlackStream> EnsureStreamAsync(CancellationToken ct)
+    {
+        if (_stream == null)
+        {
+            var channelData = ProtocolJsonSerializer.To<SlackChannelData>(
+                _turnContext.Activity.ChannelData);
+            _stream = await new SlackStream(
+                _slackApi,
+                channelData.Channel,
+                channelData.ThreadTs,
+                channelData.ApiToken).StartAsync();
+        }
+        return _stream;
+    }
+
     protected override async Task SendChunksAsync(string text, int seq, CancellationToken ct)
     {
-        while (_typedChunks.TryDequeue(out var chunk))
-            await SlackClient.SendAsync(_turnContext, chunk, ct);
-        if (!string.IsNullOrEmpty(text))
-            await SlackClient.SendAsync(_turnContext, new MarkdownTextChunk(text), ct);
+        if (string.IsNullOrEmpty(text)) return;
+        var stream = await EnsureStreamAsync(ct);
+        await stream.AppendAsync(new MarkdownTextChunk(text));
     }
 
-    protected override Task SendInformativeAsync(string text, CancellationToken ct)
-        => SlackClient.SendAsync(_turnContext,
-               new TaskUpdateChunk(title: text, status: SlackTaskStatus.InProgress), ct);
-
-    protected override Task FinalizeStreamAsync(CancellationToken ct)
-        => SlackClient.StopAsync(_turnContext, ct); // no final Activity required
-
-    protected override async Task<StreamErrorAction> HandleSendErrorAsync(Exception ex, CancellationToken ct)
+    protected override async Task SendInformativeAsync(string text, CancellationToken ct)
     {
-        await SlackClient.SendAsync(_turnContext,
-            new TaskUpdateChunk(title: "Error", status: SlackTaskStatus.Error), ct);
-        return StreamErrorAction.Cancel;
+        var stream = await EnsureStreamAsync(ct);
+        await stream.AppendAsync(new TaskUpdateChunk("thinking", text, SlackTaskStatus.InProgress));
     }
 
-    internal void QueueTypedChunk(object chunk) => _typedChunks.Enqueue(chunk);
+    protected override async Task FinalizeStreamAsync(CancellationToken ct)
+    {
+        // No final Activity required — Slack stream is closed with StopAsync
+        if (_stream != null)
+            await _stream.StopAsync();
+    }
+
+    protected override Task<StreamErrorAction> HandleSendErrorAsync(Exception ex, CancellationToken ct)
+        => Task.FromResult(StreamErrorAction.Cancel);
 }
 
-// Factory
+// Factory — receives SlackApi via DI
 internal class SlackStreamingResponseFactory : IStreamingResponseFactory
 {
-    public IStreamingResponse Create(ITurnContext ctx) => new SlackStreamingResponse(ctx);
+    private readonly SlackApi _slackApi;
+
+    public SlackStreamingResponseFactory(SlackApi slackApi) => _slackApi = slackApi;
+
+    public IStreamingResponse Create(ITurnContext ctx) =>
+        new SlackStreamingResponse(ctx, _slackApi);
 }
 
 // Registration in Slack extension setup
 services.AddStreamingResponseFactory<SlackStreamingResponseFactory>("slack");
 ```
 
-**Extension methods for typed chunks:**
+**Extension methods for typed chunks** (for app developers who want Slack-specific content):
 
 ```csharp
 public static class SlackStreamingExtensions
 {
-    public static void QueueTaskUpdate(this IStreamingResponse response, TaskUpdateChunk chunk)
+    public static void QueueBlocks(this IStreamingResponse response, BlocksChunk blocks)
     {
         if (response is SlackStreamingResponse slack)
-            slack.QueueTypedChunk(chunk);
+            slack.QueueTypedChunk(blocks);
         // no-op on non-Slack channels
     }
 }
 ```
 
-**App developer code — unchanged:**
+**App developer code — unchanged for standard usage:**
 
 ```csharp
 await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Working...", ct);
 turnContext.StreamingResponse.QueueTextChunk("Hello");
 await turnContext.StreamingResponse.EndStreamAsync(ct);
-// Optional Slack-specific:
-turnContext.StreamingResponse.QueueTaskUpdate(new TaskUpdateChunk(...));
 ```
 
 ---
