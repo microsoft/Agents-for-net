@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Builder
         /// <summary>Gets the accumulated message text (raw, unformatted).</summary>
         public string Message { get; protected set; } = string.Empty;
 
-        // ── General optional features — virtual no-op defaults (any channel may override) ───
+        // ── General optional features ─────────────────────────────────────────
 
         /// <inheritdoc/>
         public virtual bool FeedbackLoopEnabled { get; set; }
@@ -61,20 +61,67 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public virtual string FeedbackLoopType { get; set; } = "default";
 
+        // ── Citations — managed in base; channel-specific rendering in hooks ──
+
         /// <inheritdoc/>
         public virtual List<ClientCitation>? Citations { get; protected set; } = new List<ClientCitation>();
 
         /// <inheritdoc/>
-        public virtual void AddCitation(ClientCitation citation) { }
+        public virtual void AddCitation(ClientCitation citation)
+        {
+            Citations ??= new List<ClientCitation>();
+            Citations.Add(citation);
+        }
 
         /// <inheritdoc/>
-        public virtual void AddCitation(Citation citation, int citationPosition) { }
+        public virtual void AddCitation(Citation citation, int citationPosition)
+        {
+            Citations ??= new List<ClientCitation>();
+            Citations.Add(new ClientCitation()
+            {
+                Position = citationPosition,
+                Appearance = new ClientCitationAppearance()
+                {
+                    Name = citation.Title ?? $"Document #{citationPosition}",
+                    Abstract = CitationUtils.Snippet(citation.Content, 480),
+                    Url = citation.Url
+                }
+            });
+        }
 
         /// <inheritdoc/>
-        public virtual void AddCitations(IList<Citation> citations) { }
+        public virtual void AddCitations(IList<Citation> citations)
+        {
+            if (citations.Count > 0)
+            {
+                Citations ??= new List<ClientCitation>();
+                int currPos = Citations.Count;
+                foreach (Citation citation in citations)
+                {
+                    Citations.Add(new ClientCitation()
+                    {
+                        Position = currPos + 1,
+                        Appearance = new ClientCitationAppearance()
+                        {
+                            Name = citation.Title ?? $"Document #{currPos + 1}",
+                            Abstract = CitationUtils.Snippet(citation.Content, 480),
+                            Url = citation.Url
+                        }
+                    });
+                    currPos++;
+                }
+            }
+        }
 
         /// <inheritdoc/>
-        public virtual void AddCitations(IList<ClientCitation> citations) { }
+        public virtual void AddCitations(IList<ClientCitation> citations)
+        {
+            if (citations.Count > 0)
+            {
+                Citations ??= new List<ClientCitation>();
+                Citations.AddRange(citations);
+            }
+        }
 
         // ── Teams-specific — virtual no-op defaults ───────────────────────────
 
@@ -197,6 +244,7 @@ namespace Microsoft.Agents.Builder
                 _sequenceNumber = 0;
                 Message = string.Empty;
                 StreamId = string.Empty;
+                Citations = new List<ClientCitation>();
             }
         }
 

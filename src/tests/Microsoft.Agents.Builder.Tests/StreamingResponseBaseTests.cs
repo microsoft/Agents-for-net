@@ -197,14 +197,20 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
-        public void TeamsSpecificMembers_AreNoOpsOnBase()
+        public void AddCitation_AddsToList()
         {
             var sr = new TestStreamingResponse(false);
-            // Should not throw; should silently no-op
             sr.AddCitation(new Microsoft.Agents.Core.Models.ClientCitation());
-            Assert.Empty(sr.Citations!);
-            sr.FeedbackLoopEnabled = true;  // no-op setter
-            sr.EnableGeneratedByAILabel = true;  // no-op setter
+            Assert.Single(sr.Citations!);
+        }
+
+        [Fact]
+        public void OptionalProperties_AreSettableOnBase()
+        {
+            var sr = new TestStreamingResponse(false);
+            // These properties have backing storage in the base — should not throw
+            sr.FeedbackLoopEnabled = true;
+            sr.EnableGeneratedByAILabel = true;
         }
     }
 }
