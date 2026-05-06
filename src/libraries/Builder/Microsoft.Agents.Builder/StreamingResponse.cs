@@ -342,7 +342,7 @@ namespace Microsoft.Agents.Builder
             }
 
             List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-            if ((bool)EnableGeneratedByAILabel || currCitations != null)
+            if (EnableGeneratedByAILabel == true || currCitations != null)
             {
                 AIEntity entity = new()
                 {
