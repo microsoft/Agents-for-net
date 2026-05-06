@@ -140,6 +140,11 @@ public abstract class StreamingResponseBase : IStreamingResponse
 
     public bool IsStreamingChannel { get; protected set; }
 
+    // StreamId assignment is entirely the subclass's responsibility via the protected set.
+    // The base only resets it to string.Empty in ResetAsync.
+    // Common patterns:
+    //   Teams:         set from response.Id returned by the first SendActivity call in SendChunksAsync
+    //   Other channels: set to Guid.NewGuid().ToString() in the constructor or on first send
     public string StreamId { get; protected set; }
     public string Message { get; protected set; }
 

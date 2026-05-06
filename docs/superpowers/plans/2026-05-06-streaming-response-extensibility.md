@@ -519,7 +519,12 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         public bool IsStreamingChannel { get; protected set; }
 
-        /// <summary>Gets the stream ID assigned after the first intermediate message is sent.</summary>
+        /// <summary>
+        /// Gets the stream ID. Assignment is the subclass's responsibility via the protected set.
+        /// The base only resets to <see cref="string.Empty"/> in <see cref="ResetAsync"/>.
+        /// Teams sets this from the response.Id of the first SendActivity call.
+        /// Other channels may set it to <see cref="Guid.NewGuid().ToString()"/> in their constructor or on first send.
+        /// </summary>
         public string StreamId { get; protected set; } = string.Empty;
 
         /// <summary>Gets the accumulated message text.</summary>
@@ -847,7 +852,7 @@ Key changes:
    public override List<ClientCitation>? Citations { get; protected set; } = [];
    ```
 6. **`FeedbackLoopEnabled`, `FeedbackLoopType`, `Citations`, `AddCitation`, `AddCitations`, `FinalMessage`, `EnableGeneratedByAILabel`, `SensitivityLabel`**: add `override` keyword — they were already on `IStreamingResponse`, now they override the virtual no-ops in base
-7. **`Interval`, `EndStreamTimeout`, `StreamId`, `Message`**: remove — inherited from base
+7. **`Interval`, `EndStreamTimeout`, `Message`**: remove — inherited from base. **`StreamId`**: remove the field declaration — inherited from base. `StreamingResponse` continues to assign it in `SendStreamActivityAsync` via `StreamId = response.Id` (the activity ID returned by the first `SendActivityAsync` call). This is Teams-specific behavior; other channels would assign `StreamId` differently (e.g., GUID in constructor).
 8. **`UpdatesSent()`**: remove — inherited from base
 9. **`IsStreamStarted()`**: remove — inherited from base
 10. **`QueueTextChunk`**: remove — inherited from base. Do **not** add a `QueueTextChunk` override.
