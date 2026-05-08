@@ -190,6 +190,7 @@ namespace Microsoft.Agents.Builder
                                 return agenticTokenProvider.GetAgenticInstanceTokenAsync(
                                     turnContext.Activity.GetAgenticTenantId(),
                                     turnContext.Activity.GetAgenticInstanceId(),
+                                    null,
                                     cancellationToken);
                             }
 
