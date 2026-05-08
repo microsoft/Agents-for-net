@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Builder.Tests
                 return Task.CompletedTask;
             }
 
-            protected override Task SendInformativeAsync(string text, CancellationToken ct)
+            protected override Task SendInformativeAsync(string text, int sequenceNumber, CancellationToken ct)
             {
                 SentInformatives.Add(text);
                 return Task.CompletedTask;

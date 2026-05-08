@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -13,21 +12,28 @@ namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Abstract base for streaming response implementations.
-    /// Owns the text buffer, interval timer, and stream state.
+    /// Owns the text buffer, send loop, and stream state.
     /// Extension authors subclass this and implement the abstract channel-specific hooks.
     /// </summary>
+    /// <remarks>
+    /// This class support throttling via the <see cref="Interval"/> property.  Teams and Azure Channels require
+    /// some throttling since services like OpenAI produce streams that exceed allowed Channel message limits.
+    /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
+    /// in message delivery failures.
+    /// </remarks>
     public abstract class StreamingResponseBase : IStreamingResponse
     {
         public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
-        private Timer? _timer;
+        private CancellationTokenSource? _cts;
+        private Task? _loopTask;
+        private bool _disposed;
         private bool _messageUpdated;
         private bool _streamStarted;
         private bool _streamEnded;
         private bool _streamCancelled;
         private bool _userCancelled;
-        private readonly object _lock = new object();
-        private readonly AutoResetEvent _queueEmpty = new AutoResetEvent(false);
+        private readonly object _lock = new();
         private int _sequenceNumber;
 
         /// <summary>Gets or sets the interval in ms between intermediate sends.</summary>
@@ -50,7 +56,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         public string StreamId { get; protected set; } = string.Empty;
 
-        /// <summary>Gets the accumulated message text (raw, unformatted).</summary>
+        /// <summary>Gets the accumulated message text (citation-formatted).</summary>
         public string Message { get; protected set; } = string.Empty;
 
         // ── General optional features ─────────────────────────────────────────
@@ -123,13 +129,11 @@ namespace Microsoft.Agents.Builder
             }
         }
 
-        // ── Teams-specific — virtual no-op defaults ───────────────────────────
-
         /// <inheritdoc/>
         public virtual IActivity FinalMessage { get; set; }
 
         /// <inheritdoc/>
-        public virtual bool? EnableGeneratedByAILabel { get; set; }
+        public virtual bool? EnableGeneratedByAILabel { get; set; } = false;
 
         /// <inheritdoc/>
         public virtual SensitivityUsageInfo? SensitivityLabel { get; set; }
@@ -149,6 +153,7 @@ namespace Microsoft.Agents.Builder
                         ErrorHelper.StreamingResponseEnded, null);
 
                 Message += text;
+                Message = CitationUtils.FormatCitationsResponse(Message);
                 _messageUpdated = true;
                 StartStream(250);
             }
@@ -167,7 +172,13 @@ namespace Microsoft.Agents.Builder
                         ErrorHelper.StreamingResponseEnded, null);
             }
 
-            await SendInformativeAsync(text, cancellationToken).ConfigureAwait(false);
+            int seq;
+            lock (_lock)
+            {
+                seq = ++_sequenceNumber;
+            }
+
+            await SendInformativeAsync(text, seq, cancellationToken).ConfigureAwait(false);
 
             lock (_lock)
             {
@@ -193,6 +204,7 @@ namespace Microsoft.Agents.Builder
             }
             else
             {
+                Task? loopTask;
                 lock (_lock)
                 {
                     if (_streamEnded)
@@ -204,11 +216,18 @@ namespace Microsoft.Agents.Builder
 
                     if (!_streamStarted)
                         return StreamingResponseResult.NotStarted;
+
+                    loopTask = _loopTask;
                 }
 
-                // Wait for timer to drain the buffer
-                if (!_queueEmpty.WaitOne(EndStreamTimeout))
-                    return StreamingResponseResult.Timeout;
+                // Wait for the send loop to drain the buffer
+                if (loopTask != null)
+                {
+                    var timeoutTask = Task.Delay(EndStreamTimeout, CancellationToken.None);
+                    var completed = await Task.WhenAny(loopTask, timeoutTask).ConfigureAwait(false);
+                    if (completed != loopTask)
+                        return StreamingResponseResult.Timeout;
+                }
 
                 if (_streamCancelled)
                     return _userCancelled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
@@ -245,13 +264,40 @@ namespace Microsoft.Agents.Builder
                 Message = string.Empty;
                 StreamId = string.Empty;
                 Citations = new List<ClientCitation>();
+                FinalMessage = null;
+                SensitivityLabel = null;
+                EnableGeneratedByAILabel = false;
+            }
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases resources owned by this instance.
+        /// Subclasses that hold additional disposable resources should override this method,
+        /// call base.Dispose(disposing), and dispose their own resources when disposing is true.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    StopStream();
+                }
+                _disposed = true;
             }
         }
 
         // ── Abstract hooks ────────────────────────────────────────────────────
 
         /// <summary>
-        /// Called by the timer thread with accumulated text. Send as a channel-specific intermediate message.
+        /// Called by the send loop with accumulated text. Send as a channel-specific intermediate message.
         /// </summary>
         protected abstract Task SendChunksAsync(string bufferedText, int sequenceNumber, CancellationToken cancellationToken);
 
@@ -259,7 +305,7 @@ namespace Microsoft.Agents.Builder
         /// Called on the caller's thread when QueueInformativeUpdateAsync is called on a streaming channel.
         /// Send a "thinking/working" update to the channel. Implement as no-op if unsupported.
         /// </summary>
-        protected abstract Task SendInformativeAsync(string text, CancellationToken cancellationToken);
+        protected abstract Task SendInformativeAsync(string text, int sequenceNumber, CancellationToken cancellationToken);
 
         /// <summary>
         /// Called after the buffer drains (streaming) or immediately (non-streaming) by EndStreamAsync.
@@ -269,98 +315,122 @@ namespace Microsoft.Agents.Builder
         protected abstract Task FinalizeStreamAsync(CancellationToken cancellationToken);
 
         /// <summary>
-        /// Called on the timer thread when SendChunksAsync throws. Interpret the error and return
+        /// Called on the send loop when SendChunksAsync throws. Interpret the error and return
         /// a StreamErrorAction. The base class applies the action.
         /// </summary>
         protected abstract Task<StreamErrorAction> HandleSendErrorAsync(Exception ex, CancellationToken cancellationToken);
 
-        // ── Timer management ─────────────────────────────────────────────────
+        // ── Send loop management ──────────────────────────────────────────────
 
-        private void StartStream(int initialInterval = 0)
+        private void StartStream(int initialDelay = 0)
         {
-            if (_timer == null && IsStreamingChannel)
+            if (_loopTask == null && IsStreamingChannel)
             {
                 _streamStarted = true;
-                _timer = new Timer(OnTimerTick, null,
-                    initialInterval == 0 ? Interval : initialInterval,
-                    Timeout.Infinite);
+                _cts = new CancellationTokenSource();
+                _loopTask = RunSendLoopAsync(initialDelay == 0 ? Interval : initialDelay, _cts.Token);
             }
         }
 
         private void StopStream()
         {
-            _timer?.Dispose();
-            _timer = null;
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            _loopTask = null;
         }
 
-        private async void OnTimerTick(object? state)
+        private async Task RunSendLoopAsync(int initialDelay, CancellationToken ct)
         {
-            string? textToSend = null;
-            int seqToSend = 0;
-
-            lock (_lock)
+            try
             {
-                if (_messageUpdated)
+                await Task.Delay(initialDelay, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            while (!ct.IsCancellationRequested)
+            {
+                string? textToSend = null;
+                int seqToSend = 0;
+
+                lock (_lock)
                 {
-                    textToSend = Message;
-                    seqToSend = ++_sequenceNumber;
-                    _messageUpdated = false;
-                    _timer?.Change(Timeout.Infinite, Timeout.Infinite); // pause during send
+                    if (_messageUpdated)
+                    {
+                        textToSend = Message;
+                        seqToSend = ++_sequenceNumber;
+                        _messageUpdated = false;
+                    }
+                    else if (_streamEnded)
+                    {
+                        return;
+                    }
                 }
-                else if (_streamEnded)
+
+                if (textToSend != null)
                 {
-                    _queueEmpty.Set();
-                    StopStream();
-                    return;
+                    try
+                    {
+                        await SendChunksAsync(textToSend, seqToSend, CancellationToken.None).ConfigureAwait(false);
+
+                        lock (_lock)
+                        {
+                            if (_streamEnded && !_messageUpdated)
+                                return;
+                        }
+
+                        await Task.Delay(Interval, ct).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        var action = await HandleSendErrorAsync(ex, CancellationToken.None).ConfigureAwait(false);
+
+                        lock (_lock)
+                        {
+                            switch (action)
+                            {
+                                case StreamErrorAction.FallbackToNonStreaming:
+                                    IsStreamingChannel = false;
+                                    break;
+                                case StreamErrorAction.Cancel:
+                                    _streamCancelled = true;
+                                    _userCancelled = true;
+                                    break;
+                            }
+                        }
+
+                        if (action != StreamErrorAction.Continue)
+                            return;
+
+                        // Continue: retry after interval
+                        try
+                        {
+                            await Task.Delay(Interval, ct).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            return;
+                        }
+                    }
                 }
                 else
                 {
                     // No new text yet — poll faster while waiting for chunks
-                    _timer?.Change(200, Timeout.Infinite);
-                    return;
-                }
-            }
-
-            try
-            {
-                await SendChunksAsync(textToSend!, seqToSend, CancellationToken.None).ConfigureAwait(false);
-
-                lock (_lock)
-                {
-                    if (_streamEnded && !_messageUpdated)
+                    try
                     {
-                        _queueEmpty.Set();
-                        StopStream();
+                        await Task.Delay(200, ct).ConfigureAwait(false);
                     }
-                    else
+                    catch (OperationCanceledException)
                     {
-                        _timer?.Change(Interval, Timeout.Infinite); // restart
+                        return;
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Cannot rethrow — we're on the timer thread. Call the error hook.
-                var action = await HandleSendErrorAsync(ex, CancellationToken.None).ConfigureAwait(false);
-
-                lock (_lock)
-                {
-                    switch (action)
-                    {
-                        case StreamErrorAction.FallbackToNonStreaming:
-                            IsStreamingChannel = false;
-                            break;
-                        case StreamErrorAction.Cancel:
-                            _streamCancelled = true;
-                            _userCancelled = true;
-                            break;
-                        // Continue: do nothing, keep streaming (but timer was already paused — restart it)
-                        default:
-                            _timer?.Change(Interval, Timeout.Infinite);
-                            return;
-                    }
-                    StopStream();
-                    _queueEmpty.Set();
                 }
             }
         }
