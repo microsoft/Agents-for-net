@@ -1,27 +1,7 @@
 # Microsoft.Agents.Authentication.Msal
 
-Provides the MSAL IAccessTokenProvider implementation to get tokens.
+## About
 
-## Changelog
-| Version | Date | Changelog |
-|------|----|------------|
-| 1.2.0 | 2025-08-19 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/releases/tag/v1.2.0) |
-| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+Provides the MSAL `IAccessTokenProvider` implementation for authenticating agents with Azure Bot Service and Entra ID. Supports Client Secret, Certificate, Federated Credentials, and Managed Identity authentication types.
 
-## Example configuration
-
-```
-  "Connections": {
-    "ServiceConnection": {
-      "Settings": {
-        "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
-        "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-        "ClientId": "00000000-0000-0000-0000-000000000000", // this is the Client ID used for the connection.
-        "ClientSecret": "00000000-0000-0000-0000-000000000000", // this is the Client Secret used for the connection.
-        "Scopes": [
-          "https://api.botframework.com/.default"
-        ]
-      }
-    }
-  }
-```
+See [Configure authentication in a .NET agent](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/microsoft-authentication-library-configuration-options) for configuration details.
