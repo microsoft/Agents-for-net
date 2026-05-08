@@ -78,7 +78,7 @@ public partial class MyAgent : AgentApplication
 
     private async Task OnA2AAdvancedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await A2AExtension.A2ADirect(turnContext, async (eventQueue, requestContext) =>
+        await A2AExtension.A2ADirect(turnContext, async (eventQueue, requestContext, taskStore) =>
         {
             var message = new A2A.Message()
             {

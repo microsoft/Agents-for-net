@@ -314,6 +314,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     public async Task<InvokeResponse> ProcessActivityWithA2AAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, RequestContext a2aContext, AgentEventQueue a2aEventQueue, CancellationToken cancellationToken)
     {
         var context = new TurnContext(this, activity, claimsIdentity);
+        context.Services.Set<ITaskStore>(_taskStore);
         if (a2aContext != null)
         {
             context.Services.Set(a2aContext);

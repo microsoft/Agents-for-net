@@ -38,7 +38,7 @@ public class A2AAgentExtension : Builder.AgentExtension
     /// <param name="action">The action to perform with the agent event queue and request context.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
 #pragma warning disable CA1822 // Mark members as static
-    public Task A2ADirect(ITurnContext turnContext, Func<AgentEventQueue, RequestContext, Task> action)
+    public Task A2ADirect(ITurnContext turnContext, Func<AgentEventQueue, RequestContext, ITaskStore, Task> action)
 #pragma warning restore CA1822 // Mark members as static
     {
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
@@ -46,8 +46,9 @@ public class A2AAgentExtension : Builder.AgentExtension
 
         var eventQueue = turnContext.Services.Get<AgentEventQueue>();
         var requestContext = turnContext.Services.Get<RequestContext>();
+        var taskStore = turnContext.Services.Get<ITaskStore>(); 
 
-        return action(eventQueue, requestContext);
+        return action(eventQueue, requestContext, taskStore);
     }
 
     /// <summary>
