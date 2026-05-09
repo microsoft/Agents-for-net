@@ -495,6 +495,105 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             Mock.Verify(options, service);
         }
 
+        [Fact]
+        public async Task MSALProvider_Agentic_InstanceToken_UsesProvidedScopes()
+        {
+            const string customScope = "api://custom-resource/.default";
+            string instanceTokenRequestScope = null;
+            const string settingsSection = "Connections:ServiceConnection:Settings";
+            Dictionary<string, string> configSettings = new()
+            {
+                { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id-custom" },
+                { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret-custom" },
+                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "https://custom-authority.example.com/common" },
+            };
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+            options.Setup(x => x.Value).Returns(new MsalAuthConfigurationOptions { MSALEnabledLogPII = false });
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(options.Object);
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory((httpRequest) =>
+                {
+                    if (httpRequest.RequestUri.ToString().Contains("/oauth2/v2.0/token"))
+                    {
+                        var requestBody = Uri.UnescapeDataString(httpRequest.Content.ReadAsStringAsync().GetAwaiter().GetResult()).Replace("+", " ");
+                        if (requestBody.Contains("client_id=aai-custom", StringComparison.Ordinal))
+                        {
+                            var startIndex = requestBody.IndexOf("scope=", StringComparison.Ordinal);
+                            var endIndex = requestBody.IndexOf('&', startIndex);
+                            instanceTokenRequestScope = endIndex >= 0
+                                ? requestBody.Substring(startIndex + "scope=".Length, endIndex - (startIndex + "scope=".Length))
+                                : requestBody.Substring(startIndex + "scope=".Length);
+                        }
+                    }
+                }));
+
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+            await msal.GetAgenticInstanceTokenAsync("tenant-custom", "aai-custom", [customScope]);
+
+            Assert.Equal(customScope, instanceTokenRequestScope);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task MSALProvider_Agentic_InstanceToken_UsesDefaultScopeWhenScopesAreNullOrEmpty(bool useNullScopes)
+        {
+            const string defaultScope = "api://AzureAdTokenExchange/.default";
+            string instanceTokenRequestScope = null;
+            const string settingsSection = "Connections:ServiceConnection:Settings";
+            Dictionary<string, string> configSettings = new()
+            {
+                { "Connections:ServiceConnection:Settings:AuthType", "ClientSecret" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-id-default" },
+                { "Connections:ServiceConnection:Settings:ClientSecret", "test-secret-default" },
+                { "Connections:ServiceConnection:Settings:AuthorityEndpoint", "https://default-authority.example.com/common" },
+            };
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+            options.Setup(x => x.Value).Returns(new MsalAuthConfigurationOptions { MSALEnabledLogPII = false });
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(options.Object);
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory((httpRequest) =>
+                {
+                    if (httpRequest.RequestUri.ToString().Contains("/oauth2/v2.0/token"))
+                    {
+                        var requestBody = Uri.UnescapeDataString(httpRequest.Content.ReadAsStringAsync().GetAwaiter().GetResult()).Replace("+", " ");
+                        if (requestBody.Contains("client_id=aai-default", StringComparison.Ordinal))
+                        {
+                            var startIndex = requestBody.IndexOf("scope=", StringComparison.Ordinal);
+                            var endIndex = requestBody.IndexOf('&', startIndex);
+                            instanceTokenRequestScope = endIndex >= 0
+                                ? requestBody.Substring(startIndex + "scope=".Length, endIndex - (startIndex + "scope=".Length))
+                                : requestBody.Substring(startIndex + "scope=".Length);
+                        }
+                    }
+                }));
+
+            IList<string> scopes = useNullScopes ? null : [];
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+            await msal.GetAgenticInstanceTokenAsync("tenant-default", "aai-default", scopes);
+
+            Assert.Equal(defaultScope, instanceTokenRequestScope);
+        }
+
         private static X509Certificate2 CreateSelfSignedCertificate(string subjectName)
         {
             using var rsa = RSA.Create(2048);
