@@ -499,7 +499,8 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         public async Task MSALProvider_Agentic_InstanceToken_UsesProvidedScopes()
         {
             const string customScope = "api://custom-resource/.default";
-            string instanceTokenRequestScope = null;
+            const string agentAppInstanceId = "aai-custom";
+            var instanceTokenRequestScopeTcs = new TaskCompletionSource<string>();
             const string settingsSection = "Connections:ServiceConnection:Settings";
             Dictionary<string, string> configSettings = new()
             {
@@ -521,25 +522,24 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(options.Object);
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
             service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
-                .Returns(new TestHttpClientFactory((httpRequest) =>
+                .Returns(new TestHttpClientFactory(async (httpRequest) =>
                 {
                     if (httpRequest.RequestUri.ToString().Contains("/oauth2/v2.0/token"))
                     {
-                        var requestBody = Uri.UnescapeDataString(httpRequest.Content.ReadAsStringAsync().GetAwaiter().GetResult()).Replace("+", " ");
-                        if (requestBody.Contains("client_id=aai-custom", StringComparison.Ordinal))
+                        var formValues = await ParseFormBodyAsync(httpRequest);
+                        if (formValues.TryGetValue("client_id", out var clientId) && clientId == agentAppInstanceId)
                         {
-                            var startIndex = requestBody.IndexOf("scope=", StringComparison.Ordinal);
-                            var endIndex = requestBody.IndexOf('&', startIndex);
-                            instanceTokenRequestScope = endIndex >= 0
-                                ? requestBody.Substring(startIndex + "scope=".Length, endIndex - (startIndex + "scope=".Length))
-                                : requestBody.Substring(startIndex + "scope=".Length);
+                            formValues.TryGetValue("scope", out var scope);
+                            instanceTokenRequestScopeTcs.TrySetResult(scope);
                         }
                     }
                 }));
 
             var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
-            await msal.GetAgenticInstanceTokenAsync("tenant-custom", "aai-custom", [customScope]);
-
+            await msal.GetAgenticInstanceTokenAsync("tenant-custom", agentAppInstanceId, [customScope]);
+            var completedTask = await Task.WhenAny(instanceTokenRequestScopeTcs.Task, Task.Delay(TimeSpan.FromSeconds(2)));
+            Assert.Same(instanceTokenRequestScopeTcs.Task, completedTask);
+            var instanceTokenRequestScope = await instanceTokenRequestScopeTcs.Task;
             Assert.Equal(customScope, instanceTokenRequestScope);
         }
 
@@ -549,7 +549,8 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         public async Task MSALProvider_Agentic_InstanceToken_UsesDefaultScopeWhenScopesAreNullOrEmpty(bool useNullScopes)
         {
             const string defaultScope = "api://AzureAdTokenExchange/.default";
-            string instanceTokenRequestScope = null;
+            const string agentAppInstanceId = "aai-default";
+            var instanceTokenRequestScopeTcs = new TaskCompletionSource<string>();
             const string settingsSection = "Connections:ServiceConnection:Settings";
             Dictionary<string, string> configSettings = new()
             {
@@ -571,26 +572,25 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>))).Returns(options.Object);
             service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>))).Returns(logger.Object);
             service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
-                .Returns(new TestHttpClientFactory((httpRequest) =>
+                .Returns(new TestHttpClientFactory(async (httpRequest) =>
                 {
                     if (httpRequest.RequestUri.ToString().Contains("/oauth2/v2.0/token"))
                     {
-                        var requestBody = Uri.UnescapeDataString(httpRequest.Content.ReadAsStringAsync().GetAwaiter().GetResult()).Replace("+", " ");
-                        if (requestBody.Contains("client_id=aai-default", StringComparison.Ordinal))
+                        var formValues = await ParseFormBodyAsync(httpRequest);
+                        if (formValues.TryGetValue("client_id", out var clientId) && clientId == agentAppInstanceId)
                         {
-                            var startIndex = requestBody.IndexOf("scope=", StringComparison.Ordinal);
-                            var endIndex = requestBody.IndexOf('&', startIndex);
-                            instanceTokenRequestScope = endIndex >= 0
-                                ? requestBody.Substring(startIndex + "scope=".Length, endIndex - (startIndex + "scope=".Length))
-                                : requestBody.Substring(startIndex + "scope=".Length);
+                            formValues.TryGetValue("scope", out var scope);
+                            instanceTokenRequestScopeTcs.TrySetResult(scope);
                         }
                     }
                 }));
 
             IList<string> scopes = useNullScopes ? null : [];
             var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
-            await msal.GetAgenticInstanceTokenAsync("tenant-default", "aai-default", scopes);
-
+            await msal.GetAgenticInstanceTokenAsync("tenant-default", agentAppInstanceId, scopes);
+            var completedTask = await Task.WhenAny(instanceTokenRequestScopeTcs.Task, Task.Delay(TimeSpan.FromSeconds(2)));
+            Assert.Same(instanceTokenRequestScopeTcs.Task, completedTask);
+            var instanceTokenRequestScope = await instanceTokenRequestScopeTcs.Task;
             Assert.Equal(defaultScope, instanceTokenRequestScope);
         }
 
@@ -608,11 +608,38 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             return certificate;
         }
 
+        private static async Task<Dictionary<string, string>> ParseFormBodyAsync(HttpRequestMessage request)
+        {
+            var requestBody = await request.Content.ReadAsStringAsync();
+            var formValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var keyValuePair in requestBody.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var valueParts = keyValuePair.Split('=', 2);
+                var key = Uri.UnescapeDataString(valueParts[0].Replace("+", " "));
+                var value = valueParts.Length > 1 ? Uri.UnescapeDataString(valueParts[1].Replace("+", " ")) : string.Empty;
+                formValues[key] = value;
+            }
+
+            return formValues;
+        }
+
         private class TestHttpClientFactory : IHttpClientFactory
         {
-            private readonly Action<HttpRequestMessage> _assertFunc;
+            private readonly Func<HttpRequestMessage, Task> _assertFunc;
 
             public TestHttpClientFactory(Action<HttpRequestMessage> assertFunc = null)
+            {
+                _assertFunc = assertFunc != null
+                    ? (httpRequest) =>
+                    {
+                        assertFunc(httpRequest);
+                        return Task.CompletedTask;
+                    }
+                    : null;
+            }
+
+            public TestHttpClientFactory(Func<HttpRequestMessage, Task> assertFunc)
             {
                 _assertFunc = assertFunc;
             }
@@ -634,11 +661,15 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
                 var client = new Mock<HttpClient>();
                 client
                     .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-                    .Callback<HttpRequestMessage, CancellationToken>((httpRequest, ct) =>
+                    .Returns<HttpRequestMessage, CancellationToken>(async (httpRequest, ct) =>
                     {
-                        _assertFunc?.Invoke(httpRequest);
-                    })
-                    .ReturnsAsync(httpResponse);
+                        if (_assertFunc != null)
+                        {
+                            await _assertFunc(httpRequest);
+                        }
+
+                        return httpResponse;
+                    });
                 return client.Object;
             }
         }
