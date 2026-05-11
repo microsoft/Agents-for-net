@@ -199,6 +199,112 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         }
 
         [Fact]
+        public void AssemblyWithOnlyInternalTypes_IsSkipped()
+        {
+            var extensionSource = @"
+using System;
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(""ConsumerApp"")]
+[assembly: Microsoft.Agents.Builder.StreamingResponseFactoryAssemblyAttribute(
+    typeof(FakeInternal.InternalFactory), ""internal-channel"")]
+namespace FakeInternal
+{
+    internal class InternalFactory { }
+}
+";
+
+            var trusted = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES");
+            var bclRefs = new List<MetadataReference>();
+            if (trusted != null)
+                foreach (var path in trusted.Split(Path.PathSeparator))
+                    if (File.Exists(path))
+                        bclRefs.Add(MetadataReference.CreateFromFile(path));
+            bclRefs.Add(MetadataReference.CreateFromFile(
+                typeof(Microsoft.Agents.Builder.StreamingResponseFactoryAssemblyAttribute).Assembly.Location));
+
+            var extensionCompilation = CSharpCompilation.Create(
+                "FakeInternalExtension",
+                new[] { CSharpSyntaxTree.ParseText(extensionSource) },
+                bclRefs,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            var extensionDiags = extensionCompilation.GetDiagnostics()
+                .Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+            Assert.Empty(extensionDiags);
+
+            var consumerCompilation = CSharpCompilation.Create(
+                "ConsumerApp",
+                new[]
+                {
+                    CSharpSyntaxTree.ParseText("""
+                        namespace MyApp
+                        {
+                            public class Program { }
+                        }
+                        """)
+                },
+                bclRefs.Concat(new[] { extensionCompilation.ToMetadataReference() }),
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            var generator = new PreloadAssembliesSourceGenerator();
+            var driver = CSharpGeneratorDriver.Create(generator);
+            var result = driver.RunGenerators(consumerCompilation).GetRunResult();
+
+            Assert.Empty(result.Results.Single().GeneratedSources);
+        }
+
+        [Fact]
+        public void PolyfillIncluded_InGeneratedOutput()
+        {
+            var extensionSource = """
+                using System;
+
+                [assembly: Microsoft.Agents.Builder.StreamingResponseFactoryAssemblyAttribute(
+                    typeof(FakeExtension3.Factory), "test")]
+
+                namespace FakeExtension3
+                {
+                    public class Factory { }
+                }
+                """;
+
+            var trusted = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES");
+            var bclRefs = new List<MetadataReference>();
+            if (trusted != null)
+                foreach (var path in trusted.Split(Path.PathSeparator))
+                    if (File.Exists(path))
+                        bclRefs.Add(MetadataReference.CreateFromFile(path));
+            bclRefs.Add(MetadataReference.CreateFromFile(
+                typeof(Microsoft.Agents.Builder.StreamingResponseFactoryAssemblyAttribute).Assembly.Location));
+
+            var extensionCompilation = CSharpCompilation.Create(
+                "FakeExtension3",
+                new[] { CSharpSyntaxTree.ParseText(extensionSource) },
+                bclRefs,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            var extensionDiags = extensionCompilation.GetDiagnostics()
+                .Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+            Assert.Empty(extensionDiags);
+
+            var consumerCompilation = CSharpCompilation.Create(
+                "ConsumerApp3",
+                new[]
+                {
+                    CSharpSyntaxTree.ParseText("namespace MyApp { public class Program { } }")
+                },
+                bclRefs.Concat(new[] { extensionCompilation.ToMetadataReference() }),
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            var generator = new PreloadAssembliesSourceGenerator();
+            var driver = CSharpGeneratorDriver.Create(generator);
+            var result = driver.RunGenerators(consumerCompilation).GetRunResult();
+
+            var text = Assert.Single(result.Results.Single().GeneratedSources).SourceText.ToString();
+            Assert.Contains("#if !NET5_0_OR_GREATER", text);
+            Assert.Contains("ModuleInitializerAttribute", text);
+        }
+
+        [Fact]
         public void Generator_ProducesNoDiagnostics()
         {
             var source = """

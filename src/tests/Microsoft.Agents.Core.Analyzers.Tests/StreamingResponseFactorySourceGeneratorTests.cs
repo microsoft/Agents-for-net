@@ -177,6 +177,31 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         }
 
         [Fact]
+        public void AbstractClass_WithAttribute_StillEmitsAssemblyAttribute()
+        {
+            var source = """
+                using Microsoft.Agents.Builder;
+
+                namespace MyExtension
+                {
+                    [StreamingResponseFactory("test")]
+                    public abstract class BaseStreamingFactory : IStreamingResponseFactory
+                    {
+                        public abstract IStreamingResponse Create(ITurnContext ctx);
+                    }
+                }
+                """;
+
+            var generatedSources = RunGenerator(source).GetRunResult()
+                .Results.Single().GeneratedSources;
+            Assert.NotEmpty(generatedSources);
+
+            var text = generatedSources.Single().SourceText.ToString();
+            Assert.Contains("BaseStreamingFactory", text);
+            Assert.Contains("\"test\"", text);
+        }
+
+        [Fact]
         public void Generator_ProducesNoDiagnostics()
         {
             var source = """

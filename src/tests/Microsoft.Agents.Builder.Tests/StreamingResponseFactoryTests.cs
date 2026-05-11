@@ -7,7 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests
@@ -157,6 +160,131 @@ namespace Microsoft.Agents.Builder.Tests
             {
                 ResetRegistryStatics();
             }
+        }
+
+        [Fact]
+        public void Resolve_WithServiceProvider_UsesServiceToInstantiate()
+        {
+            var registry = new StreamingResponseFactoryRegistry();
+            ResetRegistryStatics();
+
+            try
+            {
+                SetDiscoveredType(registry, "service", typeof(TestFactory));
+                SetScanned(true);
+
+                var services = new ServiceCollection();
+                services.AddSingleton<TestFactory>();
+                var provider = services.BuildServiceProvider();
+
+                var result = registry.Resolve("service", provider);
+
+                Assert.NotNull(result);
+                Assert.IsType<TestFactory>(result);
+                Assert.Same(provider.GetRequiredService<TestFactory>(), result);
+            }
+            finally
+            {
+                ResetRegistryStatics();
+            }
+        }
+
+        [Fact]
+        public void Resolve_CachesInstance_SecondCallReturnsSameObject()
+        {
+            var registry = new StreamingResponseFactoryRegistry();
+            ResetRegistryStatics();
+
+            try
+            {
+                SetDiscoveredType(registry, "cached", typeof(TestFactory));
+                SetScanned(true);
+
+                var first = registry.Resolve("cached", services: null);
+                var second = registry.Resolve("cached", services: null);
+
+                Assert.NotNull(first);
+                Assert.Same(first, second);
+            }
+            finally
+            {
+                ResetRegistryStatics();
+            }
+        }
+
+        [Fact]
+        public void Resolve_WhenGetServiceReturnsNull_FallsBackToActivator()
+        {
+            var registry = new StreamingResponseFactoryRegistry();
+            ResetRegistryStatics();
+
+            try
+            {
+                SetDiscoveredType(registry, "fallback", typeof(TestFactory));
+                SetScanned(true);
+
+                var services = new Mock<IServiceProvider>();
+                services.Setup(s => s.GetService(typeof(TestFactory))).Returns((object)null);
+
+                var result = registry.Resolve("fallback", services.Object);
+
+                Assert.NotNull(result);
+                Assert.IsType<TestFactory>(result);
+                services.Verify(s => s.GetService(typeof(TestFactory)), Times.Once);
+            }
+            finally
+            {
+                ResetRegistryStatics();
+            }
+        }
+
+        [Fact]
+        public void Resolve_ParallelCalls_SameChannel_AllReturnSameInstance()
+        {
+            var registry = new StreamingResponseFactoryRegistry();
+            ResetRegistryStatics();
+
+            try
+            {
+                SetDiscoveredType(registry, "parallel", typeof(TestFactory));
+                SetScanned(true);
+
+                var tasks = new Task<IStreamingResponseFactory?>[10];
+                for (var i = 0; i < tasks.Length; i++)
+                {
+                    tasks[i] = Task.Run(() => registry.Resolve("parallel", services: null));
+                }
+
+                var results = Task.WhenAll(tasks).GetAwaiter().GetResult();
+                var first = Assert.IsType<TestFactory>(results[0]);
+
+                Assert.All(results, result => Assert.Same(first, result));
+            }
+            finally
+            {
+                ResetRegistryStatics();
+            }
+        }
+
+        [Fact]
+        public void ScanAssembly_WithNullAttributes_DoesNotThrow()
+        {
+            var results = new List<(string, Type)>();
+
+            StreamingResponseFactoryAssemblyAttribute.ScanAssembly(typeof(StreamingResponseFactoryTests).Assembly, results);
+
+            Assert.Empty(results);
+        }
+
+        [Fact]
+        public void ScanAssembly_WithDynamicAssembly_DoesNotThrow()
+        {
+            var results = new List<(string, Type)>();
+            var assembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynAsm"), AssemblyBuilderAccess.Run);
+
+            StreamingResponseFactoryAssemblyAttribute.ScanAssembly(assembly, results);
+
+            Assert.Empty(results);
         }
 
         private static void ResetRegistryStatics()
