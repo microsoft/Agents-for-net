@@ -12,10 +12,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.TeamsTeams;
-using Microsoft.Teams.Api.Clients;
 using System;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -130,9 +127,9 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     }
 
     [MessageRoute("targeted")]
-    public static async Task SendTargetedMessagesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task SendTargetedMessagesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var api = turnContext.Services.Get<ApiClient>();
+        var api = TeamsExtension.GetTeamsClient(turnContext);
         var members = await api.Conversations.Members.GetAsync(turnContext.Activity.Conversation.Id, cancellationToken);
 
         foreach (var member in members)
