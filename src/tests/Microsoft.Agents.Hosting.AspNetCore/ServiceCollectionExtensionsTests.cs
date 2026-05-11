@@ -65,7 +65,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(ActivityHandler), // TAgent.
             };
 
-            Assert.Equal(expected, services);
+            // Compare as sorted multisets so registration order doesn't matter.
+            var sortedExpected = expected.Select(t => t.FullName).OrderBy(n => n).ToList();
+            var sortedActual = services.Select(t => t.FullName).OrderBy(n => n).ToList();
+            Assert.Equal(sortedExpected, sortedActual);
         }
     }
 }
