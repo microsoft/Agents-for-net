@@ -73,6 +73,7 @@ public static class AspNetExtensions
         {
             // Noop if TokenValidation section missing or disabled.
             System.Diagnostics.Trace.WriteLine("AddAgentAspNetAuthentication: Auth disabled");
+            services.AddControllers();
             return;
         }
 

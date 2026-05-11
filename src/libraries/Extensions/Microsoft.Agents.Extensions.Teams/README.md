@@ -2,10 +2,12 @@
 
 ## About
 
-Contains the definitions for Teams.
+Provides Microsoft Teams-specific extensions for the Microsoft 365 Agents SDK. Includes Teams activity models, Teams channel data, and `TeamsInfo` helpers for accessing Teams context, roster, and meeting information within agent turns.
 
-## Changelog
-| Version | Date | Changelog |
-|------|----|------------|
-| 1.2.0 | 2025-08-19 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/releases/tag/v1.2.0) |
-| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+Also includes a `TeamsActivityHandler` compatibility base class to ease migration from Bot Framework SDK bots.
+
+## Main Types
+
+- Teams activity models, channel data, and card types
+- `TeamsInfo`: Static helpers for accessing Teams roster, meeting, and channel information
+- `TeamsActivityHandler` (compat): Compatibility base class for migrating from Bot Framework SDK

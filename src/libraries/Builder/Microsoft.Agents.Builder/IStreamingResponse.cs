@@ -47,6 +47,12 @@ namespace Microsoft.Agents.Builder
         int Interval { get; set; }
 
         /// <summary>
+        /// The initial delay in milliseconds before the first intermediate message is sent.
+        /// Defaults to 250. Set to a small value in tests.
+        /// </summary>
+        int InitialDelay { get; set; }
+
+        /// <summary>
         /// The unique identifier for the stream.
         /// </summary>
         string StreamId { get; }
