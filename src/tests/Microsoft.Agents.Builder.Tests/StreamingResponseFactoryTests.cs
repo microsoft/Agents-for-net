@@ -239,7 +239,7 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
-        public void Resolve_ParallelCalls_SameChannel_AllReturnSameInstance()
+        public async Task Resolve_ParallelCalls_SameChannel_AllReturnSameInstance()
         {
             var registry = new StreamingResponseFactoryRegistry();
             ResetRegistryStatics();
@@ -249,13 +249,13 @@ namespace Microsoft.Agents.Builder.Tests
                 SetDiscoveredType(registry, "parallel", typeof(TestFactory));
                 SetScanned(true);
 
-                var tasks = new Task<IStreamingResponseFactory?>[10];
+                var tasks = new Task<IStreamingResponseFactory>[10];
                 for (var i = 0; i < tasks.Length; i++)
                 {
                     tasks[i] = Task.Run(() => registry.Resolve("parallel", services: null));
                 }
 
-                var results = Task.WhenAll(tasks).GetAwaiter().GetResult();
+                var results = await Task.WhenAll(tasks);
                 var first = Assert.IsType<TestFactory>(results[0]);
 
                 Assert.All(results, result => Assert.Same(first, result));
