@@ -869,7 +869,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal(false, context.StreamingResponse.EnableGeneratedByAILabel);
             Assert.Null(context.StreamingResponse.SensitivityLabel);
             Assert.Empty(context.StreamingResponse.Citations);
-            Assert.Null(context.StreamingResponse.StreamId);
+            Assert.False(string.IsNullOrEmpty(context.StreamingResponse.StreamId), "StreamId should be re-assigned after reset for WebChat");
             Assert.Equal(0, context.StreamingResponse.UpdatesSent());
         }
 

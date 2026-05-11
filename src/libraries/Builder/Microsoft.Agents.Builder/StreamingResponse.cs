@@ -67,14 +67,12 @@ namespace Microsoft.Agents.Builder
             {
                 Type = ActivityTypes.Typing,
                 Text = bufferedText,
-                Entities = []
+                Entities = [new StreamInfo
+                {
+                    StreamType = StreamTypes.Streaming,
+                    StreamSequence = sequenceNumber,
+                }]
             };
-
-            activity.Entities.Add(new StreamInfo
-            {
-                StreamType = StreamTypes.Streaming,
-                StreamSequence = sequenceNumber,
-            });
 
             if (Citations is { Count: > 0 })
             {
@@ -124,25 +122,26 @@ namespace Microsoft.Agents.Builder
                     return Task.FromResult(StreamErrorAction.Cancel);
                 }
 
-#pragma warning disable CA1862
                 if (BadArgument.Equals(errorResponse.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase) &&
-                    errorResponse.Body?.Error?.Message.ToLower().Contains(TeamsStreamNotAllowed) == true)
+                    errorResponse.Body?.Error?.Message?.IndexOf(TeamsStreamNotAllowed, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
-                    System.Diagnostics.Trace.WriteLine("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
                     return Task.FromResult(StreamErrorAction.FallbackToNonStreaming);
                 }
-#pragma warning restore CA1862
 
                 var errorMessage = errorResponse.Body?.Error?.Message ?? "None";
                 _context?.Adapter?.Logger?.LogWarning(
                     "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",
                     ex.Message,
                     errorMessage);
-                System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorMessage}");
+
+                return Task.FromResult(StreamErrorAction.Error);
             }
 
-            return Task.FromResult(StreamErrorAction.Continue);
+            _context?.Adapter?.Logger?.LogWarning(
+                "Unexpected exception during StreamingResponse: {ExceptionMessage}",
+                ex.Message);
+            return Task.FromResult(StreamErrorAction.Error);
         }
 
         // ── Private helpers ───────────────────────────────────────────────────
@@ -203,14 +202,9 @@ namespace Microsoft.Agents.Builder
                 activity.Text = !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";
             }
 
-            // make sure the supplied Activity doesn't have a streamInfo already.
-            var existingStreamInfos = activity.Entities.Where(e => string.Equals(EntityTypes.StreamInfo, e.Type, StringComparison.OrdinalIgnoreCase)).ToList();
-            if (existingStreamInfos.Count != 0)
+            foreach (var existing in activity.Entities.Where(e => string.Equals(EntityTypes.StreamInfo, e.Type, StringComparison.OrdinalIgnoreCase)).ToList())
             {
-                foreach (var existing in existingStreamInfos)
-                {
-                    activity.Entities.Remove(existing);
-                }
+                activity.Entities.Remove(existing);
             }
 
             if (IsStreamingChannel)

@@ -35,9 +35,27 @@ namespace Microsoft.Agents.Builder
         private bool _userCancelled;
         private readonly object _lock = new();
         private int _sequenceNumber;
+        private int _initialDelay = 250;
+
 
         /// <summary>Gets or sets the interval in ms between intermediate sends.</summary>
         public int Interval { get; set; } = 500;
+
+        /// <summary>
+        /// The initial delay in milliseconds before the first intermediate message is sent.
+        /// Defaults to 250. Set to a small value in tests.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a negative value.</exception>
+        public int InitialDelay
+        {
+            get => _initialDelay;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "InitialDelay must be greater than or equal to 0.");
+                _initialDelay = value;
+            }
+        }
 
         /// <summary>Gets or sets the timeout in ms for EndStreamAsync to wait for the buffer to drain.</summary>
         public int EndStreamTimeout { get; set; } = DefaultEndStreamTimeout;
@@ -149,13 +167,17 @@ namespace Microsoft.Agents.Builder
             lock (_lock)
             {
                 if (_streamEnded)
+                {
+                    if (_streamCancelled)
+                        return;
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
                         ErrorHelper.StreamingResponseEnded, null);
+                }
 
                 Message += text;
                 Message = CitationUtils.FormatCitationsResponse(Message);
                 _messageUpdated = true;
-                StartStream(250);
+                StartStream(InitialDelay);
             }
         }
 
@@ -165,16 +187,13 @@ namespace Microsoft.Agents.Builder
             if (!IsStreamingChannel)
                 return;
 
+            int seq;
             lock (_lock)
             {
                 if (_streamEnded)
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
                         ErrorHelper.StreamingResponseEnded, null);
-            }
 
-            int seq;
-            lock (_lock)
-            {
                 seq = ++_sequenceNumber;
             }
 
@@ -223,10 +242,14 @@ namespace Microsoft.Agents.Builder
                 // Wait for the send loop to drain the buffer
                 if (loopTask != null)
                 {
-                    var timeoutTask = Task.Delay(EndStreamTimeout, CancellationToken.None);
+                    var timeoutTask = Task.Delay(EndStreamTimeout, cancellationToken);
                     var completed = await Task.WhenAny(loopTask, timeoutTask).ConfigureAwait(false);
                     if (completed != loopTask)
+                    {
+                        StopStream();
+                        cancellationToken.ThrowIfCancellationRequested();
                         return StreamingResponseResult.Timeout;
+                    }
                 }
 
                 if (_streamCancelled)
@@ -334,10 +357,24 @@ namespace Microsoft.Agents.Builder
 
         private void StopStream()
         {
+            var loopTask = _loopTask;
+            _loopTask = null;
             _cts?.Cancel();
+
+            if (loopTask != null)
+            {
+                try
+                {
+                    loopTask.GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    // Loop handles its own exceptions; swallow anything residual
+                }
+            }
+
             _cts?.Dispose();
             _cts = null;
-            _loopTask = null;
         }
 
         private async Task RunSendLoopAsync(int initialDelay, CancellationToken ct)
@@ -374,7 +411,7 @@ namespace Microsoft.Agents.Builder
                 {
                     try
                     {
-                        await SendChunksAsync(textToSend, seqToSend, CancellationToken.None).ConfigureAwait(false);
+                        await SendChunksAsync(textToSend, seqToSend, ct).ConfigureAwait(false);
 
                         lock (_lock)
                         {
@@ -402,6 +439,9 @@ namespace Microsoft.Agents.Builder
                                 case StreamErrorAction.Cancel:
                                     _streamCancelled = true;
                                     _userCancelled = true;
+                                    break;
+                                case StreamErrorAction.Error:
+                                    _streamCancelled = true;
                                     break;
                             }
                         }

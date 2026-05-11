@@ -19,5 +19,8 @@ namespace Microsoft.Agents.Builder
 
         /// <summary>Stop the stream and return StreamingResponseResult.UserCancelled.</summary>
         Cancel,
+
+        /// <summary>Stop the stream and return StreamingResponseResult.Error.</summary>
+        Error,
     }
 }

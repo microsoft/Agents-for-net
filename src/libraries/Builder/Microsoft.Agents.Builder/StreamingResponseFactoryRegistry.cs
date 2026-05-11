@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Builder
@@ -12,7 +13,7 @@ namespace Microsoft.Agents.Builder
     /// </summary>
     public class StreamingResponseFactoryRegistry
     {
-        private readonly Dictionary<string, IStreamingResponseFactory> _factories = new();
+        private readonly ConcurrentDictionary<string, IStreamingResponseFactory> _factories = new();
 
         /// <summary>Registers a factory for a channel, overwriting any previous registration.</summary>
         public void Register(string channelId, IStreamingResponseFactory factory)

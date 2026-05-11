@@ -105,7 +105,16 @@ namespace Microsoft.Agents.Builder
         public IActivity Activity { get; }
 
         /// <inheritdoc/>
-        public IStreamingResponse StreamingResponse => _streamingResponse ??= new StreamingResponse(this);
+        public IStreamingResponse StreamingResponse
+        {
+            get
+            {
+                if (_streamingResponse != null)
+                    return _streamingResponse;
+                var instance = new StreamingResponse(this);
+                return Interlocked.CompareExchange(ref _streamingResponse, instance, null) ?? instance;
+            }
+        }
 
         /// <summary>
         /// Sets a custom streaming response implementation, typically called by adapters
@@ -337,6 +346,7 @@ namespace Microsoft.Agents.Builder
 
             if (disposing)
             {
+                _streamingResponse?.Dispose();
                 StackState.Dispose();
                 Services.Dispose();
             }
