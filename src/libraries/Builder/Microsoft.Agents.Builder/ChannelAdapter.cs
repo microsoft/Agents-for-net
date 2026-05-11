@@ -267,10 +267,7 @@ namespace Microsoft.Agents.Builder
 #endif
 
             var registry = Services.GetService<StreamingResponseFactoryRegistry>();
-            if (registry?.TryGet(channelId, out var registryFactory) == true)
-                return registryFactory;
-
-            return null;
+            return registry?.Resolve(channelId, Services);
         }
     }
 }
