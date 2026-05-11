@@ -1,8 +1,7 @@
 # Microsoft.Agents.Hosting.A2A
 
-## Changelog
-| Version | Date | Changelog |
-|------|----|------------|
-| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+> **Preview**
 
-## Preview package for A2A Hosting endpoint for Agents SDK
+## About
+
+Provides an [A2A protocol](https://github.com/a2aproject/A2A) hosting endpoint for agents built with the Microsoft 365 Agents SDK, enabling interoperability with other A2A-compatible agents and platforms.
