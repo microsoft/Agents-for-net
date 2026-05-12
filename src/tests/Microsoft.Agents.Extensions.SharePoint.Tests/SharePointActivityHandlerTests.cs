@@ -9,10 +9,9 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Xunit;
 using Microsoft.Agents.Extensions.SharePoint.Models;
-using Microsoft.Agents.Extensions.SharePoint;
 using Microsoft.Agents.Extensions.SharePoint.Compat;
-using Microsoft.Agents.BotBuilder;
-using Microsoft.Agents.BotBuilder.Testing;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Tests;
 
 namespace Microsoft.Agents.Extensions.SharePoint.Tests
 {
@@ -39,7 +38,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await bot.OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);
@@ -71,7 +70,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await bot.OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);
@@ -103,7 +102,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await bot.OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);
@@ -135,7 +134,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await bot.OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);
@@ -167,7 +166,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
 
             // Act
             var bot = new TestActivityHandler();
-            await ((IBot)bot).OnTurnAsync(turnContext);
+            await bot.OnTurnAsync(turnContext);
 
             // Assert
             Assert.Single(bot.Record);
