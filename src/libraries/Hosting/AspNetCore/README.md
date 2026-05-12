@@ -1,31 +1,12 @@
 # Microsoft.Agents.Hosting.AspNetCore
 
-- Required package for a hosting an Agent in AspNet.
-- Provides extension methods to add an Agents using DI.
+## About
 
-## Changelog
-| Version | Date | Changelog |
-|------|----|------------|
-| 1.2.0 | 2025-08-19 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/releases/tag/v1.2.0) |
-| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+ASP.NET Core integration package for hosting agents built with the Microsoft 365 Agents SDK. Provides dependency injection extensions and HTTP middleware for processing agent requests from Azure Bot Service and other channels.
 
-## How-to use
+## Main Types
 
-```cs
-builder.AddAgent<TAgent>();
-```
-
-Or
-
-```cs
-builder.AddAgent(sp =>
-{
-	var options = new AgentApplicationOptions()
-	{
-	};
-
-	var app = new AgentApplication(options);
-
-	return app;
-});
-```
+- `AddAgent<T>()`: Registers an agent with the DI container
+- `AddAgentApplicationOptions()`: Registers `AgentApplicationOptions` with DI
+- `AddAgentAspNetAuthentication()`: Configures Azure Bot Service JWT authentication
+- `MapAgentApplicationEndpoints()`: Maps the agent HTTP endpoint (default: `/api/messages`)

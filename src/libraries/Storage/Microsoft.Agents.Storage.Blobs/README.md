@@ -2,36 +2,13 @@
 
 ## About
 
-* An Agent is inherently stateless. Once your Agent is deployed, it may not run in the same process or on the same machine from one turn to the next. However, your Agent may need to track the context of a conversation so that it can manage its behavior and remember answers to previous questions. The state and storage features of the Agents SDK allow you to add state to your Agent.
-* Microsoft.Agents.State use Storage to persist state to memory, Azure Blobs, or CosmosDb.
+Azure Blob Storage implementation of `IStorage` for the Microsoft 365 Agents SDK. Suitable for production deployments requiring persistent, scalable conversation state storage.
 
-## Changelog
-| Version | Date | Changelog |
-|------|----|------------|
-| 1.2.0 | 2025-08-19 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/releases/tag/v1.2.0) |
-| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+Also includes `BlobsTranscriptStore` for storing conversation transcripts in Azure Blob Storage.
 
 ## Main Types
 
-- BlobsStorage
+- `BlobsStorage`: `IStorage` implementation backed by Azure Blob Storage
+- `BlobsTranscriptStore`: Transcript store backed by Azure Blob Storage
 
-## Registering BlobsStorage
-
-### appsettings.json
-```json
-{
-  "BlobsStorageOptions": {
-    "ConnectionString": "{blobs_connection_string}",
-    "ContainerName": "{blobs_container_name}"
-  }
-}
-```
-
-### Program.cs
-```
-builder.Services.AddSingleton<IStorage>((sp) => new BlobsStorage(
-    builder.Configuration["BlobsStorageOptions:ConnectionString"],
-    builder.Configuration["BlobsStorageOptions:ContainerName"]));
-```
-> See the other BlobsStorage constructors for additional options.
-
+See [Agents SDK storage overview](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/storage) for more information.

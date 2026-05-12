@@ -110,9 +110,39 @@ namespace Microsoft.Agents.Builder
         /// Teams default: 1000
         /// WebChat default: 500
         /// </remarks>
-        public int Interval { get; set; }
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a negative value.</exception>
+        public int Interval
+        {
+            get => _interval;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Interval must be greater than or equal to 0.");
+                _interval = value;
+            }
+        }
+
+        private int _interval;
 
         public int EndStreamTimeout { get; set; } = DefaultEndStreamTimeout;
+
+        /// <summary>
+        /// The initial delay in milliseconds before the first intermediate message is sent.
+        /// Defaults to 250. Set to a small value in tests.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a negative value.</exception>
+        public int InitialDelay
+        {
+            get => _initialDelay;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "InitialDelay must be greater than or equal to 0.");
+                _initialDelay = value;
+            }
+        }
+
+        private int _initialDelay = 250;
 
         /// <summary>
         /// Indicate if the current channel supports intermediate messages.
@@ -290,9 +320,9 @@ namespace Microsoft.Agents.Builder
 
                 _messageUpdated = true;
 
-                // Start stream if needed.  The 250 allows for a quicker stream (better UX) if Informative hadn't been sent
+                // Start stream if needed.  The InitialDelay allows for a quicker stream (better UX) if Informative hadn't been sent
                 // and we're just now starting the stream.  It uses Interval after the first stream message.
-                StartStream(250);
+                StartStream(InitialDelay);
             }
         }
 
