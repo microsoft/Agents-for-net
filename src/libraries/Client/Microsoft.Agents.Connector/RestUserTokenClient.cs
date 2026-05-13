@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Connector
             var tokenExchangeState = new TokenExchangeState
             {
                 ConnectionName = connectionName,
-                Conversation = activity.GetConversationReference(),
+                Conversation = activity.GetConversationReference(forceBaseChannel:true),
                 RelatesTo = activity.RelatesTo,
                 MsAppId = appId,
             };
