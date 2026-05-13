@@ -671,5 +671,64 @@ namespace Microsoft.Agents.Builder.Tests
                     turnContext.Activity.CreateReply($"echo:{turnContext.Activity.Text}"), cancellationToken);
             }
         }
+
+        [Fact]
+        public void StreamingResponse_DefaultsToStreamingResponse_WhenNoFactoryRegistered()
+        {
+            var adapter = new Mock<IChannelAdapter>().Object;
+            var activity = new Activity { Type = ActivityTypes.Message, ChannelId = "test" };
+            var ctx = new TurnContext(adapter, activity);
+
+            // Default: should create a StreamingResponse (the existing Activity-based impl)
+            var sr = ctx.StreamingResponse;
+            Assert.NotNull(sr);
+            // It should be lazy — accessing twice returns same instance
+            Assert.Same(sr, ctx.StreamingResponse);
+        }
+
+        [Fact]
+        public void SetStreamingResponse_ReplacesDefault()
+        {
+            var adapter = new Mock<IChannelAdapter>().Object;
+            var activity = new Activity { Type = ActivityTypes.Message, ChannelId = "slack" };
+            var ctx = new TurnContext(adapter, activity);
+
+            var customSr = new Mock<IStreamingResponse>().Object;
+            ctx.SetStreamingResponse(customSr);
+
+            Assert.Same(customSr, ctx.StreamingResponse);
+        }
+
+        [Fact]
+        public void SetStreamingResponse_AfterStreamStarted_Throws()
+        {
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(a => a.SendActivitiesAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(new[] { new ResourceResponse() });
+
+            var activity = new Activity { Type = ActivityTypes.Message, ChannelId = "directline" };
+            var ctx = new TurnContext(adapter.Object, activity);
+
+            // Start the stream
+            ctx.StreamingResponse.QueueTextChunk("hello");
+
+            // After stream started, SetStreamingResponse should throw
+            Assert.Throws<InvalidOperationException>(() => ctx.SetStreamingResponse(new Mock<IStreamingResponse>().Object));
+        }
+
+        [Fact]
+        public void CopyConstructor_CarriesForwardStreamingResponse()
+        {
+            var adapter = new Mock<IChannelAdapter>().Object;
+            var activity = new Activity { Type = ActivityTypes.Message, ChannelId = "slack" };
+            var ctx = new TurnContext(adapter, activity);
+
+            var customSr = new Mock<IStreamingResponse>().Object;
+            ctx.SetStreamingResponse(customSr);
+
+            // Copy constructor should carry forward the streaming response
+            var ctx2 = new TurnContext(ctx, new Activity { Type = ActivityTypes.Message });
+            Assert.Same(customSr, ctx2.StreamingResponse);
+        }
     }
 }

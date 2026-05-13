@@ -8,6 +8,7 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
@@ -308,6 +309,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 // Add factory for ConnectorClient and UserTokenClient creation
                 services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
             }
+
+            // Always register the streaming factory registry for auto-discovery of
+            // IStreamingResponseFactory implementations via assembly attributes.
+            services.TryAddSingleton<StreamingResponseFactoryRegistry>();
 
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             services.AddCloudAdapter<TAdapter>();

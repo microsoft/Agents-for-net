@@ -123,10 +123,10 @@
 		<PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.73.0" />
 		<PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.73.0" />
 		<!-- OpenAI -->
-		<PackageVersion Include="OpenAI" Version="2.8.0" />
-		<PackageVersion Include="Azure.AI.OpenAI" Version="2.8.0-beta.1" />
-		<PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.3.0" />
-		<PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.3.0" />
+		<PackageVersion Include="OpenAI" Version="2.10.0" />
+		<PackageVersion Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
+		<PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.5.2" />
+		<PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.5.2" />
 		<!-- TeamsAI -->
 		<PackageVersion Include="JsonSchema.Net" Version="6.1.2" />
 		<PackageVersion Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.0.1" />

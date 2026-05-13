@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
@@ -27,9 +28,15 @@ namespace Microsoft.Agents.Builder
         public const string InvokeResponseKey = "ChannelAdapterInvokeResponse";
 
         /// <summary>
-        /// Logger for the Adapter. 
+        /// Logger for the Adapter.
         /// </summary>
         public ILogger? Logger { get; set; }
+
+        /// <summary>
+        /// Optional service provider used to resolve streaming response factories.
+        /// Concrete adapters that have DI access should set this in their constructor.
+        /// </summary>
+        public IServiceProvider? Services { get; protected set; }
 
         public ChannelAdapter(ILogger logger = null)
         {
@@ -130,10 +137,15 @@ namespace Microsoft.Agents.Builder
             // Create a turn context
             using var context = new TurnContext(this, activity, claimsIdentity);
 
+            // Inject channel-specific streaming response if a factory is registered
+            var factory = ResolveStreamingResponseFactory(activity.ChannelId);
+            if (factory is not null)
+                context.SetStreamingResponse(factory.Create(context));
+
             // Run the pipeline.
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
 
-            // If there are any results they will have been left on the TurnContext. 
+            // If there are any results they will have been left on the TurnContext.
             return ProcessTurnResults(context);
         }
 
@@ -145,6 +157,10 @@ namespace Microsoft.Agents.Builder
 
             // Create a turn context
             using var context = new TurnContext(this, continuationActivity, claimsIdentity);
+
+            var srFactory = ResolveStreamingResponseFactory(continuationActivity.ChannelId);
+            if (srFactory is not null)
+                context.SetStreamingResponse(srFactory.Create(context));
 
             // Run the pipeline.
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -238,6 +254,20 @@ namespace Microsoft.Agents.Builder
 
             // No body to return.
             return null;
+        }
+
+        protected IStreamingResponseFactory ResolveStreamingResponseFactory(string channelId)
+        {
+            if (channelId is null || Services is null)
+                return null;
+
+#if NET8_0_OR_GREATER
+            if (Services.GetKeyedService<IStreamingResponseFactory>(channelId) is { } keyedFactory)
+                return keyedFactory;
+#endif
+
+            var registry = Services.GetService<StreamingResponseFactoryRegistry>();
+            return registry?.Resolve(channelId, Services);
         }
     }
 }

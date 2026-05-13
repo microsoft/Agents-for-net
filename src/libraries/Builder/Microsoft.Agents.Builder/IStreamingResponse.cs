@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,18 @@ namespace Microsoft.Agents.Builder
         Error
     };
 
-    public interface IStreamingResponse
+    /// <summary>
+    /// This interface is used to send chunked text in a series of "intermediate" messages, on an interval.  This
+    /// gives the UX of a streamed message. When complete, a final message (ActivityType.Message) is sent with
+    /// the full message and optional Attachments.
+    ///
+    /// The expected sequence of calls is:
+    ///
+    /// `QueueInformativeUpdateAsync()`, `QueueTextChunk()`, `QueueTextChunk()`, ..., `EndStreamAsync()`.
+    ///
+    ///  Once `EndStreamAsync()` is called, the stream is considered ended and no further updates can be sent.
+    /// </summary>
+    public interface IStreamingResponse : IDisposable
     {
         /// <summary>
         /// Set IActivity that will be (optionally) used for the final streaming message.
