@@ -351,9 +351,14 @@ namespace Microsoft.Agents.Core.Models
             return activity;
         }
 
-
         /// <inheritdoc/>
         public ConversationReference GetConversationReference()
+        {
+          return GetConversationReference(forceBaseChannel: null);
+        }
+
+        /// <inheritdoc/>
+        public ConversationReference GetConversationReference(bool? forceBaseChannel = null)
         {
             var reference = new ConversationReference
             {
@@ -361,7 +366,7 @@ namespace Microsoft.Agents.Core.Models
                 User = From,
                 Agent = Recipient,
                 Conversation = Conversation,
-                ChannelId = ChannelId?.ToString(),
+                ChannelId = forceBaseChannel.HasValue && forceBaseChannel.Value ? ChannelId?.Channel : ChannelId?.ToString(),
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
                 DeliveryMode = DeliveryMode,
