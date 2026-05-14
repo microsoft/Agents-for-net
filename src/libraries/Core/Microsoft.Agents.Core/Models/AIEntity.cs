@@ -380,6 +380,16 @@ namespace Microsoft.Agents.Core.Models
             public const string MicrosoftPowerPoint = "Microsoft PowerPoint";
 
             /// <summary>
+            /// Represents the Microsoft OneNote icon name.
+            /// </summary>
+            public const string MicrosoftOneNote = "Microsoft OneNote";
+
+            /// <summary>
+            /// Represents the Microsoft SharePoint icon name.
+            /// </summary>
+            public const string MicrosoftSharePoint = "Microsoft SharePoint";
+
+            /// <summary>
             /// Represents the Microsoft Visio icon name.
             /// </summary>
             public const string MicrosoftVisio = "Microsoft Visio";
@@ -469,6 +479,12 @@ namespace Microsoft.Agents.Core.Models
         /// <summary>ClientCitationIconNamee for Microsoft PowerPoint.</summary>
         public static readonly ClientCitationIconName MicrosoftPowerPoint = new(Names.MicrosoftPowerPoint);
 
+        /// <summary>ClientCitationIconNamee for Microsoft OneNote.</summary>
+        public static readonly ClientCitationIconName MicrosoftOneNote = new(Names.MicrosoftOneNote);
+
+        /// <summary>ClientCitationIconNamee for Microsoft SharePoint.</summary>
+        public static readonly ClientCitationIconName MicrosoftSharePoint = new(Names.MicrosoftSharePoint);
+
         /// <summary>ClientCitationIconNamee for Microsoft Visio.</summary>
         public static readonly ClientCitationIconName MicrosoftVisio = new(Names.MicrosoftVisio);
 
@@ -557,6 +573,18 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         [EnumMember(Value = ClientCitationIconName.Names.MicrosoftPowerPoint)]
         MicrosoftPowerPoint,
+
+        /// <summary>
+        /// Represents the Microsoft OneNote icon name.
+        /// </summary>
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftOneNote)]
+        MicrosoftOneNote,
+
+        /// <summary>
+        /// Represents the Microsoft SharePoint icon name.
+        /// </summary>
+        [EnumMember(Value = ClientCitationIconName.Names.MicrosoftSharePoint)]
+        MicrosoftSharePoint,
 
         /// <summary>
         /// Represents the Microsoft Visio icon name.
