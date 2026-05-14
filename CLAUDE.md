@@ -83,7 +83,7 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 ### Client Libraries
 
 **Microsoft.Agents.Client** (`src/libraries/Client/Microsoft.Agents.Client/`)
-- Agent-to-Agent (A2A) communication
+- Agent-to-Agent (Activity Protocol) communication
 - `IAgentHost` for managing conversations with other agents
 - Extension: `AddAgentHost()`
 - Supports both Normal and Streaming delivery modes
@@ -101,9 +101,6 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
 - Microsoft Teams-specific functionality
-
-**Microsoft.Agents.Extensions.Teams.AI** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams.AI/`)
-- Teams AI capabilities integration
 
 **Microsoft.Agents.Extensions.SharePoint** (`src/libraries/Extensions/Microsoft.Agents.Extensions.SharePoint/`)
 - SharePoint integration
@@ -134,43 +131,25 @@ public class MyAgent : AgentApplication
 ```
 
 ### ASP.NET Core Program Setup
-1. Add services: `builder.AddAgentApplicationOptions()`, `builder.AddAgent<TAgent>()`
+1. Register agent: `builder.AddAgent<MyAgent>();`
 2. Register storage: `builder.Services.AddSingleton<IStorage, MemoryStorage>()`
 3. Add authentication: `builder.Services.AddAgentAspNetAuthentication(builder.Configuration)`
-4. Map endpoint: `app.MapPost("/api/messages", async (request, response, adapter, agent, ct) => ...)`
+4. Map endpoints: `app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());`
+5. See [EmptyAgent startup](https://github.com/microsoft/Agents-for-net/blob/main/src/samples/EmptyAgent/Program.cs)
 
 ### Agent-to-Agent Communication
 - Parent agent uses `IAgentHost` to communicate with other agents
 - Child agents require no special code - they are regular agents
 - Two delivery modes:
   - `DeliveryModes.Normal`: Async replies (for long-running operations)
-  - `DeliveryModes.Stream`: Streaming replies in HTTP response (for chat-style interactions)
+  - `DeliveryModes.Stream`: Streaming replies using SSE.
 
 ## Configuration
 
 ### Authentication (appsettings.json)
-```json
-"Connections": {
-  "ServiceConnection": {
-    "Settings": {
-      "AuthType": "ClientSecret",
-      "AuthorityEndpoint": "https://login.microsoftonline.com/{TenantId}",
-      "ClientId": "{ClientId}",
-      "ClientSecret": "{ClientSecret}",
-      "Scopes": ["https://api.botframework.com/.default"]
-    }
-  }
-}
-```
+See [Configure authentication in a .NET agent](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/microsoft-authentication-library-configuration-options)
 
-### Token Validation
-```json
-"TokenValidation": {
-  "Enabled": false,  // Set true for production
-  "Audiences": ["{ClientId}"],
-  "TenantId": "{TenantId}"
-}
-```
+See [Configure AspNet JWT authentication](src/samples/A2AAgent/AspNetExtensions.cs)
 
 ## Testing Strategy
 
@@ -180,13 +159,12 @@ public class MyAgent : AgentApplication
 - Common test helpers in `Microsoft.Agents.Builder.Testing`
 - Moq used for mocking (v4.20.72)
 
-## Samples
+## Test Samples
 
-Samples are in `src/samples/` directory. Each has its own README with setup instructions.
+Samples are in `src/samples/` directory. Each has its own README with setup instructions.  These are similar to the samples in Agents SDK.  They can contain additional functionality used when developing the DotNet SDK.
 
 **Key Samples:**
 - `EmptyAgent`: Basic agent template - good starting point
-- `AgentToAgent`: Demonstrates A2A communication with streaming and normal modes
 - `CopilotStudioClient`: Client examples for Copilot Studio integration
 - `SemanticKernel/WeatherAgent`: Shows Semantic Kernel integration
 - `TelemetryAgent`: OpenTelemetry instrumentation example
@@ -211,4 +189,8 @@ Samples are in `src/samples/` directory. Each has its own README with setup inst
 
 ### Package Publishing
 - Public packages: nuget.org (prefix: `Microsoft.Agents.*`)
-- Nightly builds: nuget.org with `-alpha` suffix (updated overnight PT)
+- Nightly builds: nuget.org with `-beta` suffix (updated overnight PT)
+
+### Terms
+- A2A is not the same as Agent-to-Agent.  A2A is the open spec: https://github.com/a2aproject/A2A, and Agent-to-Agent is communicating with another SDK agent using Activity Protocol: https://github.com/microsoft/Agents/blob/main/specs/activity/protocol-activity.md
+- A2A is also not related to `DeliveryModes.Stream`.  The later is a transport mechanism to stream responses using SSE. 

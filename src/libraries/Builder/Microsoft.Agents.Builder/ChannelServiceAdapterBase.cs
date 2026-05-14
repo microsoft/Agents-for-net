@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Builder
                     {
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
+                            ChannelServiceAdapterLog.LogTurnResponse(Logger, activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
                         }
 
                         // Respond via ConnectorClient
@@ -196,7 +196,7 @@ namespace Microsoft.Agents.Builder
 
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug("ProcessProactive: Activity='{Activity}'", ProtocolJsonSerializer.ToJson(continuationActivity));
+                ChannelServiceAdapterLog.LogProcessProactive(Logger, ProtocolJsonSerializer.ToJson(continuationActivity));
             }
 
             ValidateContinuationActivity(continuationActivity);
@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Builder
         {
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Target={Agent}, Activity='{Activity}'", activity.RequestId, callback.Target?.ToString() ?? callback.Method.Name, ProtocolJsonSerializer.ToJson(activity));
+                ChannelServiceAdapterLog.LogProcessActivity(Logger, activity.RequestId, callback.Target?.ToString() ?? callback.Method.Name, ProtocolJsonSerializer.ToJson(activity));
             }
 
             if (AgentClaims.IsAgentClaim(claimsIdentity))
@@ -243,7 +243,7 @@ namespace Microsoft.Agents.Builder
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
             if (useAnonymousAuthCallback)
             {
-                Logger.LogWarning("Anonymous access is enabled for channel: {ChannelId}.", activity.ChannelId);
+                ChannelServiceAdapterLog.LogAnonymousAccess(Logger, activity.ChannelId);
             }
 
             // Create a turn context and clients

@@ -352,9 +352,14 @@ namespace Microsoft.Agents.Core.Models
             return activity;
         }
 
-
         /// <inheritdoc/>
         public ConversationReference GetConversationReference()
+        {
+          return GetConversationReference(forceBaseChannel: null);
+        }
+
+        /// <inheritdoc/>
+        public ConversationReference GetConversationReference(bool? forceBaseChannel = null)
         {
             var reference = new ConversationReference
             {
@@ -362,7 +367,7 @@ namespace Microsoft.Agents.Core.Models
                 User = From,
                 Agent = Recipient,
                 Conversation = Conversation,
-                ChannelId = ChannelId?.ToString(),
+                ChannelId = forceBaseChannel.HasValue && forceBaseChannel.Value ? ChannelId?.Channel : ChannelId?.ToString(),
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
                 DeliveryMode = DeliveryMode,
@@ -405,7 +410,17 @@ namespace Microsoft.Agents.Core.Models
             {
                 // Outgoing
                 From = reference.Agent;
-                Recipient = reference.User;
+
+                // Targeted activities should have the recipient set to the intended user instead of the
+                // incoming Activity's sender.  This allows for proper routing of the outgoing activity
+                // to the user even if the incoming activity was sent to a different user (e.g. in group chat scenarios).
+                // Preserve an explicitly-set targeted recipient, but fall back to the conversation reference's
+                // user when the recipient has not been populated.
+                if (!this.IsTargetedActivity() || Recipient == null)
+                {
+                    Recipient = reference.User;
+                }
+
                 if (reference.ActivityId != null)
                 {
                     ReplyToId = reference.ActivityId;

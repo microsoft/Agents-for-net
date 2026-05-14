@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Builder.App
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
         private readonly ConcurrentQueue<AgentApplicationTurnError> _turnErrorHandlers;
-        
+
         public List<IAgentExtension> RegisteredExtensions { get; private set; } = new List<IAgentExtension>();
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder.App
 
             Options = options;
 
-            Logger = options.LoggerFactory?.CreateLogger<AgentApplication>() ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+            Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
 
             if (Options.TurnStateFactory == null)
             {
@@ -756,6 +756,13 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
+            {
+                ["RequestId"] = turnContext.Activity.RequestId,
+                ["ConversationId"] = turnContext.Activity.Conversation?.Id,
+                ["ActivityType"] = turnContext.Activity.Type
+            });
+
             using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
 
             if (_userAuth != null)
@@ -836,7 +843,7 @@ namespace Microsoft.Agents.Builder.App
 
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
-                        var (routeCount, routeListFormatted) = _routes.FormatRouteList();
+                        var (routeCount, routeListFormatted) = _routes.FormatRouteList(turnContext);
                         LogRouteList(Logger, routeCount, routeListFormatted);
                     }
 
@@ -887,6 +894,11 @@ namespace Microsoft.Agents.Builder.App
                         }
                     }
                     onTurnTelemetryScope.Share(routeAuthorized, routeMatched);
+
+                    if (!routeMatched)
+                    {
+                        LogNoRouteMatched(Logger, turnContext.Activity.Type);
+                    }
 
                     // Call after turn handler
                     using (var telemetryScope = new ScopeAfterTurn())
