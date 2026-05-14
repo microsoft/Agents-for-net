@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Text.Json;
 using System.Threading;
 
 namespace Microsoft.Agents.Builder.App
@@ -64,41 +64,50 @@ namespace Microsoft.Agents.Builder.App
 
         // Returns both the count and formatted string from a single lock acquisition,
         // avoiding a TOCTOU race if routes are modified between separate Count and FormatRouteList calls.
-        internal (int Count, string Formatted) FormatRouteList()
+        internal (int Count, string Formatted) FormatRouteList(ITurnContext turnContext = null)
         {
             var orderedRoutes = Enumerate();
-            var sb = new StringBuilder();
+            var entries = new List<Dictionary<string, object>>();
             int index = 0;
             foreach (var route in orderedRoutes)
             {
-                // Build flags string manually to control separator and "None" fallback.
-                // Use bitwise & rather than HasFlag to avoid enum boxing.
-                // (RouteFlags uses power-of-two values but is not decorated with [Flags])
                 var parts = new List<string>();
                 if ((route.Flags & RouteFlags.Invoke) != 0) parts.Add("Invoke");
                 if ((route.Flags & RouteFlags.Agentic) != 0) parts.Add("Agentic");
                 if ((route.Flags & RouteFlags.NonTerminal) != 0) parts.Add("NonTerminal");
-                var flagsStr = parts.Count > 0 ? string.Join(",", parts) : "None";
 
-                sb.Append($"  [{index}] {GetHandlerName(route.Handler)} flags={flagsStr} rank={route.Rank}");
-
-                var channel = route.ChannelId?.Channel;
-                if (!string.IsNullOrEmpty(channel))
+                var entry = new Dictionary<string, object>
                 {
-                    sb.Append($" channel={channel}");
+                    ["Index"] = index,
+                    ["Handler"] = GetHandlerName(route.Handler),
+                    ["Flags"] = parts.Count > 0 ? string.Join(",", parts) : "None",
+                    ["Rank"] = route.Rank,
+                    ["Channel"] = route.ChannelId?.Channel ?? "*"
+                };
+
+                if (turnContext != null && route.OAuthHandlers != null)
+                {
+                    try
+                    {
+                        var oauthHandlers = route.OAuthHandlers(turnContext);
+                        if (oauthHandlers != null && oauthHandlers.Length > 0)
+                        {
+                            entry["OAuthHandlers"] = oauthHandlers;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        entry["OAuthHandlersError"] = string.IsNullOrEmpty(ex.Message)
+                            ? ex.GetType().Name
+                            : $"{ex.GetType().Name}: {ex.Message}";
+                    }
                 }
 
-                sb.AppendLine();
+                entries.Add(entry);
                 index++;
             }
 
-            // Remove trailing newline
-            if (sb.Length > 0 && sb[sb.Length - 1] == '\n')
-            {
-                sb.Length -= sb.Length > 1 && sb[sb.Length - 2] == '\r' ? 2 : 1;
-            }
-
-            return (index, sb.ToString());
+            return (index, JsonSerializer.Serialize(entries));
         }
 
         // Produces a human-readable name for a route handler delegate.

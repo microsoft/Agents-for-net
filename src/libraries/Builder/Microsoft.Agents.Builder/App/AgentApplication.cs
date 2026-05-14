@@ -756,6 +756,13 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
+            {
+                ["RequestId"] = turnContext.Activity.RequestId,
+                ["ConversationId"] = turnContext.Activity.Conversation?.Id,
+                ["ActivityType"] = turnContext.Activity.Type
+            });
+
             using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
 
             if (_userAuth != null)
@@ -836,7 +843,7 @@ namespace Microsoft.Agents.Builder.App
 
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
-                        var (routeCount, routeListFormatted) = _routes.FormatRouteList();
+                        var (routeCount, routeListFormatted) = _routes.FormatRouteList(turnContext);
                         LogRouteList(Logger, routeCount, routeListFormatted);
                     }
 
@@ -887,6 +894,11 @@ namespace Microsoft.Agents.Builder.App
                         }
                     }
                     onTurnTelemetryScope.Share(routeAuthorized, routeMatched);
+
+                    if (!routeMatched)
+                    {
+                        LogNoRouteMatched(Logger, turnContext.Activity.Type);
+                    }
 
                     // Call after turn handler
                     using (var telemetryScope = new ScopeAfterTurn())

@@ -68,7 +68,7 @@ Parent agents use `IAgentHost` to talk to child agents. Child agents need no spe
 - Core libraries **multi-target** `net8.0` and `netstandard2.0` (set in `src/Build.Common.core.props`).
 - **TreatWarningsAsErrors** is enabled globally (`src/Build.Shared.props`).
 - Package versioning uses **Nerdbank.GitVersioning** (`src/libraries/version.json`). Release branches follow the pattern `rel/v{version}`.
-- Output goes to `bin/{Configuration}/{ProjectName}/`.
+- .NET SDK version pinned in `global.json` (8.0.x with `rollForward: latestMajor`).
 
 ### Serialization
 - Uses **`System.Text.Json`** exclusively (not Newtonsoft). The central serializer is `ProtocolJsonSerializer` in `Microsoft.Agents.Core.Serialization`.
@@ -83,11 +83,11 @@ Parent agents use `IAgentHost` to talk to child agents. Child agents need no spe
 - Test helpers in `Microsoft.Agents.Builder.Testing`.
 - Telemetry tests use `[Collection("TelemetryTests")]` to disable parallel execution (avoids `ActivitySource` listener conflicts).
 
+### Authentication
+- MSAL-based auth (`Authentication.Msal`) supports ClientSecret, Federated Credentials, and Managed Identity.
+- `AddAgentAspNetAuthentication` is defined in sample-local `AspNetExtensions.cs` files, not in the hosting library.
+- Local dev port: `http://localhost:3978`.
+
 ### Terminology
 - **Agent-to-Agent** refers to SDK agents communicating via the Activity Protocol — not the A2A open spec (`github.com/a2aproject/A2A`).
 - **`DeliveryModes.Stream`** is an SSE transport mechanism, unrelated to A2A.
-
-### Authentication
-- MSAL-based auth (`Authentication.Msal`) supports ClientSecret, Federated Credentials, and Managed Identity.
-- ClientSecret/Certificate works with dev tunnels for local debugging; Federated/Managed Identity requires deployed infrastructure.
-- Local dev port: `http://localhost:3978`.
