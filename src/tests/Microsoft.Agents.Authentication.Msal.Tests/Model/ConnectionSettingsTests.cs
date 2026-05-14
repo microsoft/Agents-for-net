@@ -260,6 +260,74 @@ namespace Microsoft.Agents.Authentication.Msal.Tests.Model
         }
 
         [Fact]
+        public void ValidateConfiguration_IdentityProxyManager_ValidWithDefaultResource()
+        {
+            var configSettings = new Dictionary<string, string> {
+                { "Connections:Settings:AuthType", "IdentityProxyManager" },
+                { "Connections:Settings:ClientId", "test-client-id" },
+            };
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var settings = new ConnectionSettings(configuration.GetSection(SettingsSection));
+
+            Assert.Equal(AuthTypes.IdentityProxyManager, settings.AuthType);
+            Assert.Equal("test-client-id", settings.ClientId);
+            Assert.Equal("api://AzureAdTokenExchange/.default", settings.IdpmResource);
+        }
+
+        [Fact]
+        public void ValidateConfiguration_IdentityProxyManager_ValidWithCustomResource()
+        {
+            var configSettings = new Dictionary<string, string> {
+                { "Connections:Settings:AuthType", "IdentityProxyManager" },
+                { "Connections:Settings:ClientId", "test-client-id" },
+                { "Connections:Settings:IdpmResource", "https://custom-resource/.default" },
+            };
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var settings = new ConnectionSettings(configuration.GetSection(SettingsSection));
+
+            Assert.Equal(AuthTypes.IdentityProxyManager, settings.AuthType);
+            Assert.Equal("https://custom-resource/.default", settings.IdpmResource);
+        }
+
+        [Fact]
+        public void ValidateConfiguration_ShouldThrowOnNullClientIdForIdentityProxyManagerType()
+        {
+            var configSettings = new Dictionary<string, string> {
+                { "Connections:Settings:AuthType", "IdentityProxyManager" },
+            };
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            Assert.Throws<ArgumentNullException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
+        }
+
+        [Fact]
+        public void ValidateConfiguration_ShouldThrowOnInvalidIdpmResource()
+        {
+            var configSettings = new Dictionary<string, string> {
+                { "Connections:Settings:AuthType", "IdentityProxyManager" },
+                { "Connections:Settings:ClientId", "test-client-id" },
+                { "Connections:Settings:IdpmResource", "not-a-valid-uri" },
+            };
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            Assert.Throws<ArgumentException>(() => new ConnectionSettings(configuration.GetSection(SettingsSection)));
+        }
+
+        [Fact]
         public void ValidateConfiguration_AssertionRequestOptions()
         {
             // Start with good
