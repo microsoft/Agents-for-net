@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             RouteList routes = new();
             string result = routes.FormatRouteList().Formatted;
-            Assert.Equal(string.Empty, result);
+            Assert.Equal("[]", result);
         }
 
         [Fact]
@@ -111,11 +111,12 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             string result = routes.FormatRouteList().Formatted;
 
-            Assert.Contains("[0]", result);
-            Assert.Contains("MyNamedHandler", result);
-            Assert.Contains("flags=None", result);
-            Assert.Contains($"rank={RouteRank.Unspecified}", result);
-            Assert.DoesNotContain("channel=", result);
+            Assert.Contains("\"Index\":0", result);
+            Assert.Contains("\"Handler\":\"ApplicationRouteTests.MyNamedHandler\"", result);
+            Assert.Contains("\"Flags\":\"None\"", result);
+            Assert.Contains($"\"Rank\":{RouteRank.Unspecified}", result);
+            Assert.Contains("\"Channel\":\"*\"", result);
+            Assert.DoesNotContain("OAuthHandlers", result);
         }
 
         [Fact]
@@ -131,7 +132,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             string result = routes.FormatRouteList().Formatted;
 
-            Assert.Contains("flags=Invoke,Agentic", result);
+            Assert.Contains("\"Flags\":\"Invoke,Agentic\"", result);
         }
 
         [Fact]
@@ -146,7 +147,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             string result = routes.FormatRouteList().Formatted;
 
-            Assert.Contains("flags=NonTerminal", result);
+            Assert.Contains("\"Flags\":\"NonTerminal\"", result);
         }
 
         [Fact]
@@ -161,7 +162,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             string result = routes.FormatRouteList().Formatted;
 
-            Assert.Contains("channel=msteams", result);
+            Assert.Contains("\"Channel\":\"msteams\"", result);
         }
 
         [Fact]
@@ -181,16 +182,137 @@ namespace Microsoft.Agents.Builder.Tests.App
             string result = routes.FormatRouteList().Formatted;
 
             // Invoke route comes first (higher priority)
-            int idx0 = result.IndexOf("[0]");
-            int idx1 = result.IndexOf("[1]");
+            int idx0 = result.IndexOf("\"Index\":0");
+            int idx1 = result.IndexOf("\"Index\":1");
             Assert.True(idx0 >= 0);
             Assert.True(idx1 >= 0);
             Assert.True(idx0 < idx1);
-            Assert.Contains("flags=Invoke", result);
+            Assert.Contains("\"Flags\":\"Invoke\"", result);
         }
 
         private static Task MyNamedHandler(ITurnContext ctx, ITurnState state, CancellationToken ct)
             => Task.CompletedTask;
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithOAuthHandlers()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph", "sharepoint" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"graph\",\"sharepoint\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithSingleOAuthHandler()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"graph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NullChannelId_LogsWildcard()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Channel\":\"*\"", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithCustomRank()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOrderRank(100)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Rank\":100", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_AllProperties()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .AsAgentic(true)
+                .WithChannelId(Channels.Msteams)
+                .WithOrderRank(500)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            var (count, result) = routes.FormatRouteList(turnContext);
+
+            Assert.Equal(1, count);
+            Assert.Contains("\"Handler\":\"ApplicationRouteTests.MyNamedHandler\"", result);
+            Assert.Contains("\"Flags\":\"Invoke,Agentic\"", result);
+            Assert.Contains("\"Channel\":\"msteams\"", result);
+            Assert.Contains("\"Rank\":500", result);
+            Assert.Contains("\"OAuthHandlers\":[\"graph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_ContextDependentOAuthHandlers()
+        {
+            var activity = MessageFactory.Text("test");
+            activity.CallerId = "urn:botframework:aadappid:some-app-id";
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(context => context.Activity.CallerId != null
+                    ? new[] { "agenticGraph" }
+                    : new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"agenticGraph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_OAuthHandlers_OmittedWithoutContext()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.DoesNotContain("OAuthHandlers", result);
+        }
 
         [Fact]
         public async Task Test_RouteList_ByAgenticThenInvokeThenRank()

@@ -58,5 +58,10 @@ namespace Microsoft.Agents.Authentication.Msal.Interfaces
         /// <see cref="AuthType"/> is <see cref="AuthTypes.UserManagedIdentity"/>.
         /// </remarks>
         public bool EnableContainerIMDS { get; set; }
+        
+        /// <summary>
+        /// Azure regional token service. This feature is currently available to first-party applications only.
+        /// </summary>
+        public string AzureRegion { get; set; }
     }
 }
