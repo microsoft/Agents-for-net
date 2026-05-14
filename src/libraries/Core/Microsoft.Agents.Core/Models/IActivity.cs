@@ -310,6 +310,13 @@ namespace Microsoft.Agents.Core.Models
         ConversationReference GetConversationReference();
 
         /// <summary>
+        /// Creates a <see cref="Microsoft.Agents.Core.Models.ConversationReference"/> based on this Activity.
+        /// </summary>
+        /// <param name="forceBaseChannel">Optional, <c>true</c> to force the use of the base channel in the conversation reference; otherwise, <c>false</c>.</param>
+        /// <returns>A conversation reference for the conversation that contains this Activity.</returns>
+        ConversationReference GetConversationReference(bool? forceBaseChannel = null);
+
+        /// <summary>
         /// Creates a new message Activity as a response to this Activity.
         /// </summary>
         /// <param name="text">The text of the reply.</param>

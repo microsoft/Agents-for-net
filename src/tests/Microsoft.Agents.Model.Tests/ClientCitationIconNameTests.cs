@@ -145,6 +145,8 @@ namespace Microsoft.Agents.Model.Tests
                 ClientCitationIconName.Names.MicrosoftWord,
                 ClientCitationIconName.Names.MicrosoftExcel,
                 ClientCitationIconName.Names.MicrosoftPowerPoint,
+                ClientCitationIconName.Names.MicrosoftOneNote,
+                ClientCitationIconName.Names.MicrosoftSharePoint,
                 ClientCitationIconName.Names.MicrosoftVisio,
                 ClientCitationIconName.Names.MicrosoftLoop,
                 ClientCitationIconName.Names.MicrosoftWhiteboard,
