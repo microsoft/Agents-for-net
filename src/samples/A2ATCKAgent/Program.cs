@@ -51,12 +51,4 @@ app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 // Add A2A endpoints.  By default A2A will respond on '/a2a'.
 app.MapA2AEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
-if (app.Environment.IsDevelopment())
-{
-    // Hardcoded for brevity and ease of testing. 
-    // In production, this should be set in configuration.
-    app.Urls.Add($"http://localhost:3978");
-    app.Urls.Add($"https://localhost:3979");
-}
-
 app.Run();
