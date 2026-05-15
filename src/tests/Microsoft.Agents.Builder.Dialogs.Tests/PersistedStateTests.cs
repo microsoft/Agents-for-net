@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
     class TestState
     {
-        public IDictionary<string, object> State { get; set; } = new Dictionary<string, object>();
+        public PersistedState State { get; set; } = [];
     }
 
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]

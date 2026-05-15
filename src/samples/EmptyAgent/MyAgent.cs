@@ -11,15 +11,10 @@ using System.Threading;
 namespace EmptyAgent;
 
 [Agent(name: "MyAgent", description: "Echo user messages back", version: "1.0")]
-public class MyAgent : AgentApplication
+public class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    public MyAgent(AgentApplicationOptions options) : base(options)
-    {
-        OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-    }
-
-    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [MembersAddedRoute]
+    public async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -30,7 +25,8 @@ public class MyAgent : AgentApplication
         }
     }
 
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [MessageRoute]
+    public async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
