@@ -190,6 +190,48 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
+        /// Handles incoming Invoke activities with a specific Name.
+        /// </summary>
+        /// <param name="name">Name of the invoke to handle.</param>
+        /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnInvoke(string name, RouteHandler<IInvokeActivity> handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        {
+            return AddRoute(InvokeRouteBuilder.Create()
+                .WithName(name)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build()
+            );
+        }
+
+        /// <summary>
+        /// Handles incoming Invoke activities matching a Name pattern.
+        /// </summary>
+        /// <param name="namePattern">Regular expression to match against the name of an incoming invoke activity.</param>
+        /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers"></param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
+        /// <returns>The application instance for chaining purposes.</returns>
+        public AgentApplication OnInvoke(Regex namePattern, RouteHandler<IInvokeActivity> handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        {
+            return AddRoute(InvokeRouteBuilder.Create()
+                .WithName(namePattern)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build()
+            );
+        }
+
+        /// <summary>
         /// Handles message reactions added events.
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered.</param>
@@ -197,7 +239,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="autoSignInHandlers"></param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessageReactionsAdded(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public AgentApplication OnMessageReactionsAdded(RouteHandler<IMessageReactionActivity> handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             return AddRoute(MessageReactionsAddedRouteBuilder.Create()
                 .WithHandler(handler)
@@ -216,7 +258,7 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="autoSignInHandlers"></param>
         /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnMessageReactionsRemoved(RouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public AgentApplication OnMessageReactionsRemoved(RouteHandler<IMessageReactionActivity> handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             return AddRoute(MessageReactionsRemovedRouteBuilder.Create()
                 .WithHandler(handler)

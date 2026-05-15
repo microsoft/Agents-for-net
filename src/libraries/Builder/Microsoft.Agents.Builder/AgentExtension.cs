@@ -31,16 +31,6 @@ namespace Microsoft.Agents.Builder
                 .WithOAuthHandlers(autoSignInHandlers)
                 .Build();
 
-            var route = new RouteBuilder()
-                .WithChannelId(ChannelId)
-                .WithSelector(ensureChannelMatches)
-                .WithHandler(routeHandler)
-                .AsInvoke(isInvokeRoute)
-                .AsAgentic(isAgenticOnly)
-                .WithOrderRank(rank)
-                .WithOAuthHandlers(autoSignInHandlers)
-                .Build();
-
             agentApplication.AddRoute(route);
         }
 

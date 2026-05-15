@@ -142,5 +142,17 @@ namespace Microsoft.Agents.Builder.App
         {
             return this;
         }
+
+        protected override void PreBuild()
+        {
+            if (_route.Selector == null)
+            {
+                // If no selector set, match any conversationUpdate activity
+                _route.Selector = (context, ct) => Task.FromResult(
+                    IsContextMatch(context, _route)
+                    && context.Activity.IsType(ActivityTypes.ConversationUpdate)
+                );
+            }
+        }
     }
 }

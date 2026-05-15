@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var app = new InstallationUpdateRouteApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.InstallationUpdate });
+            turnContext.Setup(c => c.Activity).Returns(new InstallationUpdateActivity());
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var app = new ConversationUpdateRouteApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.ConversationUpdate });
+            turnContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity());
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -230,9 +230,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var app = new MessageReactionsAddedRouteApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
+            turnContext.Setup(c => c.Activity).Returns(new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
                 ReactionsAdded = new List<MessageReaction> { new MessageReaction { Type = "like" } }
             });
 
@@ -247,9 +246,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var app = new MessageReactionsRemovedRouteApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
+            turnContext.Setup(c => c.Activity).Returns(new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
                 ReactionsRemoved = new List<MessageReaction> { new MessageReaction { Type = "like" } }
             });
 
@@ -268,7 +266,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var app = new EndOfConversationRouteApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.EndOfConversation });
+            turnContext.Setup(c => c.Activity).Returns(new EndOfConversationActivity());
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -332,7 +330,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public List<string> calls = [];
 
         [InstallationUpdateRoute]
-        public Task OnInstallationUpdate(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnInstallationUpdate"); return Task.CompletedTask; }
+        public Task OnInstallationUpdate(ITurnContext<IInstallationUpdateActivity> ctx, ITurnState state, CancellationToken ct) { calls.Add("OnInstallationUpdate"); return Task.CompletedTask; }
     }
 
     class EventRouteNameApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -367,7 +365,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public List<string> calls = [];
 
         [ConversationUpdateRoute]
-        public Task OnAnyConversationUpdate(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyConversationUpdate"); return Task.CompletedTask; }
+        public Task OnAnyConversationUpdate(ITurnContext<IConversationUpdateActivity> ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyConversationUpdate"); return Task.CompletedTask; }
     }
 
     class MembersAddedRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -391,7 +389,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public List<string> calls = [];
 
         [MessageReactionsAddedRoute]
-        public Task OnReactionsAdded(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnReactionsAdded"); return Task.CompletedTask; }
+        public Task OnReactionsAdded(ITurnContext<IMessageReactionActivity> ctx, ITurnState state, CancellationToken ct) { calls.Add("OnReactionsAdded"); return Task.CompletedTask; }
     }
 
     class MessageReactionsRemovedRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -399,7 +397,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public List<string> calls = [];
 
         [MessageReactionsRemovedRoute]
-        public Task OnReactionsRemoved(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnReactionsRemoved"); return Task.CompletedTask; }
+        public Task OnReactionsRemoved(ITurnContext<IMessageReactionActivity> ctx, ITurnState state, CancellationToken ct) { calls.Add("OnReactionsRemoved"); return Task.CompletedTask; }
     }
 
     class EndOfConversationRouteApp(AgentApplicationOptions options) : AgentApplication(options)
@@ -407,7 +405,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public List<string> calls = [];
 
         [EndOfConversationRoute]
-        public Task OnEndOfConversation(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEndOfConversation"); return Task.CompletedTask; }
+        public Task OnEndOfConversation(ITurnContext<IEndOfConversationActivity> ctx, ITurnState state, CancellationToken ct) { calls.Add("OnEndOfConversation"); return Task.CompletedTask; }
     }
 
     class StaticSignInHandlersApp(AgentApplicationOptions options) : AgentApplication(options)

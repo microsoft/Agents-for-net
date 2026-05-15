@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Builder.App
     /// </remarks>
     public class MessageReactionsRemovedRouteBuilder : RouteBuilderBase<MessageReactionsRemovedRouteBuilder>
     {
-        public MessageReactionsRemovedRouteBuilder WithHandler(RouteHandler handler)
+        public MessageReactionsRemovedRouteBuilder WithHandler(RouteHandler<IMessageReactionActivity> handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Builder.App
                 && messageReactionActivity.ReactionsRemoved.Count > 0
             );
 
-            _route.Handler = handler;
+            _route.Handler = (ct, ts, ctok) => handler(new TypedTurnContext<IMessageReactionActivity>(ct), ts, ctok);
 
             return this;
         }

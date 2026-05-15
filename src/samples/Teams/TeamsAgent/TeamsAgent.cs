@@ -185,7 +185,7 @@ public class TeamsAgent : AgentApplication
         return packages!;
     }
 
-    private Task OnMessageReaction(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
+    private Task OnMessageReaction(ITurnContext<IMessageReactionActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
         turnContext.SendActivityAsync("Message Reaction: " + turnContext.Activity.ReactionsAdded[0].Type, cancellationToken: cancellationToken);
 
     private Task MessageEdited(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>

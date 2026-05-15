@@ -1495,37 +1495,35 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnMessageReactionsAdded()
         {
             // Arrange
-            var activity1 = new Activity
+            var activity1 = new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
                 ReactionsAdded = new List<MessageReaction> { new() },
-                Name = "1",
+                Id = "1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity2 = new Activity
+            var activity2 = new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
+                Id = "2",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity
+            var activity3 = new Activity(ActivityTypes.Message)
             {
-                Type = ActivityTypes.Message,
+                Id = "3",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var agenticActivity = new Activity
+            var agenticActivity = new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
                 ReactionsAdded = new List<MessageReaction> { new() },
-                Name = "agentic1",
+                Id = "agentic1",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1550,14 +1548,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             // agentic
             app.OnMessageReactionsAdded((context, _, _) =>
             {
-                agenticNames.Add(context.Activity.Name);
+                agenticNames.Add(context.Activity.Id);
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
 
             // non-agentic
             app.OnMessageReactionsAdded((context, _, _) =>
             {
-                names.Add(context.Activity.Name);
+                names.Add(context.Activity.Id);
                 return Task.CompletedTask;
             });
 
@@ -1579,37 +1577,35 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnMessageReactionsRemoved()
         {
             // Arrange
-            var activity1 = new Activity
+            var activity1 = new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
                 ReactionsRemoved = new List<MessageReaction> { new() },
-                Name = "1",
+                Id = "1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity2 = new Activity
+            var activity2 = new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
+                Id = "2",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity
+            var activity3 = new Activity(ActivityTypes.Message)
             {
-                Type = ActivityTypes.Message,
+                Id = "3",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var agenticActivity = new Activity
+            var agenticActivity = new MessageReactionActivity
             {
-                Type = ActivityTypes.MessageReaction,
                 ReactionsRemoved = new List<MessageReaction> { new() },
-                Name = "agentic1",
+                Id = "agentic1",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1634,14 +1630,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             // agentic
             app.OnMessageReactionsRemoved((context, _, _) =>
             {
-                agenticNames.Add(context.Activity.Name);
+                agenticNames.Add(context.Activity.Id);
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
 
             // non-agentic
             app.OnMessageReactionsRemoved((context, _, _) =>
             {
-                names.Add(context.Activity.Name);
+                names.Add(context.Activity.Id);
                 return Task.CompletedTask;
             });
 
