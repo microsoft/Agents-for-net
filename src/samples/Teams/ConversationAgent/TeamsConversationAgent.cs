@@ -169,7 +169,7 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     }
 
     [MessageRoute("whoami")]
-    public static async Task WhoAmIAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task WhoAmIAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         try
         {
@@ -188,6 +188,10 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
                 throw;
             }
         }
+
+        var graphClient = TeamsExtension.GetGraph(turnContext);
+        var me = await graphClient.Me.GetAsync(cancellationToken: cancellationToken);
+        await turnContext.SendActivityAsync($"Graph thinks you are: {me?.DisplayName}.", cancellationToken: cancellationToken);
     }
 
     [MessageRoute("delete")]

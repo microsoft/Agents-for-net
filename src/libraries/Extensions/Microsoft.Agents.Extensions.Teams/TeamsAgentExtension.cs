@@ -13,6 +13,10 @@ using Microsoft.Agents.Extensions.Teams.Messages;
 using Microsoft.Agents.Extensions.Teams.TaskModules;
 using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.TeamsTeams;
+using Microsoft.Graph;
+using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Authentication;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,6 +27,8 @@ namespace Microsoft.Agents.Extensions.Teams;
 /// </summary>
 public class TeamsAgentExtension : AgentExtension
 {
+    private readonly AgentApplication _agentApplication;
+
     /// <summary>
     /// Creates a new <see cref="TeamsAgentExtension"/> instance.
     /// </summary>
@@ -47,12 +53,13 @@ public class TeamsAgentExtension : AgentExtension
         Messages = new Message(agentApplication, ChannelId);
         Configuration = new Configuration(agentApplication, ChannelId);
 
-        agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
+        _agentApplication = agentApplication;
+        _agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
             if (turnContext.Activity.ChannelId == ChannelId)
             {
                 // Set the TeamsApiClient in the turn context for use in handlers.
-                turnContext.SetTeamsApiClient(agentApplication, cancellationToken);
+                turnContext.SetTeamsApiClient(_agentApplication, cancellationToken);
 
                 // Explicit conversion of Activity.ChannelData to Teams' ChannelData for improved performance
                 turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.ChannelData>(turnContext.Activity.ChannelData);
@@ -111,6 +118,22 @@ public class TeamsAgentExtension : AgentExtension
         return turnContext.GetTeamsApiClient();
     }
 
+    /// <summary>
+    /// Creates a new instance of the GraphServiceClient for accessing Microsoft Graph APIs using the current turn
+    /// context.
+    /// </summary>
+    /// <remarks>Use this method to obtain a GraphServiceClient that is pre-authenticated for the user or bot
+    /// associated with the current turn. The returned client can be used to make requests to Microsoft Graph on behalf
+    /// of the user.  This requires that UserAuthorization is properly configured and the user is signed in.</remarks>
+    /// <param name="turnContext">The turn context containing information about the current conversation and user. Cannot be null.</param>
+    /// <param name="handlerName">The name of the handler to use for token acquisition. If null, the default handler is used.</param>
+    /// <param name="graphBaseUrl">The base URL for the Microsoft Graph API. Defaults to "https://graph.microsoft.com/v1.0".</param>
+    /// <returns>A GraphServiceClient instance configured with authentication for the current turn context.</returns>
+    public GraphServiceClient GetGraph(ITurnContext turnContext, string handlerName = null, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
+    {
+        return new GraphServiceClient(new TokenProvider(_agentApplication, turnContext, handlerName), graphBaseUrl);
+    }
+
     internal static Task SetResponse(ITurnContext context, object result = null, int status = 200)
     {
         if (!context.StackState.Has(ChannelAdapter.InvokeResponseKey))
@@ -120,5 +143,17 @@ public class TeamsAgentExtension : AgentExtension
         }
 
         return Task.CompletedTask;
+    }
+}
+
+class TokenProvider(AgentApplication agentApplication, ITurnContext turnContext, string handlerName) : IAuthenticationProvider
+{
+    public async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
+    {
+        var token = await agentApplication.UserAuthorization.GetTurnTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
+        if (token != null)
+        {
+            request.Headers["Authorization"] = [$"Bearer {token}"];
+        }
     }
 }

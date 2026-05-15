@@ -27,6 +27,7 @@
 		<PackageReference Include="System.Text.Json" />
 		<PackageReference Include="Microsoft.Extensions.Http" />
 		<PackageReference Include="Microsoft.Teams.Api" />
+		<PackageReference Include="Microsoft.Graph" />
     </ItemGroup>
 
 	<ItemGroup>
