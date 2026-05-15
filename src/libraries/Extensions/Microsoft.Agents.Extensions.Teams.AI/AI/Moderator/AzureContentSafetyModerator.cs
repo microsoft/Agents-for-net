@@ -1,9 +1,10 @@
-﻿using Microsoft.Agents.Extensions.Teams.AI.Planners;
+using Microsoft.Agents.Extensions.Teams.AI.Planners;
 using Microsoft.Agents.Extensions.Teams.AI.State;
 using Microsoft.Agents.Builder;
 using Azure.AI.ContentSafety;
 using Azure;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Moderator
 {
@@ -34,7 +35,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Moderator
                 case ModerationType.Input:
                 case ModerationType.Both:
                 {
-                    string input = turnState.Temp?.GetValue<string>("input") ?? turnContext.Activity.Text;
+                    string input = turnState.Temp?.GetValue<string>("input") ?? ((IMessageActivity)turnContext.Activity).Text;
 
                     return await _HandleTextModeration(input, true);
                 }

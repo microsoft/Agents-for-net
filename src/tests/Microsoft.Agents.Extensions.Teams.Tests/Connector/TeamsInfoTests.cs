@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -16,7 +16,6 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Compat;
 using Microsoft.Agents.Extensions.Teams.Connector;
@@ -219,10 +218,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             //         In this case, the payload should contain more detail error message.
             //         There can be many reasons: bot disabled by tenant admin, blocked during live site mitigation,
             //         the bot does not have a correct RSC permission for a specific surface type, etc
-            var activity = new Activity
-            {
-                Type = "targetedMeetingNotification",
-                Text = "Test-SendMeetingNotificationAsync",
+            var activity = new MessageActivity { Type = "targetedMeetingNotification", Text = "Test-SendMeetingNotificationAsync",
                 ChannelId = Channels.Msteams,
                 ServiceUrl = "https://test.coffee",
                 From = new ChannelAccount()
@@ -252,10 +248,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             // 400: when send message to list of users request payload validation fails.
             // 403: if the bot is not allowed to send messages.
             // 429: too many requests for throttled requests.
-            var activity = new Activity
-            {
-                Type = "message",
-                Text = "Test-SendMessageToListOfUsersAsync",
+            var activity = new MessageActivity { Text = "Test-SendMessageToListOfUsersAsync",
                 ChannelId = Channels.Msteams,
                 ServiceUrl = "https://test.coffee",
                 From = new ChannelAccount()
@@ -285,10 +278,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             // 400: when send message to list of users request payload validation fails.
             // 403: if the bot is not allowed to send messages.
             // 429: too many requests for throttled requests.
-            var activity = new Activity
-            {
-                Type = "message",
-                Text = "Test-SendMessageToAllUsersInTenantAsync",
+            var activity = new MessageActivity { Text = "Test-SendMessageToAllUsersInTenantAsync",
                 ChannelId = Channels.Msteams,
                 ServiceUrl = "https://test.coffee",
                 From = new ChannelAccount()
@@ -320,10 +310,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             // 403: if the bot is not allowed to send messages.
             // 404: when Team is not found.
             // 429: too many requests for throttled requests.
-            var activity = new Activity
-            {
-                Type = "message",
-                Text = "Test-SendMessageToAllUsersInTeamAsync",
+            var activity = new MessageActivity { Text = "Test-SendMessageToAllUsersInTeamAsync",
                 ChannelId = Channels.Msteams,
                 ServiceUrl = "https://test.coffee",
                 From = new ChannelAccount()
@@ -353,10 +340,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             // 400: when send message to list of channels request payload validation fails.
             // 403: if the bot is not allowed to send messages.
             // 429: too many requests for throttled requests.
-            var activity = new Activity
-            {
-                Type = "message",
-                Text = "Test-SendMessageToListOfChannelsAsync",
+            var activity = new MessageActivity { Text = "Test-SendMessageToListOfChannelsAsync",
                 ChannelId = Channels.Msteams,
                 ServiceUrl = "https://test.coffee",
                 From = new ChannelAccount()
@@ -384,10 +368,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             // 200: ok
             // 400: for requests with invalid operationId (Which should be of type GUID).
             // 429: too many requests for throttled requests.
-            var activity = new Activity
-            {
-                Type = "message",
-                Text = "Test-GetOperationStateAsync",
+            var activity = new MessageActivity { Text = "Test-GetOperationStateAsync",
                 ChannelId = Channels.Msteams,
                 ServiceUrl = "https://test.coffee",
                 From = new ChannelAccount()
@@ -415,10 +396,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             // 200: ok
             // 400: for requests with invalid operationId (Which should be of type GUID).
             // 429: too many requests for throttled requests.
-            var activity = new Activity
-            {
-                Type = "message",
-                Text = "Test-GetPagedFailedEntriesAsync",
+            var activity = new MessageActivity { Text = "Test-GetPagedFailedEntriesAsync",
                 ChannelId = Channels.Msteams,
                 ServiceUrl = "https://test.coffee",
                 From = new ChannelAccount()
@@ -446,10 +424,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             // 200: Ok for successful cancelled operations (Operations in state completed, or failed will not change state to cancel but still return 200)
             // 400: for requests with invalid operationId (Which should be of type GUID).
             // 429: too many requests for throttled requests.
-            var activity = new Activity
-            {
-                Type = "message",
-                Text = "Test-CancelOperationAsync",
+            var activity = new MessageActivity { Text = "Test-CancelOperationAsync",
                 ChannelId = Channels.Msteams,
                 ServiceUrl = "https://test.coffee",
                 From = new ChannelAccount()
@@ -477,10 +452,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
                 Team = new TeamInfo { Id = "team-id" },
             };
 
-            return new Activity
-            {
-                Type = "message",
-                Text = text,
+            return new MessageActivity { Text = text,
                 ChannelId = Channels.Msteams,
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 From = new ChannelAccount { Id = "id-1", AadObjectId = "participantId-1" },
@@ -495,7 +467,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Connector
             {
                 await base.OnTurnAsync(turnContext, cancellationToken);
 
-                switch (turnContext.Activity.Text)
+                switch (((IMessageActivity)turnContext.Activity).Text)
                 {
                     case "Test-GetTeamDetailsAsync":
                         await CallGetTeamDetailsAsync(turnContext);

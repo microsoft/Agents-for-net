@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Builder.Dialogs;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Models;
 
 namespace TeamsConversationSsoQuickstart.Dialogs
@@ -75,7 +74,7 @@ namespace TeamsConversationSsoQuickstart.Dialogs
         {
             if (innerDc.Context.Activity.Type == ActivityTypes.Message)
             {
-                var text = innerDc.Context.Activity.Text?.ToLowerInvariant();
+                var text = (innerDc.Context.Activity as IMessageActivity)?.Text?.ToLowerInvariant();
 
                 // Allow logout anywhere in the command
                 if (text != null && text.IndexOf("logout") >= 0)

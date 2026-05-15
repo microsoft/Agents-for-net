@@ -54,7 +54,7 @@ namespace DialogRootBot.Bots
                 {
                     var welcomeCard = CreateAdaptiveCardAttachment();
                     var activity = MessageFactory.Attachment(welcomeCard);
-                    activity.Speak = "Welcome to the Dialog Skill Prototype!";
+                    ((IMessageActivity)activity).Speak = "Welcome to the Dialog Skill Prototype!";
                     await turnContext.SendActivityAsync(activity, cancellationToken);
 #pragma warning disable CS0618 // Type or member is obsolete
                     await _mainDialog.RunAsync(turnContext, _conversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);

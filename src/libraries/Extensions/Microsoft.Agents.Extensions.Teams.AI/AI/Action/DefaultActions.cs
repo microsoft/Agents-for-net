@@ -2,7 +2,6 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Entities;
 using Microsoft.Agents.Extensions.Teams.AI.Exceptions;
 using Microsoft.Agents.Extensions.Teams.AI.Planners;
 using Microsoft.Agents.Extensions.Teams.AI.Utilities;
@@ -158,10 +157,8 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
                 attachments = command.Response.Attachments;
             }
 
-            await turnContext.SendActivityAsync(new Activity()
+            await turnContext.SendActivityAsync(new MessageActivity(contentText)
             {
-                Type = ActivityTypes.Message,
-                Text = contentText,
                 ChannelData = channelData,
                 Entities = new List<Entity>() { entity },
                 Attachments = attachments

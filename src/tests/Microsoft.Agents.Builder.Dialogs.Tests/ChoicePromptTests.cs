@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -691,13 +691,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .AssertReply((activity) =>
                 {
                     // Use ChoiceFactory to build the expected answer, manually
-                    var expectedChoices = ChoiceFactory.Inline(_colorChoices, null, null, new ChoiceFactoryOptions()
+                    var expectedChoices = ((IMessageActivity)ChoiceFactory.Inline(_colorChoices, null, null, new ChoiceFactoryOptions()
                     {
                         InlineOr = inlineOr,
                         InlineOrMore = inlineOrMore,
                         InlineSeparator = separator,
-                    }).Text;
-                    Assert.Equal($"favorite color?{expectedChoices}", activity.Text);
+                    })).Text;
+                    Assert.Equal($"favorite color?{expectedChoices}", ((IMessageActivity)activity).Text);
                 })
                 .StartTestAsync();
         }
@@ -742,13 +742,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .AssertReply((activity) =>
                 {
                     // Use ChoiceFactory to build the expected answer, manually
-                    var expectedChoices = ChoiceFactory.Inline(_colorChoices, null, null, new ChoiceFactoryOptions()
+                    var expectedChoices = ((IMessageActivity)ChoiceFactory.Inline(_colorChoices, null, null, new ChoiceFactoryOptions()
                     {
                         InlineOr = English.InlineOr,
                         InlineOrMore = English.InlineOrMore,
                         InlineSeparator = English.Separator,
-                    }).Text;
-                    Assert.Equal($"favorite color?{expectedChoices}", activity.Text);
+                    })).Text;
+                    Assert.Equal($"favorite color?{expectedChoices}", ((IMessageActivity)activity).Text);
                 })
                 .StartTestAsync();
         }
@@ -805,13 +805,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .AssertReply((activity) =>
                 {
                     // Use ChoiceFactory to build the expected answer, manually
-                    var expectedChoices = ChoiceFactory.Inline(_colorChoices, null, null, new ChoiceFactoryOptions()
+                    var expectedChoices = ((IMessageActivity)ChoiceFactory.Inline(_colorChoices, null, null, new ChoiceFactoryOptions()
                     {
                         InlineOr = culture.InlineOr,
                         InlineOrMore = culture.InlineOrMore,
                         InlineSeparator = culture.Separator,
-                    }).Text;
-                    Assert.Equal($"favorite color?{expectedChoices}", activity.Text);
+                    })).Text;
+                    Assert.Equal($"favorite color?{expectedChoices}", ((IMessageActivity)activity).Text);
                 })
                 .StartTestAsync();
         }

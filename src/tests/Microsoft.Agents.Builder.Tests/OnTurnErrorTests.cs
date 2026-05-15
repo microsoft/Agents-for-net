@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Testing;
+using Microsoft.Agents.Core.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +20,15 @@ namespace Microsoft.Agents.Builder.Tests
             {
                 if (exception is NotImplementedException)
                 {
-                    await context.SendActivityAsync(context.Activity.CreateReply(exception.Message), CancellationToken.None);
+                    var reply = new MessageActivity
+                    {
+                        Text = exception.Message,
+                        Conversation = context.Activity.Conversation,
+                        From = context.Activity.Recipient,
+                        Recipient = context.Activity.From,
+                        ReplyToId = context.Activity.Id
+                    };
+                    await context.SendActivityAsync(reply, CancellationToken.None);
                 }
                 else
                 {
@@ -29,12 +38,12 @@ namespace Microsoft.Agents.Builder.Tests
 
             await new TestFlow(adapter, (context, cancellationToken) =>
                 {
-                    if (context.Activity.Text == "foo")
+                    if (context.Activity is IMessageActivity msg && msg.Text == "foo")
                     {
-                        context.SendActivityAsync(context.Activity.Text);
+                        context.SendActivityAsync(msg.Text);
                     }
 
-                    if (context.Activity.Text == "NotImplementedException")
+                    if (context.Activity is IMessageActivity msgEx && msgEx.Text == "NotImplementedException")
                     {
                         throw new NotImplementedException("Test");
                     }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             
             var activityToSend = (Activity)Activity.CreateMessageActivity();
             activityToSend.DeliveryMode = deliveryMode;
-            activityToSend.Text = Guid.NewGuid().ToString();
+            ((IMessageActivity)activityToSend).Text = Guid.NewGuid().ToString();
 
             var client = new DialogTestClient(Channels.Test, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState, contextClaims: _claimsIdentity);
 
@@ -155,11 +155,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 if (count == 1)
                 {
-                    Assert.Equal(activitySent.Text, activitySent.Text);
+                    Assert.Equal(((IMessageActivity)activitySent).Text, ((IMessageActivity)activitySent).Text);
                 }
                 else if (count == 2)
                 {
-                    Assert.Equal("Second message", activitySent.Text);
+                    Assert.Equal("Second message", ((IMessageActivity)activitySent).Text);
                 }
             };
 
@@ -223,7 +223,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             // Create the SkillDialogInstance and the activity to send.
             var activityToSend = Activity.CreateInvokeActivity();
-            activityToSend.Name = Guid.NewGuid().ToString();
+            ((IInvokeActivity)activityToSend).Name = Guid.NewGuid().ToString();
             var sut = new SkillDialog(dialogOptions);
             var client = new DialogTestClient(Channels.Test, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState, contextClaims: _claimsIdentity);
 
@@ -231,7 +231,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             await client.SendActivityAsync<Activity>("irrelevant");
 
             // Assert results and data sent to the SkillClient for fist turn
-            Assert.Equal(activityToSend.Name, activitySent.Name);
+            Assert.Equal(((IInvokeActivity)activityToSend).Name, ((IInvokeActivity)activitySent).Name);
             Assert.Equal(DeliveryModes.ExpectReplies, activitySent.DeliveryMode);
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
 
@@ -239,7 +239,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             await client.SendActivityAsync<Activity>("Second message");
 
             // Assert results for second turn
-            Assert.Equal("Second message", activitySent.Text);
+            Assert.Equal("Second message", ((IMessageActivity)activitySent).Text);
             Assert.Equal(DialogTurnStatus.Waiting, client.DialogTurnResult.Status);
 
             // Send EndOfConversation to the dialog
@@ -279,7 +279,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);
             var activityToSend = (Activity)Activity.CreateMessageActivity();
-            activityToSend.Text = Guid.NewGuid().ToString();
+            ((IMessageActivity)activityToSend).Text = Guid.NewGuid().ToString();
             var client = new DialogTestClient(Channels.Test, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState, contextClaims: _claimsIdentity);
 
             // Send something to the dialog to start it
@@ -303,7 +303,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Create the SkillDialogInstance and the activity to send.
             var sut = new SkillDialog(dialogOptions);
             var activityToSend = (Activity)Activity.CreateMessageActivity();
-            activityToSend.Text = Guid.NewGuid().ToString();
+            ((IMessageActivity)activityToSend).Text = Guid.NewGuid().ToString();
             var client = new DialogTestClient(Channels.Test, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState, contextClaims: _claimsIdentity);
 
             // Send something to the dialog 
@@ -373,7 +373,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             testAdapter.AddExchangeableToken(connectionName, Channels.Test, "user1", "https://test", "https://test1");
             var finalActivity = await client.SendActivityAsync<Activity>("irrelevant");
             Assert.NotNull(finalActivity);
-            Assert.Single(finalActivity.Attachments);
+            Assert.Single(((IMessageActivity)finalActivity).Attachments);
         }
 
         [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
@@ -401,7 +401,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             // Don't add exchangeable token to test adapter
             var finalActivity = await client.SendActivityAsync<Activity>("irrelevant");
             Assert.NotNull(finalActivity);
-            Assert.Single(finalActivity.Attachments);
+            Assert.Single(((IMessageActivity)finalActivity).Attachments);
         }
 
         [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
@@ -430,7 +430,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             testAdapter.ThrowOnExchangeRequest(connectionName, Channels.Test, "user1", "https://test");
             var finalActivity = await client.SendActivityAsync<Activity>("irrelevant");
             Assert.NotNull(finalActivity);
-            Assert.Single(finalActivity.Attachments);
+            Assert.Single(((IMessageActivity)finalActivity).Attachments);
         }
 
         [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
@@ -459,7 +459,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             testAdapter.AddExchangeableToken(connectionName, Channels.Test, "user1", "https://test", "https://test1");
             var finalActivity = await client.SendActivityAsync<Activity>("irrelevant");
             Assert.NotNull(finalActivity);
-            Assert.Single(finalActivity.Attachments);
+            Assert.Single(((IMessageActivity)finalActivity).Attachments);
         }
 
         [Fact(Skip = "Need full IChannetHost.SendToChannel Mock")]
@@ -492,7 +492,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var sut = new SkillDialog(dialogOptions);
             var activityToSend = (Activity)Activity.CreateMessageActivity();
             activityToSend.DeliveryMode = DeliveryModes.ExpectReplies;
-            activityToSend.Text = Guid.NewGuid().ToString();
+            ((IMessageActivity)activityToSend).Text = Guid.NewGuid().ToString();
             var client = new DialogTestClient(Channels.Test, sut, new BeginSkillDialogOptions { Activity = activityToSend }, conversationState: conversationState, contextClaims: _claimsIdentity);
 
             // Send something to the dialog to start it
@@ -506,7 +506,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public async Task ContinueDialogAsync_ShouldReturnEndOfTurnOnValidateActivity()
         {
             _context.SetupGet(e => e.Activity)
-                .Returns(new Activity { Text = "shouldNotValidate" })
+                .Returns(new MessageActivity { Text = "shouldNotValidate" })
                 .Verifiable(Times.Exactly(1));
 
             var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
@@ -519,7 +519,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         public async Task ContinueDialogAsync_ShouldSendInvokeActivity()
         {
             var resultInvoke = new InvokeResponse { Status = 200, Body = "testing" };
-            var activity = new Activity { Type = ActivityTypes.InvokeResponse, Value = resultInvoke, ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1" } };
+            var activity = new Activity { Type = ActivityTypes.InvokeResponse, ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1" } };
+            ((IInvokeActivity)activity).Value = resultInvoke;
 
             _context.SetupGet(e => e.Activity)
                 .Returns(activity)
@@ -536,15 +537,15 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
 
             Assert.Equal(DialogTurnStatus.Waiting, result.Status);
-            Assert.Equal(resultInvoke.Status, (activity.Value as InvokeResponse).Status);
-            Assert.Equal(resultInvoke.Body, (activity.Value as InvokeResponse).Body.ToString());
+            Assert.Equal(resultInvoke.Status, (((IInvokeActivity)activity).Value as InvokeResponse).Status);
+            Assert.Equal(resultInvoke.Body, (((IInvokeActivity)activity).Value as InvokeResponse).Body.ToString());
             Mock.Verify(_context);
         }
 
         [Fact]
         public async Task ContinueDialogAsync_ShouldReturnEndOfDialog()
         {
-            var activity = new Activity { Type = ActivityTypes.EndOfConversation, Value = "EOC testing" };
+            var activity = new EndOfConversationActivity { Value = "EOC testing" };
 
             _context.SetupGet(e => e.Activity)
                 .Returns(new Activity() { ChannelId = Channels.Test, Conversation = new ConversationAccount() { Id = "1"} })
@@ -560,7 +561,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var result = await _dialog.ContinueDialogAsync(_dialogContext.Object);
 
             Assert.Equal(DialogTurnStatus.Complete, result.Status);
-            Assert.Equal(activity.Value, result.Result);
+            Assert.Equal(((IEndOfConversationActivity)activity).Value, result.Result);
             Mock.Verify(_context);
         }
 
@@ -675,7 +676,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         {
             var activityToSend = (Activity)Activity.CreateMessageActivity();
             activityToSend.DeliveryMode = DeliveryModes.ExpectReplies;
-            activityToSend.Text = Guid.NewGuid().ToString();
+            ((IMessageActivity)activityToSend).Text = Guid.NewGuid().ToString();
             return activityToSend;
         }
 
@@ -683,7 +684,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         {
             protected override bool OnValidateActivity(IActivity activity)
             {
-                return !(activity.Text == "shouldNotValidate");
+                return !(((IMessageActivity)activity).Text == "shouldNotValidate");
             }
 
             public AgentState State => DialogOptions.ConversationState;

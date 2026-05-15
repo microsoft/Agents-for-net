@@ -1,4 +1,4 @@
-﻿using Microsoft.Agents.Extensions.Teams.AI;
+using Microsoft.Agents.Extensions.Teams.AI;
 using Microsoft.Agents.Extensions.Teams.AI.Moderator;
 using Microsoft.Agents.Extensions.Teams.AI.Planners;
 using Microsoft.Agents.Extensions.Teams.AI.Prompts;
@@ -11,7 +11,6 @@ using Azure;
 using Microsoft.Agents.Extensions.Teams.AI.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models.Activities;
 
 #pragma warning disable CS8604 // Possible null reference argument.
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests

@@ -14,6 +14,8 @@ namespace Microsoft.Agents.Builder.Tests.App
 {
     public class ConversationUpdateRouteBuilderTests
     {
+        private static readonly RouteHandler NoOpHandler = (ctx, state, ct) => Task.CompletedTask;
+
         #region Create Tests
 
         [Fact]
@@ -33,15 +35,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_MembersAdded_MatchesWhenMembersPresent()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            mockContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.True(await route.Selector(mockContext.Object, CancellationToken.None));
@@ -51,15 +51,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_MembersAdded_NoMatchWhenMembersEmpty()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            mockContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersAdded = new List<ChannelAccount>()
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.False(await route.Selector(mockContext.Object, CancellationToken.None));
@@ -69,15 +67,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_MembersAdded_NoMatchWhenMembersNull()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            mockContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersAdded = null
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.False(await route.Selector(mockContext.Object, CancellationToken.None));
@@ -87,15 +83,11 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_MembersAdded_NoMatchNonConversationUpdate()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
-                MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
-            });
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity());
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.False(await route.Selector(mockContext.Object, CancellationToken.None));
@@ -105,15 +97,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_MembersRemoved_MatchesWhenMembersPresent()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            mockContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersRemoved = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersRemoved)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.True(await route.Selector(mockContext.Object, CancellationToken.None));
@@ -123,15 +113,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_MembersRemoved_NoMatchWhenMembersEmpty()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            mockContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersRemoved = new List<ChannelAccount>()
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersRemoved)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.False(await route.Selector(mockContext.Object, CancellationToken.None));
@@ -141,14 +129,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_UnknownEvent_MatchesAnyConversationUpdate()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
+            mockContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity
             {
                 Type = ActivityTypes.ConversationUpdate
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent("someOtherEvent")
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.True(await route.Selector(mockContext.Object, CancellationToken.None));
@@ -165,7 +153,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent("someOtherEvent")
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.False(await route.Selector(mockContext.Object, CancellationToken.None));
@@ -203,7 +191,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithSelector_WrapsWithConversationUpdateTypeCheck()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
+            mockContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity
             {
                 Type = ActivityTypes.ConversationUpdate
             });
@@ -217,7 +205,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithSelector(selector)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             var result = await route.Selector(mockContext.Object, CancellationToken.None);
@@ -244,7 +232,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithSelector(selector)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             var result = await route.Selector(mockContext.Object, CancellationToken.None);
@@ -309,7 +297,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
                 .AsInvoke()
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.False(route.Flags.HasFlag(RouteFlags.Invoke));
@@ -323,24 +311,20 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_RespectsAgenticFlag()
         {
             var agenticContext = new Mock<ITurnContext>();
-            agenticContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            agenticContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } },
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
             var nonAgenticContext = new Mock<ITurnContext>();
-            nonAgenticContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            nonAgenticContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
                 .AsAgentic()
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.True(await route.Selector(agenticContext.Object, CancellationToken.None));
@@ -351,17 +335,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteBuilder_WithUpdateEvent_RespectsChannelId()
         {
             var matchingContext = new Mock<ITurnContext>();
-            matchingContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            matchingContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } },
                 ChannelId = Channels.Msteams
             });
 
             var nonMatchingContext = new Mock<ITurnContext>();
-            nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            nonMatchingContext.Setup(c => c.Activity).Returns(new ConversationUpdateActivity {
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } },
                 ChannelId = Channels.Directline
             });
@@ -369,7 +349,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
                 .WithChannelId(Channels.Msteams)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.True(await route.Selector(matchingContext.Object, CancellationToken.None));
@@ -385,7 +365,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .Build();
 
             Assert.NotNull(route);
@@ -401,7 +381,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
-                .WithHandler((ctx, state, ct) => Task.CompletedTask)
+                .WithHandler(NoOpHandler)
                 .WithChannelId(Channels.Msteams)
                 .WithOrderRank(10)
                 .AsAgentic()
@@ -421,3 +401,4 @@ namespace Microsoft.Agents.Builder.Tests.App
         #endregion
     }
 }
+

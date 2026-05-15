@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -14,8 +14,6 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
-using Microsoft.Agents.Core.Models.Activities;
-
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
     public class WaterfallTests
@@ -342,7 +340,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 async (stepContext, cancellationToken) =>
                 {
-                    return await stepContext.PromptAsync("dateTimePrompt", new PromptOptions { Prompt = new Activity { Text = "Provide a date", Type = ActivityTypes.Message } });
+                    return await stepContext.PromptAsync("dateTimePrompt", new PromptOptions { Prompt = new MessageActivity { Text = "Provide a date" } });
                 },
                 async (stepContext, cancellationToken) =>
                 {

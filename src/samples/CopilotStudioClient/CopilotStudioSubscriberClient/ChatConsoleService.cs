@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 /*************************************************
@@ -11,7 +11,8 @@
 
 using Microsoft.Agents.CopilotStudio.Client;
 using Microsoft.Agents.CopilotStudio.Client.Models;
-
+
+using Microsoft.Agents.Core.Models;
 namespace CopilotStudioClientSample;
 
 /// <summary>
@@ -74,19 +75,19 @@ internal class ChatConsoleService(CopilotClient copilotClient) : IHostedService
         switch (act.Type)
         {
             case "message":
-                if (act.TextFormat == "markdown")
+                if (((IMessageActivity)act).TextFormat == "markdown")
                 {
 
-                    Console.WriteLine(act.Text);
-                    if (act.SuggestedActions?.Actions.Count > 0)
+                    Console.WriteLine(((IMessageActivity)act).Text);
+                    if (((IMessageActivity)act).SuggestedActions?.Actions.Count > 0)
                     {
                         Console.WriteLine("Suggested actions:\n");
-                        act.SuggestedActions.Actions.ToList().ForEach(action => Console.WriteLine("\t" + action.Text));
+                        ((IMessageActivity)act).SuggestedActions.Actions.ToList().ForEach(action => Console.WriteLine("\t" + action.Text));
                     }
                 }
                 else
                 {
-                    Console.Write($"\n{act.Text}\n");
+                    Console.Write($"\n{((IMessageActivity)act).Text}\n");
                 }
                 break;
             case "typing":

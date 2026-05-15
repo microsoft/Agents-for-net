@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.Proactive;
@@ -347,9 +347,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithActivity_ShouldSetActivity()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity = new MessageActivity {
                 Text = "Test message"
             };
 
@@ -361,7 +359,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result.Parameters.Activity);
-            Assert.Equal("Test message", result.Parameters.Activity.Text);
+            Assert.Equal("Test message", ((IMessageActivity)result.Parameters.Activity).Text);
             Assert.Equal(ActivityTypes.Message, result.Parameters.Activity.Type);
         }
 
@@ -369,10 +367,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithActivity_WithoutType_ShouldSetTypeToMessageInBuild()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Text = "Test message"
-            };
+            var activity = new Activity();
 
             // Act
             var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
@@ -583,7 +578,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void FluentInterface_ShouldAllowMethodChaining()
         {
             // Arrange
-            var activity = new Activity { Text = "Test" };
+            var activity = new MessageActivity("Test");
             var channelData = new { data = "value" };
 
             // Act
@@ -601,7 +596,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Single(result.Parameters.Members);
             Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
             Assert.Equal(TestScope, result.Scope);
-            Assert.Equal("Test", result.Parameters.Activity.Text);
+            Assert.Equal("Test", ((IMessageActivity)result.Parameters.Activity).Text);
             Assert.Equal(channelData, result.Parameters.ChannelData);
             Assert.True(result.Parameters.IsGroup);
             Assert.Equal(TestTopicName, result.Parameters.TopicName);
@@ -616,9 +611,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Integration_ShouldCreateCompleteConversationForMsteams()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity = new MessageActivity {
                 Text = "Hello Teams!"
             };
             var teamsChannelData = new { teamsChannelId = "19:123@thread.skype" };
@@ -639,7 +632,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal(TestServiceUrl, result.ServiceUrl);
             Assert.Single(result.Parameters.Members);
             Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
-            Assert.Equal("Hello Teams!", result.Parameters.Activity.Text);
+            Assert.Equal("Hello Teams!", ((IMessageActivity)result.Parameters.Activity).Text);
             Assert.True(result.Parameters.IsGroup);
             Assert.Equal("Teams Discussion", result.Parameters.TopicName);
             Assert.Equal(TestTenantId, result.Parameters.TenantId);

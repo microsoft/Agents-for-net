@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
@@ -51,12 +51,11 @@ namespace Microsoft.Agents.Storage.Tests
             var channelId = "channelWith|invalidChars";
             var emulatorConversationId = "8b6e9a80-3c94-11eb-83c4-83172d04969b|livechat";
 
-            var activity = new Activity()
+            var activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
+                Text = "text",
                 Timestamp = DateTime.UtcNow,
                 Id = Guid.NewGuid().ToString(),
-                Text = "text",
                 ChannelId = channelId,
                 From = new ChannelAccount($"User"),
                 Conversation = new ConversationAccount(id: emulatorConversationId),
@@ -86,10 +85,10 @@ namespace Microsoft.Agents.Storage.Tests
             // modify first record
             var updateActivity = ProtocolJsonSerializer.ToObject<Activity>(ProtocolJsonSerializer.ToJson(activities[0]));
             var type = updateActivity.Type;
-            updateActivity.Text = "updated";
+            ((IMessageActivity)updateActivity).Text = "updated";
             updateActivity.Type = ActivityTypes.MessageUpdate;
             await Store.LogActivityAsync(updateActivity);
-            activities[0].Text = "updated";
+            ((IMessageActivity)activities[0]).Text = "updated";
             activities[0].Type = type;
 
             // modify delete second record
@@ -379,12 +378,11 @@ namespace Microsoft.Agents.Storage.Tests
             List<Activity> activities = new List<Activity>();
             for (int i = 1; i <= count; i++)
             {
-                var activity = new Activity()
+                var activity = new MessageActivity
                 {
-                    Type = ActivityTypes.Message,
+                    Text = i.ToString(),
                     Timestamp = ts,
                     Id = Guid.NewGuid().ToString(),
-                    Text = i.ToString(),
                     ChannelId = "test",
                     From = new ChannelAccount($"User" + i),
                     Conversation = new ConversationAccount(id: conversationId),
@@ -394,12 +392,11 @@ namespace Microsoft.Agents.Storage.Tests
                 activities.Add(activity);
                 ts += TimeSpan.FromMinutes(1);
 
-                activity = new Activity()
+                activity = new MessageActivity
                 {
-                    Type = ActivityTypes.Message,
+                    Text = i.ToString(),
                     Timestamp = ts,
                     Id = Guid.NewGuid().ToString(),
-                    Text = i.ToString(),
                     ChannelId = "test",
                     From = new ChannelAccount("Bot1", "2"),
                     Conversation = new ConversationAccount(id: conversationId),

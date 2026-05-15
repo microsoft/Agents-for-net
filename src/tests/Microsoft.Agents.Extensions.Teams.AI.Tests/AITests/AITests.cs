@@ -1,4 +1,4 @@
-﻿using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
@@ -13,7 +13,6 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using Plan = Microsoft.Agents.Extensions.Teams.AI.Planners.Plan;
 using Record = Microsoft.Agents.Extensions.Teams.AI.State.Record;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 {

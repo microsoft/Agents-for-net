@@ -1,4 +1,4 @@
-﻿using Microsoft.Agents.Builder.Dialogs;
+using Microsoft.Agents.Builder.Dialogs;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;

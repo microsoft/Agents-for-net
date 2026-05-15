@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             }
 
             // Run next step with the message text as the result.
-            return await ResumeDialogAsync(dc, DialogReason.ContinueCalled, dc.Context.Activity.Text, cancellationToken).ConfigureAwait(false);
+            return await ResumeDialogAsync(dc, DialogReason.ContinueCalled, ((IMessageActivity)dc.Context.Activity).Text, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

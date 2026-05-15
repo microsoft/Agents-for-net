@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Extensions.Configuration.Memory;
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
-            var traceActivity = Activity.CreateTraceActivity("Test");
+            var traceActivity = MessageFactory.CreateTrace(new MessageActivity("Test"), "Test");
             traceActivity.Conversation = new ConversationAccount(id: "1234");
 
             var factory = new RestChannelServiceClientFactory(serviceProvider.GetService<IConfiguration>(), httpFactory.Object, connections);
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Builder.Tests
             var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
 
-            var traceActivity = Activity.CreateTraceActivity("Test");
+            var traceActivity = MessageFactory.CreateTrace(new MessageActivity("Test"), "Test");
             traceActivity.Conversation = new ConversationAccount(id: "1234");
             traceActivity.ChannelId = "Emulator";
 
@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var connections = new ConfigurationConnections(serviceProvider, serviceProvider.GetService<IConfiguration>());
             var httpFactory = new Mock<IHttpClientFactory>();
-            var traceActivity = Activity.CreateTraceActivity("Test");
+            var traceActivity = MessageFactory.CreateTrace(new MessageActivity("Test"), "Test");
             traceActivity.Conversation = new ConversationAccount(id: "1234");
 
             var factory = new RestChannelServiceClientFactory(serviceProvider.GetService<IConfiguration>(), httpFactory.Object, connections);

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -81,9 +81,9 @@ namespace Microsoft.Agents.Storage.Tests
             var activities = JsonConvert.DeserializeObject<List<Activity>>(content);
 
             var lastActivity = activities.Last();
-            if (lastActivity.Text.Last() == '\n')
+            if (((IMessageActivity)lastActivity).Text.Last() == '\n')
             {
-                lastActivity.Text = lastActivity.Text.Remove(lastActivity.Text.Length - 1);
+                ((IMessageActivity)lastActivity).Text = ((IMessageActivity)lastActivity).Text.Remove(((IMessageActivity)lastActivity).Text.Length - 1);
             }
 
             return activities.Take(activities.Count - 1).Append(lastActivity);

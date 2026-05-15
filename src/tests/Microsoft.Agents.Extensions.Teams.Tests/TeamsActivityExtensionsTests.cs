@@ -1,8 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System;
 using System.Collections.Generic;

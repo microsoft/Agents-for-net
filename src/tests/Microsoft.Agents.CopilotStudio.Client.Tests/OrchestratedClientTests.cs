@@ -57,7 +57,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             Assert.Single(responses);
             var activityResponse = Assert.IsType<OrchestratedActivityResponse>(responses[0]);
             Assert.Equal("message", activityResponse.Activity.Type);
-            Assert.Equal("Hello", activityResponse.Activity.Text);
+            Assert.Equal("Hello", ((IMessageActivity)activityResponse.Activity).Text);
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             // Assert
             Assert.Single(responses);
             var activityResponse = Assert.IsType<OrchestratedActivityResponse>(responses[0]);
-            Assert.Equal("Tool result", activityResponse.Activity.Text);
+            Assert.Equal("Tool result", ((IMessageActivity)activityResponse.Activity).Text);
         }
 
         [Fact]
@@ -250,7 +250,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             var handler = new FakeSseHttpMessageHandler(sseData.ToString());
             SetupHttpClient(handler);
             var client = CreateClient();
-            var activity = new Activity { Type = "message", Text = "User says hello" };
+            var activity = new MessageActivity("User says hello");
 
             // Act
             var responses = new List<OrchestratedResponse>();
@@ -337,7 +337,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             // Assert
             Assert.Equal(2, responses.Count);
             var activityResp = Assert.IsType<OrchestratedActivityResponse>(responses[0]);
-            Assert.Equal("From JSON", activityResp.Activity.Text);
+            Assert.Equal("From JSON", ((IMessageActivity)activityResp.Activity).Text);
             var stateResp = Assert.IsType<OrchestratedStateResponse>(responses[1]);
             Assert.Equal("Completed", stateResp.AgentState.Status.Value);
         }

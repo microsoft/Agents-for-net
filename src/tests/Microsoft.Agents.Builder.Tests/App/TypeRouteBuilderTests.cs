@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -386,16 +386,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "adaptiveCard/action",
                 Value = new { action = "submit" }
             });
 
             RouteSelector selector = (context, token) =>
             {
-                var hasValue = context.Activity.Type == ActivityTypes.Invoke && context.Activity.Value != null;
+                var hasValue = context.Activity.Type == ActivityTypes.Invoke && ((IInvokeActivity)context.Activity).Value != null;
                 return Task.FromResult(hasValue);
             };
 
@@ -679,9 +677,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var handlerExecuted = false;
 
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
@@ -755,9 +751,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var handlerExecuted = false;
 
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "adaptiveCard/action",
                 ChannelId = Channels.Msteams,
                 Value = new { action = "submit" }
@@ -766,7 +760,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = TypeRouteBuilder.Create()
                 .WithSelector((context, token) =>
                 {
-                    var hasValue = context.Activity.Type == ActivityTypes.Invoke && context.Activity.Value != null;
+                    var hasValue = context.Activity.Type == ActivityTypes.Invoke && ((IInvokeActivity)context.Activity).Value != null;
                     return Task.FromResult(hasValue);
                 })
                 .WithHandler((context, state, token) =>
@@ -874,18 +868,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange - All conditions match
             var matchingContext = new Mock<ITurnContext>();
-            matchingContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            matchingContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
             // Arrange - Wrong type
             var wrongTypeContext = new Mock<ITurnContext>();
-            wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            wrongTypeContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
@@ -934,9 +924,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" } // No agentic role
             });
@@ -972,9 +960,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "adaptiveCard/action"
             });
 
@@ -1071,28 +1057,20 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task TypeRouteBuilder_WithTypeAndSelector_BothMustMatch()
         {
             RouteSelector customSelector = (ctx, ct) =>
-                Task.FromResult(ctx.Activity.Name == "specific");
+                Task.FromResult(((IInvokeActivity)ctx.Activity).Name == "specific");
 
             var matchContext = new Mock<ITurnContext>();
-            matchContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            matchContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "specific"
             });
 
             var wrongNameContext = new Mock<ITurnContext>();
-            wrongNameContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            wrongNameContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "other"
             });
 
             var wrongTypeContext = new Mock<ITurnContext>();
-            wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
-                Name = "specific"
-            });
+            wrongTypeContext.Setup(c => c.Activity).Returns(new MessageActivity("specific"));
 
             var route = TypeRouteBuilder.Create()
                 .WithType(ActivityTypes.Invoke)
@@ -1110,21 +1088,15 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Verify the combination works regardless of call order
             RouteSelector customSelector = (ctx, ct) =>
-                Task.FromResult(ctx.Activity.Name == "specific");
+                Task.FromResult(((IInvokeActivity)ctx.Activity).Name == "specific");
 
             var matchContext = new Mock<ITurnContext>();
-            matchContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            matchContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "specific"
             });
 
             var wrongTypeContext = new Mock<ITurnContext>();
-            wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
-                Name = "specific"
-            });
+            wrongTypeContext.Setup(c => c.Activity).Returns(new MessageActivity("specific"));
 
             var route = TypeRouteBuilder.Create()
                 .WithSelector(customSelector)

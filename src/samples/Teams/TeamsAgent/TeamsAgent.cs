@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
@@ -105,7 +104,7 @@ public class TeamsAgent : AgentApplication
 
     private async Task<MessagingExtensionResult> OnQuery(ITurnContext turnContext, ITurnState turnState, Query<IDictionary<string, object>> query, CancellationToken cancellationToken)
     {
-        CommandValue<string> cmd = ProtocolJsonSerializer.ToObject<CommandValue<string>>(turnContext.Activity.Value);
+        CommandValue<string> cmd = ProtocolJsonSerializer.ToObject<CommandValue<string>>(((IInvokeActivity)turnContext.Activity).Value);
         if (cmd.CommandId != "findNuGetPackage")
         {
             _logger.LogWarning("Received unexpected commandID {cmdName}", cmd.CommandId);

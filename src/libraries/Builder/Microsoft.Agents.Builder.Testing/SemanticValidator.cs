@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <inheritdoc/>
         public async Task ValidateAsync(IActivity reply, CancellationToken cancellationToken = default)
         {
-            var replyText = string.IsNullOrEmpty(reply?.Text) ? "(non-text activity)" : reply.Text;
+            var replyText = string.IsNullOrEmpty((reply as IMessageActivity)?.Text) ? "(non-text activity)" : ((IMessageActivity)reply).Text;
 
             var messages = new List<ChatMessage>
             {

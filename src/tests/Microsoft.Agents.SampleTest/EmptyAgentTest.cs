@@ -81,7 +81,7 @@ namespace Microsoft.Agents.SampleTest
                 .Send("hello")
                 .AssertReplySatisfies(reply =>
                 {
-                    Assert.Equal("You said: hello", reply.Text);
+                    Assert.Equal("You said: hello", ((IMessageActivity)reply).Text);
                     Assert.Equal(ActivityTypes.Message, reply.Type);
                     return Task.CompletedTask;
                 })

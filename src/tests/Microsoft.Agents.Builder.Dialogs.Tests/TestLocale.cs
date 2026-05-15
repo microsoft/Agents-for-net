@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests

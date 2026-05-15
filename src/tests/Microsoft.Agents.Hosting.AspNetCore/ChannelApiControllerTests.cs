@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
     public class ChannelApiControllerTests
     {
-        private static Activity _activity => new() { Id = "123", Text = "test" };
+        private static MessageActivity _activity => new() { Id = "123", Text = "test" };
 
         [Fact]
         public async Task SendToConversationAsync_ShouldCallHandlerWithActivity()

@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             var result = new PromptRecognizerResult<T>();
             if (turnContext.Activity.Type == ActivityTypes.Message)
             {
-                var utterance = turnContext.Activity.Text;
+                var utterance = ((IMessageActivity)turnContext.Activity).Text;
                 if (string.IsNullOrEmpty(utterance))
                 {
                     return Task.FromResult(result);

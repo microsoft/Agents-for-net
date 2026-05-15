@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -126,7 +126,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             // Arrange
             var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);
-            var activity = new Activity(commandActivityType) { Name = name, ReplyToId = replyToId };
+            var activity = new InvokeActivity(name) { Type = commandActivityType, ReplyToId = replyToId };
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act
@@ -180,7 +180,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             // Arrange
             var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);
-            var activity = new Activity(ActivityTypes.Message) { Text = $"TestUpdate {DateTime.Now}." };
+            var activity = new MessageActivity { Text = $"TestUpdate {DateTime.Now}." };
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
             var activityToUpdate = Guid.NewGuid().ToString();
 
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Client.Tests
             Assert.Equal("resourceId", response.Id);
             Assert.NotNull(mockObjects.TurnContext.StackState.Get<ChannelConversationReference>(SkillChannelApiHandler.SkillConversationReferenceKey));
             Assert.Equal(activityToUpdate, mockObjects.TurnContext.Activity.Id);
-            Assert.Equal(activity.Text, mockObjects.UpdateActivity.Text);
+            Assert.Equal(((IMessageActivity)activity).Text, ((IMessageActivity)mockObjects.UpdateActivity).Text);
         }
 
         [Fact(Skip = "Mock Adapter.ContinueConversation is not waiting")]
@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Client.Tests
         {
             // Arrange
             var mockObjects = new BotFrameworkSkillHandlerTestMocks(_logger);            
-            var activity = new Activity(ActivityTypes.Message) { Text = $"Get Member." };
+            var activity = new MessageActivity { Text = $"Get Member." };
             var conversationId = await mockObjects.CreateAndApplyConversationIdAsync(activity);
 
             // Act

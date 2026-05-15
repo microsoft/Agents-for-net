@@ -201,9 +201,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
             Assert.Equal(3, sentActivities.Count);
-            Assert.Equal($"Response {activity.Conversation.Id}:{activity.Id}:0", sentActivities[0].Text);
-            Assert.Equal($"Response {activity.Conversation.Id}:{activity.Id}:1", sentActivities[1].Text);
-            Assert.Equal($"Response {activity.Conversation.Id}:{activity.Id}:2", sentActivities[2].Text);
+            Assert.Equal($"Response {activity.Conversation.Id}:{activity.Id}:0", ((IMessageActivity)sentActivities[0]).Text);
+            Assert.Equal($"Response {activity.Conversation.Id}:{activity.Id}:1", ((IMessageActivity)sentActivities[1]).Text);
+            Assert.Equal($"Response {activity.Conversation.Id}:{activity.Id}:2", ((IMessageActivity)sentActivities[2]).Text);
         }
 
         [Fact]
@@ -226,7 +226,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
             Assert.Single(sentActivities);
-            Assert.Equal("Test exception", sentActivities[0].Text);
+            Assert.Equal("Test exception", ((IMessageActivity)sentActivities[0]).Text);
         }
 
         [Fact]
@@ -242,9 +242,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var expectedReplies = ReadExpectedReplies(context);
             Assert.NotNull(expectedReplies);
             Assert.Equal(3, expectedReplies.Activities.Count);
-            Assert.Equal($"Response {convoId}:{convoId}:0", expectedReplies.Activities[0].Text);
-            Assert.Equal($"Response {convoId}:{convoId}:1", expectedReplies.Activities[1].Text);
-            Assert.Equal($"Response {convoId}:{convoId}:2", expectedReplies.Activities[2].Text);
+            Assert.Equal($"Response {convoId}:{convoId}:0", ((IMessageActivity)expectedReplies.Activities[0]).Text);
+            Assert.Equal($"Response {convoId}:{convoId}:1", ((IMessageActivity)expectedReplies.Activities[1]).Text);
+            Assert.Equal($"Response {convoId}:{convoId}:2", ((IMessageActivity)expectedReplies.Activities[2]).Text);
         }
 
         [Fact]
@@ -275,7 +275,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     Assert.StartsWith("data: ", line);
                     var activity = ProtocolJsonSerializer.ToObject<Activity>(line.Substring(6));
                     Assert.NotNull(activity);
-                    Assert.Equal("Test Response", activity.Text);
+                    Assert.Equal("Test Response", ((IMessageActivity)activity).Text);
                     conversationId = activity.Conversation.Id;
                     Assert.NotNull(conversationId);
                 }
@@ -314,14 +314,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 var agent = new TestApplication(new TestApplicationOptions(record.Storage));
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
                 {
-                    await context.SendActivityAsync($"Outer: {context.Activity.Text}", cancellationToken: ct);
+                    await context.SendActivityAsync($"Outer: {((IMessageActivity)context.Activity).Text}", cancellationToken: ct);
                     await context.Adapter.ContinueConversationAsync(
                         context.Identity,
                         context.Activity.GetConversationReference(),
                         async (innerContext, innerCt) =>
                         {
                             await Task.Delay(1000);
-                            await innerContext.SendActivityAsync($"Inner: {context.Activity.Text}", cancellationToken: innerCt);
+                            await innerContext.SendActivityAsync($"Inner: {((IMessageActivity)context.Activity).Text}", cancellationToken: innerCt);
                         },
                         ct);
                 });
@@ -339,13 +339,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.NotNull(expectedReplies);
             Assert.Equal(2, expectedReplies.Activities.Count);
 
-            Assert.Equal("Outer: user message", expectedReplies.Activities[0].Text);
+            Assert.Equal("Outer: user message", ((IMessageActivity)expectedReplies.Activities[0]).Text);
             Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[0].Conversation.Id);
             Assert.Equal(fromId, expectedReplies.Activities[0].Recipient.Id);
             Assert.Equal("1", expectedReplies.Activities[0].ReplyToId);
 
             // Inner turn has same conversation info as incoming
-            Assert.Equal("Inner: user message", expectedReplies.Activities[1].Text);
+            Assert.Equal("Inner: user message", ((IMessageActivity)expectedReplies.Activities[1]).Text);
             Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[1].Conversation.Id);
             Assert.Equal(fromId, expectedReplies.Activities[1].Recipient.Id);
             Assert.Equal("1", expectedReplies.Activities[1].ReplyToId);
@@ -369,13 +369,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 var agent = new TestApplication(new TestApplicationOptions(record.Storage));
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
                 {
-                    await context.SendActivityAsync($"Outer: {context.Activity.Text}", cancellationToken: ct);
+                    await context.SendActivityAsync($"Outer: {((IMessageActivity)context.Activity).Text}", cancellationToken: ct);
                     await context.Adapter.ContinueConversationAsync(
                         context.Identity,
                         proactiveReference,
                         async (innerContext, innerCt) =>
                         {
-                            await innerContext.SendActivityAsync($"Proactive: {context.Activity.Text}", cancellationToken: innerCt);
+                            await innerContext.SendActivityAsync($"Proactive: {((IMessageActivity)context.Activity).Text}", cancellationToken: innerCt);
                         },
                         ct);
                 });
@@ -397,13 +397,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var expectedReplies = ReadExpectedReplies(context);
             Assert.NotNull(expectedReplies);
             Assert.Single(expectedReplies.Activities);
-            Assert.Equal("Outer: user message", expectedReplies.Activities[0].Text);
+            Assert.Equal("Outer: user message", ((IMessageActivity)expectedReplies.Activities[0]).Text);
             Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[0].Conversation.Id);
             Assert.Equal(fromId, expectedReplies.Activities[0].Recipient.Id);
             Assert.Equal("1", expectedReplies.Activities[0].ReplyToId);
 
             Assert.Single(proactiveActivities);
-            Assert.Equal("Proactive: user message", proactiveActivities[0].Text);
+            Assert.Equal("Proactive: user message", ((IMessageActivity)proactiveActivities[0]).Text);
             Assert.Equal(proactiveReference.Conversation.Id, proactiveActivities[0].Conversation.Id);
             Assert.Equal(proactiveReference.User.Id, proactiveActivities[0].Recipient.Id);
             Assert.Equal(proactiveReference.ActivityId, proactiveActivities[0].ReplyToId);
@@ -422,7 +422,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 var agent = new TestApplication(new TestApplicationOptions(record.Storage));
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
                 {
-                    await context.SendActivityAsync($"Original Conversation: {context.Activity.Text}", cancellationToken: ct);
+                    await context.SendActivityAsync($"Original Conversation: {((IMessageActivity)context.Activity).Text}", cancellationToken: ct);
                     await context.Adapter.CreateConversationAsync(
                         "appid",
                         Channels.Test,
@@ -437,9 +437,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                             // TurnState isn't provided in the continuation lambda - load it manually
                             var turnState = agent.Options.TurnStateFactory();
                             await turnState.LoadStateAsync(innerContext, cancellationToken: innerCt);
-                            turnState.Conversation.SetValue("lastConvoMessage", context.Activity.Text);
-                            turnState.User.SetValue("lastConvoMessage", context.Activity.Text);
-                            await innerContext.SendActivityAsync($"New Conversation: {context.Activity.Text}", cancellationToken: innerCt);
+                            turnState.Conversation.SetValue("lastConvoMessage", ((IMessageActivity)context.Activity).Text);
+                            turnState.User.SetValue("lastConvoMessage", ((IMessageActivity)context.Activity).Text);
+                            await innerContext.SendActivityAsync($"New Conversation: {((IMessageActivity)context.Activity).Text}", cancellationToken: innerCt);
                             await turnState.SaveStateAsync(innerContext, cancellationToken: innerCt);
                         },
                         ct);
@@ -465,10 +465,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.True(turnDone.WaitOne(TimeSpan.FromSeconds(10)), "Turn did not complete within timeout");
 
             Assert.Equal(2, responses.Count);
-            Assert.Equal("Original Conversation: user message", responses[0].Text);
+            Assert.Equal("Original Conversation: user message", ((IMessageActivity)responses[0]).Text);
             Assert.Equal(origConversationId, responses[0].Conversation.Id);
             Assert.Equal("1", responses[0].ReplyToId);
-            Assert.Equal("New Conversation: user message", responses[1].Text);
+            Assert.Equal("New Conversation: user message", ((IMessageActivity)responses[1]).Text);
             Assert.Equal(newConversationId, responses[1].Conversation.Id);
             Assert.Null(responses[1].ReplyToId);
 
@@ -503,7 +503,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 var agent = new TestApplication(new TestApplicationOptions(record.Storage));
                 agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
                 {
-                    await context.SendActivityAsync($"Original Conversation: {context.Activity.Text}", cancellationToken: ct);
+                    await context.SendActivityAsync($"Original Conversation: {((IMessageActivity)context.Activity).Text}", cancellationToken: ct);
                     await context.Adapter.ContinueConversationAsync(
                         context.Identity,
                         proactiveReference,
@@ -512,8 +512,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                             // TurnState isn't provided in the continuation lambda - load it manually
                             var turnState = agent.Options.TurnStateFactory();
                             await turnState.LoadStateAsync(innerContext, cancellationToken: innerCt);
-                            turnState.Conversation.SetValue("lastConvoMessage", context.Activity.Text);
-                            await innerContext.SendActivityAsync($"Proactive Conversation: {context.Activity.Text}", cancellationToken: innerCt);
+                            turnState.Conversation.SetValue("lastConvoMessage", ((IMessageActivity)context.Activity).Text);
+                            await innerContext.SendActivityAsync($"Proactive Conversation: {((IMessageActivity)context.Activity).Text}", cancellationToken: innerCt);
                             await turnState.SaveStateAsync(innerContext, cancellationToken: innerCt);
                         },
                         ct);
@@ -541,10 +541,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             Assert.False(handler.SendToConversationCalled, "SendToConversation should not be called; all replies have a replyToId");
             Assert.Equal(2, responses.Count);
-            Assert.Equal("Original Conversation: user message", responses[0].Text);
+            Assert.Equal("Original Conversation: user message", ((IMessageActivity)responses[0]).Text);
             Assert.Equal(initialConversationId, responses[0].Conversation.Id);
             Assert.Equal("1", responses[0].ReplyToId);
-            Assert.Equal("Proactive Conversation: user message", responses[1].Text);
+            Assert.Equal("Proactive Conversation: user message", ((IMessageActivity)responses[1]).Text);
             Assert.Equal(proactiveConversationId, responses[1].Conversation.Id);
             Assert.Equal(proactiveReference.ActivityId, responses[1].ReplyToId);
 
@@ -608,7 +608,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.NotEmpty(expectedReplies.Activities);
 
             // Response is to the original "-signin" message (replyToId = "1")
-            Assert.Equal("GraphToken", expectedReplies.Activities[0].Text);
+            Assert.Equal("GraphToken", ((IMessageActivity)expectedReplies.Activities[0]).Text);
             Assert.Equal(activity.Conversation.Id, expectedReplies.Activities[0].Conversation.Id);
             Assert.Equal(fromId, expectedReplies.Activities[0].Recipient.Id);
             Assert.Equal("1", expectedReplies.Activities[0].ReplyToId);
@@ -792,7 +792,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.IsType<ErrorResponseException>(captured.InnerException);
         }
 
-        private static Activity CreateMessageActivity(
+        private static MessageActivity CreateMessageActivity(
             string deliveryMode = DeliveryModes.Normal,
             string conversationId = null,
             string text = null,
@@ -800,10 +800,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             string fromId = "userId",
             string serviceUrl = null)
         {
-            var activity = new Activity
+            var activity = new MessageActivity
             {
                 ChannelId = Channels.Test,
-                Type = ActivityTypes.Message,
                 DeliveryMode = deliveryMode,
                 Conversation = new(id: conversationId ?? Guid.NewGuid().ToString()),
                 Recipient = new(id: "recipientId", role: RoleTypes.Agent),
@@ -815,15 +814,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             return activity;
         }
 
-        private static Activity CreateInvokeActivity(
+        private static InvokeActivity CreateInvokeActivity(
             string deliveryMode = DeliveryModes.ExpectReplies,
             string conversationId = null,
             string activityId = null)
         {
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
                 ChannelId = Channels.Test,
-                Type = ActivityTypes.Invoke,
                 Name = "invoke",
                 DeliveryMode = deliveryMode,
                 Conversation = new(id: conversationId ?? Guid.NewGuid().ToString()),

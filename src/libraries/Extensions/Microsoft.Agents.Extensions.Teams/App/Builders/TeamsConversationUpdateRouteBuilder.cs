@@ -58,8 +58,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
                         _route.Selector = (context, _) => Task.FromResult
                         (
                             string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                            && context.Activity?.MembersAdded != null
-                            && context.Activity.MembersAdded.Count > 0
+                            && context.Activity is IConversationUpdateActivity updateActivity
+                            && updateActivity.MembersAdded != null
+                            && updateActivity.MembersAdded.Count > 0
                         );
                         break;
                     }
@@ -68,8 +69,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
                         _route.Selector = (context, _) => Task.FromResult
                         (
                             string.Equals(context.Activity?.Type, ActivityTypes.ConversationUpdate, StringComparison.OrdinalIgnoreCase)
-                            && context.Activity?.MembersRemoved != null
-                            && context.Activity.MembersRemoved.Count > 0
+                            && context.Activity is IConversationUpdateActivity updateActivity
+                            && updateActivity.MembersRemoved != null
+                            && updateActivity.MembersRemoved.Count > 0
                         );
                         break;
                     }

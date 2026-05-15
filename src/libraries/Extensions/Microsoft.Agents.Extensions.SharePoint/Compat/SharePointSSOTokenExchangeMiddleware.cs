@@ -71,7 +71,8 @@ namespace Microsoft.Agents.Extensions.SharePoint
         public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             if (turnContext.Activity.ChannelId == Channels.M365
-                && string.Equals(SignInConstants.SharePointTokenExchange, turnContext.Activity.Name, StringComparison.OrdinalIgnoreCase))
+                && turnContext.Activity is IEventActivity eventActivity 
+                && string.Equals(SignInConstants.SharePointTokenExchange, eventActivity.Name, StringComparison.OrdinalIgnoreCase))
             {
                 // If the TokenExchange is NOT successful, the response will have already been sent by ExchangedTokenAsync
                 if (!await this.ExchangedTokenAsync(turnContext, cancellationToken).ConfigureAwait(false))
@@ -93,10 +94,15 @@ namespace Microsoft.Agents.Extensions.SharePoint
 
         private async Task<bool> DeduplicatedTokenExchangeIdAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
+            if (turnContext.Activity is not IEventActivity eventActivity)
+            {
+                return false;
+            }
+
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
             {
-                ETag = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value)["id"].ToString(),
+                ETag = ProtocolJsonSerializer.ToJsonElements(eventActivity.Value)["id"].ToString(),
             };
 
             var storeItems = new Dictionary<string, object> { { TokenStoreItem.GetStorageKey(turnContext), storeItem } };
@@ -124,22 +130,20 @@ namespace Microsoft.Agents.Extensions.SharePoint
         private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
         {
             await turnContext.SendActivityAsync(
-                new Activity
-                {
-                    Type = ActivityTypes.InvokeResponse,
-                    Value = new InvokeResponse
-                    {
-                        Status = (int)httpStatusCode,
-                        Body = body,
-                    },
-                }, cancellationToken).ConfigureAwait(false);
+                new InvokeResponseActivity(body, (int)httpStatusCode),
+                cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<bool> ExchangedTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
+            if (turnContext.Activity is not IEventActivity eventActivity)
+            {
+                return false;
+            }
+
             TokenResponse tokenExchangeResponse = null;
 
-            AceRequest aceRequest = SharePointActivityHandler.SafeCast<AceRequest>(turnContext.Activity.Value);
+            AceRequest aceRequest = SharePointActivityHandler.SafeCast<AceRequest>(eventActivity.Value);
 
             try
             {
@@ -195,7 +199,12 @@ namespace Microsoft.Agents.Extensions.SharePoint
                 var channelId = activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
                 var conversationId = activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
 
-                var value = ProtocolJsonSerializer.ToObject<JsonObject>(activity.Value);
+                if (activity is not IEventActivity eventActivity)
+                {
+                    throw new InvalidOperationException("Invalid signin/tokenExchange. Activity is not an event activity.");
+                }
+
+                var value = ProtocolJsonSerializer.ToObject<JsonObject>(eventActivity.Value);
                 if (value == null || !value.ContainsKey("id"))
                 {
                     throw new InvalidOperationException("Invalid signin/tokenExchange. Missing activity.Value.Id.");

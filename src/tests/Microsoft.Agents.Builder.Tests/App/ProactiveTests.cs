@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -217,9 +217,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversation = new Conversation(_claims, _conversationRef);
             await _proactive.StoreConversationAsync(conversation);
 
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity = new MessageActivity {
                 Text = "Test message"
             };
 
@@ -257,7 +255,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task SendActivityAsync_WithNonExistentConversation_ShouldThrow()
         {
             // Arrange
-            var activity = new Activity { Text = "Test" };
+            var activity = new MessageActivity("Test");
 
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
@@ -268,7 +266,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task SendActivityAsync_NullConversationId_ShouldThrow()
         {
             // Arrange
-            var activity = new Activity { Text = "Test" };
+            var activity = new MessageActivity("Test");
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -290,7 +288,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var conversation = new Conversation(_claims, _conversationRef);
             await _proactive.StoreConversationAsync(conversation);
 
-            var activity = new Activity { Text = "Test" };
+            var activity = new Activity();
             Assert.Null(activity.Type);
 
             _mockAdapter
@@ -313,7 +311,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var conversation = new Conversation(_claims, _conversationRef);
-            var activity = new Activity { Text = "Test" };
+            var activity = new MessageActivity("Test");
 
             _mockAdapter
                 .Setup(a => a.ContinueConversationAsync(
@@ -355,7 +353,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var conversation = new Conversation(_claims, _conversationRef);
-            var activity = new Activity { Text = "Test" };
+            var activity = new MessageActivity("Test");
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -366,7 +364,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task SendActivityAsync_StaticMethod_NullConversation_ShouldThrow()
         {
             // Arrange
-            var activity = new Activity { Text = "Test" };
+            var activity = new MessageActivity("Test");
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -518,11 +516,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var conversation = new Conversation(_claims, _conversationRef);
-            var customActivity = new Activity
-            {
-                Type = ActivityTypes.Event,
-                Name = "CustomEvent"
-            };
+            var customActivity = new EventActivity("CustomEvent");
 
             IActivity capturedActivity = null;
             _mockAdapter
@@ -544,7 +538,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.NotNull(capturedActivity);
             Assert.Equal(ActivityTypes.Event, capturedActivity.Type);
-            Assert.Equal("CustomEvent", capturedActivity.Name);
+            Assert.Equal("CustomEvent", ((IEventActivity)capturedActivity).Name);
         }
 
         #endregion

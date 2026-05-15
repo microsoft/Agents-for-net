@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
             var route = builder
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -34,9 +34,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "testInvoke",
                 ChannelId = "testChannel"
             };
@@ -45,7 +43,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var route = builder
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -59,9 +57,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "TESTINVOKE",
                 ChannelId = "testChannel"
             };
@@ -70,7 +66,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var route = builder
                 .WithName("testinvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -83,9 +79,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "differentInvoke",
                 ChannelId = "testChannel"
             };
@@ -94,7 +88,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var route = builder
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -107,10 +101,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
-                Name = "testInvoke",
+            var activity = new MessageActivity {
                 ChannelId = "testChannel"
             };
             var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
@@ -118,7 +109,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var route = builder
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -152,9 +143,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var builder = new InvokeRouteBuilder();
             var pattern = new Regex("^test.*");
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "testInvoke123",
                 ChannelId = "testChannel"
             };
@@ -163,7 +152,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var route = builder
                 .WithName(pattern)
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -178,9 +167,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange
             var builder = new InvokeRouteBuilder();
             var pattern = new Regex("^test.*");
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "invoke123",
                 ChannelId = "testChannel"
             };
@@ -189,7 +176,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var route = builder
                 .WithName(pattern)
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -228,19 +215,17 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "customInvoke",
                 ChannelId = "testChannel"
             };
             var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
-            RouteSelector customSelector = (context, ct) => Task.FromResult(context.Activity.Name == "customInvoke");
+            RouteSelector customSelector = (context, ct) => Task.FromResult(((IInvokeActivity)context.Activity).Name == "customInvoke");
 
             // Act
             var route = builder
                 .WithSelector(customSelector)
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -254,10 +239,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message, // Not invoke type
-                Name = "customInvoke",
+            var activity = new MessageActivity { // Not invoke type
                 ChannelId = "testChannel"
             };
             var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
@@ -266,7 +248,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var route = builder
                 .WithSelector(customSelector)
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -316,7 +298,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = new InvokeRouteBuilder();
 
             // Act
-            var result = builder.WithHandler(null);
+            var result = builder.WithHandler((RouteHandler)null);
 
             // Assert - Should not throw, but Build() will throw later
             Assert.NotNull(result);
@@ -332,7 +314,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var result = builder.AsInvoke(true);
             var route = result
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -349,7 +331,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var result = builder.AsInvoke(false);
             var route = result
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert - InvokeRouteBuilder should always have Invoke flag
@@ -366,7 +348,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var result = builder.AsInvoke();
             var route = result
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -378,9 +360,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "testInvoke",
                 ChannelId = "testChannel",
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
@@ -391,7 +371,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = builder
                 .AsAgentic()
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -404,9 +384,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "testInvoke",
                 ChannelId = "testChannel"
             };
@@ -416,7 +394,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = builder
                 .AsAgentic()
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -429,9 +407,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "testInvoke",
                 ChannelId = "msteams"
             };
@@ -441,7 +417,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = builder
                 .WithChannelId(new ChannelId("msteams"))
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -454,9 +430,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "testInvoke",
                 ChannelId = "webchat"
             };
@@ -466,7 +440,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = builder
                 .WithChannelId(new ChannelId("msteams"))
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Assert
@@ -478,15 +452,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Build_NoNameOrSelector_MatchesAnyInvoke()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "anyInvokeName"
             };
             var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
 
             var route = new InvokeRouteBuilder()
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Act
@@ -507,7 +479,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
 
             var route = new InvokeRouteBuilder()
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .Build();
 
             // Act
@@ -538,7 +510,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var route = builder
                 .WithName("testInvoke")
-                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .WithHandler((RouteHandler)((context, state, ct) => Task.CompletedTask))
                 .WithOrderRank(expectedRank)
                 .Build();
 
@@ -550,9 +522,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task IntegrationTest_InvokeRouteInApplication()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "testInvoke",
                 Recipient = new ChannelAccount { Id = "recipientId" },
                 Conversation = new ConversationAccount { Id = "conversationId" },
@@ -571,11 +541,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             app.AddRoute(
                 InvokeRouteBuilder.Create()
                     .WithName("testInvoke")
-                    .WithHandler((context, state, ct) =>
+                    .WithHandler((RouteHandler)((context, state, ct) =>
                     {
                         handlerCalled = true;
                         return Task.CompletedTask;
-                    })
+                    }))
                     .Build()
             );
 
@@ -590,9 +560,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task IntegrationTest_InvokeRouteWithRegex()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "adaptiveCard/action",
                 Recipient = new ChannelAccount { Id = "recipientId" },
                 Conversation = new ConversationAccount { Id = "conversationId" },
@@ -611,11 +579,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             app.AddRoute(
                 InvokeRouteBuilder.Create()
                     .WithName(new Regex("^adaptiveCard/.*"))
-                    .WithHandler((context, state, ct) =>
+                    .WithHandler((RouteHandler)((context, state, ct) =>
                     {
                         handlerCalled = true;
                         return Task.CompletedTask;
-                    })
+                    }))
                     .Build()
             );
 

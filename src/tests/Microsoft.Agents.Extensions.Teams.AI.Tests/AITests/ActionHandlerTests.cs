@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.Agents.Extensions.Teams.AI;
 using Microsoft.Agents.Extensions.Teams.AI.Action;
 using Microsoft.Agents.Extensions.Teams.AI.Moderator;
@@ -9,7 +9,6 @@ using Moq;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests
 {

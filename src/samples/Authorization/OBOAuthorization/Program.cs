@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -77,7 +77,7 @@ builder.AddAgent(sp =>
                 {
                     if (activity.IsType(ActivityTypes.Message))
                     {
-                        await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+                        await turnContext.SendActivityAsync(((IMessageActivity)activity).Text, cancellationToken: cancellationToken);
 
                         // Record the conversationId MCS is sending. It will be used this for subsequent messages.
                         turnState.Conversation.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
@@ -87,11 +87,11 @@ builder.AddAgent(sp =>
             else if (turnContext.Activity.IsType(ActivityTypes.Message))
             {
                 // Send the Copilot Studio Agent whatever the sent and send the responses back.
-                await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
+                await foreach (IActivity activity in cpsClient.AskQuestionAsync(((IMessageActivity)turnContext.Activity).Text, mcsConversationId, cancellationToken))
                 {
                     if (activity.IsType(ActivityTypes.Message))
                     {
-                        await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
+                        await turnContext.SendActivityAsync(((IMessageActivity)activity).Text, cancellationToken: cancellationToken);
                     }
                 }
             }

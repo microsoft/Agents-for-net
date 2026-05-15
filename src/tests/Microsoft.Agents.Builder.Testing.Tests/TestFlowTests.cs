@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Builder.Testing
                 {
                     if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate)
                     {
-                        foreach (var member in turnContext.Activity.MembersAdded)
+                        foreach (var member in ((IConversationUpdateActivity)turnContext.Activity).MembersAdded)
                             addedIds.Add(member.Id);
                     }
                     return Task.CompletedTask;
@@ -132,9 +132,9 @@ namespace Microsoft.Agents.Builder.Testing
             await new TestFlow(adapter, (turnContext, cancellationToken) =>
                 {
                     if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate
-                        && turnContext.Activity.MembersAdded?.Count > 0)
+                        && ((IConversationUpdateActivity)turnContext.Activity).MembersAdded?.Count > 0)
                     {
-                        addedId = turnContext.Activity.MembersAdded[0].Id;
+                        addedId = ((IConversationUpdateActivity)turnContext.Activity).MembersAdded[0].Id;
                     }
                     return Task.CompletedTask;
                 })
@@ -253,7 +253,7 @@ namespace Microsoft.Agents.Builder.Testing
                 {
                     called = true;
                     await Task.CompletedTask;
-                    if (activity.Text != "hello reply")
+                    if (((IMessageActivity)activity).Text != "hello reply")
                         throw new InvalidOperationException("wrong text");
                 })
                 .StartTestAsync();
@@ -273,7 +273,7 @@ namespace Microsoft.Agents.Builder.Testing
                     .Send("hello")
                     .AssertReplySatisfies(activity =>
                     {
-                        if (activity.Text == "wrong")
+                        if (((IMessageActivity)activity).Text == "wrong")
                             throw new InvalidOperationException("Validation failed as expected");
                         return Task.CompletedTask;
                     })

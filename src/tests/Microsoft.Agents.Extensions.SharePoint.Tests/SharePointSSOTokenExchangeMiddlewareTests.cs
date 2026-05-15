@@ -32,9 +32,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
 
         private static readonly object _request = new { Data = FakeExchangeableItem, Properties = "Token", id = "test-id" };
 
-        private readonly Activity _activity = new ()
+        private readonly InvokeActivity _activity = new ()
         {
-            Type = ActivityTypes.Invoke,
             Name = "cardExtension/token",
             ChannelId = Channels.M365,
             From = new ChannelAccount(UserId, UserName),
@@ -91,9 +90,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
             Assert.Equal("OnSignInInvokeAsync", bot.Record[0]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            Assert.Null(((InvokeResponse)_activitiesToSend[0].Value).Body);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
+            Assert.Null(((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Body);
         }
 
         [Fact]
@@ -115,18 +114,17 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
             Assert.Equal("OnSignInInvokeAsync", bot.Record[0]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            Assert.Null(((InvokeResponse)_activitiesToSend[0].Value).Body);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
+            Assert.Null(((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Body);
         }
 
         [Fact]
         public async Task OnTurnAsync_ShouldNotExchangeTokenOnDifferentChannel()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = "cardExtension/token",
                 ChannelId = Channels.Directline,
                 From = new ChannelAccount(UserId, UserName),
@@ -148,9 +146,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
             Assert.Equal("OnSignInInvokeAsync", bot.Record[0]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            Assert.Null(((InvokeResponse)_activitiesToSend[0].Value).Body);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
+            Assert.Null(((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Body);
         }
 
         [Fact]
@@ -173,9 +171,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
             Assert.Equal("OnSignInInvokeAsync", bot.Record[0]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            Assert.Null(((InvokeResponse)_activitiesToSend[0].Value).Body);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
+            Assert.Null(((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Body);
         }
 
         [Fact]
@@ -184,9 +182,8 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
             // Arrange
             var request = new { Data = ExceptionExpected, Properties = "Token", id = "test-id" };
 
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = "cardExtension/token",
                 ChannelId = Channels.M365,
                 From = new ChannelAccount(UserId, UserName),
@@ -208,9 +205,9 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
             Assert.Equal("OnSignInInvokeAsync", bot.Record[0]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
-            Assert.Null(((InvokeResponse)_activitiesToSend[0].Value).Body);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
+            Assert.Null(((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Body);
         }
 
         private class TestActivityHandler(IStorage storage) : SharePointActivityHandler

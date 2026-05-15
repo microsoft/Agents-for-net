@@ -1,4 +1,4 @@
-﻿using Microsoft.Agents.Extensions.Teams.AI.Action;
+using Microsoft.Agents.Extensions.Teams.AI.Action;
 using Microsoft.Agents.Extensions.Teams.AI.Planners;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
@@ -7,6 +7,7 @@ using Microsoft.Agents.Extensions.Teams.AI.Utilities;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.AI
 {
@@ -352,7 +353,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI
                 string input = tempState.GetValue<string>("input");
                 if (string.IsNullOrEmpty(input))
                 {
-                    tempState.SetValue("input", turnContext.Activity.Text ?? string.Empty);
+                    tempState.SetValue("input", ((IMessageActivity)turnContext.Activity).Text ?? string.Empty);
                 }
             }
         }

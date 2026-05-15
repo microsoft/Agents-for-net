@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -13,7 +13,6 @@ using static Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Dialogs.Tests
@@ -240,7 +239,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    await dc.PromptAsync("ConfirmPrompt", new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Prompt." } }, cancellationToken);
+                    await dc.PromptAsync("ConfirmPrompt", new PromptOptions { Prompt = new MessageActivity { Text = "Prompt." } }, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
@@ -284,7 +283,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    await dc.PromptAsync("ConfirmPrompt", new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Prompt." } }, cancellationToken);
+                    await dc.PromptAsync("ConfirmPrompt", new PromptOptions { Prompt = new MessageActivity { Text = "Prompt." } }, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
                 {

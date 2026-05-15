@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -33,15 +33,7 @@ namespace Microsoft.Agents.Connector.Tests
             var bot = new ChannelAccount { Id = BotId };
             var user = new ChannelAccount { Id = UserId };
 
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
-                Id = Guid.NewGuid().ToString("N"),
-                From = bot,
-                Recipient = user,
-                Conversation = new ConversationAccount { Id = ConversationId },
-                Text = "test"
-            };
+            var activity = new MessageActivity("test") { Id = Guid.NewGuid().ToString("N"), From = bot, Recipient = user, Conversation = new ConversationAccount { Id = ConversationId } };
 
             Func<HttpRequestMessage, HttpResponseMessage> sendRequest = request =>
             {
@@ -81,16 +73,7 @@ namespace Microsoft.Agents.Connector.Tests
             var bot = new ChannelAccount { Id = BotId };
             var user = new ChannelAccount { Id = UserId };
 
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
-                Id = Guid.NewGuid().ToString("N"),
-                From = bot,
-                Recipient = user,
-                Conversation = new ConversationAccount { Id = ConversationId },
-                ReplyToId = Guid.NewGuid().ToString("N"),
-                Text = "test"
-            };
+            var activity = new MessageActivity("test") { Id = Guid.NewGuid().ToString("N"), From = bot, Recipient = user, Conversation = new ConversationAccount { Id = ConversationId }, ReplyToId = Guid.NewGuid().ToString("N") };
 
             Func<HttpRequestMessage, HttpResponseMessage> sendRequest = request =>
             {

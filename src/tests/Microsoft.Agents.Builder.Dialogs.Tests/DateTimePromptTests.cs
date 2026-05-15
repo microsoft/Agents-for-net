@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -16,8 +16,6 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
-using Microsoft.Agents.Core.Models.Activities;
-
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
     public class DateTimePromptTests
@@ -46,7 +44,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync();
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "What date would you like?" } };
+                    var options = new PromptOptions { Prompt = new MessageActivity { Text = "What date would you like?" } };
                     await dc.PromptAsync("DateTimePrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -87,7 +85,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "What date would you like?" } };
+                    var options = new PromptOptions { Prompt = new MessageActivity { Text = "What date would you like?" } };
                     await dc.PromptAsync("DateTimePrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -130,7 +128,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "What date would you like?" } };
+                    var options = new PromptOptions { Prompt = new MessageActivity { Text = "What date would you like?" } };
                     await dc.PromptAsync("DateTimePrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)

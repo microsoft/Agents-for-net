@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace DialogAgent;
 
@@ -24,11 +23,14 @@ public class DialogAgentApplication : AgentApplication
 
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        if (turnContext.Activity is IConversationUpdateActivity conversationUpdate)
         {
-            if (member.Id != turnContext.Activity.Recipient.Id)
+            foreach (ChannelAccount member in conversationUpdate.MembersAdded)
             {
-                await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
+                if (member.Id != turnContext.Activity.Recipient.Id)
+                {
+                    await turnContext.SendActivityAsync(new MessageActivity("Hello and Welcome!"), cancellationToken);
+                }
             }
         }
     }
@@ -52,7 +54,7 @@ public class DialogAgentApplication : AgentApplication
         var activeDialog = turnState.User.GetValue<string>("ActiveDialog");
         if (string.IsNullOrEmpty(activeDialog))
         {
-            await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+            await turnContext.SendActivityAsync($"You said: {((IMessageActivity)turnContext.Activity).Text}", cancellationToken: cancellationToken);
         }
         else
         {

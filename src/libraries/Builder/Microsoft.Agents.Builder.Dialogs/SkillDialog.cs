@@ -352,14 +352,18 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         private async Task<bool> SendTokenExchangeInvokeToSkillAsync(IActivity incomingActivity, string id, string connectionName, string token, CancellationToken cancellationToken)
         {
-            var activity = Activity.CreateReply(incomingActivity, () => new InvokeActivity());
-            activity.Type = ActivityTypes.Invoke;
-            activity.Name = SignInConstants.TokenExchangeOperationName;
-            activity.Value = new TokenExchangeInvokeRequest
+            var activity = new InvokeActivity(SignInConstants.TokenExchangeOperationName)
             {
-                Id = id,
-                Token = token,
-                ConnectionName = connectionName
+                ReplyToId = incomingActivity.Id,
+                Conversation = incomingActivity.Conversation,
+                From = incomingActivity.Recipient,
+                Recipient = incomingActivity.From,
+                Value = new TokenExchangeInvokeRequest
+                {
+                    Id = id,
+                    Token = token,
+                    ConnectionName = connectionName
+                }
             };
 
             // route the activity to the skill

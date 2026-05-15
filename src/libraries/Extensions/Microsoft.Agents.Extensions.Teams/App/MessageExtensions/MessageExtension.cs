@@ -104,8 +104,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, SUBMIT_ACTION_INVOKE_NAME)
-                    || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(turnContext.Activity.Value)) == null)
+                    || !(turnContext.Activity is IInvokeActivity invokeActivity)
+                    || !string.Equals(invokeActivity.Name, SUBMIT_ACTION_INVOKE_NAME)
+                    || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(invokeActivity.Value)) == null)
                 {
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnSubmitAction() triggered for activity type: {turnContext.Activity.Type}");
                 }
@@ -118,7 +119,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(result), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -199,8 +205,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             {
                 MessagingExtensionAction? messagingExtensionAction;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, SUBMIT_ACTION_INVOKE_NAME)
-                    || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(turnContext.Activity.Value)) == null
+                    || !(turnContext.Activity is IInvokeActivity invokeActivity)
+                    || !string.Equals(invokeActivity.Name, SUBMIT_ACTION_INVOKE_NAME)
+                    || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(invokeActivity.Value)) == null
                     || !string.Equals(messagingExtensionAction.BotMessagePreviewAction, "edit"))
                 {
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnAgentMessagePreviewEdit() triggered for activity type: {turnContext.Activity.Type}");
@@ -214,7 +221,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(result), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -298,8 +310,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             {
                 MessagingExtensionAction? messagingExtensionAction;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, SUBMIT_ACTION_INVOKE_NAME)
-                    || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(turnContext.Activity.Value)) == null
+                    || !(turnContext.Activity is IInvokeActivity invokeActivity)
+                    || !string.Equals(invokeActivity.Name, SUBMIT_ACTION_INVOKE_NAME)
+                    || (messagingExtensionAction = ProtocolJsonSerializer.ToObject<MessagingExtensionAction>(invokeActivity.Value)) == null
                     || !string.Equals(messagingExtensionAction.BotMessagePreviewAction, "send"))
                 {
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnAgentMessagePreviewSend() triggered for activity type: {turnContext.Activity.Type}");
@@ -315,7 +328,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -395,7 +413,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, MessageExtensionsInvokeNames.FETCH_TASK_INVOKE_NAME))
+                    || !(turnContext.Activity is IInvokeActivity invokeActivity)
+                    || !string.Equals(invokeActivity.Name, MessageExtensionsInvokeNames.FETCH_TASK_INVOKE_NAME))
                 {
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnFetchTask() triggered for activity type: {turnContext.Activity.Type}");
                 }
@@ -408,7 +427,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(result), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -488,8 +512,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             {
                 MessagingExtensionQuery? messagingExtensionQuery;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, MessageExtensionsInvokeNames.QUERY_INVOKE_NAME)
-                    || (messagingExtensionQuery = ProtocolJsonSerializer.ToObject<MessagingExtensionQuery>(turnContext.Activity.Value)) == null)
+                    || !(turnContext.Activity is IInvokeActivity invokeActivity)
+                    || !string.Equals(invokeActivity.Name, MessageExtensionsInvokeNames.QUERY_INVOKE_NAME)
+                    || (messagingExtensionQuery = ProtocolJsonSerializer.ToObject<MessagingExtensionQuery>(invokeActivity.Value)) == null)
                 {
                     throw new InvalidOperationException($"Unexpected MessageExtensions.OnQuery() triggered for activity type: {turnContext.Activity.Type}");
                 }
@@ -512,7 +537,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -568,11 +598,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, SELECT_ITEM_INVOKE_NAME));
+                    && turnContext.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, SELECT_ITEM_INVOKE_NAME));
             };
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                MessagingExtensionResult result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                MessagingExtensionResult result = await handler(turnContext, turnState, ((IInvokeActivity)turnContext.Activity).Value, cancellationToken);
 
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
@@ -584,7 +615,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -599,11 +635,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, MessageExtensionsInvokeNames.QUERY_LINK_INVOKE_NAME));
+                    && turnContext.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, MessageExtensionsInvokeNames.QUERY_LINK_INVOKE_NAME));
             };
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                AppBasedLinkQuery? appBasedLinkQuery = ProtocolJsonSerializer.ToObject<AppBasedLinkQuery>(turnContext.Activity.Value);
+                AppBasedLinkQuery? appBasedLinkQuery = ProtocolJsonSerializer.ToObject<AppBasedLinkQuery>(((IInvokeActivity)turnContext.Activity).Value);
                 MessagingExtensionResult result = await handler(turnContext, turnState, appBasedLinkQuery!.Url, cancellationToken);
 
                 // Check to see if an invoke response has already been added
@@ -616,7 +653,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -636,11 +678,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, MessageExtensionsInvokeNames.ANONYMOUS_QUERY_LINK_INVOKE_NAME));
+                    && turnContext.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, MessageExtensionsInvokeNames.ANONYMOUS_QUERY_LINK_INVOKE_NAME));
             };
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                AppBasedLinkQuery? appBasedLinkQuery = ProtocolJsonSerializer.ToObject<AppBasedLinkQuery>(turnContext.Activity.Value);
+                AppBasedLinkQuery? appBasedLinkQuery = ProtocolJsonSerializer.ToObject<AppBasedLinkQuery>(((IInvokeActivity)turnContext.Activity).Value);
                 MessagingExtensionResult result = await handler(turnContext, turnState, appBasedLinkQuery!.Url, cancellationToken);
 
                 // Check to see if an invoke response has already been added
@@ -653,7 +696,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -671,7 +719,8 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, QUERY_SETTING_URL));
+                    && turnContext.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, QUERY_SETTING_URL));
             };
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
@@ -687,7 +736,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(response), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -705,11 +759,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, CONFIGURE_SETTINGS));
+                    && turnContext.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, CONFIGURE_SETTINGS));
             };
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                await handler(turnContext, turnState, ((IInvokeActivity)turnContext.Activity).Value, cancellationToken);
 
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
@@ -717,7 +772,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -737,11 +797,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 return Task.FromResult(string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, QUERY_CARD_BUTTON_CLICKED));
+                    && turnContext.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, QUERY_CARD_BUTTON_CLICKED));
             };
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                await handler(turnContext, turnState, ((IInvokeActivity)turnContext.Activity).Value, cancellationToken);
 
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
@@ -749,7 +810,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
                     await turnContext.SendActivityAsync(new InvokeResponseActivity(), cancellationToken);
                 }
             };
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -758,18 +824,19 @@ namespace Microsoft.Agents.Extensions.Teams.App.MessageExtensions
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
             {
                 bool isInvoke = string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, invokeName);
+                    && turnContext.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, invokeName);
                 if (!isInvoke)
                 {
                     return Task.FromResult(false);
                 }
 
-                if (turnContext.Activity.Value == null)
+                if (!(turnContext.Activity is IInvokeActivity invokeAct) || invokeAct.Value == null)
                 {
                     return Task.FromResult(false);
                 }
 
-                var obj = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
+                var obj = ProtocolJsonSerializer.ToJsonElements(invokeAct.Value);
 
                 bool isCommandMatch = obj.TryGetValue("commandId", out JsonElement commandId) && commandId.ValueKind == JsonValueKind.String && isMatch(commandId.ToString());
 

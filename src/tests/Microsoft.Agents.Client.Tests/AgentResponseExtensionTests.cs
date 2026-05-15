@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -228,10 +228,10 @@ namespace Microsoft.Agents.Client.Tests
 
             app.OnActivity(ActivityTypes.Event, (turnContext, turnState, cancellationToken) =>
             {
-                if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == AdapterChannelResponseHandler.ChannelReplyEventName)
+                if (turnContext.Activity.Type == ActivityTypes.Event && ((IEventActivity)turnContext.Activity).Name == AdapterChannelResponseHandler.ChannelReplyEventName)
                 {
-                    Assert.NotNull(turnContext.Activity.Value);
-                    var channelReplyValue = ProtocolJsonSerializer.ToObject<AdapterChannelResponseHandler.ChannelReply>(turnContext.Activity.Value);
+                    Assert.NotNull(((IEventActivity)turnContext.Activity).Value);
+                    var channelReplyValue = ProtocolJsonSerializer.ToObject<AdapterChannelResponseHandler.ChannelReply>(((IEventActivity)turnContext.Activity).Value);
                     Assert.Equal(agent2ConversationId, channelReplyValue.Activity.Conversation.Id);
                     Assert.Equal("1", channelReplyValue.ChannelConversationReference.ConversationReference.Conversation.Id);
                     Assert.Equal("webchat", channelReplyValue.ChannelConversationReference.ConversationReference.ChannelId);

@@ -176,7 +176,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             if (turnContext.Activity.Type == ActivityTypes.Message)
             {
                 // Recognize utterance
-                var utterance = turnContext.Activity.Text;
+                var utterance = ((IMessageActivity)turnContext.Activity).Text;
                 if (string.IsNullOrEmpty(utterance))
                 {
                     return Task.FromResult(result);

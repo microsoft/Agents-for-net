@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             var result = new PromptRecognizerResult<string>();
             if (turnContext.Activity.Type == ActivityTypes.Message)
             {
-                var message = turnContext.Activity;
+                var message = (IMessageActivity)turnContext.Activity;
                 if (message.Text != null)
                 {
                     result.Succeeded = true;

@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Builder.Testing
                 if (turnContext.Activity.Type == ActivityTypes.Message)
                 {
                     await turnContext.SendActivityAsync(
-                        $"Echo: {turnContext.Activity.Text}",
+                        $"Echo: {((IMessageActivity)turnContext.Activity).Text}",
                         cancellationToken: cancellationToken);
                 }
             }

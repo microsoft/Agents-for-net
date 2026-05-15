@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -14,8 +14,6 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
-using Microsoft.Agents.Core.Models.Activities;
-
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
     public class ConfirmPromptTests
@@ -53,7 +51,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    await dc.PromptAsync("ConfirmPrompt", new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "Please confirm." } }, cancellationToken);
+                    await dc.PromptAsync("ConfirmPrompt", new PromptOptions { Prompt = new MessageActivity { Text = "Please confirm." } }, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
                 {
@@ -97,14 +95,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        Prompt = new MessageActivity {
                             Text = "Please confirm.",
                         },
-                        RetryPrompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        RetryPrompt = new MessageActivity {
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                     };
@@ -205,14 +199,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        Prompt = new MessageActivity {
                             Text = "Please confirm.",
                         },
-                        RetryPrompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        RetryPrompt = new MessageActivity {
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                     };
@@ -268,14 +258,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        Prompt = new MessageActivity {
                             Text = "Please confirm.",
                         },
-                        RetryPrompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        RetryPrompt = new MessageActivity {
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                     };
@@ -332,14 +318,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        Prompt = new MessageActivity {
                             Text = "Please confirm.",
                         },
-                        RetryPrompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        RetryPrompt = new MessageActivity {
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                     };
@@ -391,14 +373,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        Prompt = new MessageActivity {
                             Text = "Please confirm.",
                         },
-                        RetryPrompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        RetryPrompt = new MessageActivity {
                             Text = "Please confirm, say 'yes' or 'no' or something like that.",
                         },
                         RecognizeLanguage = "es-es"
@@ -453,7 +431,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ConfirmPrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "is it true?" },
+                                Prompt = new MessageActivity { Text = "is it true?" },
                             },
                             cancellationToken);
                     }
@@ -492,7 +470,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                             "ConfirmPrompt",
                             new PromptOptions
                             {
-                                Prompt = new Activity { Type = ActivityTypes.Message, Text = "is it true?" },
+                                Prompt = new MessageActivity { Text = "is it true?" },
                                 Style = ListStyle.None
                             },
                             cancellationToken);
@@ -507,13 +485,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         {
             return activity =>
             {
-                Assert.Equal(expectedText, activity.Text);
-                Assert.Equal(expectedSuggestedActions.Actions.Count, activity.SuggestedActions.Actions.Count);
+                Assert.Equal(expectedText, ((IMessageActivity)activity).Text);
+                Assert.Equal(expectedSuggestedActions.Actions.Count, ((IMessageActivity)activity).SuggestedActions.Actions.Count);
                 for (var i = 0; i < expectedSuggestedActions.Actions.Count; i++)
                 {
-                    Assert.Equal(expectedSuggestedActions.Actions[i].Type, activity.SuggestedActions.Actions[i].Type);
-                    Assert.Equal(expectedSuggestedActions.Actions[i].Value, activity.SuggestedActions.Actions[i].Value);
-                    Assert.Equal(expectedSuggestedActions.Actions[i].Title, activity.SuggestedActions.Actions[i].Title);
+                    Assert.Equal(expectedSuggestedActions.Actions[i].Type, ((IMessageActivity)activity).SuggestedActions.Actions[i].Type);
+                    Assert.Equal(expectedSuggestedActions.Actions[i].Value, ((IMessageActivity)activity).SuggestedActions.Actions[i].Value);
+                    Assert.Equal(expectedSuggestedActions.Actions[i].Title, ((IMessageActivity)activity).SuggestedActions.Actions[i].Title);
                 }
             };
         }

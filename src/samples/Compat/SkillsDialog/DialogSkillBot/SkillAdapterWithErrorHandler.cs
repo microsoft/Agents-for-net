@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -7,7 +7,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Agents.Storage;
@@ -68,8 +67,8 @@ namespace DialogSkillBot
                 // Send an EndOfConversation activity to the skill caller with the error to end the conversation,
                 // and let the caller decide what to do.
                 var endOfConversation = Activity.CreateEndOfConversationActivity();
-                endOfConversation.Code = "SkillError";
-                endOfConversation.Text = exception.Message;
+                ((IEndOfConversationActivity)endOfConversation).Code = "SkillError";
+                ((IEndOfConversationActivity)endOfConversation).Text = exception.Message;
                 await turnContext.SendActivityAsync(endOfConversation);
             }
             catch (Exception ex)

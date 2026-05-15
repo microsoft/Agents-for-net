@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -84,9 +84,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "HELLO"
             });
 
@@ -108,9 +106,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "goodbye"
             });
 
@@ -132,11 +128,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Event,
-                Text = "hello"
-            });
+            mockContext.Setup(c => c.Activity).Returns(new EventActivity("hello"));
 
             var builder = MessageRouteBuilder.Create()
                 .WithText("hello")
@@ -188,9 +180,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "hello world"
             });
 
@@ -212,9 +202,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "goodbye world"
             });
 
@@ -236,11 +224,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Text = "hello"
-            });
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity("hello"));
 
             var builder = MessageRouteBuilder.Create()
                 .WithText(new Regex("hello"))
@@ -376,7 +360,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = MessageRouteBuilder.Create();
-            RouteHandler handler = (context, state, token) => Task.CompletedTask;
+            RouteHandler<IMessageActivity> handler = (context, state, token) => Task.CompletedTask;
 
             // Act
             var result = builder.WithHandler(handler);
@@ -450,18 +434,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange - Agentic context
             var agenticContext = new Mock<ITurnContext>();
-            agenticContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            agenticContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "hello",
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
             // Arrange - Non-agentic context
             var nonAgenticContext = new Mock<ITurnContext>();
-            nonAgenticContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            nonAgenticContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "hello"
             });
 
@@ -486,18 +466,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange - Matching channel
             var matchingContext = new Mock<ITurnContext>();
-            matchingContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            matchingContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "hello",
                 ChannelId = Channels.Msteams
             });
 
             // Arrange - Non-matching channel
             var nonMatchingContext = new Mock<ITurnContext>();
-            nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            nonMatchingContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "hello",
                 ChannelId = Channels.Directline
             });
@@ -552,9 +528,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var handlerExecuted = false;
 
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "hello world",
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
@@ -588,9 +562,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = null
             });
 
@@ -612,9 +584,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = null
             });
 
@@ -637,9 +607,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task MessageRouteBuilder_WithoutFilter_MatchesAnyMessage()
         {
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "anything"
             });
 
@@ -724,25 +692,19 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Task.FromResult(ctx.Activity.ChannelId == Channels.Msteams);
 
             var matchContext = new Mock<ITurnContext>();
-            matchContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            matchContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "hello",
                 ChannelId = Channels.Msteams
             });
 
             var wrongTextContext = new Mock<ITurnContext>();
-            wrongTextContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            wrongTextContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "goodbye",
                 ChannelId = Channels.Msteams
             });
 
             var wrongChannelContext = new Mock<ITurnContext>();
-            wrongChannelContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            wrongChannelContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 Text = "hello",
                 ChannelId = Channels.Directline
             });

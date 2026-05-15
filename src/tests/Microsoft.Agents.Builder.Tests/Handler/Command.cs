@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Testing;
@@ -19,16 +19,14 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             var adapter = new TestAdapter();
 
             // Create mock Activity for testing.
-            var commandActivity = new Activity
+            var commandActivity = new CommandActivity
             {
-                Type = ActivityTypes.Command,
                 Name = "channel/vnd.microsoft.test.multiply",
                 Value = new MathCommand { First = 2, Second = 2 }
             };
 
-            var unknownCommandActivity = new Activity
+            var unknownCommandActivity = new CommandActivity
             {
-                Type = ActivityTypes.Command,
                 Name = "channel/vnd.microsoft.test.divide",
                 Value = new MathCommand { First = 10, Second = 2 }
             };
@@ -37,17 +35,17 @@ namespace Microsoft.Agents.Builder.Tests.Handler
                 .Send(commandActivity)
                 .AssertReply((activity) =>
                 {
-                    Assert.Equal(commandActivity.Name, activity.Name);
+                    Assert.Equal(commandActivity.Name, ((ICommandResultActivity)activity).Name);
 
-                    var result = ProtocolJsonSerializer.ToObject<CommandResultValue<MathResult>>(activity.Value);
+                    var result = ProtocolJsonSerializer.ToObject<CommandResultValue<MathResult>>(((ICommandResultActivity)activity).Value);
                     Assert.Equal(4, result.Data.Result);
                 })
                 .Send(unknownCommandActivity)
                 .AssertReply((activity) =>
                 {
-                    Assert.Equal(unknownCommandActivity.Name, activity.Name);
+                    Assert.Equal(unknownCommandActivity.Name, ((ICommandResultActivity)activity).Name);
 
-                    var result = ProtocolJsonSerializer.ToObject<CommandResultValue<MathResult>>(activity.Value);
+                    var result = ProtocolJsonSerializer.ToObject<CommandResultValue<MathResult>>(((ICommandResultActivity)activity).Value);
                     Assert.Equal("NotSupported", result.Error.Code);
                 })
                 .StartTestAsync();
@@ -62,10 +60,9 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             {
                 var value = ProtocolJsonSerializer.ToObject<MathCommand>(turnContext.Activity.Value);
 
-                var commandResult = new Activity()
+                var commandResult = new CommandResultActivity()
                 {
-                    Type = "commandResult",
-                    Name = turnContext.Activity.Name,
+                    Name = ((ICommandActivity)turnContext.Activity).Name,
                     Value = new CommandResultValue<MathResult>
                     {
                         Data = new MathResult { Result = value.First * value.Second }
@@ -76,10 +73,9 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             }
             else
             {
-                var commandResult = new Activity()
+                var commandResult = new CommandResultActivity()
                 {
-                    Type = "commandResult",
-                    Name = turnContext.Activity.Name,
+                    Name = ((ICommandActivity)turnContext.Activity).Name,
                     Value = new CommandResultValue<MathResult>
                     {
                         Error = new Error

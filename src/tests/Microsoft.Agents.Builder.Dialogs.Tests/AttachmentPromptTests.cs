@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -12,8 +12,6 @@ using Xunit;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
-using Microsoft.Agents.Core.Models.Activities;
-
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
     public class AttachmentPromptTests

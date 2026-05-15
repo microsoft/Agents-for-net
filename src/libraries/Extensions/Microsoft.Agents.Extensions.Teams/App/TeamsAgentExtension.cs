@@ -111,7 +111,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "editMessage"));
             };
-            AddRoute(AgentApplication, routeSelector, handler, false, isAgenticOnly, rank, autoSignInHandlers);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(handler)
+                .AsInvoke(false)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+            AddRoute(AgentApplication, route);
             return this;
         }
 
@@ -134,7 +142,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "undeleteMessage"));
             };
-            AddRoute(AgentApplication, routeSelector, handler, false, isAgenticOnly, rank, autoSignInHandlers);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(handler)
+                .AsInvoke(false)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+            AddRoute(AgentApplication, route);
             return this;
         }
 
@@ -157,7 +173,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     && (teamsChannelData = turnContext.Activity.GetChannelData<TeamsChannelData>()) != null
                     && string.Equals(teamsChannelData.EventType, "softDeleteMessage"));
             };
-            AddRoute(AgentApplication, routeSelector, handler, false, isAgenticOnly, rank, autoSignInHandlers);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(handler)
+                .AsInvoke(false)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+            AddRoute(AgentApplication, route);
             return this;
         }
 
@@ -175,14 +199,23 @@ namespace Microsoft.Agents.Extensions.Teams.App
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.Name, "application/vnd.microsoft.readReceipt")
+                && context.Activity is IEventActivity eventActivity
+                && string.Equals(eventActivity.Name, "application/vnd.microsoft.readReceipt")
             );
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                ReadReceiptInfo readReceiptInfo = ProtocolJsonSerializer.ToObject<ReadReceiptInfo>(turnContext.Activity.Value) ?? new();
+                ReadReceiptInfo readReceiptInfo = ProtocolJsonSerializer.ToObject<ReadReceiptInfo>(((IEventActivity)turnContext.Activity).Value) ?? new();
                 await handler(turnContext, turnState, readReceiptInfo, cancellationToken);
             };
-            AddRoute(AgentApplication, routeSelector, routeHandler, false, isAgenticOnly, rank, autoSignInHandlers);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(false)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+            AddRoute(AgentApplication, route);
             return this;
         }
 
@@ -199,10 +232,11 @@ namespace Microsoft.Agents.Extensions.Teams.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, CONFIG_FETCH_INVOKE_NAME));
+                && turnContext.Activity is IInvokeActivity invokeActivity
+                && string.Equals(invokeActivity.Name, CONFIG_FETCH_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                ConfigResponseBase result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                ConfigResponseBase result = await handler(turnContext, turnState, ((IInvokeActivity)turnContext.Activity).Value, cancellationToken);
 
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
@@ -211,7 +245,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AddRoute(AgentApplication, routeSelector, routeHandler, true, isAgenticOnly, rank, autoSignInHandlers);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+            AddRoute(AgentApplication, route);
             return this;
         }
 
@@ -228,10 +270,11 @@ namespace Microsoft.Agents.Extensions.Teams.App
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             RouteSelector routeSelector = (turnContext, cancellationToken) => Task.FromResult(
                 string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(turnContext.Activity.Name, CONFIG_SUBMIT_INVOKE_NAME));
+                && turnContext.Activity is IInvokeActivity invokeActivity
+                && string.Equals(invokeActivity.Name, CONFIG_SUBMIT_INVOKE_NAME));
             RouteHandler routeHandler = async (ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken) =>
             {
-                ConfigResponseBase result = await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
+                ConfigResponseBase result = await handler(turnContext, turnState, ((IInvokeActivity)turnContext.Activity).Value, cancellationToken);
 
                 // Check to see if an invoke response has already been added
                 if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))
@@ -240,7 +283,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AddRoute(AgentApplication, routeSelector, routeHandler, true, isAgenticOnly, rank, autoSignInHandlers);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+            AddRoute(AgentApplication, route);
             return this;
         }
 
@@ -275,14 +326,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
                 return Task.FromResult
                 (
                     string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(context.Activity?.Name, "fileConsent/invoke")
-                    && (fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(context.Activity!.Value)) != null
+                    && context.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, "fileConsent/invoke")
+                    && (fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(invokeActivity.Value)) != null
                     && string.Equals(fileConsentCardResponse.Action, fileConsentAction)
                 );
             };
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
-                FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(turnContext.Activity.Value) ?? new();
+                FileConsentCardResponse fileConsentCardResponse = ProtocolJsonSerializer.ToObject<FileConsentCardResponse>(((IInvokeActivity)turnContext.Activity).Value) ?? new();
                 await handler(turnContext, turnState, fileConsentCardResponse, cancellationToken);
 
                 // Check to see if an invoke response has already been added
@@ -292,7 +344,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AddRoute(AgentApplication, routeSelector, routeHandler, true, isAgenticOnly, rank, autoSignInHandlers);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+            AddRoute(AgentApplication, route);
             return this;
         }
 
@@ -310,11 +370,12 @@ namespace Microsoft.Agents.Extensions.Teams.App
             RouteSelector routeSelector = (context, _) => Task.FromResult
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(context.Activity?.Name, "actionableMessage/executeAction")
+                && context.Activity is IInvokeActivity invokeActivity
+                && string.Equals(invokeActivity.Name, "actionableMessage/executeAction")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
-                O365ConnectorCardActionQuery query = ProtocolJsonSerializer.ToObject<O365ConnectorCardActionQuery>(turnContext.Activity.Value) ?? new();
+                O365ConnectorCardActionQuery query = ProtocolJsonSerializer.ToObject<O365ConnectorCardActionQuery>(((IInvokeActivity)turnContext.Activity).Value) ?? new();
                 await handler(turnContext, turnState, query, cancellationToken);
 
                 // Check to see if an invoke response has already been added
@@ -324,7 +385,15 @@ namespace Microsoft.Agents.Extensions.Teams.App
                     await turnContext.SendActivityAsync(activity, cancellationToken);
                 }
             };
-            AddRoute(AgentApplication, routeSelector, routeHandler, true, isAgenticOnly, rank, autoSignInHandlers);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .AsAgentic(isAgenticOnly)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .Build();
+            AddRoute(AgentApplication, route);
             return AgentApplication;
         }
 

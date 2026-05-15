@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -90,9 +90,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "handoff/action"
             });
 
@@ -116,9 +114,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var expectedContinuation = "test-continuation-token";
 
             var mockContext = new Mock<ITurnContext>();
-            var mockActivity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var mockActivity = new InvokeActivity {
                 Name = "handoff/action",
                 Value = new { Continuation = expectedContinuation }
             };
@@ -150,9 +146,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             string capturedContinuation = null;
 
             var mockContext = new Mock<ITurnContext>();
-            var mockActivity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var mockActivity = new InvokeActivity {
                 Name = "handoff/action",
                 Value = new { SomeOtherProperty = "value" }
             };
@@ -184,9 +178,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             string capturedContinuation = null;
 
             var mockContext = new Mock<ITurnContext>();
-            var mockActivity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var mockActivity = new InvokeActivity {
                 Name = "handoff/action",
                 Value = null
             };
@@ -218,9 +210,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             IActivity sentActivity = null;
 
             var mockContext = new Mock<ITurnContext>();
-            var mockActivity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var mockActivity = new InvokeActivity {
                 Name = "handoff/action",
                 Value = new { Continuation = "test-token" }
             };
@@ -256,9 +246,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "handoff/action"
             });
 
@@ -278,9 +266,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "HANDOFF/ACTION"
             });
 
@@ -300,11 +286,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
-                Name = "handoff/action"
-            });
+            mockContext.Setup(c => c.Activity).Returns(new MessageActivity("handoff/action"));
 
             var route = HandoffRouteBuilder.Create()
                 .WithHandler((context, state, continuation, token) => Task.CompletedTask)
@@ -322,9 +304,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "other/action"
             });
 
@@ -344,9 +324,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var mockContext = new Mock<ITurnContext>();
-            mockContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            mockContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = null
             });
 
@@ -366,18 +344,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange - Matching channel
             var matchingContext = new Mock<ITurnContext>();
-            matchingContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            matchingContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "handoff/action",
                 ChannelId = Channels.Msteams
             });
 
             // Arrange - Non-matching channel
             var nonMatchingContext = new Mock<ITurnContext>();
-            nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            nonMatchingContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "handoff/action",
                 ChannelId = Channels.Directline
             });
@@ -401,18 +375,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange - Agentic context
             var agenticContext = new Mock<ITurnContext>();
-            agenticContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            agenticContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "handoff/action",
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
             // Arrange - Non-agentic context
             var nonAgenticContext = new Mock<ITurnContext>();
-            nonAgenticContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            nonAgenticContext.Setup(c => c.Activity).Returns(new InvokeActivity {
                 Name = "handoff/action",
                 Recipient = new ChannelAccount()
             });
@@ -575,9 +545,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var expectedContinuation = "test-continuation";
 
             var mockContext = new Mock<ITurnContext>();
-            var mockActivity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var mockActivity = new InvokeActivity {
                 Name = "handoff/action",
                 ChannelId = Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser },
@@ -619,9 +587,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var expectedToken = new CancellationTokenSource().Token;
 
             var mockContext = new Mock<ITurnContext>();
-            var mockActivity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var mockActivity = new InvokeActivity {
                 Name = "handoff/action",
                 Value = new { Continuation = "test" }
             };

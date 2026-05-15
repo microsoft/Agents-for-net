@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             var result = new PromptRecognizerResult<IList<Attachment>>();
             if (turnContext.Activity.Type == ActivityTypes.Message)
             {
-                var message = turnContext.Activity;
+                var message = (IMessageActivity)turnContext.Activity;
                 if (message.Attachments != null && message.Attachments.Count > 0)
                 {
                     result.Succeeded = true;

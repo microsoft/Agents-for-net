@@ -1,9 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Moq;
 using System;
 using System.Reflection;
@@ -50,8 +49,8 @@ namespace Microsoft.Agents.Builder.Tests
             context1.OnDeleteActivity((context, activity, next) => next());
             context1.OnUpdateActivity((context, activity, next) => next());
             var ccontext2 = new TurnContext(context1, new MessageActivity() { Text = "two" });
-            Assert.Equal("one", context1.Activity.Text);
-            Assert.Equal("two", ccontext2.Activity.Text);
+            Assert.Equal("one", ((IMessageActivity)context1.Activity).Text);
+            Assert.Equal("two", ((IMessageActivity)ccontext2.Activity).Text);
             Assert.Equal(context1.Adapter, ccontext2.Adapter);
             Assert.Equal(context1.StackState, ccontext2.StackState);
 
@@ -182,7 +181,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.False(context.Responded);
 
             // Send a Trace Activity, and make sure responded is NOT set.
-            var trace = Activity.CreateTraceActivity("trace");
+            var trace = MessageFactory.CreateTrace(context.Activity, "trace");
             await context.SendActivityAsync(trace);
             Assert.False(context.Responded);
 
@@ -658,18 +657,18 @@ namespace Microsoft.Agents.Builder.Tests
 
         private async Task MyBotLogic(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            if (turnContext.Activity.Text == "TestResponded")
+            if (((IMessageActivity)turnContext.Activity).Text == "TestResponded")
             {
                 Assert.False(turnContext.Responded, "Responded should be false before sending.");
 
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("one"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity { Text = "one", Conversation = turnContext.Activity.Conversation, From = turnContext.Activity.Recipient, Recipient = turnContext.Activity.From, ReplyToId = turnContext.Activity.Id }, cancellationToken);
 
                 Assert.True(turnContext.Responded, "Responded should be true after sending.");
             }
             else
             {
                 await turnContext.SendActivityAsync(
-                    turnContext.Activity.CreateReply($"echo:{turnContext.Activity.Text}"), cancellationToken);
+                    new MessageActivity { Text = $"echo:{((IMessageActivity)turnContext.Activity).Text}", Conversation = turnContext.Activity.Conversation, From = turnContext.Activity.Recipient, Recipient = turnContext.Activity.From, ReplyToId = turnContext.Activity.Id }, cancellationToken);
             }
         }
     }

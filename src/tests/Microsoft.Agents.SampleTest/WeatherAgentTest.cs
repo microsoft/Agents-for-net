@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#nullable enable
+
 using Azure.AI.OpenAI;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
@@ -76,13 +78,13 @@ namespace Microsoft.Agents.SampleTest
             {
                 // Extract the content to validate.
                 string content;
-                if (!string.IsNullOrEmpty(reply?.Text))
+                if (!string.IsNullOrEmpty(((IMessageActivity?)reply)?.Text))
                 {
-                    content = reply.Text;
+                    content = ((IMessageActivity)reply).Text;
                 }
                 else
                 {
-                    var adaptiveCardAttachment = reply?.Attachments?
+                    var adaptiveCardAttachment = ((IMessageActivity?)reply)?.Attachments?
                         .FirstOrDefault(a => string.Equals(
                             a.ContentType,
                             ContentTypes.AdaptiveCard,
@@ -101,7 +103,7 @@ namespace Microsoft.Agents.SampleTest
                     {
                         throw new InvalidOperationException(
                             $"Reply contains neither text nor an Adaptive Card attachment. " +
-                            $"Activity type: {reply?.Type}, attachments: {reply?.Attachments?.Count ?? 0}");
+                            $"Activity type: {reply?.Type}, attachments: {((IMessageActivity?)reply)?.Attachments?.Count ?? 0}");
                     }
                 }
 

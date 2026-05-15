@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Model.Tests
             ProtocolJsonSerializer.UnpackObjectStrings = false;
             var incoming = "{\"membersAdded\":[],\"membersRemoved\":[],\"reactionsAdded\":[],\"reactionsRemoved\":[],\"attachments\":[],\"entities\":[],\"channelData\":{\"name\":\"myName\"},\"value\":\"{\\\"a\\\":\\\"b\\\"}\",\"listenFor\":[],\"textHighlights\":[]}";
             var a = ProtocolJsonSerializer.ToObject<Activity>(incoming);
-            Assert.True(a.Value is string);
+            Assert.True((a as IMessageActivity)?.Value is string);
             Assert.True(a.ChannelData is JsonElement);
 
             var outgoing = ProtocolJsonSerializer.ToJson(a);
@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Model.Tests
             var rawA = parsedA.GetRawText();
             var rawB = parsedB.GetRawText();
 
-            var outActivity = new Activity() { ChannelData = new MyClass() { Name = "myName" }, Value = "{\"a\":\"b\"}" };
+            var outActivity = new MessageActivity() { ChannelData = new MyClass() { Name = "myName" }, Value = "{\"a\":\"b\"}" };
             var inJson = ProtocolJsonSerializer.ToJson(outActivity);
             var inActivity = ProtocolJsonSerializer.ToObject<IActivity>(inJson);
 
@@ -45,11 +45,11 @@ namespace Microsoft.Agents.Model.Tests
             var activityIn = ProtocolJsonSerializer.ToObject<Activity>(incoming);
             var jsonOut = ProtocolJsonSerializer.ToJson(activityIn);
 
-            var outActivity = new Activity() { Value = "just a string" };
+            var outActivity = new MessageActivity() { Value = "just a string" };
             var outActivityJson = ProtocolJsonSerializer.ToJson(outActivity);
 
-            Assert.True(activityIn.Value is string);
-            Assert.Equal("just a string", activityIn.Value);
+            Assert.True((activityIn as IMessageActivity)?.Value is string);
+            Assert.Equal("just a string", ((IMessageActivity)activityIn).Value);
             Assert.Equal(incoming, jsonOut);
             Assert.Equal(incoming, outActivityJson);
         }

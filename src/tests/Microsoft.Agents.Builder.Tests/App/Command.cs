@@ -13,7 +13,7 @@ using Microsoft.Agents.Storage;
 
 namespace Microsoft.Agents.Builder.Tests.App
 {
-    public class CommandActivity
+    public class CommandActivityTests
     {
         [Fact]
         public async Task CommandBotTest()
@@ -22,35 +22,33 @@ namespace Microsoft.Agents.Builder.Tests.App
             var storage = new MemoryStorage();
 
             // Create mock Activity for testing.
-            var commandActivity = new Activity
+            var commandActivity = new Microsoft.Agents.Core.Models.CommandActivity("channel/vnd.microsoft.test.multiply")
             {
-                Type = ActivityTypes.Command,
-                Name = "channel/vnd.microsoft.test.multiply",
                 Value = new MathCommand { First = 2, Second = 2 }
             };
 
-            var unknownCommandActivity = new Activity
+            var unknownCommandActivity = new Microsoft.Agents.Core.Models.CommandActivity("channel/vnd.microsoft.test.divide")
             {
-                Type = ActivityTypes.Command,
-                Name = "channel/vnd.microsoft.test.divide",
                 Value = new MathCommand { First = 10, Second = 2 }
             };
 
             await new TestFlow(adapter, new CommandBot(new AgentApplicationOptions(storage)))
-                .Send(commandActivity)
+                .Send((IActivity)commandActivity)
                 .AssertReply((activity) =>
                 {
-                    Assert.Equal(commandActivity.Name, activity.Name);
+                    var cmdResult = (ICommandResultActivity)activity;
+                    Assert.Equal(((ICommandActivity)commandActivity).Name, cmdResult.Name);
 
-                    var result = ProtocolJsonSerializer.ToObject<CommandResultValue<MathResult>>(activity.Value);
+                    var result = ProtocolJsonSerializer.ToObject<CommandResultValue<MathResult>>(cmdResult.Value);
                     Assert.Equal(4, result.Data.Result);
                 })
-                .Send(unknownCommandActivity)
+                .Send((IActivity)unknownCommandActivity)
                 .AssertReply((activity) =>
                 {
-                    Assert.Equal(unknownCommandActivity.Name, activity.Name);
+                    var cmdResult = (ICommandResultActivity)activity;
+                    Assert.Equal(((ICommandActivity)unknownCommandActivity).Name, cmdResult.Name);
 
-                    var result = ProtocolJsonSerializer.ToObject<CommandResultValue<MathResult>>(activity.Value);
+                    var result = ProtocolJsonSerializer.ToObject<CommandResultValue<MathResult>>(cmdResult.Value);
                     Assert.Equal("NotSupported", result.Error.Code);
                 })
                 .StartTestAsync();
@@ -66,14 +64,14 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         public static async Task OnCommandAsync(ITurnContext turnContext, ITurnState state, CancellationToken cancellationToken)
         {
-            if (turnContext.Activity.Name == "channel/vnd.microsoft.test.multiply")
+            var cmdActivity = (ICommandActivity)turnContext.Activity;
+            if (cmdActivity.Name == "channel/vnd.microsoft.test.multiply")
             {
-                var value = ProtocolJsonSerializer.ToObject<MathCommand>(turnContext.Activity.Value);
+                var value = ProtocolJsonSerializer.ToObject<MathCommand>(cmdActivity.Value);
 
-                var commandResult = new Activity()
+                var commandResult = new CommandResultActivity()
                 {
-                    Type = "commandResult",
-                    Name = turnContext.Activity.Name,
+                    Name = cmdActivity.Name,
                     Value = new CommandResultValue<MathResult>
                     {
                         Data = new MathResult { Result = value.First * value.Second }
@@ -84,10 +82,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             }
             else
             {
-                var commandResult = new Activity()
+                var commandResult = new CommandResultActivity()
                 {
-                    Type = "commandResult",
-                    Name = turnContext.Activity.Name,
+                    Name = cmdActivity.Name,
                     Value = new CommandResultValue<MathResult>
                     {
                         Error = new Error

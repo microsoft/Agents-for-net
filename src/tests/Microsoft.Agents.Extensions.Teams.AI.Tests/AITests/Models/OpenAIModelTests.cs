@@ -1,4 +1,4 @@
-﻿using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Extensions.Teams.AI.Models;
 using Microsoft.Agents.Extensions.Teams.AI.Prompts;
 using Microsoft.Agents.Extensions.Teams.AI.Prompts.Sections;
@@ -17,7 +17,6 @@ using Azure.Identity;
 using Microsoft.Agents.Extensions.Teams.AI.Augmentations;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.AITests.Models
 {

@@ -460,9 +460,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// appropriate to the current conversation.</remarks>
         public Activity MakeActivity(string text = null)
         {
-            Activity activity = new Activity
+            Activity activity = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Locale = this.Locale ?? "en-us",
                 From = Conversation.User,
                 Recipient = Conversation.Agent,

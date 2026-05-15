@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -32,9 +32,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
+            var turnContext = new TurnContext(adapter, new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = "task/fetch",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -81,7 +80,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -94,9 +93,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
+            var turnContext = new TurnContext(adapter, new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = "task/fetch",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -142,9 +140,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public async Task Test_OnFetch_RouteSelector_ActivityNotMatched()
         {
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
+            var turnContext = new TurnContext(adapter, new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = "task/fetch",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -189,9 +186,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
+            var turnContext = new TurnContext(adapter, new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = "task/submit",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -238,7 +234,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -251,9 +247,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
+            var turnContext = new TurnContext(adapter, new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = "task/submit",
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
                 {
@@ -300,9 +295,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public async Task Test_OnSubmit_RouteSelector_ActivityNotMatched()
         {
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
+            var turnContext = new TurnContext(adapter, new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = "task/submit",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },

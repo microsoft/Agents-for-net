@@ -3,6 +3,7 @@
 
 #nullable enable
 
+using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -150,7 +151,7 @@ namespace Microsoft.Agents.Model.Tests
             var result = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.Activity>(json);
 
             Assert.Equal("message", result.Type);
-            Assert.Equal("hello world", result.Text);
+            Assert.Equal("hello world", ((IMessageActivity)result).Text);
             Assert.Equal("act-123", result.Id);
         }
 

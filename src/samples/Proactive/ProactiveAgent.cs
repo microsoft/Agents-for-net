@@ -84,8 +84,10 @@ public class ProactiveAgent : AgentApplication
             conversation, 
             async (context, state, ct) =>
             {
-                var originalActivity = (IActivity)context.Activity.Value;
-                await context.SendActivityAsync($"You said: {originalActivity.Text}", cancellationToken: ct);
+                var eventActivity = context.Activity as IEventActivity;
+                var originalActivity = (IActivity)(eventActivity?.Value);
+                var messageActivity = originalActivity as IMessageActivity;
+                await context.SendActivityAsync($"You said: {messageActivity?.Text}", cancellationToken: ct);
             },
             continuationActivity: customContinuation,
             cancellationToken: cancellationToken);

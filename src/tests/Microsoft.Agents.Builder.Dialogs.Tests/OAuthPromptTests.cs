@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -136,14 +136,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        Prompt = new MessageActivity {
                             Text = "Please select an option."
                         },
-                        RetryPrompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        RetryPrompt = new MessageActivity {
                             Text = "Retrying - Please select an option."
                         }
                     };
@@ -166,10 +162,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
 
-                Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
+                Assert.Equal(InputHints.AcceptingInput, ((IMessageActivity)activity).InputHint);
 
                 // Add a magic code to the adapter
                 adapter.AddUserToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, Token, MagicCode);
@@ -188,7 +184,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task OAuthPromptTimesOut_TokenResponseEvent()
         {
-            var activity = new Activity() { Type = ActivityTypes.Event, Name = SignInConstants.TokenResponseEventName };
+            var activity = new EventActivity(SignInConstants.TokenResponseEventName);
             activity.Value = new TokenResponse(Channels.Msteams, ConnectionName, Token, DateTime.Parse("Tuesday, April 15, 2025 6:03:20 PM"));
             await PromptTimeoutEndsDialogTest(activity);
         }
@@ -196,7 +192,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task OAuthPromptTimesOut_VerifyStateOperation()
         {
-            var activity = new Activity() { Type = ActivityTypes.Invoke, Name = SignInConstants.VerifyStateOperationName };
+            var activity = new InvokeActivity(SignInConstants.VerifyStateOperationName);
             activity.Value = new { state = "888999" };
 
             await PromptTimeoutEndsDialogTest(activity);
@@ -205,7 +201,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task OAuthPromptTimesOut_TokenExchangeOperation()
         {
-            var activity = new Activity() { Type = ActivityTypes.Invoke, Name = SignInConstants.TokenExchangeOperationName };
+            var activity = new InvokeActivity(SignInConstants.TokenExchangeOperationName);
 
             activity.Value = new TokenExchangeInvokeRequest()
             {
@@ -268,10 +264,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send(MagicCode)
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
 
-                Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
+                Assert.Equal(InputHints.AcceptingInput, ((IMessageActivity)activity).InputHint);
             })
             .StartTestAsync();
         }
@@ -315,16 +311,15 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
-                Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
+                Assert.Equal(InputHints.AcceptingInput, ((IMessageActivity)activity).InputHint);
 
                 // Add an exchangable token to the adapter
                 adapter.AddExchangeableToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, ExchangeToken, Token);
             })
-            .Send(new Activity()
+            .Send(new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 Value = ProtocolJsonSerializer.ToJson(new TokenExchangeInvokeRequest()
                 {
@@ -335,7 +330,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .AssertReply(a =>
             {
                 Assert.Equal("invokeResponse", a.Type);
-                var response = ((Activity)a).Value as InvokeResponse;
+                var response = ((IInvokeActivity)a).Value as InvokeResponse;
                 Assert.NotNull(response);
                 Assert.Equal(200, response.Status);
                 var body = response.Body as TokenExchangeInvokeResponse;
@@ -385,15 +380,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
-                Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
+                Assert.Equal(InputHints.AcceptingInput, ((IMessageActivity)activity).InputHint);
 
                 // No exchangable token is added to the adapter
             })
-            .Send(new Activity()
+            .Send(new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
                 Value = ProtocolJsonSerializer.ToJson(new TokenExchangeInvokeRequest()
                 {
@@ -404,7 +398,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .AssertReply(a =>
             {
                 Assert.Equal("invokeResponse", a.Type);
-                var response = ((Activity)a).Value as InvokeResponse;
+                var response = ((IInvokeActivity)a).Value as InvokeResponse;
                 Assert.NotNull(response);
                 Assert.Equal(412, response.Status);
                 var body = response.Body as TokenExchangeInvokeResponse;
@@ -453,15 +447,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
-                Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
+                Assert.Equal(InputHints.AcceptingInput, ((IMessageActivity)activity).InputHint);
 
                 // No exchangable token is added to the adapter
             })
-            .Send(new Activity()
+            .Send(new InvokeActivity()
             {
-                Type = ActivityTypes.Invoke,
                 Name = SignInConstants.TokenExchangeOperationName,
 
                 // send no body
@@ -469,7 +462,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .AssertReply(a =>
             {
                 Assert.Equal("invokeResponse", a.Type);
-                var response = ((Activity)a).Value as InvokeResponse;
+                var response = ((IInvokeActivity)a).Value as InvokeResponse;
                 Assert.NotNull(response);
                 Assert.Equal(400, response.Status);
                 var body = response.Body as TokenExchangeInvokeResponse;
@@ -518,16 +511,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
-                Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
+                Assert.Equal(InputHints.AcceptingInput, ((IMessageActivity)activity).InputHint);
 
                 // No exchangable token is added to the adapter
             })
-            .Send(new Activity()
+            .Send(new InvokeActivity(SignInConstants.TokenExchangeOperationName)
             {
-                Type = ActivityTypes.Invoke,
-                Name = SignInConstants.TokenExchangeOperationName,
                 Value = ProtocolJsonSerializer.ToJson(new TokenExchangeInvokeRequest()
                 {
                     ConnectionName = "beepboop",
@@ -537,7 +528,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .AssertReply(a =>
             {
                 Assert.Equal("invokeResponse", a.Type);
-                var response = ((Activity)a).Value as InvokeResponse;
+                var response = ((IInvokeActivity)a).Value as InvokeResponse;
                 Assert.NotNull(response);
                 Assert.Equal(400, response.Status);
                 var body = response.Body as TokenExchangeInvokeResponse;
@@ -571,7 +562,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 }
             };
 
-            var initialActivity = new Activity()
+            var initialActivity = new MessageActivity()
             {
                 ChannelId = Channels.Skype,
                 Text = "hello"
@@ -581,8 +572,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .Send(initialActivity)
                 .AssertReply(activity =>
                 {
-                    Assert.Single(((Activity)activity).Attachments);
-                    Assert.Equal(SigninCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
+                    Assert.Single(((IMessageActivity)activity).Attachments);
+                    Assert.Equal(SigninCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
                 })
                 .StartTestAsync();
         }
@@ -620,7 +611,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 }
             };
 
-            var initialActivity = new Activity()
+            var initialActivity = new MessageActivity()
             {
                 ChannelId = channelId,
                 Text = "hello"
@@ -629,9 +620,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .Send(initialActivity)
                 .AssertReply(activity =>
                 {
-                    Assert.Single(((Activity)activity).Attachments);
-                    Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
-                    var oAuthCard = (OAuthCard)((Activity)activity).Attachments[0].Content;
+                    Assert.Single(((IMessageActivity)activity).Attachments);
+                    Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
+                    var oAuthCard = (OAuthCard)((IMessageActivity)activity).Attachments[0].Content;
                     var cardAction = oAuthCard.Buttons[0];
                     Assert.Equal(shouldHaveSignInLink, cardAction.Value != null);
                 })
@@ -711,9 +702,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
-                Assert.Equal(InputHints.AcceptingInput, ((Activity)activity).InputHint);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
+                Assert.Equal(InputHints.AcceptingInput, ((IMessageActivity)activity).InputHint);
             })
             .Send(messageActivityWithNullText)
             .AssertReply(retryPromptText)
@@ -754,9 +745,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .Send("hello")
                 .AssertReply(activity =>
                 {
-                    Assert.Single(((Activity)activity).Attachments);
-                    Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
-                    var oAuthCard = (OAuthCard)((Activity)activity).Attachments[0].Content;
+                    Assert.Single(((IMessageActivity)activity).Attachments);
+                    Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
+                    var oAuthCard = (OAuthCard)((IMessageActivity)activity).Attachments[0].Content;
                     if (containsSasurl)
                     {
                         Assert.NotNull(oAuthCard.TokenPostResource);
@@ -815,8 +806,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
             })
             .Send("blah")
             .AssertReply("Ended.")
@@ -891,10 +882,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, activity.Attachments[0].ContentType);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
 
-                Assert.Equal(InputHints.AcceptingInput, activity.InputHint);
+                Assert.Equal(InputHints.AcceptingInput, ((IMessageActivity)activity).InputHint);
 
                 // Prepare an EventActivity with a TokenResponse and send it to the botCallbackHandler
                 var eventActivity = CreateEventResponse(adapter, activity, ConnectionName, Token);
@@ -946,8 +937,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Send("hello")
             .AssertReply(activity =>
             {
-                Assert.Single(((Activity)activity).Attachments);
-                Assert.Equal(OAuthCard.ContentType, ((Activity)activity).Attachments[0].ContentType);
+                Assert.Single(((IMessageActivity)activity).Attachments);
+                Assert.Equal(OAuthCard.ContentType, ((IMessageActivity)activity).Attachments[0].ContentType);
 
                 // Add a magic code to the adapter
                 adapter.AddUserToken(ConnectionName, activity.ChannelId.Channel, activity.Recipient.Id, Token, MagicCode);
@@ -958,12 +949,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             .Delay(500)
             .Send(oauthPromptActivity);
 
-            if (oauthPromptActivity.Name == SignInConstants.TokenExchangeOperationName)
+            if (((IEventActivity)oauthPromptActivity).Name == SignInConstants.TokenExchangeOperationName)
             {
                 flow = flow.AssertReply(a =>
                 {
                     Assert.Equal("invokeResponse", a.Type);
-                    var response = ((Activity)a).Value as InvokeResponse;
+                    var response = ((IInvokeActivity)a).Value as InvokeResponse;
                     Assert.NotNull(response);
                     Assert.Equal(400, response.Status);
                     var body = response.Body as TokenExchangeInvokeResponse;
@@ -982,12 +973,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             adapter.AddUserToken(connectionName, activity.ChannelId.Channel, activity.Recipient.Id, token);
 
             // send an event TokenResponse activity to the botCallback handler
-            var eventActivity = activity.CreateReply();
-            eventActivity.Type = ActivityTypes.Event;
-            var from = eventActivity.From;
-            eventActivity.From = eventActivity.Recipient;
-            eventActivity.Recipient = from;
-            eventActivity.Name = SignInConstants.TokenResponseEventName;
+            var eventActivity = new EventActivity(SignInConstants.TokenResponseEventName);
+            eventActivity.ChannelId = activity.ChannelId;
+            eventActivity.From = activity.Recipient;
+            eventActivity.Recipient = activity.From;
+            eventActivity.Conversation = activity.Conversation;
             eventActivity.Value = new TokenResponse()
             {
                 ConnectionName = connectionName,

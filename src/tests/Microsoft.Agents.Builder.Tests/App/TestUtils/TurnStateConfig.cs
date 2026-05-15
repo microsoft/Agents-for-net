@@ -1,4 +1,4 @@
-﻿using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System;
@@ -35,13 +35,13 @@ namespace Microsoft.Agents.Builder.Tests.App.TestUtils
         }
         public static ITurnContext CreateConfiguredTurnContext()
         {
-            return new TurnContext(new NotImplementedAdapter(), new Activity(
-                text: "hello",
-                channelId: "channelId",
-                recipient: new() { Id = "recipientId" },
-                conversation: new() { Id = "conversationId" },
-                from: new() { Id = "fromId" }
-            ));
+            return new TurnContext(new NotImplementedAdapter(), new MessageActivity("hello")
+            {
+                ChannelId = "channelId",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" }
+            });
         }
     }
 }

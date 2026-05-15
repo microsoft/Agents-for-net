@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Builder.Testing
                     //  could be thrown.
                     await _testTask.ConfigureAwait(false);
 
-                    var cu = Activity.CreateConversationUpdateActivity();
+                    var cu = Activity.CreateConversationUpdateActivity() as IConversationUpdateActivity;
                     cu.MembersAdded.Add(this._adapter.Conversation.User);
                     await _adapter.ProcessActivityAsync((Activity)cu, _callback, default).ConfigureAwait(false);
                 },
@@ -165,7 +165,7 @@ namespace Microsoft.Agents.Builder.Testing
                     async () =>
                     {
                         await _testTask.ConfigureAwait(false);
-                        var cu = Activity.CreateConversationUpdateActivity();
+                        var cu = Activity.CreateConversationUpdateActivity() as IConversationUpdateActivity;
                         foreach (var member in memberList)
                             cu.MembersAdded.Add(member);
                         await _adapter.ProcessActivityAsync((Activity)cu, _callback, default).ConfigureAwait(false);
@@ -267,17 +267,18 @@ namespace Microsoft.Agents.Builder.Testing
             return AssertReply(
                 (reply) =>
                 {
-                    if (reply == null || !reply.Text.Contains(expected))
+                    var messageReply = reply as IMessageActivity;
+                    if (messageReply == null || !messageReply.Text.Contains(expected))
                     {
                         if (description == null)
                         {
                             throw new InvalidOperationException(
-                                $"Expected:{expected}\nReceived:{reply?.Text ?? "Not a Message Activity"}");
+                                $"Expected:{expected}\nReceived:{messageReply?.Text ?? "Not a Message Activity"}");
                         }
                         else
                         {
                             throw new InvalidOperationException(
-                                $"{description}:\nExpected:{expected}\nReceived:{reply?.Text ?? "Not a Message Activity"}");
+                                $"{description}:\nExpected:{expected}\nReceived:{messageReply?.Text ?? "Not a Message Activity"}");
                         }
                     }
                 },
@@ -314,7 +315,9 @@ namespace Microsoft.Agents.Builder.Testing
             return AssertReply(
                 (reply) =>
                 {
-                    description = description ?? expected.Text.Trim();
+                    var expectedMessage = expected as IMessageActivity;
+                    var replyMessage = reply as IMessageActivity;
+                    description = description ?? expectedMessage?.Text?.Trim() ?? "Activity comparison";
                     if (expected.Type != reply.Type)
                     {
                         throw new InvalidOperationException($"{description}: Type should match");
@@ -329,15 +332,15 @@ namespace Microsoft.Agents.Builder.Testing
                     }
                     else
                     {
-                        if (expected.Text?.Trim() != reply.Text?.Trim())
+                        if (expectedMessage?.Text?.Trim() != replyMessage?.Text?.Trim())
                         {
                             if (description == null)
                             {
-                                throw new InvalidOperationException($"Expected:{expected.Text}\nReceived:{reply.Text}");
+                                throw new InvalidOperationException($"Expected:{expectedMessage?.Text}\nReceived:{replyMessage?.Text}");
                             }
                             else
                             {
-                                throw new InvalidOperationException($"{description}:\nExpected:{expected.Text}\nReceived:{reply.Text}");
+                                throw new InvalidOperationException($"{description}:\nExpected:{expectedMessage?.Text}\nReceived:{replyMessage?.Text}");
                             }
                         }
                     }
@@ -661,11 +664,12 @@ namespace Microsoft.Agents.Builder.Testing
             return AssertReply(
                 (reply) =>
                 {
-                    var text = reply.Text;
+                    var messageReply = reply as IMessageActivity;
+                    var text = messageReply?.Text;
 
                     foreach (var candidate in candidates)
                     {
-                        if (reply.Text == candidate)
+                        if (messageReply?.Text == candidate)
                         {
                             return;
                         }

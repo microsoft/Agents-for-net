@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -387,7 +387,7 @@ namespace Microsoft.Agents.State.Tests
                     await userState.LoadAsync(context, false);
                     var state = userState.GetValue("test", () => new TestState());
                     Assert.NotNull(state);
-                    switch (context.Activity.Text)
+                    switch (((IMessageActivity)context.Activity).Text)
                     {
                         case "set value":
                             state.Value = "test";
@@ -416,7 +416,7 @@ namespace Microsoft.Agents.State.Tests
                         await userState.LoadAsync(context, false, cancellationToken);
                         var testPocoState = userState.GetValue("testPoco", () => new TestPocoState());
                         Assert.NotNull(userState);
-                        switch (context.Activity.Text)
+                        switch (((IMessageActivity)context.Activity).Text)
                         {
                             case "set value":
                                 testPocoState.Value = "test";
@@ -447,7 +447,7 @@ namespace Microsoft.Agents.State.Tests
                         await userState.LoadAsync(context, false, cancellationToken);
                         var conversationState = userState.GetValue("test", () => new TestState());
                         Assert.NotNull(conversationState);
-                        switch (context.Activity.Text)
+                        switch (((IMessageActivity)context.Activity).Text)
                         {
                             case "set value":
                                 conversationState.Value = "test";
@@ -477,7 +477,7 @@ namespace Microsoft.Agents.State.Tests
                         await userState.LoadAsync(context, false, cancellationToken);
                         var conversationState = userState.GetValue("testPoco", () => new TestPocoState());
                         Assert.NotNull(conversationState);
-                        switch (context.Activity.Text)
+                        switch (((IMessageActivity)context.Activity).Text)
                         {
                             case "set value":
                                 conversationState.Value = "test";
@@ -507,7 +507,7 @@ namespace Microsoft.Agents.State.Tests
                         await privateConversationState.LoadAsync(context, false);
                         var conversationState = privateConversationState.GetValue("testPoco", () => new TestPocoState());
                         Assert.NotNull(conversationState);
-                        switch (context.Activity.Text)
+                        switch (((IMessageActivity)context.Activity).Text)
                         {
                             case "set value":
                                 conversationState.Value = "test";
@@ -536,7 +536,7 @@ namespace Microsoft.Agents.State.Tests
                     {
                         await customState.LoadAsync(context, false, cancellationToken);
                         var test = customState.GetValue("test", () => new TestPocoState());
-                        switch (context.Activity.Text)
+                        switch (((IMessageActivity)context.Activity).Text)
                         {
                             case "set value":
                                 test.Value = testGuid;
@@ -566,7 +566,7 @@ namespace Microsoft.Agents.State.Tests
                         await convoState.LoadAsync(context, false, cancellationToken);
                         var conversation = convoState.GetValue("typed", () => new TypedObject());
                         Assert.NotNull(conversation);
-                        switch (context.Activity.Text)
+                        switch (((IMessageActivity)context.Activity).Text)
                         {
                             case "set value":
                                 conversation.Name = "test";

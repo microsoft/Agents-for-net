@@ -88,8 +88,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             {
                 TaskModuleAction? taskModuleAction;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, FETCH_INVOKE_NAME)
-                    || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(turnContext.Activity.Value)) == null)
+                    || !(turnContext.Activity is IInvokeActivity invokeActivity)
+                    || !string.Equals(invokeActivity.Name, FETCH_INVOKE_NAME)
+                    || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(invokeActivity.Value)) == null)
                 {
                     throw new InvalidOperationException($"Unexpected TaskModules.OnFetch() triggered for activity type: {turnContext.Activity.Type}");
                 }
@@ -104,7 +105,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
                 }
             };
 
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -191,8 +197,9 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             {
                 TaskModuleAction? taskModuleAction;
                 if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, SUBMIT_INVOKE_NAME)
-                    || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(turnContext.Activity.Value)) == null)
+                    || !(turnContext.Activity is IInvokeActivity invokeActivity)
+                    || !string.Equals(invokeActivity.Name, SUBMIT_INVOKE_NAME)
+                    || (taskModuleAction = ProtocolJsonSerializer.ToObject<TaskModuleAction>(invokeActivity.Value)) == null)
                 {
                     throw new InvalidOperationException($"Unexpected TaskModules.OnSubmit() triggered for activity type: {turnContext.Activity.Type}");
                 }
@@ -207,7 +214,12 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
                 }
             };
 
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .AsInvoke(true)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -252,18 +264,19 @@ namespace Microsoft.Agents.Extensions.Teams.App.TaskModules
             RouteSelector routeSelector = (ITurnContext turnContext, CancellationToken cancellationToken) =>
             {
                 bool isInvoke = string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, invokeName);
+                    && turnContext.Activity is IInvokeActivity invokeActivity
+                    && string.Equals(invokeActivity.Name, invokeName);
                 if (!isInvoke)
                 {
                     return Task.FromResult(false);
                 }
 
-                if (turnContext.Activity.Value == null)
+                if (!(turnContext.Activity is IInvokeActivity invokeAct) || invokeAct.Value == null)
                 {
                     return Task.FromResult(false);
                 }
 
-                var obj = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value);
+                var obj = ProtocolJsonSerializer.ToJsonElements(invokeAct.Value);
 
                 if (!obj.TryGetValue("data", out var dataNode))
                 {

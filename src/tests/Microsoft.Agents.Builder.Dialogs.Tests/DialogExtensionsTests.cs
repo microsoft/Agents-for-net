@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -19,8 +19,6 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Client.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
-using Microsoft.Agents.Core.Models.Activities;
-
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
     public class DialogExtensionsTests
@@ -89,8 +87,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 Assert.NotNull(_eocSent);
                 Assert.Equal(ActivityTypes.EndOfConversation, _eocSent.Type);
-                Assert.Equal(EndOfConversationCodes.CompletedSuccessfully, _eocSent.Code);
-                Assert.Equal("SomeName", _eocSent.Value);
+                Assert.Equal(EndOfConversationCodes.CompletedSuccessfully, ((IEndOfConversationActivity)_eocSent).Code);
+                Assert.Equal("SomeName", ((IEndOfConversationActivity)_eocSent).Value);
                 Assert.Equal("en-GB", _eocSent.Locale);
             }
             else
@@ -120,10 +118,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var testFlow = CreateTestFlow(dialog, FlowTestCase.LeafSkill);
             await testFlow.Send("Hi")
                 .AssertReply("Hello, what is your name?")
-                .Send(new Activity(ActivityTypes.Event)
+                .Send(new EventActivity(DialogEvents.RepromptDialog)
                 {
-                    CallerId = _parentBotId,
-                    Name = DialogEvents.RepromptDialog
+                    CallerId = _parentBotId
                 })
                 .AssertReply("Hello, what is your name?")
                 .StartTestAsync();
@@ -201,7 +198,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             _context.SetupGet(e => e.Services)
                 .Returns([]);
             _context.SetupGet(e => e.Activity)
-                .Returns(new Activity { Type = ActivityTypes.Event, Name = DialogEvents.RepromptDialog })
+                .Returns(new EventActivity(DialogEvents.RepromptDialog))
                 .Verifiable(Times.Exactly(3));
             _context.Setup(e => e.Identity)
                 .Returns(claims);

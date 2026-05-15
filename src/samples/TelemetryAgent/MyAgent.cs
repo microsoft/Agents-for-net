@@ -20,7 +20,8 @@ public class MyAgent : AgentApplication
 
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        var conversationUpdate = turnContext.Activity as IConversationUpdateActivity;
+        foreach (ChannelAccount member in conversationUpdate?.MembersAdded ?? [])
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
@@ -31,6 +32,7 @@ public class MyAgent : AgentApplication
 
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
+        var messageActivity = turnContext.Activity as IMessageActivity;
+        await turnContext.SendActivityAsync($"You said: {messageActivity?.Text}", cancellationToken: cancellationToken);
     }
 }

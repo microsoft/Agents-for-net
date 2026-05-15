@@ -15,7 +15,6 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Connector.Types;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Connector.Tests
 {

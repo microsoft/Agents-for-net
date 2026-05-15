@@ -5,6 +5,7 @@ using Microsoft.Agents.Extensions.Teams.App.Meetings;
 using Microsoft.Agents.Extensions.Teams.App.TaskModules;
 using Microsoft.Agents.Extensions.Teams.AI;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams.AI;
 
@@ -39,10 +40,10 @@ public class TeamsApplication : AgentApplication
         {
             string? input = turnState.Temp.GetValue<string?>("input");
             // Call the OnBeforeTurn method of the TeamsAgentExtension.
-            if ((input == null || input.Length == 0) && turnContext.Activity.Text != null)
+            if ((input == null || input.Length == 0) && ((IMessageActivity)turnContext.Activity).Text != null)
             {
                 // Use the received activity text
-                turnState.Temp.SetValue("input", turnContext.Activity.Text);
+                turnState.Temp.SetValue("input", ((IMessageActivity)turnContext.Activity).Text);
             }
             return Task.FromResult(true);
         });

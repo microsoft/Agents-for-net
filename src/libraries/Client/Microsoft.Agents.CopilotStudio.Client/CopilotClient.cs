@@ -176,9 +176,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         {
             using (_logger.BeginScope("D2E:AskQuestionAsync"))
             {
-                var activity = new Activity
+                var activity = new MessageActivity
                 {
-                    Type = "message",
                     Text = question,
                     Conversation = new ConversationAccount { Id = conversationId }
                 };

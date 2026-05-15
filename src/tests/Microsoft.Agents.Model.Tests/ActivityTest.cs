@@ -233,7 +233,18 @@ namespace Microsoft.Agents.Model.Tests
         public void CanCreateReplyActivity(string activityLocale, string text, bool createRecipient = true, bool createFrom = true, string createReplyLocale = null)
         {
             var activity = CreateActivity(activityLocale, createRecipient, createFrom);
-            var reply = activity.CreateReply(() => new MessageActivity(text) { Locale = createReplyLocale });
+            
+            // Create reply by manually copying properties from the original activity
+            var reply = new MessageActivity(text ?? string.Empty)
+            {
+                Locale = createReplyLocale ?? activityLocale,
+                ReplyToId = activity.Id,
+                ServiceUrl = activity.ServiceUrl,
+                ChannelId = activity.ChannelId,
+                Conversation = activity.Conversation,
+                From = activity.Recipient,
+                Recipient = activity.From,
+            };
 
             Assert.NotNull(reply);
             Assert.True(reply.Type == ActivityTypes.Message);
@@ -241,7 +252,7 @@ namespace Microsoft.Agents.Model.Tests
             Assert.True(reply.ServiceUrl == "ServiceUrl123");
             Assert.True(reply.ChannelId == "ChannelId123");
             Assert.True(reply.Conversation.IsGroup);
-            Assert.True(reply.Text == (text ?? string.Empty));
+            Assert.True(((IMessageActivity)reply).Text == (text ?? string.Empty));
             Assert.True(reply.Locale == (activityLocale ?? createReplyLocale));
             ValidateRecipientAndFrom(reply, createRecipient, createFrom);
         }

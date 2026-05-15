@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -32,10 +32,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -81,7 +78,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -94,10 +91,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -143,10 +137,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public async Task Test_OnSubmitAction_RouteSelector_ActivityNotMatched()
         {
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/fetchTask",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/fetchTask",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -190,19 +181,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var activity = new Activity()
-            {
-                Type = ActivityTypes.Message,
-                Recipient = new() { Id = "recipientId" },
+            var activity = new MessageActivity() { Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
 
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -246,7 +231,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -259,19 +244,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var activity = new Activity()
-            {
-                Type = ActivityTypes.Message,
-                Recipient = new() { Id = "recipientId" },
+            var activity = new MessageActivity() { Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
 
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -312,10 +291,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public async Task Test_OnAgentMessagePreviewEdit_RouteSelector_ActivityNotMatched()
         {
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/fetchTask",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/fetchTask",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -358,19 +334,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var activity = new Activity()
-            {
-                Type = ActivityTypes.Message,
-                Recipient = new() { Id = "recipientId" },
+            var activity = new MessageActivity() { Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
 
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -411,7 +381,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -424,19 +394,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var activity = new Activity()
-            {
-                Type = ActivityTypes.Message,
-                Recipient = new() { Id = "recipientId" },
+            var activity = new MessageActivity() { Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
 
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/submitAction",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -477,10 +441,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public async Task Test_OnAgentMessagePreviewSend_RouteSelector_ActivityNotMatched()
         {
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/fetchTask",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/fetchTask",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -522,10 +483,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/fetchTask",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/fetchTask",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -564,7 +522,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -577,10 +535,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/fetchTask",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/fetchTask",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -617,10 +572,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public async Task Test_OnFetchTask_RouteSelector_ActivityNotMatched()
         {
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/submitAction",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -663,10 +615,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/query",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/query",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -719,7 +668,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -732,10 +681,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/query",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/query",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     commandId = "test-command",
@@ -785,10 +731,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         public async Task Test_OnQuery_RouteSelector_NotMatched()
         {
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/selectItem",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/selectItem",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -832,10 +775,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/selectItem",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/selectItem",
                 Value = ProtocolJsonSerializer.ToJsonElements(new { }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -873,7 +813,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -886,10 +826,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/query",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/query",
                 Value = ProtocolJsonSerializer.ToJsonElements(new { }),
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -937,10 +874,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/queryLink",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/queryLink",
                 Value = new
                 {
                     url = "test-url"
@@ -982,7 +916,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -995,10 +929,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/query",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/query",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1038,10 +969,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/anonymousQueryLink",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/anonymousQueryLink",
                 Value = new
                 {
                     url = "test-url"
@@ -1083,7 +1011,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -1096,10 +1024,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/query",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/query",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1138,10 +1063,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/querySettingUrl",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/querySettingUrl",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1177,7 +1099,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -1190,10 +1112,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/settings",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/settings",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1232,10 +1151,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/setting",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/setting",
                 Value = ProtocolJsonSerializer.ToJsonElements(new
                 {
                     state = "test-state"
@@ -1274,7 +1190,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -1287,10 +1203,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/querySettingUrl",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/querySettingUrl",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1328,10 +1241,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/onCardButtonClicked",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/onCardButtonClicked",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1363,7 +1273,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeActivity)activitiesToSend[0]).Value);
         }
 
         [Fact]
@@ -1376,10 +1286,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var turnContext = new TurnContext(adapter, new Activity()
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/querySettingUrl",
+            var turnContext = new TurnContext(adapter, new InvokeActivity() { Name = "composeExtension/querySettingUrl",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },

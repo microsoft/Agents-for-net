@@ -10,7 +10,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models;
 
 namespace Agent1;
 
@@ -42,7 +42,8 @@ public class HostAgent : AgentApplication
     [MembersAddedRoute]
     protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        var conversationUpdate = turnContext.Activity as IConversationUpdateActivity;
+        foreach (ChannelAccount member in conversationUpdate?.MembersAdded ?? [])
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
@@ -55,10 +56,11 @@ public class HostAgent : AgentApplication
     [MessageRoute]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
+        var messageActivity = turnContext.Activity as IMessageActivity;
         var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);
         if (echoConversationId == null)
         {
-            if (!turnContext.Activity.Text.Contains("agent"))
+            if (!messageActivity?.Text?.Contains("agent") ?? true)
             {
                 // Respond with instructions
                 await turnContext.SendActivityAsync("Say \"agent\" and I'll patch you through", cancellationToken: cancellationToken);
@@ -85,9 +87,10 @@ public class HostAgent : AgentApplication
             await _agentHost.DeleteConversationAsync(turnContext, reference.AgentConversationId, cancellationToken);
 
             // In this sample, the Agent2 will send an EndOfConversation with a result when "end" is sent.
-            if (agentActivity.Value != null)
+            var endOfConversation = agentActivity as IEndOfConversationActivity;
+            if (endOfConversation?.Value != null)
             {
-                var resultMessage = $"The '{reference.AgentName}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(agentActivity.Value)}";
+                var resultMessage = $"The '{reference.AgentName}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(endOfConversation.Value)}";
                 await turnContext.SendActivityAsync(resultMessage, cancellationToken: cancellationToken);
             }
 
@@ -99,7 +102,8 @@ public class HostAgent : AgentApplication
             // Forward whatever Agent2 sent to the User until EndOfConversation is received.
             // Note that the agentActivity is for a different conversation.  It cannot be sent directly to ABS
             // without modification.  Here we are just extracting values we need.
-            await turnContext.SendActivityAsync($"({reference.AgentName}) {agentActivity.Text}", cancellationToken: cancellationToken);
+            var agentMessage = agentActivity as IMessageActivity;
+            await turnContext.SendActivityAsync($"({reference.AgentName}) {agentMessage?.Text}", cancellationToken: cancellationToken);
         }
     }
 }

@@ -10,7 +10,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Models.Activities;
+using Microsoft.Agents.Core.Models;
 
 namespace StreamingAgent1;
 
@@ -38,7 +38,8 @@ public class StreamingHostAgent : AgentApplication
     [MembersAddedRoute]
     protected async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
+        var conversationUpdate = turnContext.Activity as IConversationUpdateActivity;
+        foreach (ChannelAccount member in conversationUpdate?.MembersAdded ?? [])
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
@@ -50,10 +51,11 @@ public class StreamingHostAgent : AgentApplication
     [MessageRoute]
     protected async Task OnUserMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
+        var messageActivity = turnContext.Activity as IMessageActivity;
         var echoConversationId = await _agentHost.GetConversation(turnContext, Agent2Name, cancellationToken);
         if (echoConversationId == null)
         {
-            if (!turnContext.Activity.Text.Contains("agent"))
+            if (!messageActivity?.Text?.Contains("agent") ?? true)
             {
                 await turnContext.SendActivityAsync("Say \"agent\" and I'll patch you through", cancellationToken: cancellationToken);
                 return;
@@ -74,9 +76,10 @@ public class StreamingHostAgent : AgentApplication
                 // Remove the Agent conversation reference since the conversation is over.
                 await _agentHost.DeleteConversationAsync(turnContext, echoConversationId, cancellationToken);
 
-                if (agentActivity.Value != null)
+                var endOfConversation = agentActivity as IEndOfConversationActivity;
+                if (endOfConversation?.Value != null)
                 {
-                    var resultMessage = $"The '{Agent2Name}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(agentActivity.Value)}";
+                    var resultMessage = $"The '{Agent2Name}' Agent returned:\n\n{ProtocolJsonSerializer.ToJson(endOfConversation.Value)}";
                     await turnContext.SendActivityAsync(resultMessage, cancellationToken: cancellationToken);
                 }
 
@@ -86,7 +89,8 @@ public class StreamingHostAgent : AgentApplication
             else
             {
                 // Just repeat message to C2
-                await turnContext.SendActivityAsync($"({Agent2Name}) {agentActivity.Text}", cancellationToken: cancellationToken);
+                var agentMessage = agentActivity as IMessageActivity;
+                await turnContext.SendActivityAsync($"({Agent2Name}) {agentMessage?.Text}", cancellationToken: cancellationToken);
             }
         }
     }

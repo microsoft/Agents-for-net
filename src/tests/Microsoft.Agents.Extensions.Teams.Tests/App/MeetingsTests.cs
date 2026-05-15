@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -157,39 +157,23 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         {
             return new TurnContext[]
             {
-                new(adapter, new Activity
-                {
-                    Type = ActivityTypes.Event,
-                    ChannelId = Channels.Msteams,
-                    Name = activityName,
+                new(adapter, new EventActivity(activityName) { ChannelId = Channels.Msteams,
                     Id = "test.id",
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From =  new() { Id = "fromId" },
                 }),
-                new(adapter, new Activity
-                {
-                    Type = ActivityTypes.Event,
-                    ChannelId = Channels.Msteams,
-                    Name = "fake.name",
+                new(adapter, new EventActivity("fake.name") { ChannelId = Channels.Msteams,
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From =  new() { Id = "fromId" },
                 }),
-                new(adapter, new Activity
-                {
-                    Type = ActivityTypes.Invoke,
-                    ChannelId = Channels.Msteams,
-                    Name = activityName,
+                new(adapter, new InvokeActivity { ChannelId = Channels.Msteams, Name = activityName,
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From =  new() { Id = "fromId" },
                 }),
-                new(adapter, new Activity
-                {
-                    Type = ActivityTypes.Event,
-                    ChannelId = Channels.Webchat,
-                    Name = activityName,
+                new(adapter, new EventActivity(activityName) { ChannelId = Channels.Webchat,
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From =  new() { Id = "fromId" },

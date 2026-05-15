@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
@@ -14,10 +14,9 @@ namespace Microsoft.Agents.Storage.Tests
 {
     public class TraceTranscriptLoggerTests
     {
-        private readonly Activity _activity = new Activity
+        private readonly Activity _activity = new MessageActivity
         {
             Id = "test-id",
-            Type = ActivityTypes.Message,
             From = new ChannelAccount { Id = "user-id", Name = "user-name", Role = "user-role" },
             Text = "test-text"
         };
@@ -66,11 +65,11 @@ namespace Microsoft.Agents.Storage.Tests
 
             if (Debugger.IsAttached)
             {
-                Assert.Contains(_activity.Text, traceOutput);
+                Assert.Contains(((IMessageActivity)_activity).Text, traceOutput);
             }
             else
             {
-                Assert.DoesNotContain(_activity.Text, traceOutput);
+                Assert.DoesNotContain(((IMessageActivity)_activity).Text, traceOutput);
             }
 
             Trace.Listeners.Remove(listener);

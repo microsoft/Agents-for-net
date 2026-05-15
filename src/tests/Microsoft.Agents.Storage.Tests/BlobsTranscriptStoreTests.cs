@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -30,10 +30,7 @@ namespace Microsoft.Agents.Storage.Tests
         private BlobsTranscriptStore _storage;
         private readonly Mock<BlobClient> _client = new Mock<BlobClient>();
         private readonly Mock<BlobContainerClient> _container = new Mock<BlobContainerClient>();
-        private readonly Activity _activity = new Activity
-        {
-            Type = ActivityTypes.Message,
-            Text = "Text",
+        private readonly Activity _activity = new MessageActivity("Text") {
             Id = "Id",
             ChannelId = "ChannelId",
             Conversation = new ConversationAccount { Id = "Conversation-Id" },

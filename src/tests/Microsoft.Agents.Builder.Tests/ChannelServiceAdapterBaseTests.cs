@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -430,7 +429,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set<IConnectorClient>(connectorClient.Object);
             var activities = new Activity[]
             {
-                new Activity(type: ActivityTypes.Message, text: "reply")
+                new MessageActivity("reply")
             };
 
             // Act

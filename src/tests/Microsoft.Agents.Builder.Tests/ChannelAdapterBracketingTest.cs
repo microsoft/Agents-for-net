@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Testing;
+using Microsoft.Agents.Core.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,8 +35,8 @@ namespace Microsoft.Agents.Builder.Tests
 
             async Task Echo(ITurnContext ctx, CancellationToken cancellationToken)
             {
-                string toEcho = "ECHO:" + ctx.Activity.Text;
-                await ctx.SendActivityAsync(ctx.Activity.CreateReply(toEcho), cancellationToken);
+                string toEcho = "ECHO:" + ((IMessageActivity)ctx.Activity).Text;
+                await ctx.SendActivityAsync(new MessageActivity { Text = toEcho, Conversation = ctx.Activity.Conversation, From = ctx.Activity.Recipient, Recipient = ctx.Activity.From, ReplyToId = ctx.Activity.Id }, cancellationToken);
             }
 
             await new TestFlow(adapter, Echo)
@@ -63,8 +64,8 @@ namespace Microsoft.Agents.Builder.Tests
 
             async Task EchoWithException(ITurnContext ctx, CancellationToken cancellationToken)
             {
-                string toEcho = "ECHO:" + ctx.Activity.Text;
-                await ctx.SendActivityAsync(ctx.Activity.CreateReply(toEcho), cancellationToken);
+                string toEcho = "ECHO:" + ((IMessageActivity)ctx.Activity).Text;
+                await ctx.SendActivityAsync(new MessageActivity { Text = toEcho, Conversation = ctx.Activity.Conversation, From = ctx.Activity.Recipient, Recipient = ctx.Activity.From, ReplyToId = ctx.Activity.Id }, cancellationToken);
                 throw new Exception(uniqueId);
             }
 
@@ -81,17 +82,17 @@ namespace Microsoft.Agents.Builder.Tests
         {
             public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken)
             {
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("BEFORE"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity { Text = "BEFORE", Conversation = turnContext.Activity.Conversation, From = turnContext.Activity.Recipient, Recipient = turnContext.Activity.From, ReplyToId = turnContext.Activity.Id }, cancellationToken);
                 try
                 {
                     await next(cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("CAUGHT:" + ex.Message), cancellationToken);
+                    await turnContext.SendActivityAsync(new MessageActivity { Text = "CAUGHT:" + ex.Message, Conversation = turnContext.Activity.Conversation, From = turnContext.Activity.Recipient, Recipient = turnContext.Activity.From, ReplyToId = turnContext.Activity.Id }, cancellationToken);
                 }
 
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("AFTER"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity { Text = "AFTER", Conversation = turnContext.Activity.Conversation, From = turnContext.Activity.Recipient, Recipient = turnContext.Activity.From, ReplyToId = turnContext.Activity.Id }, cancellationToken);
             }
         }
 
@@ -99,9 +100,9 @@ namespace Microsoft.Agents.Builder.Tests
         {
             public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken)
             {
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("BEFORE"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity { Text = "BEFORE", Conversation = turnContext.Activity.Conversation, From = turnContext.Activity.Recipient, Recipient = turnContext.Activity.From, ReplyToId = turnContext.Activity.Id }, cancellationToken);
                 await next(cancellationToken);
-                await turnContext.SendActivityAsync(turnContext.Activity.CreateReply("AFTER"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity { Text = "AFTER", Conversation = turnContext.Activity.Conversation, From = turnContext.Activity.Recipient, Recipient = turnContext.Activity.From, ReplyToId = turnContext.Activity.Id }, cancellationToken);
             }
         }
     }

@@ -21,9 +21,8 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
         public async Task TestSharePointGetCardViewAction()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = "cardExtension/getCardView",
                 Value = new JsonObject()
             };
@@ -45,17 +44,16 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             Assert.Equal("OnSharePointTaskGetCardViewAsync", bot.Record[0]);
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
-            Assert.IsType<InvokeResponse>(activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestSharePointGetQuickViewAction()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = "cardExtension/getQuickView",
                 Value = new JsonObject()
             };
@@ -77,17 +75,16 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             Assert.Equal("OnSharePointTaskGetQuickViewAsync", bot.Record[0]);
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
-            Assert.IsType<InvokeResponse>(activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestSharePointGetPropertyPaneConfigurationAction()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = "cardExtension/getPropertyPaneConfiguration",
                 Value = new JsonObject()
             };
@@ -109,17 +106,16 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             Assert.Equal("OnSharePointTaskGetPropertyPaneConfigurationAsync", bot.Record[0]);
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
-            Assert.IsType<InvokeResponse>(activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestSharePointSetPropertyPaneConfigurationAction()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = "cardExtension/setPropertyPaneConfiguration",
                 Value = new JsonObject()
             };
@@ -141,17 +137,16 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             Assert.Equal("OnSharePointTaskSetPropertyPaneConfigurationAsync", bot.Record[0]);
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
-            Assert.IsType<InvokeResponse>(activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestSharePointHandleActionAction()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new InvokeActivity
             {
-                Type = ActivityTypes.Invoke,
                 Name = "cardExtension/handleAction",
                 Value = new JsonObject()
             };
@@ -173,8 +168,8 @@ namespace Microsoft.Agents.Extensions.SharePoint.Tests
             Assert.Equal("OnSharePointTaskHandleActionAsync", bot.Record[0]);
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
-            Assert.IsType<InvokeResponse>(activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)activitiesToSend[0]).Value).Status);
         }
 
         private class TestActivityHandler : SharePointActivityHandler

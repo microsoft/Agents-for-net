@@ -33,9 +33,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             string channelId = Channels.Test)
         {
             var adapter = new TestAdapter(channelId);
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity = new MessageActivity {
                 Text = "hello",
                 ChannelId = channelId,
                 Conversation = new ConversationAccount { Id = "conv1" },
@@ -50,9 +48,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_ReturnsNull_ForNonMessageActivity()
         {
             var adapter = new TestAdapter();
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            var activity = new ConversationUpdateActivity {
                 ChannelId = Channels.Test,
                 Conversation = new ConversationAccount { Id = "c" },
                 From = new ChannelAccount { Id = "u" },
@@ -164,9 +160,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             worker.Start();
 
             // Send a streaming-final typing activity through the turn context middleware pipeline.
-            var finalTyping = new Activity
-            {
-                Type = ActivityTypes.Typing,
+            var finalTyping = new TypingActivity {
                 ChannelId = Channels.Test,
                 Entities = [new StreamInfo { StreamType = StreamTypes.Final }]
             };
@@ -300,10 +294,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Reset the interval at t~=50ms. Without reset the next typing would fire at ~400ms.
             // With reset it fires at ~50ms + 400ms = ~450ms.
             await context.SendActivityAsync(
-                new Activity
-                {
-                    Type = ActivityTypes.Event,
-                    Name = "ping",
+                new EventActivity("ping") {
                     ChannelId = Channels.Test,
                     Conversation = new ConversationAccount { Id = "conv1" }
                 },

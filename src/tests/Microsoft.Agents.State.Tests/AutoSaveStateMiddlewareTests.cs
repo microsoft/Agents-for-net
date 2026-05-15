@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -35,13 +35,13 @@ namespace Microsoft.Agents.State.Tests
                 // System.Diagnostics.Debug.WriteLine($"{context.Activity.Id} UserCount({context.Activity.From.Id}):{userCount} convCount({context.Activity.Conversation.Id}):{convCount}");
                 if (context.Activity.Type == ActivityTypes.Message)
                 {
-                    if (context.Activity.Text == "get userCount")
+                    if (((IMessageActivity)context.Activity).Text == "get userCount")
                     {
-                        await context.SendActivityAsync(context.Activity.CreateReply($"{userCount}"), cancellationToken);
+                        await context.SendActivityAsync(new MessageActivity { Text = $"userCount", Conversation = context.Activity.Conversation, From = context.Activity.Recipient, Recipient = context.Activity.From, ReplyToId = context.Activity.Id }, cancellationToken);
                     }
-                    else if (context.Activity.Text == "get convCount")
+                    else if (((IMessageActivity)context.Activity).Text == "get convCount")
                     {
-                        await context.SendActivityAsync(context.Activity.CreateReply($"{convCount}"), cancellationToken);
+                        await context.SendActivityAsync(new MessageActivity { Text = $"convCount", Conversation = context.Activity.Conversation, From = context.Activity.Recipient, Recipient = context.Activity.From, ReplyToId = context.Activity.Id }, cancellationToken);
                     }
                 }
 
@@ -110,13 +110,13 @@ namespace Microsoft.Agents.State.Tests
 
                 if (context.Activity.Type == ActivityTypes.Message)
                 {
-                    if (context.Activity.Text == "get userCount")
+                    if (((IMessageActivity)context.Activity).Text == "get userCount")
                     {
-                        await context.SendActivityAsync(context.Activity.CreateReply($"{userCount}"), cancellationToken);
+                        await context.SendActivityAsync(new MessageActivity { Text = $"userCount", Conversation = context.Activity.Conversation, From = context.Activity.Recipient, Recipient = context.Activity.From, ReplyToId = context.Activity.Id }, cancellationToken);
                     }
-                    else if (context.Activity.Text == "get convCount")
+                    else if (((IMessageActivity)context.Activity).Text == "get convCount")
                     {
-                        await context.SendActivityAsync(context.Activity.CreateReply($"{convCount}"), cancellationToken);
+                        await context.SendActivityAsync(new MessageActivity { Text = $"convCount", Conversation = context.Activity.Conversation, From = context.Activity.Recipient, Recipient = context.Activity.From, ReplyToId = context.Activity.Id }, cancellationToken);
                     }
                 }
 

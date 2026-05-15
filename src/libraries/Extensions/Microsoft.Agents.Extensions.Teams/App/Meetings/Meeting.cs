@@ -39,14 +39,19 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && context.Activity?.ChannelId == Channels.Msteams
-                && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingStart")
+                && context.Activity is IEventActivity eventActivity
+                && string.Equals(eventActivity.Name, "application/vnd.microsoft.meetingStart")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
-                MeetingStartEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingStartEventDetails>(turnContext.Activity.Value, () => new());
+                MeetingStartEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingStartEventDetails>(((IEventActivity)turnContext.Activity).Value, () => new());
                 await handler(turnContext, turnState, meeting, cancellationToken);
             };
-            _app.AddRoute(routeSelector, routeHandler);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -62,14 +67,19 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && context.Activity?.ChannelId == Channels.Msteams
-                && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingEnd")
+                && context.Activity is IEventActivity eventActivity
+                && string.Equals(eventActivity.Name, "application/vnd.microsoft.meetingEnd")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
-                MeetingEndEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingEndEventDetails>(turnContext.Activity.Value, () => new());
+                MeetingEndEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingEndEventDetails>(((IEventActivity)turnContext.Activity).Value, () => new());
                 await handler(turnContext, turnState, meeting, cancellationToken);
             };
-            _app.AddRoute(routeSelector, routeHandler);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -85,14 +95,19 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && context.Activity?.ChannelId == Channels.Msteams
-                && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingParticipantJoin")
+                && context.Activity is IEventActivity eventActivity
+                && string.Equals(eventActivity.Name, "application/vnd.microsoft.meetingParticipantJoin")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
-                MeetingParticipantsEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(turnContext.Activity.Value, () => new());
+                MeetingParticipantsEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(((IEventActivity)turnContext.Activity).Value, () => new());
                 await handler(turnContext, turnState, meeting, cancellationToken);
             };
-            _app.AddRoute(routeSelector, routeHandler);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
 
@@ -108,14 +123,19 @@ namespace Microsoft.Agents.Extensions.Teams.App.Meetings
             (
                 string.Equals(context.Activity?.Type, ActivityTypes.Event, StringComparison.OrdinalIgnoreCase)
                 && context.Activity?.ChannelId == Channels.Msteams
-                && string.Equals(context.Activity?.Name, "application/vnd.microsoft.meetingParticipantLeave")
+                && context.Activity is IEventActivity eventActivity
+                && string.Equals(eventActivity.Name, "application/vnd.microsoft.meetingParticipantLeave")
             );
             RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
             {
-                MeetingParticipantsEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(turnContext.Activity.Value, () => new());
+                MeetingParticipantsEventDetails meeting = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(((IEventActivity)turnContext.Activity).Value, () => new());
                 await handler(turnContext, turnState, meeting, cancellationToken);
             };
-            _app.AddRoute(routeSelector, routeHandler);
+            var route = RouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(routeHandler)
+                .Build();
+            _app.AddRoute(route);
             return _app;
         }
     }

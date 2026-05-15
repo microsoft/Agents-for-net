@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Hosting.A2A;
 using Microsoft.Agents.Hosting.A2A.Protocol;
@@ -40,9 +39,8 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         turnContext.StreamingResponse.AddCitations([new Citation("1", "title", "https://example.com/fox-jump")]);
         await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
 
-        var eoc = new Activity()
+        var eoc = new EndOfConversationActivity
         {
-            Type = ActivityTypes.EndOfConversation,
             Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
         };
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
@@ -62,10 +60,9 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         // SDK always creates a Task in A2A. Simple one-shot message with no expectation of multi-turn should
         // just be sent as EOC with Activity.Text in order to complete the A2A Task. Othewise, there is no
         // way to convey to A2A that the Task is complete.
-        var activity = new Activity()
+        var activity = new EndOfConversationActivity
         {
-            Text = $"You said: {turnContext.Activity.Text}",
-            Type = ActivityTypes.EndOfConversation,
+            Text = $"You said: {((IMessageActivity)turnContext.Activity).Text}",
         };
         await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
     }
@@ -84,18 +81,18 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         var multi = turnState.Conversation.GetValue(nameof(MultiResult), () => new MultiResult());
         multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Activity = turnContext.Activity });
 
-        if (turnContext.Activity.Text.Equals("end", System.StringComparison.OrdinalIgnoreCase))
+        var messageActivity = turnContext.Activity as IMessageActivity;
+        if (messageActivity?.Text != null && messageActivity.Text.Equals("end", System.StringComparison.OrdinalIgnoreCase))
         {
             // Send EOC to complete the A2A Task.
-            var eoc = new Activity()
+            var eoc = new EndOfConversationActivity
             {
-                Type = ActivityTypes.EndOfConversation,
                 Text = "All done. Activity list result in Artifacts", // optional, added as a message is TaskStatus
                 Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
             };
 
             multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = ProtocolJsonSerializer.CloneTo<IActivity>(eoc) });
-            eoc.Value = multi;  // optional, added to Task Artifacts
+            ((IEndOfConversationActivity)eoc).Value = multi;  // optional, added to Task Artifacts
 
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
 
@@ -105,7 +102,7 @@ public class MyAgent : AgentApplication, IAgentCardHandler
         else
         {
             // Hosting.A2A requires ExpectingInput for multi-turn. 
-            var activity = new MessageActivity($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
+            var activity = new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}", inputHint: InputHints.ExpectingInput);
             multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Activity = activity });
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }

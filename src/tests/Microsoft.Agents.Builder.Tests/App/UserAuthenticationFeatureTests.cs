@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -11,7 +11,6 @@ using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -332,7 +331,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
             {
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             });
 
             // act
@@ -384,7 +383,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
             {
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             });
 
             // act
@@ -469,7 +468,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             app.OnMessage("-graph", async (turnContext, turnState, cancellationToken) =>
             {
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             },
             autoSignInHandlers: [GraphName]);
 
@@ -477,7 +476,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             app.OnMessage("-sharepoint", async (turnContext, turnState, cancellationToken) =>
             {
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             },
             autoSignInHandlers: [SharePointName]);
 
@@ -485,7 +484,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             app.OnMessage("-signedIn", async (turnContext, turnState, cancellationToken) =>
             {
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, "signedIn"));
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             },
             autoSignInHandlers: ["signedIn"]);
 
@@ -561,7 +560,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             },
             autoSignInHandlers: [SharePointName, GraphName]);
 
@@ -635,7 +634,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
             {
                 Assert.NotNull(app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             },
             rank: RouteRank.Last);
 
@@ -648,7 +647,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 // GraphName token should be available since it was global auto
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
 
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             },
             autoSignInHandlers: [SharePointName]);
 
@@ -725,7 +724,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
                 Assert.Null(await app.UserAuthorization.GetTurnTokenAsync(turnContext, SharePointName));
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             },
             rank: RouteRank.Last);
 
@@ -738,7 +737,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 // GraphName token should be available since it was global auto
                 Assert.NotNull(await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName));
 
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             },
             autoSignInHandlers: [GraphName, SharePointName]);
 
@@ -797,7 +796,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 var token = await app.UserAuthorization.ExchangeTurnTokenAsync(turnContext, GraphName);
                 Assert.NotNull(token);
                 Assert.Equal("NewGraphToken", token);
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             });
 
             // act
@@ -857,7 +856,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 var token = await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName);
                 Assert.NotNull(token);
                 Assert.Equal("NewToken", token);
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             });
 
             // act
@@ -917,7 +916,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 var token = await app.UserAuthorization.ExchangeTurnTokenAsync(turnContext, GraphName, exchangeScopes: runtimeOboScopes);
                 Assert.NotNull(token);
                 Assert.Equal("NewToken", token);
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             });
 
             // act
@@ -990,7 +989,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 var token = await app.UserAuthorization.GetTurnTokenAsync(turnContext, GraphName);
                 Assert.NotNull(token);
                 Assert.Equal(GraphToken, token);
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             }, rank: RouteRank.Last);
 
             // should get a new token (calls GetRefreshedUserTokenAsync)
@@ -999,7 +998,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 var token = await app.UserAuthorization.GetTurnTokenAsync(turnContext, "RefreshGraphName");
                 Assert.NotNull(token);
                 Assert.Equal("NewGraphToken", token);
-                await turnContext.SendActivityAsync(new MessageActivity($"You said: {turnContext.Activity.Text}"), cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity($"You said: {((IMessageActivity)turnContext.Activity).Text}"), cancellationToken);
             }, autoSignInHandlers: ["RefreshGraphName"]);
 
             // act

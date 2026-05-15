@@ -7,11 +7,10 @@ namespace Microsoft.Agents.Builder.Tests
 {
     public static class TestMessage
     {
-        public static Activity Message(string id = "1234")
+        public static MessageActivity Message(string id = "1234")
         {
-            Activity a = new Activity
+            MessageActivity a = new MessageActivity
             {
-                Type = ActivityTypes.Message,
                 Id = id,
                 Text = "test",
                 From = new ChannelAccount()

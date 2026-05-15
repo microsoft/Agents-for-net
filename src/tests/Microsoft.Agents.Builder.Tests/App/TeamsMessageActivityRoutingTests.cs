@@ -82,9 +82,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var app = new TeamsChannelIdApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            turnContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 ChannelId = Channels.Msteams,
                 Text = "hello from Teams"
             });
@@ -100,9 +98,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var app = new TeamsChannelIdApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            turnContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 ChannelId = "directline",
                 Text = "hello from web"
             });
@@ -117,9 +113,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             var app = new TeamsChannelIdApp(new AgentApplicationOptions((IStorage)null));
             var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
-            {
-                Type = ActivityTypes.Message,
+            turnContext.Setup(c => c.Activity).Returns(new MessageActivity {
                 ChannelId = "MSTEAMS",
                 Text = "hello"
             });

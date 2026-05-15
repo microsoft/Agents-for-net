@@ -309,7 +309,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         protected virtual IActivity AppendChoices(IActivity prompt, ChannelId channelId, IList<Choice> choices, ListStyle style, ChoiceFactoryOptions options = null, string conversationType = default, IList<string> toList = default, CancellationToken cancellationToken = default)
         {
             // Get base prompt text (if any)
-            var text = prompt != null && !string.IsNullOrEmpty(prompt.Text) ? prompt.Text : string.Empty;
+            var text = prompt is IMessageActivity promptMsg && !string.IsNullOrEmpty(promptMsg.Text) ? promptMsg.Text : string.Empty;
 
             // Create temporary msg
             IActivity msg;
@@ -333,7 +333,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
 
                 case ListStyle.None:
                     msg = Activity.CreateMessageActivity();
-                    msg.Text = text;
+                    ((IMessageActivity)msg).Text = text;
                     break;
 
                 default:
@@ -347,29 +347,32 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                 // clone the prompt the set in the options (note ActivityEx has Properties so this is the safest mechanism)
                 prompt = prompt.Clone();
 
-                prompt.Text = msg.Text;
+                var msgActivity = (IMessageActivity)msg;
+                var promptActivity = (IMessageActivity)prompt;
 
-                if (msg.SuggestedActions?.Actions != null && msg.SuggestedActions.Actions.Count > 0)
+                promptActivity.Text = msgActivity.Text;
+
+                if (msgActivity.SuggestedActions?.Actions != null && msgActivity.SuggestedActions.Actions.Count > 0)
                 {
-                    prompt.SuggestedActions = msg.SuggestedActions;
+                    promptActivity.SuggestedActions = msgActivity.SuggestedActions;
                 }
 
-                if (msg.Attachments != null && msg.Attachments.Any())
+                if (msgActivity.Attachments != null && msgActivity.Attachments.Any())
                 {
-                    if (prompt.Attachments == null)
+                    if (promptActivity.Attachments == null)
                     {
-                        prompt.Attachments = msg.Attachments;
+                        promptActivity.Attachments = msgActivity.Attachments;
                     }
                     else
                     {
-                        prompt.Attachments = prompt.Attachments.Concat(msg.Attachments).ToList();
+                        promptActivity.Attachments = promptActivity.Attachments.Concat(msgActivity.Attachments).ToList();
                     }
                 }
 
                 return prompt;
             }
 
-            msg.InputHint = InputHints.ExpectingInput;
+            ((IMessageActivity)msg).InputHint = InputHints.ExpectingInput;
             return msg;
         }
     }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Testing;
@@ -11,8 +11,6 @@ using Xunit;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
-using Microsoft.Agents.Core.Models.Activities;
-
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
     public class ActivityPromptTests
@@ -47,7 +45,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var eventPrompt = new EventActivityPrompt("EventActivityPrompt", Validator);
             
             // Create mock Activity for testing.
-            var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
+            var eventActivity = new EventActivity("test-event") { Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
@@ -61,7 +59,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "please send an event." } };
+                    var options = new PromptOptions { Prompt = new MessageActivity { Text = "please send an event." } };
                     await dc.PromptAsync("EventActivityPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -92,7 +90,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
             var eventPrompt = new EventActivityPrompt("EventActivityPrompt", validator);
 
-            var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
+            var eventActivity = new EventActivity("test-event") { Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
@@ -107,14 +105,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 {
                     var options = new PromptOptions
                     {
-                        Prompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        Prompt = new MessageActivity {
                             Text = "please send an event.",
                         },
-                        RetryPrompt = new Activity
-                        {
-                            Type = ActivityTypes.Message,
+                        RetryPrompt = new MessageActivity {
                             Text = "Retrying - please send an event.",
                         },
                     };
@@ -157,20 +151,16 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
 
                 var dc = await dialogs.CreateContextAsync(turnContext, cancellationToken);
 
-                switch (turnContext.Activity.Text)
+                switch (((IMessageActivity)turnContext.Activity).Text)
                 {
                     case "begin":
 
                         var options = new PromptOptions
                         {
-                            Prompt = new Activity
-                            {
-                                Type = ActivityTypes.Message,
+                            Prompt = new MessageActivity {
                                 Text = "please send an event.",
                             },
-                            RetryPrompt = new Activity
-                            {
-                                Type = ActivityTypes.Message,
+                            RetryPrompt = new MessageActivity {
                                 Text = "Retrying - please send an event.",
                             },
                         };
@@ -215,7 +205,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var eventPrompt = new EventActivityWithoutRetryPrompt("EventActivityWithoutRetryPrompt", Validator);
 
             // Create mock Activity for testing.
-            var eventActivity = new Activity { Type = ActivityTypes.Event, Value = 2 };
+            var eventActivity = new EventActivity("test-event") { Value = 2 };
 
             await new TestFlow(adapter, async (turnContext, cancellationToken) =>
             {
@@ -229,7 +219,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 var results = await dc.ContinueDialogAsync(cancellationToken);
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "please send an event." } };
+                    var options = new PromptOptions { Prompt = new MessageActivity { Text = "please send an event." } };
                     await dc.PromptAsync("EventActivityWithoutRetryPrompt", options, cancellationToken);
                 }
                 else if (results.Status == DialogTurnStatus.Complete)
@@ -252,7 +242,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 var eventPrompt = new EventActivityPrompt("EventActivityPrompt", Validator);
 
-                var options = new PromptOptions { Prompt = new Activity { Type = ActivityTypes.Message, Text = "please send an event." } };
+                var options = new PromptOptions { Prompt = new MessageActivity { Text = "please send an event." } };
 
                 await eventPrompt.OnPromptNullContext(options);
             });
@@ -294,9 +284,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             var activity = promptContext.Recognized.Value;
             if (activity.Type == ActivityTypes.Event)
             {
-                if ((int)activity.Value == 2)
+                if ((int)((IEventActivity)activity).Value == 2)
                 {
-                    promptContext.Recognized.Value = new MessageActivity(activity.Value.ToString());
+                    promptContext.Recognized.Value = new MessageActivity(((IEventActivity)activity).Value.ToString());
                     return true;
                 }
             }

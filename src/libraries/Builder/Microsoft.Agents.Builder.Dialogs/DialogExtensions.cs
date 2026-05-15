@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 }
 
                 // Handle a reprompt event sent from the parent.
-                if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity.Name == DialogEvents.RepromptDialog)
+                if (turnContext.Activity.Type == ActivityTypes.Event && turnContext.Activity is IEventActivity eventActivity && eventActivity.Name == DialogEvents.RepromptDialog)
                 {
                     if (dialogContext.Stack.Count == 0)
                     {
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Builder.Dialogs
                 {
                     // Send End of conversation at the end.
                     var code = result.Status == DialogTurnStatus.Complete ? EndOfConversationCodes.CompletedSuccessfully : EndOfConversationCodes.UserCancelled;
-                    var activity = new Activity(ActivityTypes.EndOfConversation) { Value = result.Result, Locale = turnContext.Activity.Locale, Code = code };
+                    var activity = new EndOfConversationActivity { Value = result.Result, Locale = turnContext.Activity.Locale, Code = code };
                     await turnContext.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
                 }
             }

@@ -4,7 +4,6 @@
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -389,7 +388,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Assert
             Assert.Single(bot.Record);
             Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-            Assert.Equal(200, ((InvokeResponse)((Activity)adapter.Activity).Value).Status);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeResponseActivity)adapter.Activity).Value).Status);
         }
 
         [Fact]
@@ -424,17 +423,14 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Assert
             Assert.Single(bot.Record);
             Assert.Equal("OnInvokeActivityAsync", bot.Record[0]);
-            Assert.Equal(501, ((InvokeResponse)((Activity)adapter.Activity).Value).Status);
+            Assert.Equal(501, ((InvokeResponse)((IInvokeResponseActivity)adapter.Activity).Value).Status);
         }
 
         [Fact]
         public async Task TestEventNullNameAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Event,
-            };
+            var activity = new Activity(ActivityTypes.Event);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
 
             // Act
@@ -562,9 +558,8 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task TestCommandResultActivityType()
         {
             // Arrange
-            var activity = new Activity
+            var activity = new CommandResultActivity
             {
-                Type = ActivityTypes.CommandResult,
                 Name = "application/test",
                 Value = new CommandResultValue<object> { CommandId = "Test", Data = new { test = true } }
             };
@@ -604,7 +599,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         {
             // Arrange
             var turnContextMock = new Mock<ITurnContext>();
-            turnContextMock.Setup(tc => tc.Activity).Returns(new Activity { Type = ActivityTypes.Message });
+            turnContextMock.Setup(tc => tc.Activity).Returns(new MessageActivity());
             turnContextMock.Setup(tc => tc.Adapter).Returns(new NotImplementedAdapter());
 
             turnContextMock.Setup(tc => tc.StackState).Returns([]);
@@ -740,9 +735,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnEmptyValue()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "adaptiveCard/action"
             };
 
@@ -754,9 +747,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnSerialization()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "adaptiveCard/action",
                 Value = ""
             };
@@ -769,9 +760,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnNullAction()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "adaptiveCard/action",
                 Value = new AdaptiveCardInvokeValue { Action = null }
             };
@@ -784,9 +773,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task GetAdaptiveCardInvokeValue_ShouldThrowOnNotSupportedAction()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "adaptiveCard/action",
                 Value = new AdaptiveCardInvokeValue { Action = new AdaptiveCardInvokeAction { Type = "" } }
             };
@@ -798,7 +785,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             await ((IAgent)bot).OnTurnAsync(turnContext);
 
             //Assert
-            var sent = adapter.Activity as Activity;
+            var sent = (IInvokeResponseActivity)adapter.Activity;
             Assert.Equal(ActivityTypes.InvokeResponse, sent.Type);
 
             Assert.IsType<InvokeResponse>(sent.Value);
@@ -820,9 +807,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
         public async Task GetSearchInvokeValue_ShouldThrowExceptionOnSerialization()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "application/search",
                 Value = ""
             };
@@ -831,14 +816,12 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             await AssertErrorThroughInvokeAdapter(activity, "Value property is not valid for search");
         }
 
-        private static Activity GetSearchActivity(object value) => new()
+        private static InvokeActivity GetSearchActivity(object value) => new("application/search")
         {
-            Type = ActivityTypes.Invoke,
-            Name = "application/search",
             Value = value
         };
 
-        private static async Task AssertErrorThroughInvokeAdapter(Activity activity, string errorMessage)
+        private static async Task AssertErrorThroughInvokeAdapter(IActivity activity, string errorMessage)
         {
             // Arrange
             var adapter = new TestInvokeAdapter();
@@ -849,7 +832,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             await ((IAgent)bot).OnTurnAsync(turnContext);
 
             // Assert
-            var sent = adapter.Activity as Activity;
+            var sent = (IInvokeResponseActivity)adapter.Activity;
             Assert.Equal(ActivityTypes.InvokeResponse, sent.Type);
 
             Assert.IsType<InvokeResponse>(sent.Value);
@@ -1046,10 +1029,10 @@ namespace Microsoft.Agents.Builder.Tests.Handler
                 turnContext.OnUpdateActivity((t, a, n) => Task.FromResult(new ResourceResponse()));
                 await turnContext.DeleteActivityAsync(activity.GetConversationReference(), cancellationToken);
                 await turnContext.DeleteActivityAsync(activity.Id, cancellationToken);
-                await turnContext.SendActivityAsync(new Activity(), cancellationToken);
-                await turnContext.SendActivitiesAsync([new Activity()], cancellationToken);
-                await turnContext.UpdateActivityAsync(new Activity(), cancellationToken);
-                await turnContext.TraceActivityAsync(activity.Name, activity.Value, activity.ValueType, activity.Label, cancellationToken);
+                await turnContext.SendActivityAsync(new MessageActivity(), cancellationToken);
+                await turnContext.SendActivitiesAsync([new MessageActivity()], cancellationToken);
+                await turnContext.UpdateActivityAsync(new MessageActivity(), cancellationToken);
+                await turnContext.TraceActivityAsync("trace", activity.Value, activity.ValueType, "label", cancellationToken);
             }
         }
 

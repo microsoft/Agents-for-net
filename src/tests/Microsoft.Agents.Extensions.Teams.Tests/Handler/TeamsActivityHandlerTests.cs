@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 
@@ -39,10 +39,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateBotTeamsMemberAdded()
         {
             // Arrange            
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                MembersAdded =
+            var activity = new ConversationUpdateActivity { MembersAdded =
                 [
                     new ChannelAccount { Id = "bot" },
                 ],
@@ -81,10 +78,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var connectorMock = new Mock<IConnectorClient>();
             connectorMock.Setup(x => x.Conversations).Returns(conversationsMock.Object);
 
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                MembersAdded =
+            var activity = new ConversationUpdateActivity { MembersAdded =
                 [
                     new ChannelAccount { Id = "id-1" },
                 ],
@@ -116,10 +110,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             var connectorMock = new Mock<IConnectorClient>();
             connectorMock.Setup(x => x.Conversations).Returns(conversationsMock.Object);
 
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                MembersAdded =
+            var activity = new ConversationUpdateActivity { MembersAdded =
                 [
                     new TeamsChannelAccount
                     {
@@ -159,10 +150,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsMemberRemoved()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                MembersRemoved =
+            var activity = new ConversationUpdateActivity { MembersRemoved =
                 [
                     new ChannelAccount { Id = "a" },
                 ],
@@ -186,10 +174,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsChannelCreated()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelCreated" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "channelCreated" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -208,10 +193,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsChannelDeleted()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelDeleted" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "channelDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -230,10 +212,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsChannelRenamed()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelRenamed" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "channelRenamed" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -252,10 +231,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsChannelRestored()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "channelRestored" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "channelRestored" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -274,10 +250,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsTeamArchived()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamArchived" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "teamArchived" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -296,10 +269,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsTeamDeleted()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamDeleted" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "teamDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -318,10 +288,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsTeamHardDeleted()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamHardDeleted" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "teamHardDeleted" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -340,10 +307,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsTeamRenamed()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamRenamed" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "teamRenamed" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -362,10 +326,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsTeamRestored()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamRestored" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "teamRestored" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -384,10 +345,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestConversationUpdateTeamsTeamUnarchived()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                ChannelData = new TeamsChannelData { EventType = "teamUnarchived" },
+            var activity = new ConversationUpdateActivity { ChannelData = new TeamsChannelData { EventType = "teamUnarchived" },
                 ChannelId = Channels.Msteams,
             };
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
@@ -406,10 +364,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         public async Task TestFileConsentAccept()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "fileConsent/invoke",
+            var activity = new InvokeActivity { Name = "fileConsent/invoke",
                 Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
                 {
                     Action = "accept",
@@ -435,18 +390,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsFileConsentAcceptAsync", bot.Record[2]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestFileConsentDecline()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "fileConsent/invoke",
+            var activity = new InvokeActivity { Name = "fileConsent/invoke",
                 Value = JsonSerializer.SerializeToElement(new FileConsentCardResponse
                 {
                     Action = "decline",
@@ -472,18 +424,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsFileConsentDeclineAsync", bot.Record[2]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestActionableMessageExecuteAction()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "actionableMessage/executeAction",
+            var activity = new InvokeActivity { Name = "actionableMessage/executeAction",
                 Value = JsonSerializer.SerializeToElement(new O365ConnectorCardActionQuery()),
             };
 
@@ -499,18 +448,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsO365ConnectorCardActionAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestComposeExtensionQueryLink()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/queryLink",
+            var activity = new InvokeActivity { Name = "composeExtension/queryLink",
                 Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
             };
 
@@ -526,18 +472,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsAppBasedLinkQueryAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestComposeExtensionAnonymousQueryLink()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/anonymousQueryLink",
+            var activity = new InvokeActivity { Name = "composeExtension/anonymousQueryLink",
                 Value = JsonSerializer.SerializeToElement(new AppBasedLinkQuery()),
             };
 
@@ -553,18 +496,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsAnonymousAppBasedLinkQueryAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestComposeExtensionQuery()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/query",
+            var activity = new InvokeActivity { Name = "composeExtension/query",
                 Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
             };
 
@@ -580,18 +520,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMessagingExtensionQueryAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestMessagingExtensionSelectItemAsync()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/selectItem",
+            var activity = new InvokeActivity { Name = "composeExtension/selectItem",
                 Value = new JsonElement(),
             };
 
@@ -607,18 +544,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMessagingExtensionSelectItemAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestMessagingExtensionSubmitAction()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var activity = new InvokeActivity { Name = "composeExtension/submitAction",
                 Value = JsonSerializer.SerializeToElement(new MessagingExtensionQuery()),
             };
 
@@ -635,18 +569,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMessagingExtensionSubmitActionAsync", bot.Record[2]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestMessagingExtensionSubmitActionPreviewActionEdit()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var activity = new InvokeActivity { Name = "composeExtension/submitAction",
                 Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
                 {
                     BotMessagePreviewAction = "edit",
@@ -666,18 +597,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMessagingExtensionAgentMessagePreviewEditAsync", bot.Record[2]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestMessagingExtensionSubmitActionPreviewActionSend()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/submitAction",
+            var activity = new InvokeActivity { Name = "composeExtension/submitAction",
                 Value = JsonSerializer.SerializeToElement(new MessagingExtensionAction
                 {
                     BotMessagePreviewAction = "send",
@@ -697,18 +625,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMessagingExtensionAgentMessagePreviewSendAsync", bot.Record[2]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestMessagingExtensionFetchTask()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/fetchTask",
+            var activity = new InvokeActivity { Name = "composeExtension/fetchTask",
                 Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
             };
 
@@ -724,18 +649,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMessagingExtensionFetchTaskAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestMessagingExtensionConfigurationQuerySettingUrl()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/querySettingUrl",
+            var activity = new InvokeActivity { Name = "composeExtension/querySettingUrl",
                 Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
             };
 
@@ -751,18 +673,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMessagingExtensionConfigurationQuerySettingUrlAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestMessagingExtensionConfigurationSetting()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "composeExtension/setting",
+            var activity = new InvokeActivity { Name = "composeExtension/setting",
                 Value = JsonSerializer.SerializeToElement(new { commandId = "testCommand" }),
             };
 
@@ -778,18 +697,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMessagingExtensionConfigurationSettingAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestTaskModuleFetch()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "task/fetch",
+            var activity = new InvokeActivity { Name = "task/fetch",
                 Value = JsonSerializer.SerializeToElement(new
                 {
                     data = new
@@ -816,18 +732,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsTaskModuleFetchAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestTaskModuleSubmit()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "task/submit",
+            var activity = new InvokeActivity { Name = "task/submit",
                 Value = JsonSerializer.SerializeToElement(new
                 {
                     data = new
@@ -854,18 +767,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsTaskModuleSubmitAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestTabFetch()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "tab/fetch",
+            var activity = new InvokeActivity { Name = "tab/fetch",
                 Value = JsonSerializer.SerializeToElement(new
                 {
                     data = new
@@ -892,18 +802,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsTabFetchAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestTabSubmit()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "tab/submit",
+            var activity = new InvokeActivity { Name = "tab/submit",
                 Value = JsonSerializer.SerializeToElement(new
                 {
                     data = new
@@ -930,18 +837,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsTabSubmitAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestConfigFetch()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "config/fetch",
+            var activity = new InvokeActivity { Name = "config/fetch",
                 Value = JsonSerializer.SerializeToElement(new
                 {
                     data = new
@@ -968,18 +872,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsConfigFetchAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestConfigSubmit()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "config/submit",
+            var activity = new InvokeActivity { Name = "config/submit",
                 Value = JsonSerializer.SerializeToElement(new
                 {
                     data = new
@@ -1006,18 +907,15 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsConfigSubmitAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
         public async Task TestSigninVerifyState()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Name = "signin/verifyState",
+            var activity = new InvokeActivity { Name = "signin/verifyState",
             };
 
             var turnContext = new TurnContext(new SimpleAdapter(CaptureSend), activity);
@@ -1032,8 +930,8 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsSigninVerifyStateAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
-            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.IsType<InvokeResponse>(((IInvokeActivity)_activitiesToSend[0]).Value);
+            Assert.Equal(200, ((InvokeResponse)((IInvokeActivity)_activitiesToSend[0]).Value).Status);
         }
 
         [Fact]
@@ -1062,12 +960,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         {
             // Arrange
             var startTimeBase = new DateTime(2024, 6, 5, 0, 1, 2);
-            var activity = new Activity
-            {
-                ChannelId = Channels.Msteams,
-                Type = ActivityTypes.Event,
-                Name = "application/vnd.microsoft.meetingStart",
-                Value = JsonSerializer.SerializeToElement(new
+            var activity = new EventActivity("application/vnd.microsoft.meetingStart") { ChannelId = Channels.Msteams, Value = JsonSerializer.SerializeToElement(new
                 {
                     StartTime = startTimeBase.ToString("o", CultureInfo.InvariantCulture) // "2025-06-05T00:01:02.0Z"
                 }),
@@ -1085,7 +978,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMeetingStartAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Contains(startTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+            Assert.Contains(startTimeBase.ToString(CultureInfo.InvariantCulture), ((IMessageActivity)_activitiesToSend[0]).Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
         }
 
         [Fact]
@@ -1093,12 +986,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
         {
             // Arrange
             var endTimeBase = new DateTime(2024, 6, 5, 0, 1, 2);
-            var activity = new Activity
-            {
-                ChannelId = Channels.Msteams,
-                Type = ActivityTypes.Event,
-                Name = "application/vnd.microsoft.meetingEnd",
-                Value = JsonSerializer.SerializeToElement(new
+            var activity = new EventActivity("application/vnd.microsoft.meetingEnd") { ChannelId = Channels.Msteams, Value = JsonSerializer.SerializeToElement(new
                 {
                     EndTime = endTimeBase.ToString("o", CultureInfo.InvariantCulture) //"2021-06-05T01:02:03.0Z"
                 }),
@@ -1116,19 +1004,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMeetingEndAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Contains(endTimeBase.ToString(CultureInfo.InvariantCulture), _activitiesToSend[0].Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
+            Assert.Contains(endTimeBase.ToString(CultureInfo.InvariantCulture), ((IMessageActivity)_activitiesToSend[0]).Text); // Date format differs between OSs, so we just Assert.Contains instead of Assert.Equals
         }
 
         [Fact]
         public async Task TeamsReadReceiptEvent()
         {
             // Arrange
-            var activity = new Activity
-            {
-                ChannelId = Channels.Msteams,
-                Type = ActivityTypes.Event,
-                Name = "application/vnd.microsoft.readReceipt",
-                Value = JsonSerializer.SerializeToElement(new
+            var activity = new EventActivity("application/vnd.microsoft.readReceipt") { ChannelId = Channels.Msteams, Value = JsonSerializer.SerializeToElement(new
                 {
                     lastReadMessageId = "10101010"
                 }),
@@ -1146,19 +1029,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsReadReceiptAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Equal("10101010", _activitiesToSend[0].Text);
+            Assert.Equal("10101010", ((IMessageActivity)_activitiesToSend[0]).Text);
         }
 
         [Fact]
         public async Task TestMeetingParticipantsJoinEvent()
         {
             // Arrange
-            var activity = new Activity
-            {
-                ChannelId = Channels.Msteams,
-                Type = ActivityTypes.Event,
-                Name = "application/vnd.microsoft.meetingParticipantJoin",
-                Value = JsonSerializer.SerializeToElement(
+            var activity = new EventActivity("application/vnd.microsoft.meetingParticipantJoin") { ChannelId = Channels.Msteams, Value = JsonSerializer.SerializeToElement(
                     new MeetingParticipantsEventDetails
                     {
                         Members =
@@ -1190,19 +1068,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMeetingParticipantsJoinAsync", bot.Record[1]);
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
-            Assert.Equal("id", activitiesToSend[0].Text);
+            Assert.Equal("id", ((IMessageActivity)activitiesToSend[0]).Text);
         }
 
         [Fact]
         public async Task TestMeetingParticipantsLeaveEvent()
         {
             // Arrange
-            var activity = new Activity
-            {
-                ChannelId = Channels.Msteams,
-                Type = ActivityTypes.Event,
-                Name = "application/vnd.microsoft.meetingParticipantLeave",
-                Value = JsonSerializer.SerializeToElement(
+            var activity = new EventActivity("application/vnd.microsoft.meetingParticipantLeave") { ChannelId = Channels.Msteams, Value = JsonSerializer.SerializeToElement(
                     new MeetingParticipantsEventDetails
                     {
                         Members =
@@ -1230,7 +1103,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
             Assert.Equal("OnTeamsMeetingParticipantsLeaveAsync", bot.Record[1]);
             Assert.NotNull(_activitiesToSend);
             Assert.Single(_activitiesToSend);
-            Assert.Equal("id", _activitiesToSend[0].Text);
+            Assert.Equal("id", ((IMessageActivity)_activitiesToSend[0]).Text);
         }
 
         [Fact]

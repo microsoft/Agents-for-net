@@ -182,11 +182,11 @@ internal class OrchestratedChatConsoleService(OrchestratedClient orchestratedCli
         switch (act.Type)
         {
             case "message":
-                Console.WriteLine(act.Text);
-                if (act.SuggestedActions?.Actions.Count > 0)
+                Console.WriteLine(((IMessageActivity)act).Text);
+                if (((IMessageActivity)act).SuggestedActions?.Actions.Count > 0)
                 {
                     Console.WriteLine("Suggested actions:");
-                    act.SuggestedActions.Actions.ToList().ForEach(action => Console.WriteLine($"  - {action.Text}"));
+                    ((IMessageActivity)act).SuggestedActions.Actions.ToList().ForEach(action => Console.WriteLine($"  - {action.Text}"));
                 }
                 break;
             case "typing":

@@ -1,4 +1,4 @@
-﻿using Microsoft.Agents.Extensions.Teams.AI.Moderator;
+using Microsoft.Agents.Extensions.Teams.AI.Moderator;
 using Microsoft.Agents.Extensions.Teams.AI.Planners;
 using Microsoft.Agents.Extensions.Teams.AI;
 using Microsoft.Extensions.Configuration;
@@ -8,7 +8,6 @@ using Microsoft.Agents.Extensions.Teams.AI.State;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 
 namespace Microsoft.Agents.Extensions.Teams.AI.Tests.IntegrationTests
 {

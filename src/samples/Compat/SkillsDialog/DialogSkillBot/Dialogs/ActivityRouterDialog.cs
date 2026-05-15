@@ -1,11 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Dialogs;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 
 namespace DialogSkillBot.Dialogs
@@ -49,10 +48,11 @@ namespace DialogSkillBot.Dialogs
         private async Task<DialogTurnResult> OnEventActivityAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var activity = stepContext.Context.Activity;
-            await stepContext.Context.TraceActivityAsync($"{GetType().Name}.OnEventActivityAsync()", label: $"Name: {activity.Name}. Value: {GetObjectAsJsonString(activity.Value)}", cancellationToken: cancellationToken);
+            var eventActivity = activity as IEventActivity;
+            await stepContext.Context.TraceActivityAsync($"{GetType().Name}.OnEventActivityAsync()", label: $"Name: {eventActivity?.Name}. Value: {GetObjectAsJsonString(eventActivity?.Value)}", cancellationToken: cancellationToken);
 
             // Resolve what to execute based on the event name.
-            switch (activity.Name)
+            switch (eventActivity?.Name)
             {
                 case "BookFlight":
                     return await BeginBookFlight(stepContext, cancellationToken);
@@ -62,7 +62,7 @@ namespace DialogSkillBot.Dialogs
 
                 default:
                     // We didn't get an event name we can handle.
-                    await stepContext.Context.SendActivityAsync(new MessageActivity($"Unrecognized EventName: \"{activity.Name}\".", inputHint: InputHints.IgnoringInput), cancellationToken);
+                    await stepContext.Context.SendActivityAsync(new MessageActivity($"Unrecognized EventName: \"{eventActivity?.Name}\".", inputHint: InputHints.IgnoringInput), cancellationToken);
                     return new DialogTurnResult(DialogTurnStatus.Complete);
             }
         }
@@ -71,9 +71,10 @@ namespace DialogSkillBot.Dialogs
         private async Task<DialogTurnResult> OnMessageActivityAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var activity = stepContext.Context.Activity;
+            var messageActivity = activity as IMessageActivity;
 
             // Start a dialog if we recognize the intent.
-            switch (activity.Text)
+            switch (messageActivity?.Text)
             {
                 case "BookFlight":
                     return await BeginBookFlight(stepContext, cancellationToken);
@@ -95,10 +96,11 @@ namespace DialogSkillBot.Dialogs
         private static async Task<DialogTurnResult> BeginGetWeather(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var activity = stepContext.Context.Activity;
+            var eventActivity = activity as IEventActivity;
             var location = new Location();
-            if (activity.Value != null)
+            if (eventActivity?.Value != null)
             {
-                location = ProtocolJsonSerializer.ToObject<Location>(activity.Value);
+                location = ProtocolJsonSerializer.ToObject<Location>(eventActivity.Value);
             }
 
             // We haven't implemented the GetWeatherDialog so we just display a TODO message.
@@ -111,10 +113,11 @@ namespace DialogSkillBot.Dialogs
         private async Task<DialogTurnResult> BeginBookFlight(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var activity = stepContext.Context.Activity;
+            var eventActivity = activity as IEventActivity;
             var bookingDetails = new BookingDetails();
-            if (activity.Value != null)
+            if (eventActivity?.Value != null)
             {
-                bookingDetails = ProtocolJsonSerializer.ToObject<BookingDetails>(activity.Value);
+                bookingDetails = ProtocolJsonSerializer.ToObject<BookingDetails>(eventActivity.Value);
             }
 
             // Start the booking dialog.

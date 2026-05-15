@@ -13,7 +13,6 @@ using Microsoft.Agents.Builder.Dialogs.Prompts;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Client;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Models.Activities;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Configuration;
 
@@ -77,7 +76,8 @@ namespace DialogRootBot.Dialogs
             // This is an example on how to cancel a SkillDialog that is currently in progress from the parent bot.
             var activeSkill = await _activeSkillProperty.GetAsync(innerDc.Context, () => null, cancellationToken);
             var activity = innerDc.Context.Activity;
-            if (activeSkill != null && activity.Type == ActivityTypes.Message && activity.Text.Equals("abort", StringComparison.OrdinalIgnoreCase))
+            var messageActivity = activity as IMessageActivity;
+            if (activeSkill != null && activity.Type == ActivityTypes.Message && messageActivity?.Text != null && messageActivity.Text.Equals("abort", StringComparison.OrdinalIgnoreCase))
             {
                 // Cancel all dialogs when the user says abort.
                 // The SkillDialog automatically sends an EndOfConversation message to the skill to let the
@@ -244,24 +244,23 @@ namespace DialogRootBot.Dialogs
             // Send an event activity to the skill with "BookFlight" in the name.
             if (selectedOption.Equals(SkillActionBookFlight, StringComparison.OrdinalIgnoreCase))
             {
-                activity = (Activity)Activity.CreateEventActivity();
-                activity.Name = SkillActionBookFlight;
+                activity = (Activity)Activity.CreateEventActivity(SkillActionBookFlight);
             }
 
             // Send an event activity to the skill with "BookFlight" in the name and some testing values.
             if (selectedOption.Equals(SkillActionBookFlightWithInputParameters, StringComparison.OrdinalIgnoreCase))
             {
-                activity = (Activity)Activity.CreateEventActivity();
-                activity.Name = SkillActionBookFlight;
-                activity.Value = new { origin = "New York", destination = "Seattle" };
+                var eventActivity = Activity.CreateEventActivity(SkillActionBookFlight);
+                ((IEventActivity)eventActivity).Value = new { origin = "New York", destination = "Seattle" };
+                activity = (Activity)eventActivity;
             }
 
             // Send an event activity to the skill with "GetWeather" in the name and some testing values.
             if (selectedOption.Equals(SkillActionGetWeather, StringComparison.OrdinalIgnoreCase))
             {
-                activity = (Activity)Activity.CreateEventActivity();
-                activity.Name = SkillActionGetWeather;
-                activity.Value = new { latitude = 47.614891, longitude = -122.195801};
+                var eventActivity = Activity.CreateEventActivity(SkillActionGetWeather);
+                ((IEventActivity)eventActivity).Value = new { latitude = 47.614891, longitude = -122.195801};
+                activity = (Activity)eventActivity;
             }
 
             if (activity == null)

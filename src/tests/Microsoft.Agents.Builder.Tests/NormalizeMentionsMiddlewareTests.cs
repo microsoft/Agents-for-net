@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Testing;
@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             await new TestFlow(adapter, async (context, cancellationToken) =>
             {
-                Assert.False(context.Activity.Text.Contains("<at") && context.Activity.Text.Contains("</at>"));
+                Assert.False(((IMessageActivity)context.Activity).Text.Contains("<at") && ((IMessageActivity)context.Activity).Text.Contains("</at>"));
                 if (context.Activity.Entities != null)
                 {
                     int i = 1;
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.Tests
                     {
                         Assert.DoesNotContain("<at", entity.Text);
                         Assert.DoesNotContain("</at>", entity.Text);
-                        Assert.Contains(entity.Text, context.Activity.Text);
+                        Assert.Contains(entity.Text, ((IMessageActivity)context.Activity).Text);
                         Assert.Equal($"user{i++}", entity.Mentioned.Id);
                     }
                 }
@@ -63,8 +63,8 @@ namespace Microsoft.Agents.Builder.Tests
 
             await new TestFlow(adapter, async (context, cancellationToken) =>
             {
-                Assert.False(context.Activity.Text.Contains("<at") && context.Activity.Text.Contains("</at>"));
-                Assert.DoesNotContain("bot", context.Activity.Text);
+                Assert.False(((IMessageActivity)context.Activity).Text.Contains("<at") && ((IMessageActivity)context.Activity).Text.Contains("</at>"));
+                Assert.DoesNotContain("bot", ((IMessageActivity)context.Activity).Text);
                 Assert.True(context.Activity.Entities == null || context.Activity.Entities.Count == 0);
                 await context.SendActivityAsync("OK");
             })
@@ -81,13 +81,13 @@ namespace Microsoft.Agents.Builder.Tests
 
             await new TestFlow(adapter, async (context, cancellationToken) =>
             {
-                Assert.False(context.Activity.Text.Contains("<at") && context.Activity.Text.Contains("</at>"));
-                Assert.Contains("Bot", context.Activity.Text);
+                Assert.False(((IMessageActivity)context.Activity).Text.Contains("<at") && ((IMessageActivity)context.Activity).Text.Contains("</at>"));
+                Assert.Contains("Bot", ((IMessageActivity)context.Activity).Text);
                 Assert.NotNull(context.Activity.Entities);
                 var entity = context.Activity.Entities.Single() as Mention;
                 Assert.DoesNotContain("<at", entity.Text);
                 Assert.DoesNotContain("</at>", entity.Text);
-                Assert.Contains(entity.Text, context.Activity.Text);
+                Assert.Contains(entity.Text, ((IMessageActivity)context.Activity).Text);
                 Assert.Equal($"bot", entity.Mentioned.Id);
                 await context.SendActivityAsync("OK");
             })
@@ -98,9 +98,10 @@ namespace Microsoft.Agents.Builder.Tests
 
         public Activity CreateMentionActivity(string text, params Entity[] entities)
         {
-            Activity activity = new Activity();
-            activity.Text = text;
-            activity.Entities = entities.ToList();
+            Activity activity = new MessageActivity(text)
+            {
+                Entities = entities.ToList()
+            };
             return activity;
         }
 

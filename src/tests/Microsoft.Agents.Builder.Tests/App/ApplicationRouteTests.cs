@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -10,7 +10,6 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
 using System;
-using Microsoft.Agents.Core.Models.Activities;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -348,14 +347,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             });
             var messages = new List<string>();
 
-            app.AddRoute(
-                (context, _) => Task.FromResult(string.Equals("hello.1", context.Activity.Text)),
-                (context, _, _) =>
+            app.AddRoute(MessageRouteBuilder.Create()
+                .WithText("hello.1")
+                .WithHandler((context, _, _) =>
                 {
                     messages.Add(context.Activity.Text);
                     return Task.CompletedTask;
-                },
-                false);
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -384,30 +383,29 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var selectedRoutes = new List<int>();
-            app.AddRoute(
-                (context, _) => Task.FromResult(string.Equals("hello", context.Activity.Text)),
-                (context, _, _) =>
+            app.AddRoute(MessageRouteBuilder.Create()
+                .WithText("hello")
+                .WithHandler((context, _, _) =>
                 {
                     selectedRoutes.Add(0);
                     return Task.CompletedTask;
-                },
-                false);
-            app.AddRoute(
-                (context, _) => Task.FromResult(string.Equals("hello.1", context.Activity.Text)),
-                (context, _, _) =>
+                })
+                .Build());
+            app.AddRoute(MessageRouteBuilder.Create()
+                .WithText("hello.1")
+                .WithHandler((context, _, _) =>
                 {
                     selectedRoutes.Add(1);
                     return Task.CompletedTask;
-                },
-                false);
-            app.AddRoute(
-                (_, _) => Task.FromResult(true),
-                (context, _, _) =>
+                })
+                .Build());
+            app.AddRoute(MessageRouteBuilder.Create()
+                .WithHandler((context, _, _) =>
                 {
                     selectedRoutes.Add(2);
                     return Task.CompletedTask;
-                },
-                false);
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
@@ -421,18 +419,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_Application_InvokeRoute()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity1 = new InvokeActivity {
                 Name = "invoke.1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity2 = new InvokeActivity {
                 Name = "invoke.2",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -450,14 +444,14 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var names = new List<string>();
-            app.AddRoute(
-                (context, _) => Task.FromResult(string.Equals("invoke.1", context.Activity.Name)),
-                (context, _, _) =>
+            app.AddRoute(InvokeRouteBuilder.Create()
+                .WithName("invoke.1")
+                .WithHandler((context, _, _) =>
                 {
                     names.Add(context.Activity.Name);
                     return Task.CompletedTask;
-                },
-                true);
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -472,9 +466,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_Application_InvokeRoutes_Are_Called_InOrder()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "invoke.1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -490,30 +482,23 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var selectedRoutes = new List<int>();
-            app.AddRoute(
-                (context, _) => Task.FromResult(string.Equals("invoke", context.Activity.Name)),
-                (context, _, _) =>
-                {
-                    selectedRoutes.Add(0);
-                    return Task.CompletedTask;
-                },
-                true);
-            app.AddRoute(
-                (context, _) => Task.FromResult(string.Equals("invoke.1", context.Activity.Name)),
-                (context, _, _) =>
-                {
-                    selectedRoutes.Add(1);
-                    return Task.CompletedTask;
-                },
-                true);
-            app.AddRoute(
-                (_, _) => Task.FromResult(true),
-                (context, _, _) =>
+            app.OnInvoke("invoke", (context, _, _) =>
+            {
+                selectedRoutes.Add(0);
+                return Task.CompletedTask;
+            });
+            app.OnInvoke("invoke.1", (context, _, _) =>
+            {
+                selectedRoutes.Add(1);
+                return Task.CompletedTask;
+            });
+            app.AddRoute(InvokeRouteBuilder.Create()
+                .WithHandler((ITurnContext<IInvokeActivity> context, ITurnState _, CancellationToken _) =>
                 {
                     selectedRoutes.Add(2);
                     return Task.CompletedTask;
-                },
-                true);
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
@@ -527,9 +512,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_Application_InvokeRoutes_Are_Called_First()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "invoke.1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -545,22 +528,21 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var selectedRoutes = new List<int>();
-            app.AddRoute(
-                (_, _) => Task.FromResult(true),
-                (context, _, _) =>
+            app.AddRoute(InvokeRouteBuilder.Create()
+                .WithHandler((ITurnContext<IInvokeActivity> context, ITurnState _, CancellationToken _) =>
                 {
                     selectedRoutes.Add(0);
                     return Task.CompletedTask;
-                },
-                true);
-            app.AddRoute(
-                (_, _) => Task.FromResult(true),
-                (context, _, _) =>
+                })
+                .Build());
+            app.AddRoute(RouteBuilder.Create()
+                .WithSelector((_, _) => Task.FromResult(true))
+                .WithHandler((context, _, _) =>
                 {
                     selectedRoutes.Add(1);
                     return Task.CompletedTask;
-                },
-                false);
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
@@ -574,9 +556,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_Application_No_InvokeRoute_Matched_Fallback_To_Routes()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity = new InvokeActivity {
                 Name = "invoke.1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -592,30 +572,32 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var selectedRoutes = new List<int>();
-            app.AddRoute(
-                (_, _) => Task.FromResult(false),
-                (context, _, _) =>
+            app.AddRoute(InvokeRouteBuilder.Create()
+                .WithSelector((_, _) => Task.FromResult(false))
+                .WithHandler((ITurnContext<IInvokeActivity> context, ITurnState _, CancellationToken _) =>
                 {
                     selectedRoutes.Add(0);
                     return Task.CompletedTask;
-                },
-                true);
-            app.AddRoute(
-                (context, _) => Task.FromResult(string.Equals("invoke.1", context.Activity.Name)),
-                (context, _, _) =>
+                })
+                .Build());
+            app.AddRoute(RouteBuilder.Create()
+                .WithSelector((context, _) => Task.FromResult(
+                    context.Activity is IInvokeActivity invokeActivity
+                    && string.Equals("invoke.1", invokeActivity.Name)))
+                .WithHandler((context, _, _) =>
                 {
                     selectedRoutes.Add(1);
                     return Task.CompletedTask;
-                },
-                false);
-            app.AddRoute(
-                (_, _) => Task.FromResult(true),
-                (context, _, _) =>
+                })
+                .Build());
+            app.AddRoute(RouteBuilder.Create()
+                .WithSelector((_, _) => Task.FromResult(true))
+                .WithHandler((context, _, _) =>
                 {
                     selectedRoutes.Add(2);
                     return Task.CompletedTask;
-                },
-                false);
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
@@ -629,25 +611,19 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnActivity_String_Selector()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity1 = new MessageActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity2 = new InvokeActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var agenticActivity = new MessageActivity {
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -699,9 +675,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnActivity_Regex_Selector()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity1 = new MessageActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -715,9 +689,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var agenticActivity = new MessageActivity {
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -769,27 +741,21 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnActivity_Function_Selector()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
-                Name = "Message",
+            var activity1 = new MessageActivity {
+                Id = "Message",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity2 = new InvokeActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
-                Name = "Message",
+            var agenticActivity = new MessageActivity {
+                Id = "Message",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -811,22 +777,25 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticTypes = new List<string>();
 
             // agentic
-#pragma warning disable CS0618 // Type or member is obsolete
-            app.OnActivity((context, _) => Task.FromResult(context.Activity?.Name != null), (context, _, _) =>
-            {
-                agenticTypes.Add(context.Activity.Type);
-                return Task.CompletedTask;
-            }, isAgenticOnly: true);
-#pragma warning restore CS0618 // Type or member is obsolete
+            app.AddRoute(RouteBuilder.Create()
+                .WithSelector((context, _) => Task.FromResult(context.Activity?.Id != null))
+                .WithHandler((context, _, _) =>
+                {
+                    agenticTypes.Add(context.Activity.Type);
+                    return Task.CompletedTask;
+                })
+                .AsAgentic(true)
+                .Build());
 
             // non-agentic
-#pragma warning disable CS0618 // Type or member is obsolete
-            app.OnActivity((context, _) => Task.FromResult(context.Activity?.Name != null), (context, _, _) =>
-            {
-                types.Add(context.Activity.Type);
-                return Task.CompletedTask;
-            });
-#pragma warning restore CS0618 // Type or member is obsolete
+            app.AddRoute(RouteBuilder.Create()
+                .WithSelector((context, _) => Task.FromResult(context.Activity?.Id != null))
+                .WithHandler((context, _, _) =>
+                {
+                    types.Add(context.Activity.Type);
+                    return Task.CompletedTask;
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -845,9 +814,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnActivity_Multiple_Selectors()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity1 = new MessageActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -856,15 +823,13 @@ namespace Microsoft.Agents.Builder.Tests.App
             var activity2 = new Activity
             {
                 Type = ActivityTypes.MessageDelete,
-                Name = "Delete",
+                Id = "Delete",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var activity3 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity3 = new InvokeActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -882,19 +847,17 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var types = new List<string>();
-#pragma warning disable CS0618 // Type or member is obsolete
-            app.OnActivity(new MultipleRouteSelector
-            {
-                Strings = new[] { ActivityTypes.Invoke },
-                Regexes = new[] { new Regex("^message$") },
-                RouteSelectors = new RouteSelector[] { (context, _) => Task.FromResult(context.Activity?.Name != null) },
-            },
-            (context, _, _) =>
-            {
-                types.Add(context.Activity.Type);
-                return Task.CompletedTask;
-            });
-#pragma warning restore CS0618 // Type or member is obsolete
+            app.AddRoute(RouteBuilder.Create()
+                .WithSelector((context, _) => Task.FromResult(
+                    context.Activity.IsType(ActivityTypes.Invoke)
+                    || new Regex("^message$").IsMatch(context.Activity.Type ?? string.Empty)
+                    || context.Activity?.Id != null))
+                .WithHandler((context, _, _) =>
+                {
+                    types.Add(context.Activity.Type);
+                    return Task.CompletedTask;
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -912,37 +875,29 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnConversationUpdate_MembersAdded()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            var activity1 = new ConversationUpdateActivity {
                 MembersAdded = new List<ChannelAccount> { new() },
-                Name = "1",
+                Id = "1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            var activity2 = new ConversationUpdateActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var activity3 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity3 = new InvokeActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            var agenticActivity = new ConversationUpdateActivity {
                 MembersAdded = new List<ChannelAccount> { new() },
-                Name = "agentic1",
+                Id = "agentic1",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -967,14 +922,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             // agentic
             app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, (context, _, _) =>
             {
-                agenticNames.Add(context.Activity.Name);
+                agenticNames.Add(context.Activity.Id);
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
 
             // non-agentic
             app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, (context, _, _) =>
             {
-                names.Add(context.Activity.Name);
+                names.Add(context.Activity.Id);
                 return Task.CompletedTask;
             });
 
@@ -996,37 +951,29 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnConversationUpdate_MembersRemoved()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            var activity1 = new ConversationUpdateActivity {
                 MembersRemoved = new List<ChannelAccount> { new() },
-                Name = "1",
+                Id = "1",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            var activity2 = new ConversationUpdateActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var activity3 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity3 = new InvokeActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId",
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
+            var agenticActivity = new ConversationUpdateActivity {
                 MembersRemoved = new List<ChannelAccount> { new() },
-                Name = "agentic1",
+                Id = "agentic1",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1051,14 +998,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             // agentic
             app.OnConversationUpdate(ConversationUpdateEvents.MembersRemoved, (context, _, _) =>
             {
-                agenticNames.Add(context.Activity.Name);
+                agenticNames.Add(context.Activity.Id);
                 return Task.CompletedTask;
             }, isAgenticOnly: true);
 
             // non-agentic
             app.OnConversationUpdate(ConversationUpdateEvents.MembersRemoved, (context, _, _) =>
             {
-                names.Add(context.Activity.Name);
+                names.Add(context.Activity.Id);
                 return Task.CompletedTask;
             });
 
@@ -1080,10 +1027,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnConversationUpdate_UnknownEventName()
         {
             // Arrange
-            var activity = new Activity
-            {
-                Type = ActivityTypes.ConversationUpdate,
-                Name = "1",
+            var activity = new ConversationUpdateActivity {
+                Id = "1",
                 ChannelId = Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1101,7 +1046,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             app.OnConversationUpdate("unknown",
                 (context, _, _) =>
                 {
-                    names.Add(context.Activity.Name);
+                    names.Add(context.Activity.Id);
                     return Task.CompletedTask;
                 });
 
@@ -1117,45 +1062,34 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnMessage_String_Selector()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity1 = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity2 = new MessageActivity {
                 Text = "HELLO",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity
-            {
-                Type = ActivityTypes.Event,
-                Text = "hello",
+            var activity3 = new EventActivity("hello") {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var agenticActivity = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var nullTextActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var nullTextActivity = new MessageActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -1207,27 +1141,21 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnMessage_StringWord_Selector()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity1 = new MessageActivity {
                 Text = "hello a",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity2 = new MessageActivity {
                 Text = "welcome",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity3 = new MessageActivity {
                 Text = "i say hello b",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1265,36 +1193,27 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnMessage_Regex_Selector()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity1 = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity2 = new MessageActivity {
                 Text = "welcome",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
-                Text = "hello",
+            var activity3 = new InvokeActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var agenticActivity = new MessageActivity {
                 Text = "agentic hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1349,26 +1268,20 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnMessage_Function_Selector()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity1 = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity2 = new InvokeActivity {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var agenticActivity = new MessageActivity {
                 Text = "agentic hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1391,22 +1304,25 @@ namespace Microsoft.Agents.Builder.Tests.App
             var agenticTexts = new List<string>();
 
             // agentic
-#pragma warning disable CS0618 // Type or member is obsolete
-            app.OnMessage((context, _) => Task.FromResult(context.Activity?.Text != null), (context, _, _) =>
-            {
-                agenticTexts.Add(context.Activity.Text);
-                return Task.CompletedTask;
-            }, isAgenticOnly: true);
-#pragma warning restore CS0618 // Type or member is obsolete
+            app.AddRoute(MessageRouteBuilder.Create()
+                .WithSelector((context, _) => Task.FromResult(((IMessageActivity)context.Activity).Text != null))
+                .WithHandler((context, _, _) =>
+                {
+                    agenticTexts.Add(context.Activity.Text);
+                    return Task.CompletedTask;
+                })
+                .AsAgentic(true)
+                .Build());
 
             // non-agentic
-#pragma warning disable CS0618 // Type or member is obsolete
-            app.OnMessage((context, _) => Task.FromResult(context.Activity?.Text != null), (context, _, _) =>
-            {
-                texts.Add(context.Activity.Text);
-                return Task.CompletedTask;
-            });
-#pragma warning restore CS0618 // Type or member is obsolete
+            app.AddRoute(MessageRouteBuilder.Create()
+                .WithSelector((context, _) => Task.FromResult(((IMessageActivity)context.Activity).Text != null))
+                .WithHandler((context, _, _) =>
+                {
+                    texts.Add(context.Activity.Text);
+                    return Task.CompletedTask;
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -1425,28 +1341,22 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_OnMessage_Multiple_Selectors()
         {
             // Arrange
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity1 = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity2 = new MessageActivity {
                 Text = "welcome",
-                Name = "hello",
+                Id = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var activity3 = new MessageActivity {
                 Text = "hello world",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1465,19 +1375,17 @@ namespace Microsoft.Agents.Builder.Tests.App
                 StartTypingTimer = false,
             });
             var texts = new List<string>();
-#pragma warning disable CS0618 // Type or member is obsolete
-            app.OnMessage(new MultipleRouteSelector
-            {
-                Strings = new[] { "hello" },
-                Regexes = new[] { new Regex(@"\bworld\b") },
-                RouteSelectors = new RouteSelector[] { (context, _) => Task.FromResult(context.Activity?.Name != null) },
-            },
-            (context, _, _) =>
-            {
-                texts.Add(context.Activity.Text);
-                return Task.CompletedTask;
-            });
-#pragma warning restore CS0618 // Type or member is obsolete
+            app.AddRoute(MessageRouteBuilder.Create()
+                .WithSelector((context, _) => Task.FromResult(
+                    string.Equals(((IMessageActivity)context.Activity).Text, "hello", StringComparison.OrdinalIgnoreCase)
+                    || (context.Activity is IMessageActivity messageActivity && messageActivity.Text != null && new Regex(@"\bworld\b").IsMatch(messageActivity.Text))
+                    || context.Activity?.Id != null))
+                .WithHandler((context, _, _) =>
+                {
+                    texts.Add(context.Activity.Text);
+                    return Task.CompletedTask;
+                })
+                .Build());
 
             // Act
             await app.OnTurnAsync(turnContext1, CancellationToken.None);
@@ -1512,7 +1420,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity(ActivityTypes.Message)
+            var activity3 = new MessageActivity()
             {
                 Id = "3",
                 Recipient = new() { Id = "recipientId" },
@@ -1594,7 +1502,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity(ActivityTypes.Message)
+            var activity3 = new MessageActivity()
             {
                 Id = "3",
                 Recipient = new() { Id = "recipientId" },
@@ -1665,9 +1573,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 activitiesToSend = arg;
             }
             var adapter = new SimpleAdapter(CaptureSend);
-            var activity1 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity1 = new InvokeActivity {
                 Name = "handoff/action",
                 Value = new { Continuation = "test" },
                 Id = "test",
@@ -1676,27 +1582,20 @@ namespace Microsoft.Agents.Builder.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity2 = new Activity
-            {
-                Type = ActivityTypes.Event,
-                Name = "actionableMessage/executeAction",
+            var activity2 = new EventActivity("actionableMessage/executeAction") {
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var activity3 = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var activity3 = new InvokeActivity {
                 Name = "composeExtension/queryLink",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
                 ChannelId = "channelId"
             };
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Invoke,
+            var agenticActivity = new InvokeActivity {
                 Name = "handoff/action",
                 Value = new { Continuation = "test" },
                 Id = "agentic test",
@@ -1751,7 +1650,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(activitiesToSend);
             Assert.Single(activitiesToSend);
             Assert.Equal("invokeResponse", activitiesToSend[0].Type);
-            Assert.Equivalent(expectedInvokeResponse, activitiesToSend[0].Value);
+            Assert.Equivalent(expectedInvokeResponse, ((IInvokeResponseActivity)activitiesToSend[0]).Value);
 
             Assert.Single(agenticIds);
             Assert.Equal("agentic test", agenticIds[0]);
@@ -1762,9 +1661,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange - An agentic message should be handled by the agentic route,
             // not by a competing non-agentic route registered first.
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var agenticActivity = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1808,9 +1705,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task Test_TwoAgenticRoutes_SameRank_FirstMatchingWins()
         {
             // Arrange - Two agentic routes with the same rank; first matching selector wins.
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var agenticActivity = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1854,9 +1749,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange - A regular (non-agentic) message must not match an agentic-only route
             // and should fall through to the non-agentic handler.
-            var normalActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var normalActivity = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
@@ -1902,9 +1795,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange - Verify that isAgenticOnly=true flows through AgentExtension.AddRoute
             // and results in the route being ordered above non-agentic routes.
             // This is the pattern used by A365 Notifications and other extensions.
-            var agenticActivity = new Activity
-            {
-                Type = ActivityTypes.Message,
+            var agenticActivity = new MessageActivity {
                 Text = "hello",
                 Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
                 Conversation = new() { Id = "conversationId" },
@@ -1934,13 +1825,15 @@ namespace Microsoft.Agents.Builder.Tests.App
             var extension = new TestExtension("testChannel");
             extension.AddRoute(
                 app,
-                (context, _) => Task.FromResult(context.Activity.Type == ActivityTypes.Message),
-                (context, _, _) =>
-                {
-                    handlerCalled = "extensionAgentic";
-                    return Task.CompletedTask;
-                },
-                isAgenticOnly: true);
+                RouteBuilder.Create()
+                    .WithSelector((context, _) => Task.FromResult(context.Activity.Type == ActivityTypes.Message))
+                    .WithHandler((context, _, _) =>
+                    {
+                        handlerCalled = "extensionAgentic";
+                        return Task.CompletedTask;
+                    })
+                    .AsAgentic(true)
+                    .Build());
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
@@ -1968,10 +1861,8 @@ namespace Microsoft.Agents.Builder.Tests.App
                     .SetMinimumLevel(LogLevel.Debug));
 
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
+            var turnContext = new TurnContext(adapter, new MessageActivity("hi")
             {
-                Type = ActivityTypes.Message,
-                Text = "hi",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -2002,10 +1893,8 @@ namespace Microsoft.Agents.Builder.Tests.App
                     .SetMinimumLevel(LogLevel.Information));
 
             var adapter = new SimpleAdapter();
-            var turnContext = new TurnContext(adapter, new Activity()
+            var turnContext = new TurnContext(adapter, new MessageActivity("hi")
             {
-                Type = ActivityTypes.Message,
-                Text = "hi",
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },

@@ -290,9 +290,8 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         else
         {
             // Send EndOfConversation to agent
-            var eoc = new Activity()
+            var eoc = new EndOfConversationActivity()
             {
-                Type = ActivityTypes.EndOfConversation,
                 ChannelId = Channels.A2A,
                 Conversation = new ConversationAccount()
                 {

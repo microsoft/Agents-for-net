@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using CsvHelper;
 using System.Globalization;
@@ -206,7 +206,7 @@ internal class EvaluationService(EvalClientConfig settings, CopilotClient copilo
 
         if (act.Type == "message")
         {
-            response = act.Text;
+            response = ((IMessageActivity)act).Text;
         }
 
         return response;

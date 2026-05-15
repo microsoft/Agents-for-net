@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Threading.Tasks;
@@ -9,8 +9,6 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Builder.Dialogs.Prompts;
-using Microsoft.Agents.Core.Models.Activities;
-
 namespace Microsoft.Agents.Builder.Dialogs.Tests
 {
     public class PromptValidatorContextTests
@@ -27,7 +25,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 async (stepContext, cancellationToken) =>
                 {
-                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityTypes.Message } }, cancellationToken);
+                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new MessageActivity { Text = "Please type your name." } }, cancellationToken);
                 },
                 async (stepContext, cancellationToken) =>
                 {
@@ -93,7 +91,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 async (stepContext, cancellationToken) =>
                 {
-                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityTypes.Message } }, cancellationToken);
+                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new MessageActivity { Text = "Please type your name." } }, cancellationToken);
                 },
                 async (stepContext, cancellationToken) =>
                 {
@@ -160,7 +158,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             {
                 async (stepContext, cancellationToken) =>
                 {
-                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new Activity { Text = "Please type your name.", Type = ActivityTypes.Message } }, cancellationToken);
+                    return await stepContext.PromptAsync("namePrompt", new PromptOptions { Prompt = new MessageActivity { Text = "Please type your name." } }, cancellationToken);
                 },
                 async (stepContext, cancellationToken) =>
                 {
