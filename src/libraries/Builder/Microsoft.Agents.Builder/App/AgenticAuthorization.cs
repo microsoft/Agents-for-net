@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder.App
             _connections = connections;
         }
 
-        public async Task<string> GetAgenticInstanceTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticInstanceTokenAsync(ITurnContext turnContext, IList<string> scopes = null, CancellationToken cancellationToken = default)
         {
             if (!IsAgenticRequest(turnContext))
             {
@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Builder.App
             var connection = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
             if (connection is IAgenticTokenProvider agenticTokenProvider)
             {
-                return await agenticTokenProvider.GetAgenticInstanceTokenAsync(GetAgenticTenantId(turnContext), GetAgenticInstanceId(turnContext), cancellationToken);
+                return await agenticTokenProvider.GetAgenticInstanceTokenAsync(GetAgenticTenantId(turnContext), GetAgenticInstanceId(turnContext), scopes, cancellationToken);
             }
 
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
