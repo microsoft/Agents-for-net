@@ -24,6 +24,7 @@ namespace Microsoft.Agents.Connector.Tests
         private const string UserId = "test-user";
         private const string MemberId = "member-id";
         private const int PageSize = 3;
+        private const int MaxApxConversationIdLength = 256;
         private readonly Uri UriEndpoint = new Uri("http://localhost");
         private readonly Mock<HttpClient> MockHttpClient;
 
@@ -237,7 +238,7 @@ namespace Microsoft.Agents.Connector.Tests
         public async Task SendToConversationAsync_ShouldTrimAndUrlEncodeConversationId_ForAgentsSubchannels()
         {
             var conversationsClient = UseConversation();
-            var conversationId = $"{new string('a', 255)}/tail";
+            var conversationId = $"{new string('a', MaxApxConversationIdLength - 1)}/tail";
 
             MockHttpClient
                 .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
@@ -520,7 +521,7 @@ namespace Microsoft.Agents.Connector.Tests
         public async Task ReplyToActivityAsync_ShouldTrimAndUrlEncodeConversationId_ForAgentsSubchannels()
         {
             var conversationsClient = UseConversation();
-            var conversationId = $"{new string('a', 255)}/tail";
+            var conversationId = $"{new string('a', MaxApxConversationIdLength - 1)}/tail";
 
             MockHttpClient
                 .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))

@@ -335,10 +335,10 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             string convId;
 
-            var isAgentsChannel = IsAgentsChannel(body);
+            var isAgentsParentChannel = IsAgentsParentChannel(body);
 
             // Truncate conversationId for agents:* channels and Teams agentic roles to MaxApxConversationIdLength characters
-            if (isAgentsChannel ||
+            if (isAgentsParentChannel ||
                 (body?.ChannelId?.Channel == Channels.Msteams
                 && (body?.From?.Role == RoleTypes.AgenticIdentity
                 || body?.From?.Role == RoleTypes.AgenticUser)))
@@ -350,7 +350,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 convId = conversationId;
             }
 
-            if (isAgentsChannel)
+            if (isAgentsParentChannel)
             {
                 convId = HttpUtility.UrlEncode(convId);
             }
@@ -358,14 +358,14 @@ namespace Microsoft.Agents.Connector.RestClients
             return convId;
         }
 
-        private static bool IsAgentsChannel(IActivity body)
+        private static bool IsAgentsParentChannel(IActivity body)
         {
             return body?.ChannelId?.Channel == Channels.Agents;
         }
 
         private static string EncodeConversationId(string conversationId, IActivity body)
         {
-            return IsAgentsChannel(body) ? conversationId : HttpUtility.UrlEncode(conversationId);
+            return IsAgentsParentChannel(body) ? conversationId : HttpUtility.UrlEncode(conversationId);
         }
     }
 }
