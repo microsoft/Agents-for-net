@@ -14,10 +14,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.JsonWebTokens;
+
+#nullable enable
 
 public static class AspNetExtensions
 {
