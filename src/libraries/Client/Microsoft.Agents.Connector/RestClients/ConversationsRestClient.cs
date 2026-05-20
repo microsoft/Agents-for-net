@@ -75,7 +75,7 @@ namespace Microsoft.Agents.Connector.RestClients
             using var telemetryScope = new ScopeSendToConversation(conversationId, body?.Id);
 
             var convId = TruncateConversationId(conversationId, body);
-            var path = string.Format(RestApiPaths.ConversationActivities, HttpUtility.UrlEncode(convId));
+            var path = string.Format(RestApiPaths.ConversationActivities, EncodeConversationId(convId, body));
             var request = RestRequest.Post(path).WithBody(body);
             if (body?.ChannelId == Channels.Msteams && body.IsTargetedActivity())
             {
@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Connector.RestClients
             using var telemetryScope = new ScopeReplyToActivity(conversationId, activityId);
 
             var convId = TruncateConversationId(conversationId, body);
-            var path = string.Format(RestApiPaths.ConversationActivity, HttpUtility.UrlEncode(convId), HttpUtility.UrlEncode(activityId));
+            var path = string.Format(RestApiPaths.ConversationActivity, EncodeConversationId(convId, body), HttpUtility.UrlEncode(activityId));
             var request = RestRequest.Post(path).WithBody(body);
             if (body?.ChannelId == Channels.Msteams && body.IsTargetedActivity())
             {
@@ -335,18 +335,37 @@ namespace Microsoft.Agents.Connector.RestClients
         {
             string convId;
 
-            // Truncate conversationId for Teams and Agentic roles to MaxApxConversationIdLength characters
-            if ((body?.ChannelId?.Channel == Channels.Msteams ||
-                body?.ChannelId?.Channel == Channels.Agents)
+            var isAgentsChannel = IsAgentsChannel(body);
+
+            // Truncate conversationId for agents:* channels and Teams agentic roles to MaxApxConversationIdLength characters
+            if (isAgentsChannel ||
+                (body?.ChannelId?.Channel == Channels.Msteams
                 && (body?.From?.Role == RoleTypes.AgenticIdentity
-                || body?.From?.Role == RoleTypes.AgenticUser))
+                || body?.From?.Role == RoleTypes.AgenticUser)))
             {
                 convId = conversationId.Length > MaxApxConversationIdLength ? conversationId[..MaxApxConversationIdLength] : conversationId;
             }
             else
+            {
                 convId = conversationId;
+            }
+
+            if (isAgentsChannel)
+            {
+                convId = HttpUtility.UrlEncode(convId);
+            }
 
             return convId;
+        }
+
+        private static bool IsAgentsChannel(IActivity body)
+        {
+            return body?.ChannelId?.Channel == Channels.Agents;
+        }
+
+        private static string EncodeConversationId(string conversationId, IActivity body)
+        {
+            return IsAgentsChannel(body) ? conversationId : HttpUtility.UrlEncode(conversationId);
         }
     }
 }
