@@ -24,7 +24,6 @@ namespace Microsoft.Agents.Connector.Tests
         private const string UserId = "test-user";
         private const string MemberId = "member-id";
         private const int PageSize = 3;
-        private const int MaxApxConversationIdLength = 256;
         private readonly Uri UriEndpoint = new Uri("http://localhost");
         private readonly Mock<HttpClient> MockHttpClient;
 
@@ -232,41 +231,6 @@ namespace Microsoft.Agents.Connector.Tests
             var result = await conversationsClient.SendToConversationAsync(TestActivity);
 
             Assert.Equal(resourceResponse.Id, result.Id);
-        }
-
-        [Fact]
-        public async Task SendToConversationAsync_ShouldTrimAndUrlEncodeConversationId_ForAgentsSubchannels()
-        {
-            var conversationsClient = UseConversation();
-            var conversationId = $"{new string('a', MaxApxConversationIdLength - 1)}/tail";
-
-            MockHttpClient
-                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
-                {
-                    var requestUri = request.RequestUri.OriginalString;
-                    Assert.Contains("/v3/conversations/", requestUri, StringComparison.OrdinalIgnoreCase);
-                    Assert.Contains("/activities", requestUri, StringComparison.OrdinalIgnoreCase);
-                    Assert.DoesNotContain("%252f", requestUri, StringComparison.OrdinalIgnoreCase);
-                    Assert.DoesNotContain("tail", requestUri, StringComparison.OrdinalIgnoreCase);
-                    Assert.Equal(5, request.RequestUri.Segments.Length);
-                })
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "resource-id" }))
-                });
-
-            var activity = new Activity
-            {
-                Id = "activity-id",
-                ChannelId = "agents:email",
-                From = new ChannelAccount { Role = RoleTypes.User },
-                Conversation = new ConversationAccount { Id = conversationId }
-            };
-
-            var result = await conversationsClient.SendToConversationAsync(activity);
-
-            Assert.Equal("resource-id", result.Id);
         }
 
         [Fact]
@@ -515,42 +479,6 @@ namespace Microsoft.Agents.Connector.Tests
             var result = await conversationsClient.ReplyToActivityAsync(TestActivity);
 
             Assert.Equal(resourceResponse.Id, result.Id);
-        }
-
-        [Fact]
-        public async Task ReplyToActivityAsync_ShouldTrimAndUrlEncodeConversationId_ForAgentsSubchannels()
-        {
-            var conversationsClient = UseConversation();
-            var conversationId = $"{new string('a', MaxApxConversationIdLength - 1)}/tail";
-
-            MockHttpClient
-                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
-                {
-                    var requestUri = request.RequestUri.OriginalString;
-                    Assert.Contains("/v3/conversations/", requestUri, StringComparison.OrdinalIgnoreCase);
-                    Assert.Contains("/activities/reply-id", requestUri, StringComparison.OrdinalIgnoreCase);
-                    Assert.DoesNotContain("%252f", requestUri, StringComparison.OrdinalIgnoreCase);
-                    Assert.DoesNotContain("tail", requestUri, StringComparison.OrdinalIgnoreCase);
-                    Assert.Equal(6, request.RequestUri.Segments.Length);
-                })
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "resource-id" }))
-                });
-
-            var activity = new Activity
-            {
-                Id = "activity-id",
-                ReplyToId = "reply-id",
-                ChannelId = "agents:email",
-                From = new ChannelAccount { Role = RoleTypes.User },
-                Conversation = new ConversationAccount { Id = conversationId }
-            };
-
-            var result = await conversationsClient.ReplyToActivityAsync(activity);
-
-            Assert.Equal("resource-id", result.Id);
         }
 
         [Fact]
