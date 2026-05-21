@@ -342,11 +342,16 @@ namespace Microsoft.Agents.Connector.RestClients
                 || body?.From?.Role == RoleTypes.AgenticUser))
             {
                 convId = conversationId.Length > MaxApxConversationIdLength ? conversationId[..MaxApxConversationIdLength] : conversationId;
-                convId = convId
-                    .Replace('/', '_')
-                    .Replace('\\', '_')
-                    .Replace('#', '_')
-                    .Replace('?', '_');
+                var convIdChars = convId.ToCharArray();
+                for (var i = 0; i < convIdChars.Length; i++)
+                {
+                    if (convIdChars[i] == '/' || convIdChars[i] == '\\' || convIdChars[i] == '#' || convIdChars[i] == '?')
+                    {
+                        convIdChars[i] = '_';
+                    }
+                }
+
+                convId = new string(convIdChars);
             }
             else
                 convId = conversationId;
