@@ -234,6 +234,63 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
+        public async Task SendToConversationAsync_ShouldUrlEncodeConversationIdInTruncate_ForAgentsChannel()
+        {
+            var conversationsClient = UseConversation();
+            var activity = new Activity
+            {
+                Id = "activity-id",
+                ChannelId = "agents:email",
+                From = new ChannelAccount { Role = RoleTypes.AgenticUser },
+                Conversation = new ConversationAccount { Id = "conversation/with/slash" }
+            };
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    Assert.Contains("%252f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "resource-id" }))
+                });
+
+            var result = await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.Equal("resource-id", result.Id);
+        }
+
+        [Fact]
+        public async Task SendToConversationAsync_ShouldNotUrlEncodeConversationIdInTruncate_ForTeamsChannel()
+        {
+            var conversationsClient = UseConversation();
+            var activity = new Activity
+            {
+                Id = "activity-id",
+                ChannelId = Channels.Msteams,
+                From = new ChannelAccount { Role = RoleTypes.AgenticUser },
+                Conversation = new ConversationAccount { Id = "conversation/with/slash" }
+            };
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    Assert.Contains("%2f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("%252f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "resource-id" }))
+                });
+
+            var result = await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.Equal("resource-id", result.Id);
+        }
+
+        [Fact]
         public async Task SendToConversationAsync_ShouldThrowWithErrorBody()
         {
             var conversationsClient = UseConversation();

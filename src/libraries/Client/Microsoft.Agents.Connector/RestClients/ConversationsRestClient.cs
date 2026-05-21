@@ -334,15 +334,19 @@ namespace Microsoft.Agents.Connector.RestClients
         private string TruncateConversationId(string conversationId, IActivity body)
         {
             string convId;
+            var isAgentsChannel = body?.ChannelId?.Channel == Channels.Agents;
 
             // Truncate conversationId for Teams and Agentic roles to MaxApxConversationIdLength characters
             if ((body?.ChannelId?.Channel == Channels.Msteams ||
-                body?.ChannelId?.Channel == Channels.Agents)
+                isAgentsChannel)
                 && (body?.From?.Role == RoleTypes.AgenticIdentity
                 || body?.From?.Role == RoleTypes.AgenticUser))
             {
                 convId = conversationId.Length > MaxApxConversationIdLength ? conversationId[..MaxApxConversationIdLength] : conversationId;
-                convId = HttpUtility.UrlEncode(convId);
+                if (isAgentsChannel)
+                {
+                    convId = HttpUtility.UrlEncode(convId);
+                }
             }
             else
                 convId = conversationId;
