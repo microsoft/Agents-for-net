@@ -61,9 +61,15 @@ namespace Microsoft.Agents.Extensions.Teams
                 cancellationToken: cancellationToken);
         }
 
-        public Task<ResourceResponse> ReplyAsync(IActivity activity, CancellationToken cancellationToken = default)
+        public Task<ResourceResponse> ReplyAsync(string text, CancellationToken cancellationToken = default)
         {
-            
+            if (Activity.Id != null)
+            {
+                var newActivity = Activity.CreateReply();
+                newActivity.AddQuote(Activity.Id, text);
+                return SendActivityAsync(newActivity, cancellationToken);
+            }
+            return SendActivityAsync(Activity.CreateReply(text), cancellationToken);
         }
         public Task<ResourceResponse> ReplyAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default)
         {

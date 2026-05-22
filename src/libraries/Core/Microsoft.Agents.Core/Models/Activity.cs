@@ -498,6 +498,45 @@ namespace Microsoft.Agents.Core.Models
             return trace;
         }
 
+        public Activity AddQuote(string messageId, string text = null)
+        {
+            var quotedReplyEntity = new QuotedReply(messageId);
+
+            Entities.Add(quotedReplyEntity);
+
+            Text += $"<quoted messageId={messageId}/>";
+
+            if (text != null)
+            {
+                Text += $" {text}";
+            }
+            return this;
+        }
+
+        public Activity AddMention(ChannelAccount account, string? text = null, bool addText=true)
+        {
+            var mentionText = text ?? account.Name;
+            mentionText = $"<at>{mentionText}</at>"
+
+            if (addText)
+            {
+                Text = $"{mentionText} {Text}";
+            }
+
+            Entities.Add(new Mention(
+                account,
+                mentionText
+            ));
+
+            return this;
+        }
+
+        public Activity AddText(string text)
+        {
+            Text += text;
+            return this;
+        }
+
         /// <summary>
         /// Indicates whether this activity is of a specified activity type.
         /// </summary>

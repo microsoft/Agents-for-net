@@ -13,5 +13,6 @@ namespace Microsoft.Agents.Core.Models
         public const string ActivityTreatment = "activityTreatment";
         public const string ProductInfo = "ProductInfo";
         public const string AICitation = "https://schema.org/Message";
+        public const string QuotedReply = "quotedReply";
     }
 }
