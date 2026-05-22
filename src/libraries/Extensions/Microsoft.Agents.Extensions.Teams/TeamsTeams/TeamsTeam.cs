@@ -36,6 +36,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
         public TeamsTeam OnTeamEventReceived(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
@@ -54,6 +55,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
         public TeamsTeam OnArchived(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamArchived()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -73,6 +75,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
         public TeamsTeam OnUnarchived(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamUnarchived()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -92,6 +95,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
         public TeamsTeam OnRenamed(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamRenamed()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -111,6 +115,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
         public TeamsTeam OnRestored(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamRestored()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -130,6 +135,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
         public TeamsTeam OnDeleted(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamDeleted()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -149,6 +155,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams
         /// <returns>The current TeamsTeam instance, allowing for method chaining.</returns>
         public TeamsTeam OnHardDeleted(TeamUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(TeamUpdateRouteBuilder.Create()
                 .ForTeamHardDeleted()
                 .WithChannelId(_channelId).WithOrderRank(rank)

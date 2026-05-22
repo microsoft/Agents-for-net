@@ -18,109 +18,15 @@ using System.Xml;
 
 namespace Microsoft.Agents.Extensions.Teams
 {
-    class TeamsTurnContext : ITurnContext
+    class TeamsTurnContext : TurnContextWrapper
     {
 
-        private readonly ITurnContext _turnContext;
         private readonly Proactive _proactive;
 
-        #region ITurnContext Contract
-
-        public IChannelAdapter Adapter
+        public TeamsTurnContext(ITurnContext turnContext, Proactive proactive) : base(turnContext)
         {
-            get { return _turnContext.Adapter; }
-        }
-
-        public TurnContextStateCollection Services
-        {
-            get {  return _turnContext.Services; }
-        }
-
-        public TurnContextStateCollection StackState
-        {
-            get { return _turnContext.StackState; }
-        }
-
-        public IActivity Activity
-        {
-            get { return _turnContext.Activity; }
-        }
-
-        public IStreamingResponse StreamingResponse
-        {
-            get { return _turnContext.StreamingResponse; }
-        }
-
-        public bool Responded
-        {
-            get { return _turnContext.Responded; }
-        }
-
-        public ClaimsIdentity Identity
-        {
-            get { return _turnContext.Identity; }
-        }
-
-        public TeamsTurnContext(ITurnContext turnContext, Proactive proactive)
-        {
-            this._turnContext = turnContext;
             this._proactive = proactive;
         }
-
-        public Task<ResourceResponse> SendActivityAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default)
-        {
-            return _turnContext.SendActivityAsync(text, speak, inputHint, cancellationToken);
-        }
-
-        public Task<ResourceResponse> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
-        {
-            return _turnContext.SendActivityAsync(activity, cancellationToken);
-        }
-
-        public Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default)
-        {
-            return _turnContext.SendActivitiesAsync(activities, cancellationToken);
-        }
-
-        public Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
-        {
-            return _turnContext.UpdateActivityAsync(activity, cancellationToken);
-        }
-
-        public Task DeleteActivityAsync(string activityId, CancellationToken cancellationToken = default)
-        {
-            return _turnContext.DeleteActivityAsync(activityId, cancellationToken);
-        }
-
-        public Task DeleteActivityAsync(ConversationReference conversationReference, CancellationToken cancellationToken = default)
-        {
-            return _turnContext.DeleteActivityAsync(conversationReference, cancellationToken);
-        }
-
-        public ITurnContext OnSendActivities(SendActivitiesHandler handler)
-        {
-            _turnContext.OnSendActivities(handler);
-            return this;
-        }
-
-        public ITurnContext OnUpdateActivity(UpdateActivityHandler handler)
-        {
-            _turnContext.OnUpdateActivity(handler);
-            return this;
-        }
-
-        public ITurnContext OnDeleteActivity(DeleteActivityHandler handler)
-        {
-            _turnContext.OnDeleteActivity(handler);
-            return this;
-        }
-
-        public Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default)
-        {
-            return _turnContext.TraceActivityAsync(name, value, valueType, label, cancellationToken);
-        }
-
-        #endregion
 
         private async Task<ResourceResponse> SendActivityToUserAsync(Microsoft.Teams.Api.Account userAccount, IActivity activity, CancellationToken cancellationToken = default)
         {
@@ -159,7 +65,7 @@ namespace Microsoft.Agents.Extensions.Teams
         {
             
         }
-         public Task<ResourceResponse> ReplyAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default)
+        public Task<ResourceResponse> ReplyAsync(string text, string speak = null, string inputHint = "acceptingInput", CancellationToken cancellationToken = default)
         {
             return _turnContext.ReplyAsync(text, speak, inputHint, cancellationToken);
         }

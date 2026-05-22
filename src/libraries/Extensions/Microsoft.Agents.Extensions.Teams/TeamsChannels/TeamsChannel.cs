@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.TeamsTeams;
 
 namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
 {
@@ -20,6 +21,15 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
             _channelId = channelId;
         }
 
+        private ChannelUpdateHandler WrapHandler(ChannelUpdateHandler handler)
+        {
+            return async (tc, turnState, data, cancellationToken) =>
+            {
+                var teamsTC = new TeamsTurnContext(tc, _app.Proactive);
+                await handler(teamsTC, turnState, data, cancellationToken);
+            };
+        }
+
         /// <summary>
         /// Registers a handler to be invoked for any channel update event.
         /// Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between
@@ -35,6 +45,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnChannelEventReceived(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .WithChannelId(_channelId).WithOrderRank(rank)
                 .WithHandler(handler)
@@ -53,6 +64,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnCreated(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .ForChannelCreated()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -72,6 +84,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnDeleted(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .ForChannelDeleted()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -91,6 +104,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnRenamed(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .ForChannelRenamed()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -110,6 +124,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnShared(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .ForChannelShared()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -129,6 +144,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnUnshared(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .ForChannelUnshared()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -148,6 +164,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnRestored(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .ForChannelRestored()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -167,6 +184,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnMemberAdded(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .ForChannelMemberAdded()
                 .WithChannelId(_channelId).WithOrderRank(rank)
@@ -186,6 +204,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels
         /// <returns>The current TeamsChannel instance, allowing for method chaining.</returns>
         public TeamsChannel OnMemberRemoved(ChannelUpdateHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
         {
+            handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
             _app.AddRoute(ChannelUpdateRouteBuilder.Create()
                 .ForChannelMemberRemoved()
                 .WithChannelId(_channelId).WithOrderRank(rank)

@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -22,6 +23,15 @@ public class Message
         _channelId = channelId;
     }
 
+    private RouteHandler WrapHandler(RouteHandler handler)
+    {
+        return async (tc, turnState, cancellationToken) =>
+        {
+            var teamsTC = new TeamsTurnContext(tc, _app.Proactive);
+            await handler(teamsTC, turnState, cancellationToken);
+        };
+    }
+
     /// <summary>
     /// Handles message edit events.
     /// </summary>
@@ -34,6 +44,7 @@ public class Message
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public Message OnMessageEdit(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
+        handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
         _app.AddRoute(MessageEditRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
             .WithHandler(handler)
@@ -54,6 +65,7 @@ public class Message
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public Message OnMessageUndelete(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
+        handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
         _app.AddRoute(MessageUndeleteRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
             .WithHandler(handler)
@@ -74,6 +86,7 @@ public class Message
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public Message OnMessageDelete(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
+        handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
         _app.AddRoute(MessageDeleteRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
             .WithHandler(handler)
@@ -94,6 +107,7 @@ public class Message
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public Message OnReadReceipt(ReadReceiptHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
+        handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
         _app.AddRoute(ReadReceiptRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
             .WithHandler(handler)
@@ -114,6 +128,7 @@ public class Message
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public Message OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
+        handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
         _app.AddRoute(O365ConnectorCardActionRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
             .WithHandler(handler)
