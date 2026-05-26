@@ -81,10 +81,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.Agent)}.{nameof(ConversationReference.Agent.Id)}");
             }
-            if (string.IsNullOrWhiteSpace(reference.User?.Id))
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.User)}.{nameof(ConversationReference.User.Id)}");
-            }
+            //if (string.IsNullOrWhiteSpace(reference.User?.Id))
+            //{
+            //    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.User)}.{nameof(ConversationReference.User.Id)}");
+            //}
             if (string.IsNullOrWhiteSpace(reference.ServiceUrl))
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, nameof(ConversationReference.ServiceUrl));

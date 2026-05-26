@@ -44,9 +44,18 @@ namespace Microsoft.Agents.Extensions.Teams
         // proactive continueConversation
         public Task<ResourceResponse> SendActivityAsync(string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            return _proactive.SendActivityAsync(
+            Conversation conv = new Conversation(
+                Identity,
+                new ConversationReference(
+                    agent: Activity.Recipient,
+                    channelId: Channels.Msteams,
+                    serviceUrl: "https://smba.trafficmanager.net/teams",
+                    conversation: new ConversationAccount(id: conversationId)
+                )
+            );
+            return Proactive.SendActivityAsync(
                 Adapter,
-                conversationId,
+                conv,
                 activity,
                 cancellationToken: cancellationToken);
         }
@@ -56,12 +65,11 @@ namespace Microsoft.Agents.Extensions.Teams
             if (Activity.Id != null)
             {
                 var newActivity = Activity.CreateReply();
-                newActivity.AddQuote(Activity.Id, text);
+                newActivity.AddQuote(Activity.Id, Activity.Text);
+                newActivity.AddText(text);
                 return SendActivityAsync(newActivity, cancellationToken);
             }
             return SendActivityAsync(Activity.CreateReply(text), cancellationToken);
         }
-
-
     }
 }

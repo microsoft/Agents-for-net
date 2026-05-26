@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
@@ -19,7 +20,7 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
     [TeamsMessageRoute("/reply")]
     public async Task ReplyRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // quoting helper
+        // quoting helpers
         await turnContext.ReplyAsync("Hello!", cancellationToken);
     }
 
@@ -28,7 +29,8 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
     {
         // activity mention helper
         var replyActivity = turnContext.Activity.CreateReply()
-            .AddMention(turnContext.Activity.From, ", this is a mention");
+            .AddMention(turnContext.Activity.From)
+            .AddText(", hello.");
         await turnContext.SendActivityAsync(replyActivity, cancellationToken);
     }
 
@@ -55,13 +57,13 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
     [TeamsMessageRoute("/subscribe")]
     public async Task SubscribeRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var subscribedConversations = turnState.GetValue<List<string>>("subscribedUsers", () => new List<string>());
+        var subscribedConversations = turnState.User.GetValue<List<string>>("subscribedUsers", () => new List<string>());
 
 
         if (!subscribedConversations.Contains(turnContext.Activity.Conversation.Id))
         {
             subscribedConversations.Add(turnContext.Activity.Conversation.Id);
-            turnState.SetValue("subscribedUsers", subscribedConversations);
+            turnState.User.SetValue("subscribedUsers", subscribedConversations);
             await turnContext.SendActivityAsync("You have been subscribed to proactive messages.", cancellationToken: cancellationToken);
         }
         else
@@ -74,7 +76,7 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
     [TeamsMessageRoute("/notify")]
     public async Task ContinueConversationRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var subscribedConversations = turnState.GetValue<List<string>>("subscribedUsers", () => new List<string>());
+        var subscribedConversations = turnState.User.GetValue<List<string>>("subscribedUsers", () => new List<string>());
 
         if (subscribedConversations.Count == 0)
         {
@@ -89,5 +91,25 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
             // proactive continueConversation helper
             await turnContext.SendActivityAsync(convId, proactiveMessage, cancellationToken);
         }
+    }
+
+    [MessageRoute("/help")]
+    public async Task IDKRoute(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await turnContext.SendActivityAsync(
+            "Commands:\n" +
+            "  - /reply       - reply to the user\n" +
+            "  - /mention     - mention the user\n" +
+            "  - /messageteam - proactively start a new conversation with every member in the conversation\n" +
+            "  - /subscribe   - subscribe the conversation to future proactive notifications\n" +
+            "  - /notify      - send proactive notifications to all subscribed conversations\n"
+        );
+    }
+
+    [ActivityRoute("message", rank: RouteRank.Last)]
+    public async Task DefaultRoute(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}");
+        await turnContext.SendActivityAsync("Enter \"/help\" to see a list of available commands.");
     }
 }

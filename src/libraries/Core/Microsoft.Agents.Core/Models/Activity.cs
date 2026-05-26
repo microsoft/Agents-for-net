@@ -500,27 +500,29 @@ namespace Microsoft.Agents.Core.Models
 
         public IActivity AddQuote(string messageId, string text = null)
         {
-            var quotedReplyEntity = new QuotedReply(messageId);
+            //var quotedReplyEntity = new QuotedReply(messageId);
 
-            Entities.Add(quotedReplyEntity);
+            //Entities.Add(quotedReplyEntity);
 
-            Text += $"<quoted messageId={messageId}/>";
+            Text += (
+                $"<blockquote itemscope =\"\" itemtype=\"http://schema.skype.com/Reply\" itemid=\"{messageId}\">\n" +
+                $"<strong itemprop=\"mri\" itemid=\"{Recipient?.Id}\">{Recipient?.Name}</strong><span itemprop=\"time\" itemid=\"{messageId}\"></span>\n" +
+                $"<p itemprop=\"preview\">{text}</p>\n" +
+                $"</blockquote>\r\n"
+            );
 
-            if (text != null)
-            {
-                Text += $" {text}";
-            }
+            ReplyToId = messageId;
+
             return this;
         }
 
-        public IActivity AddMention(ChannelAccount account, string text = null, bool addText=true)
+        public IActivity AddMention(ChannelAccount account, bool addText = true)
         {
-            var mentionText = text ?? account.Name;
-            mentionText = $"<at>{mentionText}</at>";
+            var mentionText = $"<at>{account.Name}</at>";
 
             if (addText)
             {
-                Text = $"{mentionText} {Text}";
+                Text = $"{mentionText}{Text}";
             }
 
             Entities.Add(new Mention(

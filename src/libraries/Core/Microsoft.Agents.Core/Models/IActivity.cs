@@ -348,7 +348,7 @@ namespace Microsoft.Agents.Core.Models
 
         IActivity AddQuote(string messageId, string text = null);
 
-        IActivity AddMention(ChannelAccount account, string? text = null, bool addText = true);
+        IActivity AddMention(ChannelAccount account, bool addText = true);
 
         IActivity AddText(string text);
     }

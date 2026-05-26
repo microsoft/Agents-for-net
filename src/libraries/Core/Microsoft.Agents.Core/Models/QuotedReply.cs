@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Core.Models
     public class QuotedReply : Entity
     {
 
-        public QuotedReply(string messageId, string type = default) : base(type ?? EntityTypes.Mention)
+        public QuotedReply(string messageId, string type = default) : base(type ?? EntityTypes.QuotedReply)
         {
             quotedReply = new QuotedReplyBody(messageId);
         }
