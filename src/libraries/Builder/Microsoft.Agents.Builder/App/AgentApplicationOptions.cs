@@ -129,14 +129,14 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="loggerFactory"></param>
         public AgentApplicationOptions(
             IServiceProvider sp,
-            IConfiguration configuration, 
-            IChannelAdapter channelAdapter, 
-            IStorage storage = null, 
+            IConfiguration configuration,
+            IChannelAdapter channelAdapter,
+            IStorage storage = null,
             UserAuthorizationOptions authOptions = null,
             AdaptiveCardsOptions cardOptions = null,
             IList<IInputFileDownloader> fileDownloaders = null,
             string configKey = "AgentApplication",
-            ILoggerFactory loggerFactory = null) 
+            ILoggerFactory loggerFactory = null)
         {
             LoggerFactory = loggerFactory ?? DefaultLoggerFactory;
 

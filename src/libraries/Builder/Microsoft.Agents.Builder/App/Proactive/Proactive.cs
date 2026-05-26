@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.Telemetry.Proactive.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -102,6 +103,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 activity.Type = ActivityTypes.Message;
             }
 
+            using var telemetryScope = new ScopeSendActivity(conversation.Reference.Conversation.Id, activity);
+
             ExceptionDispatchInfo exceptionInfo = null;
             ResourceResponse response = null;
             await adapter.ContinueConversationAsync(conversation.Identity, conversation.Reference, async (turnContext, ct) =>
@@ -115,6 +118,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                     // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
                     // results in the exception being lost.  Capture the exception info here to re-throw
                     // after ContinueConversationAsync completes.
+                    telemetryScope.SetError(ex);
                     exceptionInfo = ExceptionDispatchInfo.Capture(ex);
                 }
             }, cancellationToken).ConfigureAwait(false);
@@ -204,6 +208,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 }
             }
 
+            var conversationId = conversation.Reference.Conversation.Id;
+            using var telemetryScope = new ScopeContinueConversation(conversationId, continuationActivity);
             ExceptionDispatchInfo exceptionInfo = null;
 
             await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
@@ -217,6 +223,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
                     // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
                     // results in the exception being lost.  Capture the exception info here to re-throw
                     // after ProcessProactiveAsync completes.
+                    telemetryScope.SetError(ex);
                     exceptionInfo = ExceptionDispatchInfo.Capture(ex);
                 }
             }, cancellationToken).ConfigureAwait(false);
@@ -316,6 +323,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             AssertionHelpers.ThrowIfNull(conversation, nameof(conversation));
 
+            using var telemetryScope = new ScopeStoreConversation(conversation.Reference.Conversation.Id);
+
             var key = GetRecordKey(conversation.Reference.Conversation.Id);
             await _app.Options.Proactive.Storage.WriteAsync(
                 new Dictionary<string, object>
@@ -341,13 +350,17 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
+            using var telemetryScope = new ScopeGetConversation(conversationId);
+
             var key = GetRecordKey(conversationId);
             var items = await _options.Storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
 
             if (items != null && items.TryGetValue(key, out var item) && item is Conversation record)
             {
+                telemetryScope.Share(true);
                 return record;
             }
+            telemetryScope.Share(false);
             return null;
         }
 
@@ -379,8 +392,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         public Task DeleteConversationAsync(string conversationId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(conversationId, nameof(conversationId));
+            using var telemetryScope = new ScopeDeleteConversation(conversationId);
             var key = GetRecordKey(conversationId);
-            return _options.Storage.DeleteAsync([key], cancellationToken);
+            return telemetryScope.WrapAsync(async () =>
+            {
+                await _options.Storage.DeleteAsync([key], cancellationToken).ConfigureAwait(false);
+            });
         }
 
         private async Task OnTurnAsync(ITurnContext turnContext, RouteHandler handler, string[] tokenHandlers = null, CancellationToken cancellationToken = default)

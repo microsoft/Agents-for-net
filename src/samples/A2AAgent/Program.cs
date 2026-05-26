@@ -52,11 +52,4 @@ app.MapAgentApplicationEndpoints(!app.Environment.IsDevelopment());
 // Map A2A endpoints to /a2a.
 app.MapA2AApplicationEndpoints(!app.Environment.IsDevelopment());
 
-if (app.Environment.IsDevelopment())
-{
-    // Hardcoded for brevity and ease of testing. 
-    // In production, this should be set in configuration.
-    app.Urls.Add($"http://localhost:3978");
-}
-
-await app.RunAsync();
+app.Run();

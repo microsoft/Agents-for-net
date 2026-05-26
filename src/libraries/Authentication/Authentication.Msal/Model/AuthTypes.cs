@@ -11,6 +11,7 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         UserManagedIdentity,
         SystemManagedIdentity,
         FederatedCredentials,
-        WorkloadIdentity
+        WorkloadIdentity,
+        IdentityProxyManager
     }
 }

@@ -58,16 +58,4 @@ var incomingRoute = app.MapPost("/api/messages", async (HttpRequest request, Htt
 app.MapA2AJsonRpc(requireAuth: !app.Environment.IsDevelopment());
 app.MapWellKnownAgentCard();
 
-if (!app.Environment.IsDevelopment())
-{
-    incomingRoute.RequireAuthorization();
-}
-else
-{
-    // Hardcoded for brevity and ease of testing. 
-    // In production, this should be set in configuration.
-    app.Urls.Add($"http://localhost:3978");
-    app.Urls.Add($"https://localhost:3979");
-}
-
 app.Run();
