@@ -345,5 +345,11 @@ namespace Microsoft.Agents.Core.Models
         /// the JSON object is deserialized, but are instead stored in this property. Such properties
         /// will be written to a JSON object when the instance is serialized.</remarks>
         IDictionary<string, JsonElement> Properties { get; set; }
+
+        IActivity AddQuote(string messageId, string text = null);
+
+        IActivity AddMention(ChannelAccount account, string? text = null, bool addText = true);
+
+        IActivity AddText(string text);
     }
 }

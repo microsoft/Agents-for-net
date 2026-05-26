@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams
 {
     public static class HandlerUtils
     {
-        public static RouteHandler WrapHandler<T>(RouteHandler handler, Proactive proactive)
+        public static RouteHandler WrapHandler(RouteHandler handler, Proactive proactive)
         {
             return async (tc, turnState, cancellationToken) =>
             {

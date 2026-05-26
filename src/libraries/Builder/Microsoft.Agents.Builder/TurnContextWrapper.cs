@@ -1,20 +1,9 @@
 ﻿using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Errors;
-using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams;
-using Microsoft.Agents.Extensions.Teams.TeamsChannels;
-using Microsoft.Agents.Extensions.Teams.TeamsTeams;
-using System.Xml;
 
 namespace Microsoft.Agents.Extensions.Teams
 {

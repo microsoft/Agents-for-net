@@ -498,7 +498,7 @@ namespace Microsoft.Agents.Core.Models
             return trace;
         }
 
-        public Activity AddQuote(string messageId, string text = null)
+        public IActivity AddQuote(string messageId, string text = null)
         {
             var quotedReplyEntity = new QuotedReply(messageId);
 
@@ -513,10 +513,10 @@ namespace Microsoft.Agents.Core.Models
             return this;
         }
 
-        public Activity AddMention(ChannelAccount account, string? text = null, bool addText=true)
+        public IActivity AddMention(ChannelAccount account, string text = null, bool addText=true)
         {
             var mentionText = text ?? account.Name;
-            mentionText = $"<at>{mentionText}</at>"
+            mentionText = $"<at>{mentionText}</at>";
 
             if (addText)
             {
@@ -531,7 +531,7 @@ namespace Microsoft.Agents.Core.Models
             return this;
         }
 
-        public Activity AddText(string text)
+        public IActivity AddText(string text)
         {
             Text += text;
             return this;

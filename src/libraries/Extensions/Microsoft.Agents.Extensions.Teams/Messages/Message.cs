@@ -95,6 +95,17 @@ public class Message
         return this;
     }
 
+    public Message OnMessage(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    {
+        handler = HandlerUtils.WrapHandler(handler, _app.Proactive);
+        _app.AddRoute(MessageDeleteRouteBuilder.Create()
+            .WithChannelId(_channelId).WithOrderRank(rank)
+            .WithHandler(handler)
+            .WithOAuthHandlers(autoSignInHandlers)
+            .Build());
+        return this;
+    }
+
     /// <summary>
     /// Handles read receipt events for messages sent by the agent in personal scope.
     /// </summary>
