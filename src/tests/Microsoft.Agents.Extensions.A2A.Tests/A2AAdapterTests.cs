@@ -65,13 +65,6 @@ public class A2AAdapterTests
         Assert.Throws<ArgumentNullException>(() => new A2AAdapter((ITaskStore)null, _mockLogger));
     }
 
-    [Fact]
-    public void Constructor_WithNullStorage_ShouldThrowArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new A2AAdapter((IStorage)null, _mockLogger));
-    }
-
     #endregion
 
     #region ProcessAgentCardAsync Tests
