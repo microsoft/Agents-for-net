@@ -14,10 +14,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 public static class AspNetExtensions
 {
@@ -184,7 +184,7 @@ public static class AspNetExtensions
             options.Events = new JwtBearerEvents
             {
                 // Create a ConfigurationManager based on the requestor.  This is to handle ABS non-Entra tokens.
-                OnMessageReceived = async context =>
+                OnMessageReceived = context =>
                 {
                     string authorizationHeader = context.Request.Headers.Authorization.ToString();
 
@@ -192,8 +192,7 @@ public static class AspNetExtensions
                     {
                         // Default to AadTokenValidation handling
                         context.Options.TokenValidationParameters.ConfigurationManager ??= options.ConfigurationManager as BaseConfigurationManager;
-                        await Task.CompletedTask.ConfigureAwait(false);
-                        return;
+                        return Task.CompletedTask;
                     }
 
                     string[] parts = authorizationHeader?.Split(' ')!;
@@ -201,12 +200,12 @@ public static class AspNetExtensions
                     {
                         // Default to AadTokenValidation handling
                         context.Options.TokenValidationParameters.ConfigurationManager ??= options.ConfigurationManager as BaseConfigurationManager;
-                        await Task.CompletedTask.ConfigureAwait(false);
-                        return;
+                        return Task.CompletedTask;
                     }
 
-                    JwtSecurityToken token = new(parts[1]);
-                    string issuer = token.Claims.FirstOrDefault(claim => claim.Type == AuthenticationConstants.IssuerClaim)?.Value!;
+                    // Use JsonWebToken for lightweight issuer extraction without full token parsing
+                    JsonWebToken token = new(parts[1]);
+                    string issuer = token.Issuer;
 
                     if (validationOptions.AzureBotServiceTokenHandling 
                         && (AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase) 
@@ -233,7 +232,7 @@ public static class AspNetExtensions
                         });
                     }
 
-                    await Task.CompletedTask.ConfigureAwait(false);
+                    return Task.CompletedTask;
                 },
 
                 OnTokenValidated = context =>

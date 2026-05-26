@@ -45,11 +45,4 @@ app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 // /proactive/continue/ext.
 app.MapAgentProactiveEndpoints<ProactiveAgent>(requireAuth: !app.Environment.IsDevelopment());
 
-if (app.Environment.IsDevelopment())
-{
-    // Hardcoded for brevity and ease of testing. 
-    // In production, this should be set in configuration.
-    app.Urls.Add($"http://localhost:3978");
-}
-
 app.Run();

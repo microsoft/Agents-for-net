@@ -56,6 +56,9 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <summary>Whether the authentication attempt succeeded.</summary>
         public static readonly string AuthSuccess = "auth.success";
 
+        /// <summary>Whether the conversation was found in a proactive scenario.</summary>
+        public static readonly string ConversationFound = "proactive.conversation.found";
+
         /// <summary>The conversation identifier associated with the activity.</summary>
         public static readonly string ConversationId = "activity.conversation.id";
 
@@ -73,6 +76,9 @@ namespace Microsoft.Agents.Core.Telemetry
 
         /// <summary>The number of keys involved in a storage operation.</summary>
         public static readonly string KeyCount = "storage.keys.count";
+
+        /// <summary>The number of members in a proactive conversation scenario.</summary>
+        public static readonly string MembersCount = "proactive.members.count";
 
         /// <summary>A general-purpose operation name tag.</summary>
         public static readonly string Operation = "operation";
