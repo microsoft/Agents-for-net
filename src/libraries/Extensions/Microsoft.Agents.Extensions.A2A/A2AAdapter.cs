@@ -245,7 +245,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     #region Agent Turn Processing
     private AgentRequestContext CreateAgentRequestContext(HttpRequest httpRequest, IAgent agent, bool cache = true)
     {
-        var agentContext = new AgentRequestContext(httpRequest, this, agent);
+        var agentContext = new AgentRequestContext(httpRequest, this, agent, Logger);
         return cache ? _a2aAgentContext.GetOrAdd(agentContext.RequestId, agentContext) : agentContext;
     }
 
@@ -256,50 +256,62 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
     internal async Task ExecuteAgentTurnAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
     {
-        using (Logger.BeginScope("ExecuteAgentTurnAsync: Agent={AgentType}, RequestId={RequestId}, TaskId={TaskId}", agent.GetType().Name, requestId, context.TaskId))
+        var activity = A2AActivity.ActivityFromMessage(requestId, context.TaskId, context.Message);
+        if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
         {
-            var activity = A2AActivity.ActivityFromMessage(requestId, context.TaskId, context.Message);
-            if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
-            {
-                Logger.LogError("Invalid Activity for RequestId={RequestId}, TaskId={TaskId}", requestId, context.TaskId);
-                throw new A2AException($"Invalid Activity for RequestId={requestId}", A2AErrorCode.InternalError);
-            }
+            Logger.LogError("Invalid Activity for RequestId={RequestId}, TaskId={TaskId}", requestId, context.TaskId);
+            throw new A2AException($"Invalid Activity for RequestId={requestId}", A2AErrorCode.InternalError);
+        }
 
-            Log.WithRequestIdAndBody(Logger, context.TaskId, ProtocolJsonSerializer.ToJson(activity));
+        using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
+        {
+            ["AgentType"] = agent.GetType().Name,
+            ["RequestId"] = requestId,
+            ["ConversationId"] = activity.Conversation?.Id,
+            ["TaskId"] = context.TaskId
+        });
 
-            try
-            {
-                _ = await ProcessActivityWithA2AAsync(identity, activity, agent.OnTurnAsync, context, eventQueue, cancellationToken).ConfigureAwait(false);
-            }
-            finally
-            {
-                _a2aAgentContext.TryRemove(requestId, out _);
-            }
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Log.LogRequest(Logger, context.TaskId, ProtocolJsonSerializer.ToJson(activity));
+        }
+
+        try
+        {
+            _ = await ProcessActivityWithA2AAsync(identity, activity, agent.OnTurnAsync, context, eventQueue, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _a2aAgentContext.TryRemove(requestId, out _);
         }
     }
 
     internal async Task ExecuteAgentCancelTaskAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, CancellationToken cancellationToken)
     {
-        using (Logger.BeginScope("ExecuteAgentCancelTaskAsync: Agent={AgentType}, RequestId={RequestId}", agent.GetType().Name, requestId))
+        using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
         {
-            var eoc = new Activity()
-            {
-                Type = ActivityTypes.EndOfConversation,
-                Code = EndOfConversationCodes.UserCancelled,
-                ChannelId = Channels.A2A,
-                Conversation = new ConversationAccount() { Id = context.TaskId },
-                Recipient = new ChannelAccount { Id = "assistant", Role = RoleTypes.Agent },
-                From = new ChannelAccount { Id = A2AActivity.DefaultUserId, Role = RoleTypes.User }
-            };
+            ["AgentType"] = agent.GetType().Name,
+            ["RequestId"] = requestId,
+            ["TaskId"] = context.TaskId
+        });
 
-            try
-            {
-                _ = await ProcessActivityWithA2AAsync(identity, eoc, agent.OnTurnAsync, context, null, cancellationToken).ConfigureAwait(false);
-            }
-            finally
-            {
-                _a2aAgentContext.TryRemove(requestId, out _);
-            }
+        var eoc = new Activity()
+        {
+            Type = ActivityTypes.EndOfConversation,
+            Code = EndOfConversationCodes.UserCancelled,
+            ChannelId = Channels.A2A,
+            Conversation = new ConversationAccount() { Id = context.TaskId },
+            Recipient = new ChannelAccount { Id = "assistant", Role = RoleTypes.Agent },
+            From = new ChannelAccount { Id = A2AActivity.DefaultUserId, Role = RoleTypes.User }
+        };
+
+        try
+        {
+            _ = await ProcessActivityWithA2AAsync(identity, eoc, agent.OnTurnAsync, context, null, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _a2aAgentContext.TryRemove(requestId, out _);
         }
     }
     #endregion
@@ -347,13 +359,15 @@ class AgentRequestContext : IAgentHandler
     public IAgent Agent { get; }
     public ClaimsIdentity Identity { get; }
     public AgentEventQueue EventQueue { get; private set; }
+    public ILogger Logger { get; }
 
-    public AgentRequestContext(HttpRequest httpRequest, A2AAdapter adapter, IAgent agent)
+    public AgentRequestContext(HttpRequest httpRequest, A2AAdapter adapter, IAgent agent, ILogger logger)
     {
         Adapter = adapter;
         Agent = agent;
         Identity = HttpHelper.GetClaimsIdentity(httpRequest);
         RequestId = httpRequest.HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
+        Logger = logger;
     }
 
     public async Task ExecuteAsync(RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
@@ -380,6 +394,11 @@ class AgentRequestContext : IAgentHandler
     {
         foreach (var activity in activities)
         {
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                Log.LogResponse(Logger, turnContext.Activity.Conversation.Id, ProtocolJsonSerializer.ToJson(activity));
+            }
+
             var entity = activity.GetStreamingEntity();
             if (entity != null)
             {
@@ -522,5 +541,11 @@ static partial class Log
         EventId = 1,
         Level = LogLevel.Debug,
         Message = "A2A turn with requestId '{RequestId}', and Activity: {Activity}")]
-    public static partial void WithRequestIdAndBody(ILogger logger, string requestId, string activity);
+    public static partial void LogRequest(ILogger logger, string requestId, string activity);
+
+    [LoggerMessage(
+        EventId = 2,
+        Level = LogLevel.Debug,
+        Message = "A2A Response with requestId '{RequestId}', and Activity: {Activity}")]
+    public static partial void LogResponse(ILogger logger, string requestId, string activity);
 }
