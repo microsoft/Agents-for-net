@@ -550,20 +550,21 @@ public class TeamsActivityHandler : ActivityHandler
     /// <returns>A task that represents the work queued to execute.</returns>
     protected virtual async Task OnTeamsMembersAddedDispatchAsync(IList<ChannelAccount> membersAdded, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
-        var teamsMembersAdded = new List<Microsoft.Teams.Api.Account>();
+        var teamsMembersAdded = new List<ChannelAccount>();
         foreach (var memberAdded in membersAdded)
         {
             if (memberAdded.Properties.Count > 0 || memberAdded.Id == turnContext.Activity?.Recipient?.Id)
             {
                 // when the ChannelAccount object is fully a Teams.Api.Account
-                teamsMembersAdded.Add(ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Account>(memberAdded));
+                teamsMembersAdded.Add(memberAdded);
             }
             else
             {
-                Microsoft.Teams.Api.Account newMemberInfo = null;
+                ChannelAccount newMemberInfo = null;
                 try
                 {
-                    newMemberInfo = await TeamsInfo.GetMemberAsync(turnContext, memberAdded.Id, cancellationToken).ConfigureAwait(false);
+                    var member = await TeamsInfo.GetMemberAsync(turnContext, memberAdded.Id, cancellationToken).ConfigureAwait(false);
+                    newMemberInfo = member.ToCoreChannelAccount();
                 }
                 catch (ErrorResponseException ex)
                 {
@@ -573,13 +574,7 @@ public class TeamsActivityHandler : ActivityHandler
                     }
 
                     // unable to find the member added in ConversationUpdate Activity in the response from the GetMemberAsync call
-                    newMemberInfo = new Microsoft.Teams.Api.Account
-                    {
-                        Id = memberAdded.Id,
-                        Name = memberAdded.Name,
-                        AadObjectId = memberAdded.AadObjectId,
-                        Role = new Microsoft.Teams.Api.Role(memberAdded.Role),
-                    };
+                    newMemberInfo = memberAdded;
                 }
 
                 teamsMembersAdded.Add(newMemberInfo);
@@ -603,13 +598,7 @@ public class TeamsActivityHandler : ActivityHandler
     /// <returns>A task that represents the work queued to execute.</returns>
     protected virtual Task OnTeamsMembersRemovedDispatchAsync(IList<ChannelAccount> membersRemoved, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
-        var teamsMembersRemoved = new List<Microsoft.Teams.Api.Account>();
-        foreach (var memberRemoved in membersRemoved)
-        {
-            teamsMembersRemoved.Add(ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Account>(memberRemoved));
-        }
-
-        return OnTeamsMembersRemovedAsync(teamsMembersRemoved, Team, turnContext, cancellationToken);
+        return OnTeamsMembersRemovedAsync(membersRemoved, Team, turnContext, cancellationToken);
     }
 
     /// <summary>
@@ -623,9 +612,9 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsMembersAddedAsync(IList<Microsoft.Teams.Api.Account> teamsMembersAdded, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsMembersAddedAsync(IList<ChannelAccount> teamsMembersAdded, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
-        return OnMembersAddedAsync(ProtocolJsonSerializer.ToObject<IList<ChannelAccount>>(teamsMembersAdded), turnContext, cancellationToken);
+        return OnMembersAddedAsync(teamsMembersAdded, turnContext, cancellationToken);
     }
 
     /// <summary>
@@ -639,9 +628,9 @@ public class TeamsActivityHandler : ActivityHandler
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>A task that represents the work queued to execute.</returns>
-    protected virtual Task OnTeamsMembersRemovedAsync(IList<Microsoft.Teams.Api.Account> teamsMembersRemoved, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected virtual Task OnTeamsMembersRemovedAsync(IList<ChannelAccount> teamsMembersRemoved, Microsoft.Teams.Api.Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
-        return OnMembersRemovedAsync(ProtocolJsonSerializer.ToObject<IList<ChannelAccount>>(teamsMembersRemoved), turnContext, cancellationToken);
+        return OnMembersRemovedAsync(teamsMembersRemoved, turnContext, cancellationToken);
     }
 
     /// <summary>

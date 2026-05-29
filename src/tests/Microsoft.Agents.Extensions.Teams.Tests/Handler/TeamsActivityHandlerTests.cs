@@ -1406,6 +1406,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                 // GetMembers (Team)
                 if (request.RequestUri.PathAndQuery.EndsWith("team-id/members"))
                 {
+#pragma warning disable CS0618 // Type or member is obsolete
                     var content = new TeamsPagedMembersResult
                     {
                         Members =
@@ -1414,16 +1415,19 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
                             {
                                 Id = "id-1",
                                 Name = "name-1",
-                                Role = new Role("role-1")
+                                Role = new Role("role-1"),
+                                Type = new AccountType("role-1")
                             },
                             new Account
                             {
                                 Id = "id-2",
                                 Name = "name-2",
-                                Role = new Role("role-2")
+                                Role = new Role("role-2"),
+                                Type = new AccountType("role-2")
                             },
                         ]
                     };
+#pragma warning restore CS0618 // Type or member is obsolete
                     response.Content = new StringContent(JsonSerializer.Serialize(content));
                 }
 

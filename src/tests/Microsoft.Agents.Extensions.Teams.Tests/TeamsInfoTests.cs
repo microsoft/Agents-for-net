@@ -1257,11 +1257,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                 else if (request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1/participants/participantId-1?tenantId=tenantId-1")
                     || request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meetingId-1/participants/participantId-1"))
                 {
+#pragma warning disable CS0618 // Type or member is obsolete
                     var content = new MeetingParticipant
                     {
-                        User = new Account { Id = "participantId-1", Role = new Role("role-1") },
+                        User = new Account { Id = "participantId-1", Role = new Role("role-1"), Type = new AccountType("role-1") },
                         Meeting = new MeetingInfo { Role = "Organizer" }
                     };
+#pragma warning restore CS0618 // Type or member is obsolete
                     response.StatusCode = HttpStatusCode.OK;
                     response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }

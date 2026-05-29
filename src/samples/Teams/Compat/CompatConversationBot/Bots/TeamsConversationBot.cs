@@ -44,7 +44,7 @@ namespace CompatConversationBot.Bots
                 await CardActivityAsync(turnContext, false, cancellationToken);
         }
 
-        protected override async Task OnTeamsMembersAddedAsync(IList<Microsoft.Teams.Api.Account> membersAdded, Microsoft.Teams.Api.Team teamInfo, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+        protected override async Task OnTeamsMembersAddedAsync(IList<ChannelAccount> membersAdded, Microsoft.Teams.Api.Team teamInfo, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             foreach (var teamMember in membersAdded)
             {
@@ -321,7 +321,7 @@ namespace CompatConversationBot.Bots
             await turnContext.SendActivityAsync(MessageFactory.Attachment(heroCard.ToAttachment()), cancellationToken);
         }
 
-        protected override async Task OnTeamsMembersRemovedAsync(IList<Microsoft.Teams.Api.Account> membersRemoved, Microsoft.Teams.Api.Team teamInfo, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+        protected override async Task OnTeamsMembersRemovedAsync(IList<ChannelAccount> membersRemoved, Microsoft.Teams.Api.Team teamInfo, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             foreach (var member in membersRemoved)
             {

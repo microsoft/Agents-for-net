@@ -87,13 +87,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             return base.OnTeamsTeamUnarchivedAsync(Team, turnContext, cancellationToken);
         }
 
-        protected override Task OnTeamsMembersAddedAsync(IList<Account> membersAdded, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+        protected override Task OnTeamsMembersAddedAsync(IList<ChannelAccount> membersAdded, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             Record.Add(MethodBase.GetCurrentMethod().Name);
             return Task.CompletedTask;
         }
 
-        protected override Task OnTeamsMembersRemovedAsync(IList<Account> membersRemoved, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
+        protected override Task OnTeamsMembersRemovedAsync(IList<ChannelAccount> membersRemoved, Team Team, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             Record.Add(MethodBase.GetCurrentMethod().Name);
             return Task.CompletedTask;
