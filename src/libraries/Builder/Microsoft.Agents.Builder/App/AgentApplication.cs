@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Telemetry.App.Scopes;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using System;
@@ -27,6 +28,7 @@ namespace Microsoft.Agents.Builder.App
     public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
+        private readonly string _agentName;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
@@ -46,6 +48,8 @@ namespace Microsoft.Agents.Builder.App
             Options = options;
 
             Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+
+            _agentName = GetType().GetCustomAttribute<AgentAttribute>()?.Name ?? GetType().Name;
 
             if (Options.TurnStateFactory == null)
             {
@@ -755,6 +759,13 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
+
+            // Register Activity-derived header provider for agentic requests.
+            if (turnContext.Activity.IsAgenticRequest())
+            {
+                HeaderPropagationContext.HeaderProviders.Add(
+                    new AgenticHeaderProvider(turnContext.Activity, _agentName));
+            }
 
             using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
             {

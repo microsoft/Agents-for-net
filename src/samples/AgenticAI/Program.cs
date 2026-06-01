@@ -28,6 +28,9 @@ builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 WebApplication app = builder.Build();
 
+// Use Microsoft.Agents.Core.HeaderPropagation
+app.UseHeaderPropagation();
+
 // Enable AspNet authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();

@@ -17,7 +17,10 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static void AddTypeInfo(this JsonNode jsonNode, object value)
         {
-            jsonNode.AsObject().AddTypeInfo(value);
+            if (jsonNode is JsonObject jsonObject)
+            {
+                jsonObject.AddTypeInfo(value);
+            }
         }
 
         public static bool GetTypeInfo(this JsonObject jsonObject, out Type type)
@@ -34,7 +37,13 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static bool GetTypeInfo(this JsonNode jsonNode, out Type type)
         {
-            return jsonNode.AsObject().GetTypeInfo(out type);
+            if (jsonNode is JsonObject jsonObject)
+            {
+                return jsonObject.GetTypeInfo(out type);
+            }
+
+            type = null;
+            return false;
         }
 
         public static void RemoveTypeInfo(this JsonObject jsonObject)
@@ -45,7 +54,10 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static void RemoveTypeInfo(this JsonNode jsonNode)
         {
-            jsonNode.AsObject().RemoveTypeInfo();
+            if (jsonNode is JsonObject jsonObject)
+            {
+                jsonObject.RemoveTypeInfo();
+            }
         }
 
         public static void RemoveTypeInfo(this IDictionary<string, object> dict)
