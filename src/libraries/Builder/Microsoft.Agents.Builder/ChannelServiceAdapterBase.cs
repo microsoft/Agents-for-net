@@ -243,7 +243,14 @@ namespace Microsoft.Agents.Builder
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
             if (useAnonymousAuthCallback)
             {
-                ChannelServiceAdapterLog.LogAnonymousAccess(Logger, activity.ChannelId);
+                if (IsTrustedLocalTransport(activity))
+                {
+                    ChannelServiceAdapterLog.LogAnonymousAccessTrustedTransport(Logger, activity.ChannelId);
+                }
+                else
+                {
+                    ChannelServiceAdapterLog.LogAnonymousAccess(Logger, activity.ChannelId);
+                }
             }
 
             // Create a turn context and clients
@@ -315,6 +322,15 @@ namespace Microsoft.Agents.Builder
                     break;
             }
             return true;
+        }
+
+        // Activities arriving over the local-process named pipe transport carry a well-known
+        // urn:botframework:namedpipe* service URL set by the hosting library. Anonymous access
+        // is the expected mode for that ingress, so we log Information rather than Warning to
+        // avoid noisy false alarms.
+        private static bool IsTrustedLocalTransport(IActivity activity)
+        {
+            return TransportConstants.IsNamedPipeServiceUrl(activity?.ServiceUrl);
         }
     }
 }
