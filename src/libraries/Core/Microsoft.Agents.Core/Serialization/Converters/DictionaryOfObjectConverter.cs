@@ -95,6 +95,18 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                                         dict[child.Key] = valValue.GetBoolean();
 #endif
                                         break;
+
+                                    case JsonValueKind.Array:
+                                        JsonArray childArray = JsonArray.Create(valValue);
+                                        if (childArray != null)
+                                        {
+#if NETSTANDARD
+                                            changes.Add(new KeyValuePair<string, object>(child.Key, DeserializeJsonArray(childArray, options)));
+#else
+                                            dict[child.Key] = DeserializeJsonArray(childArray, options);
+#endif
+                                        }
+                                        break;
                                 }
                             }
                         }
@@ -140,9 +152,9 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     {
                         SerializeJsonObject(jObj, item.Value, options);
                     }
-                    else if (newValue is JsonArray jArray)
+                    else if (newValue is JsonArray jArray && item.Value is IList sourceList && !(item.Value is Array arr && arr.Rank > 1))
                     {
-                        SerializeJsonArray(jArray, (IList)item.Value);
+                        SerializeJsonArray(jArray, sourceList);
                     }
                 }
 
@@ -221,12 +233,23 @@ namespace Microsoft.Agents.Core.Serialization.Converters
         {
             for (int i = 0; i < jArray.Count; i++)
             {
-                jArray[i].AddTypeInfo(sourceList[i]);
-                if (i == 0)
+                // JsonObject
+                if (jArray[i] is JsonObject jObj)
                 {
-                    // storing the array type in the first element
-                    jArray[i].AddCollectionTypeInfo(sourceList.GetType());
+                    jObj.AddTypeInfo(sourceList[i]);
+                    if (i == 0)
+                    {
+                        jObj.AddCollectionTypeInfo(sourceList.GetType());
+                    }
                 }
+
+                // JsonArray
+                else if (jArray[i] is JsonArray nestedArray && sourceList[i] is IList nestedList)
+                {
+                    SerializeJsonArray(nestedArray, nestedList);
+                }
+
+                // JsonValue (primitives like string, int, bool): no type info to add
             }
         }
 
@@ -264,7 +287,11 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                 }
                 else
                 {
-                    objValue.Add(aItem);
+                    // Primitive array elements (string, int, bool) have no $type metadata.
+                    // Initialize the list on first encounter since typed-element path was never entered.
+                    objValue ??= new List<object>();
+
+                    objValue.Add(DeserializeJsonValue(aItem));
                 }
             }
 
@@ -276,6 +303,39 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     array.SetValue(objValue[i], i);
                 }
                 return array;
+            }
+
+            // Promote homogeneous primitive lists to typed arrays so that
+            // round-tripped primitive arrays (e.g. string[], int[], bool[])
+            // come back as their original CLR type instead of List<object>.
+            if (objValue is List<object> list && list.Count > 0)
+            {
+                Type elementType = list[0]?.GetType();
+                if (elementType != null
+                    && (elementType == typeof(string)
+                        || elementType == typeof(int)
+                        || elementType == typeof(bool)))
+                {
+                    bool allSameType = true;
+                    for (int i = 1; i < list.Count; i++)
+                    {
+                        if (list[i]?.GetType() != elementType)
+                        {
+                            allSameType = false;
+                            break;
+                        }
+                    }
+
+                    if (allSameType)
+                    {
+                        Array typedArray = Array.CreateInstance(elementType, list.Count);
+                        for (int i = 0; i < list.Count; i++)
+                        {
+                            typedArray.SetValue(list[i], i);
+                        }
+                        return typedArray;
+                    }
+                }
             }
 
             return objValue;

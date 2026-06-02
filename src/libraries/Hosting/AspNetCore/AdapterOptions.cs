@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
     /// <summary>
-    /// 
+    /// Configuration options for CloudAdapter runtime behavior.
     /// </summary>
     public class AdapterOptions
     {
@@ -15,5 +15,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// application may be terminated forcefully. Set this value according to the expected shutdown duration of your
         /// application components.</remarks>
         public int ShutdownTimeoutSeconds { get; set; } = 60;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether stack traces should be emitted in OnTurnError output.
+        /// </summary>
+        public bool EmitStackTrace { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Activity.ServiceUrl should be validated using the 'serviceurl' claim in the incoming token. This is typically used to ensure that the request is coming from a trusted source.
+        /// </summary>
+        public bool ValidateServiceUrl { get; set; } = false;
     }
 }

@@ -1,9 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Primitives;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using Xunit;
 
 namespace Microsoft.Agents.Core.HeaderPropagation.Tests
@@ -14,6 +16,8 @@ namespace Microsoft.Agents.Core.HeaderPropagation.Tests
         public HeaderPropagationTests()
         {
             HeaderPropagationContext.HeadersToPropagate = new HeaderPropagationEntryCollection();
+            HeaderPropagationContext.HeaderProviders = new List<IHeaderValueProvider>();
+            HeaderPropagationContext.HeadersFromRequest = new Dictionary<string, StringValues>();
         }
 
         [Fact]
@@ -111,6 +115,171 @@ namespace Microsoft.Agents.Core.HeaderPropagation.Tests
             Assert.Equal(2, filteredHeaders.Count);
             Assert.Equal("1234", filteredHeaders["x-ms-correlation-id"]);
             Assert.Equal("new-value-2", filteredHeaders["x-custom-header-1"]);
+        }
+    }
+
+    [Collection("Non-Parallel Collection")]
+    public class AgenticHeaderProviderTests
+    {
+        public AgenticHeaderProviderTests()
+        {
+            HeaderPropagationContext.HeadersToPropagate = new HeaderPropagationEntryCollection();
+            HeaderPropagationContext.HeaderProviders = new List<IHeaderValueProvider>();
+            HeaderPropagationContext.HeadersFromRequest = new Dictionary<string, StringValues>();
+        }
+
+        [Fact]
+        public void AgenticHeaderProvider_AgenticRequest_ShouldEmitAllHeaders()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Recipient = new ChannelAccount
+                {
+                    Role = RoleTypes.AgenticUser,
+                    AgenticAppId = "Entra:test-guid-1234"
+                },
+                ChannelId = new ChannelId("msteams")
+            };
+
+            var provider = new AgenticHeaderProvider(activity, "MyTestAgent");
+
+            // Act
+            var headers = provider.GetHeaders().ToList();
+
+            // Assert
+            Assert.Equal(4, headers.Count);
+            Assert.Equal("AgentRegistrar", headers[0].Key);
+            Assert.Equal("A365", headers[0].Value);
+            Assert.Equal("AgentID", headers[1].Key);
+            Assert.Equal("Entra:test-guid-1234", headers[1].Value);
+            Assert.Equal("AgentName", headers[2].Key);
+            Assert.Equal("MyTestAgent", headers[2].Value);
+            Assert.Equal("Agent-Referrer", headers[3].Key);
+            Assert.Equal("msteams", headers[3].Value);
+        }
+
+        [Fact]
+        public void AgenticHeaderProvider_AgenticIdentityRole_ShouldEmitHeaders()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Recipient = new ChannelAccount
+                {
+                    Role = RoleTypes.AgenticIdentity,
+                    AgenticAppId = "Entra:identity-guid"
+                },
+                ChannelId = new ChannelId("webchat")
+            };
+
+            var provider = new AgenticHeaderProvider(activity, "IdentityAgent");
+
+            // Act
+            var headers = provider.GetHeaders().ToList();
+
+            // Assert
+            Assert.Equal(4, headers.Count);
+            Assert.Equal("A365", headers[0].Value);
+            Assert.Equal("Entra:identity-guid", headers[1].Value);
+            Assert.Equal("IdentityAgent", headers[2].Value);
+            Assert.Equal("webchat", headers[3].Value);
+        }
+
+        [Fact]
+        public void AgenticHeaderProvider_NonAgenticRequest_ShouldEmitNoHeaders()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Recipient = new ChannelAccount
+                {
+                    Role = RoleTypes.User
+                },
+                ChannelId = new ChannelId("msteams")
+            };
+
+            var provider = new AgenticHeaderProvider(activity, "MyAgent");
+
+            // Act
+            var headers = provider.GetHeaders().ToList();
+
+            // Assert
+            Assert.Empty(headers);
+        }
+
+        [Fact]
+        public void AgenticHeaderProvider_NullRole_ShouldEmitNoHeaders()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Recipient = new ChannelAccount(),
+                ChannelId = new ChannelId("msteams")
+            };
+
+            var provider = new AgenticHeaderProvider(activity, "MyAgent");
+
+            // Act
+            var headers = provider.GetHeaders().ToList();
+
+            // Assert
+            Assert.Empty(headers);
+        }
+
+        [Fact]
+        public void AddHeaderPropagation_ShouldApplyProviderHeaders()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Recipient = new ChannelAccount
+                {
+                    Role = RoleTypes.AgenticUser,
+                    AgenticAppId = "Entra:app-id-123"
+                },
+                ChannelId = new ChannelId("msteams:Copilot")
+            };
+
+            HeaderPropagationContext.HeaderProviders.Add(new AgenticHeaderProvider(activity, "TestAgent"));
+
+            using var httpClient = new HttpClient();
+
+            // Act
+            httpClient.AddHeaderPropagation();
+
+            // Assert
+            Assert.Equal("A365", httpClient.DefaultRequestHeaders.GetValues("AgentRegistrar").First());
+            Assert.Equal("Entra:app-id-123", httpClient.DefaultRequestHeaders.GetValues("AgentID").First());
+            Assert.Equal("TestAgent", httpClient.DefaultRequestHeaders.GetValues("AgentName").First());
+            Assert.Equal("msteams:Copilot", httpClient.DefaultRequestHeaders.GetValues("Agent-Referrer").First());
+        }
+
+        [Fact]
+        public void AddHeaderPropagation_NonAgentic_ShouldNotAddProviderHeaders()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Recipient = new ChannelAccount
+                {
+                    Role = RoleTypes.User
+                },
+                ChannelId = new ChannelId("msteams")
+            };
+
+            HeaderPropagationContext.HeaderProviders.Add(new AgenticHeaderProvider(activity, "TestAgent"));
+
+            using var httpClient = new HttpClient();
+
+            // Act
+            httpClient.AddHeaderPropagation();
+
+            // Assert
+            Assert.False(httpClient.DefaultRequestHeaders.Contains("AgentRegistrar"));
+            Assert.False(httpClient.DefaultRequestHeaders.Contains("AgentID"));
+            Assert.False(httpClient.DefaultRequestHeaders.Contains("AgentName"));
+            Assert.False(httpClient.DefaultRequestHeaders.Contains("Agent-Referrer"));
         }
     }
 

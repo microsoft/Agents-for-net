@@ -29,6 +29,7 @@ The SDK is organized into layered libraries under `src/libraries/`:
 - **Core** (`Core/Microsoft.Agents.Core`) — Activity Protocol models, serialization (`ProtocolJsonSerializer` using `System.Text.Json`), validation, and telemetry primitives. Foundation for everything else.
 - **Builder** (`Builder/Microsoft.Agents.Builder`) — Agent construction framework. Key types: `AgentApplication` (route-based handler registration), `IAgent`, `ITurnContext`, `ITurnState`. Agents subclass `AgentApplication` and register handlers in the constructor via `OnActivity()`, `OnConversationUpdate()`, etc.
 - **Hosting** (`Hosting/AspNetCore`) — ASP.NET Core integration. Extension methods `AddAgent<T>()`, `AddAgentAspNetAuthentication()`, `MapAgentApplicationEndpoints()`. Default endpoint: `/api/messages`.
+- **Hosting DirectLine.NamedPipes** (`Hosting/DirectLine.NamedPipes`) — Named pipe transport for DirectLineFlex (Azure App Service sidecar). Extension method `AddAgentNamedPipeTransport()`. Enables pipe-based communication without HTTP roundtrips.
 - **Client** (`Client/`) — Agent-to-Agent communication (`IAgentHost`), Azure Bot Service connectivity (`Connector`), Copilot Studio client.
 - **Extensions** (`Extensions/`) — Platform-specific: Teams, SharePoint.
 - **Storage** (`Storage/`) — `IStorage` abstraction with `MemoryStorage` (dev), Blob, and CosmosDb implementations.

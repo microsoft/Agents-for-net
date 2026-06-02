@@ -75,6 +75,12 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 - Provides `IAgentHttpAdapter` for processing HTTP requests
 - Default endpoint: `/api/messages`
 
+**Microsoft.Agents.Hosting.DirectLine.NamedPipes** (`src/libraries/Hosting/DirectLine.NamedPipes/`)
+- Named pipe transport for DirectLineFlex (Azure App Service sidecar)
+- Extension method: `AddAgentNamedPipeTransport()`
+- Enables pipe-based agent communication without HTTP roundtrips
+- Uses Bot Framework wire protocol (48-byte ASCII framed headers)
+
 **Microsoft.Agents.Authentication.Msal** (`src/libraries/Authentication/Authentication.Msal/`)
 - MSAL-based authentication for Azure Bot Service and Entra ID
 - Supports ClientSecret, Federated Credentials, and Managed Identity auth types
