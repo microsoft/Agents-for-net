@@ -57,22 +57,49 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.True(route.IsChannelIdMatch(new ChannelId("msteams:subchannel")));
         }
 
-        // IsChannelIdMatch: wildcard with sub-channel is NOT treated as wildcard
+        // IsChannelIdMatch: wildcard channel with specific sub-channel ("*:sub") matches any parent channel with that sub-channel
 
         [Fact]
-        public void IsChannelIdMatch_WildcardWithSubChannel_IsNotWildcard()
+        public void IsChannelIdMatch_WildcardChannelWithSubChannel_DoesNotMatchChannelWithoutSubChannel()
         {
             var route = new Route { ChannelId = new ChannelId("*:sub") };
 
-            // Should NOT match a different channel
+            // Should NOT match a channel without the matching subchannel
             Assert.False(route.IsChannelIdMatch(new ChannelId("msteams")));
         }
 
         [Fact]
-        public void IsChannelIdMatch_WildcardWithSubChannel_MatchesExactChannelAndSubChannel()
+        public void IsChannelIdMatch_WildcardChannelWithSubChannel_MatchesAnyParentWithSubChannel()
         {
-            var route = new Route { ChannelId = new ChannelId("*:sub") };
-            Assert.True(route.IsChannelIdMatch(new ChannelId("*:sub")));
+            var route = new Route { ChannelId = new ChannelId("*:email") };
+            Assert.True(route.IsChannelIdMatch(new ChannelId("agents:email")));
+            Assert.True(route.IsChannelIdMatch(new ChannelId("msteams:email")));
+            Assert.True(route.IsChannelIdMatch(new ChannelId("slack:email")));
+        }
+
+        [Fact]
+        public void IsChannelIdMatch_WildcardChannelWithSubChannel_DoesNotMatchDifferentSubChannel()
+        {
+            var route = new Route { ChannelId = new ChannelId("*:email") };
+            Assert.False(route.IsChannelIdMatch(new ChannelId("agents:chat")));
+        }
+
+        // IsChannelIdMatch: specific channel with wildcard sub-channel ("agents:*") matches any subchannel
+
+        [Fact]
+        public void IsChannelIdMatch_SpecificChannelWildcardSubChannel_MatchesAnySubChannel()
+        {
+            var route = new Route { ChannelId = new ChannelId("agents:*") };
+            Assert.True(route.IsChannelIdMatch(new ChannelId("agents:email")));
+            Assert.True(route.IsChannelIdMatch(new ChannelId("agents:chat")));
+            Assert.True(route.IsChannelIdMatch(new ChannelId("agents")));
+        }
+
+        [Fact]
+        public void IsChannelIdMatch_SpecificChannelWildcardSubChannel_DoesNotMatchDifferentChannel()
+        {
+            var route = new Route { ChannelId = new ChannelId("agents:*") };
+            Assert.False(route.IsChannelIdMatch(new ChannelId("msteams:email")));
         }
 
         // IsChannelIdMatch: specific channel matching
