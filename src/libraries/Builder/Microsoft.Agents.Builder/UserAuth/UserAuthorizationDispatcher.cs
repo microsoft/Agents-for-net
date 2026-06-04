@@ -38,6 +38,7 @@ namespace Microsoft.Agents.Builder.UserAuth
         private readonly ILogger<UserAuthorizationDispatcher> _logger;
         private readonly IStorage _storage;
         private readonly IConnections _connections;
+        private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
         /// 
@@ -87,6 +88,7 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <param name="configKey"></param>
         public UserAuthorizationDispatcher(IServiceProvider sp, ILoggerFactory loggerFactory, IConfiguration configuration, IStorage storage, string configKey = "UserAuthentication")
         {
+            _serviceProvider = sp ?? throw new ArgumentNullException(nameof(sp));
             _loggerFactory = loggerFactory ?? AgentApplicationOptions.DefaultLoggerFactory;
             _logger = loggerFactory.CreateLogger<UserAuthorizationDispatcher>();
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
@@ -215,7 +217,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             try
             {
                 // Construct the provider
-                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([handlerName, _storage, _connections, handlerDefinition.Settings, _loggerFactory.CreateLogger(handlerDefinition.Constructor.DeclaringType)]) as IUserAuthorization;
+                handlerDefinition.Instance = handlerDefinition.Constructor.Invoke([handlerName, _storage, _connections, handlerDefinition.Settings, _loggerFactory.CreateLogger(handlerDefinition.Constructor.DeclaringType), _serviceProvider]) as IUserAuthorization;
                 return handlerDefinition.Instance;
             }
             catch (Exception ex)

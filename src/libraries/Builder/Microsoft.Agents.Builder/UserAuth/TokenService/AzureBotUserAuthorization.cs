@@ -37,7 +37,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="connections"></param>
         /// <param name="configurationSection"></param>
         /// <param name="logger"></param>
-        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null)
+        /// <param name="serviceProvider"></param>
+        public AzureBotUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null, IServiceProvider serviceProvider = null)
             : this(name, storage, connections, GetOAuthSettings(configurationSection), logger)
         {
 

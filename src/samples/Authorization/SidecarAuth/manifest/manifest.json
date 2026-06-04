@@ -1,0 +1,68 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vdevPreview/MicrosoftTeams.schema.json",
+  "id": "0e289db3-d3a3-40d5-94e7-1ff572a823ca",
+  "name": {
+    "short": "trboehre-agenticobo Blueprint",
+    "full": "trboehre-agenticobo Blueprint"
+  },
+  "description": {
+    "short": "trboehre-agenticobo",
+    "full": "This is a test registration for the trboehre-agenticobo agents."
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#9ec9d9",
+  "version": "1.0.0",
+  "manifestVersion": "devPreview",
+  "developer": {
+    "name": "Microsoft Corporation",
+    "mpnId": "",
+    "websiteUrl": "https://go.microsoft.com/fwlink/?LinkId=518028",
+    "privacyUrl": "https://go.microsoft.com/fwlink/?LinkId=518028",
+    "termsOfUseUrl": "https://shares.datatransfer.microsoft.com/assets/Microsoft_Terms_of_Use.html"
+  },
+  "agenticUserTemplates": [
+    {
+      "id": "7b0926a6-c4ee-445a-a913-bd054594bd09",
+      "file": "agenticUserTemplateManifest.json"
+    }
+  ],
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "0e289db3-d3a3-40d5-94e7-1ff572a823ca",
+        "type": "bot",
+        "functionsAs": "agenticUserOnly",
+        "agenticUserTemplateId": "7b0926a6-c4ee-445a-a913-bd054594bd09"
+      }
+    ]
+  },
+  "bots": [
+    {
+      "botId": "0e289db3-d3a3-40d5-94e7-1ff572a823ca",
+      "scopes": [
+        "personal",
+        "groupChat",
+        "team",
+        "copilot"
+      ],
+      "supportsFiles": true,
+      "isNotificationOnly": false,
+      "supportsSessions": true,
+      "supportsTargetedMessages": true
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "webApplicationInfo": {
+    "id": "0e289db3-d3a3-40d5-94e7-1ff572a823ca",
+    "resource": "api://0e289db3-d3a3-40d5-94e7-1ff572a823ca"
+  },
+  "validDomains": [
+    "token.botframework.com"
+  ]
+}

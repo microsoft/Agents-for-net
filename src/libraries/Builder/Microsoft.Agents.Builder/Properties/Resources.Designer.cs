@@ -342,6 +342,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Entra Sidecar token acquisition failed for service &apos;{0}&apos;. Status: {1}. Details: {2}.
+        /// </summary>
+        internal static string EntraSidecarTokenAcquisitionFailed {
+            get {
+                return ResourceManager.GetString("EntraSidecarTokenAcquisitionFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to StreamingResponse instance has already ended..
         /// </summary>
         internal static string StreamingResponseEnded {

@@ -290,4 +290,8 @@
     <value>An instance of type 'ConversationParameters' contains invalid values: {0}</value>
     <comment>Raised when using Proactive with missing or invalid User Id.</comment>
   </data>
+  <data name="EntraSidecarTokenAcquisitionFailed" xml:space="preserve">
+    <value>Entra Sidecar token acquisition failed for service '{0}'. Status: {1}. Details: {2}</value>
+    <comment>Raised when the Entra SDK Sidecar returns an error from the /AuthorizationHeader endpoint.</comment>
+  </data>
 </root>

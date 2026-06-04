@@ -212,9 +212,7 @@ orleans.codegen.cs
 
 #local development
 appsettings.local.json
-appsettings.Development.json
-appsettings.Development*
-appsettings.Production.json
+appsettings.*.json
 **/[Aa]ppManifest/*.zip
 .deployment
 
@@ -232,3 +230,7 @@ appsettings.Production.json
 # Claude Code temporary files
 tmpclaude*
 settings.local.json
+
+# a365
+a365.config.json
+a365.generated.*
