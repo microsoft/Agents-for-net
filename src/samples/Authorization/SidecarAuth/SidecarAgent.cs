@@ -34,7 +34,7 @@ public class SidecarAgent : AgentApplication
             await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
         }, rank: RouteRank.Last);
 
-        OnActivity(ActivityTypes.Message, OnMessageAsync, autoSignInHandlers: ["me"], rank: RouteRank.Last);
+        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
 
         UserAuthorization.OnUserSignInFailure(OnUserSignInFailure);
     }
