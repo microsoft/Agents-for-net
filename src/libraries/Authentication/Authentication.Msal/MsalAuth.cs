@@ -40,6 +40,7 @@ namespace Microsoft.Agents.Authentication.Msal
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
         private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList = new();
+        private readonly ConcurrentDictionary<string, IConfidentialClientApplication> _cachedConfidentialClients = new();
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
@@ -163,6 +164,76 @@ namespace Microsoft.Agents.Authentication.Msal
         public IApplicationBase CreateClientApplication()
         {
             return (IApplicationBase)InnerCreateClientApplication();
+        }
+
+        public IApplicationBase CreateClientApplication(string redirectUri)
+        {
+            var app = InnerCreateClientApplication();
+            if (app is IConfidentialClientApplication confidentialApp && !string.IsNullOrEmpty(redirectUri))
+            {
+                // Rebuild with the redirect URI since it can't be set post-creation
+                return (IApplicationBase)RebuildWithRedirectUri(confidentialApp, redirectUri);
+            }
+            return (IApplicationBase)app;
+        }
+
+        public IConfidentialClientApplication GetOrCreateConfidentialClient(string redirectUri)
+        {
+            if (string.IsNullOrEmpty(redirectUri))
+            {
+                throw new ArgumentNullException(nameof(redirectUri));
+            }
+
+            return _cachedConfidentialClients.GetOrAdd(redirectUri, uri =>
+            {
+                return (IConfidentialClientApplication)RebuildWithRedirectUri(null, uri);
+            });
+        }
+
+        private object RebuildWithRedirectUri(IConfidentialClientApplication existingApp, string redirectUri)
+        {
+            var cAppBuilder = ConfidentialClientApplicationBuilder.CreateWithApplicationOptions(
+                new ConfidentialClientApplicationOptions()
+                {
+                    ClientId = _connectionSettings.ClientId,
+                    EnablePiiLogging = _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII,
+                    LogLevel = Identity.Client.LogLevel.Verbose,
+                    RedirectUri = redirectUri
+                })
+                .WithLogging(new IdentityLoggerAdapter(_logger), _systemServiceProvider.GetService<IOptions<MsalAuthConfigurationOptions>>().Value.MSALEnabledLogPII)
+                .WithLegacyCacheCompatibility(false)
+                .WithCacheOptions(new CacheOptions(true))
+                .WithHttpClientFactory(_msalHttpClient);
+
+            if (!string.IsNullOrEmpty(_connectionSettings.Authority))
+            {
+                cAppBuilder.WithAuthority(_connectionSettings.Authority);
+            }
+            else if (!string.IsNullOrEmpty(_connectionSettings.TenantId))
+            {
+                cAppBuilder.WithTenantId(_connectionSettings.TenantId);
+            }
+
+            if (_connectionSettings.AuthType == AuthTypes.Certificate || _connectionSettings.AuthType == AuthTypes.CertificateSubjectName)
+            {
+                cAppBuilder.WithCertificate(_certificateProvider.GetCertificate(), _connectionSettings.SendX5C);
+            }
+            else if (_connectionSettings.AuthType == AuthTypes.ClientSecret)
+            {
+                cAppBuilder.WithClientSecret(_connectionSettings.ClientSecret);
+            }
+            else if (_connectionSettings.AuthType == AuthTypes.FederatedCredentials)
+            {
+                _clientAssertion ??= new ManagedIdentityClientAssertion(_connectionSettings.FederatedClientId, null, _logger);
+                cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
+            }
+            else if (_connectionSettings.AuthType == AuthTypes.WorkloadIdentity)
+            {
+                _clientAssertion ??= new AzureIdentityForKubernetesClientAssertion(_connectionSettings.FederatedTokenFile, _logger);
+                cAppBuilder.WithClientAssertion(async (AssertionRequestOptions options) => await _clientAssertion.GetSignedAssertionAsync(_connectionSettings.AssertionRequestOptions));
+            }
+
+            return cAppBuilder.Build();
         }
         #endregion
 

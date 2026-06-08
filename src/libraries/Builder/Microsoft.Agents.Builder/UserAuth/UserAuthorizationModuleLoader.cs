@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -8,6 +8,7 @@ using Microsoft.Agents.Builder.UserAuth.Connector;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Extensions.Teams.App.UserAuth;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -59,10 +60,14 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 typeName = typeof(ConnectorUserAuthorization).FullName;
             }
-            
+            else if (typeName.Equals(nameof(TeamsAgenticAuthorization), StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(TeamsAgenticAuthorization).FullName;
+            }
+
             // This throws for invalid assembly name.
 #if !NETSTANDARD
-                Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
+            Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
 #else
             // This throws for invalid assembly name.
             Assembly assembly = _loadContext.Load(assemblyName);

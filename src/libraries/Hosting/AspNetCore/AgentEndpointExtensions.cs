@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -243,6 +243,21 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             var assemblyName = System.Reflection.Assembly.GetCallingAssembly().GetName().Name;
             var assemblyVersion = System.Reflection.Assembly.GetCallingAssembly().GetName().Version?.ToString() ?? "unknown";
             return app.MapGet("/", () => $"Microsoft Agents SDK: {assemblyName}, version {assemblyVersion}");
+        }
+
+        /// <summary>
+        /// Maps the Teams SSO OAuth callback endpoint for handling authorization code redirects from Azure AD.
+        /// This endpoint must be publicly accessible and should match the RedirectUri configured in TeamsAgenticSettings.
+        /// </summary>
+        /// <param name="endpoints">The endpoint route builder.</param>
+        /// <param name="path">The path for the callback endpoint. Defaults to "/auth/callback".</param>
+        /// <returns>An endpoint convention builder for further configuration.</returns>
+        public static IEndpointConventionBuilder MapTeamsAgenticOAuthCallbackEndpoint(
+            this IEndpointRouteBuilder endpoints,
+            [StringSyntax("Route")] string path = "/auth/callback")
+        {
+            return endpoints.MapGet(path, TeamsAgenticOAuthCallbackEndpoint.HandleCallbackAsync)
+                .AllowAnonymous();
         }
 
         /// <summary>
