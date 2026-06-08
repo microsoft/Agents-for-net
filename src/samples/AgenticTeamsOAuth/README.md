@@ -96,3 +96,85 @@ This sample demonstrates how to configure and run an Agentic Agent in Teams that
 
 ## Further reading
 To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
+
+## Multi-Node Deployment: MSAL Distributed Token Cache
+
+By default, `TeamsAgenticAuthorization` uses MSAL's in-memory token cache. This works for single-instance deployments — after the user signs in, subsequent turns return a cached token via `AcquireTokenSilent` without re-prompting.
+
+**For multi-node clusters** (e.g., Azure App Service with multiple instances, Kubernetes), the in-memory cache is not shared across nodes. A user who signs in on Node A will be prompted again if their next request lands on Node B.
+
+To solve this, configure a **distributed token cache** backed by Redis, SQL Server, or any `IDistributedCache` implementation.
+
+### Setup with Redis
+
+1. Add the NuGet package:
+
+   ```bash
+   dotnet add package Microsoft.Identity.Web.TokenCache
+   ```
+
+2. Register the distributed cache and attach it to MSAL in `Program.cs`:
+
+   ```csharp
+   using Microsoft.Identity.Web.TokenCacheProviders.Distributed;
+
+   // Add a distributed cache (Redis example)
+   builder.Services.AddStackExchangeRedisCache(options =>
+   {
+       options.Configuration = builder.Configuration.GetConnectionString("Redis");
+   });
+
+   // Attach the distributed cache to MSAL's token cache
+   builder.Services.AddDistributedTokenCaches();
+   ```
+
+3. Add the Redis connection string to `appsettings.json`:
+
+   ```json
+   "ConnectionStrings": {
+     "Redis": "your-redis-host:6380,password=...,ssl=True,abortConnect=False"
+   }
+   ```
+
+### Setup with SQL Server
+
+1. Add the NuGet packages:
+
+   ```bash
+   dotnet add package Microsoft.Extensions.Caching.SqlServer
+   dotnet add package Microsoft.Identity.Web.TokenCache
+   ```
+
+2. Create the cache table:
+
+   ```bash
+   dotnet sql-cache create "YourConnectionString" dbo TokenCache
+   ```
+
+3. Register in `Program.cs`:
+
+   ```csharp
+   using Microsoft.Identity.Web.TokenCacheProviders.Distributed;
+
+   builder.Services.AddDistributedSqlServerCache(options =>
+   {
+       options.ConnectionString = builder.Configuration.GetConnectionString("SqlCache");
+       options.SchemaName = "dbo";
+       options.TableName = "TokenCache";
+   });
+
+   builder.Services.AddDistributedTokenCaches();
+   ```
+
+### How It Works
+
+- `Microsoft.Identity.Web.TokenCache` hooks into MSAL's `SetBeforeAccess` / `SetAfterAccess` events on the `IConfidentialClientApplication` token cache.
+- When `AcquireTokenByAuthorizationCode` runs (in the OAuth callback), the tokens are serialized to the distributed store.
+- When `AcquireTokenSilent` runs (on subsequent turns, potentially on a different node), the tokens are deserialized from the distributed store.
+- Token cache entries are keyed by the user's home account ID, so each user's tokens are isolated.
+
+### Notes
+
+- The distributed cache is **optional** — single-instance deployments work without it.
+- Ensure the cache has appropriate TTL settings. MSAL manages token expiry internally, but stale cache entries should be evicted.
+- For production, use TLS-encrypted connections to Redis/SQL to protect tokens in transit.
