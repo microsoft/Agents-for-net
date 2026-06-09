@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
+namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
 {
     /// <summary>
     /// Settings for TeamsAgenticAuthorization.

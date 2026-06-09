@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Extensions.Teams.App.UserAuth;
+using Microsoft.Agents.Builder.UserAuth.TeamsAgentic;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests

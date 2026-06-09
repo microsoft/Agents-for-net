@@ -4,9 +4,9 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Authentication.Msal;
 using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Builder.UserAuth.TeamsAgentic;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.App.UserAuth;
 using Microsoft.Agents.Storage;
 using Microsoft.Identity.Client;
 using Moq;

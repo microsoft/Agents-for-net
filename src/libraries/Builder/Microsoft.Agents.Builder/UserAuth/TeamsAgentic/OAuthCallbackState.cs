@@ -5,7 +5,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System;
 
-namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
+namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
 {
     /// <summary>
     /// Stores pending OAuth state between when the sign-in card is sent

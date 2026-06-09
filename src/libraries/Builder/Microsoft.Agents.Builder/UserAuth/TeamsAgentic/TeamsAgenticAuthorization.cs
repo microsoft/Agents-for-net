@@ -20,7 +20,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.App.UserAuth
+namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
 {
     /// <summary>
     /// Handles user authentication for Teams agents running in agentic mode.

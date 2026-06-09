@@ -4,14 +4,12 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Authentication.Msal;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Builder.UserAuth.TeamsAgentic;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.App.UserAuth;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
