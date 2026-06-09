@@ -309,6 +309,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
             }
 
+            if (!services.Any(x => x.ServiceType == typeof(Builder.UserAuth.TeamsAgentic.TeamsAgenticCallbackHandler)))
+            {
+                // Handler for Teams agentic OAuth callback logic (transport-agnostic).
+                services.AddTransient<Builder.UserAuth.TeamsAgentic.TeamsAgenticCallbackHandler>();
+            }
+
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             services.AddCloudAdapter<TAdapter>();
             return services;

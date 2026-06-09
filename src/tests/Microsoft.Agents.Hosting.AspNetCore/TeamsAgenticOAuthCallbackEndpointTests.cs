@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.UserAuth.TeamsAgentic;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             services.AddSingleton(Mock.Of<IConnections>());
             services.AddSingleton(Mock.Of<Builder.IChannelAdapter>());
             services.AddSingleton(Mock.Of<Builder.IAgent>());
+            services.AddTransient<TeamsAgenticCallbackHandler>();
 
             var httpContext = new DefaultHttpContext
             {
