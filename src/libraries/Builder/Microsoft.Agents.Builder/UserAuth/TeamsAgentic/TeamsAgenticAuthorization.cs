@@ -3,8 +3,6 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Authentication.Msal;
-using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
@@ -14,7 +12,6 @@ using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -115,17 +112,6 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
             await _storage.DeleteAsync([key], cancellationToken).ConfigureAwait(false);
         }
 
-        private static IAppConfig GetAppConfig(IConnections connections, string connectionName)
-        {
-            var client = connections.GetConnection(connectionName);
-            if (client is IMSALProvider msal)
-            {
-                return ((IConfidentialClientApplication)msal.CreateClientApplication()).AppConfig;
-            }
-
-            throw new InvalidOperationException($"Connection '{connectionName}' does not support MSAL");
-        }
-
         private IAppConfig GetAppConfigForTurn(ITurnContext turnContext, string connectionName)
         {
             IAccessTokenProvider provider;
@@ -169,9 +155,18 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
         private async Task<string> AuthenticateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             // Try silent token acquisition first (uses MSAL's cached tokens).
+            // In the normal flow, the OAuth callback handler (TeamsAgenticCallbackHandler) exchanges
+            // the authorization code via MSAL, which caches the resulting tokens. It then dispatches
+            // a proactive signin/verifyState invoke to re-enter this pipeline. By the time we get
+            // here, the token is already in MSAL's cache and silent acquisition succeeds.
+            // The invoke serves as a trigger to resume the conversation — not to deliver the token.
+            // The token in the invoke's Value payload exists as a fallback for multi-instance
+            // deployments where the MSAL in-memory cache may not be shared across servers.
             var silentToken = await TryAcquireTokenSilentAsync(turnContext, cancellationToken).ConfigureAwait(false);
             if (!string.IsNullOrEmpty(silentToken))
             {
+                // Silent succeeded — clean up any prior flow messages and state.
+                await CleanUpFlowAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 return silentToken;
             }
 
@@ -189,12 +184,37 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
             }
             else
             {
+                // Fallback path: silent failed (e.g., MSAL cache not shared across instances),
+                // but the signin/verifyState invoke carries the token in its Value payload.
+                // RecognizeToken extracts it so the flow can still complete.
                 tokenResponse = await OnContinueFlow(turnContext, cancellationToken);
             }
 
             await SaveFlowStateAsync(turnContext, _state, cancellationToken).ConfigureAwait(false);
 
             return tokenResponse?.Token;
+        }
+
+        /// <summary>
+        /// Loads flow state and, if present, deletes flow messages and removes the state from storage.
+        /// Called when the flow completes via silent token acquisition or the verification invoke.
+        /// </summary>
+        private async Task CleanUpFlowAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        {
+            if (!TryGetStorageKey(turnContext, out var key))
+            {
+                return;
+            }
+
+            var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+            if (!items.TryGetValue(key, out object value) || value is not AgenticFlowState state)
+            {
+                return;
+            }
+
+            _state = state;
+            await DeleteFlowMessagesAsync(turnContext, cancellationToken).ConfigureAwait(false);
+            await _storage.DeleteAsync([key], cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<string> TryAcquireTokenSilentAsync(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -280,10 +300,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
             TokenResponse tokenResponse;
             if (HasTimedOut(turnContext, _state.FlowExpires))
             {
+                await DeleteFlowMessagesAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 throw new AuthException("Authentication flow timed out.", AuthExceptionReason.Timeout);
             }
             else if (IsSignInFailureInvoke(turnContext))
             {
+                await DeleteFlowMessagesAsync(turnContext, cancellationToken).ConfigureAwait(false);
                 throw new AuthException($"Sign in failed: {ProtocolJsonSerializer.ToJson(turnContext.Activity.Value)}", AuthExceptionReason.InvalidSignIn);
             }
             else if (IsTeamsVerificationInvoke(turnContext))
@@ -293,7 +315,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
 
                 if (tokenResponse != null)
                 {
-                    // Flow completed — clean up flow state from storage.
+                    // Flow completed — delete flow messages and clean up state from storage.
+                    await DeleteFlowMessagesAsync(turnContext, cancellationToken).ConfigureAwait(false);
+
                     if (TryGetStorageKey(turnContext, out var flowKey))
                     {
                         await _storage.DeleteAsync([flowKey], cancellationToken).ConfigureAwait(false);
@@ -304,10 +328,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
             {
                 if (_state.ContinueCount >= _settings.InvalidSignInRetryMax)
                 {
+                    await DeleteFlowMessagesAsync(turnContext, cancellationToken).ConfigureAwait(false);
                     throw new AuthException("Invalid sign in.", AuthExceptionReason.InvalidSignIn);
                 }
 
-                await turnContext.SendActivityAsync(_settings.InvalidSignInRetryMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var retryResponse = await turnContext.SendActivityAsync(_settings.InvalidSignInRetryMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
+                TrackSentActivityId(retryResponse);
                 return null;
             }
 
@@ -440,7 +466,36 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
                 },
             ];
 
-            await context.SendActivityAsync(prompt, cancellationToken).ConfigureAwait(false);
+            var response = await context.SendActivityAsync(prompt, cancellationToken).ConfigureAwait(false);
+            TrackSentActivityId(response);
+        }
+
+        private void TrackSentActivityId(ResourceResponse response)
+        {
+            if (_settings.DeleteFlowMessagesOnCompletion && _state != null && response != null && !string.IsNullOrEmpty(response.Id))
+            {
+                _state.SentActivityIds.Add(response.Id);
+            }
+        }
+
+        private async Task DeleteFlowMessagesAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        {
+            if (!_settings.DeleteFlowMessagesOnCompletion || _state == null || _state.SentActivityIds.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var activityId in _state.SentActivityIds)
+            {
+                try
+                {
+                    await turnContext.DeleteActivityAsync(activityId, cancellationToken).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Best-effort deletion — don't fail the flow if a message can't be removed.
+                }
+            }
         }
 
         private static async Task SendInvokeResponseAsync(ITurnContext turnContext, HttpStatusCode statusCode, object body, CancellationToken cancellationToken)
@@ -521,6 +576,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
         public bool FlowStarted = false;
         public DateTime FlowExpires = DateTime.MinValue;
         public int ContinueCount = 0;
+        public List<string> SentActivityIds { get; set; } = new List<string>();
         public string ETag { get; set; }
     }
 }

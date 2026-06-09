@@ -57,6 +57,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
         public int InvalidSignInRetryMax { get; set; } = 2;
 
         /// <summary>
+        /// Gets or sets whether to automatically delete flow-related messages (e.g., sign-in cards, retry prompts)
+        /// from the conversation when the authentication flow completes or fails.
+        /// </summary>
+        /// <value>Defaults to <c>true</c>.</value>
+        public bool DeleteFlowMessagesOnCompletion { get; set; } = true;
+
+        /// <summary>
         /// Initializes the class
         /// </summary>
         /// <param name="oAuthConnectionName">Name of the IConnections entry for interactive OAuth.</param>
