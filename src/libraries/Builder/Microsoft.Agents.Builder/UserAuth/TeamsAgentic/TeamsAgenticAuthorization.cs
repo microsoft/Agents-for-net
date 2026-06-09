@@ -421,15 +421,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
                             new
                             {
                                 type = "TextBlock",
-                                text = "Sign In Required",
+                                text = _settings.Title ?? "Sign In Required",
                                 weight = "Bolder",
                                 size = "Medium",
-                                wrap = true
-                            },
-                            new
-                            {
-                                type = "TextBlock",
-                                text = "Click the button below to sign in.",
                                 wrap = true
                             }
                         },
@@ -438,7 +432,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
                             new
                             {
                                 type = "Action.OpenUrl",
-                                title = "Sign In",
+                                title = _settings.Text ?? "Sign In",
                                 url = authorizeUrl
                             }
                         }

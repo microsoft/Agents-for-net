@@ -13,6 +13,18 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
         public static readonly TimeSpan DefaultTimeoutValue = TimeSpan.FromMinutes(15);
 
         /// <summary>
+        /// Gets or sets the title of the sign-in card.
+        /// </summary>
+        /// <value>The title of the sign-in card.</value>
+        public string Title { get; set; } = "Sign In";
+
+        /// <summary>
+        /// Gets or sets any additional text to include in the sign-in card.
+        /// </summary>
+        /// <value>Any additional text to include in the sign-in card.</value>
+        public string Text { get; set; } = "Please sign in";
+
+        /// <summary>
         /// The AAD scopes for authentication. Only one resource is allowed in the scopes.
         /// </summary>
         public string[] Scopes { get; set; } = [];
@@ -49,13 +61,17 @@ namespace Microsoft.Agents.Builder.UserAuth.TeamsAgentic
         /// </summary>
         /// <param name="oAuthConnectionName">Name of the IConnections entry for interactive OAuth.</param>
         /// <param name="scopes">The AAD scopes for authentication.</param>
+        /// <param name="title">The title of the sign-in card.</param>
+        /// <param name="text">Button text for the sign-in card.</param>
         /// <param name="redirectUri">The redirect URI for the OAuth callback endpoint hosted by the bot.</param>
         /// <param name="connectionName">Name of the IConnections entry for the agent's identity. Optional.</param>
         /// <param name="timeout">Number of milliseconds to wait for the user to authenticate.</param>
-        public TeamsAgenticSettings(string oAuthConnectionName, string[] scopes, string redirectUri = null, string connectionName = null, int timeout = 900000)
+        public TeamsAgenticSettings(string oAuthConnectionName, string[] scopes, string title = null, string text = null, string redirectUri = null, string connectionName = null, int timeout = 900000)
         {
             OAuthConnectionName = oAuthConnectionName;
             Scopes = scopes;
+            Title = title ?? Title;
+            Text = text ?? Text;
             RedirectUri = redirectUri;
             ConnectionName = connectionName;
             Timeout = timeout;
