@@ -7,11 +7,16 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.Messages;
+using Microsoft.Graph.Models;
+using Microsoft.Teams.Api.Messages;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace TeamsPoc;
+
+#pragma warning disable ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
 
 [TeamsExtension]
 public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentApplication(options)
@@ -20,14 +25,14 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
     [TeamsMessageRoute("/reply")]
     public async Task ReplyRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // quoting helpers
+        // ReplyAsync sends a quoted reply to the incoming message.
         await turnContext.ReplyAsync("Hello!", cancellationToken);
     }
 
     [TeamsMessageRoute("/mention")]
     public async Task MentionRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        // activity mention helper
+        // Build a reply that @mentions the sender before appending text.
         var replyActivity = turnContext.Activity.CreateReply()
             .AddMention(turnContext.Activity.From)
             .AddText(", hello.");
@@ -45,7 +50,7 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
 
             foreach (var teamMember in currentPage.Members)
             {
-                // proactive createConversation helper
+                // Create a proactive 1:1 conversation with each member and send a message.
                 await turnContext.SendActivityAsync(teamMember, "This is a proactive message.");
             }
         }
@@ -88,9 +93,18 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
         foreach (var convId in subscribedConversations)
         {
             var proactiveMessage = MessageFactory.Text("This is a notification to a subscribed conversation.");
-            // proactive continueConversation helper
+            // Continue each stored conversation and deliver the notification activity.
             await turnContext.SendActivityAsync(convId, proactiveMessage, cancellationToken);
         }
+    }
+
+    [TeamsMessageRoute("/react")]
+    public async Task ReactRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        // Demonstrate temporary reactions by adding one, waiting, and then removing it.
+        await turnContext.AddReactionAsync(ReactionType.Eyes, cancellationToken: cancellationToken);
+        await Task.Delay(5000, cancellationToken);
+        await turnContext.DeleteReactionAsync(ReactionType.Eyes, cancellationToken: cancellationToken);
     }
 
     [MessageRoute("/help")]
@@ -102,7 +116,8 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
             "  - /mention     - mention the user\n" +
             "  - /messageteam - proactively start a new conversation with every member in the conversation\n" +
             "  - /subscribe   - subscribe the conversation to future proactive notifications\n" +
-            "  - /notify      - send proactive notifications to all subscribed conversations\n"
+            "  - /notify      - send proactive notifications to all subscribed conversations\n" +
+            "  - /react       - react to the user's message\n"
         );
     }
 

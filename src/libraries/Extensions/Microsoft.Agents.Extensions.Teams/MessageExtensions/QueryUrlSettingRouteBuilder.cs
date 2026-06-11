@@ -29,6 +29,7 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     /// Configures the route to use the specified asynchronous handler for processing query URL settings.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query URL settings.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of QueryUrlSettingRouteBuilder, enabling method chaining.</returns>
     public QueryUrlSettingRouteBuilder WithHandler(QueryUrlSettingHandler handler, Proactive proactive)
     {

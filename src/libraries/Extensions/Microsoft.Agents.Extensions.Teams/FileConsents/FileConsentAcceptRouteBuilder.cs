@@ -31,8 +31,9 @@ public class FileConsentAcceptRouteBuilder : FileConsentRouteBuilderBase<FileCon
     /// <param name="handler">An asynchronous delegate invoked when the user accepts the file consent card.
     /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Api.FileConsentCardResponse"/>,
     /// and a cancellation token.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current <see cref="FileConsentAcceptRouteBuilder"/> instance for method chaining.</returns>
-    public FileConsentAcceptRouteBuilder WithHandler(FileConsentHandler handler, Proactive proactive)
+    public FileConsentAcceptRouteBuilder WithHandler(FileConsentHandler handler, Microsoft.Agents.Builder.App.Proactive.Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {

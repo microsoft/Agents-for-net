@@ -31,6 +31,7 @@ public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuil
     /// Configures the route to use the specified asynchronous handler for processing anonymous query link.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query link.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of AnonQueryLinkRouteBuilder, enabling method chaining.</returns>
     public AnonQueryLinkRouteBuilder WithHandler(QueryLinkHandler handler, Proactive proactive)
     {

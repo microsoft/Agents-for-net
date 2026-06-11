@@ -29,6 +29,7 @@ public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteB
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the fetch action</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of FetchActionRouteBuilder, enabling method chaining.</returns>
     public FetchActionRouteBuilder WithHandler(FetchActionHandler handler, Proactive proactive)
     {

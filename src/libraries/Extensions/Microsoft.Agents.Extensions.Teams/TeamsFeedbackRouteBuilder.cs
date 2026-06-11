@@ -9,18 +9,14 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Extensions.Teams.App;
+namespace Microsoft.Agents.Extensions.Teams;
 
 public class TeamsFeedbackRouteBuilder : FeedbackRouteBuilderBase<TeamsFeedbackRouteBuilder>
 {
 
     public TeamsFeedbackRouteBuilder WithHandler(TeamsFeedbackLoopHandler handler, Proactive proactive)
     {
-        FeedbackLoopHandler routeHandler = async (tc, turnState, feedbackData, cancellationToken) =>
-        {
-            var teamsTC = new TeamsTurnContext(tc, proactive);
-            await handler(teamsTC, turnState, feedbackData, cancellationToken);
-        };
+        var routeHandler = HandlerUtils.WrapHandler(handler, proactive);
         return WithHandlerCore(routeHandler);
     }
 

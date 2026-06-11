@@ -29,6 +29,7 @@ public class TaskFetchRouteBuilder : KeyValueRouteBuilderBase<TaskFetchRouteBuil
     /// handler receives the deserialized data from the incoming activity, allowing for type-safe processing of 
     /// the fetch request's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the fetch request.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of TaskFetchRouteBuilder, enabling method chaining.</returns>
     public TaskFetchRouteBuilder WithHandler(TaskFetchHandler handler, Proactive proactive)
     {

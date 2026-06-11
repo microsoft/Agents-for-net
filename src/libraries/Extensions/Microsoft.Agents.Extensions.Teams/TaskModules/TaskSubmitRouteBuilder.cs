@@ -28,6 +28,7 @@ public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBu
     /// <remarks>Use this method to specify custom logic for handling submit requests in Teams task modules. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the submit request's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the submit request.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of TaskSubmitRouteBuilder, enabling method chaining.</returns>
     public TaskSubmitRouteBuilder WithHandler(TaskSubmitHandler handler, Proactive proactive)
     {

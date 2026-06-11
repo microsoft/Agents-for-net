@@ -26,6 +26,7 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
     /// Configures the route to use the specified handler for processing submit actions.
     /// </summary>
     /// <param name="handler">The delegate that processes the submit action.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of the SubmitActionRouteBuilder, enabling method chaining.</returns>
     public SubmitActionRouteBuilder WithHandler(SubmitActionHandler handler, Proactive proactive)
     {

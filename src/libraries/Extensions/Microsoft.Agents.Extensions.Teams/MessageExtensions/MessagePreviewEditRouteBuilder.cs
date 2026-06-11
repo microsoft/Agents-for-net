@@ -28,6 +28,7 @@ public class MessagePreviewEditRouteBuilder : CommandRouteBuilderBase<MessagePre
     /// Configures the route to use the specified handler for processing message preview edit actions.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message preview edit action.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of <see cref="MessagePreviewEditRouteBuilder"/>, enabling method chaining.</returns>
     public MessagePreviewEditRouteBuilder WithHandler(MessagePreviewEditHandler handler, Proactive proactive)
     {

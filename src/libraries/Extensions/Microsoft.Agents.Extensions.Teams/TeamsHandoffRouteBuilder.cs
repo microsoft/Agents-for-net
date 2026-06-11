@@ -9,18 +9,14 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Extensions.Teams.App;
+namespace Microsoft.Agents.Extensions.Teams;
 
 public class TeamsHandoffRouteBuilder : HandoffRouteBuilderBase<TeamsHandoffRouteBuilder>
 {
 
     public TeamsHandoffRouteBuilder WithHandler(TeamsHandoffHandler handler, Proactive proactive)
     {
-        HandoffHandler routeHandler = async (tc, turnState, continuation, cancellationToken) =>
-        {
-            var teamsTC = new TeamsTurnContext(tc, proactive);
-            await handler(teamsTC, turnState, continuation, cancellationToken);
-        };
+        var routeHandler = HandlerUtils.WrapHandler(handler, proactive);
         return WithHandlerCore(routeHandler);
     }
 

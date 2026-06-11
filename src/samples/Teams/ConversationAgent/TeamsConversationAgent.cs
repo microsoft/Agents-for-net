@@ -126,8 +126,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         await turnContext.SendActivityAsync(card.ToMessage(), cancellationToken);
     }
 
-    [MessageRoute("targeted")]
-    public async Task SendTargetedMessagesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [TeamsMessageRoute("targeted")]
+    public async Task SendTargetedMessagesAsync(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var api = TeamsExtension.GetTeamsClient(turnContext);
         var members = await api.Conversations.Members.GetAsync(turnContext.Activity.Conversation.Id, cancellationToken);

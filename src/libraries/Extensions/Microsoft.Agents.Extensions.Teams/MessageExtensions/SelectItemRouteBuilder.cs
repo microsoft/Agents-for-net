@@ -35,6 +35,7 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
     /// <typeparam name="TData">The type of data extracted from the select item action payload and passed to the handler. This comes from the <c>Activity.Value</c> and will be <c>JsonElement</c>.</typeparam>
     /// <param name="handler">An asynchronous delegate that processes the select item, receiving the turn context, turn state, deserialized data
     /// of type <typeparamref name="TData"/>, and a cancellation token.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of SelectItemRouteBuilder, enabling method chaining.</returns>
     public SelectItemRouteBuilder WithHandler<TData>(SelectItemHandler<TData> handler, Proactive proactive)
     {

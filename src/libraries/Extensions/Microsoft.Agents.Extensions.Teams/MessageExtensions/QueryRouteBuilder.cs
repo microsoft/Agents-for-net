@@ -30,6 +30,7 @@ public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
     /// processing of the query's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the query, receiving the turn context, turn state, deserialized data
     /// of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of QueryRouteBuilder, enabling method chaining.</returns>
     public QueryRouteBuilder WithHandler(QueryHandler handler, Proactive proactive)
     {

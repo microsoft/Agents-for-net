@@ -6,7 +6,7 @@ using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.Agents.Extensions.Teams.App;
+namespace Microsoft.Agents.Extensions.Teams;
 
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class TeamsMessageRouteAttribute(string text = null, string textRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute

@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activity = new Activity { Type = ActivityTypes.Message, Text = "hello", Recipient = TargetUser };
 
             await turnContext.SendTargetedActivityAsync(activity);
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task SendTargetedActivityAsync_OriginalActivityIsNotModified()
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activity = new Activity { Type = ActivityTypes.Message, Text = "original", Recipient = TargetUser };
 
             await turnContext.SendTargetedActivityAsync(activity);
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task SendTargetedActivityAsync_OriginalActivityWithEntitiesIsNotModified()
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var originalEntity = new Entity { Type = "custom" };
             var activity = new Activity
             {
@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activity = new Activity
             {
                 Type = ActivityTypes.Message,
@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task SendTargetedActivityAsync_ReturnsResourceResponse()
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activity = new Activity { Type = ActivityTypes.Message, Id = "msg-1", Recipient = TargetUser };
 
             var response = await turnContext.SendTargetedActivityAsync(activity);
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activity = new Activity { Type = ActivityTypes.Message, Text = "hello", Recipient = TargetUser };
 
             await turnContext.SendTargetedActivityAsync(activity);
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activities = new IActivity[]
             {
                 new Activity { Type = ActivityTypes.Message, Text = "msg1", Recipient = TargetUser },
@@ -148,7 +148,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task SendTargetedActivitiesAsync_OriginalActivitiesAreNotModified()
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activities = new IActivity[]
             {
                 new Activity { Type = ActivityTypes.Message, Text = "a", Recipient = TargetUser },
@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activities = new IActivity[]
             {
                 new Activity { Type = ActivityTypes.Message, Text = "a", Recipient = TargetUser },
@@ -184,7 +184,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task SendTargetedActivitiesAsync_ReturnsResourceResponseForEach()
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activities = new IActivity[]
             {
                 new Activity { Type = ActivityTypes.Message, Id = "id-1", Recipient = TargetUser },
@@ -204,7 +204,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activities = new IActivity[]
             {
                 new Activity
@@ -231,7 +231,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         {
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activities = new IActivity[]
             {
                 new Activity { Type = ActivityTypes.Message, Text = "solo", Recipient = TargetUser }
@@ -248,7 +248,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task SendTargetedActivitiesAsync_SupportsCancellationToken()
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var cts = new CancellationTokenSource();
             var activities = new IActivity[]
             {
@@ -265,7 +265,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task SendTargetedActivityAsync_NoRecipientOnActivity_ThrowsInvalidOperationException()
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activity = new Activity { Type = ActivityTypes.Message, Text = "hello" }; // no Recipient
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -276,7 +276,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         public async Task SendTargetedActivitiesAsync_NoRecipientOnActivity_ThrowsInvalidOperationException()
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
+            var turnContext = new TeamsTurnContext(CreateTurnContext(adapter), null);
             var activities = new IActivity[]
             {
                 new Activity { Type = ActivityTypes.Message, Text = "hello" } // no Recipient

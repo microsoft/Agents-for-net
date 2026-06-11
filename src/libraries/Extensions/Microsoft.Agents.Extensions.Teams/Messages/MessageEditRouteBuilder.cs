@@ -29,6 +29,7 @@ public class MessageEditRouteBuilder : MessageEventRouteBuilderBase<MessageEditR
     /// Configures the route to use the specified handler for processing message edit events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message edit event.</param>
+    /// <param name="proactive">The proactive messaging helper used to wrap the handler in a <see cref="TeamsTurnContext"/>.</param>
     /// <returns>The current <see cref="MessageEditRouteBuilder"/> instance for method chaining.</returns>
     public MessageEditRouteBuilder WithHandler(TeamsRouteHandler handler, Proactive proactive)
     {

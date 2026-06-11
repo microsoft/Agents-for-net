@@ -32,6 +32,7 @@ public class MeetingParticipantsLeaveRouteBuilder : MeetingEventRouteBuilderBase
     /// <param name="handler">An asynchronous delegate that processes the participants leave event.
     /// Receives the turn context, turn state, deserialized <see cref="MeetingParticipantsEventDetails"/>,
     /// and a cancellation token.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current <see cref="MeetingParticipantsLeaveRouteBuilder"/> instance for method chaining.</returns>
     public MeetingParticipantsLeaveRouteBuilder WithHandler(MeetingParticipantsEventHandler handler, Proactive proactive)
     {

@@ -28,6 +28,7 @@ public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePre
     /// Configures the route to use the specified handler for processing message preview send actions.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message preview send action.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of <see cref="MessagePreviewSendRouteBuilder"/>, enabling method chaining.</returns>
     public MessagePreviewSendRouteBuilder WithHandler(MessagePreviewSendHandler handler, Proactive proactive)
     {

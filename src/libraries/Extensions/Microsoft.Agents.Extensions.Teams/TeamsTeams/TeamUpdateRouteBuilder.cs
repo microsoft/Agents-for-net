@@ -90,6 +90,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// Configures the route to use the specified handler for team update events.
     /// </summary>
     /// <param name="handler">The handler to process team update events.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current instance of the TeamUpdateRouteBuilder, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder WithHandler(TeamUpdateHandler handler, Proactive proactive)
     {

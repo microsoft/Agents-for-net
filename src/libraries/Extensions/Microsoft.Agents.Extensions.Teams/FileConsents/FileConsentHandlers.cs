@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +8,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 
 /// <summary>
-/// Function for handling file consent card activities.
+/// Delegate for handling Teams file consent card invoke activities.
 /// </summary>
 /// <param name="turnContext">The context for the current conversation turn.</param>
 /// <param name="turnState">The state object that stores arbitrary data for this turn.</param>

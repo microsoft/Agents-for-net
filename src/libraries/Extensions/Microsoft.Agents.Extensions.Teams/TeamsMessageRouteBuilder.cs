@@ -9,7 +9,7 @@ using Microsoft.Agents.Extensions.Teams.Messages;
 using System;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.App
+namespace Microsoft.Agents.Extensions.Teams
 {
 
     public class TeamsMessageRouteBuilder : MessageRouteBuilderBase<TeamsMessageRouteBuilder>

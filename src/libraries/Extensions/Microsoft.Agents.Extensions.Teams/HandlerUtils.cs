@@ -21,6 +21,24 @@ namespace Microsoft.Agents.Extensions.Teams
             };
         }
 
+        public static HandoffHandler WrapHandler(TeamsHandoffHandler handler, Proactive proactive)
+        {
+            return async (tc, turnState, continuation, cancellationToken) =>
+            {
+                var teamsTC = new TeamsTurnContext(tc, proactive);
+                await handler(teamsTC, turnState, continuation, cancellationToken);
+            };
+        }
+
+        public static FeedbackLoopHandler WrapHandler(TeamsFeedbackLoopHandler handler, Proactive proactive)
+        {
+            return async (tc, turnState, feedbackData, cancellationToken) =>
+            {
+                var teamsTC = new TeamsTurnContext(tc, proactive);
+                await handler(teamsTC, turnState, feedbackData, cancellationToken);
+            };
+        }
+
         public static void TeamsInvokeGenericWithHandler(AgentApplication app, MethodInfo method, Type openHandlerType, int paramIndex, object builder)
         {
             var genericParam = method.GetParameters()[paramIndex].ParameterType;

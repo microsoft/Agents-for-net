@@ -33,7 +33,7 @@ public class MessageEditRouteAttribute(bool isAgenticOnly = false, ushort rank =
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamsRouteHandler>(app, method);
-        var builder = MessageEditRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = MessageEditRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }

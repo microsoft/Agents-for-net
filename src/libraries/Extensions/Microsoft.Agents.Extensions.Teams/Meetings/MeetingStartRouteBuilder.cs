@@ -31,6 +31,7 @@ public class MeetingStartRouteBuilder : MeetingEventRouteBuilderBase<MeetingStar
     /// <param name="handler">An asynchronous delegate that processes the meeting start event.
     /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Api.Meetings.MeetingDetails"/>,
     /// and a cancellation token.</param>
+    /// <param name="proactive">The proactive messaging helper used to create a <see cref="TeamsTurnContext"/> for the handler.</param>
     /// <returns>The current <see cref="MeetingStartRouteBuilder"/> instance for method chaining.</returns>
     public MeetingStartRouteBuilder WithHandler(MeetingStartHandler handler, Proactive proactive)
     {
