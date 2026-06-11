@@ -59,6 +59,10 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 typeName = typeof(ConnectorUserAuthorization).FullName;
             }
+            else if (typeName.Equals(nameof(TeamsTokenServiceAuthorization), StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(TeamsTokenServiceAuthorization).FullName;
+            }
             
             // This throws for invalid assembly name.
 #if !NETSTANDARD

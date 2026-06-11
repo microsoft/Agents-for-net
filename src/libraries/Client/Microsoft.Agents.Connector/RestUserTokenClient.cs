@@ -81,7 +81,8 @@ namespace Microsoft.Agents.Connector
 
             _logger.LogInformation("GetSignInResourceAsync ConnectionName: {connectionName}", connectionName);
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
-            return await _agentSignInClient.GetSignInResourceAsync(state, null, null, finalRedirect, cancellationToken).ConfigureAwait(false);
+            var codeChallenge = PkceHelper.ComputeCodeChallenge(PkceHelper.GenerateCodeVerifier());
+            return await _agentSignInClient.GetSignInResourceAsync(state, codeChallenge, null, finalRedirect, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -138,7 +139,8 @@ namespace Microsoft.Agents.Connector
 
             _logger.LogInformation("GetTokenOrSignInResourceAsync ConnectionName: {connectionName}", connectionName);
             var state = CreateTokenExchangeState(_appId, connectionName, activity);
-            return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId, state, code, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
+            var codeChallenge = PkceHelper.ComputeCodeChallenge(PkceHelper.GenerateCodeVerifier());
+            return await _userTokenClient.GetTokenOrSignInResourceAsync(activity.From.Id, connectionName, activity.ChannelId, state, code, codeChallenge, finalRedirect, fwdUrl, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

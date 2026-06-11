@@ -56,6 +56,13 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public bool EndOnInvalidMessage { get; set; }
 
         /// <summary>
+        /// Gets or sets the redirect URI for the OAuth callback endpoint hosted by the bot.
+        /// Used by TeamsTokenServiceAuthorization as the finalRedirect passed to Token Service.
+        /// (e.g., "https://mybot.azurewebsites.net/auth/callback").
+        /// </summary>
+        public string RedirectUri { get; set; }
+
+        /// <summary>
         /// Gets or sets an optional boolean value to force the display of a Sign In link overriding
         /// the default behavior.
         /// </summary>

@@ -62,12 +62,13 @@ namespace Microsoft.Agents.Connector.RestClients
         /// <param name="userId"> User ID.</param>
         /// <param name="connectionName"> Connection name.</param>
         /// <param name="channelId"> Channel ID.</param>
-        /// <param name="code"> Code.</param>
         /// <param name="state"> State.</param>
+        /// <param name="code"> Code.</param>
+        /// <param name="codeChallenge"> PKCE code challenge.</param>
         /// <param name="finalRedirect"> Final redirect.</param>
         /// <param name="fwdUrl"> Fwd URL.</param>
         /// <param name="cancellationToken"> The cancellation token.</param>
         /// <returns>A Task representing the <see cref="Microsoft.Agents.Core.Models.TokenOrSignInResourceResponse"/> of the HTTP operation.</returns>
-        Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, ChannelId channelId, string state, string code = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default);
+        Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, ChannelId channelId, string state, string code = default, string codeChallenge = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default);
     }
 }

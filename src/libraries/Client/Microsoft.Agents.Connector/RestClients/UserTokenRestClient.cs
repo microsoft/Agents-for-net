@@ -207,7 +207,7 @@ namespace Microsoft.Agents.Connector.RestClients
         }
 
         /// <inheritdoc/>
-        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, ChannelId channelId, string state, string code = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default)
+        public async Task<TokenOrSignInResourceResponse> GetTokenOrSignInResourceAsync(string userId, string connectionName, ChannelId channelId, string state, string code = default, string codeChallenge = default, string finalRedirect = default, string fwdUrl = default, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrEmpty(userId, nameof(userId));
             AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
@@ -232,6 +232,7 @@ namespace Microsoft.Agents.Connector.RestClients
                 .WithQuery("channelId", channelId?.Channel)
                 .WithQuery("code", code)
                 .WithQuery("state", state)
+                .WithQuery("code_challenge", codeChallenge)
                 .WithQuery("finalRedirect", finalRedirect)
                 .WithQuery("fwdUrl", fwdUrl);
 
