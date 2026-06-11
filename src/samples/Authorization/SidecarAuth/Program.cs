@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 using SidecarAuth;
-using Microsoft.Agents.Builder.UserAuth.EntraSidecar;
+using Microsoft.Agents.Authentication.EntraAuthSidecar;
+using Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;

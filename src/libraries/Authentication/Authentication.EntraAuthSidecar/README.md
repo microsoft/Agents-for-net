@@ -15,12 +15,11 @@ Reference spec: [microsoft/Agents#606](https://github.com/microsoft/Agents/issue
 | Type | Role |
 |---|---|
 | `SidecarHttpClient` | Reusable HTTP client for the sidecar API (internal). Builds query strings, parses `{ "authorizationHeader": "Bearer <token>" }` responses, and surfaces RFC 7807 `ProblemDetails` errors. |
-| `SidecarAccessTokenProvider` | Connection-level provider implementing `IAccessTokenProvider` and `IAgenticTokenProvider`. Translates each SDK token call into a single sidecar request. Loadable from configuration via the `(IServiceProvider, IConfigurationSection)` constructor. |
-| `SidecarUserAuthorization` | `IUserAuthorization` handler for per-route user sign-in on agentic requests. Derives `AgentIdentity`/`AgentUserId` from `Activity.Recipient` and calls the sidecar's unauthenticated endpoint (Phase 1). `SignOutUserAsync`/`ResetStateAsync` are intentional no-ops (the sidecar owns the token cache). |
+| `SidecarAuth` | Connection-level provider implementing `IAccessTokenProvider` and `IAgenticTokenProvider`. Translates each SDK token call into a sidecar request and serves repeat requests from an in-memory token cache (see [Token caching](#token-caching)). Loadable from configuration via the `(IServiceProvider, IConfigurationSection)` constructor. |
 | `SidecarServiceCollectionExtensions` | `AddSidecarConnections(...)` DI helper that registers the `SidecarHttpClient` and provider. |
 | `SidecarHealthCheck` / `AddSidecarHealthCheck` | ASP.NET Core `IHealthCheck` (and `IHealthChecksBuilder` extension) that probes the sidecar `/healthz` endpoint on demand. |
 | `SidecarStartupHealthCheck` / `AddSidecarStartupProbe` | Optional `IHostedService` that probes the sidecar once at startup. Warn-only by default; opt into fail-fast with `failOnUnreachable: true`. |
-| `SidecarSettings` / `SidecarConnectionSettings` | Configuration models for the handler and the connection provider, respectively. |
+| `SidecarConnectionSettings` | Configuration model (bound from the connection `Settings`) carrying `ServiceName`, `BlueprintServiceName`, `Scopes`, `SidecarBaseUrl`, `RequestTimeout`, `RetryCount`, plus inherited connection settings (`ClientId`, `TenantId`). |
 
 ## Sidecar endpoint mapping
 
@@ -45,13 +44,21 @@ GET /AuthorizationHeaderUnauthenticated/{serviceName}
 
 `AgentUserId` (object id) and `AgentUsername` (UPN) are mutually exclusive; the client emits exactly one and rejects a request that sets both.
 
-> **Phase 1 scope.** `SidecarUserAuthorization` uses the sidecar's **unauthenticated** endpoint: the sidecar resolves the full chain from the agent identity parameters. The authenticated (on-behalf-of) endpoint is out of scope for Phase 1 and will be added when that flow is specified.
-
 ### How this relates to the spec
 
 Spec #606 (Phase 1) originally anticipated the SDK deriving the Agent Instance and Agent User tokens locally from the Blueprint token. In practice the **sidecar performs the entire agentic identity chain internally** (Blueprint → Instance → agentic User via federated identity) and returns the final resource token. The SDK therefore only needs to translate each call into a single sidecar request — there is no local `client_credentials`/`user_fic` exchange. This is required for agentic *instance* apps, which are `ServiceIdentity`-type service principals whose federated credentials are Entra-managed and cannot be exchanged by the client.
 
 `AgentIdentity` and `AgentUserId` are **not** stored in configuration; they are extracted from the inbound activity (`Recipient.AgenticAppId`, `Recipient.AgenticUserId`) at runtime, so a single deployment can serve multiple agent identities and users.
+
+## Token caching
+
+`SidecarAuth` keeps a lightweight in-memory token cache (mirroring the MSAL provider's SDK-side cache) so repeated calls for the same identity don't hit the sidecar on every turn:
+
+- **Key** — the agent identity (`AgentIdentity` client id) plus the other request parameters that change the issued token: downstream `serviceName`, `AgentUsername`/`AgentUserId`, tenant, app-only vs. user, and scopes. Distinct flows, users, tenants, and scope sets never share an entry.
+- **Lifetime** — the token's own JWT `exp` claim when parseable, otherwise a conservative 5-minute fallback for opaque tokens. An entry is evicted once it is within **30 seconds** of expiry, so callers never receive a token that expires mid-flight.
+- **Force refresh** — `GetAccessTokenAsync(..., forceRefresh: true)` evicts the entry and re-acquires from the sidecar (also setting `optionsOverride.AcquireTokenOptions.ForceRefresh=true` so the sidecar bypasses its own cache).
+
+This is in addition to the sidecar's own server-side token cache and the expiry hint surfaced to Azure.Core via `GetTokenCredential()`.
 
 ## Base URL resolution
 
@@ -61,6 +68,12 @@ Spec #606 (Phase 1) originally anticipated the SDK deriving the Agent Instance a
 2. Explicit configuration (`SidecarBaseUrl`)
 3. `http://localhost:5178` (default — the Entra ID Agent Container's local default port)
 
+### Loopback/private-address safety check (SSRF)
+
+Because the sidecar issues tokens for the agent's identity, the provider refuses to send requests to an arbitrary host. After resolution, the base URL **must** point to a loopback (`localhost`, `127.0.0.0/8`, `::1`) or private address (RFC 1918 / RFC 4193 / link-local). A public/routable address is rejected with an `InvalidOperationException` at construction time. This applies regardless of whether the URL came from `SIDECAR_URL`, the `SidecarBaseUrl` setting, or the default.
+
+To intentionally target a non-private address (e.g. a sidecar reachable at a routable address inside a carefully validated private network), set **`BypassLocalNetworkRestriction: true`** in the connection `Settings`. This is **UNSAFE** and disables the SSRF guard entirely — only enable it for a network configuration you have explicitly validated, never in a default or untrusted deployment.
+
 ## Configuration
 
 ### Connection-level provider (replaces MSAL)
@@ -68,35 +81,28 @@ Spec #606 (Phase 1) originally anticipated the SDK deriving the Agent Instance a
 ```json
 "Connections": {
   "ServiceConnection": {
-    "Assembly": "Microsoft.Agents.Builder",
-    "Type": "Microsoft.Agents.Builder.UserAuth.EntraSidecar.SidecarAccessTokenProvider",
+    "Assembly": "Microsoft.Agents.Authentication.EntraAuthSidecar",
+    "Type": "Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarAuth",
     "Settings": {
       "SidecarBaseUrl": "http://localhost:5178",
       "ServiceName": "botframework",
-      "Scopes": [ "5a807f24-c9de-44ee-a3a7-329e88a00ffc/.default" ]
+      "Scopes": [ "5a807f24-c9de-44ee-a3a7-329e88a00ffc/.default" ],
+      "RequestTimeout": "00:00:30",
+      "RetryCount": 3
     }
   }
 }
 ```
 
-### Per-route user authorization handler
-
-```json
-"AgentApplication": {
-  "UserAuthorization": {
-    "Handlers": {
-      "me": {
-        "Type": "SidecarUserAuthorization",
-        "Settings": {
-          "SidecarBaseUrl": "http://localhost:5178",
-          "ServiceName": "me",
-          "Scopes": [ "User.Read" ]
-        }
-      }
-    }
-  }
-}
-```
+| Setting | Required | Default | Description |
+|---|---|---|---|
+| `ServiceName` | No | `default` | Downstream API name configured in the sidecar. |
+| `Scopes` | No | — | Scope overrides forwarded as `optionsOverride.Scopes`. |
+| `SidecarBaseUrl` | No | `http://localhost:5178` | Sidecar endpoint. Resolution: `SIDECAR_URL` env var > this > default. The resolved host must be loopback/private unless `BypassLocalNetworkRestriction` is set. |
+| `BypassLocalNetworkRestriction` | No | `false` | **UNSAFE.** Disables the loopback/private-address SSRF safety check. Only enable for a carefully validated private-network configuration (see above). |
+| `RequestTimeout` | No | `00:00:30` | Per-attempt HTTP timeout for sidecar calls. |
+| `RetryCount` | No | `3` | Retry attempts for transient failures (HTTP 408/429/5xx, network errors, timeouts) using exponential backoff. `0` disables retries. |
+| `ClientId` / `TenantId` | No | — | Inherited from `ConnectionSettingsBase`; surfaced via `ConnectionSettings`. Not used for token acquisition (the sidecar owns the credential). |
 
 ### Code-first DI registration
 
@@ -126,7 +132,7 @@ builder.Services.AddSidecarStartupProbe(failOnUnreachable: false);
 
 The sidecar must declare matching **downstream APIs**:
 
-- The connection's `ServiceName` (e.g. `botframework`, `me`) with the appropriate scope.
+- The connection's `ServiceName` (e.g. `botframework`) with the appropriate scope.
 - A Blueprint downstream API named by `BlueprintServiceName` (default `agenticblueprint`), configured **app-only** (`RequestAppToken: true`) with the `api://AzureAdTokenExchange/.default` scope. This is what `GetAgenticApplicationTokenAsync` calls.
 
-See the runnable end-to-end example in [`src/samples/Authorization/SidecarAuth`](../../../../../samples/Authorization/SidecarAuth/README.md).
+See the runnable end-to-end example in [`src/samples/Authorization/SidecarAuth`](../../../samples/Authorization/SidecarAuth/README.md).

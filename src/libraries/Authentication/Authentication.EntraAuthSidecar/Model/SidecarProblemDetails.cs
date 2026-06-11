@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Microsoft.Agents.Builder.UserAuth.EntraSidecar
+namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Model
 {
     /// <summary>
     /// RFC 7807 ProblemDetails parsed from sidecar error responses.

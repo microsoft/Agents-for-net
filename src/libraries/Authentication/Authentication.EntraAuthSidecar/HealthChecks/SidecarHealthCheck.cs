@@ -5,17 +5,15 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.UserAuth.EntraSidecar
+namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
 {
     /// <summary>
     /// ASP.NET Core health check that reports whether the Microsoft Entra ID Agent ID sidecar is
     /// reachable, by calling its <c>/healthz</c> endpoint.
     /// </summary>
-    internal sealed class SidecarHealthCheck : IHealthCheck
+    internal sealed class SidecarHealthCheck(SidecarHttpClient sidecarClient) : IHealthCheck
     {
-        private readonly SidecarHttpClient _sidecarClient;
-
-        public SidecarHealthCheck(SidecarHttpClient sidecarClient) => _sidecarClient = sidecarClient;
+        private readonly SidecarHttpClient _sidecarClient = sidecarClient;
 
         /// <inheritdoc/>
         public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)

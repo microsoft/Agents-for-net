@@ -3,11 +3,16 @@
 
 using Azure.Core;
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder.UserAuth.EntraSidecar;
+using Microsoft.Agents.Authentication.EntraAuthSidecar;
+using Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks;
+using Microsoft.Agents.Authentication.EntraAuthSidecar.Model;
+using Microsoft.Agents.Authentication.EntraAuthSidecar.Utils;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
@@ -16,12 +21,13 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Microsoft.Agents.Builder.Tests
+namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
 {
     public class SidecarHttpClientTests
     {
@@ -66,6 +72,19 @@ namespace Microsoft.Agents.Builder.Tests
 
             Assert.Equal("PoP", result.Scheme);
             Assert.Equal("eyJpoptoken", result.Token);
+        }
+
+        [Fact]
+        public async Task GetAuthorizationHeaderUnauthenticated_HeaderWithoutScheme_DefaultsToBearer()
+        {
+            // A header value with no space (raw token) defaults the scheme to "Bearer".
+            var handler = CreateMockHandler(HttpStatusCode.OK, """{"authorizationHeader":"rawtokenwithoutscheme"}""");
+            var client = CreateClient(handler.Object);
+
+            var result = await client.GetAuthorizationHeaderUnauthenticatedAsync("me");
+
+            Assert.Equal("Bearer", result.Scheme);
+            Assert.Equal("rawtokenwithoutscheme", result.Token);
         }
 
         [Fact]
@@ -124,19 +143,19 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
-        public async Task GetAuthorizationHeaderUnauthenticated_Error_ThrowsSidecarRequestException()
+        public async Task GetAuthorizationHeaderUnauthenticated_Error_ThrowsErrorResponseException()
         {
             var problemJson = """{"type":"https://tools.ietf.org/html/rfc7231","title":"Bad Request","status":400,"detail":"Service not found"}""";
             var handler = CreateMockHandler(HttpStatusCode.BadRequest, problemJson);
             var client = CreateClient(handler.Object);
 
-            var ex = await Assert.ThrowsAsync<SidecarRequestException>(
+            var ex = await Assert.ThrowsAsync<ErrorResponseException>(
                 () => client.GetAuthorizationHeaderUnauthenticatedAsync("unknown-service"));
 
             Assert.Equal(400, ex.StatusCode);
-            Assert.Equal("Bad Request", ex.Message);
-            Assert.NotNull(ex.ProblemDetails);
-            Assert.Equal("Service not found", ex.ProblemDetails.Detail);
+            // Title and detail are surfaced through the public exception message.
+            Assert.Contains("Bad Request", ex.Message);
+            Assert.Contains("Service not found", ex.Message);
         }
 
         [Fact]
@@ -145,17 +164,17 @@ namespace Microsoft.Agents.Builder.Tests
             var handler = CreateMockHandler(HttpStatusCode.OK, """{"otherField":"value"}""");
             var client = CreateClient(handler.Object);
 
-            await Assert.ThrowsAsync<SidecarRequestException>(
+            await Assert.ThrowsAsync<ErrorResponseException>(
                 () => client.GetAuthorizationHeaderUnauthenticatedAsync("me"));
         }
 
         [Fact]
-        public async Task GetAuthorizationHeaderUnauthenticated_MalformedJson_ThrowsSidecarRequestException()
+        public async Task GetAuthorizationHeaderUnauthenticated_MalformedJson_ThrowsErrorResponseException()
         {
             var handler = CreateMockHandler(HttpStatusCode.OK, "not-valid-json{");
             var client = CreateClient(handler.Object);
 
-            var ex = await Assert.ThrowsAsync<SidecarRequestException>(
+            var ex = await Assert.ThrowsAsync<ErrorResponseException>(
                 () => client.GetAuthorizationHeaderUnauthenticatedAsync("me"));
 
             Assert.Equal(0, ex.StatusCode);
@@ -258,9 +277,9 @@ namespace Microsoft.Agents.Builder.Tests
         }
     }
 
-    public class SidecarAccessTokenProviderTests
+    public class SidecarAuthTests
     {
-        private static (SidecarAccessTokenProvider provider, Mock<HttpMessageHandler> handler) CreateProvider(
+        private static (SidecarAuth provider, Mock<HttpMessageHandler> handler) CreateProvider(
             string responseToken = "test-token",
             string serviceName = "default")
         {
@@ -276,7 +295,7 @@ namespace Microsoft.Agents.Builder.Tests
             var httpClient = new HttpClient(mock.Object);
             var sidecarClient = new SidecarHttpClient(httpClient, "http://localhost:5178");
             var settings = new SidecarConnectionSettings { ServiceName = serviceName };
-            var provider = new SidecarAccessTokenProvider(sidecarClient, settings);
+            var provider = new SidecarAuth(sidecarClient, settings);
 
             return (provider, mock);
         }
@@ -301,7 +320,7 @@ namespace Microsoft.Agents.Builder.Tests
                 ItExpr.IsAny<CancellationToken>());
         }
 
-        private static (SidecarAccessTokenProvider provider, List<string> capturedUrls) CreateCapturingProvider(
+        private static (SidecarAuth provider, List<string> capturedUrls) CreateCapturingProvider(
             string serviceName = "default", string responseToken = "sidecar-token")
         {
             var capturedUrls = new List<string>();
@@ -309,7 +328,7 @@ namespace Microsoft.Agents.Builder.Tests
             mock.Protected()
                 .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
                 .Callback<HttpRequestMessage, CancellationToken>((r, _) => capturedUrls.Add(r.RequestUri.ToString()))
-                .ReturnsAsync(new HttpResponseMessage
+                .ReturnsAsync(() => new HttpResponseMessage
                 {
                     StatusCode = HttpStatusCode.OK,
                     Content = new StringContent($"{{\"authorizationHeader\":\"Bearer {responseToken}\"}}")
@@ -317,7 +336,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var sidecarClient = new SidecarHttpClient(new HttpClient(mock.Object), "http://localhost:5178");
             var settings = new SidecarConnectionSettings { ServiceName = serviceName };
-            var provider = new SidecarAccessTokenProvider(sidecarClient, settings);
+            var provider = new SidecarAuth(sidecarClient, settings);
 
             return (provider, capturedUrls);
         }
@@ -428,7 +447,7 @@ namespace Microsoft.Agents.Builder.Tests
                 });
 
             var sidecarClient = new SidecarHttpClient(new HttpClient(mock.Object), "http://localhost:5178");
-            var provider = new SidecarAccessTokenProvider(sidecarClient,
+            var provider = new SidecarAuth(sidecarClient,
                 new SidecarConnectionSettings { ServiceName = "botframework", Scopes = new List<string> { "Configured.Scope" } });
 
             await provider.GetAgenticUserTokenAsync("tenant-id", "agent-app-id", "user@contoso.com", scopes: null);
@@ -460,7 +479,7 @@ namespace Microsoft.Agents.Builder.Tests
                 .Build()
                 .GetSection("EntraSidecar");
 
-            var provider = new SidecarAccessTokenProvider(sp, section);
+            var provider = new SidecarAuth(sp, section);
 
             await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
 
@@ -468,11 +487,190 @@ namespace Microsoft.Agents.Builder.Tests
             var url = Assert.Single(capturedUrls);
             Assert.Contains("/AuthorizationHeaderUnauthenticated/botframework", url);
         }
+
+        [Fact]
+        public void ConfigLoaderConstructor_CreatesClient_WhenNoneRegistered()
+        {
+            // No SidecarHttpClient and no IHttpClientFactory registered -> the ctor must create a plain
+            // HttpClient against the (loopback) resolved base URL, which passes the SSRF guard.
+            var sp = new ServiceCollection().BuildServiceProvider();
+
+            var section = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    { "EntraSidecar:ServiceName", "botframework" },
+                    { "EntraSidecar:RequestTimeout", "00:00:03" },
+                    { "EntraSidecar:RetryCount", "1" }
+                })
+                .Build()
+                .GetSection("EntraSidecar");
+
+            var provider = new SidecarAuth(sp, section);
+
+            Assert.NotNull(provider);
+        }
+
+        [Fact]
+        public void ConfigSectionConstructor_BindsSettings_AndExposesConnectionSettings()
+        {
+            var section = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    { "EntraSidecar:TenantId", "tenant-xyz" },
+                    { "EntraSidecar:Scopes:0", "Custom.Scope" }
+                })
+                .Build()
+                .GetSection("EntraSidecar");
+
+            var provider = new SidecarAuth(new SidecarHttpClient(new HttpClient(), "http://localhost:5178"), section);
+
+            var settings = provider.ConnectionSettings;
+            Assert.Equal("tenant-xyz", settings.TenantId);
+            Assert.Contains("Custom.Scope", settings.Scopes);
+        }
+
+        [Fact]
+        public async Task TokenCache_PrunesExpiredEntries_WhenGrowthExceedsCap()
+        {
+            // Every issued token is already expired, so each distinct-user entry is reclaimed by the
+            // expired-entry sweep that runs on write once the cache passes its hard cap.
+            var pastJwt = CreateJwtWithExpiry(DateTimeOffset.UtcNow.AddMinutes(-5));
+            var (provider, _) = CreateCapturingProvider(responseToken: pastJwt);
+
+            // Drive many distinct users (distinct cache keys) well past the 500-entry cap.
+            for (var i = 0; i < 700; i++)
+            {
+                await provider.GetAgenticUserTokenAsync(
+                    "tenant", "agent", $"user{i}@contoso.com", new List<string> { "scope" });
+            }
+
+            var count = GetTokenCacheCount(provider);
+            Assert.True(count <= 500, $"Token cache grew unbounded: {count} entries.");
+        }
+
+        [Fact]
+        public async Task TokenCache_EnforcesHardCap_WhenAllEntriesAreValid()
+        {
+            // Tokens are valid (future expiry), so the expired-entry sweep frees nothing; the hard cap
+            // must still bound the cache by evicting the entries nearest to expiry.
+            var futureJwt = CreateJwtWithExpiry(DateTimeOffset.UtcNow.AddHours(1));
+            var (provider, _) = CreateCapturingProvider(responseToken: futureJwt);
+
+            for (var i = 0; i < 700; i++)
+            {
+                await provider.GetAgenticUserTokenAsync(
+                    "tenant", "agent", $"user{i}@contoso.com", new List<string> { "scope" });
+            }
+
+            var count = GetTokenCacheCount(provider);
+            Assert.True(count <= 500, $"Token cache exceeded its hard cap: {count} entries.");
+        }
+
+        private static int GetTokenCacheCount(SidecarAuth provider)
+        {
+            var field = typeof(SidecarAuth).GetField("_tokenCache", BindingFlags.NonPublic | BindingFlags.Instance);
+            var cache = (System.Collections.IDictionary)field.GetValue(provider);
+            return cache.Count;
+        }
+
+        private static string CreateJwtWithExpiry(DateTimeOffset expiry)
+        {
+            var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
+                issuer: null, audience: null, claims: null, notBefore: null, expires: expiry.UtcDateTime);
+            return new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        [Fact]
+        public async Task GetAccessTokenAsync_SecondCall_ServedFromCache()
+        {
+            var (provider, urls) = CreateCapturingProvider(responseToken: "opaque-token");
+
+            var first = await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+            var second = await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+
+            Assert.Equal("opaque-token", first);
+            Assert.Equal(first, second);
+            // Opaque token => 5-minute fallback TTL, so the second call is served from cache (single sidecar hit).
+            Assert.Single(urls);
+        }
+
+        [Fact]
+        public async Task GetAccessTokenAsync_ForceRefresh_BypassesCache()
+        {
+            var (provider, urls) = CreateCapturingProvider(responseToken: "opaque-token");
+
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" }, forceRefresh: true);
+
+            // Force refresh evicts the cached entry and re-acquires from the sidecar.
+            Assert.Equal(2, urls.Count);
+        }
+
+        [Fact]
+        public async Task GetAccessTokenAsync_DifferentScopes_UseDistinctCacheEntries()
+        {
+            var (provider, urls) = CreateCapturingProvider(responseToken: "opaque-token");
+
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "Mail.Read" });
+
+            // Distinct scopes are distinct cache keys, so each triggers its own sidecar call.
+            Assert.Equal(2, urls.Count);
+        }
+
+        [Fact]
+        public async Task GetAccessTokenAsync_NearExpiryJwt_IsNotServedFromCache()
+        {
+            // exp within the 30s buffer => the entry is evicted on the next lookup and re-acquired.
+            var jwt = CreateJwtWithExpiry(DateTimeOffset.UtcNow.AddSeconds(5));
+            var (provider, urls) = CreateCapturingProvider(responseToken: jwt);
+
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+
+            Assert.Equal(2, urls.Count);
+        }
+
+        [Fact]
+        public async Task GetAccessTokenAsync_ValidJwt_SecondCall_ServedFromCache()
+        {
+            var jwt = CreateJwtWithExpiry(DateTimeOffset.UtcNow.AddHours(1));
+            var (provider, urls) = CreateCapturingProvider(responseToken: jwt);
+
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+
+            // exp is an hour out => well beyond the 30s buffer, so the second call is a cache hit.
+            Assert.Single(urls);
+        }
+
+        [Fact]
+        public async Task GetAgenticApplicationTokenAsync_SecondCall_ServedFromCache()
+        {
+            var (provider, urls) = CreateCapturingProvider(responseToken: "blueprint-token");
+
+            await provider.GetAgenticApplicationTokenAsync("tenant-id", "agent-app-id");
+            await provider.GetAgenticApplicationTokenAsync("tenant-id", "agent-app-id");
+
+            Assert.Single(urls);
+        }
+
+        [Fact]
+        public async Task GetAgenticUserTokenAsync_DifferentUsers_UseDistinctCacheEntries()
+        {
+            var (provider, urls) = CreateCapturingProvider("botframework", "user-token");
+
+            await provider.GetAgenticUserTokenAsync("tenant-id", "agent-app-id", "alice@contoso.com", new List<string> { "User.Read" });
+            await provider.GetAgenticUserTokenAsync("tenant-id", "agent-app-id", "bob@contoso.com", new List<string> { "User.Read" });
+
+            // Different agentic users must never share a cached token.
+            Assert.Equal(2, urls.Count);
+        }
     }
 
     public class SidecarTokenCredentialTests
     {
-        private static SidecarAccessTokenProvider CreateProvider(string responseToken)
+        private static SidecarAuth CreateProvider(string responseToken)
         {
             var mock = new Mock<HttpMessageHandler>();
             mock.Protected()
@@ -484,7 +682,7 @@ namespace Microsoft.Agents.Builder.Tests
                 });
 
             var sidecarClient = new SidecarHttpClient(new HttpClient(mock.Object), "http://localhost:5178");
-            return new SidecarAccessTokenProvider(sidecarClient, new SidecarConnectionSettings { ServiceName = "default" });
+            return new SidecarAuth(sidecarClient, new SidecarConnectionSettings { ServiceName = "default" });
         }
 
         private static string CreateJwtWithExpiry(DateTimeOffset expiry)
@@ -606,219 +804,6 @@ namespace Microsoft.Agents.Builder.Tests
         }
     }
 
-    public class SidecarUserAuthorizationTests
-    {
-        private static (SidecarUserAuthorization handler, List<string> urls) CreateHandler(
-            string serviceName = "me", string responseToken = "user-token")
-        {
-            var urls = new List<string>();
-            var mock = new Mock<HttpMessageHandler>();
-            mock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .Callback<HttpRequestMessage, CancellationToken>((r, _) => urls.Add(r.RequestUri.ToString()))
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent($"{{\"authorizationHeader\":\"Bearer {responseToken}\"}}")
-                });
-
-            var sidecarClient = new SidecarHttpClient(new HttpClient(mock.Object), "http://localhost:5178");
-            var settings = new SidecarSettings { ServiceName = serviceName };
-            var handler = new SidecarUserAuthorization("test", new Mock<IConnections>().Object, settings, sidecarClient);
-            return (handler, urls);
-        }
-
-        private static ITurnContext CreateAgenticContext(string agenticUserId = null, string id = null)
-        {
-            var activity = new Activity
-            {
-                Recipient = new ChannelAccount
-                {
-                    Role = RoleTypes.AgenticUser,
-                    AgenticAppId = "agent-app-id",
-                    AgenticUserId = agenticUserId,
-                    Id = id
-                }
-            };
-            var context = new Mock<ITurnContext>();
-            context.Setup(c => c.Activity).Returns(activity);
-            return context.Object;
-        }
-
-        [Fact]
-        public async Task GetRefreshedUserTokenAsync_AgenticUserId_PassesAgentUserId()
-        {
-            var (handler, urls) = CreateHandler();
-            var context = CreateAgenticContext(agenticUserId: "user-oid");
-
-            var response = await handler.GetRefreshedUserTokenAsync(context);
-
-            Assert.Equal("user-token", response.Token);
-            var url = Assert.Single(urls);
-            Assert.Contains("/AuthorizationHeaderUnauthenticated/me", url);
-            Assert.Contains("AgentIdentity=agent-app-id", url);
-            Assert.Contains("AgentUserId=user-oid", url);
-            Assert.DoesNotContain("AgentUsername", url);
-        }
-
-        [Fact]
-        public async Task GetRefreshedUserTokenAsync_UsesUnauthenticatedEndpoint_ByDefault()
-        {
-            var (handler, urls) = CreateHandler();
-
-            await handler.GetRefreshedUserTokenAsync(CreateAgenticContext(agenticUserId: "user-oid"));
-
-            var url = Assert.Single(urls);
-            Assert.Contains("/AuthorizationHeaderUnauthenticated/me", url);
-        }
-
-        [Fact]
-        public async Task GetRefreshedUserTokenAsync_NoAgenticUserId_PassesAgentUsernameFromId()
-        {
-            var (handler, urls) = CreateHandler();
-            var context = CreateAgenticContext(agenticUserId: null, id: "user@contoso.com");
-
-            await handler.GetRefreshedUserTokenAsync(context);
-
-            var url = Assert.Single(urls);
-            Assert.Contains("AgentUsername=user%40contoso.com", url);
-            Assert.DoesNotContain("AgentUserId", url);
-        }
-
-        [Fact]
-        public async Task SignInUserAsync_NonAgenticRequest_Throws()
-        {
-            var (handler, _) = CreateHandler();
-            var activity = new Activity { Recipient = new ChannelAccount { Role = RoleTypes.User } };
-            var context = new Mock<ITurnContext>();
-            context.Setup(c => c.Activity).Returns(activity);
-
-            await Assert.ThrowsAsync<InvalidOperationException>(
-                () => handler.SignInUserAsync(context.Object));
-        }
-
-        [Fact]
-        public async Task GetRefreshedUserTokenAsync_SidecarError_ThrowsWrappedException()
-        {
-            var mock = new Mock<HttpMessageHandler>();
-            mock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    Content = new StringContent("""{"title":"Bad Request","status":400,"detail":"nope"}""")
-                });
-            var sidecarClient = new SidecarHttpClient(new HttpClient(mock.Object), "http://localhost:5178");
-            var handler = new SidecarUserAuthorization("test", new Mock<IConnections>().Object,
-                new SidecarSettings { ServiceName = "me" }, sidecarClient);
-            var context = CreateAgenticContext(agenticUserId: "user-oid");
-
-            await Assert.ThrowsAsync<InvalidOperationException>(
-                () => handler.GetRefreshedUserTokenAsync(context));
-        }
-
-        [Fact]
-        public void Constructor_NullName_Throws()
-        {
-            var sidecarClient = new SidecarHttpClient(new HttpClient(), "http://localhost:5178");
-            Assert.Throws<ArgumentNullException>(() =>
-                new SidecarUserAuthorization(null, new Mock<IConnections>().Object,
-                    new SidecarSettings { ServiceName = "me" }, sidecarClient));
-        }
-
-        private static (SidecarUserAuthorization handler, List<string> urls) CreateHandler(SidecarSettings settings)
-        {
-            var urls = new List<string>();
-            var mock = new Mock<HttpMessageHandler>();
-            mock.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .Callback<HttpRequestMessage, CancellationToken>((r, _) => urls.Add(r.RequestUri.ToString()))
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("""{"authorizationHeader":"Bearer user-token"}""")
-                });
-
-            var sidecarClient = new SidecarHttpClient(new HttpClient(mock.Object), "http://localhost:5178");
-            var handler = new SidecarUserAuthorization("test", new Mock<IConnections>().Object, settings, sidecarClient);
-            return (handler, urls);
-        }
-
-        [Fact]
-        public async Task GetRefreshedUserTokenAsync_AppliesSettingsToRequest()
-        {
-            var settings = new SidecarSettings
-            {
-                ServiceName = "me",
-                ForceRefresh = true,
-                RequestAppToken = true,
-                Tenant = "tenant-xyz",
-                Scopes = new List<string> { "User.Read" }
-            };
-            var (handler, urls) = CreateHandler(settings);
-
-            await handler.GetRefreshedUserTokenAsync(CreateAgenticContext(agenticUserId: "user-oid"));
-
-            var url = Assert.Single(urls);
-            Assert.Contains("optionsOverride.AcquireTokenOptions.ForceRefresh=true", url);
-            Assert.Contains("optionsOverride.RequestAppToken=true", url);
-            Assert.Contains("optionsOverride.AcquireTokenOptions.Tenant=tenant-xyz", url);
-            Assert.Contains("optionsOverride.Scopes=User.Read", url);
-        }
-
-        [Fact]
-        public async Task GetRefreshedUserTokenAsync_ExchangeScopesOverrideSettingsScopes()
-        {
-            var settings = new SidecarSettings
-            {
-                ServiceName = "me",
-                Scopes = new List<string> { "User.Read" }
-            };
-            var (handler, urls) = CreateHandler(settings);
-
-            await handler.GetRefreshedUserTokenAsync(
-                CreateAgenticContext(agenticUserId: "user-oid"),
-                exchangeScopes: new List<string> { "Mail.Read" });
-
-            var url = Assert.Single(urls);
-            Assert.Contains("optionsOverride.Scopes=Mail.Read", url);
-            Assert.DoesNotContain("optionsOverride.Scopes=User.Read", url);
-        }
-
-        [Fact]
-        public async Task GetRefreshedUserTokenAsync_AgenticIdentityRole_OmitsUserParameters()
-        {
-            var (handler, urls) = CreateHandler();
-            var activity = new Activity
-            {
-                Recipient = new ChannelAccount
-                {
-                    Role = RoleTypes.AgenticIdentity,
-                    AgenticAppId = "agent-app-id",
-                    AgenticUserId = "should-be-ignored",
-                    Id = "ignored@contoso.com"
-                }
-            };
-            var context = new Mock<ITurnContext>();
-            context.Setup(c => c.Activity).Returns(activity);
-
-            await handler.GetRefreshedUserTokenAsync(context.Object);
-
-            var url = Assert.Single(urls);
-            Assert.Contains("AgentIdentity=agent-app-id", url);
-            Assert.DoesNotContain("AgentUserId", url);
-            Assert.DoesNotContain("AgentUsername", url);
-        }
-
-        [Fact]
-        public void Constructor_EmptyServiceName_Throws()
-        {
-            Assert.Throws<ArgumentException>(() =>
-                new SidecarUserAuthorization("test", new Mock<IConnections>().Object,
-                    new SidecarSettings { ServiceName = "" }));
-        }
-    }
-
     public class SidecarServiceCollectionExtensionsTests
     {
         [Fact]
@@ -833,7 +818,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             var accessProvider = sp.GetRequiredService<IAccessTokenProvider>();
             var agenticProvider = sp.GetRequiredService<IAgenticTokenProvider>();
-            var concrete = sp.GetRequiredService<SidecarAccessTokenProvider>();
+            var concrete = sp.GetRequiredService<SidecarAuth>();
 
             Assert.Same(concrete, accessProvider);
             Assert.Same(concrete, agenticProvider);
@@ -867,7 +852,7 @@ namespace Microsoft.Agents.Builder.Tests
                 .ConfigurePrimaryHttpMessageHandler(() => mock.Object);
 
             var sp = services.BuildServiceProvider();
-            var provider = sp.GetRequiredService<SidecarAccessTokenProvider>();
+            var provider = sp.GetRequiredService<SidecarAuth>();
 
             // BlueprintServiceName must survive registration, else it falls back to "agenticblueprint".
             await provider.GetAgenticApplicationTokenAsync("tenant-1", "agent-1");
@@ -878,6 +863,39 @@ namespace Microsoft.Agents.Builder.Tests
             capturedUrls.Clear();
             await provider.GetAgenticInstanceTokenAsync("tenant-1", "agent-1");
             Assert.Contains(capturedUrls, u => u.Contains("optionsOverride.Scopes=Custom.Scope"));
+        }
+
+        [Fact]
+        public async Task AddSidecarConnections_MissingServiceName_DefaultsToDefault()
+        {
+            var capturedUrls = new List<string>();
+            var mock = new Mock<HttpMessageHandler>();
+            mock.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .Callback<HttpRequestMessage, CancellationToken>((r, _) => capturedUrls.Add(r.RequestUri.ToString()))
+                .ReturnsAsync(() => new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("""{"authorizationHeader":"Bearer token"}""")
+                });
+
+            // ServiceName explicitly blank -> the registration guard must fall back to "default".
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
+            {
+                { "EntraSidecar:ServiceName", "" },
+                { "EntraSidecar:Scopes:0", "Custom.Scope" }
+            }).Build();
+
+            var services = new ServiceCollection();
+            services.AddSidecarConnections(configuration);
+            services.AddHttpClient(SidecarHttpClient.HttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => mock.Object);
+
+            var sp = services.BuildServiceProvider();
+            var provider = sp.GetRequiredService<SidecarAuth>();
+
+            await provider.GetAgenticInstanceTokenAsync("tenant-1", "agent-1");
+            Assert.Contains(capturedUrls, u => u.Contains("/AuthorizationHeaderUnauthenticated/default"));
         }
     }
 
@@ -927,6 +945,98 @@ namespace Microsoft.Agents.Builder.Tests
 
             await check.StopAsync(CancellationToken.None);
         }
+
+        [Fact]
+        public void AddSidecarStartupProbe_RegistersHostedService_ReusingRegisteredClient()
+        {
+            var services = new ServiceCollection();
+            services.AddSingleton(new SidecarHttpClient(new HttpClient(), "http://localhost:5178"));
+            services.AddSidecarStartupProbe();
+
+            var sp = services.BuildServiceProvider();
+
+            var hosted = Assert.Single(sp.GetServices<IHostedService>(), s => s is SidecarStartupHealthCheck);
+            Assert.IsType<SidecarStartupHealthCheck>(hosted);
+        }
+
+        [Fact]
+        public void AddSidecarStartupProbe_CreatesClient_WhenNoneRegistered()
+        {
+            var services = new ServiceCollection();
+            services.AddSidecarStartupProbe(failOnUnreachable: true, sidecarBaseUrl: "http://localhost:5178", timeout: TimeSpan.FromSeconds(2));
+
+            var sp = services.BuildServiceProvider();
+
+            var hosted = Assert.Single(sp.GetServices<IHostedService>(), s => s is SidecarStartupHealthCheck);
+            Assert.IsType<SidecarStartupHealthCheck>(hosted);
+        }
+
+        [Fact]
+        public void AddSidecarStartupProbe_CreatesClient_UsingHttpClientFactory()
+        {
+            var services = new ServiceCollection();
+            services.AddHttpClient(SidecarHttpClient.HttpClientName);
+            services.AddSidecarStartupProbe(sidecarBaseUrl: "http://localhost:5178");
+
+            var sp = services.BuildServiceProvider();
+
+            var hosted = Assert.Single(sp.GetServices<IHostedService>(), s => s is SidecarStartupHealthCheck);
+            Assert.IsType<SidecarStartupHealthCheck>(hosted);
+        }
+    }
+
+    public class SidecarTokenExpiryTests
+    {
+        [Fact]
+        public void Resolve_ValidJwt_ReturnsExpClaim()
+        {
+            var expiry = DateTimeOffset.UtcNow.AddHours(1);
+            var token = new JwtSecurityToken(issuer: null, audience: null, claims: null,
+                notBefore: null, expires: expiry.UtcDateTime);
+            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+            var resolved = SidecarTokenExpiry.Resolve(jwt);
+
+            // JWT exp has whole-second resolution.
+            Assert.InRange(resolved, expiry.AddSeconds(-2), expiry.AddSeconds(2));
+        }
+
+        [Fact]
+        public void Resolve_OpaqueToken_UsesFallbackLifetime()
+        {
+            var before = DateTimeOffset.UtcNow;
+            var resolved = SidecarTokenExpiry.Resolve("opaque-non-jwt-token");
+            var after = DateTimeOffset.UtcNow;
+
+            Assert.InRange(resolved, before.AddMinutes(5).AddSeconds(-5), after.AddMinutes(5).AddSeconds(5));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void Resolve_NullOrEmpty_UsesFallbackLifetime(string token)
+        {
+            var before = DateTimeOffset.UtcNow;
+            var resolved = SidecarTokenExpiry.Resolve(token);
+            var after = DateTimeOffset.UtcNow;
+
+            Assert.InRange(resolved, before.AddMinutes(5).AddSeconds(-5), after.AddMinutes(5).AddSeconds(5));
+        }
+
+        [Fact]
+        public void Resolve_JwtWithoutExpClaim_UsesFallbackLifetime()
+        {
+            // A readable JWT that carries no "exp" claim -> ValidTo is DateTime.MinValue -> fallback.
+            var token = new JwtSecurityToken(issuer: "iss", audience: "aud", claims: null,
+                notBefore: null, expires: null);
+            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+            var before = DateTimeOffset.UtcNow;
+            var resolved = SidecarTokenExpiry.Resolve(jwt);
+            var after = DateTimeOffset.UtcNow;
+
+            Assert.InRange(resolved, before.AddMinutes(5).AddSeconds(-5), after.AddMinutes(5).AddSeconds(5));
+        }
     }
 
     public class SidecarConnectionSettingsTests
@@ -962,6 +1072,40 @@ namespace Microsoft.Agents.Builder.Tests
 
             Assert.Equal("default", settings.ServiceName);
             Assert.Equal("agenticblueprint", settings.BlueprintServiceName);
+            Assert.Equal(TimeSpan.FromSeconds(30), settings.RequestTimeout);
+            Assert.Equal(3, settings.RetryCount);
+        }
+
+        [Fact]
+        public void ConfigConstructor_BindsTimeoutAndRetryCount()
+        {
+            var section = Section(new Dictionary<string, string>
+            {
+                { "Conn:RequestTimeout", "00:00:45" },
+                { "Conn:RetryCount", "5" },
+                { "Conn:SidecarBaseUrl", "http://localhost:9999" }
+            });
+
+            var settings = new SidecarConnectionSettings(section);
+
+            Assert.Equal(TimeSpan.FromSeconds(45), settings.RequestTimeout);
+            Assert.Equal(5, settings.RetryCount);
+            Assert.Equal("http://localhost:9999", settings.SidecarBaseUrl);
+        }
+
+        [Fact]
+        public void Bind_PopulatesTimeoutAndRetryCount()
+        {
+            var section = Section(new Dictionary<string, string>
+            {
+                { "Conn:RequestTimeout", "00:01:00" },
+                { "Conn:RetryCount", "7" }
+            });
+
+            var settings = section.Get<SidecarConnectionSettings>();
+
+            Assert.Equal(TimeSpan.FromMinutes(1), settings.RequestTimeout);
+            Assert.Equal(7, settings.RetryCount);
         }
 
         [Fact]
@@ -969,6 +1113,186 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var section = new ConfigurationBuilder().Build().GetSection("Missing");
             Assert.Throws<ArgumentException>(() => new SidecarConnectionSettings(section));
+        }
+    }
+
+    public class SidecarBaseUrlValidationTests
+    {
+        [Theory]
+        [InlineData("http://localhost:5178")]
+        [InlineData("http://127.0.0.1:5178")]
+        [InlineData("http://[::1]:5178")]
+        [InlineData("http://10.0.0.5:8080")]
+        [InlineData("http://172.16.4.3:8080")]
+        [InlineData("http://172.31.255.1:8080")]
+        [InlineData("http://192.168.1.10:8080")]
+        [InlineData("http://169.254.10.10:8080")]
+        [InlineData("http://[fc00::1]:8080")]
+        [InlineData("http://[fd12:3456:789a::1]:8080")]
+        [InlineData("http://[fe80::1]:8080")]
+        [InlineData("http://agentid-sidecar.localhost:8080")]
+        public void ValidateBaseUrl_AllowsLoopbackAndPrivate(string url)
+        {
+            // Should not throw for loopback / private addresses without the bypass flag.
+            SidecarHttpClient.ValidateBaseUrl(url, bypassLocalNetworkRestriction: false);
+        }
+
+        [Theory]
+        [InlineData("http://20.50.60.70:8080")]
+        [InlineData("http://8.8.8.8")]
+        [InlineData("http://[2001:4860:4860::8888]")]
+        [InlineData("https://sidecar.contoso.com")]
+        [InlineData("http://172.32.0.1:8080")]
+        public void ValidateBaseUrl_RejectsPublicAddress_WhenNotBypassed(string url)
+        {
+            Assert.Throws<InvalidOperationException>(
+                () => SidecarHttpClient.ValidateBaseUrl(url, bypassLocalNetworkRestriction: false));
+        }
+
+        [Theory]
+        [InlineData("http://20.50.60.70:8080")]
+        [InlineData("https://sidecar.contoso.com")]
+        public void ValidateBaseUrl_AllowsPublicAddress_WhenBypassEnabled(string url)
+        {
+            // The explicit (unsafe) bypass flag skips the safety check.
+            SidecarHttpClient.ValidateBaseUrl(url, bypassLocalNetworkRestriction: true);
+        }
+
+        [Fact]
+        public void ValidateBaseUrl_PublicSidecarUrlEnvVar_IsRejected_WhenConfigIsSafeLocalhost()
+        {
+            // Repro for the SSRF env-var bypass: a safe localhost config must NOT let a public
+            // SIDECAR_URL env value through, because validation no longer keys off config presence.
+            var original = Environment.GetEnvironmentVariable("SIDECAR_URL");
+            try
+            {
+                Environment.SetEnvironmentVariable("SIDECAR_URL", "https://attacker.contoso.com");
+                var resolved = SidecarHttpClient.ResolveBaseUrl(configuredUrl: "http://localhost:5178");
+
+                Assert.Equal("https://attacker.contoso.com", resolved);
+                Assert.Throws<InvalidOperationException>(
+                    () => SidecarHttpClient.ValidateBaseUrl(resolved, bypassLocalNetworkRestriction: false));
+
+                // The operator can still opt in explicitly (unsafe) via the bypass flag.
+                SidecarHttpClient.ValidateBaseUrl(resolved, bypassLocalNetworkRestriction: true);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("SIDECAR_URL", original);
+            }
+        }
+
+        [Fact]
+        public void ValidateBaseUrl_MalformedUrl_Throws()
+        {
+            Assert.Throws<InvalidOperationException>(
+                () => SidecarHttpClient.ValidateBaseUrl("not-a-url", bypassLocalNetworkRestriction: false));
+        }
+
+        [Fact]
+        public void ValidateBaseUrl_MalformedUrl_Throws_EvenWhenBypassed()
+        {
+            // The bypass flag only relaxes the loopback/private-address rule, never basic URL validation.
+            Assert.Throws<InvalidOperationException>(
+                () => SidecarHttpClient.ValidateBaseUrl("not-a-url", bypassLocalNetworkRestriction: true));
+        }
+    }
+
+    public class SidecarHttpClientRetryTests
+    {
+        private static readonly TimeSpan FastBackoff = TimeSpan.FromMilliseconds(1);
+
+        private static Mock<HttpMessageHandler> SequenceHandler(params HttpResponseMessage[] responses)
+        {
+            var mock = new Mock<HttpMessageHandler>();
+            var setup = mock.Protected()
+                .SetupSequence<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+            foreach (var response in responses)
+            {
+                setup = setup.ReturnsAsync(response);
+            }
+
+            return mock;
+        }
+
+        private static HttpResponseMessage Ok(string token = "Bearer eyJok")
+            => new() { StatusCode = HttpStatusCode.OK, Content = new StringContent($$"""{"authorizationHeader":"{{token}}"}""") };
+
+        private static HttpResponseMessage Status(HttpStatusCode code)
+            => new() { StatusCode = code, Content = new StringContent("") };
+
+        private static void VerifyCallCount(Mock<HttpMessageHandler> mock, int times)
+        {
+            mock.Protected().Verify(
+                "SendAsync",
+                Times.Exactly(times),
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task RetriesTransientStatus_ThenSucceeds()
+        {
+            var handler = SequenceHandler(Status(HttpStatusCode.ServiceUnavailable), Status(HttpStatusCode.InternalServerError), Ok());
+            var client = new SidecarHttpClient(new HttpClient(handler.Object), "http://localhost:5178", null, null, retryCount: 3, retryBackoffBase: FastBackoff);
+
+            var result = await client.GetAuthorizationHeaderUnauthenticatedAsync("default");
+
+            Assert.Equal("eyJok", result.Token);
+            VerifyCallCount(handler, 3);
+        }
+
+        [Fact]
+        public async Task GivesUpAfterRetryCount_ThrowsWithStatus()
+        {
+            var handler = SequenceHandler(Status(HttpStatusCode.InternalServerError), Status(HttpStatusCode.InternalServerError));
+            var client = new SidecarHttpClient(new HttpClient(handler.Object), "http://localhost:5178", null, null, retryCount: 1, retryBackoffBase: FastBackoff);
+
+            var ex = await Assert.ThrowsAsync<ErrorResponseException>(
+                () => client.GetAuthorizationHeaderUnauthenticatedAsync("default"));
+
+            Assert.Equal(500, ex.StatusCode);
+            VerifyCallCount(handler, 2);
+        }
+
+        [Fact]
+        public async Task DoesNotRetryNonTransientStatus()
+        {
+            var handler = SequenceHandler(Status(HttpStatusCode.BadRequest), Ok());
+            var client = new SidecarHttpClient(new HttpClient(handler.Object), "http://localhost:5178", null, null, retryCount: 3, retryBackoffBase: FastBackoff);
+
+            await Assert.ThrowsAsync<ErrorResponseException>(
+                () => client.GetAuthorizationHeaderUnauthenticatedAsync("default"));
+
+            VerifyCallCount(handler, 1);
+        }
+
+        [Fact]
+        public async Task RetriesOnNetworkException_ThenSucceeds()
+        {
+            var mock = new Mock<HttpMessageHandler>();
+            mock.Protected()
+                .SetupSequence<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .ThrowsAsync(new HttpRequestException("connection refused"))
+                .ReturnsAsync(Ok());
+            var client = new SidecarHttpClient(new HttpClient(mock.Object), "http://localhost:5178", null, null, retryCount: 2, retryBackoffBase: FastBackoff);
+
+            var result = await client.GetAuthorizationHeaderUnauthenticatedAsync("default");
+
+            Assert.Equal("eyJok", result.Token);
+            VerifyCallCount(mock, 2);
+        }
+
+        [Fact]
+        public async Task RetryDisabled_WhenRetryCountZero()
+        {
+            var handler = SequenceHandler(Status(HttpStatusCode.ServiceUnavailable), Ok());
+            var client = new SidecarHttpClient(new HttpClient(handler.Object), "http://localhost:5178", null, null, retryCount: 0, retryBackoffBase: FastBackoff);
+
+            await Assert.ThrowsAsync<ErrorResponseException>(
+                () => client.GetAuthorizationHeaderUnauthenticatedAsync("default"));
+
+            VerifyCallCount(handler, 1);
         }
     }
 }

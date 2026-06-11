@@ -1,6 +1,6 @@
 {
-  "id": "7b0926a6-c4ee-445a-a913-bd054594bdaa",
+  "id": "${{AGENT_TEMPLATE_ID}}",
   "schemaVersion": "0.1.0-preview",
-  "agentIdentityBlueprintId": "d55898b8-f900-49bf-a5f3-2ae900349988",
+  "agentIdentityBlueprintId": "${{BLUEPRINT_ID}}",
   "communicationProtocol": "activityProtocol"
 }

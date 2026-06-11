@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Builder.UserAuth.EntraSidecar
+namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Model
 {
     /// <summary>
     /// Options used to build the query string for a sidecar token request.

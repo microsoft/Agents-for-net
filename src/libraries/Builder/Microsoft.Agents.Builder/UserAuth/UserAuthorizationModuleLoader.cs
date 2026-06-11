@@ -5,7 +5,6 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.UserAuth.AgenticAuth;
 using Microsoft.Agents.Builder.UserAuth.Connector;
-using Microsoft.Agents.Builder.UserAuth.EntraSidecar;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
@@ -59,10 +58,6 @@ namespace Microsoft.Agents.Builder.UserAuth
             else if (typeName.Equals(nameof(ConnectorUserAuthorization), StringComparison.OrdinalIgnoreCase))
             {
                 typeName = typeof(ConnectorUserAuthorization).FullName;
-            }
-            else if (typeName.Equals(nameof(SidecarUserAuthorization), StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(SidecarUserAuthorization).FullName;
             }
             
             // This throws for invalid assembly name.
@@ -131,7 +126,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             return type.GetConstructor(
                 bindingAttr: BindingFlags.Instance | BindingFlags.Public,
                 binder: null,
-                types: [typeof(string), typeof(IStorage), typeof(IConnections), typeof(IConfigurationSection), typeof(ILogger), typeof(IServiceProvider)],
+                types: [typeof(string), typeof(IStorage), typeof(IConnections), typeof(IConfigurationSection), typeof(ILogger)],
                 modifiers: null);
         }
     }

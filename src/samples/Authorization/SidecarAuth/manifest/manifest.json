@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vdevPreview/MicrosoftTeams.schema.json",
-  "id": "d55898b8-f900-49bf-a5f3-2ae900349988",
+  "id": "${{BLUEPRINT_ID}}",
   "name": {
-    "short": "mameye-obo-bp-agent Blueprint",
-    "full": "mameye-obo-bp-agent Blueprint"
+    "short": "sidecar-blueprint-agent Blueprint",
+    "full": "sidecar-blueprint-agent Blueprint"
   },
   "description": {
-    "short": "mameye-obo-bp-agent",
-    "full": "This is a test registration for the mameye-obo-bp-agent agents."
+    "short": "sidecar-blueprint-agent",
+    "full": "This is a test registration for the sidecar-blueprint-agent agents."
   },
   "icons": {
     "outline": "outline.png",
@@ -25,23 +25,23 @@
   },
   "agenticUserTemplates": [
     {
-      "id": "7b0926a6-c4ee-445a-a913-bd054594bdaa",
+      "id": "${{AGENT_TEMPLATE_ID}}",
       "file": "agenticUserTemplateManifest.json"
     }
   ],
   "copilotAgents": {
     "customEngineAgents": [
       {
-        "id": "d55898b8-f900-49bf-a5f3-2ae900349988",
+        "id": "${{BLUEPRINT_ID}}",
         "type": "bot",
         "functionsAs": "agenticUserOnly",
-        "agenticUserTemplateId": "7b0926a6-c4ee-445a-a913-bd054594bdaa"
+        "agenticUserTemplateId": "${{AGENT_TEMPLATE_ID}}"
       }
     ]
   },
   "bots": [
     {
-      "botId": "d55898b8-f900-49bf-a5f3-2ae900349988",
+      "botId": "${{BLUEPRINT_ID}}",
       "scopes": [
         "personal",
         "groupChat",
@@ -59,8 +59,8 @@
     "messageTeamMembers"
   ],
   "webApplicationInfo": {
-    "id": "d55898b8-f900-49bf-a5f3-2ae900349988",
-    "resource": "api://d55898b8-f900-49bf-a5f3-2ae900349988"
+    "id": "${{BLUEPRINT_ID}}",
+    "resource": "api://${{BLUEPRINT_ID}}"
   },
   "validDomains": [
     "token.botframework.com"

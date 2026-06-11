@@ -10,7 +10,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.UserAuth.EntraSidecar
+namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
 {
     /// <summary>
     /// Optional hosted service that probes the Microsoft Entra ID Agent ID sidecar once at startup by
@@ -80,6 +80,11 @@ namespace Microsoft.Agents.Builder.UserAuth.EntraSidecar
         /// Optional sidecar base URL used only when no <see cref="SidecarHttpClient"/> is registered. When
         /// null, resolves from the <c>SIDECAR_URL</c> environment variable, then falls back to the default.
         /// </param>
+        /// <param name="bypassLocalNetworkRestriction">
+        /// When <c>true</c>, disables the loopback/private-address safety check on the resolved URL.
+        /// <b>UNSAFE</b>; see <see cref="SidecarHttpClient.ValidateBaseUrl"/>. Only used when no
+        /// <see cref="SidecarHttpClient"/> is already registered.
+        /// </param>
         /// <param name="timeout">
         /// Optional probe timeout. Defaults to <see cref="SidecarHttpClient.DefaultTimeout"/>.
         /// </param>
@@ -88,6 +93,7 @@ namespace Microsoft.Agents.Builder.UserAuth.EntraSidecar
             this IServiceCollection services,
             bool failOnUnreachable = false,
             string sidecarBaseUrl = null,
+            bool bypassLocalNetworkRestriction = false,
             TimeSpan? timeout = null)
         {
             services.AddSingleton<IHostedService>(sp =>
@@ -103,10 +109,13 @@ namespace Microsoft.Agents.Builder.UserAuth.EntraSidecar
                 }
                 else
                 {
+                    var resolvedUrl = SidecarHttpClient.ResolveBaseUrl(sidecarBaseUrl);
+                    SidecarHttpClient.ValidateBaseUrl(resolvedUrl, bypassLocalNetworkRestriction);
+
                     var httpClientFactory = sp.GetService<IHttpClientFactory>();
                     var httpClient = httpClientFactory?.CreateClient(SidecarHttpClient.HttpClientName)
                         ?? new HttpClient { Timeout = SidecarHttpClient.DefaultTimeout };
-                    client = new SidecarHttpClient(httpClient, SidecarHttpClient.ResolveBaseUrl(sidecarBaseUrl), logger);
+                    client = new SidecarHttpClient(httpClient, resolvedUrl, logger);
                 }
 
                 return new SidecarStartupHealthCheck(

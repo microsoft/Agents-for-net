@@ -2,12 +2,11 @@
 
 This sample shows how to authenticate a Microsoft 365 Agent using the **Microsoft Entra ID Agent Container** (the *sidecar*) instead of MSAL. Token acquisition is delegated to the sidecar over its local HTTP API, so the agent never handles secrets or certificates. It is intended for **Agent 365 / agentic** scenarios where the inbound activity carries an agent identity (`Recipient.AgenticAppId`, `Recipient.AgenticUserId`).
 
-The provider and handler used here live in `Microsoft.Agents.Builder.UserAuth.EntraSidecar`. See the [library README](../../../libraries/Builder/Microsoft.Agents.Builder/UserAuth/EntraSidecar/README.md) for the full design and endpoint mapping, and spec [microsoft/Agents#606](https://github.com/microsoft/Agents/issues/606) for background.
+The provider used here lives in `Microsoft.Agents.Authentication.EntraAuthSidecar`. See the [library README](../../../libraries/Authentication/Authentication.EntraAuthSidecar/README.md) for the full design and endpoint mapping, and spec [microsoft/Agents#606](https://github.com/microsoft/Agents/issues/606) for background.
 
 This sample demonstrates:
 
-- **Connection-level token acquisition** via `SidecarAccessTokenProvider` (configured as the `ServiceConnection` token provider) — used by the SDK to call back to the channel/Bot Framework as the agentic identity.
-- **Per-route user authorization** via `SidecarUserAuthorization` — the `me` handler acquires a `User.Read` token for the agentic user.
+- **Connection-level token acquisition** via `SidecarAuth` (configured as the `ServiceConnection` token provider) — used by the SDK to call back to the channel/Bot Framework as the agentic identity.
 - **Sidecar health check** — `SidecarHealthCheck` is exposed at `/health` to report whether the sidecar is reachable, and an optional startup probe verifies reachability once at startup.
 
 ## How it works
@@ -35,10 +34,9 @@ The sidecar's configuration must declare the downstream APIs this sample referen
 | Downstream API name | Used by | Configuration |
 |---|---|---|
 | `botframework` | `ServiceConnection` (channel callbacks) | Scope `5a807f24-c9de-44ee-a3a7-329e88a00ffc/.default` |
-| `me` | `SidecarUserAuthorization` (`-me` route) | Scope `User.Read` |
 | `agenticblueprint` | `GetAgenticApplicationTokenAsync` | App-only (`RequestAppToken: true`), scope `api://AzureAdTokenExchange/.default` |
 
-The sidecar holds the agent (Blueprint) credential. If the sidecar base URL differs from the default, set the `SIDECAR_URL` environment variable or the `SidecarBaseUrl` setting.
+The sidecar holds the agent (Blueprint) credential. If the sidecar base URL differs from the default, set the `SIDECAR_URL` environment variable or the `SidecarBaseUrl` setting. The resolved URL must be a loopback or private address; to target a non-private address in a carefully validated private network, set the (unsafe) `BypassLocalNetworkRestriction: true` setting. See the [library README](../../../libraries/Authentication/Authentication.EntraAuthSidecar/README.md#loopbackprivate-address-safety-check-ssrf).
 
 ## Configure the agent
 
@@ -49,8 +47,8 @@ Edit `appsettings.json` (or, for local development, `appsettings.Development.jso
    ```json
    "Connections": {
      "ServiceConnection": {
-       "Assembly": "Microsoft.Agents.Builder",
-       "Type": "Microsoft.Agents.Builder.UserAuth.EntraSidecar.SidecarAccessTokenProvider",
+       "Assembly": "Microsoft.Agents.Authentication.EntraAuthSidecar",
+       "Type": "Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarAuth",
        "Settings": {
          "SidecarBaseUrl": "http://localhost:5178",
          "ServiceName": "botframework",
@@ -60,26 +58,7 @@ Edit `appsettings.json` (or, for local development, `appsettings.Development.jso
    }
    ```
 
-2. The `me` user-authorization handler is already configured to use the sidecar:
-
-   ```json
-   "AgentApplication": {
-     "UserAuthorization": {
-       "Handlers": {
-         "me": {
-           "Type": "SidecarUserAuthorization",
-           "Settings": {
-             "SidecarBaseUrl": "http://localhost:5178",
-             "ServiceName": "me",
-             "Scopes": [ "User.Read" ]
-           }
-         }
-       }
-     }
-   }
-   ```
-
-3. Set `TokenValidation` for your tenant. For local debugging, the audience is the agent Blueprint app ID:
+2. Set `TokenValidation` for your tenant. For local debugging, the audience is the agent Blueprint app ID:
 
    ```json
    "TokenValidation": {
@@ -117,7 +96,7 @@ Edit `appsettings.json` (or, for local development, `appsettings.Development.jso
 
 1. Update `manifest/manifest.json` with your agent app ID and tunnel domain, then zip the `manifest` folder contents (`manifest.json`, `color.png`, `outline.png`).
 2. Upload the custom app and start a chat with the agent.
-3. Send **`-me`** to sign in via the sidecar and have the agent read your profile from Microsoft Graph. Send any other message to see it echoed back.
+3. Send any message to exercise the agentic connection.
 
 > **Sign-out:** the sidecar owns the token cache and exposes no revoke endpoint in this phase, so `SignOutUserAsync`/`ResetStateAsync` are intentional no-ops and there is no `-signout` command.
 
@@ -125,5 +104,5 @@ If a token request fails, the sidecar returns an RFC 7807 error which the SDK su
 
 ## Further reading
 
-- [EntraSidecar provider library README](../../../libraries/Builder/Microsoft.Agents.Builder/UserAuth/EntraSidecar/README.md)
+- [EntraAuthSidecar provider library README](../../../libraries/Authentication/Authentication.EntraAuthSidecar/README.md)
 - [Microsoft 365 Agents SDK](https://github.com/microsoft/agents-for-net)

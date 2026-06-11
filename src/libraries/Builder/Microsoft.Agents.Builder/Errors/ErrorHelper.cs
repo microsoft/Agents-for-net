@@ -88,8 +88,5 @@ namespace Microsoft.Agents.Builder.Errors
         internal static readonly AgentErrorDefinition ProactiveInvalidConversationReferenceInstance = new AgentErrorDefinition(-50045, Properties.Resources.ProactiveInvalidConversationReferenceInstance, "https://aka.ms/M365AgentsErrorCodes/#-50045");
         internal static readonly AgentErrorDefinition ProactiveInvalidConversationParametersInstance = new AgentErrorDefinition(-50046, Properties.Resources.ProactiveInvalidConversationParametersInstance, "https://aka.ms/M365AgentsErrorCodes/#-50046");
         internal static readonly AgentErrorDefinition ProactiveNotAllHandlersSignedIn = new AgentErrorDefinition(-50047, Properties.Resources.ProactiveNotAllHandlersSignedIn, "https://aka.ms/M365AgentsErrorCodes/#-50047");
-
-        // EntraSidecar
-        internal static readonly AgentErrorDefinition EntraSidecarTokenAcquisitionFailed = new AgentErrorDefinition(-50048, Properties.Resources.EntraSidecarTokenAcquisitionFailed, "https://aka.ms/M365AgentsErrorCodes/#-50048");
     }
 }

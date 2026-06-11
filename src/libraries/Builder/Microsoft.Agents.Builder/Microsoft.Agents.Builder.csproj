@@ -25,7 +25,6 @@
         <PackageReference Include="System.Memory.Data" />
 		<PackageReference Include="System.Text.Json" />
 		<PackageReference Include="Microsoft.Extensions.Http" />
-		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
     </ItemGroup>
 
     <ItemGroup>
