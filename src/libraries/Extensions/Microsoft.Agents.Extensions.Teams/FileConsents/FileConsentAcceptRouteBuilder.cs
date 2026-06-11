@@ -32,13 +32,14 @@ public class FileConsentAcceptRouteBuilder : FileConsentRouteBuilderBase<FileCon
     /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Api.FileConsentCardResponse"/>,
     /// and a cancellation token.</param>
     /// <returns>The current <see cref="FileConsentAcceptRouteBuilder"/> instance for method chaining.</returns>
-    public FileConsentAcceptRouteBuilder WithHandler(FileConsentHandler handler)
+    public FileConsentAcceptRouteBuilder WithHandler(FileConsentHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var response = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(ctx.Activity.Value);
-            await handler(ctx, ts, response, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx).ConfigureAwait(false);
+            await handler(ttc, ts, response, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc).ConfigureAwait(false);
         };
         return this;
     }

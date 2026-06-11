@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -28,10 +29,11 @@ public class MessageUndeleteRouteBuilder : MessageEventRouteBuilderBase<MessageU
     /// Configures the route to use the specified handler for processing message undelete events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message undelete event.</param>
+    /// <param name="proactive">An instance of <see cref="Proactive"/> for handling proactive messaging.</param>
     /// <returns>The current <see cref="MessageUndeleteRouteBuilder"/> instance for method chaining.</returns>
-    public MessageUndeleteRouteBuilder WithHandler(RouteHandler handler)
+    public MessageUndeleteRouteBuilder WithHandler(TeamsRouteHandler handler, Proactive proactive)
     {
-        _route.Handler = handler;
+        _route.Handler = HandlerUtils.WrapHandler(handler, proactive);
         return this;
     }
 }

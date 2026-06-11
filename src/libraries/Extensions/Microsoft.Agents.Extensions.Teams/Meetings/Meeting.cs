@@ -30,7 +30,7 @@ public class Meeting
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnStart(MeetingStartHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MeetingStartRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(MeetingStartRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -44,7 +44,7 @@ public class Meeting
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnEnd(MeetingEndHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MeetingEndRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(MeetingEndRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -58,7 +58,7 @@ public class Meeting
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnParticipantsJoin(MeetingParticipantsEventHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MeetingParticipantsJoinRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(MeetingParticipantsJoinRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -72,7 +72,7 @@ public class Meeting
     /// <returns>The application instance for chaining purposes.</returns>
     public Meeting OnParticipantsLeave(MeetingParticipantsEventHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MeetingParticipantsLeaveRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(MeetingParticipantsLeaveRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 }

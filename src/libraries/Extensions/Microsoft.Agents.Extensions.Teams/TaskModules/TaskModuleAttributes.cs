@@ -40,7 +40,7 @@ public class TaskFetchRouteAttribute(string value = null, string key = null, boo
             .WithOrderRank(rank);
 
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TaskFetchHandler>(app, method);
-        builder.WithHandler(handler);
+        builder.WithHandler(handler, app.Proactive);
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -80,7 +80,7 @@ public class TaskSubmitRouteAttribute(string value = null, string key = null, bo
             .WithOrderRank(rank);
 
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TaskSubmitHandler>(app, method);
-        builder.WithHandler(handler);
+        builder.WithHandler(handler, app.Proactive);
 
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());

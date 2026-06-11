@@ -1,4 +1,5 @@
 ﻿using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams
 {
-    public class TurnContextWrapper : ITurnContext
+    public abstract class TurnContextWrapper : ITurnContext
     {
 
         protected readonly ITurnContext _turnContext;

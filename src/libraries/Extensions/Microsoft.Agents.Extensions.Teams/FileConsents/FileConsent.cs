@@ -109,7 +109,7 @@ public class FileConsent
     public FileConsent OnAccept(FileConsentHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(FileConsentAcceptRouteBuilder.Create()
-            .WithHandler(handler)
+            .WithHandler(handler, _app.Proactive)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)
             .WithOAuthHandlers(autoSignInHandlers)
@@ -128,7 +128,7 @@ public class FileConsent
     public FileConsent OnDecline(FileConsentHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(FileConsentDeclineRouteBuilder.Create()
-            .WithHandler(handler)
+            .WithHandler(handler, _app.Proactive)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)
             .WithOAuthHandlers(autoSignInHandlers)

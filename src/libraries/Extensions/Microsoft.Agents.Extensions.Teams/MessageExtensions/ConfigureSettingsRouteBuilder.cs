@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Errors;
@@ -32,13 +33,14 @@ public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsR
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
     /// <returns>The current instance of ConfigureSettingsRouteBuilder, enabling method chaining.</returns>
-    public ConfigureSettingsRouteBuilder WithHandler(ConfigureSettingsHandler handler)
+    public ConfigureSettingsRouteBuilder WithHandler(ConfigureSettingsHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
     }

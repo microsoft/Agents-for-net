@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
@@ -30,13 +31,14 @@ public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
     /// <param name="handler">An asynchronous delegate that processes the query, receiving the turn context, turn state, deserialized data
     /// of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token.</param>
     /// <returns>The current instance of QueryRouteBuilder, enabling method chaining.</returns>
-    public QueryRouteBuilder WithHandler(QueryHandler handler)
+    public QueryRouteBuilder WithHandler(QueryHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
     }

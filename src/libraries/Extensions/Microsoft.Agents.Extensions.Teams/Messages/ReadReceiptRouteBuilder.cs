@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Text.Json;
@@ -30,13 +31,15 @@ public class ReadReceiptRouteBuilder : RouteBuilderBase<ReadReceiptRouteBuilder>
     /// The handler receives the deserialized <see cref="JsonElement"/> payload from the activity value.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the read receipt event.</param>
+    /// <param name="proactive">An instance of <see cref="Proactive"/> for handling proactive messaging.</param>    
     /// <returns>The current <see cref="ReadReceiptRouteBuilder"/> instance for method chaining.</returns>
-    public ReadReceiptRouteBuilder WithHandler(ReadReceiptHandler handler)
+    public ReadReceiptRouteBuilder WithHandler(ReadReceiptHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var data = (JsonElement)ctx.Activity.Value;
-            await handler(ctx, ts, data, ct).ConfigureAwait(false);
+            await handler(ttc, ts, data, ct).ConfigureAwait(false);
         };
         return this;
     }

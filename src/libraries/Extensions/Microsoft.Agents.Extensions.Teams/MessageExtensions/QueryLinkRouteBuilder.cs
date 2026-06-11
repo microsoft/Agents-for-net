@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Errors;
@@ -31,13 +32,14 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query link.</param>
     /// <returns>The current instance of QueryLinkRouteBuilder, enabling method chaining.</returns>
-    public QueryLinkRouteBuilder WithHandler(QueryLinkHandler handler)
+    public QueryLinkRouteBuilder WithHandler(QueryLinkHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             AppBasedQueryLink? value = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, value?.Url, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            var response = await handler(ttc, ts, value?.Url, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
     }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Teams.Api;
 using System.Collections.Generic;
@@ -109,10 +110,15 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// Configures the route to use the specified handler for channel update events.
     /// </summary>
     /// <param name="handler">The handler to process channel update events.</param>
+    /// <param name="proactive">The proactive service to use for the handler.</param>
     /// <returns>The current instance of the ChannelUpdateRouteBuilder, enabling method chaining.</returns>
-    public ChannelUpdateRouteBuilder WithHandler(ChannelUpdateHandler handler)
+    public ChannelUpdateRouteBuilder WithHandler(ChannelUpdateHandler handler, Proactive proactive)
     {
-        _route.Handler = (ctx, ts, ct) => handler(ctx, ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct);
+        _route.Handler = async (ctx, ts, ct) =>
+        {
+            var ttc = new TeamsTurnContext(ctx, proactive);
+            await handler(ttc, ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct);
+        };
         return this;
     }
 

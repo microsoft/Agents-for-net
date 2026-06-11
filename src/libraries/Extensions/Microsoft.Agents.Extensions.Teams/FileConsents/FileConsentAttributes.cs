@@ -37,7 +37,7 @@ public class FileConsentAcceptRouteAttribute(bool isAgenticOnly = false, ushort 
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<FileConsentHandler>(app, method);
         var builder = FileConsentAcceptRouteBuilder.Create()
-            .WithHandler(handler)
+            .WithHandler(handler, app.Proactive)
             .AsAgentic(isAgenticOnly)
             .WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
@@ -72,7 +72,7 @@ public class FileConsentDeclineRouteAttribute(bool isAgenticOnly = false, ushort
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<FileConsentHandler>(app, method);
         var builder = FileConsentDeclineRouteBuilder.Create()
-            .WithHandler(handler)
+            .WithHandler(handler, app.Proactive)
             .AsAgentic(isAgenticOnly)
             .WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));

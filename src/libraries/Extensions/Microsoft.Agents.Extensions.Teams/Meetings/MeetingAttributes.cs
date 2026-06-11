@@ -32,7 +32,7 @@ public class MeetingStartRouteAttribute(bool isAgenticOnly = false, ushort rank 
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<MeetingStartHandler>(app, method);
-        var builder = MeetingStartRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = MeetingStartRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -63,7 +63,7 @@ public class MeetingEndRouteAttribute(bool isAgenticOnly = false, ushort rank = 
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<MeetingEndHandler>(app, method);
-        var builder = MeetingEndRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = MeetingEndRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -94,7 +94,7 @@ public class MeetingParticipantsJoinRouteAttribute(bool isAgenticOnly = false, u
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<MeetingParticipantsEventHandler>(app, method);
-        var builder = MeetingParticipantsJoinRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = MeetingParticipantsJoinRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -125,7 +125,7 @@ public class MeetingParticipantsLeaveRouteAttribute(bool isAgenticOnly = false, 
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<MeetingParticipantsEventHandler>(app, method);
-        var builder = MeetingParticipantsLeaveRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = MeetingParticipantsLeaveRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }

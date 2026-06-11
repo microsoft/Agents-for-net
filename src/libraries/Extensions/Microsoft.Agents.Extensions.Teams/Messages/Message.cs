@@ -42,11 +42,11 @@ public class Message
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Message OnMessageEdit(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public Message OnMessageEdit(TeamsRouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(MessageEditRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(handler)
+            .WithHandler(handler, _app.Proactive)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;
@@ -64,19 +64,9 @@ public class Message
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public Message OnMessageUndelete(TeamsRouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        RouteHandler newHandler = HandlerUtils.WrapHandler(handler, _app.Proactive);
         _app.AddRoute(MessageUndeleteRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(newHandler)
-            .WithOAuthHandlers(autoSignInHandlers)
-            .Build());
-        return this;
-    }
-    public Message OnMessageUndelete(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
-    {
-        _app.AddRoute(MessageUndeleteRouteBuilder.Create()
-            .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(handler)
+            .WithHandler(handler, _app.Proactive)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;
@@ -94,40 +84,9 @@ public class Message
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public Message OnMessageDelete(TeamsRouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        RouteHandler newHandler = HandlerUtils.WrapHandler(handler, _app.Proactive);
         _app.AddRoute(MessageDeleteRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(newHandler)
-            .WithOAuthHandlers(autoSignInHandlers)
-            .Build());
-        return this;
-    }
-    public Message OnMessageDelete(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
-    {
-        _app.AddRoute(MessageDeleteRouteBuilder.Create()
-            .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(handler)
-            .WithOAuthHandlers(autoSignInHandlers)
-            .Build());
-        return this;
-    }
-
-    public Message OnMessage(TeamsRouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
-    {
-        RouteHandler newHandler = HandlerUtils.WrapHandler(handler, _app.Proactive);
-        _app.AddRoute(MessageDeleteRouteBuilder.Create()
-            .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(newHandler)
-            .WithOAuthHandlers(autoSignInHandlers)
-            .Build());
-        return this;
-    }
-
-    public Message OnMessage(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
-    {
-        _app.AddRoute(MessageDeleteRouteBuilder.Create()
-            .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(handler)
+            .WithHandler(handler, _app.Proactive)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;
@@ -147,7 +106,7 @@ public class Message
     {
         _app.AddRoute(ReadReceiptRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(handler)
+            .WithHandler(handler, _app.Proactive)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;
@@ -167,7 +126,7 @@ public class Message
     {
         _app.AddRoute(O365ConnectorCardActionRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
-            .WithHandler(handler)
+            .WithHandler(handler, _app.Proactive)
             .WithOAuthHandlers(autoSignInHandlers)
             .Build());
         return this;

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
@@ -29,13 +30,14 @@ public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteB
     /// processing of the action's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the fetch action</param>
     /// <returns>The current instance of FetchActionRouteBuilder, enabling method chaining.</returns>
-    public FetchActionRouteBuilder WithHandler(FetchActionHandler handler)
+    public FetchActionRouteBuilder WithHandler(FetchActionHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, action, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            var response = await handler(ttc, ts, action, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
     }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.Teams.TaskModules;
@@ -28,12 +29,13 @@ public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBu
     /// processing of the submit request's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the submit request.</param>
     /// <returns>The current instance of TaskSubmitRouteBuilder, enabling method chaining.</returns>
-    public TaskSubmitRouteBuilder WithHandler(TaskSubmitHandler handler)
+    public TaskSubmitRouteBuilder WithHandler(TaskSubmitHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive); 
             var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.TaskModules.Request>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
+            var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;

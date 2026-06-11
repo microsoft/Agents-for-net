@@ -32,7 +32,7 @@ public class ChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushort ran
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelCreated().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelCreated().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -63,7 +63,7 @@ public class ChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushort ran
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelDeleted().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelDeleted().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -94,7 +94,7 @@ public class ChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, ushort
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelMemberAdded().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelMemberAdded().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -125,7 +125,7 @@ public class ChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false, usho
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelMemberRemoved().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelMemberRemoved().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -156,7 +156,7 @@ public class ChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushort ran
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelRenamed().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelRenamed().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -187,7 +187,7 @@ public class ChannelRestoredRouteAttribute(bool isAgenticOnly = false, ushort ra
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelRestored().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelRestored().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -218,7 +218,7 @@ public class ChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelShared().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelShared().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -249,7 +249,7 @@ public class ChannelUnsharedRouteAttribute(bool isAgenticOnly = false, ushort ra
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().ForChannelUnshared().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().ForChannelUnshared().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -282,7 +282,7 @@ public class ChannelUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ChannelUpdateHandler>(app, method);
-        var builder = ChannelUpdateRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ChannelUpdateRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }

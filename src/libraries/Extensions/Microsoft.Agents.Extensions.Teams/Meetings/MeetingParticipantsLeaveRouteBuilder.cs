@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
 
@@ -32,12 +33,13 @@ public class MeetingParticipantsLeaveRouteBuilder : MeetingEventRouteBuilderBase
     /// Receives the turn context, turn state, deserialized <see cref="MeetingParticipantsEventDetails"/>,
     /// and a cancellation token.</param>
     /// <returns>The current <see cref="MeetingParticipantsLeaveRouteBuilder"/> instance for method chaining.</returns>
-    public MeetingParticipantsLeaveRouteBuilder WithHandler(MeetingParticipantsEventHandler handler)
+    public MeetingParticipantsLeaveRouteBuilder WithHandler(MeetingParticipantsEventHandler handler, Proactive proactive)
     {
         _route.Handler = (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var details = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(ctx.Activity.Value);
-            return handler(ctx, ts, details, ct);
+            return handler(ttc, ts, details, ct);
         };
         return this;
     }

@@ -90,7 +90,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch(string value, TaskFetchHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(TaskFetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(value).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(TaskFetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(value).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -108,7 +108,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch(Regex valuePattern, TaskFetchHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(TaskFetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(valuePattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(TaskFetchRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(valuePattern).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -142,7 +142,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit(string value, TaskSubmitHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(TaskSubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(value).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(TaskSubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(value).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -160,7 +160,7 @@ public class TaskModule
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit(Regex valuePattern, TaskSubmitHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(TaskSubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(valuePattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(TaskSubmitRouteBuilder.Create().WithChannelId(_channelId).WithKey(key).WithValue(valuePattern).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 }

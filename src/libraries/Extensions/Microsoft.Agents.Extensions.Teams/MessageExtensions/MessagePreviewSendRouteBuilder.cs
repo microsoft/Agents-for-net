@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
@@ -28,12 +29,13 @@ public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePre
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message preview send action.</param>
     /// <returns>The current instance of <see cref="MessagePreviewSendRouteBuilder"/>, enabling method chaining.</returns>
-    public MessagePreviewSendRouteBuilder WithHandler(MessagePreviewSendHandler handler)
+    public MessagePreviewSendRouteBuilder WithHandler(MessagePreviewSendHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
-            await handler(ctx, ts, messagingExtensionAction.BotActivityPreview?[0]?.ToCoreActivity(), ct).ConfigureAwait(false);
+            await handler(ttc, ts, messagingExtensionAction.BotActivityPreview?[0]?.ToCoreActivity(), ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, new Microsoft.Teams.Api.MessageExtensions.Response()).ConfigureAwait(false);
         };
         return this;

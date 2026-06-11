@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Errors;
 using System;
@@ -29,12 +30,13 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query URL settings.</param>
     /// <returns>The current instance of QueryUrlSettingRouteBuilder, enabling method chaining.</returns>
-    public QueryUrlSettingRouteBuilder WithHandler(QueryUrlSettingHandler handler)
+    public QueryUrlSettingRouteBuilder WithHandler(QueryUrlSettingHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var response = await handler(ctx, ts, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            var ttc = new TeamsTurnContext(ctx, proactive);
+            var response = await handler(ttc, ts, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
     }

@@ -1,15 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-
-using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
-using System.Text.Json.Nodes;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
@@ -29,13 +20,8 @@ namespace Microsoft.Agents.Builder.App
     /// app.AddRoute(route);
     /// </code>
     /// </remarks>
-    public class FeedbackRouteBuilder : RouteBuilderBase<FeedbackRouteBuilder>
+    public class FeedbackRouteBuilder : FeedbackRouteBuilderBase<FeedbackRouteBuilder>
     {
-        public FeedbackRouteBuilder() : base()
-        {
-            _route.Flags |= RouteFlags.Invoke;
-        }
-
         /// <summary>
         /// Configures the route to handle feedback actions using the specified feedback loop handler.
         /// </summary>
@@ -47,47 +33,7 @@ namespace Microsoft.Agents.Builder.App
         /// <returns>The current <see cref="Microsoft.Agents.Builder.App.FeedbackRouteBuilder"/> instance for method chaining.</returns>
         public FeedbackRouteBuilder WithHandler(FeedbackLoopHandler handler)
         {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            Task<bool> routeSelector(ITurnContext context, CancellationToken _)
-            {
-                var jsonObject = ProtocolJsonSerializer.ToObject<JsonObject>(context.Activity.Value);
-                string? actionName = jsonObject != null && jsonObject.ContainsKey("actionName") ? jsonObject["actionName"].ToString() : string.Empty;
-                return Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.Type == ActivityTypes.Invoke
-                    && context.Activity.Name == "message/submitAction"
-                    && actionName == "feedback"
-                );
-            }
-
-            async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-            {
-                FeedbackData feedbackLoopData = ProtocolJsonSerializer.ToObject<FeedbackData>(turnContext.Activity.Value)!;
-                feedbackLoopData.ReplyToId = turnContext.Activity.ReplyToId;
-
-                await handler(turnContext, turnState, feedbackLoopData, cancellationToken);
-                await turnContext.SendActivityAsync(Activity.CreateInvokeResponseActivity(), cancellationToken);
-            }
-
-            _route.Selector = routeSelector;
-            _route.Handler = routeHandler;
-
-            return this;
-        }
-
-        /// <summary>
-        /// Returns the current route builder instance configured for Invoke routing. This method ensures that the route
-        /// remains set as an Invoke route.
-        /// </summary>
-        /// <remarks>This override prevents changing the route configuration from Invoke routing,
-        /// maintaining consistency with the route's initial setup.</remarks>
-        /// <param name="isInvoke">Ignored</param>
-        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.FeedbackRouteBuilder"/> with Invoke routing enabled.</returns>
-        public override FeedbackRouteBuilder AsInvoke(bool isInvoke = true)
-        {
-            return this;
+            return WithHandlerCore(handler);
         }
     }
 }

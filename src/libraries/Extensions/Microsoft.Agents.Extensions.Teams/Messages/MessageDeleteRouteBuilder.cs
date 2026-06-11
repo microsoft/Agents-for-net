@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -28,10 +29,11 @@ public class MessageDeleteRouteBuilder : MessageEventRouteBuilderBase<MessageDel
     /// Configures the route to use the specified handler for processing message soft-delete events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message soft-delete event.</param>
+    /// <param name="proactive">An instance of <see cref="Proactive"/> for handling proactive messaging.</param>
     /// <returns>The current <see cref="MessageDeleteRouteBuilder"/> instance for method chaining.</returns>
-    public MessageDeleteRouteBuilder WithHandler(RouteHandler handler)
+    public MessageDeleteRouteBuilder WithHandler(TeamsRouteHandler handler, Proactive proactive)
     {
-        _route.Handler = handler;
+        _route.Handler = HandlerUtils.WrapHandler(handler, proactive);
         return this;
     }
 }

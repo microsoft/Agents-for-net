@@ -32,7 +32,7 @@ public class MessageEditRouteAttribute(bool isAgenticOnly = false, ushort rank =
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamsRouteHandler>(app, method);
         var builder = MessageEditRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
@@ -62,52 +62,10 @@ public class MessageUndeleteRouteAttribute(bool isAgenticOnly = false, ushort ra
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
-        var builder = MessageUndeleteRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamsRouteHandler>(app, method);
+        var builder = MessageUndeleteRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
-    }
-}
-
-[AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TeamsMessageRouteAttribute(string text = null, string textRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
-{
-    public void AddRoute(AgentApplication app, MethodInfo method)
-    {
-        if (method.GetParameters()[0].ParameterType == typeof(TeamsTurnContext))
-        {
-            var handler = HandlerUtils.WrapHandler(RouteAttributeHelper.CreateHandlerDelegate<TeamsRouteHandler>(app, method), app.Proactive);
-            var b = MessageRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
-            RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
-
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                b = b.WithText(text);
-            }
-            else if (!string.IsNullOrWhiteSpace(textRegex))
-            {
-                b = b.WithText(new Regex(textRegex));
-            }
-
-            app.AddRoute(b.Build());
-        }
-        else
-        {
-            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
-            var b = MessageRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
-            RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
-
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                b = b.WithText(text);
-            }
-            else if (!string.IsNullOrWhiteSpace(textRegex))
-            {
-                b = b.WithText(new Regex(textRegex));
-            }
-
-            app.AddRoute(b.Build());
-        }
     }
 }
 
@@ -134,8 +92,8 @@ public class MessageDeleteRouteAttribute(bool isAgenticOnly = false, ushort rank
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
-        var builder = MessageDeleteRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamsRouteHandler>(app, method);
+        var builder = MessageDeleteRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -167,7 +125,7 @@ public class ReadReceiptRouteAttribute(bool isAgenticOnly = false, ushort rank =
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<ReadReceiptHandler>(app, method);
-        var builder = ReadReceiptRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = ReadReceiptRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -199,7 +157,7 @@ public class O365ConnectorCardActionRouteAttribute(bool isAgenticOnly = false, u
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<O365ConnectorCardActionHandler>(app, method);
-        var builder = O365ConnectorCardActionRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var builder = O365ConnectorCardActionRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }

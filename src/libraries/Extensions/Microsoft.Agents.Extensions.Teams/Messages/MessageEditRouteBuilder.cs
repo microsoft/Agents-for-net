@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -29,9 +30,9 @@ public class MessageEditRouteBuilder : MessageEventRouteBuilderBase<MessageEditR
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message edit event.</param>
     /// <returns>The current <see cref="MessageEditRouteBuilder"/> instance for method chaining.</returns>
-    public MessageEditRouteBuilder WithHandler(RouteHandler handler)
+    public MessageEditRouteBuilder WithHandler(TeamsRouteHandler handler, Proactive proactive)
     {
-        _route.Handler = handler;
+        _route.Handler = HandlerUtils.WrapHandler(handler, proactive);
         return this;
     }
 }

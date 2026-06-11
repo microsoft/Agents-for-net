@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Errors;
@@ -33,13 +34,14 @@ public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedR
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
     /// <returns>The current instance of CardButtonClickedRouteBuilder, enabling method chaining.</returns>
-    public CardButtonClickedRouteBuilder WithHandler<TData>(CardButtonClickedHandler<TData> handler)
+    public CardButtonClickedRouteBuilder WithHandler<TData>(CardButtonClickedHandler<TData> handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var cardData = ProtocolJsonSerializer.ToObject<TData>(ctx.Activity.Value);
-            await handler(ctx, ts, cardData, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, null).ConfigureAwait(false);
+            await handler(ttc, ts, cardData, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, null).ConfigureAwait(false);
         };
         return this;
     }

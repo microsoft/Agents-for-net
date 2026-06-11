@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
@@ -26,13 +27,14 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
     /// </summary>
     /// <param name="handler">The delegate that processes the submit action.</param>
     /// <returns>The current instance of the SubmitActionRouteBuilder, enabling method chaining.</returns>
-    public SubmitActionRouteBuilder WithHandler(SubmitActionHandler handler)
+    public SubmitActionRouteBuilder WithHandler(SubmitActionHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
-            var result = await handler(ctx, ts, action, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, result).ConfigureAwait(false);
+            var result = await handler(ttc, ts, action, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, result).ConfigureAwait(false);
         };
         return this;
     }

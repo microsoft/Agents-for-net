@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Errors;
@@ -35,15 +36,16 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
     /// <param name="handler">An asynchronous delegate that processes the select item, receiving the turn context, turn state, deserialized data
     /// of type <typeparamref name="TData"/>, and a cancellation token.</param>
     /// <returns>The current instance of SelectItemRouteBuilder, enabling method chaining.</returns>
-    public SelectItemRouteBuilder WithHandler<TData>(SelectItemHandler<TData> handler)
+    public SelectItemRouteBuilder WithHandler<TData>(SelectItemHandler<TData> handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
             try
             {
+                var ttc = new TeamsTurnContext(ctx, proactive);
                 var value = ProtocolJsonSerializer.ToObject<TData>(ctx.Activity.Value);
-                var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
-                await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+                var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
+                await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

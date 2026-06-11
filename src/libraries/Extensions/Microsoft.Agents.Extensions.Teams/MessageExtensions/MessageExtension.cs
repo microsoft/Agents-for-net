@@ -41,7 +41,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnMessagePreviewEdit(string commandId, MessagePreviewEditHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -57,7 +57,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnMessagePreviewEdit(Regex commandIdPattern, MessagePreviewEditHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(MessagePreviewEditRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -82,7 +82,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnMessagePreviewSend(string commandId, MessagePreviewSendHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -98,7 +98,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnMessagePreviewSend(Regex commandIdPattern, MessagePreviewSendHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(MessagePreviewSendRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -126,7 +126,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnFetchAction(string commandId, FetchActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -141,7 +141,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnFetchAction(Regex commandIdPattern, FetchActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(FetchActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -167,7 +167,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSubmitAction(string commandId, SubmitActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -182,7 +182,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(SubmitActionRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -208,7 +208,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuery(string commandId, QueryHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -223,7 +223,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuery(Regex commandIdPattern, QueryHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(QueryRouteBuilder.Create().WithChannelId(_channelId).WithCommand(commandIdPattern).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -248,7 +248,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSelectItem<TData>(SelectItemHandler<TData> handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(SelectItemRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(SelectItemRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -271,7 +271,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQueryLink(QueryLinkHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(QueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -285,7 +285,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAnonymousQueryLink(QueryLinkHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(AnonQueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(AnonQueryLinkRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -315,7 +315,7 @@ public class MessageExtension
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQueryUrlSetting(QueryUrlSettingHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryUrlSettingRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(QueryUrlSettingRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -340,7 +340,7 @@ public class MessageExtension
     /// <returns>The current MessageExtension instance for method chaining.</returns>
     public MessageExtension OnConfigureSettings(ConfigureSettingsHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(ConfigureSettingsRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(ConfigureSettingsRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -365,7 +365,7 @@ public class MessageExtension
     /// <returns>The current <see cref="MessageExtension"/> instance for method chaining.</returns>
     public MessageExtension OnCardButtonClicked<TData>(CardButtonClickedHandler<TData> handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(CardButtonClickedRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler<TData>(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(CardButtonClickedRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler<TData>(handler, _app.Proactive).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 }

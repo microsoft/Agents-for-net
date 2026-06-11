@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System;
@@ -23,14 +24,16 @@ public class O365ConnectorCardActionRouteBuilder : RouteBuilderBase<O365Connecto
     /// The handler receives the deserialized <see cref="Microsoft.Teams.Api.O365.ConnectorCardActionQuery"/> from the activity value.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the O365 Connector Card Action invoke.</param>
-    /// <returns>The current <see cref="O365ConnectorCardActionRouteBuilder"/> instance for method chaining.</returns>
-    public O365ConnectorCardActionRouteBuilder WithHandler(O365ConnectorCardActionHandler handler)
+    /// <param name="proactive">An instance of <see cref="Proactive"/> for handling proactive messaging.</param>
+    /// <returns>The current <see cref="O365ConnectorCardActionRouteBuilder"/> instance for method chaining.</returns>  
+    public O365ConnectorCardActionRouteBuilder WithHandler(O365ConnectorCardActionHandler handler, Proactive proactive)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             Microsoft.Teams.Api.O365.ConnectorCardActionQuery query =
                 ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.O365.ConnectorCardActionQuery>(ctx.Activity.Value) ?? new();
-            await handler(ctx, ts, query, ct).ConfigureAwait(false);
+            await handler(ttc, ts, query, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx).ConfigureAwait(false);
         };
         return this;

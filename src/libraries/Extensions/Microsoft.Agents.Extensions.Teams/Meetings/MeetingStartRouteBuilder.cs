@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.Teams.Meetings;
@@ -31,12 +32,13 @@ public class MeetingStartRouteBuilder : MeetingEventRouteBuilderBase<MeetingStar
     /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Api.Meetings.MeetingDetails"/>,
     /// and a cancellation token.</param>
     /// <returns>The current <see cref="MeetingStartRouteBuilder"/> instance for method chaining.</returns>
-    public MeetingStartRouteBuilder WithHandler(MeetingStartHandler handler)
+    public MeetingStartRouteBuilder WithHandler(MeetingStartHandler handler, Proactive proactive)
     {
         _route.Handler = (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx, proactive);
             var details = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(ctx.Activity.Value);
-            return handler(ctx, ts, details, ct);
+            return handler(ttc, ts, details, ct);
         };
         return this;
     }
