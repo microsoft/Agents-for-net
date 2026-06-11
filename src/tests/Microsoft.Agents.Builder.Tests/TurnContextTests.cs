@@ -655,6 +655,77 @@ namespace Microsoft.Agents.Builder.Tests
                 () => context.DeleteActivityAsync("some-activity-id"));
         }
 
+        // ApplyConversationReference — targeted activity Recipient preservation
+
+        [Fact]
+        public async Task SendActivityAsync_TargetedActivity_PreservesRecipientThroughApplyConversationReference()
+        {
+            // The incoming turn activity establishes the conversation reference (User = "convo-user")
+            var incomingActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Id = "incoming-id",
+                From = new ChannelAccount { Id = "convo-user", Name = "Convo User" },
+                Recipient = new ChannelAccount { Id = "bot-id", Name = "Bot" },
+                Conversation = new ConversationAccount { Id = "convo-id" },
+                ServiceUrl = "https://example.com",
+                ChannelId = Channels.Msteams
+            };
+
+            IActivity[] capturedActivities = null;
+            var adapter = new SimpleAdapter(activities => capturedActivities = activities);
+            var context = new TurnContext(adapter, incomingActivity);
+
+            // Target a specific member — different from the conversation user
+            var targetMember = new ChannelAccount { Id = "target-member-id", Name = "Target Member", Role = RoleTypes.User };
+            var outgoing = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "only for you",
+                Recipient = new ChannelAccount { Id = targetMember.Id, Name = targetMember.Name, Role = RoleTypes.User }
+            };
+            outgoing.MakeTargetedActivity();
+
+            await context.SendActivityAsync(outgoing);
+
+            Assert.NotNull(capturedActivities);
+            Assert.Single(capturedActivities);
+            // Recipient must remain the targeted member, NOT be overwritten with the conversation user
+            Assert.Equal("target-member-id", capturedActivities[0].Recipient.Id);
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_NonTargetedActivity_SetsRecipientFromConversationReference()
+        {
+            var incomingActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Id = "incoming-id",
+                From = new ChannelAccount { Id = "convo-user", Name = "Convo User" },
+                Recipient = new ChannelAccount { Id = "bot-id", Name = "Bot" },
+                Conversation = new ConversationAccount { Id = "convo-id" },
+                ServiceUrl = "https://example.com"
+            };
+
+            IActivity[] capturedActivities = null;
+            var adapter = new SimpleAdapter(activities => capturedActivities = activities);
+            var context = new TurnContext(adapter, incomingActivity);
+
+            var outgoing = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new ChannelAccount { Id = "some-other-id" }
+            };
+
+            await context.SendActivityAsync(outgoing);
+
+            Assert.NotNull(capturedActivities);
+            Assert.Single(capturedActivities);
+            // Non-targeted: Recipient is replaced by the conversation reference User (From of the incoming)
+            Assert.Equal("convo-user", capturedActivities[0].Recipient.Id);
+        }
+
         private async Task MyBotLogic(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (turnContext.Activity.Text == "TestResponded")

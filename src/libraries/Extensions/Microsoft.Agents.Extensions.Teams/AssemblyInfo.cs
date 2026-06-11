@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.Serialization;
 using System.Runtime.CompilerServices;
 
 // Allows us to access some internal methods from the Memory.Tests unit tests so we don't have to use reflection and we get compile checks.

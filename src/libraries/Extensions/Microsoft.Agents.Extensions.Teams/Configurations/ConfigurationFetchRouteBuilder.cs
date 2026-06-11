@@ -1,0 +1,41 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Microsoft.Agents.Extensions.Teams.Configurations;
+
+/// <summary>
+/// Provides a builder for configuring routes that handle Teams config fetch invocations.
+/// </summary>
+/// <remarks>
+/// Use <see cref="ConfigurationFetchRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
+/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch"/>.
+/// </remarks>
+public class ConfigurationFetchRouteBuilder : ConfigurationRouteBuilderBase<ConfigurationFetchRouteBuilder>
+{
+    /// <summary>
+    /// Initializes a new instance of <see cref="ConfigurationFetchRouteBuilder"/>,
+    /// pre-configured to match config fetch invocations.
+    /// </summary>
+    public ConfigurationFetchRouteBuilder() : base()
+    {
+        InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch;
+    }
+
+    /// <summary>
+    /// Configures the route to use the specified handler for processing config fetch invocations.
+    /// </summary>
+    /// <param name="handler">An asynchronous delegate invoked when a config fetch request is received.
+    /// Receives the turn context, turn state, config data from the activity value,
+    /// and a cancellation token. Must return a <see cref="Microsoft.Teams.Api.Config.ConfigResponse"/>.</param>
+    /// <returns>The current <see cref="ConfigurationFetchRouteBuilder"/> instance for method chaining.</returns>
+    public ConfigurationFetchRouteBuilder WithHandler(ConfigurationHandler handler)
+    {
+        _route.Handler = async (ctx, ts, ct) =>
+        {
+            var result = await handler(ctx, ts, ctx.Activity.Value, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ctx, result).ConfigureAwait(false);
+        };
+        return this;
+    }
+}
