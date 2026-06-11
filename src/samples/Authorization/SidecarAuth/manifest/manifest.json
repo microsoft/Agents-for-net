@@ -1,20 +1,20 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vdevPreview/MicrosoftTeams.schema.json",
-  "id": "0e289db3-d3a3-40d5-94e7-1ff572a823ca",
+  "id": "d55898b8-f900-49bf-a5f3-2ae900349988",
   "name": {
-    "short": "trboehre-agenticobo Blueprint",
-    "full": "trboehre-agenticobo Blueprint"
+    "short": "mameye-obo-bp-agent Blueprint",
+    "full": "mameye-obo-bp-agent Blueprint"
   },
   "description": {
-    "short": "trboehre-agenticobo",
-    "full": "This is a test registration for the trboehre-agenticobo agents."
+    "short": "mameye-obo-bp-agent",
+    "full": "This is a test registration for the mameye-obo-bp-agent agents."
   },
   "icons": {
     "outline": "outline.png",
     "color": "color.png"
   },
   "accentColor": "#9ec9d9",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifestVersion": "devPreview",
   "developer": {
     "name": "Microsoft Corporation",
@@ -25,23 +25,23 @@
   },
   "agenticUserTemplates": [
     {
-      "id": "7b0926a6-c4ee-445a-a913-bd054594bd09",
+      "id": "7b0926a6-c4ee-445a-a913-bd054594bdaa",
       "file": "agenticUserTemplateManifest.json"
     }
   ],
   "copilotAgents": {
     "customEngineAgents": [
       {
-        "id": "0e289db3-d3a3-40d5-94e7-1ff572a823ca",
+        "id": "d55898b8-f900-49bf-a5f3-2ae900349988",
         "type": "bot",
         "functionsAs": "agenticUserOnly",
-        "agenticUserTemplateId": "7b0926a6-c4ee-445a-a913-bd054594bd09"
+        "agenticUserTemplateId": "7b0926a6-c4ee-445a-a913-bd054594bdaa"
       }
     ]
   },
   "bots": [
     {
-      "botId": "0e289db3-d3a3-40d5-94e7-1ff572a823ca",
+      "botId": "d55898b8-f900-49bf-a5f3-2ae900349988",
       "scopes": [
         "personal",
         "groupChat",
@@ -59,8 +59,8 @@
     "messageTeamMembers"
   ],
   "webApplicationInfo": {
-    "id": "0e289db3-d3a3-40d5-94e7-1ff572a823ca",
-    "resource": "api://0e289db3-d3a3-40d5-94e7-1ff572a823ca"
+    "id": "d55898b8-f900-49bf-a5f3-2ae900349988",
+    "resource": "api://d55898b8-f900-49bf-a5f3-2ae900349988"
   },
   "validDomains": [
     "token.botframework.com"

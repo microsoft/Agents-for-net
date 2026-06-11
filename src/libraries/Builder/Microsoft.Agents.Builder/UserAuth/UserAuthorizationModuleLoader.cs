@@ -60,9 +60,9 @@ namespace Microsoft.Agents.Builder.UserAuth
             {
                 typeName = typeof(ConnectorUserAuthorization).FullName;
             }
-            else if (typeName.Equals(nameof(EntraSidecarUserAuthorization), StringComparison.OrdinalIgnoreCase))
+            else if (typeName.Equals(nameof(SidecarUserAuthorization), StringComparison.OrdinalIgnoreCase))
             {
-                typeName = typeof(EntraSidecarUserAuthorization).FullName;
+                typeName = typeof(SidecarUserAuthorization).FullName;
             }
             
             // This throws for invalid assembly name.

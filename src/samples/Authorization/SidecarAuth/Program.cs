@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using SidecarAuth;
+using Microsoft.Agents.Builder.UserAuth.EntraSidecar;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
@@ -15,6 +16,13 @@ builder.Services.AddHttpClient();
 // Add the AgentApplication, which contains the logic for responding to
 // user messages.
 builder.AddAgent<SidecarAgent>();
+
+// Report whether the Entra ID sidecar is reachable at "/health".
+builder.Services.AddHealthChecks().AddSidecarHealthCheck();
+
+// Optionally probe the sidecar once at startup. With failOnUnreachable:false (the default) an
+// unreachable sidecar logs a warning and startup continues; set true to fail fast instead.
+builder.Services.AddSidecarStartupProbe(failOnUnreachable: false);
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -35,8 +43,11 @@ app.UseAuthorization();
 // Map GET "/"
 app.MapAgentRootEndpoint();
 
+// Sidecar reachability health endpoint.
+app.MapHealthChecks("/health");
+
 // Map the endpoints for all agents using the [AgentInterface] attribute.
 // If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
-app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+app.MapAgentApplicationEndpoints(requireAuth: true);
 
 app.Run();

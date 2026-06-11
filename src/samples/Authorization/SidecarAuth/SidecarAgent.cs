@@ -7,6 +7,11 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
+using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +20,7 @@ namespace SidecarAuth;
 public class SidecarAgent : AgentApplication
 {
     /// <summary>
-    /// Default Sign In Name
+    /// Default display name used when the user's profile cannot be read from Graph.
     /// </summary>
     private readonly string _defaultDisplayName = "Unknown User";
 
@@ -28,11 +33,10 @@ public class SidecarAgent : AgentApplication
     {
         OnConversationUpdate(ConversationUpdateEvents.MembersAdded, WelcomeMessageAsync);
 
-        OnMessage("-signout", async (turnContext, turnState, cancellationToken) =>
-        {
-            await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken: cancellationToken);
-            await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
-        }, rank: RouteRank.Last);
+        // Per-route auto sign-in: the "-me" route acquires a token via the "me" UserAuthorization
+        // handler (EntraSidecar) before OnMe runs. The sidecar performs the agentic identity chain
+        // and returns a User.Read token for the agentic user.
+        OnMessage("-me", OnMe, autoSignInHandlers: ["me"]);
 
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
 
@@ -55,9 +59,39 @@ public class SidecarAgent : AgentApplication
         {
             if (member.Id != turnContext.Activity.Recipient.Id)
             {
-                await turnContext.SendActivityAsync("Welcome!", cancellationToken: cancellationToken);
+                StringBuilder sb = new();
+                sb.AppendLine("Welcome to the SidecarAuth Example!");
+                sb.AppendLine("This Agent acquires tokens via the Microsoft Entra ID Agent Container (sidecar) instead of MSAL.");
+                sb.AppendLine("You can use the following command to interact with the agent:");
+                sb.AppendLine("**-me**: Signs you in via the sidecar and displays your profile from Microsoft Graph.");
+                sb.AppendLine("");
+                sb.AppendLine("Type anything else to see the agent echo back your message.");
+                await turnContext.SendActivityAsync(MessageFactory.Text(sb.ToString()), cancellationToken);
             }
         }
+    }
+
+    /// <summary>
+    /// Handles "-me": uses the "me" UserAuthorization handler (per-route auto sign-in) to acquire a
+    /// token via the sidecar, then reads the user's profile from Microsoft Graph.
+    /// </summary>
+    /// <param name="turnContext"><see cref="ITurnContext"/></param>
+    /// <param name="turnState"><see cref="ITurnState"/></param>
+    /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
+    private async Task OnMe(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        // If sign-in succeeded the token is available via UserAuthorization.GetTurnTokenAsync(turnContext, "me").
+        // If it failed, this handler is not reached; OnUserSignInFailure is called instead.
+        var graphInfo = await GetGraphInfo(turnContext, "me");
+        if (graphInfo == null)
+        {
+            await turnContext.SendActivityAsync("Failed to read your profile from the Graph API using the sidecar-issued token.", cancellationToken: cancellationToken);
+            return;
+        }
+
+        var displayName = graphInfo["displayName"]?.GetValue<string>() ?? _defaultDisplayName;
+        var meInfo = $"Name: {displayName}{Environment.NewLine}Job Title: {graphInfo["jobTitle"]?.GetValue<string>()}{Environment.NewLine}Email: {graphInfo["mail"]?.GetValue<string>()}";
+        await turnContext.SendActivityAsync(meInfo, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -86,5 +120,30 @@ public class SidecarAgent : AgentApplication
         // Raise a notification to the user that the sign-in process failed.  In a production Agent, this would be used
         // to display alternative ways to get help, or in some cases transfer to a live agent.
         await turnContext.SendActivityAsync($"Sign In: Failed to login to '{handlerName}': {response.Cause}/{response.Error!.Message}", cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Reads the signed-in user's profile from the Microsoft Graph /me endpoint using the token
+    /// acquired by the named UserAuthorization handler.
+    /// </summary>
+    private async Task<JsonNode> GetGraphInfo(ITurnContext turnContext, string handlerName)
+    {
+        string accessToken = await turnContext.GetTurnTokenAsync(handlerName);
+        try
+        {
+            using HttpClient client = new();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage response = await client.GetAsync("https://graph.microsoft.com/v1.0/me");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonNode.Parse(content)!;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Trace.WriteLine($"Error getting user profile: {ex.Message}");
+        }
+        return null!;
     }
 }

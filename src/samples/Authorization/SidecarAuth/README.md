@@ -1,157 +1,129 @@
-﻿# AutoSignIn
+﻿# SidecarAuth
 
-This Agent has been created using [Microsoft 365 Agents Framework](https://github.com/microsoft/agents-for-net), it shows how to use Auto SignIn user authorization in your Agent.
+This sample shows how to authenticate a Microsoft 365 Agent using the **Microsoft Entra ID Agent Container** (the *sidecar*) instead of MSAL. Token acquisition is delegated to the sidecar over its local HTTP API, so the agent never handles secrets or certificates. It is intended for **Agent 365 / agentic** scenarios where the inbound activity carries an agent identity (`Recipient.AgenticAppId`, `Recipient.AgenticUserId`).
 
-This sample:
-- Gets an OAuth token automatically for every message sent by the user
-  > This is done by setting the `AgentApplication:UserAuthorization:AutoSign` setting to true.  This will use the default UserAuthorization Handler to automatically get a token for all incoming Activities.  Use this when your Agents needs the same token for much of it's functionality.
-- Per-Route sign in .  In this sample, this is the `-me` message.
-  > Messages the user sends are routed to a handler of your choice.  This feature allows you to indicate that a particular token is needed for the handler.  Per-Route user authorization will automatically handle the OAuth flow to get the token and make it available to your Agent.  Keep in mind that if the the Auto SignIn option is enabled, you actually have two tokens available in the handler.
+The provider and handler used here live in `Microsoft.Agents.Builder.UserAuth.EntraSidecar`. See the [library README](../../../libraries/Builder/Microsoft.Agents.Builder/UserAuth/EntraSidecar/README.md) for the full design and endpoint mapping, and spec [microsoft/Agents#606](https://github.com/microsoft/Agents/issues/606) for background.
 
-The sample uses the bot OAuth capabilities in [Azure Bot Service](https://docs.botframework.com), providing features to make it easier to develop a bot that authorizes users to various identity providers such as Azure AD (Azure Active Directory), GitHub, Uber, etc.
+This sample demonstrates:
 
-- ## Prerequisites
+- **Connection-level token acquisition** via `SidecarAccessTokenProvider` (configured as the `ServiceConnection` token provider) — used by the SDK to call back to the channel/Bot Framework as the agentic identity.
+- **Per-route user authorization** via `SidecarUserAuthorization` — the `me` handler acquires a `User.Read` token for the agentic user.
+- **Sidecar health check** — `SidecarHealthCheck` is exposed at `/health` to report whether the sidecar is reachable, and an optional startup probe verifies reachability once at startup.
 
--  [.Net](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) version 8.0
--  [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows)
+## How it works
 
-## QuickStart using WebChat or Teams
+```
+Agent  ──►  Sidecar (http://localhost:5178)  ──►  Microsoft Entra ID
+       GET /AuthorizationHeaderUnauthenticated/{serviceName}
+           ?AgentIdentity={agentAppInstanceId}&AgentUserId={agenticUserId}
+       ◄── { "authorizationHeader": "Bearer <token>" }
+```
 
-- Overview of running and testing an Agent
-  - Provision an Azure Bot in your Azure Subscription
-  - Configure your Agent settings to use to desired authentication type
-  - Running an instance of the Agent app (either locally or deployed to Azure)
-  - Test in a client
+The sidecar performs the entire agentic identity chain internally (Blueprint → Instance → agentic User via federated identity) and returns the final token. The SDK only translates each token request into a single sidecar call; `AgentIdentity`/`AgentUserId` come from the inbound activity at runtime.
 
-1. Create an Azure Bot with one of these authentication types
-   - [SingleTenant, Client Secret](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-single-secret.md)
-   - [SingleTenant, Federated Credentials](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-fic.md) 
-   - [User Assigned Managed Identity](https://github.com/microsoft/Agents/blob/main/docs/HowTo/azurebot-create-msi.md)
+## Prerequisites
 
-1. [Add OAuth to your bot](https://aka.ms/AgentsSDK-AddAuth)
+- [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- The **Entra ID Agent Container** running locally and reachable. The container listens on `http://localhost:5178` by default (its local default port); override with the `SIDECAR_URL` environment variable or the `SidecarBaseUrl` setting.
+- An [agentic-enabled](https://aka.ms/agent365enable) agent (Blueprint) registered in your tenant.
+- A [dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) for testing from Teams / M365.
 
-1. For purposes of this sample, create a second Azure Bot **OAuth Connection** as a copy of the one just created.
-   > This is to ease setup of this sample.  In an actual Agent, this second connection would be setup separately, with different API Permissions and scopes specific to the external service being accessed. \
-   > This OAuth Connection is for the `-me` message in this sample.   
+## Configure the sidecar (downstream APIs)
 
-1. Configuring the authentication connection in the Agent settings
-   > These instructions are for **SingleTenant, Client Secret**. For other auth type configuration, see [DotNet MSAL Authentication](https://github.com/microsoft/Agents/blob/main/docs/HowTo/MSALAuthConfigurationOptions.md).
-   1. Open the `appsettings.json` file in the root of the sample project.
+The sidecar's configuration must declare the downstream APIs this sample references:
 
-   1. Find the section labeled `Connections`,  it should appear similar to this:
+| Downstream API name | Used by | Configuration |
+|---|---|---|
+| `botframework` | `ServiceConnection` (channel callbacks) | Scope `5a807f24-c9de-44ee-a3a7-329e88a00ffc/.default` |
+| `me` | `SidecarUserAuthorization` (`-me` route) | Scope `User.Read` |
+| `agenticblueprint` | `GetAgenticApplicationTokenAsync` | App-only (`RequestAppToken: true`), scope `api://AzureAdTokenExchange/.default` |
 
-      ```json
-      "Connections": {
-        "ServiceConnection": {
-          "Settings": {
-            "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
-            "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-            "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
-            "ClientSecret": "{{ClientSecret}}", // this is the Client Secret used for the connection.
-            "Scopes": [
-              "https://api.botframework.com/.default"
-            ]
-          }
-        }
-      },
-      ```
+The sidecar holds the agent (Blueprint) credential. If the sidecar base URL differs from the default, set the `SIDECAR_URL` environment variable or the `SidecarBaseUrl` setting.
 
-      1. Replace all **{{ClientId}}** with the AppId of the Azure Bot.
-      1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
-      1. Set the **{{ClientSecret}}** to the Secret that was created on the App Registration.
-      
-      > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
+## Configure the agent
 
-1. Configure the UserAuthorization handlers
-   1. Open the `appsettings.json` file and locate
-      ```json
-      "AgentApplication": {
-        "UserAuthorization": {
-          "DefaultHandlerName": "auto",
-          "AutoSignin": true,
-          "Handlers": {
-            "auto": {
-              "Settings": {
-                "AzureBotOAuthConnectionName": "{{auto_connection_name}}",
-                "Title": "SigIn for Sample",
-                "Text":  "Please sign in and send the 6-digit code"
-              }
-            },
-           "me": {
-             "Settings": {
-               "AzureBotOAuthConnectionName": "{{me_connection_name}}",
-               "Title": "SigIn for Me",
-               "Text": "Please sign in and send the 6-digit code"
-             }
-          }
-        }
-      }
-      ```
+Edit `appsettings.json` (or, for local development, `appsettings.Development.json`).
 
-      1. Replace **{{auto_connection_name}}** with the first **OAuth Connection** name created
-      1. Replace **{{me_connection_name}}** with the second **OAuth Connection** name created
+1. Configure the connection to use the sidecar provider:
 
-1. Running the Agent
-   1. Running the Agent locally
-      - Requires a tunneling tool to allow for local development and debugging should you wish to do local development whilst connected to a external client such as Microsoft Teams.
-      - **For ClientSecret or Certificate authentication types only.**  Federated Credentials and Managed Identity will not work via a tunnel to a local agent and must be deployed to an App Service or container.
-      
-      1. Run `dev tunnels`. Please follow [Create and host a dev tunnel](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows) and host the tunnel with anonymous user access command as shown below:
-
-         ```bash
-         devtunnel host -p 3978 --allow-anonymous
-         ```
-
-      1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `{tunnel-url}/api/messages`
-
-      1. Start the Agent in Visual Studio
-
-   1. Deploy Agent code to Azure
-      1. VS Publish works well for this.  But any tools used to deploy a web application will also work.
-      1. On the Azure Bot, select **Settings**, then **Configuration**, and update the **Messaging endpoint** to `https://{{appServiceDomain}}/api/messages`
-
-## Testing this agent with WebChat
-
-   1. Select **Test in WebChat** on the Azure Bot
-
-## Testing this Agent in Teams or M365
-
-1. Update the manifest.json
-   - Edit the `manifest.json` contained in the `/appManifest` folder
-     - Replace with your AppId (that was created above) *everywhere* you see the place holder string `<<AAD_APP_CLIENT_ID>>`
-     - Replace `<<BOT_DOMAIN>>` with your Agent url.  For example, the tunnel host name.
-   - Zip up the contents of the `/appManifest` folder to create a `manifest.zip`
-     - `manifest.json`
-     - `outline.png`
-     - `color.png`
-
-1. Your Azure Bot should have the **Microsoft Teams** channel added under **Channels**.
-
-1. Navigate to the Microsoft Admin Portal (MAC). Under **Settings** and **Integrated Apps,** select **Upload Custom App**.
-
-1. Select the `manifest.zip` created in the previous step. 
-
-1. After a short period of time, the agent shows up in Microsoft Teams and Microsoft 365 Copilot.
-
-## Interacting with the Agent
-
-- When the conversation starts, you will be greeted with a welcome message which include your name and instructions.  If this is the first time you've interacted with the Agent in a conversation, you will be prompts to sign in (WebChat), or with Teams SSO the OAuth will happen silently.
-- Sending `-me` will display additional information about you.
-- Note that if running this in Teams and SSO is setup, you shouldn't see any "sign in" prompts.  This is true in this sample since we are only requesting a basic set of scopes that Teams doesn't require additional consent for.
-
-1. ## Enabling JWT token validation
-1. By default, the AspNet token validation is disabled in order to support local debugging.
-1. Enable by updating appsettings
    ```json
-   "TokenValidation": {
-     "Enabled": false,
-     "Audiences": [
-       "{{ClientId}}" // this is the Client ID used for the Azure Bot
-     ],
-     "TenantId": "{{TenantId}}"
-   },
+   "Connections": {
+     "ServiceConnection": {
+       "Assembly": "Microsoft.Agents.Builder",
+       "Type": "Microsoft.Agents.Builder.UserAuth.EntraSidecar.SidecarAccessTokenProvider",
+       "Settings": {
+         "SidecarBaseUrl": "http://localhost:5178",
+         "ServiceName": "botframework",
+         "Scopes": [ "5a807f24-c9de-44ee-a3a7-329e88a00ffc/.default" ]
+       }
+     }
+   }
    ```
 
-## Further reading
-To learn more about building Agents, see our [Microsoft 365 Agents SDK](https://github.com/microsoft/agents) repo.
+2. The `me` user-authorization handler is already configured to use the sidecar:
 
+   ```json
+   "AgentApplication": {
+     "UserAuthorization": {
+       "Handlers": {
+         "me": {
+           "Type": "SidecarUserAuthorization",
+           "Settings": {
+             "SidecarBaseUrl": "http://localhost:5178",
+             "ServiceName": "me",
+             "Scopes": [ "User.Read" ]
+           }
+         }
+       }
+     }
+   }
+   ```
+
+3. Set `TokenValidation` for your tenant. For local debugging, the audience is the agent Blueprint app ID:
+
+   ```json
+   "TokenValidation": {
+     "Enabled": true,
+     "Audiences": [ "{{BlueprintAppId}}" ],
+     "TenantId": "{{TenantId}}"
+   }
+   ```
+
+> Do not commit secrets or real tenant/app IDs. `appsettings.Development.json` is git-ignored — keep environment-specific values there.
+
+## Run
+
+1. Ensure the sidecar is running and healthy:
+
+   ```bash
+   curl http://localhost:5178/healthz
+   ```
+
+2. Start a dev tunnel and point your agent's messaging endpoint at it:
+
+   ```bash
+   devtunnel host -p 3978 --allow-anonymous
+   ```
+
+3. Run the agent:
+
+   ```bash
+   dotnet run --project src/samples/Authorization/SidecarAuth
+   ```
+
+   The agent listens on `http://localhost:3978`; the messaging endpoint is `/api/messages`. The sidecar reachability probe is at `http://localhost:3978/health`. An optional startup probe (`AddSidecarStartupProbe`) also checks the sidecar once at startup — warn-only by default, or pass `failOnUnreachable: true` to fail fast.
+
+## Test in Teams / M365
+
+1. Update `manifest/manifest.json` with your agent app ID and tunnel domain, then zip the `manifest` folder contents (`manifest.json`, `color.png`, `outline.png`).
+2. Upload the custom app and start a chat with the agent.
+3. Send **`-me`** to sign in via the sidecar and have the agent read your profile from Microsoft Graph. Send any other message to see it echoed back.
+
+> **Sign-out:** the sidecar owns the token cache and exposes no revoke endpoint in this phase, so `SignOutUserAsync`/`ResetStateAsync` are intentional no-ops and there is no `-signout` command.
+
+If a token request fails, the sidecar returns an RFC 7807 error which the SDK surfaces internally; the underlying AADSTS detail is logged at the `Microsoft.Agents` debug level.
+
+## Further reading
+
+- [EntraSidecar provider library README](../../../libraries/Builder/Microsoft.Agents.Builder/UserAuth/EntraSidecar/README.md)
+- [Microsoft 365 Agents SDK](https://github.com/microsoft/agents-for-net)
