@@ -52,15 +52,44 @@ namespace Microsoft.Agents.Builder.App
 
         public bool IsChannelIdMatch(ChannelId channelId)
         {
-            return ChannelId == null || IsWildcardChannelId(ChannelId) || ChannelIdsEqual(ChannelId, channelId);
+            return ChannelId == null || IsWildcardMatch(ChannelId, channelId) || ChannelIdsEqual(ChannelId, channelId);
         }
 
-        private static bool IsWildcardChannelId(ChannelId channelId)
+        private static bool IsWildcardMatch(ChannelId pattern, ChannelId candidate)
         {
-            return channelId != null
-                && string.Equals(channelId.Channel, "*", StringComparison.Ordinal)
-                && string.IsNullOrEmpty(channelId.SubChannel);
+            if (pattern == null)
+            {
+                return false;
+            }
+
+            bool channelIsWildcard = string.Equals(pattern.Channel, "*", StringComparison.Ordinal);
+            bool subChannelIsWildcard = string.Equals(pattern.SubChannel, "*", StringComparison.Ordinal);
+
+            if (!channelIsWildcard && !subChannelIsWildcard)
+            {
+                return false;
+            }
+
+            // Full wildcard "*" (no subchannel) matches everything including null
+            if (channelIsWildcard && string.IsNullOrEmpty(pattern.SubChannel))
+            {
+                return true;
+            }
+
+            if (candidate == null)
+            {
+                return false;
+            }
+
+            bool channelMatch = channelIsWildcard
+                || string.Equals(pattern.Channel, candidate.Channel, StringComparison.OrdinalIgnoreCase);
+
+            bool subChannelMatch = subChannelIsWildcard
+                || string.Equals(pattern.SubChannel, candidate.SubChannel, StringComparison.OrdinalIgnoreCase);
+
+            return channelMatch && subChannelMatch;
         }
+
         private static bool ChannelIdsEqual(ChannelId left, ChannelId right)
         {
             return left != null

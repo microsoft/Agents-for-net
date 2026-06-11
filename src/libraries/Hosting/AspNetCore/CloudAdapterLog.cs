@@ -6,15 +6,7 @@ using System;
 
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
-    // Event ID registry for CloudAdapter log messages:
-    //   1 = Turn begin (LogTurnBegin)
-    //   2 = Turn response (LogTurnResponse)
-    //   3 = Turn end (LogTurnEnd)
-    //   4 = Activity accepted for background processing (LogActivityAccepted)
-    //   5 = Processing exception (LogProcessingException)
-    //   6 = Request cancelled (LogRequestCancelled)
-    //   7 = Unexpected exception (LogUnexpectedException)
-    //   Future messages: start from 8
+    // Event ID registry for CloudAdapter log messages
     internal static partial class CloudAdapterLog
     {
         [LoggerMessage(EventId = 1, Level = LogLevel.Debug,
@@ -44,5 +36,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [LoggerMessage(EventId = 7, Level = LogLevel.Error,
             Message = "Unexpected exception in CloudAdapter.ProcessAsync")]
         internal static partial void LogUnexpectedException(ILogger logger, Exception exception);
+
+        [LoggerMessage(EventId = 8, Level = LogLevel.Error,
+            Message = "Invalid service URL Claim={ServiceUrlClaim}, ServiceUrl='{ServiceUrl}'")]
+        internal static partial void LogInvalidServiceUrl(ILogger logger, string serviceUrlClaim, string serviceUrl);
+
+        [LoggerMessage(EventId = 9, Level = LogLevel.Warning,
+            Message = "Invalid service URL Claim={ServiceUrlClaim}, ServiceUrl='{ServiceUrl}'")]
+        internal static partial void LogInvalidServiceUrlWarning(ILogger logger, string serviceUrlClaim, string serviceUrl);
+
+        [LoggerMessage(EventId = 10, Level = LogLevel.Error,
+            Message = "Missing or invalid body, Activity ='{Activity}'")]
+        internal static partial void LogInvalidActivity(ILogger logger, string activity);
     }
 }

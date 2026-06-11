@@ -37,13 +37,13 @@ To exercise the agent locally over the named pipe, you need a process on the sam
 
 ### Custom Pipe Name
 
-To use a different pipe name, pass it to the extension:
+ > **Note:** The DirectLine App Service extension uses the pipe name `{WEBSITE_SITE_NAME}.directline`. See the library [README](../../libraries/Hosting/DirectLine.NamedPipes/README.md#pipe-name) for details.
 
+To use a different pipe name, pass it to the extension:
 ```csharp
 builder.AddAgentNamedPipeTransport("my-custom-pipe");
 ```
 
-The DirectLine App Service extension uses the pipe name `{WEBSITE_SITE_NAME}.directline`. See the library [README](../../libraries/Hosting/DirectLine.NamedPipes/README.md#pipe-name) for details.
 
 ## Deployment to Azure App Service
 

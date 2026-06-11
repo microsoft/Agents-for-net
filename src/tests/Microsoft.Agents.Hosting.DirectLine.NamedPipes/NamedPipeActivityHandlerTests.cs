@@ -14,7 +14,6 @@ using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Xunit;
 
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
@@ -109,8 +108,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 ContentType = "application/json",
                 Attachments =
                 {
-                    new NamedPipeAttachment { Id = Guid.NewGuid().ToString("D"), ContentType = "image/png", Body = new byte[] { 1, 2, 3 } },
-                    new NamedPipeAttachment { Id = Guid.NewGuid().ToString("D"), ContentType = "audio/wav", Body = new byte[] { 4, 5 } },
+                    new NamedPipeAttachment { Id = Guid.NewGuid().ToString("D"), ContentType = "image/png", Body = [1, 2, 3] },
+                    new NamedPipeAttachment { Id = Guid.NewGuid().ToString("D"), ContentType = "audio/wav", Body = [4, 5] },
                 },
             };
 

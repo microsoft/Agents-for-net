@@ -10,19 +10,18 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
-    /// Verifies the outbound 4 KB chunking invariant for stream payloads: stream bytes larger
-    /// than <see cref="NamedPipeProtocol.MaxPayloadLength"/> (4096) are split across multiple
+    /// Verifies the outbound 64 KB chunking invariant for stream payloads: stream bytes larger
+    /// than <see cref="NamedPipeProtocol.MaxSendStreamChunkSize"/> (65536) are split across multiple
     /// frames sharing the same payload id, and only the last chunk carries End=true when the
-    /// caller requested termination.  Matches Bot.Streaming TransportConstants.MaxPayloadLength.
+    /// caller requested termination.
     /// </summary>
     public class NamedPipeProtocolChunkingTests
     {
-        private const int Max = NamedPipeProtocol.MaxPayloadLength;
+        private const int Max = NamedPipeProtocol.MaxSendStreamChunkSize;
 
         [Theory]
         [InlineData(0)]            // empty -> 1 frame
@@ -32,7 +31,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
         [InlineData(Max + 1)]      // 2 frames
         [InlineData(Max * 2)]      // 2 frames
         [InlineData(Max * 2 + 7)]  // 3 frames
-        [InlineData(50_000)]       // many frames
+        [InlineData(200_000)]      // several frames
         public async Task LargeBodyStream_IsSplitIntoMaxLengthFrames(int bodyLength)
         {
             using var harness = await FrameInspectorHarness.CreateAsync();
@@ -58,7 +57,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             {
                 var frame = await harness.ReadFrameAsync();
                 Assert.Equal(PayloadTypes.Stream, frame.Header.Type);
-                Assert.True(frame.Header.PayloadLength <= Max, $"Frame {frameCount} exceeded MaxPayloadLength: {frame.Header.PayloadLength}.");
+                Assert.True(frame.Header.PayloadLength <= Max, $"Frame {frameCount} exceeded MaxSendStreamChunkSize: {frame.Header.PayloadLength}.");
                 reassembled.Write(frame.Payload, 0, frame.Payload.Length);
                 sawEnd = frame.Header.End;
                 frameCount++;
@@ -207,7 +206,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 var header = HeaderSerializer.Deserialize(headerBuf);
                 var payload = header.PayloadLength > 0
                     ? await ReadExactAsync(_outboundClient, header.PayloadLength)
-                    : Array.Empty<byte>();
+                    : [];
                 return (header, payload);
             }
 
