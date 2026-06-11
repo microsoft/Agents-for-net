@@ -51,7 +51,7 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
             foreach (var teamMember in currentPage.Members)
             {
                 // Create a proactive 1:1 conversation with each member and send a message.
-                await turnContext.SendActivityAsync(teamMember, "This is a proactive message.");
+                await turnContext.CreateConversationAsync(teamMember, "This is a proactive message.");
             }
         }
         while (continuationToken != null);
@@ -94,7 +94,7 @@ public partial class TeamsPocAgent(AgentApplicationOptions options) : AgentAppli
         {
             var proactiveMessage = MessageFactory.Text("This is a notification to a subscribed conversation.");
             // Continue each stored conversation and deliver the notification activity.
-            await turnContext.SendActivityAsync(convId, proactiveMessage, cancellationToken);
+            await turnContext.ContinueConversationAsync(convId, proactiveMessage, cancellationToken);
         }
     }
 

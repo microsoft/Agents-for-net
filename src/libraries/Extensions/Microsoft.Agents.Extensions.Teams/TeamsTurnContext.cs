@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Extensions.Teams
         }
 
         // proactive createConversation
-        public async Task<ResourceResponse> SendActivityAsync(Microsoft.Teams.Api.Account userAccount, string text, CancellationToken cancellationToken = default)
+        public async Task<ResourceResponse> CreateConversationAsync(Microsoft.Teams.Api.Account userAccount, string text, CancellationToken cancellationToken = default)
         {
             var createOptions = CreateConversationOptionsBuilder
                 .Create(Identity.GetIncomingAudience(), Channels.Msteams, Activity.ServiceUrl)
@@ -46,15 +46,14 @@ namespace Microsoft.Agents.Extensions.Teams
             return new ResourceResponse();
         }
 
-        // proactive continueConversation
-        public Task<ResourceResponse> SendActivityAsync(string conversationId, IActivity activity, CancellationToken cancellationToken = default)
+        public Task<ResourceResponse> ContinueConversationAsync(string conversationId, IActivity activity, CancellationToken cancellationToken = default)
         {
-            var conv = new Microsoft.Agents.Builder.App.Proactive.Conversation(
+            var conv = new Builder.App.Proactive.Conversation(
                 Identity,
                 new ConversationReference(
                     agent: Activity.Recipient,
                     channelId: Channels.Msteams,
-                    serviceUrl: "https://smba.trafficmanager.net/teams",
+                    serviceUrl: Activity.ServiceUrl,
                     conversation: new ConversationAccount(id: conversationId)
                 )
             );

@@ -7,6 +7,7 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.Teams;
@@ -16,6 +17,7 @@ public class TeamsHandoffRouteBuilder : HandoffRouteBuilderBase<TeamsHandoffRout
 
     public TeamsHandoffRouteBuilder WithHandler(TeamsHandoffHandler handler, Proactive proactive)
     {
+        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
         var routeHandler = HandlerUtils.WrapHandler(handler, proactive);
         return WithHandlerCore(routeHandler);
     }
