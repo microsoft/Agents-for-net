@@ -88,6 +88,15 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         /// </summary>
         private static SidecarHttpClient CreateSidecarHttpClient(IServiceProvider serviceProvider, IConfigurationSection configurationSection)
         {
+            // Prefer an already-registered (and already-validated) client from DI. When a safe,
+            // preconfigured SidecarHttpClient exists we reuse it and skip resolving/validating the
+            // config or SIDECAR_URL value, which may be absent or intentionally point elsewhere.
+            var existingClient = serviceProvider?.GetService<SidecarHttpClient>();
+            if (existingClient != null)
+            {
+                return existingClient;
+            }
+
             var configuredBaseUrl = configurationSection?.GetValue<string>("SidecarBaseUrl");
             var bypassLocalNetworkRestriction = configurationSection?.GetValue("BypassLocalNetworkRestriction", false) ?? false;
             var resolvedUrl = SidecarHttpClient.ResolveBaseUrl(configuredBaseUrl);
@@ -102,13 +111,6 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
 
             var logger = serviceProvider?.GetService<ILoggerFactory>()?.CreateLogger<SidecarHttpClient>()
                 ?? (ILogger)NullLogger<SidecarHttpClient>.Instance;
-
-            // Try to get from DI first (registered via AddSidecarConnections)
-            var existingClient = serviceProvider?.GetService<SidecarHttpClient>();
-            if (existingClient != null)
-            {
-                return existingClient;
-            }
 
             // Fall back to creating one using IHttpClientFactory or a plain HttpClient
             var httpClientFactory = serviceProvider?.GetService<IHttpClientFactory>();

@@ -368,7 +368,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
                     var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 #endif
 
-                    _logger.LogDebug("Sidecar response OK from {Url}. Response length: {Length}", request.RequestUri, content?.Length ?? 0);
+                    _logger.LogDebug("Sidecar response OK from {Url}. Response length: {Length}", requestPath, content?.Length ?? 0);
 
                     var result = ParseTokenResponse(content);
                     _logger.LogDebug(
