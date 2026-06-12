@@ -19,10 +19,10 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
 
         public override AccessToken GetToken(TokenRequestContext requestContext, CancellationToken cancellationToken)
         {
-            // Synchronous path required by TokenCredential contract.
-            // Use Task.Run to avoid blocking the current context on ValueTask.
-            return Task.Run(() => GetTokenAsync(requestContext, cancellationToken).AsTask(), cancellationToken)
-                .GetAwaiter().GetResult();
+            // Synchronous path required by TokenCredential contract. GetTokenAsync uses
+            // ConfigureAwait(false) throughout, so blocking directly here is safe and avoids the
+            // extra thread-pool scheduling that Task.Run would incur on every synchronous call.
+            return GetTokenAsync(requestContext, cancellationToken).AsTask().GetAwaiter().GetResult();
         }
 
         public override async ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, CancellationToken cancellationToken)

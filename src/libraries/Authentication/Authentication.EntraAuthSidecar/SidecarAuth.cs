@@ -43,6 +43,19 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         // Hard upper bound on cached entries; protects memory when many distinct identities are served.
         private const int MaxCacheEntries = 500;
 
+        // Default sidecar downstream API names; used when the configured value is null, empty, or
+        // whitespace (configuration binding can yield an explicit empty string, e.g. "ServiceName": "").
+        private const string DefaultServiceName = "default";
+        private const string DefaultBlueprintServiceName = "agenticblueprint";
+
+        // Configured service names normalized so an explicitly blank value never produces an invalid
+        // sidecar endpoint path (e.g. /AuthorizationHeaderUnauthenticated/ with a missing serviceName).
+        private string ServiceName =>
+            string.IsNullOrWhiteSpace(_settings.ServiceName) ? DefaultServiceName : _settings.ServiceName;
+
+        private string BlueprintServiceName =>
+            string.IsNullOrWhiteSpace(_settings.BlueprintServiceName) ? DefaultBlueprintServiceName : _settings.BlueprintServiceName;
+
         /// <summary>
         /// Creates a new <see cref="SidecarAuth"/> using DI service provider.
         /// This constructor matches the <c>(IServiceProvider, IConfigurationSection)</c> signature
@@ -134,7 +147,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
             };
 
             return await GetCachedTokenAsync(
-                _settings.ServiceName ?? "default",
+                ServiceName,
                 options).ConfigureAwait(false);
         }
 
@@ -160,7 +173,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
             };
 
             return await GetCachedTokenAsync(
-                _settings.BlueprintServiceName ?? "agenticblueprint",
+                BlueprintServiceName,
                 options,
                 cancellationToken).ConfigureAwait(false);
         }
@@ -180,7 +193,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
             };
 
             return await GetCachedTokenAsync(
-                _settings.ServiceName ?? "default",
+                ServiceName,
                 options,
                 cancellationToken).ConfigureAwait(false);
         }
@@ -204,7 +217,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
             };
 
             return await GetCachedTokenAsync(
-                _settings.ServiceName ?? "default",
+                ServiceName,
                 options,
                 cancellationToken).ConfigureAwait(false);
         }
@@ -299,12 +312,19 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         /// <summary>
         /// Builds the cache key. Keyed primarily by the agent identity (client id), plus the remaining
         /// request parameters that change the issued token, so distinct flows, users, tenants, and
-        /// scopes never collide. <see cref="SidecarRequestOptions.ForceRefresh"/> is intentionally
-        /// excluded so a forced refresh updates the same entry.
+        /// scopes never collide. Scopes are normalized (deduplicated and ordered) so the same scope set
+        /// supplied in a different order maps to the same entry, improving cache hits.
+        /// <see cref="SidecarRequestOptions.ForceRefresh"/> is intentionally excluded so a forced
+        /// refresh updates the same entry.
         /// </summary>
         private static string BuildCacheKey(string serviceName, SidecarRequestOptions options)
         {
-            var scopes = options.Scopes != null ? string.Join(" ", options.Scopes) : string.Empty;
+            var scopes = options.Scopes != null
+                ? string.Join(" ", options.Scopes
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(s => s, StringComparer.Ordinal))
+                : string.Empty;
             return string.Join("|",
                 serviceName,
                 options.AgentIdentity,

@@ -97,6 +97,7 @@ To intentionally target a non-private address (e.g. a sidecar reachable at a rou
 | Setting | Required | Default | Description |
 |---|---|---|---|
 | `ServiceName` | No | `default` | Downstream API name configured in the sidecar. |
+| `BlueprintServiceName` | No | `agenticblueprint` | Downstream API name for the Blueprint (agent application) token-exchange step. Used by `GetAgenticApplicationTokenAsync`; must be configured app-only with the `api://AzureAdTokenExchange/.default` scope on the sidecar. |
 | `Scopes` | No | — | Scope overrides forwarded as `optionsOverride.Scopes`. |
 | `SidecarBaseUrl` | No | `http://localhost:5178` | Sidecar endpoint. Resolution: `SIDECAR_URL` env var > this > default. The resolved host must be loopback/private unless `BypassLocalNetworkRestriction` is set. |
 | `BypassLocalNetworkRestriction` | No | `false` | **UNSAFE.** Disables the loopback/private-address SSRF safety check. Only enable for a carefully validated private-network configuration (see above). |

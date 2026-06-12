@@ -103,6 +103,21 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
                     $"The resolved sidecar base URL '{resolvedUrl}' is not a valid absolute URL.");
             }
 
+            // Always restrict to http/https and reject embedded userinfo, regardless of the bypass
+            // flag: this URL is used for HTTP calls that carry the agent's identity context, so
+            // non-HTTP schemes (e.g. file://) and credentials-in-URL must never slip through.
+            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new InvalidOperationException(
+                    $"The resolved sidecar base URL '{resolvedUrl}' must use the http or https scheme.");
+            }
+
+            if (!string.IsNullOrEmpty(uri.UserInfo))
+            {
+                throw new InvalidOperationException(
+                    $"The resolved sidecar base URL '{resolvedUrl}' must not contain userinfo (credentials).");
+            }
+
             if (bypassLocalNetworkRestriction)
             {
                 return;

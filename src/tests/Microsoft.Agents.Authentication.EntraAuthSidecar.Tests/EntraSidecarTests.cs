@@ -320,8 +320,50 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
                 ItExpr.IsAny<CancellationToken>());
         }
 
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetAccessTokenAsync_BlankServiceName_FallsBackToDefault(string serviceName)
+        {
+            var (provider, urls) = CreateCapturingProvider(serviceName: serviceName);
+
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com", new List<string> { "User.Read" });
+
+            var url = Assert.Single(urls);
+            // A blank ServiceName must not produce /AuthorizationHeaderUnauthenticated/ with a missing segment.
+            Assert.Contains("/AuthorizationHeaderUnauthenticated/default", url);
+        }
+
+        [Fact]
+        public async Task GetCachedToken_ScopeOrderDoesNotAffectCacheKey()
+        {
+            var (provider, urls) = CreateCapturingProvider(responseToken: "cached-token");
+
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com",
+                new List<string> { "User.Read", "Mail.Read" });
+            // Same scope set, different order (and a duplicate) must hit the same cache entry.
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com",
+                new List<string> { "Mail.Read", "User.Read", "User.Read" });
+
+            Assert.Single(urls);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetAgenticApplicationTokenAsync_BlankBlueprintServiceName_FallsBackToDefault(string blueprintServiceName)
+        {
+            var (provider, urls) = CreateCapturingProvider(blueprintServiceName: blueprintServiceName);
+
+            await provider.GetAgenticApplicationTokenAsync("tenant-id", "agent-app-id");
+
+            var url = Assert.Single(urls);
+            // A blank BlueprintServiceName must fall back to the default downstream API name.
+            Assert.Contains("/AuthorizationHeaderUnauthenticated/agenticblueprint", url);
+        }
+
         private static (SidecarAuth provider, List<string> capturedUrls) CreateCapturingProvider(
-            string serviceName = "default", string responseToken = "sidecar-token")
+            string serviceName = "default", string responseToken = "sidecar-token", string blueprintServiceName = "agenticblueprint")
         {
             var capturedUrls = new List<string>();
             var mock = new Mock<HttpMessageHandler>();
@@ -335,7 +377,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
                 });
 
             var sidecarClient = new SidecarHttpClient(new HttpClient(mock.Object), "http://localhost:5178");
-            var settings = new SidecarConnectionSettings { ServiceName = serviceName };
+            var settings = new SidecarConnectionSettings { ServiceName = serviceName, BlueprintServiceName = blueprintServiceName };
             var provider = new SidecarAuth(sidecarClient, settings);
 
             return (provider, capturedUrls);
@@ -1195,6 +1237,31 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
             // The bypass flag only relaxes the loopback/private-address rule, never basic URL validation.
             Assert.Throws<InvalidOperationException>(
                 () => SidecarHttpClient.ValidateBaseUrl("not-a-url", bypassLocalNetworkRestriction: true));
+        }
+
+        [Theory]
+        [InlineData("file:///etc/passwd")]
+        [InlineData("ftp://localhost/secret")]
+        [InlineData("gopher://localhost:70")]
+        public void ValidateBaseUrl_RejectsNonHttpScheme(string url)
+        {
+            // Non-HTTP(S) schemes must be rejected regardless of the bypass flag.
+            Assert.Throws<InvalidOperationException>(
+                () => SidecarHttpClient.ValidateBaseUrl(url, bypassLocalNetworkRestriction: false));
+            Assert.Throws<InvalidOperationException>(
+                () => SidecarHttpClient.ValidateBaseUrl(url, bypassLocalNetworkRestriction: true));
+        }
+
+        [Theory]
+        [InlineData("http://user:pass@localhost:5178")]
+        [InlineData("http://user@localhost:5178")]
+        public void ValidateBaseUrl_RejectsUserInfo(string url)
+        {
+            // Embedded credentials must be rejected regardless of the bypass flag.
+            Assert.Throws<InvalidOperationException>(
+                () => SidecarHttpClient.ValidateBaseUrl(url, bypassLocalNetworkRestriction: false));
+            Assert.Throws<InvalidOperationException>(
+                () => SidecarHttpClient.ValidateBaseUrl(url, bypassLocalNetworkRestriction: true));
         }
     }
 
