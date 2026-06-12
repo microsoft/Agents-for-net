@@ -25,6 +25,15 @@ public class MessageUndeleteRouteBuilder : MessageEventRouteBuilderBase<MessageU
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="MessageUndeleteRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="MessageUndeleteRouteBuilder"/>.</returns>
+    public static MessageUndeleteRouteBuilder Create()
+    {
+        return new MessageUndeleteRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing message undelete events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message undelete event.</param>

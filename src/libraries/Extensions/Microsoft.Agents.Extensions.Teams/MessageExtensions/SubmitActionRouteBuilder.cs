@@ -22,6 +22,15 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="SubmitActionRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="SubmitActionRouteBuilder"/>.</returns>
+    public static SubmitActionRouteBuilder Create()
+    {
+        return new SubmitActionRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing submit actions.
     /// </summary>
     /// <param name="handler">The delegate that processes the submit action.</param>

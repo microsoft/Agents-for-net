@@ -18,6 +18,14 @@ namespace Microsoft.Agents.Extensions.Teams;
 /// </summary>
 public class TeamsHandoffRouteBuilder : HandoffRouteBuilderBase<TeamsHandoffRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="TeamsHandoffRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="TeamsHandoffRouteBuilder"/>.</returns>
+    public static TeamsHandoffRouteBuilder Create()
+    {
+        return new TeamsHandoffRouteBuilder();
+    }
 
     /// <summary>
     /// Assigns the specified Teams handoff handler to the current route.

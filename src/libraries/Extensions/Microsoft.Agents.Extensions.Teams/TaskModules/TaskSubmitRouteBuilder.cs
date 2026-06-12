@@ -22,6 +22,15 @@ public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBu
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="TaskSubmitRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="TaskSubmitRouteBuilder"/>.</returns>
+    public static TaskSubmitRouteBuilder Create()
+    {
+        return new TaskSubmitRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing submit requests.
     /// </summary>
     /// <remarks>Use this method to specify custom logic for handling submit requests in Teams task modules. The handler receives the deserialized data from the incoming activity, allowing for type-safe

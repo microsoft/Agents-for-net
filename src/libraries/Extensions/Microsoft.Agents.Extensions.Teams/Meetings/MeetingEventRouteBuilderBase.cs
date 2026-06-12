@@ -21,6 +21,8 @@ public abstract class MeetingEventRouteBuilderBase<TBuilder> : RouteBuilderBase<
     /// </summary>
     protected string EventName { get; set; }
 
+    protected MeetingEventRouteBuilderBase() : base() { }
+
     /// <summary>
     /// For meeting event routes, the invoke flag is ignored to prevent misconfiguration.
     /// </summary>

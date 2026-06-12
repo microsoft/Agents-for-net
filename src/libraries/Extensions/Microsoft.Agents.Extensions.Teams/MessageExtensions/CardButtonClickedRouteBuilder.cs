@@ -26,6 +26,15 @@ public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedR
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="CardButtonClickedRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="CardButtonClickedRouteBuilder"/>.</returns>
+    public static CardButtonClickedRouteBuilder Create()
+    {
+        return new CardButtonClickedRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing card button click actions with deserialized
     /// data of type TData.
     /// </summary>

@@ -25,6 +25,15 @@ public class MeetingStartRouteBuilder : MeetingEventRouteBuilderBase<MeetingStar
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="MeetingStartRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="MeetingStartRouteBuilder"/>.</returns>
+    public static MeetingStartRouteBuilder Create()
+    {
+        return new MeetingStartRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing meeting start events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the meeting start event.
@@ -35,8 +44,9 @@ public class MeetingStartRouteBuilder : MeetingEventRouteBuilderBase<MeetingStar
     {
         _route.Handler = (ctx, ts, ct) =>
         {
-            var details = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(ctx.Activity.Value);
-            return handler(ctx, ts, details, ct);
+            var ttc = new TeamsTurnContext(ctx);
+            var details = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(ttc.Activity.Value);
+            return handler(ttc, ts, details, ct);
         };
         return this;
     }

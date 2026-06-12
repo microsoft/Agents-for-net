@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.MessageExtensions;
 
 namespace Microsoft.Agents.Extensions.Teams.Meetings;
 
@@ -25,6 +26,15 @@ public class MeetingEndRouteBuilder : MeetingEventRouteBuilderBase<MeetingEndRou
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="MeetingEndRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="MeetingEndRouteBuilder"/>.</returns>
+    public static MeetingEndRouteBuilder Create()
+    {
+        return new MeetingEndRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing meeting end events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the meeting end event.
@@ -35,8 +45,9 @@ public class MeetingEndRouteBuilder : MeetingEventRouteBuilderBase<MeetingEndRou
     {
         _route.Handler = (ctx, ts, ct) =>
         {
-            var details = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(ctx.Activity.Value);
-            return handler(ctx, ts, details, ct);
+            var ttc = new TeamsTurnContext(ctx);
+            var details = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(ttc.Activity.Value);
+            return handler(ttc, ts, details, ct);
         };
         return this;
     }

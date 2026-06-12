@@ -23,6 +23,15 @@ public class ConfigurationFetchRouteBuilder : ConfigurationRouteBuilderBase<Conf
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="ConfigurationFetchRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="ConfigurationFetchRouteBuilder"/>.</returns>
+    public static ConfigurationFetchRouteBuilder Create()
+    {
+        return new ConfigurationFetchRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing config fetch invocations.
     /// </summary>
     /// <param name="handler">An asynchronous delegate invoked when a config fetch request is received.
@@ -33,8 +42,9 @@ public class ConfigurationFetchRouteBuilder : ConfigurationRouteBuilderBase<Conf
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var result = await handler(ctx, ts, ctx.Activity.Value, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, result).ConfigureAwait(false);
+            var ttc = new TeamsTurnContext(ctx);
+            var result = await handler(ttc, ts, ctx.Activity.Value, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, result).ConfigureAwait(false);
         };
         return this;
     }

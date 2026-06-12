@@ -27,6 +27,15 @@ public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuil
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="AnonQueryLinkRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="AnonQueryLinkRouteBuilder"/>.</returns>
+    public static AnonQueryLinkRouteBuilder Create()
+    {
+        return new AnonQueryLinkRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing anonymous query link.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query link.</param>

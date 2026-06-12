@@ -24,6 +24,15 @@ public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePre
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="MessagePreviewSendRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="MessagePreviewSendRouteBuilder"/>.</returns>
+    public static MessagePreviewSendRouteBuilder Create()
+    {
+        return new MessagePreviewSendRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing message preview send actions.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message preview send action.</param>

@@ -26,6 +26,15 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="SelectItemRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="SelectItemRouteBuilder"/>.</returns>
+    public static SelectItemRouteBuilder Create()
+    {
+        return new SelectItemRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing select item.
     /// </summary>
     /// <remarks>Use this method to specify custom logic for handling select item actions in Teams message

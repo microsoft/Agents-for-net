@@ -14,6 +14,14 @@ namespace Microsoft.Agents.Extensions.Teams;
 /// </summary>
 public class TeamsFeedbackRouteBuilder : FeedbackRouteBuilderBase<TeamsFeedbackRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="TeamsFeedbackRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="TeamsFeedbackRouteBuilder"/>.</returns>
+    public static TeamsFeedbackRouteBuilder Create()
+    {
+        return new TeamsFeedbackRouteBuilder();
+    }
 
     /// <summary>
     /// Assigns the specified Teams feedback loop handler to the current route.

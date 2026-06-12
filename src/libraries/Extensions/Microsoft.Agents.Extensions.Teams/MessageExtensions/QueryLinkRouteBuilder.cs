@@ -27,6 +27,15 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="QueryLinkRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="QueryLinkRouteBuilder"/>.</returns>
+    public static QueryLinkRouteBuilder Create()
+    {
+        return new QueryLinkRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing query link.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query link.</param>

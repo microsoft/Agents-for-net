@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Extensions.Teams.App;
+using Microsoft.Agents.Extensions.Teams.TaskModules;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -22,6 +23,15 @@ public class MessageDeleteRouteBuilder : MessageEventRouteBuilderBase<MessageDel
     {
         ActivityTypeName = Microsoft.Teams.Api.Activities.ActivityType.MessageDelete;
         EventTypeName = "softDeleteMessage";
+    }
+
+    /// <summary>
+    /// Creates a new instance of the <see cref="MessageDeleteRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="MessageDeleteRouteBuilder"/>.</returns>
+    public static MessageDeleteRouteBuilder Create()
+    {
+        return new MessageDeleteRouteBuilder();
     }
 
     /// <summary>

@@ -22,6 +22,15 @@ public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteB
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="FetchActionRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="FetchActionRouteBuilder"/>.</returns>
+    public static FetchActionRouteBuilder Create()
+    {
+        return new FetchActionRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing fetch tasks.
     /// </summary>
     /// <remarks>Use this method to specify custom logic for handling fetch tasks in Teams message

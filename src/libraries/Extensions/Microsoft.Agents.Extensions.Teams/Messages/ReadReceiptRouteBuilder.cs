@@ -18,6 +18,16 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// </remarks>
 public class ReadReceiptRouteBuilder : RouteBuilderBase<ReadReceiptRouteBuilder>
 {
+
+    /// <summary>
+    /// Creates a new instance of the <see cref="ReadReceiptRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="ReadReceiptRouteBuilder"/>.</returns>
+    public static ReadReceiptRouteBuilder Create()
+    {
+        return new ReadReceiptRouteBuilder();
+    }
+
     /// <summary>
     /// Read receipt routes are event activities, not invoke routes.
     /// </summary>

@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.TeamsTeams;
 using Microsoft.Teams.Api;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -24,6 +25,15 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels;
 public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateRouteBuilder>
 {
     private readonly IList<string> _channelEvents = [];
+
+    /// <summary>
+    /// Creates a new instance of the <see cref="ChannelUpdateRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="ChannelUpdateRouteBuilder"/>.</returns>
+    public static ChannelUpdateRouteBuilder Create()
+    {
+        return new ChannelUpdateRouteBuilder();
+    }
 
     /// <summary>
     /// Match on channel created events.

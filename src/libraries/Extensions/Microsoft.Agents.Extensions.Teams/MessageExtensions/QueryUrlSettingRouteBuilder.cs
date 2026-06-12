@@ -25,6 +25,15 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="QueryUrlSettingRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="QueryUrlSettingRouteBuilder"/>.</returns>
+    public static QueryUrlSettingRouteBuilder Create()
+    {
+        return new QueryUrlSettingRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing query URL settings.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query URL settings.</param>

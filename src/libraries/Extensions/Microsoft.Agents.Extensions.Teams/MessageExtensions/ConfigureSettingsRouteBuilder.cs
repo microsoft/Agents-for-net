@@ -26,6 +26,15 @@ public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsR
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="ConfigureSettingsRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="ConfigureSettingsRouteBuilder"/>.</returns>
+    public static ConfigureSettingsRouteBuilder Create()
+    {
+        return new ConfigureSettingsRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing configure settings.
     /// </summary>
     /// <remarks>Use this method to specify custom logic for handling configure settings in Teams message

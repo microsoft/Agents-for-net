@@ -22,6 +22,15 @@ public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="QueryRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="QueryRouteBuilder"/>.</returns>
+    public static QueryRouteBuilder Create()
+    {
+        return new QueryRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified asynchronous handler for processing query.
     /// </summary>
     /// <remarks>Use this method to specify custom logic for handling queries in Teams message

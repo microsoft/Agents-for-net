@@ -27,6 +27,16 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     private readonly IList<string> _teamEvents = [];
 
     /// <summary>
+    /// Creates a new instance of the <see cref="TeamUpdateRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="TeamUpdateRouteBuilder"/>.</returns>
+    public static TeamUpdateRouteBuilder Create()
+    {
+        return new TeamUpdateRouteBuilder();
+    }
+
+
+    /// <summary>
     /// Match on team archived events.
     /// </summary>
     /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>

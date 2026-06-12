@@ -17,4 +17,4 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A <see cref="Microsoft.Teams.Api.Config.ConfigResponse"/>.</returns>
-public delegate Task<Microsoft.Teams.Api.Config.ConfigResponse> ConfigurationHandler(ITurnContext turnContext, ITurnState turnState, object configData, CancellationToken cancellationToken);
+public delegate Task<Microsoft.Teams.Api.Config.ConfigResponse> ConfigurationHandler(TeamsTurnContext turnContext, ITurnState turnState, object configData, CancellationToken cancellationToken);

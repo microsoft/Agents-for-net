@@ -18,6 +18,16 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// </remarks>
 public class O365ConnectorCardActionRouteBuilder : RouteBuilderBase<O365ConnectorCardActionRouteBuilder>
 {
+
+    /// <summary>
+    /// Creates a new instance of the <see cref="O365ConnectorCardActionRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="O365ConnectorCardActionRouteBuilder"/>.</returns>
+    public static O365ConnectorCardActionRouteBuilder Create()
+    {
+        return new O365ConnectorCardActionRouteBuilder();
+    }
+
     /// <summary>
     /// Configures the route to use the specified handler for processing O365 Connector Card Action invokes.
     /// The handler receives the deserialized <see cref="Microsoft.Teams.Api.O365.ConnectorCardActionQuery"/> from the activity value.

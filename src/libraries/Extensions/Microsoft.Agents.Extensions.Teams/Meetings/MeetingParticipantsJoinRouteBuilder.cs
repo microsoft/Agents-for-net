@@ -26,6 +26,15 @@ public class MeetingParticipantsJoinRouteBuilder : MeetingEventRouteBuilderBase<
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="MeetingParticipantsJoinRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="MeetingParticipantsJoinRouteBuilder"/>.</returns>
+    public static MeetingParticipantsJoinRouteBuilder Create()
+    {
+        return new MeetingParticipantsJoinRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing meeting participants join events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the participants join event.
@@ -36,8 +45,9 @@ public class MeetingParticipantsJoinRouteBuilder : MeetingEventRouteBuilderBase<
     {
         _route.Handler = (ctx, ts, ct) =>
         {
-            var details = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(ctx.Activity.Value);
-            return handler(ctx, ts, details, ct);
+            var ttc = new TeamsTurnContext(ctx);
+            var details = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(ttc.Activity.Value);
+            return handler(ttc, ts, details, ct);
         };
         return this;
     }

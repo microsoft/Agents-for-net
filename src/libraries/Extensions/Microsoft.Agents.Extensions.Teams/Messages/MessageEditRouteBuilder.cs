@@ -25,6 +25,15 @@ public class MessageEditRouteBuilder : MessageEventRouteBuilderBase<MessageEditR
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="MessageEditRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="MessageEditRouteBuilder"/>.</returns>
+    public static MessageEditRouteBuilder Create()
+    {
+        return new MessageEditRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing message edit events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message edit event.</param>

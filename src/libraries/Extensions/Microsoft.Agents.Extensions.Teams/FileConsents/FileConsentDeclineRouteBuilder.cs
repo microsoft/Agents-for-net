@@ -26,6 +26,15 @@ public class FileConsentDeclineRouteBuilder : FileConsentRouteBuilderBase<FileCo
     }
 
     /// <summary>
+    /// Creates a new instance of the <see cref="FileConsentDeclineRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="FileConsentDeclineRouteBuilder"/>.</returns>
+    public static FileConsentDeclineRouteBuilder Create()
+    {
+        return new FileConsentDeclineRouteBuilder();
+    }
+
+    /// <summary>
     /// Configures the route to use the specified handler for processing file consent decline invocations.
     /// </summary>
     /// <param name="handler">An asynchronous delegate invoked when the user declines the file consent card.
@@ -36,9 +45,10 @@ public class FileConsentDeclineRouteBuilder : FileConsentRouteBuilderBase<FileCo
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var response = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(ctx.Activity.Value);
-            await handler(ctx, ts, response, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx).ConfigureAwait(false);
+            var ttc = new TeamsTurnContext(ctx);
+            var response = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(ttc.Activity.Value);
+            await handler(ttc, ts, response, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc).ConfigureAwait(false);
         };
         return this;
     }
