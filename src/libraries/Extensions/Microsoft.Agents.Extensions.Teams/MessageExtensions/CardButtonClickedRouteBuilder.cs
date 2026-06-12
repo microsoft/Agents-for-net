@@ -37,9 +37,10 @@ public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedR
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var cardData = ProtocolJsonSerializer.ToObject<TData>(ctx.Activity.Value);
-            await handler(ctx, ts, cardData, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, null).ConfigureAwait(false);
+            var ttc = new TeamsTurnContext(ctx);
+            var cardData = ProtocolJsonSerializer.ToObject<TData>(ttc.Activity.Value);
+            await handler(ttc, ts, cardData, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, null).ConfigureAwait(false);
         };
         return this;
     }

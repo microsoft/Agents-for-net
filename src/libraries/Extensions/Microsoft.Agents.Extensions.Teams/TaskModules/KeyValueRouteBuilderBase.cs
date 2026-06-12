@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 /// and ensures the route is properly configured for Invoke routing before building.
 /// </summary>
 /// <typeparam name="TBuilder">The concrete builder type, used to enable fluent method chaining.</typeparam>
-public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : KeyValueRouteBuilderBase<TBuilder>
+public abstract class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : KeyValueRouteBuilderBase<TBuilder>
 {
     private static readonly string DEFAULT_TASK_DATA_KEY = "task";
     private Func<string, bool> _keyMatch;
@@ -33,7 +33,7 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
     /// Initializes a new instance of <see cref="KeyValueRouteBuilderBase{TBuilder}"/>,
     /// pre-configured as an Invoke route.
     /// </summary>
-    public KeyValueRouteBuilderBase() : base()
+    protected KeyValueRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
     }

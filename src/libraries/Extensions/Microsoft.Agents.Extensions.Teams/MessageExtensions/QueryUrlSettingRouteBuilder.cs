@@ -33,8 +33,9 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var response = await handler(ctx, ts, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            var ttc = new TeamsTurnContext(ctx);
+            var response = await handler(ttc, ts, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
     }

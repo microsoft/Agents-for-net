@@ -30,9 +30,10 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
-            var result = await handler(ctx, ts, action, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, result).ConfigureAwait(false);
+            var ttc = new TeamsTurnContext(ctx);
+            var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ttc.Activity.Value);
+            var result = await handler(ttc, ts, action, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, result).ConfigureAwait(false);
         };
         return this;
     }

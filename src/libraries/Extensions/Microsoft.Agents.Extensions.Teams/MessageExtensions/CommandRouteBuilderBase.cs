@@ -20,14 +20,14 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// Supports matching the incoming command ID by exact string or regular expression pattern.
 /// </summary>
 /// <typeparam name="TBuilder">The concrete builder type, used to enable fluent method chaining.</typeparam>
-public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : CommandRouteBuilderBase<TBuilder>
+public abstract class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> where TBuilder : CommandRouteBuilderBase<TBuilder>
 {
     private Func<string, bool> _commandMatch;
 
     protected string InvokeName { get; set; }
     protected string? PreviewAction { get; set; }
 
-    public CommandRouteBuilderBase() : base()
+    protected CommandRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
     }

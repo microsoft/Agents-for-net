@@ -34,9 +34,10 @@ public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            var ttc = new TeamsTurnContext(ctx);
+            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(ttc.Activity.Value);
+            var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
     }

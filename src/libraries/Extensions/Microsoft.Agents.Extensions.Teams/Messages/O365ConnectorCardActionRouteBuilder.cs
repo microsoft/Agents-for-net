@@ -28,10 +28,11 @@ public class O365ConnectorCardActionRouteBuilder : RouteBuilderBase<O365Connecto
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
+            var ttc = new TeamsTurnContext(ctx);
             Microsoft.Teams.Api.O365.ConnectorCardActionQuery query =
                 ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.O365.ConnectorCardActionQuery>(ctx.Activity.Value) ?? new();
-            await handler(ctx, ts, query, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx).ConfigureAwait(false);
+            await handler(ttc, ts, query, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc).ConfigureAwait(false);
         };
         return this;
     }

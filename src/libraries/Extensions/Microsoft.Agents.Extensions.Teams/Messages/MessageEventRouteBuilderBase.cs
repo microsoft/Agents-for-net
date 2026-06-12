@@ -27,6 +27,8 @@ public abstract class MessageEventRouteBuilderBase<TBuilder> : RouteBuilderBase<
     /// </summary>
     protected string EventTypeName { get; set; }
 
+    protected MessageEventRouteBuilderBase() : base() { }
+
     /// <summary>
     /// Message event routes cannot be configured as invoke routes.
     /// </summary>

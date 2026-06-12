@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Teams.Api;
 using System.Collections.Generic;
@@ -92,7 +93,11 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <returns>The current instance of the TeamUpdateRouteBuilder, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder WithHandler(TeamUpdateHandler handler)
     {
-        _route.Handler = (ctx, ts, ct) => handler(ctx, ts, ctx.Activity.GetChannelData<ChannelData>().Team, ct);
+        _route.Handler = async (ctx, ts, ct) =>
+        {
+            var ttc = new TeamsTurnContext(ctx);
+            await handler(ttc, ts, ctx.Activity.GetChannelData<ChannelData>().Team, ct);
+        };
         return this;
     }
 

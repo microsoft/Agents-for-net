@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.Teams.App;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -29,9 +29,9 @@ public class MessageDeleteRouteBuilder : MessageEventRouteBuilderBase<MessageDel
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message soft-delete event.</param>
     /// <returns>The current <see cref="MessageDeleteRouteBuilder"/> instance for method chaining.</returns>
-    public MessageDeleteRouteBuilder WithHandler(RouteHandler handler)
+    public MessageDeleteRouteBuilder WithHandler(TeamsRouteHandler handler)
     {
-        _route.Handler = handler;
+        _route.Handler = HandlerUtils.WrapHandler(handler);
         return this;
     }
 }

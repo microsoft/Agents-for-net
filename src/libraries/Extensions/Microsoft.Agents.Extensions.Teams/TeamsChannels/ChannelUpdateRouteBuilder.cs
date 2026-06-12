@@ -112,7 +112,10 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the ChannelUpdateRouteBuilder, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder WithHandler(ChannelUpdateHandler handler)
     {
-        _route.Handler = (ctx, ts, ct) => handler(ctx, ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct);
+        _route.Handler = async (ctx, ts, ct) => {
+            var ttc = new TeamsTurnContext(ctx);
+            await handler(ttc, ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct)
+        };
         return this;
     }
 

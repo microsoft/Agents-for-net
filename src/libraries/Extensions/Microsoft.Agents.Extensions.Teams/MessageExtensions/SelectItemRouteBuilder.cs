@@ -41,9 +41,10 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
         {
             try
             {
-                var value = ProtocolJsonSerializer.ToObject<TData>(ctx.Activity.Value);
-                var response = await handler(ctx, ts, value, ct).ConfigureAwait(false);
-                await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+                var ttc = new TeamsTurnContext(ctx);
+                var value = ProtocolJsonSerializer.ToObject<TData>(ttc.Activity.Value);
+                var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
+                await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
