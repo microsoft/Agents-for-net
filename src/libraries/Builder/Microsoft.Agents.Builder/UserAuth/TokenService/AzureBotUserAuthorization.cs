@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Telemetry.Authorization.Scopes;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -203,41 +204,44 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private async Task<TokenResponse> OnContinueFlow(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)
         {
-            TokenResponse tokenResponse;
+            var flowResult = await _flow.ContinueFlowAsync(turnContext, state.FlowExpires, cancellationToken).ConfigureAwait(false);
 
-            try
+            switch (flowResult.Status)
             {
-                tokenResponse = await _flow.ContinueFlowAsync(turnContext, state.FlowExpires, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TimeoutException)
-            {
-                throw new AuthException("Authorization flow timed out.", AuthExceptionReason.Timeout);
-            }
-            catch (UserCancelledException)
-            {
-                throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
-            }
+                case OAuthFlowStatus.TimedOut:
+                    throw new AuthException("Authorization flow timed out.", AuthExceptionReason.Timeout);
 
-            if (tokenResponse == null)
-            {
-                if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
-                {
-                    state.ContinueCount++;
-                    if (state.ContinueCount >= _settings.InvalidSignInRetryMax)
+                case OAuthFlowStatus.UserCancelled:
+                    throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
+
+                case OAuthFlowStatus.SignInFailed:
+                    throw CreateSignInFailureException(flowResult.ErrorResponse);
+
+                case OAuthFlowStatus.Complete:
+                    if (flowResult.TokenResponse == null)
                     {
-                        // The only way this happens is if C2 sent a bogus code
-                        throw new AuthException("Retry max", AuthExceptionReason.InvalidSignIn);
+                        throw new InvalidOperationException("OAuth flow completed without a token response.");
                     }
 
-                    await turnContext.SendActivityAsync(_settings.InvalidSignInRetryMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
-                }
+                    state.FlowStarted = false;
+                    return flowResult.TokenResponse;
 
-                // token still pending.
-                return null;
+                default: // Pending
+                    if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
+                    {
+                        state.ContinueCount++;
+                        if (state.ContinueCount >= _settings.InvalidSignInRetryMax)
+                        {
+                            // The only way this happens is if C2 sent a bogus code
+                            throw new AuthException("Retry max", AuthExceptionReason.InvalidSignIn);
+                        }
+
+                        await turnContext.SendActivityAsync(_settings.InvalidSignInRetryMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    }
+
+                    // token still pending.
+                    return null;
             }
-
-            state.FlowStarted = false;
-            return tokenResponse;
         }
 
         private async Task<FlowState> GetFlowStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -262,6 +266,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             var channelId = turnContext.Activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
             var conversationId = turnContext.Activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
             return $"oauth/{Name}/{channelId}/{conversationId}/flowState";
+        }
+
+        private static ErrorResponseException CreateSignInFailureException(ErrorResponse errorResponse)
+        {
+            var error = errorResponse?.Error;
+            return new ErrorResponseException($"SignInFailure: ({error?.Code}) {error?.Message}") { Body = errorResponse };
         }
     }
 
