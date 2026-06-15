@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
-            var app = CreateApp(turnContext1);
+            var app = CreateApp(turnContext1, turnContext1, turnContext2, turnContext3);
             var routes = new List<string>();
             var contexts = new List<TeamsTurnContext>();
 
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var adapter = new NotImplementedAdapter();
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
-            var app = CreateApp(turnContext1);
+            var app = CreateApp(turnContext1, turnContext1, turnContext2);
             var names = new List<string>();
             var contexts = new List<TeamsTurnContext>();
 
@@ -162,7 +162,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
-            var app = CreateApp(turnContext1);
+            var app = CreateApp(turnContext1, turnContext1, turnContext2, turnContext3);
             var messages = new List<string>();
             var contexts = new List<TeamsTurnContext>();
 
@@ -236,7 +236,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
             var turnContext4 = new TurnContext(adapter, activity4);
-            var app = CreateApp(turnContext1);
+            var app = CreateApp(turnContext1, turnContext1, turnContext2, turnContext3, turnContext4);
             var names = new List<string>();
             var contexts = new List<TeamsTurnContext>();
 
@@ -308,7 +308,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var turnContext1 = new TurnContext(adapter, activity1);
             var turnContext2 = new TurnContext(adapter, activity2);
             var turnContext3 = new TurnContext(adapter, activity3);
-            var app = CreateApp(turnContext1);
+            var app = CreateApp(turnContext1, turnContext1, turnContext2, turnContext3);
             var names = new List<string>();
             var contexts = new List<TeamsTurnContext>();
 
@@ -388,7 +388,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var handoffTurnContext = new TurnContext(adapter, handoffActivity);
             var feedbackTurnContext = new TurnContext(adapter, feedbackActivity);
             var ignoredTurnContext = new TurnContext(adapter, ignoredActivity);
-            var app = CreateApp(handoffTurnContext);
+            var app = CreateApp(handoffTurnContext, handoffTurnContext, feedbackTurnContext, ignoredTurnContext);
             var continuations = new List<string>();
             var feedbackReplies = new List<string>();
             var contexts = new List<TeamsTurnContext>();
@@ -425,16 +425,18 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
         }
 
-        private static AgentApplication CreateApp(ITurnContext turnContext)
+        private static AgentApplication CreateApp(ITurnContext referenceTurnContext, params ITurnContext[] turnContexts)
         {
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            return new AgentApplication(new(() => turnState.Result)
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(referenceTurnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
             {
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
                 HttpClientFactory = new Mock<IHttpClientFactory>().Object,
             });
+
+            return app;
         }
     }
 }

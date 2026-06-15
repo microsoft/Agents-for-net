@@ -12,6 +12,7 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams;
 using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.TeamsTeams;
+using Microsoft.Agents.Extensions.Teams.App;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -67,28 +68,28 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     }
 
     [ChannelCreatedRoute]
-    public async Task OnChannelCreatedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
+    public async Task OnChannelCreatedAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
     {
         var heroCard = new HeroCard(text: $"{channelInfo.Name} is the Channel created");
         await turnContext.SendActivityAsync(heroCard.ToMessage(), cancellationToken);
     }
 
     [ChannelRenamedRoute]
-    public async Task OnChannelRenamedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
+    public async Task OnChannelRenamedAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
     {
         var heroCard = new HeroCard(text: $"{channelInfo.Name} is the new Channel name");
         await turnContext.SendActivityAsync(heroCard.ToMessage(), cancellationToken);
     }
 
     [ChannelDeletedRoute]
-    public async Task OnChannelDeletedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
+    public async Task OnChannelDeletedAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channelInfo, CancellationToken cancellationToken)
     {
         var heroCard = new HeroCard(text: $"{channelInfo.Name} is the Channel deleted");
         await turnContext.SendActivityAsync(heroCard.ToMessage(), cancellationToken);
     }
 
     [TeamRenamedRoute]
-    public async Task OnTeamRenamedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team teamInfo, CancellationToken cancellationToken)
+    public async Task OnTeamRenamedAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team teamInfo, CancellationToken cancellationToken)
     {
         var heroCard = new HeroCard(text: $"{teamInfo.Name} is the new Team name");
         await turnContext.SendActivityAsync(heroCard.ToMessage(), cancellationToken);
@@ -126,8 +127,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         await turnContext.SendActivityAsync(card.ToMessage(), cancellationToken);
     }
 
-    [MessageRoute("targeted")]
-    public async Task SendTargetedMessagesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [TeamsMessageRoute("targeted")]
+    public async Task SendTargetedMessagesAsync(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var api = TeamsExtension.GetTeamsClient(turnContext);
         var members = await api.Conversations.Members.GetAsync(turnContext.Activity.Conversation.Id, cancellationToken);

@@ -16,14 +16,14 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     private readonly string _appBaseUrl = configuration.GetValue<string>("AppBaseUrl") ?? "http://localhost:3978";
 
     [MessageRoute]
-    public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public Task OnMessageAsync(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         return turnContext.SendActivityAsync(MessageFactory.Attachment(new Attachment(contentType: ContentTypes.AdaptiveCard, content: CardLoader.LoadCardJson("launcher-card.json"))), cancellationToken);
     }
 
     #region Simple Form
     [TaskFetchRoute("simple_form")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
             new Microsoft.Teams.Api.TaskModules.ContinueTask(
@@ -37,7 +37,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     }
 
     [TaskSubmitRoute("simple_form")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormSubmitAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
         await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form!", cancellationToken: cancellationToken);
@@ -48,7 +48,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
 
     #region Dialog with Webpage Content
     [TaskFetchRoute("webpage_dialog")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
             new Microsoft.Teams.Api.TaskModules.ContinueTask(
@@ -62,7 +62,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     }
 
     [TaskSubmitRoute("webpage_dialog")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogSubmitAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
         var email = request.GetDataString("email", "No email provided");
@@ -74,7 +74,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
 
     #region Multi-Step Form
     [TaskFetchRoute("multi_step_form")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
             new Microsoft.Teams.Api.TaskModules.ContinueTask(
@@ -88,7 +88,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     }
 
     [TaskSubmitRoute("multi_step_form_submit_name")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitNameAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitNameAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
 
@@ -104,7 +104,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     }
 
     [TaskSubmitRoute("multi_step_form_submit_email")]
-    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitEmailAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+    public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitEmailAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
         var email = request.GetDataString("email", "No email provided");
@@ -116,7 +116,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
 
     #region Mixed Example with Card and Webpage
     [TaskFetchRoute("mixed_example")]
-    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMixedExampleFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.TaskModules.Response> OnMixedExampleFetchAsync(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
             new Microsoft.Teams.Api.TaskModules.ContinueTask(

@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
@@ -84,6 +85,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Act
             foreach (var turnContext in turnContexts)
             {
+                turnContext.Services.Set<Proactive>(app.Proactive);
                 await app.OnTurnAsync(turnContext, CancellationToken.None);
             }
 

@@ -61,9 +61,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
             };
             var adapter = new NotImplementedAdapter();
-            var turnContext1 = new TurnContext(adapter, activity1);
-            var turnContext2 = new TurnContext(adapter, activity2);
-            var turnContext3 = new TurnContext(adapter, activity3);
+            var turnContext1 = CreateTurnContext(adapter, activity1);
+            var turnContext2 = CreateTurnContext(adapter, activity2);
+            var turnContext3 = CreateTurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -130,9 +130,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
             };
             var adapter = new NotImplementedAdapter();
-            var turnContext1 = new TurnContext(adapter, activity1);
-            var turnContext2 = new TurnContext(adapter, activity2);
-            var turnContext3 = new TurnContext(adapter, activity3);
+            var turnContext1 = CreateTurnContext(adapter, activity1);
+            var turnContext2 = CreateTurnContext(adapter, activity2);
+            var turnContext3 = CreateTurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -201,9 +201,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
             };
             var adapter = new NotImplementedAdapter();
-            var turnContext1 = new TurnContext(adapter, activity1);
-            var turnContext2 = new TurnContext(adapter, activity2);
-            var turnContext3 = new TurnContext(adapter, activity3);
+            var turnContext1 = CreateTurnContext(adapter, activity1);
+            var turnContext2 = CreateTurnContext(adapter, activity2);
+            var turnContext3 = CreateTurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -280,10 +280,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
             };
-            var turnContext1 = new TurnContext(adapter, activity1);
-            var turnContext2 = new TurnContext(adapter, activity2);
-            var turnContext3 = new TurnContext(adapter, activity3);
-            var turnContext4 = new TurnContext(adapter, activity4);
+            var turnContext1 = CreateTurnContext(adapter, activity1);
+            var turnContext2 = CreateTurnContext(adapter, activity2);
+            var turnContext3 = CreateTurnContext(adapter, activity3);
+            var turnContext4 = CreateTurnContext(adapter, activity4);
             var configResponseMock = new Mock<ConfigResponse>();
             var expectedInvokeResponse = new InvokeResponse()
             {
@@ -377,10 +377,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
             };
-            var turnContext1 = new TurnContext(adapter, activity1);
-            var turnContext2 = new TurnContext(adapter, activity2);
-            var turnContext3 = new TurnContext(adapter, activity3);
-            var turnContext4 = new TurnContext(adapter, activity4);
+            var turnContext1 = CreateTurnContext(adapter, activity1);
+            var turnContext2 = CreateTurnContext(adapter, activity2);
+            var turnContext3 = CreateTurnContext(adapter, activity3);
+            var turnContext4 = CreateTurnContext(adapter, activity4);
             var configResponseMock = new Mock<ConfigResponse>();
             var expectedInvokeResponse = new InvokeResponse()
             {
@@ -469,9 +469,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams
             };
-            var turnContext1 = new TurnContext(adapter, activity1);
-            var turnContext2 = new TurnContext(adapter, activity2);
-            var turnContext3 = new TurnContext(adapter, activity3);
+            var turnContext1 = CreateTurnContext(adapter, activity1);
+            var turnContext2 = CreateTurnContext(adapter, activity2);
+            var turnContext3 = CreateTurnContext(adapter, activity3);
             var expectedInvokeResponse = new InvokeResponse
             {
                 Status = 200
@@ -555,9 +555,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams
             };
-            var turnContext1 = new TurnContext(adapter, activity1);
-            var turnContext2 = new TurnContext(adapter, activity2);
-            var turnContext3 = new TurnContext(adapter, activity3);
+            var turnContext1 = CreateTurnContext(adapter, activity1);
+            var turnContext2 = CreateTurnContext(adapter, activity2);
+            var turnContext3 = CreateTurnContext(adapter, activity3);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext1);
             var expectedInvokeResponse = new InvokeResponse
             {
@@ -634,9 +634,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Channels.Msteams
             };
-            var turnContext1 = new TurnContext(adapter, activity1);
-            var turnContext2 = new TurnContext(adapter, activity2);
-            var turnContext3 = new TurnContext(adapter, activity3);
+            var turnContext1 = CreateTurnContext(adapter, activity1);
+            var turnContext2 = CreateTurnContext(adapter, activity2);
+            var turnContext3 = CreateTurnContext(adapter, activity3);
             var expectedInvokeResponse = new InvokeResponse
             {
                 Status = 200
@@ -692,7 +692,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
             };
             var adapter = new NotImplementedAdapter();
-            var turnContext = new TurnContext(adapter, activity);
+            var turnContext = CreateTurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -738,7 +738,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 From = new() { Id = "fromId" },
             };
             var adapter = new NotImplementedAdapter();
-            var turnContext = new TurnContext(adapter, activity);
+            var turnContext = CreateTurnContext(adapter, activity);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
@@ -764,6 +764,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             // Assert
             Assert.Empty(names);
+        }
+
+        private static TurnContext CreateTurnContext(ChannelAdapter adapter, IActivity activity)
+        {
+            return new TurnContext(adapter, activity);
         }
     }
 }

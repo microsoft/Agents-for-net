@@ -200,7 +200,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [ConfigurationFetchRoute]
         public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnConfigFetchAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             object configData,
             CancellationToken cancellationToken)
@@ -212,7 +212,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [ConfigurationSubmitRoute]
         public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnConfigSubmitAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             object configData,
             CancellationToken cancellationToken)

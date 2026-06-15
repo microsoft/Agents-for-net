@@ -138,7 +138,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             // Arrange
             IActivity[] activitiesToSend = null;
             var adapter = new SimpleAdapter((activities) => activitiesToSend = activities);
-            var turnContext = new TurnContext(adapter, new Activity
+            var turnContext = CreateTurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.Message,
                 Text = "hello",
@@ -170,7 +170,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         {
             IActivity[] activitiesToSend = null;
             var adapter = new SimpleAdapter((activities) => activitiesToSend = activities);
-            var turnContext = new TurnContext(adapter, new Activity
+            var turnContext = CreateTurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.Invoke,
                 Name = invokeName,
@@ -200,6 +200,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
             return (app, turnContext);
         }
+        private static TurnContext CreateTurnContext(ChannelAdapter adapter, IActivity activity)
+        {
+            return new TurnContext(adapter, activity);
+        }
+
     }
 
     [TeamsExtension]
