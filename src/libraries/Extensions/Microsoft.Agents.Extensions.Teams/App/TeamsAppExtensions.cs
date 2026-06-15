@@ -1,12 +1,6 @@
-﻿using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App;
+﻿using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Extensions.Teams.App;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Teams
 {

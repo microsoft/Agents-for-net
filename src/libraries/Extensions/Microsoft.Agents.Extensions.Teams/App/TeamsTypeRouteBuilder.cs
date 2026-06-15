@@ -9,18 +9,18 @@ using Microsoft.Agents.Extensions.Teams.App;
 namespace Microsoft.Agents.Extensions.Teams
 {
 
-    public class TeamsMessageRouteBuilder : MessageRouteBuilderBase<TeamsMessageRouteBuilder>
+    public class TeamsTypeRouteBuilder : TypeRouteBuilderBase<TeamsTypeRouteBuilder>
     {
         /// <summary>
-        /// Creates a new instance of the <see cref="TeamsMessageRouteBuilder"/> class.
+        /// Creates a new instance of the <see cref="TeamsTypeRouteBuilder"/> class.
         /// </summary>
-        /// <returns>A new <see cref="TeamsMessageRouteBuilder"/>.</returns>
-        public static TeamsMessageRouteBuilder Create()
+        /// <returns>A new <see cref="TeamsTypeRouteBuilder"/>.</returns>
+        public static TeamsTypeRouteBuilder Create()
         {
-            return new TeamsMessageRouteBuilder();
+            return new TeamsTypeRouteBuilder();
         }
 
-        public TeamsMessageRouteBuilder WithHandler(TeamsRouteHandler handler)
+        public TeamsTypeRouteBuilder WithHandler(TeamsRouteHandler handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             _route.Handler = HandlerUtils.WrapHandler(handler);
