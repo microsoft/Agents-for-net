@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Extensions.Teams.MessageExtensions;
 using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;

@@ -5,7 +5,6 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Errors;
-using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 using System;
 using System.Threading.Tasks;
 

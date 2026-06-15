@@ -4,7 +4,6 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Errors;
-using Microsoft.Agents.Extensions.Teams.Messages;
 using System;
 using System.Threading.Tasks;
 

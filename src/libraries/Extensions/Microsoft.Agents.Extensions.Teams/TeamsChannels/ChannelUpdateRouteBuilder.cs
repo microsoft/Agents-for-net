@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.Configurations;
 using Microsoft.Teams.Api;
 using System;
 using System.Collections.Generic;

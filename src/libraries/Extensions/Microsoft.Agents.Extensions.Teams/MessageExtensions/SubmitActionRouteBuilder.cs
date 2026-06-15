@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.TaskModules;
 using System;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
