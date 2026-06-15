@@ -29,15 +29,15 @@ public partial class TeamsAgent(AgentApplicationOptions options) : AgentApplicat
         await turnContext.ReplyAsync("Hello!", cancellationToken);
     }
 
-    //[TeamsMessageRoute("/mention")]
-    //public async Task MentionRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    //{
-    //    // Build a reply that @mentions the sender before appending text.
-    //    var replyActivity = turnContext.Activity.CreateReply()
-    //        .AddMention(turnContext.Activity.From)
-    //        .AddText(", hello.");
-    //    await turnContext.SendActivityAsync(replyActivity, cancellationToken);
-    //}
+    [TeamsMessageRoute("/mention")]
+    public async Task MentionRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        // Build a reply that @mentions the sender before appending text.
+        var replyActivity = turnContext.Activity.CreateReply()
+            .AddMention(turnContext.Activity.From)
+            .AddText(", hello.");
+        await turnContext.SendActivityAsync(replyActivity, cancellationToken);
+    }
 
     [TeamsMessageRoute("/messageteam")]
     public async Task MessageTeamRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

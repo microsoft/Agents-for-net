@@ -125,4 +125,37 @@ public static class TeamsActivityExtensions
             };
         return true;
     }
+
+    public static IActivity AddQuote(this IActivity activity, string messageId, string text = null)
+    {
+        activity.Text += (
+            $"<blockquote itemscope =\"\" itemtype=\"http://schema.skype.com/Reply\" itemid=\"{messageId}\">\n" +
+            $"<strong itemprop=\"mri\" itemid=\"{activity.Recipient?.Id}\">{activity.Recipient?.Name}</strong><span itemprop=\"time\" itemid=\"{messageId}\"></span>\n" +
+            $"<p itemprop=\"preview\">{text}</p>\n" +
+            $"</blockquote>\r\n"
+        );
+
+        activity.ReplyToId = messageId;
+        return activity;
+    }
+
+    public static IActivity AddMention(this IActivity activity, ChannelAccount account)
+    {
+        var mentionText = $"<at>{account.Name}</at>";
+
+        activity.Text = $"{mentionText}{activity.Text}";
+
+        activity.Entities.Add(new Core.Models.Mention(
+            account,
+            mentionText
+        ));
+
+        return activity;
+    }
+
+    public static IActivity AddText(this IActivity activity, string text)
+    {
+        activity.Text += text;
+        return activity;
+    }
 }

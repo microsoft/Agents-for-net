@@ -95,33 +95,6 @@ namespace Microsoft.Agents.Extensions.Teams
                 cancellationToken: cancellationToken);
         }
 
-        private static void AddQuote(IActivity activity, string messageId, string text = null)
-        {
-            activity.Text += (
-                $"<blockquote itemscope =\"\" itemtype=\"http://schema.skype.com/Reply\" itemid=\"{messageId}\">\n" +
-                $"<strong itemprop=\"mri\" itemid=\"{activity.Recipient?.Id}\">{activity.Recipient?.Name}</strong><span itemprop=\"time\" itemid=\"{messageId}\"></span>\n" +
-                $"<p itemprop=\"preview\">{text}</p>\n" +
-                $"</blockquote>\r\n"
-            );
-
-            activity.ReplyToId = messageId;
-        }
-
-        private static void AddMention(IActivity activity, ChannelAccount account, bool addText = true)
-        {
-            var mentionText = $"<at>{account.Name}</at>";
-
-            if (addText)
-            {
-                activity.Text = $"{mentionText}{activity.Text}";
-            }
-
-            activity.Entities.Add(new Core.Models.Mention(
-                account,
-                mentionText
-            ));
-        }
-
         /// <summary>
         /// Replies to the current activity, quoting the original Teams message when possible.
         /// </summary>
@@ -132,9 +105,9 @@ namespace Microsoft.Agents.Extensions.Teams
         {
             if (Activity.Id != null)
             {
-                var newActivity = Activity.CreateReply();
-                AddQuote(newActivity, Activity.Id, Activity.Text);
-                newActivity.Text += text;
+                var newActivity = Activity.CreateReply()
+                    .AddQuote(Activity.Id, Activity.Text)
+                    .AddText(text);
                 return SendActivityAsync(newActivity, cancellationToken);
             }
             return SendActivityAsync(Activity.CreateReply(text), cancellationToken);
