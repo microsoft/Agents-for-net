@@ -124,7 +124,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     {
         _route.Handler = async (ctx, ts, ct) => {
             var ttc = new TeamsTurnContext(ctx);
-            await handler(ttc, ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct)
+            await handler(ttc, ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct);
         };
         return this;
     }

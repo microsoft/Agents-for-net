@@ -33,7 +33,7 @@ public class TeamsMessageRouteAttribute(string text = null, string textRegex = n
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamsRouteHandler>(app, method);
-        var b = TeamsMessageRouteBuilder.Create().WithHandler(handler, app.Proactive).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var b = TeamsMessageRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
 
         if (!string.IsNullOrWhiteSpace(text))
