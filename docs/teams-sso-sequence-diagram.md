@@ -269,3 +269,12 @@ sequenceDiagram
     end
 ```
 
+## Related Source Files
+
+| Component | Path |
+|-----------|------|
+| UserAuthorization | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/` |
+| Authentication.Msal | `src/libraries/Authentication/Authentication.Msal/` |
+| Token Service Client | `src/libraries/Client/Microsoft.Agents.Connector/` |
+| AgentApplication (SignIn orchestration) | `src/libraries/Builder/Microsoft.Agents.Builder/App/AgentApplication.cs` |
+
