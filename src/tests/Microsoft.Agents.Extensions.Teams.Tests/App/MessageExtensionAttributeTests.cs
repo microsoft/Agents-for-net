@@ -503,7 +503,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         [SubmitActionRoute("testCommand")]
 
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSubmitActionAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.MessageExtensions.Action action,
             CancellationToken cancellationToken)
@@ -527,7 +527,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [QueryRoute("queryCommand")]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.MessageExtensions.Query query,
             CancellationToken cancellationToken)
@@ -551,7 +551,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [QueryLinkRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             string url,
             CancellationToken cancellationToken)
@@ -576,7 +576,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [QueryUrlSettingRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryUrlSettingAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             CancellationToken cancellationToken)
         {
@@ -599,7 +599,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [ConfigureSettingsRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnConfigureSettingsAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.MessageExtensions.Query settings,
             CancellationToken cancellationToken)
@@ -622,7 +622,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [FetchActionRoute("fetchCommand")]
         public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTaskAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.MessageExtensions.Action action,
             CancellationToken cancellationToken)
@@ -646,7 +646,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [CardButtonClickedRoute]
         public Task OnCardButtonClickedAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             CardData cardData,
             CancellationToken cancellationToken)
@@ -677,7 +677,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [MessagePreviewEditRoute("previewEditCommand")]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnMessagePreviewEditAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             IActivity activityPreview,
             CancellationToken cancellationToken)
@@ -702,7 +702,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [MessagePreviewSendRoute("previewSendCommand")]
         public Task OnMessagePreviewSendAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             IActivity activityPreview,
             CancellationToken cancellationToken)
@@ -726,7 +726,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [SelectItemRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             JsonElement item,
             CancellationToken cancellationToken)

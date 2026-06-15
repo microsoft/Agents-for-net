@@ -169,7 +169,7 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <returns>The configured agent application.</returns>
         public static AgentApplication OnMessageReactionsRemoved(this AgentApplication app, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler, app.Proactive);
+            var newHandler = HandlerUtils.WrapHandler(handler);
             return app.OnMessageReactionsRemoved(newHandler, rank, autoSignInHandlers, isAgenticOnly);
         }
 

@@ -213,7 +213,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [FileConsentAcceptRoute]
         public Task OnFileConsentAcceptAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.FileConsentCardResponse response,
             CancellationToken cancellationToken)
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [FileConsentDeclineRoute]
         public Task OnFileConsentDeclineAsync(
-            ITurnContext turnContext,
+            TeamsTurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.FileConsentCardResponse response,
             CancellationToken cancellationToken)

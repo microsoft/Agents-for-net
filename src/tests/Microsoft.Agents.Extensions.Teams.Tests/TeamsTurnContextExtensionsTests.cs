@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Tests;
 using Microsoft.Agents.Core.Models;
 using System;
@@ -291,9 +292,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         /// <summary>The user being targeted in outgoing activities.</summary>
         private static readonly ChannelAccount TargetUser = new() { Id = "fromId", Name = "Target User", Role = RoleTypes.User };
 
-        private static ITurnContext CreateTurnContext(ChannelAdapter adapter)
+        private static TeamsTurnContext CreateTurnContext(ChannelAdapter adapter)
         {
-            return new TurnContext(adapter, new Activity
+            var app = new AgentApplication(new AgentApplicationOptions((Microsoft.Agents.Storage.IStorage)null)
+            {
+                StartTypingTimer = false,
+            });
+
+            var turnContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.Message,
                 ChannelId = Channels.Msteams,
@@ -301,6 +307,10 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
             });
+
+            turnContext.Services.Set(app.Proactive);
+
+            return new TeamsTurnContext(turnContext);
         }
     }
 }
