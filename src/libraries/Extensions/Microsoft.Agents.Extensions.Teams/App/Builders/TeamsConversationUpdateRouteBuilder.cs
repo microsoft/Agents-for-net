@@ -17,6 +17,17 @@ namespace Microsoft.Agents.Extensions.Teams.App.Builders
     /// update activities. This builder allows matching update activities by name, and supports agentic routing scenarios.</remarks>
     public class TeamsConversationUpdateRouteBuilder : RouteBuilderBase<TeamsConversationUpdateRouteBuilder>
     {
+
+        /// <summary>
+        /// Creates a new instance of the TeamsConversationUpdateRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A TeamsConversationUpdateRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static TeamsConversationUpdateRouteBuilder Create()
+        {
+            return new TeamsConversationUpdateRouteBuilder();
+        }
+
+
         /// <summary>
         /// Configures the route to match a specific <see cref="Microsoft.Agents.Extensions.Teams.App.TeamsConversationUpdateEvents"/>, such as members being added or removed.
         /// </summary>

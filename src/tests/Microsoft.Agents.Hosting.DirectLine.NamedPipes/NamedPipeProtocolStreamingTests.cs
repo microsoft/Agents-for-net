@@ -271,7 +271,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // In production, DLFlex has a meaningful gap between operations; in tests with
             // anonymous pipes, data arrives instantly so without this delay the probe would
             // incorrectly consume the next frame's header byte.
-            await Task.Delay(50);
+            // Use 200ms (not 50ms) to account for CancelAfter timer granularity (~15.6ms on
+            // Windows) and thread scheduling jitter on loaded CI machines.
+            await Task.Delay(200);
 
             // --- Second request: must parse correctly immediately ---
             var req2Id = Guid.NewGuid();
