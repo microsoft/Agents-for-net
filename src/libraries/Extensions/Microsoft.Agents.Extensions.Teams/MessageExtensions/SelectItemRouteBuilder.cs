@@ -20,6 +20,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the SelectItemRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A SelectItemRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static SelectItemRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<SelectItemRouteBuilder>();
+        return builder;
+    }
+
     public SelectItemRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;

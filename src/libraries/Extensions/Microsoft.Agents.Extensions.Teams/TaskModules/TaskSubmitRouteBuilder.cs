@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.TeamsTeams;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 
@@ -16,6 +18,16 @@ namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 /// </remarks>
 public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the TaskSubmitRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A TaskSubmitRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static TaskSubmitRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<TaskSubmitRouteBuilder>();
+        return builder;
+    }
+
     public TaskSubmitRouteBuilder() : base()
     {
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.Tasks.Submit;

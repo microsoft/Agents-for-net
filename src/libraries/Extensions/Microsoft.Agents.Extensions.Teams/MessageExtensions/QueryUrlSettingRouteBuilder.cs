@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Teams.Errors;
+using Microsoft.Agents.Extensions.Teams.Messages;
 using System;
 using System.Threading.Tasks;
 
@@ -19,6 +20,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the QueryUrlSettingRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A QueryUrlSettingRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static QueryUrlSettingRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<QueryUrlSettingRouteBuilder>();
+        return builder;
+    }
+
     public QueryUrlSettingRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;

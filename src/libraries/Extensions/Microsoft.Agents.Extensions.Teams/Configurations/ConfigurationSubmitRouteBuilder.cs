@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Extensions.Teams.Configurations;
 
 /// <summary>
@@ -13,6 +15,16 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 /// </remarks>
 public class ConfigurationSubmitRouteBuilder : ConfigurationRouteBuilderBase<ConfigurationSubmitRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the ConfigurationSubmitRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A ConfigurationSubmitRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static ConfigurationSubmitRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<ConfigurationSubmitRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="ConfigurationSubmitRouteBuilder"/>,
     /// pre-configured to match config submit invocations.

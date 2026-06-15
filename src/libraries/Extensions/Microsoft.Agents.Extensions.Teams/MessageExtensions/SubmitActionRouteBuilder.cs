@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.TaskModules;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 
@@ -16,6 +18,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the SubmitActionRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A SubmitActionRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static SubmitActionRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<SubmitActionRouteBuilder>();
+        return builder;
+    }
+
     public SubmitActionRouteBuilder() : base()
     {
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction;

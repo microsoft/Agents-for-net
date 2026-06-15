@@ -3,7 +3,9 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.Teams.Configurations;
 using Microsoft.Teams.Api;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -24,6 +26,16 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsChannels;
 public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateRouteBuilder>
 {
     private readonly IList<string> _channelEvents = [];
+
+    /// <summary>
+    /// Creates a new instance of the ChannelUpdateRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A ChannelUpdateRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static ChannelUpdateRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<ChannelUpdateRouteBuilder>();
+        return builder;
+    }
 
     /// <summary>
     /// Match on channel created events.

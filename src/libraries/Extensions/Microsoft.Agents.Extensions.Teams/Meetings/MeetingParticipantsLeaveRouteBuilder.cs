@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Meetings;
 
@@ -16,6 +17,16 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// </remarks>
 public class MeetingParticipantsLeaveRouteBuilder : MeetingEventRouteBuilderBase<MeetingParticipantsLeaveRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the MeetingParticipantsLeaveRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A MeetingParticipantsLeaveRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static MeetingParticipantsLeaveRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<MeetingParticipantsLeaveRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="MeetingParticipantsLeaveRouteBuilder"/>,
     /// pre-configured to match the Teams meeting participants leave event.

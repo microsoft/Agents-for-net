@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.Teams.MessageExtensions;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -14,6 +16,16 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// </remarks>
 public class MessageEditRouteBuilder : MessageEventRouteBuilderBase<MessageEditRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the MessageEditRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A MessageEditRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static MessageEditRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<MessageEditRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="MessageEditRouteBuilder"/>,
     /// pre-configured to match Teams message edit events.

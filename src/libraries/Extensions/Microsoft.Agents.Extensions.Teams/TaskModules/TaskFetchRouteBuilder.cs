@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 
@@ -16,6 +17,16 @@ namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 /// </remarks>
 public class TaskFetchRouteBuilder : KeyValueRouteBuilderBase<TaskFetchRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the TaskFetchRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A TaskFetchRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static TaskFetchRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<TaskFetchRouteBuilder>();
+        return builder;
+    }
+
     public TaskFetchRouteBuilder() : base()
     {
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.Tasks.Fetch;

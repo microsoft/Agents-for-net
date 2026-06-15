@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 
@@ -17,6 +18,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class MessagePreviewEditRouteBuilder : CommandRouteBuilderBase<MessagePreviewEditRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the MessagePreviewEditRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A MessagePreviewEditRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static MessagePreviewEditRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<MessagePreviewEditRouteBuilder>();
+        return builder;
+    }
+
     public MessagePreviewEditRouteBuilder() : base()
     {
         PreviewAction = Microsoft.Teams.Api.MessageExtensions.MessagePreviewAction.Edit.ToString();

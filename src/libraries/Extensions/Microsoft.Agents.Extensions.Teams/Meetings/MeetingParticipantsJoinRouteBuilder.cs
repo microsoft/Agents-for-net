@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Models;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Meetings;
 
@@ -16,6 +17,16 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// </remarks>
 public class MeetingParticipantsJoinRouteBuilder : MeetingEventRouteBuilderBase<MeetingParticipantsJoinRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the MeetingParticipantsJoinRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A MeetingParticipantsJoinRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static MeetingParticipantsJoinRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<MeetingParticipantsJoinRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="MeetingParticipantsJoinRouteBuilder"/>,
     /// pre-configured to match the Teams meeting participants join event.

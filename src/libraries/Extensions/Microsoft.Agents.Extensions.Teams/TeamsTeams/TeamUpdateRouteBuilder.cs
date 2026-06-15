@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Teams.Api;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -24,6 +25,16 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams;
 public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBuilder>
 {
     private readonly IList<string> _teamEvents = [];
+
+    /// <summary>
+    /// Creates a new instance of the TeamUpdateRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A TeamUpdateRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static TeamUpdateRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<TeamUpdateRouteBuilder>();
+        return builder;
+    }
 
     /// <summary>
     /// Match on team archived events.

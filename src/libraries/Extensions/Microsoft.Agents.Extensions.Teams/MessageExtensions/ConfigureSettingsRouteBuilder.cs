@@ -20,6 +20,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the ConfigureSettingsRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A ConfigureSettingsRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static ConfigureSettingsRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<ConfigureSettingsRouteBuilder>();
+        return builder;
+    }
+
     public ConfigureSettingsRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;

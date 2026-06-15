@@ -21,6 +21,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the QueryLinkRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A QueryLinkRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static QueryLinkRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<QueryLinkRouteBuilder>();
+        return builder;
+    }
+
     public QueryLinkRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;

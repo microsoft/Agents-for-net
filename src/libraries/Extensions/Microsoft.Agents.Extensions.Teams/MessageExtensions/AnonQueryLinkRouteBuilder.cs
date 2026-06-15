@@ -21,6 +21,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the AnonQueryLinkRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>An AnonQueryLinkRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static AnonQueryLinkRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<AnonQueryLinkRouteBuilder>();
+        return builder;
+    }
+
     public AnonQueryLinkRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;

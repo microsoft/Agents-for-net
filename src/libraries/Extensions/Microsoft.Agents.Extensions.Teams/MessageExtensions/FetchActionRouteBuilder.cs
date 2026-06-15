@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.Meetings;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 
@@ -16,6 +18,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the FetchActionRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A FetchActionRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static FetchActionRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<FetchActionRouteBuilder>();
+        return builder;
+    }
+
     public FetchActionRouteBuilder() : base()
     {
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.FetchTask;

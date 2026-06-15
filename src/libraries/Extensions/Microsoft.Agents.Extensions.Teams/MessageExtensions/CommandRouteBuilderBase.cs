@@ -27,7 +27,7 @@ public class CommandRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> wher
     protected string InvokeName { get; set; }
     protected string? PreviewAction { get; set; }
 
-    public CommandRouteBuilderBase() : base()
+    protected CommandRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
     }

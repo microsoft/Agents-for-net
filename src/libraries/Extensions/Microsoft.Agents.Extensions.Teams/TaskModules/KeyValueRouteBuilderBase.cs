@@ -33,7 +33,7 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
     /// Initializes a new instance of <see cref="KeyValueRouteBuilderBase{TBuilder}"/>,
     /// pre-configured as an Invoke route.
     /// </summary>
-    public KeyValueRouteBuilderBase() : base()
+    protected KeyValueRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
     }

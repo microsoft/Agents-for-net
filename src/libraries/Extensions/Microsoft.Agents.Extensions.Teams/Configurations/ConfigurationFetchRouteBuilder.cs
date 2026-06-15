@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Extensions.Teams.Configurations;
 
 /// <summary>
@@ -13,6 +15,16 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 /// </remarks>
 public class ConfigurationFetchRouteBuilder : ConfigurationRouteBuilderBase<ConfigurationFetchRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the ConfigurationFetchRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A ConfigurationFetchRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static ConfigurationFetchRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<ConfigurationFetchRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="ConfigurationFetchRouteBuilder"/>,
     /// pre-configured to match config fetch invocations.

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 
@@ -16,6 +17,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the QueryRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A QueryRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static QueryRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<QueryRouteBuilder>();
+        return builder;
+    }
+
     public QueryRouteBuilder() : base()
     {
         InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Query;

@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.Teams.Messages;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 
@@ -16,6 +18,16 @@ namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 /// </remarks>
 public class FileConsentDeclineRouteBuilder : FileConsentRouteBuilderBase<FileConsentDeclineRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the FileConsentDeclineRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A FileConsentDeclineRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static FileConsentDeclineRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<FileConsentDeclineRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="FileConsentDeclineRouteBuilder"/>,
     /// pre-configured to match file consent decline invocations.

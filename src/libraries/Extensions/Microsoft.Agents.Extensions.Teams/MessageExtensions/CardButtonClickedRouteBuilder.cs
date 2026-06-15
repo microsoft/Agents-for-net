@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Errors;
+using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 using System;
 using System.Threading.Tasks;
 
@@ -20,6 +21,16 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the CardButtonClickedRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A CardButtonClickedRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static CardButtonClickedRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<CardButtonClickedRouteBuilder>();
+        return builder;
+    }
+
     public CardButtonClickedRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;

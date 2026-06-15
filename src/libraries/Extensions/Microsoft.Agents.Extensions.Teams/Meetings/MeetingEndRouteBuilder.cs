@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Meetings;
 
@@ -15,6 +16,16 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// </remarks>
 public class MeetingEndRouteBuilder : MeetingEventRouteBuilderBase<MeetingEndRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the MeetingEndRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A MeetingEndRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static MeetingEndRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<MeetingEndRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="MeetingEndRouteBuilder"/>,
     /// pre-configured to match the Teams meeting end event.

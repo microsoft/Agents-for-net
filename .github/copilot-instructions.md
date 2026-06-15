@@ -1,5 +1,12 @@
 # Copilot Instructions for Agents-for-net
 
+## Project Overview
+
+This is the Microsoft 365 Agents SDK for .NET — a framework for building enterprise-grade conversational agents that work across M365, Teams, Copilot Studio, and other platforms.
+
+**Current State:** Generally Available (GA)  
+**Documentation:** https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/
+
 ## Build and Test
 
 ```bash
@@ -8,6 +15,9 @@ dotnet build src/Microsoft.Agents.SDK.sln
 
 # Build via top-level project (includes all libraries)
 dotnet build AgentSdk.proj
+
+# Restore dependencies
+dotnet restore AgentSdk.proj
 
 # Run all tests
 dotnet test --no-build -c Debug ./src/
@@ -24,15 +34,7 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 
 ## Architecture
 
-The SDK is organized into layered libraries under `src/libraries/`:
-
-- **Core** (`Core/Microsoft.Agents.Core`) — Activity Protocol models, serialization (`ProtocolJsonSerializer` using `System.Text.Json`), validation, and telemetry primitives. Foundation for everything else.
-- **Builder** (`Builder/Microsoft.Agents.Builder`) — Agent construction framework. Key types: `AgentApplication` (route-based handler registration), `IAgent`, `ITurnContext`, `ITurnState`. Agents subclass `AgentApplication` and register handlers in the constructor via `OnActivity()`, `OnConversationUpdate()`, etc.
-- **Hosting** (`Hosting/AspNetCore`) — ASP.NET Core integration. Extension methods `AddAgent<T>()`, `AddAgentAspNetAuthentication()`, `MapAgentApplicationEndpoints()`. Default endpoint: `/api/messages`.
-- **Hosting DirectLine.NamedPipes** (`Hosting/DirectLine.NamedPipes`) — Named pipe transport for DirectLineFlex (Azure App Service sidecar). Extension method `AddAgentNamedPipeTransport()`. Enables pipe-based communication without HTTP roundtrips.
-- **Client** (`Client/`) — Agent-to-Agent communication (`IAgentHost`), Azure Bot Service connectivity (`Connector`), Copilot Studio client.
-- **Extensions** (`Extensions/`) — Platform-specific: Teams, SharePoint.
-- **Storage** (`Storage/`) — `IStorage` abstraction with `MemoryStorage` (dev), Blob, and CosmosDb implementations.
+The SDK is organized into layered libraries under `src/libraries/`. See `doc/architecture.md` for a architecture overview.
 
 ### Agent Pattern
 
@@ -58,9 +60,39 @@ app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 
-### Agent-to-Agent Communication
+### Extensions
 
-Parent agents use `IAgentHost` to talk to child agents. Child agents need no special code. Two delivery modes: `DeliveryModes.Normal` (async replies) and `DeliveryModes.Stream` (SSE streaming).
+**Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
+- Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/read receipts, config pages
+- Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
+- Two routing styles: **fluent builders** (`TeamsExtension.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[QueryRoute("cmdId")]`)
+- Feature areas exposed as properties on `TeamsAgentExtension`:
+  - `TeamsExtension.MessageExtensions` — search queries, link unfurling, anonymous link unfurling, action commands, compose previews, card button clicks, settings
+  - `TeamsExtension.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
+  - `TeamsExtension.Meetings` — start/end, participants join/leave
+  - `TeamsExtension.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
+  - `TeamsExtension.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
+  - `TeamsExtension.FileConsent` — file upload consent accept/decline
+  - `TeamsExtension.Messages` — message edit/delete/undelete, read receipts, O365 connector card actions
+  - `TeamsExtension.Config` — config fetch/submit (bot configuration UI)
+- `TeamsInfo` static helper — `GetMeetingInfoAsync()`, `GetMeetingParticipantAsync()`, `GetTeamDetailsAsync()`, `GetTeamChannelsAsync()`, `GetPagedMembersAsync()`, `GetPagedTeamMembersAsync()`, `GetTeamMemberAsync()`, `GetMemberAsync()`
+- `TeamsTurnContextExtensions` — `SendTargetedActivityAsync()` for sending to specific recipients
+- `TeamsActivityExtensions` — `TeamsGetChannelId()`, `TeamsNotifyUser()`, `TeamsEnableFeedbackLoop()`, etc.
+- Route builders accept `autoSignInHandlers` and route attributes accept `signInHandlers` parameter for per-route OAuth/SSO flows; Teams SSO and OBO via Azure Bot Token Service are supported
+- Legacy `TeamsActivityHandler` in `Compat/` namespace for migration from Bot Framework SDK
+
+```csharp
+// Minimal Teams agent setup
+[TeamsExtension]
+public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
+{
+    [QueryRoute("searchCmd")]
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchAsync(
+        ITurnContext ctx, ITurnState state,
+        Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken ct)
+        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response { ComposeExtension = BuildResults(query) });
+}
+```
 
 ## Key Conventions
 
@@ -83,6 +115,7 @@ Parent agents use `IAgentHost` to talk to child agents. Child agents need no spe
 - Test projects are under `src/tests/` and may target both .NET 8.0 and .NET Framework 4.8.
 - Test helpers in `Microsoft.Agents.Builder.Testing`.
 - Telemetry tests use `[Collection("TelemetryTests")]` to disable parallel execution (avoids `ActivitySource` listener conflicts).
+- Do not use Task.Delay in tests as they cause flakiness. Use syncronization primitives or test-specific hooks instead.
 
 ### Authentication
 - MSAL-based auth (`Authentication.Msal`) supports ClientSecret, Federated Credentials, and Managed Identity.
@@ -92,3 +125,32 @@ Parent agents use `IAgentHost` to talk to child agents. Child agents need no spe
 ### Terminology
 - **Agent-to-Agent** refers to SDK agents communicating via the Activity Protocol — not the A2A open spec (`github.com/a2aproject/A2A`).
 - **`DeliveryModes.Stream`** is an SSE transport mechanism, unrelated to A2A.
+
+## Configuration
+
+### Authentication (appsettings.json)
+- See [Configure authentication in a .NET agent](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/microsoft-authentication-library-configuration-options)
+- See [Configure AspNet JWT authentication](src/samples/A2AAgent/AspNetExtensions.cs)
+- **ClientSecret/Certificate**: Works with dev tunnels for local debugging.
+- **Federated Credentials/Managed Identity**: Requires deployment to App Service or container (cannot use dev tunnel).
+
+## Samples
+
+Samples are in `src/samples/`. Each has its own README with setup instructions.
+
+**Key Samples:**
+- `EmptyAgent`: Basic agent template — good starting point
+- `CopilotStudioClient`: Client examples for Copilot Studio integration
+- `SemanticKernel/WeatherAgent`: Shows Semantic Kernel integration
+- `TelemetryAgent`: OpenTelemetry instrumentation example
+
+## Local Development
+
+- Default agent port: `http://localhost:3978`
+- Use `devtunnel` for external client connections (Teams, Bot Service)
+- Use Agents Playground for local testing without tunnels
+
+## Package Publishing
+
+- Public packages: nuget.org (prefix: `Microsoft.Agents.*`)
+- Nightly builds: nuget.org with `-beta` suffix (updated overnight PT)

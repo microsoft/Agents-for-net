@@ -148,10 +148,15 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // attachment data, the protocol trusts framing (End=true) and dispatches without blocking.
             using var harness = await InboundHarness.CreateAsync();
             var received = new List<NamedPipeRequest>();
+            var firstReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var allReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             harness.Protocol.OnRequestReceived = (req, _) =>
             {
                 received.Add(req);
+                if (received.Count == 1)
+                {
+                    firstReceived.TrySetResult(true);
+                }
                 if (received.Count == 2)
                 {
                     allReceived.TrySetResult(true);
@@ -184,10 +189,10 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // Attachment is properly framed: header PayloadLength = actual bytes = 100, End=true
             await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId, attachmentBody, end: true);
 
-            // Wait for probe timeout (20ms) before sending next request.
-            // The probe detects trailing bytes by checking if data arrives immediately;
-            // in tests with in-memory pipes we need to let the timeout expire first.
-            await Task.Delay(50);
+            // Wait for the first request to be fully dispatched (probe timeout completed)
+            // before sending the second request. This avoids a race where the second request's
+            // bytes are consumed by the probe read of the first request.
+            await firstReceived.Task.WaitAsync(TimeSpan.FromSeconds(3));
 
             // Second request arrives after probe timeout (no drain needed)
             await harness.WriteRequestWithoutStreamsAsync(Guid.NewGuid());

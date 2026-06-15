@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -14,6 +15,16 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// </remarks>
 public class MessageDeleteRouteBuilder : MessageEventRouteBuilderBase<MessageDeleteRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the MessageDeleteRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A MessageDeleteRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static MessageDeleteRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<MessageDeleteRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="MessageDeleteRouteBuilder"/>,
     /// pre-configured to match Teams message soft-delete events.

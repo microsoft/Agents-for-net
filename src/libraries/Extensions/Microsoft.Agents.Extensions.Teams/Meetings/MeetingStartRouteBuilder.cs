@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Meetings;
 
@@ -15,6 +16,16 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// </remarks>
 public class MeetingStartRouteBuilder : MeetingEventRouteBuilderBase<MeetingStartRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the MeetingStartRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A MeetingStartRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static MeetingStartRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<MeetingStartRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="MeetingStartRouteBuilder"/>,
     /// pre-configured to match the Teams meeting start event.

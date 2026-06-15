@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using System;
 
 namespace Microsoft.Agents.Extensions.Teams.Messages;
 
@@ -14,6 +15,16 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// </remarks>
 public class MessageUndeleteRouteBuilder : MessageEventRouteBuilderBase<MessageUndeleteRouteBuilder>
 {
+    /// <summary>
+    /// Creates a new instance of the MessageUndeleteRouteBuilder class for constructing route definitions.
+    /// </summary>
+    /// <returns>A MessageUndeleteRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static MessageUndeleteRouteBuilder Create()
+    {
+        var builder = Activator.CreateInstance<MessageUndeleteRouteBuilder>();
+        return builder;
+    }
+
     /// <summary>
     /// Initializes a new instance of <see cref="MessageUndeleteRouteBuilder"/>,
     /// pre-configured to match Teams message undelete events.
