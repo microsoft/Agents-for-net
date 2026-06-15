@@ -49,6 +49,7 @@ app.MapHealthChecks("/health");
 
 // Map the endpoints for all agents using the [AgentInterface] attribute.
 // If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
-app.MapAgentApplicationEndpoints(requireAuth: true);
+// Auth is disabled in Development (see appsettings TokenValidation:Enabled); require it otherwise.
+app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 app.Run();

@@ -74,9 +74,15 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         /// </summary>
         public static string ResolveBaseUrl(string configuredUrl = null)
         {
-            return Environment.GetEnvironmentVariable("SIDECAR_URL")
-                ?? configuredUrl
-                ?? "http://localhost:5178";
+            // Treat empty/whitespace values as unset so an exported-but-blank SIDECAR_URL (or a blank
+            // configured value) falls back to the next source instead of resolving to an invalid URL.
+            var envUrl = Environment.GetEnvironmentVariable("SIDECAR_URL");
+            if (!string.IsNullOrWhiteSpace(envUrl))
+            {
+                return envUrl;
+            }
+
+            return !string.IsNullOrWhiteSpace(configuredUrl) ? configuredUrl : "http://localhost:5178";
         }
 
         /// <summary>
@@ -272,6 +278,13 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
             {
                 foreach (var scope in options.Scopes)
                 {
+                    // Callers may pass null/empty scope entries; skip them so EscapeDataString never
+                    // throws on null and the query string isn't padded with empty scope params.
+                    if (string.IsNullOrWhiteSpace(scope))
+                    {
+                        continue;
+                    }
+
                     queryParams.Add($"optionsOverride.Scopes={Uri.EscapeDataString(scope)}");
                 }
             }

@@ -63,28 +63,34 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
                         return new SidecarHealthCheck(existing);
                     }
 
-                    if (fallbackClient == null)
+                    // Single lock around both initialization and read guarantees safe publication of
+                    // the shared fallback client across concurrent probes. The lock is uncontended in
+                    // practice (probes are infrequent), so the cost is negligible.
+                    SidecarHttpClient client;
+                    lock (fallbackGate)
                     {
-                        lock (fallbackGate)
-                        {
-                            if (fallbackClient == null)
-                            {
-                                var resolvedUrl = SidecarHttpClient.ResolveBaseUrl(sidecarBaseUrl);
-                                SidecarHttpClient.ValidateBaseUrl(resolvedUrl, bypassLocalNetworkRestriction);
-
-                                var httpClientFactory = sp.GetService<IHttpClientFactory>();
-                                var httpClient = httpClientFactory?.CreateClient(SidecarHttpClient.HttpClientName)
-                                    ?? new HttpClient { Timeout = SidecarHttpClient.DefaultTimeout };
-
-                                fallbackClient = new SidecarHttpClient(httpClient, resolvedUrl);
-                            }
-                        }
+                        client = fallbackClient ??= CreateFallbackClient(sp, sidecarBaseUrl, bypassLocalNetworkRestriction);
                     }
 
-                    return new SidecarHealthCheck(fallbackClient);
+                    return new SidecarHealthCheck(client);
                 },
                 failureStatus,
                 tags));
+        }
+
+        private static SidecarHttpClient CreateFallbackClient(
+            System.IServiceProvider sp,
+            string sidecarBaseUrl,
+            bool bypassLocalNetworkRestriction)
+        {
+            var resolvedUrl = SidecarHttpClient.ResolveBaseUrl(sidecarBaseUrl);
+            SidecarHttpClient.ValidateBaseUrl(resolvedUrl, bypassLocalNetworkRestriction);
+
+            var httpClientFactory = sp.GetService<IHttpClientFactory>();
+            var httpClient = httpClientFactory?.CreateClient(SidecarHttpClient.HttpClientName)
+                ?? new HttpClient { Timeout = SidecarHttpClient.DefaultTimeout };
+
+            return new SidecarHttpClient(httpClient, resolvedUrl);
         }
     }
 }

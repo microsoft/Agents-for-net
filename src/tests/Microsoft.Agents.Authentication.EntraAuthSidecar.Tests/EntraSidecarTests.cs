@@ -127,6 +127,37 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
         }
 
         [Fact]
+        public async Task GetAuthorizationHeaderUnauthenticated_NullAndEmptyScopes_AreSkipped()
+        {
+            HttpRequestMessage capturedRequest = null;
+            var mock = new Mock<HttpMessageHandler>();
+            mock.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .Callback<HttpRequestMessage, CancellationToken>((r, _) => capturedRequest = r)
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("""{"authorizationHeader":"Bearer token"}""")
+                });
+
+            var client = CreateClient(mock.Object);
+            var options = new SidecarRequestOptions
+            {
+                // Null/empty/whitespace entries must be skipped (no throw, no empty query params).
+                Scopes = new List<string> { null, "", "   ", "User.Read" }
+            };
+
+            await client.GetAuthorizationHeaderUnauthenticatedAsync("graph", options);
+
+            Assert.NotNull(capturedRequest);
+            var url = capturedRequest.RequestUri.ToString();
+            Assert.Contains("optionsOverride.Scopes=User.Read", url);
+            // Exactly one scope param survives; no empty "optionsOverride.Scopes=&" entries.
+            Assert.Single(System.Text.RegularExpressions.Regex.Matches(url, "optionsOverride\\.Scopes="));
+            Assert.DoesNotContain("optionsOverride.Scopes=&", url);
+        }
+
+        [Fact]
         public async Task GetAuthorizationHeaderUnauthenticated_BothAgentUsernameAndUserId_Throws()
         {
             var handler = CreateMockHandler(HttpStatusCode.OK, """{"authorizationHeader":"Bearer token"}""");
@@ -239,6 +270,43 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
             {
                 Environment.SetEnvironmentVariable("SIDECAR_URL", null);
                 var url = SidecarHttpClient.ResolveBaseUrl(null);
+                Assert.Equal("http://localhost:5178", url);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("SIDECAR_URL", original);
+            }
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void ResolveBaseUrl_BlankEnvVar_FallsBackToConfig(string envValue)
+        {
+            var original = Environment.GetEnvironmentVariable("SIDECAR_URL");
+            try
+            {
+                // A blank SIDECAR_URL must be treated as unset so a valid configured URL still wins.
+                Environment.SetEnvironmentVariable("SIDECAR_URL", envValue);
+                var url = SidecarHttpClient.ResolveBaseUrl("http://configured:5000");
+                Assert.Equal("http://configured:5000", url);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("SIDECAR_URL", original);
+            }
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void ResolveBaseUrl_BlankEnvAndConfig_FallsBackToDefault(string blank)
+        {
+            var original = Environment.GetEnvironmentVariable("SIDECAR_URL");
+            try
+            {
+                Environment.SetEnvironmentVariable("SIDECAR_URL", blank);
+                var url = SidecarHttpClient.ResolveBaseUrl(blank);
                 Assert.Equal("http://localhost:5178", url);
             }
             finally
