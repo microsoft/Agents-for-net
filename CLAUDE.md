@@ -75,12 +75,6 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 - Provides `IAgentHttpAdapter` for processing HTTP requests
 - Default endpoint: `/api/messages`
 
-**Microsoft.Agents.Hosting.DirectLine.NamedPipes** (`src/libraries/Hosting/DirectLine.NamedPipes/`)
-- Named pipe transport for DirectLineFlex (Azure App Service sidecar)
-- Extension method: `AddAgentNamedPipeTransport()`
-- Enables pipe-based agent communication without HTTP roundtrips
-- Uses Bot Framework wire protocol (48-byte ASCII framed headers)
-
 **Microsoft.Agents.Authentication.Msal** (`src/libraries/Authentication/Authentication.Msal/`)
 - MSAL-based authentication for Azure Bot Service and Entra ID
 - Supports ClientSecret, Federated Credentials, and Managed Identity auth types
@@ -89,7 +83,7 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 ### Client Libraries
 
 **Microsoft.Agents.Client** (`src/libraries/Client/Microsoft.Agents.Client/`)
-- Agent-to-Agent (Activity Protocol) communication
+- Agent-to-Agent (A2A) communication
 - `IAgentHost` for managing conversations with other agents
 - Extension: `AddAgentHost()`
 - Supports both Normal and Streaming delivery modes
@@ -136,6 +130,13 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
         => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response { ComposeExtension = BuildResults(query) });
 }
 ```
+- Microsoft Teams-specific functionality
+
+**Microsoft.Agents.Extensions.Teams.AI** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams.AI/`)
+- Teams AI capabilities integration
+
+**Microsoft.Agents.Extensions.SharePoint** (`src/libraries/Extensions/Microsoft.Agents.Extensions.SharePoint/`)
+- SharePoint integration
 
 ### Storage
 
@@ -163,25 +164,43 @@ public class MyAgent : AgentApplication
 ```
 
 ### ASP.NET Core Program Setup
-1. Register agent: `builder.AddAgent<MyAgent>();`
+1. Add services: `builder.AddAgentApplicationOptions()`, `builder.AddAgent<TAgent>()`
 2. Register storage: `builder.Services.AddSingleton<IStorage, MemoryStorage>()`
 3. Add authentication: `builder.Services.AddAgentAspNetAuthentication(builder.Configuration)`
-4. Map endpoints: `app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());`
-5. See [EmptyAgent startup](https://github.com/microsoft/Agents-for-net/blob/main/src/samples/EmptyAgent/Program.cs)
+4. Map endpoint: `app.MapPost("/api/messages", async (request, response, adapter, agent, ct) => ...)`
 
 ### Agent-to-Agent Communication
 - Parent agent uses `IAgentHost` to communicate with other agents
 - Child agents require no special code - they are regular agents
 - Two delivery modes:
   - `DeliveryModes.Normal`: Async replies (for long-running operations)
-  - `DeliveryModes.Stream`: Streaming replies using SSE.
+  - `DeliveryModes.Stream`: Streaming replies in HTTP response (for chat-style interactions)
 
 ## Configuration
 
 ### Authentication (appsettings.json)
-See [Configure authentication in a .NET agent](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/microsoft-authentication-library-configuration-options)
+```json
+"Connections": {
+  "ServiceConnection": {
+    "Settings": {
+      "AuthType": "ClientSecret",
+      "AuthorityEndpoint": "https://login.microsoftonline.com/{TenantId}",
+      "ClientId": "{ClientId}",
+      "ClientSecret": "{ClientSecret}",
+      "Scopes": ["https://api.botframework.com/.default"]
+    }
+  }
+}
+```
 
-See [Configure AspNet JWT authentication](src/samples/A2AAgent/AspNetExtensions.cs)
+### Token Validation
+```json
+"TokenValidation": {
+  "Enabled": false,  // Set true for production
+  "Audiences": ["{ClientId}"],
+  "TenantId": "{TenantId}"
+}
+```
 
 ## Testing Strategy
 
@@ -191,12 +210,13 @@ See [Configure AspNet JWT authentication](src/samples/A2AAgent/AspNetExtensions.
 - Common test helpers in `Microsoft.Agents.Builder.Testing`
 - Moq used for mocking (v4.20.72)
 
-## Test Samples
+## Samples
 
-Samples are in `src/samples/` directory. Each has its own README with setup instructions.  These are similar to the samples in Agents SDK.  They can contain additional functionality used when developing the DotNet SDK.
+Samples are in `src/samples/` directory. Each has its own README with setup instructions.
 
 **Key Samples:**
 - `EmptyAgent`: Basic agent template - good starting point
+- `AgentToAgent`: Demonstrates A2A communication with streaming and normal modes
 - `CopilotStudioClient`: Client examples for Copilot Studio integration
 - `SemanticKernel/WeatherAgent`: Shows Semantic Kernel integration
 - `TelemetryAgent`: OpenTelemetry instrumentation example
@@ -206,6 +226,7 @@ Samples are in `src/samples/` directory. Each has its own README with setup inst
 - `ConversationAgent`: Proactive messaging and conversation management in Teams
 - `MessageExtensions`: Search and action-based message extension examples
 - `Compat/CompatConversationBot`, `CompatMessageExtensions`, `CompatTaskModule`: Legacy Bot Framework SDK migration examples
+- `OTelAgent`: OpenTelemetry instrumentation example
 
 ## Important Notes
 
