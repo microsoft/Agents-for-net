@@ -321,7 +321,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         {
             var scopes = options.Scopes != null
                 ? string.Join(" ", options.Scopes
-                    .Where(s => !string.IsNullOrEmpty(s))
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
                     .Distinct(StringComparer.Ordinal)
                     .OrderBy(s => s, StringComparer.Ordinal))
                 : string.Empty;

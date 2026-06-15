@@ -416,6 +416,21 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
             Assert.Single(urls);
         }
 
+        [Fact]
+        public async Task GetCachedToken_WhitespaceScopesDoNotAffectCacheKey()
+        {
+            var (provider, urls) = CreateCapturingProvider(responseToken: "cached-token");
+
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com",
+                new List<string> { "User.Read" });
+            // Whitespace/empty scopes are ignored by the URL builder, so they must also be ignored by
+            // the cache key — otherwise an equivalent request would miss the cache.
+            await provider.GetAccessTokenAsync("https://graph.microsoft.com",
+                new List<string> { "User.Read", "   ", "" });
+
+            Assert.Single(urls);
+        }
+
         [Theory]
         [InlineData("")]
         [InlineData("   ")]

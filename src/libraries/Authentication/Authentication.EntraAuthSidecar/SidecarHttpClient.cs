@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
 #if NETSTANDARD
                         var errorContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 #else
-                        var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                        var errorContent = await response.Content.ReadAsStringAsync(linkedCts.Token).ConfigureAwait(false);
 #endif
                         if (IsTransientStatus(response.StatusCode) && attempt < maxAttempts)
                         {
@@ -393,7 +393,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
 #if NETSTANDARD
                     var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 #else
-                    var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    var content = await response.Content.ReadAsStringAsync(linkedCts.Token).ConfigureAwait(false);
 #endif
 
                     _logger.LogDebug("Sidecar response OK from {Url}. Response length: {Length}", requestPath, content?.Length ?? 0);
