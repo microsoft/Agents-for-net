@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Protocols;
@@ -22,6 +23,13 @@ using Microsoft.IdentityModel.JsonWebTokens;
 public static class AspNetExtensions
 {
     private static readonly ConcurrentDictionary<string, ConfigurationManager<OpenIdConnectConfiguration>> _openIdMetadataCache = new();
+
+    private static bool IsBotFrameworkIssuer(string issuer)
+    {
+        return AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase)
+            || AuthenticationConstants.GovBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase)
+            || AuthenticationConstants.ChinaBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase);
+    }
 
     /// <summary>
     /// Adds JWT bearer token validation for Azure Bot Service and agent-to-agent requests, reading settings from configuration.
@@ -208,9 +216,7 @@ public static class AspNetExtensions
                     string issuer = token.Issuer;
 
                     if (validationOptions.AzureBotServiceTokenHandling 
-                        && (AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase) 
-                        || AuthenticationConstants.GovBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase)
-                        || AuthenticationConstants.ChinaBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase)))
+                        && IsBotFrameworkIssuer(issuer))
                     {
                         // Use the Azure Bot authority for this configuration manager
                         context.Options.TokenValidationParameters.ConfigurationManager = _openIdMetadataCache.GetOrAdd(validationOptions.AzureBotServiceOpenIdMetadataUrl, key =>
@@ -235,9 +241,34 @@ public static class AspNetExtensions
                     return Task.CompletedTask;
                 },
 
-                OnTokenValidated = context =>
+                OnTokenValidated = async context =>
                 {
-                    return Task.CompletedTask;
+                    // AllowedCallers check for non-BotFramework tokens.
+                    // BotFramework tokens (from ABS) are excluded since they use service-level issuers.
+                    var issuer = context.Principal?.FindFirst("iss")?.Value;
+                    bool isBotFrameworkToken = validationOptions.AzureBotServiceTokenHandling
+                        && issuer != null && IsBotFrameworkIssuer(issuer);
+
+                    if (!isBotFrameworkToken
+                        && validationOptions.AllowedCallers != null
+                        && validationOptions.AllowedCallers.Count > 0
+                        && !validationOptions.AllowedCallers.Contains("*"))
+                    {
+                        // azp (v2 tokens) or appid (v1 tokens)
+                        var callerAppId = context.Principal?.FindFirst("azp")?.Value
+                            ?? context.Principal?.FindFirst("appid")?.Value;
+
+                        if (string.IsNullOrEmpty(callerAppId) || !validationOptions.AllowedCallers.Contains(callerAppId))
+                        {
+                            var message = $"Caller App ID '{callerAppId}' is not in the AllowedCallers list.";
+                            context.Response.StatusCode = 403;
+                            await context.Response.WriteAsync(message);
+
+                            // Throwing is required to short-circuit the pipeline. context.Fail() alone does not
+                            // prevent the request from reaching the endpoint when requireAuth is false (AllowAnonymous).
+                            throw new UnauthorizedAccessException(message);
+                        }
+                    }
                 },
                 OnForbidden = context =>
                 {
@@ -338,5 +369,13 @@ public static class AspNetExtensions
         /// How frequently the OpenID Connect metadata is refreshed from the identity provider.  Defaults to 12 hours.
         /// </summary>
         public TimeSpan? OpenIdMetadataRefresh { get; set; }
+
+        /// <summary>
+        /// List of Application IDs (Client IDs) that are allowed to call this agent.  Optional.
+        /// When empty or containing <c>"*"</c>, any caller is accepted.
+        /// When populated with specific App IDs, the <c>azp</c> or <c>appid</c> claim in the inbound token
+        /// must match one of the listed values.  This check applies only to non-BotFramework tokens.
+        /// </summary>
+        public IList<string>? AllowedCallers { get; set; }
     }
 }
