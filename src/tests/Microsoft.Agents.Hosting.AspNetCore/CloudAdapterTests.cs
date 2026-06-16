@@ -792,7 +792,166 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.IsType<ErrorResponseException>(captured.InnerException);
         }
 
-        private static MessageActivity CreateMessageActivity(
+        #region ValidateServiceUrl Tests
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_MatchingHosts_ShouldSucceed()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = true });
+            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://smba.trafficmanager.net/other/");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            // Should not return BadRequest - matching hosts pass validation
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_Enabled_ShouldReturnBadRequest()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = true });
+            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://evil.example.com/callback/");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_Disabled_ShouldNotReturnBadRequest()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = false });
+            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://evil.example.com/callback/");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            // Should not be rejected - validation is disabled (warning only)
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_NoServiceUrlClaim_ShouldSucceed()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = true });
+            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
+            // No serviceurl claim in identity - validation should pass
+            var context = CreateHttpContext(activity);
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_NoActivityServiceUrl_ShouldSucceed()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = true });
+            // Activity with no ServiceUrl
+            var activity = CreateMessageActivity(serviceUrl: null);
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://smba.trafficmanager.net/teams/");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_MismatchedHosts_InvokeActivity_ShouldReturnBadRequest()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = true });
+            var activity = CreateInvokeActivity();
+            activity.ServiceUrl = "https://smba.trafficmanager.net/teams/";
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://evil.example.com/callback/");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_MalformedClaimUri_Enabled_ShouldReturnBadRequest()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = true });
+            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "not-a-valid-uri");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ProcessAsync_ValidateServiceUrl_MalformedActivityUri_Disabled_ShouldNotReturnBadRequest()
+        {
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions { ValidateServiceUrl = false });
+            var activity = CreateMessageActivity(serviceUrl: "not-a-valid-uri");
+            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://smba.trafficmanager.net/teams/");
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            // Validation disabled - should only warn, not reject
+            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        }
+
+
+
+        private static DefaultHttpContext CreateHttpContextWithServiceUrlClaim(Activity activity, string serviceUrlClaimValue)
+        {
+            var context = CreateHttpContext(activity);
+            var claims = new List<Claim>
+            {
+                new Claim("serviceurl", serviceUrlClaimValue)
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuth");
+            context.User = new ClaimsPrincipal(identity);
+            return context;
+        }
+
+        private static Record UseRecordWithOptions(Func<Record, IAgent> createAgent, AdapterOptions options)
+        {
+            var factory = new Mock<IChannelServiceClientFactory>();
+            var adapterLogger = new Mock<ILogger<CloudAdapter>>();
+            var serviceLogger = new Mock<ILogger<HostedActivityService>>();
+
+            var sp = new Mock<IServiceProvider>();
+            var queue = new ActivityTaskQueue();
+            var adapter = new CloudAdapter(factory.Object, queue, adapterLogger.Object, options: options);
+            var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), queue, serviceLogger.Object);
+
+            var record = new Record(null, adapter, factory, service, queue, adapterLogger, serviceLogger);
+
+            if (createAgent != null)
+            {
+                record.Agent = createAgent(record);
+            }
+
+            sp.Setup(s => s.GetService(It.IsAny<Type>())).Returns(record.Agent);
+
+            return record;
+        }
+
+        #endregion
+
+        private static Activity CreateMessageActivity(
             string deliveryMode = DeliveryModes.Normal,
             string conversationId = null,
             string text = null,

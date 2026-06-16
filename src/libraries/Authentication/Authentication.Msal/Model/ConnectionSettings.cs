@@ -32,8 +32,13 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                 AuthType = msalConfigurationSection.GetValue<AuthTypes>("AuthType", AuthTypes.ClientSecret);
                 FederatedClientId = msalConfigurationSection.GetValue<string>("FederatedClientId", string.Empty);
                 FederatedTokenFile = msalConfigurationSection.GetValue<string>("FederatedTokenFile", string.Empty);
-                EnableContainerIMDS = msalConfigurationSection.GetValue<bool>("EnableContainerIMDS", false);
+                IdpmResource = msalConfigurationSection.GetValue<string>("IdpmResource", string.Empty);
                 AssertionRequestOptions = msalConfigurationSection.GetSection("AssertionRequestOptions").Get<AssertionRequestOptions>();
+                AzureRegion = msalConfigurationSection.GetValue<string>("AzureRegion", string.Empty);
+                if (string.IsNullOrEmpty(AzureRegion))
+                {
+                    AzureRegion = msalConfigurationSection.GetValue<string>("RegionalAuthority", string.Empty);
+                }
             }
 
             ValidateConfiguration();
@@ -67,7 +72,10 @@ namespace Microsoft.Agents.Authentication.Msal.Model
         public string FederatedTokenFile { get; set; }
 
         /// <inheritdoc/>
-        public bool EnableContainerIMDS { get; set; }
+        public string IdpmResource { get; set; }
+        
+        /// <inheritdoc/>
+        public string AzureRegion { get; set; }
 
         public AssertionRequestOptions AssertionRequestOptions { get; set; }
 
@@ -119,6 +127,23 @@ namespace Microsoft.Agents.Authentication.Msal.Model
                     if (string.IsNullOrEmpty(Authority) && string.IsNullOrEmpty(TenantId))
                     {
                         throw new ArgumentNullException(nameof(Authority), "TenantId or Authority is required");
+                    }
+                    break;
+                case AuthTypes.IdentityProxyManager:
+                    if (string.IsNullOrEmpty(ClientId))
+                    {
+                        throw new ArgumentNullException(nameof(ClientId), "ClientId is required");
+                    }
+                    if (string.IsNullOrEmpty(IdpmResource))
+                    {
+                        IdpmResource = "api://AzureAdTokenExchange/.default";
+                    }
+                    else
+                    {
+                        if (!Uri.TryCreate(IdpmResource, UriKind.Absolute, out var _))
+                        {
+                            throw new ArgumentException("IdpmResource must be a valid absolute URI", nameof(IdpmResource));
+                        }
                     }
                     break;
                 case AuthTypes.UserManagedIdentity:

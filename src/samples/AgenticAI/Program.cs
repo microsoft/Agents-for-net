@@ -28,6 +28,9 @@ builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
 
 WebApplication app = builder.Build();
 
+// Use Microsoft.Agents.Core.HeaderPropagation
+app.UseHeaderPropagation();
+
 // Enable AspNet authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
@@ -38,12 +41,5 @@ app.MapAgentRootEndpoint();
 // Map the endpoints for all agents using the [AgentInterface] attribute.
 // If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
 app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
-
-if (app.Environment.IsDevelopment())
-{
-    // Hardcoded for brevity and ease of testing. 
-    // In production, this should be set in configuration.
-    app.Urls.Add($"http://localhost:3978");
-}
 
 app.Run();

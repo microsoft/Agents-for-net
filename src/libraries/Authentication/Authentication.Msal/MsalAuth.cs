@@ -180,16 +180,16 @@ namespace Microsoft.Agents.Authentication.Msal
 
                 return tokenResult.AccessToken;
             }
-            else if (_connectionSettings.EnableContainerIMDS && _connectionSettings.AuthType == AuthTypes.UserManagedIdentity && app is IManagedIdentityApplication msiApp)
+            else if (_connectionSettings.AuthType == AuthTypes.IdentityProxyManager && app is IManagedIdentityApplication msiApp)
             {
                 var tokenResult = await msiApp
-                    .AcquireTokenForManagedIdentity("api://AzureAdTokenExchange/.default")
+                    .AcquireTokenForManagedIdentity(_connectionSettings.IdpmResource)
                     .ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
                 return tokenResult.AccessToken;
             }
 
-            throw new InvalidOperationException("Only IConfidentialClientApplication or EnableContainerIMDS+UserManagedIdentity is supported for Agentic.");
+            throw new InvalidOperationException("Only IConfidentialClientApplication or AuthType.IdentityProxyManager is supported for Agentic.");
         }
 
         public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
@@ -297,7 +297,7 @@ namespace Microsoft.Agents.Authentication.Msal
                     .WithHttpClientFactory(_msalHttpClient)
                     .Build();
             }
-            else if (_connectionSettings.AuthType == AuthTypes.UserManagedIdentity)
+            else if (_connectionSettings.AuthType == AuthTypes.UserManagedIdentity || _connectionSettings.AuthType == AuthTypes.IdentityProxyManager)
             {
                 msalAuthClient = ManagedIdentityApplicationBuilder.Create(
                         ManagedIdentityId.WithUserAssignedClientId(_connectionSettings.ClientId))
@@ -328,6 +328,11 @@ namespace Microsoft.Agents.Authentication.Msal
                 else
                 {
                     cAppBuilder.WithTenantId(ResolveTenantId(_connectionSettings, tenantId));
+                }
+
+                if (!string.IsNullOrWhiteSpace(_connectionSettings.AzureRegion))
+                {
+                    cAppBuilder.WithAzureRegion(_connectionSettings.AzureRegion);
                 }
 
                 // If Client secret was passed in , get the secret and create it that way 

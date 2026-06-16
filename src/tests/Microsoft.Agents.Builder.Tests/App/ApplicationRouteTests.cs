@@ -3,12 +3,19 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.AdaptiveCards;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
+using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using ProactiveApp = Microsoft.Agents.Builder.App.Proactive.Proactive;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -97,7 +104,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             RouteList routes = new();
             string result = routes.FormatRouteList().Formatted;
-            Assert.Equal(string.Empty, result);
+            Assert.Equal("[]", result);
         }
 
         [Fact]
@@ -111,11 +118,12 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             string result = routes.FormatRouteList().Formatted;
 
-            Assert.Contains("[0]", result);
-            Assert.Contains("MyNamedHandler", result);
-            Assert.Contains("flags=None", result);
-            Assert.Contains($"rank={RouteRank.Unspecified}", result);
-            Assert.DoesNotContain("channel=", result);
+            Assert.Contains("\"Index\":0", result);
+            Assert.Contains("\"Handler\":\"ApplicationRouteTests.MyNamedHandler\"", result);
+            Assert.Contains("\"Flags\":\"None\"", result);
+            Assert.Contains($"\"Rank\":{RouteRank.Unspecified}", result);
+            Assert.Contains("\"Channel\":\"*\"", result);
+            Assert.DoesNotContain("OAuthHandlers", result);
         }
 
         [Fact]
@@ -131,7 +139,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             string result = routes.FormatRouteList().Formatted;
 
-            Assert.Contains("flags=Invoke,Agentic", result);
+            Assert.Contains("\"Flags\":\"Invoke,Agentic\"", result);
         }
 
         [Fact]
@@ -146,7 +154,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             string result = routes.FormatRouteList().Formatted;
 
-            Assert.Contains("flags=NonTerminal", result);
+            Assert.Contains("\"Flags\":\"NonTerminal\"", result);
         }
 
         [Fact]
@@ -161,7 +169,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             string result = routes.FormatRouteList().Formatted;
 
-            Assert.Contains("channel=msteams", result);
+            Assert.Contains("\"Channel\":\"msteams\"", result);
         }
 
         [Fact]
@@ -181,16 +189,137 @@ namespace Microsoft.Agents.Builder.Tests.App
             string result = routes.FormatRouteList().Formatted;
 
             // Invoke route comes first (higher priority)
-            int idx0 = result.IndexOf("[0]");
-            int idx1 = result.IndexOf("[1]");
+            int idx0 = result.IndexOf("\"Index\":0");
+            int idx1 = result.IndexOf("\"Index\":1");
             Assert.True(idx0 >= 0);
             Assert.True(idx1 >= 0);
             Assert.True(idx0 < idx1);
-            Assert.Contains("flags=Invoke", result);
+            Assert.Contains("\"Flags\":\"Invoke\"", result);
         }
 
         private static Task MyNamedHandler(ITurnContext ctx, ITurnState state, CancellationToken ct)
             => Task.CompletedTask;
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithOAuthHandlers()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph", "sharepoint" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"graph\",\"sharepoint\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithSingleOAuthHandler()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"graph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NullChannelId_LogsWildcard()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Channel\":\"*\"", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithCustomRank()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOrderRank(100)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Rank\":100", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_AllProperties()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .AsAgentic(true)
+                .WithChannelId(Channels.Msteams)
+                .WithOrderRank(500)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            var (count, result) = routes.FormatRouteList(turnContext);
+
+            Assert.Equal(1, count);
+            Assert.Contains("\"Handler\":\"ApplicationRouteTests.MyNamedHandler\"", result);
+            Assert.Contains("\"Flags\":\"Invoke,Agentic\"", result);
+            Assert.Contains("\"Channel\":\"msteams\"", result);
+            Assert.Contains("\"Rank\":500", result);
+            Assert.Contains("\"OAuthHandlers\":[\"graph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_ContextDependentOAuthHandlers()
+        {
+            var activity = MessageFactory.Text("test");
+            activity.CallerId = "urn:botframework:aadappid:some-app-id";
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(context => context.Activity.CallerId != null
+                    ? new[] { "agenticGraph" }
+                    : new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"agenticGraph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_OAuthHandlers_OmittedWithoutContext()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.DoesNotContain("OAuthHandlers", result);
+        }
 
         [Fact]
         public async Task Test_RouteList_ByAgenticThenInvokeThenRank()
@@ -363,6 +492,119 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.Single(messages);
             Assert.Equal("hello.1", messages[0]);
+        }
+
+        [Fact]
+        public async Task Test_Application_Route_CanResolveServicesFromTurnContext()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            ITurnState resolvedTurnState = null;
+            AdaptiveCard resolvedAdaptiveCards = null;
+            ProactiveApp resolvedProactive = null;
+
+            var app = new AgentApplication(new(() => turnState)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            app.AddRoute(
+                (context, _) => Task.FromResult(string.Equals("hello.services", context.Activity.Text)),
+                (context, state, _) =>
+                {
+                    resolvedTurnState = context.Services.Get<ITurnState>();
+                    resolvedAdaptiveCards = context.Services.Get<AdaptiveCard>();
+                    resolvedProactive = context.Services.Get<ProactiveApp>();
+
+                    Assert.Same(state, resolvedTurnState);
+                    return Task.CompletedTask;
+                },
+                false);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Same(turnState, resolvedTurnState);
+            Assert.Same(app.AdaptiveCards, resolvedAdaptiveCards);
+            Assert.Same(app.Proactive, resolvedProactive);
+        }
+
+        [Fact]
+        public void Test_Application_SetTurnContextServices_SetsCoreServices()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services.core");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            ITurnState turnState = new TurnState();
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)null)
+            {
+                StartTypingTimer = false,
+            });
+
+            // Act
+            app.SetTurnContextServices(turnContext, turnState);
+
+            // Assert
+            Assert.Same(turnState, turnContext.Services.Get<ITurnState>());
+            Assert.Same(app.AdaptiveCards, turnContext.Services.Get<AdaptiveCard>());
+            Assert.Same(app.Proactive, turnContext.Services.Get<ProactiveApp>());
+            Assert.Null(turnContext.Services.Get<UserAuthorization>());
+        }
+
+        [Fact]
+        public void Test_Application_SetTurnContextServices_SetsUserAuthorization_WhenConfigured()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services.auth");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            ITurnState turnState = new TurnState();
+            var connections = new Moq.Mock<IConnections>();
+            var handler = new Moq.Mock<Microsoft.Agents.Builder.UserAuth.IUserAuthorization>();
+            handler.SetupGet(h => h.Name).Returns("test");
+
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)new MemoryStorage())
+            {
+                StartTypingTimer = false,
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    new MemoryStorage(),
+                    connections.Object,
+                    handler.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                    DefaultHandlerName = "test"
+                }
+            });
+
+            // Act
+            app.SetTurnContextServices(turnContext, turnState);
+
+            // Assert
+            Assert.Same(turnState, turnContext.Services.Get<ITurnState>());
+            Assert.Same(app.AdaptiveCards, turnContext.Services.Get<AdaptiveCard>());
+            Assert.Same(app.Proactive, turnContext.Services.Get<ProactiveApp>());
+            Assert.Same(app.UserAuthorization, turnContext.Services.Get<UserAuthorization>());
         }
 
         [Fact]

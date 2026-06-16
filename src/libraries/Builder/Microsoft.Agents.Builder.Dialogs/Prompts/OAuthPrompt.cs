@@ -10,6 +10,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
@@ -179,67 +180,79 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             var expires = (DateTime) state[PersistedExpires];
             var isMessage = dc.Context.Activity.Type == ActivityTypes.Message;
 
-            try
-            {
-                var tokenResponse = await _dialogOAuthFlow.ContinueFlowAsync(dc.Context, expires, cancellationToken).ConfigureAwait(false);
+            var flowResult = await _dialogOAuthFlow.ContinueFlowAsync(dc.Context, expires, cancellationToken).ConfigureAwait(false);
 
-                if (IsTokenResponseEvent(dc.Context))
-                {
-                    // fixup the turnContext's state context if this was received from a skill host caller
-                    var callerInfo = (CallerInfo)dc.ActiveDialog.State[PersistedCaller];
-                    if (callerInfo != null)
-                    {
-                        // set the ServiceUrl to the caller host's Url
-                        dc.Context.Activity.ServiceUrl = callerInfo.CallerServiceUrl;
-
-                        // recreate a ConnectorClient and set it in TurnState so replies use the correct one
-                        var serviceUrl = dc.Context.Activity.ServiceUrl;
-                        var audience = callerInfo.Scope;
-                        var connectorClient = await CreateConnectorClientAsync(dc.Context, audience, cancellationToken).ConfigureAwait(false);
-                        dc.Context.Services.Set<IConnectorClient>(connectorClient);
-                    }
-                }
-
-                var recognized = new PromptRecognizerResult<TokenResponse>()
-                {
-                    Succeeded = tokenResponse != null,
-                    Value = tokenResponse,
-                };
-
-                var promptState = (IDictionary<string, object>)state[PersistedState];
-                var promptOptions = (PromptOptions)state[PersistedOptions];
-
-                // Increment attempt count
-                promptState[Prompt<int>.AttemptCountKey] = (int) promptState[Prompt<int>.AttemptCountKey] + 1;
-
-                // Validate the return value
-                var isValid = recognized.Succeeded;
-                if (_validator != null && recognized.Succeeded)
-                {
-                    var promptContext = new PromptValidatorContext<TokenResponse>(dc.Context, recognized, promptState, promptOptions);
-                    isValid = await _validator(promptContext, cancellationToken).ConfigureAwait(false);
-                }
-
-                // Return recognized value or re-prompt
-                if (isValid)
-                {
-                    return await dc.EndDialogAsync(recognized.Value, cancellationToken).ConfigureAwait(false);
-                }
-                else if (isMessage && _settings.EndOnInvalidMessage)
-                {
-                    // If EndOnInvalidMessage is set, complete the prompt with no result.
-                    return await dc.EndDialogAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-                }
-
-                if (!dc.Context.Responded && isMessage && promptOptions?.RetryPrompt != null)
-                {
-                    await dc.Context.SendActivityAsync(promptOptions.RetryPrompt, cancellationToken).ConfigureAwait(false);
-                }
-            }
-            catch (TimeoutException)
+            if (flowResult.Status == OAuthFlowStatus.TimedOut)
             {
                 // if the token fetch request times out, complete the prompt with no result.
                 return await dc.EndDialogAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+
+            if (flowResult.Status == OAuthFlowStatus.UserCancelled)
+            {
+                // Preserve pre-existing behavior: surface failure by propagating UserCancelledException.
+                throw new UserCancelledException();
+            }
+
+            if (flowResult.Status == OAuthFlowStatus.SignInFailed)
+            {
+                // Preserve pre-existing behavior: surface failure by propagating an exception with the error response details.
+                throw CreateSignInFailureException(flowResult.ErrorResponse);
+            }
+
+            var tokenResponse = flowResult.Status == OAuthFlowStatus.Complete ? flowResult.TokenResponse : null;
+
+            if (IsTokenResponseEvent(dc.Context))
+            {
+                // fixup the turnContext's state context if this was received from a skill host caller
+                var callerInfo = (CallerInfo)dc.ActiveDialog.State[PersistedCaller];
+                if (callerInfo != null)
+                {
+                    // set the ServiceUrl to the caller host's Url
+                    dc.Context.Activity.ServiceUrl = callerInfo.CallerServiceUrl;
+
+                    // recreate a ConnectorClient and set it in TurnState so replies use the correct one
+                    var serviceUrl = dc.Context.Activity.ServiceUrl;
+                    var audience = callerInfo.Scope;
+                    var connectorClient = await CreateConnectorClientAsync(dc.Context, audience, cancellationToken).ConfigureAwait(false);
+                    dc.Context.Services.Set<IConnectorClient>(connectorClient);
+                }
+            }
+
+            var recognized = new PromptRecognizerResult<TokenResponse>()
+            {
+                Succeeded = tokenResponse != null,
+                Value = tokenResponse,
+            };
+
+            var promptState = (IDictionary<string, object>)state[PersistedState];
+            var promptOptions = (PromptOptions)state[PersistedOptions];
+
+            // Increment attempt count
+            promptState[Prompt<int>.AttemptCountKey] = (int) promptState[Prompt<int>.AttemptCountKey] + 1;
+
+            // Validate the return value
+            var isValid = recognized.Succeeded;
+            if (_validator != null && recognized.Succeeded)
+            {
+                var promptContext = new PromptValidatorContext<TokenResponse>(dc.Context, recognized, promptState, promptOptions);
+                isValid = await _validator(promptContext, cancellationToken).ConfigureAwait(false);
+            }
+
+            // Return recognized value or re-prompt
+            if (isValid)
+            {
+                return await dc.EndDialogAsync(recognized.Value, cancellationToken).ConfigureAwait(false);
+            }
+            else if (isMessage && _settings.EndOnInvalidMessage)
+            {
+                // If EndOnInvalidMessage is set, complete the prompt with no result.
+                return await dc.EndDialogAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+
+            if (!dc.Context.Responded && isMessage && promptOptions?.RetryPrompt != null)
+            {
+                await dc.Context.SendActivityAsync(promptOptions.RetryPrompt, cancellationToken).ConfigureAwait(false);
             }
 
             return EndOfTurn;
@@ -287,6 +300,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
             return activity.Type == ActivityTypes.Event && (activity as IEventActivity).Name == SignInConstants.TokenResponseEventName;
         }
 
+        private static ErrorResponseException CreateSignInFailureException(ErrorResponse errorResponse)
+        {
+            var error = errorResponse?.Error;
+            return new ErrorResponseException($"SignInFailure: ({error?.Code}) {error?.Message}") { Body = errorResponse };
+        }
+
         private static CallerInfo CreateCallerInfo(ITurnContext turnContext)
         {
             if (turnContext.Identity as ClaimsIdentity != null && AgentClaims.IsAgentClaim(turnContext.Identity))
@@ -307,5 +326,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
 
             public string Scope { get; set; }
         }
+    }
+
+    internal class UserCancelledException : Exception
+    {
     }
 }

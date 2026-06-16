@@ -1,5 +1,12 @@
 # Copilot Instructions for Agents-for-net
 
+## Project Overview
+
+This is the Microsoft 365 Agents SDK for .NET — a framework for building enterprise-grade conversational agents that work across M365, Teams, Copilot Studio, and other platforms.
+
+**Current State:** Generally Available (GA)  
+**Documentation:** https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/
+
 ## Build and Test
 
 ```bash
@@ -8,6 +15,9 @@ dotnet build src/Microsoft.Agents.SDK.sln
 
 # Build via top-level project (includes all libraries)
 dotnet build AgentSdk.proj
+
+# Restore dependencies
+dotnet restore AgentSdk.proj
 
 # Run all tests
 dotnet test --no-build -c Debug ./src/
@@ -24,14 +34,7 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 
 ## Architecture
 
-The SDK is organized into layered libraries under `src/libraries/`:
-
-- **Core** (`Core/Microsoft.Agents.Core`) — Activity Protocol models, serialization (`ProtocolJsonSerializer` using `System.Text.Json`), validation, and telemetry primitives. Foundation for everything else.
-- **Builder** (`Builder/Microsoft.Agents.Builder`) — Agent construction framework. Key types: `AgentApplication` (route-based handler registration), `IAgent`, `ITurnContext`, `ITurnState`. Agents subclass `AgentApplication` and register handlers in the constructor via `OnActivity()`, `OnConversationUpdate()`, etc.
-- **Hosting** (`Hosting/AspNetCore`) — ASP.NET Core integration. Extension methods `AddAgent<T>()`, `AddAgentAspNetAuthentication()`, `MapAgentApplicationEndpoints()`. Default endpoint: `/api/messages`.
-- **Client** (`Client/`) — Agent-to-Agent communication (`IAgentHost`), Azure Bot Service connectivity (`Connector`), Copilot Studio client.
-- **Extensions** (`Extensions/`) — Platform-specific: Teams, SharePoint.
-- **Storage** (`Storage/`) — `IStorage` abstraction with `MemoryStorage` (dev), Blob, and CosmosDb implementations.
+The SDK is organized into layered libraries under `src/libraries/`. See `doc/architecture.md` for a architecture overview.
 
 ### Agent Pattern
 
@@ -68,7 +71,7 @@ Parent agents use `IAgentHost` to talk to child agents. Child agents need no spe
 - Core libraries **multi-target** `net8.0` and `netstandard2.0` (set in `src/Build.Common.core.props`).
 - **TreatWarningsAsErrors** is enabled globally (`src/Build.Shared.props`).
 - Package versioning uses **Nerdbank.GitVersioning** (`src/libraries/version.json`). Release branches follow the pattern `rel/v{version}`.
-- Output goes to `bin/{Configuration}/{ProjectName}/`.
+- .NET SDK version pinned in `global.json` (8.0.x with `rollForward: latestMajor`).
 
 ### Serialization
 - Uses **`System.Text.Json`** exclusively (not Newtonsoft). The central serializer is `ProtocolJsonSerializer` in `Microsoft.Agents.Core.Serialization`.
@@ -82,12 +85,42 @@ Parent agents use `IAgentHost` to talk to child agents. Child agents need no spe
 - Test projects are under `src/tests/` and may target both .NET 8.0 and .NET Framework 4.8.
 - Test helpers in `Microsoft.Agents.Builder.Testing`.
 - Telemetry tests use `[Collection("TelemetryTests")]` to disable parallel execution (avoids `ActivitySource` listener conflicts).
+- Do not use Task.Delay in tests as they cause flakiness. Use syncronization primitives or test-specific hooks instead.
+
+### Authentication
+- MSAL-based auth (`Authentication.Msal`) supports ClientSecret, Federated Credentials, and Managed Identity.
+- `AddAgentAspNetAuthentication` is defined in sample-local `AspNetExtensions.cs` files, not in the hosting library.
+- Local dev port: `http://localhost:3978`.
 
 ### Terminology
 - **Agent-to-Agent** refers to SDK agents communicating via the Activity Protocol — not the A2A open spec (`github.com/a2aproject/A2A`).
 - **`DeliveryModes.Stream`** is an SSE transport mechanism, unrelated to A2A.
 
-### Authentication
-- MSAL-based auth (`Authentication.Msal`) supports ClientSecret, Federated Credentials, and Managed Identity.
-- ClientSecret/Certificate works with dev tunnels for local debugging; Federated/Managed Identity requires deployed infrastructure.
-- Local dev port: `http://localhost:3978`.
+## Configuration
+
+### Authentication (appsettings.json)
+- See [Configure authentication in a .NET agent](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/microsoft-authentication-library-configuration-options)
+- See [Configure AspNet JWT authentication](src/samples/A2AAgent/AspNetExtensions.cs)
+- **ClientSecret/Certificate**: Works with dev tunnels for local debugging.
+- **Federated Credentials/Managed Identity**: Requires deployment to App Service or container (cannot use dev tunnel).
+
+## Samples
+
+Samples are in `src/samples/`. Each has its own README with setup instructions.
+
+**Key Samples:**
+- `EmptyAgent`: Basic agent template — good starting point
+- `CopilotStudioClient`: Client examples for Copilot Studio integration
+- `SemanticKernel/WeatherAgent`: Shows Semantic Kernel integration
+- `TelemetryAgent`: OpenTelemetry instrumentation example
+
+## Local Development
+
+- Default agent port: `http://localhost:3978`
+- Use `devtunnel` for external client connections (Teams, Bot Service)
+- Use Agents Playground for local testing without tunnels
+
+## Package Publishing
+
+- Public packages: nuget.org (prefix: `Microsoft.Agents.*`)
+- Nightly builds: nuget.org with `-beta` suffix (updated overnight PT)

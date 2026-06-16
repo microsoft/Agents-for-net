@@ -95,7 +95,7 @@ namespace Microsoft.Agents.Builder.Tests
             var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
 
             // Assert
-            Assert.Null(result);
+            Assert.Equal(OAuthFlowStatus.Pending, result.Status);
             Assert.True(responsesSent);
         }
 
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Builder.Tests
             var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
 
             // Assert
-            Assert.Null(result);
+            Assert.Equal(OAuthFlowStatus.Pending, result.Status);
             Assert.True(responsesSent);
         }
 
@@ -159,7 +159,202 @@ namespace Microsoft.Agents.Builder.Tests
             context.Services.Set(mockTokenClient.Object);
 
             //Act
-            await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(OAuthFlowStatus.Pending, result.Status);
+            Assert.True(responsesSent);
+        }
+
+        [Fact]
+        public async Task ContinueFlowAsync_ShouldReturnTimedOut_WhenExpired()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                From = new ChannelAccount { Id = "user-id" },
+                ChannelId = "channel-id",
+                Text = "hello",
+            };
+            var context = new TurnContext(new SimpleAdapter(), activity);
+
+            // Act — expires in the past
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(-1), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(OAuthFlowStatus.TimedOut, result.Status);
+            Assert.Null(result.TokenResponse);
+        }
+
+        [Fact]
+        public async Task ContinueFlowAsync_ShouldReturnTimedOut_AndRespondOk_WhenVerifyStateInvokeExpired()
+        {
+            // Arrange
+            bool responsesSent = false;
+            void ValidateResponses(IActivity[] activities)
+            {
+                var activityValue = (InvokeResponse)activities[0].Value;
+                Assert.Equal((int)HttpStatusCode.OK, activityValue.Status);
+                Assert.Null(activityValue.Body);
+                responsesSent = true;
+            }
+
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = SignInConstants.VerifyStateOperationName,
+                From = new ChannelAccount { Id = "user-id" },
+                ChannelId = "channel-id",
+            };
+            var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
+
+            // Act
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(-1), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(OAuthFlowStatus.TimedOut, result.Status);
+            Assert.Null(result.TokenResponse);
+            Assert.True(responsesSent);
+        }
+
+        [Fact]
+        public async Task ContinueFlowAsync_ShouldReturnTimedOut_AndRespondBadRequest_WhenTokenExchangeInvokeExpired()
+        {
+            // Arrange
+            bool responsesSent = false;
+            void ValidateResponses(IActivity[] activities)
+            {
+                var activityValue = (InvokeResponse)activities[0].Value;
+                var messageBody = (TokenExchangeInvokeResponse)activityValue.Body;
+                Assert.Equal((int)HttpStatusCode.BadRequest, activityValue.Status);
+                Assert.Equal(_flow.Settings.AzureBotOAuthConnectionName, messageBody.ConnectionName);
+                Assert.Equal("The Agent received a 'signin/tokenExchange' but had timed out.", messageBody.FailureDetail);
+                responsesSent = true;
+            }
+
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = SignInConstants.TokenExchangeOperationName,
+                Value = new TokenExchangeInvokeRequest
+                {
+                    Id = "exchange-id",
+                    ConnectionName = _flow.Settings.AzureBotOAuthConnectionName,
+                    Token = "token",
+                },
+                From = new ChannelAccount { Id = "user-id" },
+                ChannelId = "channel-id",
+            };
+            var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
+
+            // Act
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(-1), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(OAuthFlowStatus.TimedOut, result.Status);
+            Assert.Null(result.TokenResponse);
+            Assert.True(responsesSent);
+        }
+
+        [Fact]
+        public async Task ContinueFlowAsync_ShouldReturnUserCancelled_WhenUserClosedSignIn()
+        {
+            // Arrange
+            bool responsesSent = false;
+            void ValidateResponses(IActivity[] activities)
+            {
+                var activityValue = (InvokeResponse)activities[0].Value;
+                Assert.Equal((int)HttpStatusCode.OK, activityValue.Status);
+                responsesSent = true;
+            }
+
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = SignInConstants.VerifyStateOperationName,
+                Value = new { state = SignInConstants.CancelledByUser },
+                From = new ChannelAccount { Id = "user-id" },
+                ChannelId = "channel-id",
+            };
+            var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
+
+            // Act
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(OAuthFlowStatus.UserCancelled, result.Status);
+            Assert.True(responsesSent);
+        }
+
+        [Fact]
+        public async Task ContinueFlowAsync_ShouldReturnSignInFailed_WhenSignInFailureInvokeReceived()
+        {
+            // Arrange
+            bool responsesSent = false;
+            void ValidateResponses(IActivity[] activities)
+            {
+                var activityValue = (InvokeResponse)activities[0].Value;
+                Assert.Equal((int)HttpStatusCode.OK, activityValue.Status);
+                responsesSent = true;
+            }
+
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = SignInConstants.SignInFailure,
+                Value = new Error { Code = "config_error", Message = "bad oauth connection" },
+                From = new ChannelAccount { Id = "user-id" },
+                ChannelId = "channel-id",
+            };
+            var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
+
+            // Act
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(OAuthFlowStatus.SignInFailed, result.Status);
+            Assert.NotNull(result.ErrorResponse);
+            Assert.Equal("config_error", result.ErrorResponse.Error.Code);
+            Assert.Equal("bad oauth connection", result.ErrorResponse.Error.Message);
+            Assert.True(responsesSent);
+        }
+
+        [Fact]
+        public async Task ContinueFlowAsync_ShouldReturnComplete_WhenMagicCodeSucceeds()
+        {
+            // Arrange
+            bool responsesSent = false;
+            void ValidateResponses(IActivity[] activities)
+            {
+                var activityValue = (InvokeResponse)activities[0].Value;
+                Assert.Equal((int)HttpStatusCode.OK, activityValue.Status);
+                responsesSent = true;
+            }
+
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = SignInConstants.VerifyStateOperationName,
+                Value = new { state = "123456" },
+                From = new ChannelAccount { Id = "user-id" },
+                ChannelId = "channel-id",
+            };
+            var context = new TurnContext(new SimpleAdapter(ValidateResponses), activity);
+
+            var expectedToken = new TokenResponse("channel-id", _flow.Settings.AzureBotOAuthConnectionName, "my-token");
+            var mockUserTokenClient = new Mock<IUserTokenClient>();
+            mockUserTokenClient
+                .Setup(x => x.GetUserTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ChannelId>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedToken);
+            context.Services.Set<IUserTokenClient>(mockUserTokenClient.Object);
+
+            // Act
+            var result = await _flow.ContinueFlowAsync(context, DateTime.UtcNow.AddHours(1), CancellationToken.None);
+
+            // Assert
+            Assert.Equal(OAuthFlowStatus.Complete, result.Status);
+            Assert.Equal(expectedToken, result.TokenResponse);
             Assert.True(responsesSent);
         }
     }

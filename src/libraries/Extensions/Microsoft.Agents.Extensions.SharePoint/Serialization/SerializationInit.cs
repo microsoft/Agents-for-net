@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.SharePoint.Serialization.Converters;
 
 namespace Microsoft.Agents.Extensions.SharePoint.Serialization
 {
@@ -10,7 +11,11 @@ namespace Microsoft.Agents.Extensions.SharePoint.Serialization
     {
         public static void Init()
         {
-            ProtocolJsonSerializer.SerializationOptions.ApplySharePointOptions();
+            ProtocolJsonSerializer.ApplyExtensionConverters(
+            [
+                new AceDataConverter(),
+                new AceRequestConverter()
+            ]);
         }
     }
 }

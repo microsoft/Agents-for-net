@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Builder
                     {
                         if (Logger.IsEnabled(LogLevel.Debug))
                         {
-                            Logger.LogDebug("Turn Response: RequestId={RequestId}, Activity='{Activity}'", activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
+                            ChannelServiceAdapterLog.LogTurnResponse(Logger, activity.RequestId, ProtocolJsonSerializer.ToJson(activity));
                         }
 
                         // Respond via ConnectorClient
@@ -197,7 +197,7 @@ namespace Microsoft.Agents.Builder
 
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug("ProcessProactive: Activity='{Activity}'", ProtocolJsonSerializer.ToJson(continuationActivity));
+                ChannelServiceAdapterLog.LogProcessProactive(Logger, ProtocolJsonSerializer.ToJson(continuationActivity));
             }
 
             ValidateContinuationActivity(continuationActivity);
@@ -228,7 +228,7 @@ namespace Microsoft.Agents.Builder
         {
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                Logger.LogDebug("ProcessActivity: RequestId={RequestId}, Target={Agent}, Activity='{Activity}'", activity.RequestId, callback.Target?.ToString() ?? callback.Method.Name, ProtocolJsonSerializer.ToJson(activity));
+                ChannelServiceAdapterLog.LogProcessActivity(Logger, activity.RequestId, callback.Target?.ToString() ?? callback.Method.Name, ProtocolJsonSerializer.ToJson(activity));
             }
 
             if (AgentClaims.IsAgentClaim(claimsIdentity))
@@ -244,7 +244,14 @@ namespace Microsoft.Agents.Builder
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
             if (useAnonymousAuthCallback)
             {
-                Logger.LogWarning("Anonymous access is enabled for channel: {ChannelId}.", activity.ChannelId);
+                if (IsTrustedLocalTransport(activity))
+                {
+                    ChannelServiceAdapterLog.LogAnonymousAccessTrustedTransport(Logger, activity.ChannelId);
+                }
+                else
+                {
+                    ChannelServiceAdapterLog.LogAnonymousAccess(Logger, activity.ChannelId);
+                }
             }
 
             // Create a turn context and clients
@@ -333,6 +340,15 @@ namespace Microsoft.Agents.Builder
                     break;
             }
             return true;
+        }
+
+        // Activities arriving over the local-process named pipe transport carry a well-known
+        // urn:botframework:namedpipe* service URL set by the hosting library. Anonymous access
+        // is the expected mode for that ingress, so we log Information rather than Warning to
+        // avoid noisy false alarms.
+        private static bool IsTrustedLocalTransport(IActivity activity)
+        {
+            return TransportConstants.IsNamedPipeServiceUrl(activity?.ServiceUrl);
         }
     }
 }

@@ -234,6 +234,70 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
+        public async Task SendToConversationAsync_ShouldSanitizePathCharactersInConversationId_ForAgentsChannel()
+        {
+            var conversationsClient = UseConversation();
+            var activity = new Activity
+            {
+                Id = "activity-id",
+                ChannelId = "agents:email",
+                From = new ChannelAccount { Role = RoleTypes.AgenticUser },
+                Conversation = new ConversationAccount { Id = "conversation/with\\bad#chars?x" }
+            };
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    Assert.Contains("conversation_with_bad_chars_x", request.RequestUri.OriginalString, StringComparison.Ordinal);
+                    Assert.DoesNotContain("%2f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("%5c", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("%23", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("%3f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "resource-id" }))
+                });
+
+            var result = await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.Equal("resource-id", result.Id);
+        }
+
+        [Fact]
+        public async Task SendToConversationAsync_ShouldNotSanitizePathCharactersInConversationId_ForTeamsChannel()
+        {
+            var conversationsClient = UseConversation();
+            var activity = new Activity
+            {
+                Id = "activity-id",
+                ChannelId = Channels.Msteams,
+                From = new ChannelAccount { Role = RoleTypes.AgenticUser },
+                Conversation = new ConversationAccount { Id = "conversation/with\\bad#chars?x" }
+            };
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    Assert.Contains("%2f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.Contains("%5c", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.Contains("%23", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.Contains("%3f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("conversation_with_bad_chars_x", request.RequestUri.OriginalString, StringComparison.Ordinal);
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "resource-id" }))
+                });
+
+            var result = await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.Equal("resource-id", result.Id);
+        }
+
+        [Fact]
         public async Task SendToConversationAsync_ShouldThrowWithErrorBody()
         {
             var conversationsClient = UseConversation();

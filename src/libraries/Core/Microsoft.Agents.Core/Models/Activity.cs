@@ -125,13 +125,19 @@ namespace Microsoft.Agents.Core.Models
         /// <inheritdoc/>
         public ConversationReference GetConversationReference()
         {
+            return GetConversationReference(forceBaseChannel: null);
+        }
+
+        /// <inheritdoc/>
+        public ConversationReference GetConversationReference(bool? forceBaseChannel = null)
+        {
             var reference = new ConversationReference
             {
                 ActivityId = !string.Equals(Type, ActivityTypes.ConversationUpdate.ToString(), StringComparison.OrdinalIgnoreCase) || ChannelId != "directline" && ChannelId != "webchat" ? Id : null,
                 User = From,
                 Agent = Recipient,
                 Conversation = Conversation,
-                ChannelId = ChannelId?.ToString(),
+                ChannelId = forceBaseChannel.HasValue && forceBaseChannel.Value ? ChannelId?.Channel : ChannelId?.ToString(),
                 Locale = Locale,
                 ServiceUrl = ServiceUrl,
                 DeliveryMode = DeliveryMode,

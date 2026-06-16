@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -13,27 +12,23 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// RouteBuilder for routing Feedback Loop activities in an AgentApplication.
+    /// Provides a concrete builder for routing feedback loop invoke activities in an <see cref="AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="Microsoft.Agents.Builder.App.FeedbackRouteBuilder"/> to create and configure routes that respond to activities of type 'invoke' with
-    /// name "message/submitAction". This builder allows matching event activities by name or regular expression, and supports
-    /// channelId and agentic routing scenarios. Instances are created via the <see cref="Microsoft.Agents.Builder.App.FeedbackRouteBuilder.Create"/> method
-    /// and further configured using <see cref="Microsoft.Agents.Builder.App.FeedbackRouteBuilder.WithHandler(Microsoft.Agents.Builder.App.FeedbackLoopHandler)"/>.<br/><br/>
-    /// Example usage:<br/><br/>
-    /// <code>
-    /// var route = FeedbackRouteBuilder.Create()
-    ///    .WithHandler(async (context, state, feedbackData, ct) => Task.FromResult(context.SendActivityAsync("Feedback action received", cancellationToken: ct)))
-    ///    .Build();
-    ///    
-    /// app.AddRoute(route);
-    /// </code>
+    /// Use <see cref="FeedbackRouteBuilder"/> when you need a feedback route that uses the standard
+    /// <see cref="FeedbackLoopHandler"/> delegate. This type inherits the shared feedback loop selection behavior
+    /// from <see cref="FeedbackRouteBuilderBase{TBuilder}"/>.
     /// </remarks>
-    public class FeedbackRouteBuilder : RouteBuilderBase<FeedbackRouteBuilder>
+    public class FeedbackRouteBuilder : FeedbackRouteBuilderBase<FeedbackRouteBuilder>
     {
-        public FeedbackRouteBuilder() : base()
+
+        /// <summary>
+        /// Creates a new instance of the FeedbackRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A FeedbackRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static FeedbackRouteBuilder Create()
         {
-            _route.Flags |= RouteFlags.Invoke;
+            return new FeedbackRouteBuilder();
         }
 
         /// <summary>

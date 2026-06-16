@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Telemetry.App.Scopes;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using System;
@@ -26,6 +27,7 @@ namespace Microsoft.Agents.Builder.App
     public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
+        private readonly string _agentName;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
@@ -45,6 +47,8 @@ namespace Microsoft.Agents.Builder.App
             Options = options;
 
             Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+
+            _agentName = GetType().GetCustomAttribute<AgentAttribute>()?.Name ?? GetType().Name;
 
             if (Options.TurnStateFactory == null)
             {
@@ -231,6 +235,28 @@ namespace Microsoft.Agents.Builder.App
         #region Turn Handling
 
         /// <summary>
+        /// Registers the application-scoped services needed for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// This stores the current <see cref="ITurnState"/>, <see cref="AdaptiveCard"/>, and
+        /// <see cref="Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
+        /// When user authorization is configured, the current <see cref="UserAuthorization"/>
+        /// instance is also registered.
+        /// </remarks>
+        /// <param name="turnContext">The turn context to populate with services.</param>
+        /// <param name="turnState">The turn state for the current turn.</param>
+        internal void SetTurnContextServices(ITurnContext turnContext, ITurnState turnState)
+        {
+            if (_userAuth != null)
+            {
+                turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+            turnContext.Services.Set<Proactive.Proactive>(Proactive);
+            turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);
+            turnContext.Services.Set<ITurnState>(turnState);
+        }
+
+        /// <summary>
         /// Called by the adapter (for example, a <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/>)
         /// at runtime in order to process an inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
@@ -243,18 +269,33 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
-            using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
-
-            if (_userAuth != null)
+            // Register Activity-derived header provider for agentic requests.
+            if (turnContext.Activity.IsAgenticRequest())
             {
-                turnContext.Services.Set<UserAuthorization>(_userAuth);
+                HeaderPropagationContext.HeaderProviders.Add(
+                    new AgenticHeaderProvider(turnContext.Activity, _agentName));
             }
+
+            using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
+            {
+                ["RequestId"] = turnContext.Activity.RequestId,
+                ["ConversationId"] = turnContext.Activity.Conversation?.Id,
+                ["ActivityType"] = turnContext.Activity.Type
+            });
+
+            using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
 
             bool routeMatched = false;
             bool routeAuthorized = false;
 
             try
             {
+                // Load turn state
+                ITurnState turnState = Options.TurnStateFactory!();
+                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                SetTurnContextServices(turnContext, turnState);
+
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
                 {
@@ -273,10 +314,6 @@ namespace Microsoft.Agents.Builder.App
                         turnContext.Activity.RemoveRecipientMention();
                     }
                 }
-
-                // Load turn state
-                ITurnState turnState = Options.TurnStateFactory!();
-                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 try
                 {
@@ -323,7 +360,7 @@ namespace Microsoft.Agents.Builder.App
 
                     if (Logger.IsEnabled(LogLevel.Debug))
                     {
-                        var (routeCount, routeListFormatted) = _routes.FormatRouteList();
+                        var (routeCount, routeListFormatted) = _routes.FormatRouteList(turnContext);
                         LogRouteList(Logger, routeCount, routeListFormatted);
                     }
 
@@ -374,6 +411,11 @@ namespace Microsoft.Agents.Builder.App
                         }
                     }
                     onTurnTelemetryScope.Share(routeAuthorized, routeMatched);
+
+                    if (!routeMatched)
+                    {
+                        LogNoRouteMatched(Logger, turnContext.Activity.Type);
+                    }
 
                     // Call after turn handler
                     using (var telemetryScope = new ScopeAfterTurn())
