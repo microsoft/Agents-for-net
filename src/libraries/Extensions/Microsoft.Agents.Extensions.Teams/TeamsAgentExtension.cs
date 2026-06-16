@@ -134,6 +134,29 @@ public class TeamsAgentExtension : AgentExtension
         return new GraphServiceClient(new TokenProvider(_agentApplication, turnContext, handlerName), graphBaseUrl);
     }
 
+    private GraphServiceClient GetAppGraph(ITurnContext turnContext, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
+    {
+        return new GraphServiceClient(new AppTokenProvider(_agentApplication));
+    }
+
+    public async Task<List<string>> GetConversationThreads(ITurnContext turnContext, string? conversationId = null, CancellationToken cancellationToken = default)
+    {
+        var graphClient = GetAppGraph(turnContext);
+        var groupId = turnContext.Activity.TeamsGetTeamInfo()?.AadGroupId;
+        conversationId ??= turnContext.Activity.Conversation.Id;
+
+        var conversation = await graphClient.Groups[groupId].Conversations[conversationId].GetAsync(cancellationToken: cancellationToken); ;
+
+        List<string> threads = new List<string>();
+
+        foreach (var thread in conversation.Threads)
+        {
+            threads.Add(thread.Id);
+        }
+
+        return threads;
+    }
+
     internal static Task SetResponse(ITurnContext context, object result = null, int status = 200)
     {
         if (!context.StackState.Has(ChannelAdapter.InvokeResponseKey))
@@ -151,6 +174,22 @@ class TokenProvider(AgentApplication agentApplication, ITurnContext turnContext,
     public async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
     {
         var token = await agentApplication.UserAuthorization.GetTurnTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
+        if (token != null)
+        {
+            request.Headers["Authorization"] = [$"Bearer {token}"];
+        }
+    }
+}
+
+class AppTokenProvider(AgentApplication agentApplication) : IAuthenticationProvider
+{
+    public async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
+    {
+        var connection = agentApplication.Options.Connections.GetDefaultConnection();
+        var token = await connection.GetAccessTokenAsync(
+            "https://graph.microsoft.com",
+            ["https://graph.microsoft.com/.default"]).ConfigureAwait(false);
+
         if (token != null)
         {
             request.Headers["Authorization"] = [$"Bearer {token}"];

@@ -121,10 +121,30 @@ public partial class TeamsAgent(AgentApplicationOptions options) : AgentApplicat
         );
     }
 
+    [TeamsMessageRoute("/list")]
+    public async Task ListRoute(TeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var threads = await TeamsExtension.GetConversationThreads(turnContext, cancellationToken: cancellationToken);
+
+        if (threads.Count == 0)
+        {
+            await turnContext.SendActivityAsync("No conversation threads found.", cancellationToken: cancellationToken);
+            return;
+        }
+        var reply = "Conversation Threads:\n" + string.Join("\n", threads);
+        await turnContext.SendActivityAsync(reply, cancellationToken: cancellationToken);
+    }
+
     [ActivityRoute("message", rank: RouteRank.Last)]
     public async Task DefaultRoute(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}");
         await turnContext.SendActivityAsync("Enter \"/help\" to see a list of available commands.");
     }
+
+    //[TeamsMembersAddedRoute]
+    //public async Task MemberAdded(TeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel data, CancellationToken cancellationToken)
+    //{
+
+    //}
 }
