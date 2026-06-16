@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Azure.AI.OpenAI;
@@ -36,7 +36,10 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 // Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
 // configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+}
 
 WebApplication app = builder.Build();
 

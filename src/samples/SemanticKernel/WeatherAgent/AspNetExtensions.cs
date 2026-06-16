@@ -4,7 +4,6 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Protocols;
@@ -41,8 +40,7 @@ public static class AspNetExtensions
     /// </param>
     /// <remarks>
     /// <para>
-    /// If the configuration section is absent or contains <c>"Enabled": false</c>, authentication is not configured and
-    /// all requests will be treated as unauthenticated.  This is useful for local development only.
+    /// If the configuration section is absent, an <see cref="ArgumentException"/> is thrown.
     /// </para>
     /// <para>
     /// Minimum configuration for Azure Public cloud:
@@ -77,12 +75,9 @@ public static class AspNetExtensions
     {
         IConfigurationSection tokenValidationSection = configuration.GetSection(tokenValidationSectionName);
 
-        if (!tokenValidationSection.Exists() || !tokenValidationSection.GetValue("Enabled", true))
+        if (!tokenValidationSection.Exists())
         {
-            // Noop if TokenValidation section missing or disabled.
-            System.Diagnostics.Trace.WriteLine("AddAgentAspNetAuthentication: Auth disabled");
-            services.AddControllers();
-            return;
+            throw new ArgumentException($"Configuration section '{tokenValidationSectionName}' is missing. Token validation requires a valid configuration section.");
         }
 
         services.AddAgentAspNetAuthentication(tokenValidationSection.Get<TokenValidationOptions>()!);
@@ -241,7 +236,7 @@ public static class AspNetExtensions
                     return Task.CompletedTask;
                 },
 
-                OnTokenValidated = async context =>
+                OnTokenValidated = context =>
                 {
                     // AllowedCallers check for non-BotFramework tokens.
                     // BotFramework tokens (from ABS) are excluded since they use service-level issuers.
@@ -260,15 +255,11 @@ public static class AspNetExtensions
 
                         if (string.IsNullOrEmpty(callerAppId) || !validationOptions.AllowedCallers.Contains(callerAppId))
                         {
-                            var message = $"Caller App ID '{callerAppId}' is not in the AllowedCallers list.";
-                            context.Response.StatusCode = 403;
-                            await context.Response.WriteAsync(message);
-
-                            // Throwing is required to short-circuit the pipeline. context.Fail() alone does not
-                            // prevent the request from reaching the endpoint when requireAuth is false (AllowAnonymous).
-                            throw new UnauthorizedAccessException(message);
+                            context.Fail($"Caller App ID '{callerAppId}' is not in the AllowedCallers list.");
                         }
                     }
+
+                    return Task.CompletedTask;
                 },
                 OnForbidden = context =>
                 {
@@ -286,11 +277,6 @@ public static class AspNetExtensions
     /// Settings that control JWT bearer token validation for Azure Bot Service and agent-to-agent requests.
     /// Read from the <c>TokenValidation</c> configuration section by <see cref="AddAgentAspNetAuthentication(IServiceCollection, IConfiguration, string)"/>.
     /// </summary>
-    /// <remarks>
-    /// An <c>Enabled</c> key may also appear in the same configuration section.  When set to <c>false</c>,
-    /// authentication is disabled entirely and this class is not read.  This key is not a property of
-    /// <see cref="TokenValidationOptions"/> because it is evaluated before deserialization.
-    /// </remarks>
     public class TokenValidationOptions
     {
         /// <summary>
