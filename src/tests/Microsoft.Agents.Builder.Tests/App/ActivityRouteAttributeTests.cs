@@ -17,14 +17,19 @@ namespace Microsoft.Agents.Builder.Tests.App
 {
     public class ActivityRouteAttributeTests
     {
+        private static Mock<ITurnContext> CreateTurnContext(Activity activity)
+        {
+            var turnContext = new Mock<ITurnContext>();
+            turnContext.Setup(c => c.Activity).Returns(activity);
+            turnContext.SetupGet(c => c.Services).Returns(new TurnContextStateCollection());
+            return turnContext;
+        }
+
         [Fact]
         public async Task MessageRouteAttribute_Any()
         {
             var app = new TestApp(new AgentApplicationOptions((IStorage) null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext
-                .Setup(c => c.Activity)
-                .Returns(new Activity() { Type = ActivityTypes.Message });
+            var turnContext = CreateTurnContext(new Activity() { Type = ActivityTypes.Message });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -36,10 +41,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task MessageRouteAttribute_Text()
         {
             var app = new TestApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext
-                .Setup(c => c.Activity)
-                .Returns(new Activity() { Type = "message", Text = "-test" });
+            var turnContext = CreateTurnContext(new Activity() { Type = "message", Text = "-test" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -51,10 +53,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task MessageRouteAttribute_Regex()
         {
             var app = new TestApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext
-                .Setup(c => c.Activity)
-                .Returns(new Activity() { Type = "message", Text = "testActivity" });
+            var turnContext = CreateTurnContext(new Activity() { Type = "message", Text = "testActivity" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -70,8 +69,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ActivityRouteAttribute_ExactType()
         {
             var app = new ActivityRouteTypeApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.Event });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Event });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -83,8 +81,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ActivityRouteAttribute_Regex()
         {
             var app = new ActivityRouteRegexApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.Invoke });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Invoke });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -96,9 +93,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ActivityRouteAttribute_Any_FiresWhenNoOtherRouteMatches()
         {
             var app = new ActivityRouteAnyApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
             // Use a type that the specific routes don't match.
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = "customActivityType" });
+            var turnContext = CreateTurnContext(new Activity { Type = "customActivityType" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -114,8 +110,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task InstallationUpdateRouteAttribute_FiresOnInstallationUpdate()
         {
             var app = new InstallationUpdateRouteApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.InstallationUpdate });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.InstallationUpdate });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -131,8 +126,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task EventRouteAttribute_ExactName()
         {
             var app = new EventRouteNameApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.Event, Name = "myEvent" });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Event, Name = "myEvent" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -144,8 +138,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task EventRouteAttribute_NameRegex()
         {
             var app = new EventRouteNameRegexApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.Event, Name = "mySpecialEvent" });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Event, Name = "mySpecialEvent" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -157,8 +150,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task EventRouteAttribute_Any_FiresWhenNoNamedRouteMatches()
         {
             var app = new EventRouteAnyApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.Event, Name = "unknownEvent" });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Event, Name = "unknownEvent" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -174,8 +166,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task ConversationUpdateRouteAttribute_Any()
         {
             var app = new ConversationUpdateRouteApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.ConversationUpdate });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.ConversationUpdate });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -191,8 +182,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task MembersAddedRouteAttribute_FiresOnMembersAdded()
         {
             var app = new MembersAddedRouteApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
+            var turnContext = CreateTurnContext(new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
@@ -208,8 +198,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task MembersRemovedRouteAttribute_FiresOnMembersRemoved()
         {
             var app = new MembersRemovedRouteApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
+            var turnContext = CreateTurnContext(new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
                 MembersRemoved = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } }
@@ -229,8 +218,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task MessageReactionsAddedRouteAttribute_FiresOnReactionsAdded()
         {
             var app = new MessageReactionsAddedRouteApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
+            var turnContext = CreateTurnContext(new Activity
             {
                 Type = ActivityTypes.MessageReaction,
                 ReactionsAdded = new List<MessageReaction> { new MessageReaction { Type = "like" } }
@@ -246,8 +234,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task MessageReactionsRemovedRouteAttribute_FiresOnReactionsRemoved()
         {
             var app = new MessageReactionsRemovedRouteApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity
+            var turnContext = CreateTurnContext(new Activity
             {
                 Type = ActivityTypes.MessageReaction,
                 ReactionsRemoved = new List<MessageReaction> { new MessageReaction { Type = "like" } }
@@ -267,8 +254,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task EndOfConversationRouteAttribute_FiresOnEndOfConversation()
         {
             var app = new EndOfConversationRouteApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.EndOfConversation });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.EndOfConversation });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
@@ -286,8 +272,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Regression test for the fix that allows static methods to be used as autoSignInHandlers.
             // Prior to the fix, CreateDelegate with a target threw for static methods.
             var app = new StaticSignInHandlersApp(new AgentApplicationOptions((IStorage)null));
-            var turnContext = new Mock<ITurnContext>();
-            turnContext.Setup(c => c.Activity).Returns(new Activity { Type = ActivityTypes.Message, Text = "hello" });
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Message, Text = "hello" });
 
             await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
 
