@@ -48,5 +48,12 @@ namespace Microsoft.Agents.Builder.App
             _route.Handler = typedHandler;
             return this;
         }
+
+        public MessageRouteBuilder WithHandler(RouteHandler handler)
+        {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+            _route.Handler = handler;
+            return this;
+        }
     }
 }

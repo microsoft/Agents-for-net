@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Core.Models
         /// One of: "acceptingInput", "ignoringInput", or "expectingInput".
         /// Default is "acceptingInput".</param>
         /// <returns>A message activity containing the text.</returns>
-        public static IActivity Text(string text, string ssml = null, string inputHint = null)
+        public static IMessageActivity Text(string text, string ssml = null, string inputHint = null)
         {
             return new MessageActivity(text, ssml: ssml, inputHint: inputHint);
         }
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Core.Models
         /// <see cref="Microsoft.Agents.Core.Models.ActionTypes.ImBack"/>.
         /// </remarks>
         /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.SuggestedActions(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.CardAction}, string, string, string)"/>
-        public static IActivity SuggestedActions(IEnumerable<string> actions, string text = null, string ssml = null, string inputHint = null)
+        public static IMessageActivity SuggestedActions(IEnumerable<string> actions, string text = null, string ssml = null, string inputHint = null)
         {
             return SuggestedActions(actions, text, ssml, inputHint, null);
         }
@@ -131,7 +131,7 @@ namespace Microsoft.Agents.Core.Models
         /// <see cref="Microsoft.Agents.Core.Models.ActionTypes.ImBack"/>.
         /// </remarks>
         /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.SuggestedActions(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.CardAction}, string, string, string, System.Collections.Generic.IList{string})"/>
-        public static IActivity SuggestedActions(IEnumerable<string> actions, string text = null, string ssml = null, string inputHint = null, IList<string> toList = default)
+        public static IMessageActivity SuggestedActions(IEnumerable<string> actions, string text = null, string ssml = null, string inputHint = null, IList<string> toList = default)
         {
             actions = actions ?? throw new ArgumentNullException(nameof(actions));
 
@@ -182,7 +182,7 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>A message activity that contains the suggested actions.</returns>
         /// <exception cref="ArgumentNullException">
         /// <paramref name="cardActions"/> is <c>null</c>.</exception>
-        public static IActivity SuggestedActions(IEnumerable<CardAction> cardActions, string text = null, string ssml = null, string inputHint = null)
+        public static IMessageActivity SuggestedActions(IEnumerable<CardAction> cardActions, string text = null, string ssml = null, string inputHint = null)
         {
             return SuggestedActions(cardActions, text, ssml, inputHint, null);
         }
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>A message activity that contains the suggested actions.</returns>
         /// <exception cref="ArgumentNullException">
         /// <paramref name="cardActions"/> is <c>null</c>.</exception>
-        public static IActivity SuggestedActions(IEnumerable<CardAction> cardActions, string text = null, string ssml = null, string inputHint = null, IList<string> toList = default)
+        public static IMessageActivity SuggestedActions(IEnumerable<CardAction> cardActions, string text = null, string ssml = null, string inputHint = null, IList<string> toList = default)
         {
             cardActions = cardActions ?? throw new ArgumentNullException(nameof(cardActions));
 
@@ -245,7 +245,7 @@ namespace Microsoft.Agents.Core.Models
         /// <paramref name="attachment"/> is <c>null</c>.</exception>
         /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, string, string, string)"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Carousel(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, string, string, string)"/>
-        public static IActivity Attachment(Attachment attachment, string text = null, string ssml = null, string inputHint = null)
+        public static IMessageActivity Attachment(Attachment attachment, string text = null, string ssml = null, string inputHint = null)
         {
             attachment = attachment ?? throw new ArgumentNullException(nameof(attachment));
 
@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Core.Models
         /// <paramref name="attachments"/> is <c>null</c>.</exception>
         /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Carousel(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, string, string, string)"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(Microsoft.Agents.Core.Models.Attachment, string, string, string)"/>
-        public static IActivity Attachment(IEnumerable<Attachment> attachments, string text = null, string ssml = null, string inputHint = null)
+        public static IMessageActivity Attachment(IEnumerable<Attachment> attachments, string text = null, string ssml = null, string inputHint = null)
         {
             attachments = attachments ?? throw new ArgumentNullException(nameof(attachments));
 
@@ -326,7 +326,7 @@ namespace Microsoft.Agents.Core.Models
         /// </code>
         /// </example>
         /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, string, string, string)"/>
-        public static IActivity Carousel(IEnumerable<Attachment> attachments, string text = null, string ssml = null, string inputHint = null)
+        public static IMessageActivity Carousel(IEnumerable<Attachment> attachments, string text = null, string ssml = null, string inputHint = null)
         {
             attachments = attachments ?? throw new ArgumentNullException(nameof(attachments));
 
@@ -356,7 +356,7 @@ namespace Microsoft.Agents.Core.Models
         ///     MessageFactory.ContentUrl("https://{domainName}/cat.jpg", MediaTypeNames.Image.Jpeg, "Cat Picture");
         /// </code>
         /// </example>
-        public static IActivity ContentUrl(string url, string contentType, string name = null, string text = null, string ssml = null, string inputHint = null)
+        public static IMessageActivity ContentUrl(string url, string contentType, string name = null, string text = null, string ssml = null, string inputHint = null)
         {
             if (string.IsNullOrWhiteSpace(url))
             {
@@ -377,12 +377,12 @@ namespace Microsoft.Agents.Core.Models
 
             return AttachmentActivity(AttachmentLayoutTypes.List.ToString(), [a], text, ssml, inputHint);
         }
-        public static IActivity CreateMessageActivity()
+        public static IMessageActivity CreateMessageActivity()
         {
             return new MessageActivity();
         }
 
-        public static IActivity CreateMessageActivity(string messageText , string textFormat = TextFormatTypes.Plain)
+        public static IMessageActivity CreateMessageActivity(string messageText , string textFormat = TextFormatTypes.Plain)
         {
             return new MessageActivity(messageText, textFormat);
         }
