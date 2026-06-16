@@ -17,4 +17,4 @@ namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task FileConsentHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse, CancellationToken cancellationToken);
+public delegate Task FileConsentHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse fileConsentCardResponse, CancellationToken cancellationToken);

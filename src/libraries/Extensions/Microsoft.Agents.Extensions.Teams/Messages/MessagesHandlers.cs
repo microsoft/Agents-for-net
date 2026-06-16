@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using System.Text.Json;
 using System.Threading;
@@ -18,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task O365ConnectorCardActionHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken);
+public delegate Task O365ConnectorCardActionHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling read receipt events.
@@ -28,4 +27,4 @@ public delegate Task O365ConnectorCardActionHandler(ITurnContext turnContext, IT
 /// <param name="data">The read receipt data.</param>
 /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task ReadReceiptHandler(ITurnContext turnContext, ITurnState turnState, JsonElement data, CancellationToken cancellationToken);
+public delegate Task ReadReceiptHandler(ITeamsTurnContext turnContext, ITurnState turnState, JsonElement data, CancellationToken cancellationToken);
