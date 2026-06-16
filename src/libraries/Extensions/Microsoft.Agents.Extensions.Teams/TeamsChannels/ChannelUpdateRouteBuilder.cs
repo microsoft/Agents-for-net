@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -123,7 +123,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the ChannelUpdateRouteBuilder, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder WithHandler(ChannelUpdateHandler handler)
     {
-        _route.Handler = (ctx, ts, ct) => handler(ctx, ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct);
+        _route.Handler = (ctx, ts, ct) => handler(new TeamsTurnContext(ctx), ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct);
         return this;
     }
 

@@ -48,7 +48,7 @@ public class FileConsentDeclineRouteBuilder : FileConsentRouteBuilderBase<FileCo
         _route.Handler = async (ctx, ts, ct) =>
         {
             var response = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(ctx.Activity.Value);
-            await handler(ctx, ts, response, ct).ConfigureAwait(false);
+            await handler(new TeamsTurnContext(ctx), ts, response, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx).ConfigureAwait(false);
         };
         return this;

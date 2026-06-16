@@ -48,7 +48,7 @@ public class MeetingParticipantsLeaveRouteBuilder : MeetingEventRouteBuilderBase
         _route.Handler = (ctx, ts, ct) =>
         {
             var details = ProtocolJsonSerializer.ToObject<MeetingParticipantsEventDetails>(ctx.Activity.Value);
-            return handler(ctx, ts, details, ct);
+            return handler(new TeamsTurnContext(ctx), ts, details, ct);
         };
         return this;
     }

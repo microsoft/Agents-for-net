@@ -46,7 +46,7 @@ public class ReadReceiptRouteBuilder : RouteBuilderBase<ReadReceiptRouteBuilder>
         _route.Handler = async (ctx, ts, ct) =>
         {
             var data = (JsonElement)ctx.Activity.Value;
-            await handler(ctx, ts, data, ct).ConfigureAwait(false);
+            await handler(new TeamsTurnContext(ctx), ts, data, ct).ConfigureAwait(false);
         };
         return this;
     }

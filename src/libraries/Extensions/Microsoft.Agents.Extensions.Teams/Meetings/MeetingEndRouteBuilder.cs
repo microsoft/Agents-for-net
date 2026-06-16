@@ -47,7 +47,7 @@ public class MeetingEndRouteBuilder : MeetingEventRouteBuilderBase<MeetingEndRou
         _route.Handler = (ctx, ts, ct) =>
         {
             var details = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Meetings.MeetingDetails>(ctx.Activity.Value);
-            return handler(ctx, ts, details, ct);
+            return handler(new TeamsTurnContext(ctx), ts, details, ct);
         };
         return this;
     }

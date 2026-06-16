@@ -45,7 +45,7 @@ public class ConfigurationFetchRouteBuilder : ConfigurationRouteBuilderBase<Conf
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var result = await handler(ctx, ts, ctx.Activity.Value, ct).ConfigureAwait(false);
+            var result = await handler(new TeamsTurnContext(ctx), ts, ctx.Activity.Value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, result).ConfigureAwait(false);
         };
         return this;
