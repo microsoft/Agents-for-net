@@ -535,6 +535,7 @@ namespace Microsoft.Agents.Builder
                 _userCanceled = false;
                 Message = "";
                 Citations = [];
+                Attachments = [];
                 SensitivityLabel = null;
                 EnableGeneratedByAILabel = false;
             }

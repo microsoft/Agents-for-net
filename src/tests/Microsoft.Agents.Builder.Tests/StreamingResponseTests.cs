@@ -424,6 +424,24 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public async Task AddAttachment_IncludedInFinalMessage()
+        {
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Channels.Test });
+            var attachment = new Attachment { ContentType = "text/plain", Name = "attachment.txt", Content = "hello" };
+
+            context.StreamingResponse.AddAttachment(attachment);
+            context.StreamingResponse.QueueTextChunk("with attachment");
+            await context.StreamingResponse.EndStreamAsync();
+
+            var finalActivity = responses.Last();
+            Assert.NotNull(finalActivity.Attachments);
+            Assert.Single(finalActivity.Attachments);
+            Assert.Same(attachment, finalActivity.Attachments[0]);
+        }
+
+        [Fact]
         public async Task SensitivityLabel_SetOnResponse_IncludedInFinalMessageAIEntity()
         {
             var responses = new List<IActivity>();
@@ -859,6 +877,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.EnableGeneratedByAILabel = true;
             context.StreamingResponse.SensitivityLabel = new SensitivityUsageInfo { Name = "Sensitive" };
             context.StreamingResponse.AddCitation(new ClientCitation { Position = 1 });
+            context.StreamingResponse.AddAttachment(new Attachment { ContentType = "text/plain", Name = "attachment.txt", Content = "payload" });
             context.StreamingResponse.QueueTextChunk("some text");
             await context.StreamingResponse.EndStreamAsync();
 
@@ -871,6 +890,11 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Empty(context.StreamingResponse.Citations);
             Assert.Null(context.StreamingResponse.StreamId);
             Assert.Equal(0, context.StreamingResponse.UpdatesSent());
+
+            context.StreamingResponse.QueueTextChunk("after reset");
+            await context.StreamingResponse.EndStreamAsync();
+            var postResetFinal = responses.Last();
+            Assert.True(postResetFinal.Attachments == null || postResetFinal.Attachments.Count == 0);
         }
 
         [Fact]
