@@ -894,7 +894,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.QueueTextChunk("after reset");
             await context.StreamingResponse.EndStreamAsync();
             var postResetFinal = responses.Last();
-            Assert.True(postResetFinal.Attachments == null || postResetFinal.Attachments.Count == 0);
+            Assert.True(postResetFinal.Attachments?.Count == 0 ?? true);
         }
 
         [Fact]
