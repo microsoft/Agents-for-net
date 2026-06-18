@@ -145,5 +145,29 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             Assert.Single(onBehalfOfList);
             Assert.Equal("TestOnBehalfOf", onBehalfOfList[0].DisplayName);
         }
+
+        [Fact]
+        public void TeamsEnableFeedbackLoop_ShouldAddFeedbackLoopData()
+        {
+            var activity = new Activity();
+
+            var result = activity.TeamsEnableFeedbackLoop("custom");
+
+            Assert.True(result);
+            var channelData = JsonSerializer.SerializeToElement(activity.ChannelData);
+            Assert.Equal("custom", channelData.GetProperty("feedbackLoop").GetProperty("type").GetString());
+        }
+
+        [Fact]
+        public void TeamsEnableFeedbackLoop_ShouldReturnFalse_WhenChannelDataAlreadySet()
+        {
+            var existingChannelData = new ChannelData { Team = new Team { Id = "team123" } };
+            var activity = new Activity { ChannelData = existingChannelData };
+
+            var result = activity.TeamsEnableFeedbackLoop();
+
+            Assert.False(result);
+            Assert.Same(existingChannelData, activity.ChannelData);
+        }
     }
 }

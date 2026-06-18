@@ -304,7 +304,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.Configuration.OnConfigFetch((turnContext, _, _, _) =>
+                ext.Config.OnConfigFetch((turnContext, _, _, _) =>
                 {
                     names.Add(turnContext.Activity.Name);
                     return Task.FromResult(configResponseMock.Object);
@@ -399,7 +399,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.Configuration.OnConfigSubmit((turnContext, _, configData, _) =>
+                ext.Config.OnConfigSubmit((turnContext, _, configData, _) =>
                 {
                     Assert.NotNull(configData);
                     //Assert.Equal(configData, configData as JObject);
@@ -653,7 +653,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var extension = new TeamsAgentExtension(app);
             app.RegisterExtension(extension, (ext) =>
             {
-                ext.Messages.OnO365ConnectorCardAction((turnContext, _, _, _) =>
+                ext.Messages.OnExecuteAction((turnContext, _, _, _) =>
                 {
                     ids.Add(turnContext.Activity.Id);
                     return Task.CompletedTask;

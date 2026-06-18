@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.Teams.TaskModules;
 /// Decorate a method with this attribute to register it as a handler for Teams task module fetch events.
 /// <code>
 /// [TaskFetchRoute("myKey")]
-/// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnFetchAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+/// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnFetchAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module fetch event
 /// }
@@ -56,7 +56,7 @@ public class TaskFetchRouteAttribute(string value = null, string key = null, boo
 /// Decorate a method with this attribute to register it as a handler for Teams task module submit events.
 /// <code>
 /// [TaskSubmitRoute("myKey")]
-/// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSubmitAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+/// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSubmitAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module submit event
 /// }

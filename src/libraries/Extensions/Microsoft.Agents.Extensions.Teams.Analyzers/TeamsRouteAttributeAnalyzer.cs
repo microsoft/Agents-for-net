@@ -187,8 +187,8 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.QueryUrlSettingRouteAttribute",
-                AttributeDisplayName   = "QueryUrlSettingRoute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.QuerySettingUrlRouteAttribute",
+                AttributeDisplayName   = "QuerySettingUrlRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, CancelToken },
@@ -212,8 +212,8 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers
             },
             new SignatureRule
             {
-                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.ConfigureSettingsRouteAttribute",
-                AttributeDisplayName   = "ConfigureSettingsRoute",
+                AttributeMetadataName  = "Microsoft.Agents.Extensions.Teams.MessageExtensions.SettingRouteAttribute",
+                AttributeDisplayName   = "SettingRoute",
                 ReturnTypeGenericArgument = Response,
                 ReturnTypeDisplayName  = "Task<Microsoft.Teams.Api.MessageExtensions.Response>",
                 ParameterTypes         = new string?[] { TurnContext, TurnState, Query, CancelToken },

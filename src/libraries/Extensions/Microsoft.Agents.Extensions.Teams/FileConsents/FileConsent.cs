@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 ///
 ///     [FileConsentAcceptRoute]
 ///     public async Task OnFileConsentAcceptAsync(
-///         ITurnContext turnContext,
+///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
 ///         Microsoft.Teams.Api.FileConsentCardResponse response,
 ///         CancellationToken cancellationToken)
@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 ///
 ///     [FileConsentDeclineRoute]
 ///     public Task OnFileConsentDeclineAsync(
-///         ITurnContext turnContext,
+///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
 ///         Microsoft.Teams.Api.FileConsentCardResponse response,
 ///         CancellationToken cancellationToken)

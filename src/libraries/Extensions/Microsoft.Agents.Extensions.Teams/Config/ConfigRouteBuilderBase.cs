@@ -7,14 +7,14 @@ using Microsoft.Agents.Extensions.Teams.Errors;
 using System;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.Configurations;
+namespace Microsoft.Agents.Extensions.Teams.Config;
 
 /// <summary>
 /// Base class for route builders that match Teams config invoke activities by a fixed invoke name.
 /// </summary>
 /// <typeparam name="TBuilder">The concrete builder type, used to enable fluent method chaining.</typeparam>
-public abstract class ConfigurationRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder>
-    where TBuilder : ConfigurationRouteBuilderBase<TBuilder>
+public abstract class ConfigRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder>
+    where TBuilder : ConfigRouteBuilderBase<TBuilder>
 {
     /// <summary>
     /// The Teams invoke activity name this builder matches (e.g. <c>"config/fetch"</c> or <c>"config/submit"</c>).
@@ -23,10 +23,10 @@ public abstract class ConfigurationRouteBuilderBase<TBuilder> : RouteBuilderBase
     protected string InvokeName { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="ConfigurationRouteBuilderBase{TBuilder}"/>,
+    /// Initializes a new instance of <see cref="ConfigRouteBuilderBase{TBuilder}"/>,
     /// pre-configured as an Invoke route.
     /// </summary>
-    protected ConfigurationRouteBuilderBase() : base()
+    protected ConfigRouteBuilderBase() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
     }

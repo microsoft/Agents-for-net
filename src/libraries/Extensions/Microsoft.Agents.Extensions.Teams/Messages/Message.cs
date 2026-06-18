@@ -105,15 +105,15 @@ public class Message
     /// Handles O365 Connector Card Action activities.
     /// </summary>
     /// <remarks>
-    /// Alternatively, the <see cref="O365ConnectorCardActionRouteAttribute"/> can be used to decorate an <see cref="O365ConnectorCardActionHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="ExecuteActionRouteAttribute"/> can be used to decorate an <see cref="O365ConnectorCardActionHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Message OnO365ConnectorCardAction(O365ConnectorCardActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public Message OnExecuteAction(ExecuteActionRouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(O365ConnectorCardActionRouteBuilder.Create()
+        _app.AddRoute(ExecuteActionRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
             .WithHandler(handler)
             .WithOAuthHandlers(autoSignInHandlers)

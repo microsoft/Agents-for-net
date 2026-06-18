@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// The method must match the <see cref="MeetingStartHandler"/> delegate signature.
 /// <code>
 /// [MeetingStartRoute]
-/// public async Task OnMeetingStartAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
+/// public async Task OnMeetingStartAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
 /// {
 ///     // Handle meeting start event
 /// }
@@ -46,7 +46,7 @@ public class MeetingStartRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// The method must match the <see cref="MeetingEndHandler"/> delegate signature.
 /// <code>
 /// [MeetingEndRoute]
-/// public async Task OnMeetingEndAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
+/// public async Task OnMeetingEndAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
 /// {
 ///     // Handle meeting end event
 /// }
@@ -77,7 +77,7 @@ public class MeetingEndRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 /// The method must match the <see cref="MeetingParticipantsEventHandler"/> delegate signature.
 /// <code>
 /// [MeetingParticipantsJoinRoute]
-/// public async Task OnParticipantsJoinAsync(ITurnContext turnContext, ITurnState turnState, MeetingParticipantsEventDetails participants, CancellationToken cancellationToken)
+/// public async Task OnParticipantsJoinAsync(ITeamsTurnContext turnContext, ITurnState turnState, MeetingParticipantsEventDetails participants, CancellationToken cancellationToken)
 /// {
 ///     // Handle participants join event
 /// }
@@ -108,7 +108,7 @@ public class MeetingParticipantsJoinRouteAttribute(bool isAgenticOnly = false, u
 /// The method must match the <see cref="MeetingParticipantsEventHandler"/> delegate signature.
 /// <code>
 /// [MeetingParticipantsLeaveRoute]
-/// public async Task OnParticipantsLeaveAsync(ITurnContext turnContext, ITurnState turnState, MeetingParticipantsEventDetails participants, CancellationToken cancellationToken)
+/// public async Task OnParticipantsLeaveAsync(ITeamsTurnContext turnContext, ITurnState turnState, MeetingParticipantsEventDetails participants, CancellationToken cancellationToken)
 /// {
 ///     // Handle participants leave event
 /// }

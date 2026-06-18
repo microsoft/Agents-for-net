@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// The decorated method must match the <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// [MessageEditRoute]
-/// public async Task OnMessageEditAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// public async Task OnMessageEditAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     // Handle message edit event
 /// }
@@ -46,7 +46,7 @@ public class MessageEditRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// The decorated method must match the <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// [MessageUndeleteRoute]
-/// public async Task OnMessageUndeleteAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// public async Task OnMessageUndeleteAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     // Handle message undelete event
 /// }
@@ -77,7 +77,7 @@ public class MessageUndeleteRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The decorated method must match the <see cref="RouteHandler"/> delegate signature.
 /// <code>
 /// [MessageDeleteRoute]
-/// public async Task OnMessageDeleteAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// public async Task OnMessageDeleteAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     // Handle message soft-delete event
 /// }
@@ -109,7 +109,7 @@ public class MessageDeleteRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// the third parameter must be <see cref="System.Text.Json.JsonElement"/>.
 /// <code>
 /// [ReadReceiptRoute]
-/// public async Task OnReadReceiptAsync(ITurnContext turnContext, ITurnState turnState, System.Text.Json.JsonElement data, CancellationToken cancellationToken)
+/// public async Task OnReadReceiptAsync(ITeamsTurnContext turnContext, ITurnState turnState, System.Text.Json.JsonElement data, CancellationToken cancellationToken)
 /// {
 ///     // Handle read receipt event
 /// }
@@ -141,7 +141,7 @@ public class ReadReceiptRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// the third parameter must be <see cref="Microsoft.Teams.Api.O365.ConnectorCardActionQuery"/>.
 /// <code>
 /// [O365ConnectorCardActionRoute]
-/// public async Task OnO365ConnectorCardActionAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken)
+/// public async Task OnO365ConnectorCardActionAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken)
 /// {
 ///     // Handle O365 connector card action
 /// }
@@ -152,13 +152,13 @@ public class ReadReceiptRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class O365ConnectorCardActionRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class ExecuteActionRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<O365ConnectorCardActionHandler>(app, method);
-        var builder = O365ConnectorCardActionRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<ExecuteActionRouteHandler>(app, method);
+        var builder = ExecuteActionRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }

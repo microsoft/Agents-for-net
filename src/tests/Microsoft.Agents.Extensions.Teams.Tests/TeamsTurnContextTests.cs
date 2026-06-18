@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests
 {
-    public class TeamsTurnContextExtensionsTests
+    public class TeamsTurnContextTests
     {
         // ── SendTargetedActivityAsync ─────────────────────────────────────────
 
@@ -291,9 +291,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
         /// <summary>The user being targeted in outgoing activities.</summary>
         private static readonly ChannelAccount TargetUser = new() { Id = "fromId", Name = "Target User", Role = RoleTypes.User };
 
-        private static ITurnContext CreateTurnContext(ChannelAdapter adapter)
+        private static ITeamsTurnContext CreateTurnContext(ChannelAdapter adapter)
         {
-            return new TurnContext(adapter, new Activity
+            var innerContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.Message,
                 ChannelId = Channels.Msteams,
@@ -301,6 +301,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
             });
+            return new TeamsTurnContext(innerContext);
         }
     }
 }

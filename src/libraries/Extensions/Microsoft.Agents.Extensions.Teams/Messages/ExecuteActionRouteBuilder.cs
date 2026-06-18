@@ -13,18 +13,18 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// Provides a builder for configuring routes that handle Teams O365 Connector Card Action invoke activities.
 /// </summary>
 /// <remarks>
-/// Use <see cref="O365ConnectorCardActionRouteBuilder"/> to create and configure routes that respond to Activity Type of <see cref="ActivityTypes.Invoke"/> with a name of
+/// Use <see cref="ExecuteActionRouteBuilder"/> to create and configure routes that respond to Activity Type of <see cref="ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.ExecuteAction"/> triggered by O365 Connector Card action buttons.
 /// </remarks>
-public class O365ConnectorCardActionRouteBuilder : RouteBuilderBase<O365ConnectorCardActionRouteBuilder>
+public class ExecuteActionRouteBuilder : RouteBuilderBase<ExecuteActionRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the O365ConnectorCardActionRouteBuilder class for constructing route definitions.
+    /// Creates a new instance of the ExecuteActionRouteBuilder class for constructing route definitions.
     /// </summary>
-    /// <returns>An O365ConnectorCardActionRouteBuilder instance that can be used to configure and build routes.</returns>
-    public static O365ConnectorCardActionRouteBuilder Create()
+    /// <returns>An ExecuteActionRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static ExecuteActionRouteBuilder Create()
     {
-        var builder = Activator.CreateInstance<O365ConnectorCardActionRouteBuilder>();
+        var builder = Activator.CreateInstance<ExecuteActionRouteBuilder>();
         return builder;
     }
 
@@ -33,14 +33,14 @@ public class O365ConnectorCardActionRouteBuilder : RouteBuilderBase<O365Connecto
     /// The handler receives the deserialized <see cref="Microsoft.Teams.Api.O365.ConnectorCardActionQuery"/> from the activity value.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the O365 Connector Card Action invoke.</param>
-    /// <returns>The current <see cref="O365ConnectorCardActionRouteBuilder"/> instance for method chaining.</returns>
-    public O365ConnectorCardActionRouteBuilder WithHandler(O365ConnectorCardActionHandler handler)
+    /// <returns>The current <see cref="ExecuteActionRouteBuilder"/> instance for method chaining.</returns>
+    public ExecuteActionRouteBuilder WithHandler(ExecuteActionRouteHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
             Microsoft.Teams.Api.O365.ConnectorCardActionQuery query =
                 ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.O365.ConnectorCardActionQuery>(ctx.Activity.Value) ?? new();
-            await handler(ctx, ts, query, ct).ConfigureAwait(false);
+            await handler(new TeamsTurnContext(ctx), ts, query, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx).ConfigureAwait(false);
         };
         return this;

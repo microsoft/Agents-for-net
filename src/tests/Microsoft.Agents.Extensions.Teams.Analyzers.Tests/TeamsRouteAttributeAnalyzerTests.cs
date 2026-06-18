@@ -580,11 +580,11 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // ConfigureSettingsRoute (returns Task, Query as 3rd param)
+        // SettingRoute (returns Task<Response>, Query as 3rd param)
         // ---------------------------------------------------------------------------
 
         [Fact]
-        public async Task ConfigureSettingsRoute_CorrectSignature_NoDiagnostic()
+        public async Task SettingRoute_CorrectSignature_NoDiagnostic()
         {
             const string source = """
                 using System.Threading;
@@ -595,8 +595,8 @@ namespace Microsoft.Agents.Extensions.Teams.Analyzers.Tests
                 [Microsoft.Agents.Extensions.Teams.TeamsExtension]
                 public class Agent
                 {
-                    [Microsoft.Agents.Extensions.Teams.MessageExtensions.ConfigureSettingsRoute]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnConfigureSettings(
+                    [Microsoft.Agents.Extensions.Teams.MessageExtensions.SettingRoute]
+                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSetting(
                         ITurnContext ctx, ITurnState state,
                         Microsoft.Teams.Api.MessageExtensions.Query settings,
                         CancellationToken ct)

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
@@ -44,7 +44,7 @@ public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePre
         _route.Handler = async (ctx, ts, ct) =>
         {
             var messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
-            await handler(ctx, ts, messagingExtensionAction.BotActivityPreview?[0]?.ToCoreActivity(), ct).ConfigureAwait(false);
+            await handler(new TeamsTurnContext(ctx), ts, messagingExtensionAction.BotActivityPreview?[0]?.ToCoreActivity(), ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, new Microsoft.Teams.Api.MessageExtensions.Response()).ConfigureAwait(false);
         };
         return this;

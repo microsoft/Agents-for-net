@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Serialization;
@@ -42,7 +42,7 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
         _route.Handler = async (ctx, ts, ct) =>
         {
             var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
-            var result = await handler(ctx, ts, action, ct).ConfigureAwait(false);
+            var result = await handler(new TeamsTurnContext(ctx), ts, action, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, result).ConfigureAwait(false);
         };
         return this;

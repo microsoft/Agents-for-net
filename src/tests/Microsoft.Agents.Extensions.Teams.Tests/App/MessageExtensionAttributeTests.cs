@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task QueryUrlSettingAttribute_AddRoute_CreatesWorkingRoute()
+        public async Task QuerySettingUrlAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new TestQueryUrlSettingAppWithAttribute(new(() => turnState.Result)
+            var app = new TestQuerySettingUrlAppWithAttribute(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
@@ -203,7 +203,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigureSettingsAttribute_AddRoute_CreatesWorkingRoute()
+        public async Task SettingAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new TestConfigureSettingsAppWithAttribute(new(() => turnState.Result)
+            var app = new TestSettingAppWithAttribute(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
@@ -551,31 +551,31 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [QueryLinkRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(
-            ITurnContext turnContext,
+            ITeamsTurnContext turnContext,
             ITurnState turnState,
-            string url,
+            Microsoft.Teams.Api.AppBasedQueryLink query,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
-            Assert.Equal("https://example.com", url);
+            Assert.Equal("https://example.com", query.Url);
             var response = new Microsoft.Teams.Api.MessageExtensions.Response();
             return Task.FromResult(response);
         }
     }
 
-    class TestQueryUrlSettingAppWithAttribute : AgentApplication
+    class TestQuerySettingUrlAppWithAttribute : AgentApplication
     {
         public bool HandlerCalled { get; set; }
 
-        public TestQueryUrlSettingAppWithAttribute(AgentApplicationOptions options) : base(options)
+        public TestQuerySettingUrlAppWithAttribute(AgentApplicationOptions options) : base(options)
         {
             // Register the Teams extension
             var extension = new TeamsAgentExtension(this);
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [QueryUrlSettingRoute]
-        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryUrlSettingAsync(
+        [QuerySettingUrlRoute]
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuerySettingUrlAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             CancellationToken cancellationToken)
@@ -586,19 +586,19 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
     }
 
-    class TestConfigureSettingsAppWithAttribute : AgentApplication
+    class TestSettingAppWithAttribute : AgentApplication
     {
         public bool HandlerCalled { get; set; }
 
-        public TestConfigureSettingsAppWithAttribute(AgentApplicationOptions options) : base(options)
+        public TestSettingAppWithAttribute(AgentApplicationOptions options) : base(options)
         {
             // Register the Teams extension
             var extension = new TeamsAgentExtension(this);
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [ConfigureSettingsRoute]
-        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnConfigureSettingsAsync(
+        [SettingRoute]
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSettingAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.MessageExtensions.Query settings,

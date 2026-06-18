@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -48,7 +48,7 @@ public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedR
         _route.Handler = async (ctx, ts, ct) =>
         {
             var cardData = ProtocolJsonSerializer.ToObject<TData>(ctx.Activity.Value);
-            await handler(ctx, ts, cardData, ct).ConfigureAwait(false);
+            await handler(new TeamsTurnContext(ctx), ts, cardData, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, null).ConfigureAwait(false);
         };
         return this;

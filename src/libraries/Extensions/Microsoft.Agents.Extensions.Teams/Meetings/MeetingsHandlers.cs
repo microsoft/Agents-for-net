@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Extensions.Teams.Models;
 using System.Threading;
@@ -18,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Teams.Meetings;
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task MeetingStartHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken);
+public delegate Task MeetingStartHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Microsoft Teams meeting end events.
@@ -29,7 +28,7 @@ public delegate Task MeetingStartHandler(ITurnContext turnContext, ITurnState tu
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task MeetingEndHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken);
+public delegate Task MeetingEndHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling Microsoft Teams meeting participants join or leave events.
@@ -40,4 +39,4 @@ public delegate Task MeetingEndHandler(ITurnContext turnContext, ITurnState turn
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task MeetingParticipantsEventHandler(ITurnContext turnContext, ITurnState turnState, MeetingParticipantsEventDetails meeting, CancellationToken cancellationToken);
+public delegate Task MeetingParticipantsEventHandler(ITeamsTurnContext turnContext, ITurnState turnState, MeetingParticipantsEventDetails meeting, CancellationToken cancellationToken);

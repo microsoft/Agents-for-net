@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.State;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,4 +18,4 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams;
 /// triggered the event.</param>
 /// <param name="cancellationToken">A cancellation token that can be used to request cancellation of the asynchronous operation.</param>
 /// <returns>A task that represents the asynchronous operation of handling the team update event.</returns>
-public delegate Task TeamUpdateHandler(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team data, CancellationToken cancellationToken);
+public delegate Task TeamUpdateHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team data, CancellationToken cancellationToken);

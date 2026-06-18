@@ -21,19 +21,18 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// </remarks>
 public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
 {
-    /// <summary>
-    /// Creates a new instance of the QueryLinkRouteBuilder class for constructing route definitions.
-    /// </summary>
-    /// <returns>A QueryLinkRouteBuilder instance that can be used to configure and build routes.</returns>
-    public static QueryLinkRouteBuilder Create()
-    {
-        var builder = Activator.CreateInstance<QueryLinkRouteBuilder>();
-        return builder;
-    }
-
     public QueryLinkRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
+    }
+
+    /// <summary>
+    /// Creates a new instance of the <see cref="QueryLinkRouteBuilder"/> class.
+    /// </summary>
+    /// <returns>A new <see cref="QueryLinkRouteBuilder"/>.</returns>
+    public static QueryLinkRouteBuilder Create()
+    {
+        return new QueryLinkRouteBuilder();
     }
 
     /// <summary>
@@ -45,9 +44,10 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            AppBasedQueryLink? value = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(ctx.Activity.Value);
-            var response = await handler(ctx, ts, value?.Url, ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
+            var ttc = new TeamsTurnContext(ctx);
+            AppBasedQueryLink? value = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(ttc.Activity.Value);
+            var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
     }
