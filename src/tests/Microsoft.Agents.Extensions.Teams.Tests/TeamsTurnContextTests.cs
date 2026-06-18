@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Extensions.Teams.Tests
 {
-    public class TeamsTurnContextExtensionsTests
+    public class TeamsTurnContextTests
     {
         // ── SendTargetedActivityAsync ─────────────────────────────────────────
 

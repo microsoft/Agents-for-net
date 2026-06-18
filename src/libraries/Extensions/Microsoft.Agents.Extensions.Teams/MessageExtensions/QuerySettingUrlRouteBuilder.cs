@@ -20,9 +20,9 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 public class QuerySettingUrlRouteBuilder : RouteBuilderBase<QuerySettingUrlRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the QueryUrlSettingRouteBuilder class for constructing route definitions.
+    /// Creates a new instance of the QuerySettingUrlRouteBuilder class for constructing route definitions.
     /// </summary>
-    /// <returns>A QueryUrlSettingRouteBuilder instance that can be used to configure and build routes.</returns>
+    /// <returns>A QuerySettingUrlRouteBuilder instance that can be used to configure and build routes.</returns>
     public static QuerySettingUrlRouteBuilder Create()
     {
         var builder = Activator.CreateInstance<QuerySettingUrlRouteBuilder>();
@@ -38,7 +38,7 @@ public class QuerySettingUrlRouteBuilder : RouteBuilderBase<QuerySettingUrlRoute
     /// Configures the route to use the specified asynchronous handler for processing query URL settings.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query URL settings.</param>
-    /// <returns>The current instance of QueryUrlSettingRouteBuilder, enabling method chaining.</returns>
+    /// <returns>The current instance of QuerySettingUrlRouteBuilder, enabling method chaining.</returns>
     public QuerySettingUrlRouteBuilder WithHandler(QuerySettingUrlHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>

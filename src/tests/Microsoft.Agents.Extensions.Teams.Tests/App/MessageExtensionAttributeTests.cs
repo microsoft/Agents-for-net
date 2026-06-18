@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task QueryUrlSettingAttribute_AddRoute_CreatesWorkingRoute()
+        public async Task QuerySettingUrlAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new TestQueryUrlSettingAppWithAttribute(new(() => turnState.Result)
+            var app = new TestQuerySettingUrlAppWithAttribute(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
@@ -203,7 +203,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
-        public async Task ConfigureSettingsAttribute_AddRoute_CreatesWorkingRoute()
+        public async Task SettingAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
             IActivity[] activitiesToSend = null;
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var app = new TestConfigureSettingsAppWithAttribute(new(() => turnState.Result)
+            var app = new TestSettingAppWithAttribute(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
@@ -563,11 +563,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
     }
 
-    class TestQueryUrlSettingAppWithAttribute : AgentApplication
+    class TestQuerySettingUrlAppWithAttribute : AgentApplication
     {
         public bool HandlerCalled { get; set; }
 
-        public TestQueryUrlSettingAppWithAttribute(AgentApplicationOptions options) : base(options)
+        public TestQuerySettingUrlAppWithAttribute(AgentApplicationOptions options) : base(options)
         {
             // Register the Teams extension
             var extension = new TeamsAgentExtension(this);
@@ -575,7 +575,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [QuerySettingUrlRoute]
-        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryUrlSettingAsync(
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuerySettingUrlAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             CancellationToken cancellationToken)
@@ -586,11 +586,11 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
     }
 
-    class TestConfigureSettingsAppWithAttribute : AgentApplication
+    class TestSettingAppWithAttribute : AgentApplication
     {
         public bool HandlerCalled { get; set; }
 
-        public TestConfigureSettingsAppWithAttribute(AgentApplicationOptions options) : base(options)
+        public TestSettingAppWithAttribute(AgentApplicationOptions options) : base(options)
         {
             // Register the Teams extension
             var extension = new TeamsAgentExtension(this);
@@ -598,7 +598,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [SettingRoute]
-        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnConfigureSettingsAsync(
+        public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSettingAsync(
             ITurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.MessageExtensions.Query settings,

@@ -41,7 +41,7 @@ public class SettingRouteBuilder : RouteBuilderBase<SettingRouteBuilder>
     /// <remarks>Use this method to specify custom logic for handling configure settings in Teams message
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
-    /// <returns>The current instance of ConfigureSettingsRouteBuilder, enabling method chaining.</returns>
+    /// <returns>The current instance of SettingRouteBuilder, enabling method chaining.</returns>
     public SettingRouteBuilder WithHandler(SettingHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>

@@ -307,13 +307,13 @@ public class MessageExtension
     ///         }
     ///     }));
     /// </code>
-    /// Alternatively, the <see cref="QuerySettingUrlRouteAttribute"/> can be used to decorate a <see cref="QueryUrlSettingHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="QuerySettingUrlRouteAttribute"/> can be used to decorate a <see cref="QuerySettingUrlHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQueryUrlSetting(QuerySettingUrlHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public MessageExtension OnQuerySettingUrl(QuerySettingUrlHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(QuerySettingUrlRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
@@ -338,7 +338,7 @@ public class MessageExtension
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The current MessageExtension instance for method chaining.</returns>
-    public MessageExtension OnConfigureSettings(SettingHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public MessageExtension OnSetting(SettingHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(SettingRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
