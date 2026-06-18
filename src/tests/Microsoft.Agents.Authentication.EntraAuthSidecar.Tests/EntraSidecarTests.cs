@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Azure.Core;
@@ -193,6 +193,33 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
         public async Task GetAuthorizationHeaderUnauthenticated_MissingAuthHeader_Throws()
         {
             var handler = CreateMockHandler(HttpStatusCode.OK, """{"otherField":"value"}""");
+            var client = CreateClient(handler.Object);
+
+            await Assert.ThrowsAsync<ErrorResponseException>(
+                () => client.GetAuthorizationHeaderUnauthenticatedAsync("me"));
+        }
+
+        [Theory]
+        [InlineData("Bearer ")]
+        [InlineData("PoP   ")]
+        public async Task GetAuthorizationHeaderUnauthenticated_SchemeWithEmptyToken_Throws(string header)
+        {
+            var handler = CreateMockHandler(HttpStatusCode.OK, $$"""{"authorizationHeader":"{{header}}"}""");
+            var client = CreateClient(handler.Object);
+
+            var ex = await Assert.ThrowsAsync<ErrorResponseException>(
+                () => client.GetAuthorizationHeaderUnauthenticatedAsync("me"));
+
+            Assert.Contains("malformed", ex.Message);
+        }
+
+        [Theory]
+        [InlineData("Bearer")]
+        [InlineData("bearer")]
+        [InlineData("PoP")]
+        public async Task GetAuthorizationHeaderUnauthenticated_SchemeOnly_Throws(string header)
+        {
+            var handler = CreateMockHandler(HttpStatusCode.OK, $$"""{"authorizationHeader":"{{header}}"}""");
             var client = CreateClient(handler.Object);
 
             await Assert.ThrowsAsync<ErrorResponseException>(

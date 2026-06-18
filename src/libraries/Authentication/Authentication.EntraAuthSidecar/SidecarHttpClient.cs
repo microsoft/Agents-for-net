@@ -450,17 +450,26 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
                     && authHeader.ValueKind == JsonValueKind.String)
                 {
                     var headerValue = authHeader.GetString();
-                    if (!string.IsNullOrEmpty(headerValue))
+                    if (!string.IsNullOrWhiteSpace(headerValue))
                     {
-                        var spaceIndex = headerValue.IndexOf(' ');
+                        var trimmed = headerValue.Trim();
+                        var spaceIndex = trimmed.IndexOf(' ');
                         if (spaceIndex > 0)
                         {
-                            return new SidecarTokenResult(
-                                headerValue.Substring(0, spaceIndex),
-                                headerValue.Substring(spaceIndex + 1));
+                            // "{scheme} {token}" form: the token after the separator must be non-empty.
+                            var token = trimmed.Substring(spaceIndex + 1).Trim();
+                            if (token.Length > 0)
+                            {
+                                return new SidecarTokenResult(trimmed.Substring(0, spaceIndex), token);
+                            }
                         }
-
-                        return new SidecarTokenResult("Bearer", headerValue);
+                        else if (!IsKnownAuthScheme(trimmed))
+                        {
+                            // No separator: treat the whole value as a raw token and default the
+                            // scheme to Bearer. A lone scheme name (e.g. "Bearer") is not a valid
+                            // token and falls through to the error below.
+                            return new SidecarTokenResult("Bearer", trimmed);
+                        }
                     }
                 }
             }
@@ -472,11 +481,15 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
                 };
             }
 
-            throw new ErrorResponseException("Sidecar response missing authorizationHeader field")
+            throw new ErrorResponseException("Sidecar response missing or malformed authorizationHeader field")
             {
                 StatusCode = 0
             };
         }
+
+        private static bool IsKnownAuthScheme(string value)
+            => value.Equals("Bearer", StringComparison.OrdinalIgnoreCase)
+               || value.Equals("PoP", StringComparison.OrdinalIgnoreCase);
 
         private static SidecarProblemDetails TryParseProblemDetails(string content)
         {
