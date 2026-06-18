@@ -184,9 +184,9 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Tests
                 () => client.GetAuthorizationHeaderUnauthenticatedAsync("unknown-service"));
 
             Assert.Equal(400, ex.StatusCode);
-            // Title and detail are surfaced through the public exception message.
+            // The title/status are surfaced, but the (potentially PII-bearing) detail must never be.
             Assert.Contains("Bad Request", ex.Message);
-            Assert.Contains("Service not found", ex.Message);
+            Assert.DoesNotContain("Service not found", ex.Message);
         }
 
         [Fact]

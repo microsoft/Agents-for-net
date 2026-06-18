@@ -371,20 +371,18 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
 
                         var problemDetails = TryParseProblemDetails(errorContent);
 
+                        // Never surface problemDetails.Detail or the raw response body: the sidecar can
+                        // echo request parameters (UPN, object id, tenant) into them. Log and throw only
+                        // the non-sensitive title/status.
                         _logger.LogError(
-                            "Sidecar returned error. Status: {StatusCode}, URL: {Url}, ProblemTitle: {Title}, Detail: {Detail}, Body: {Body}",
+                            "Sidecar returned error. Status: {StatusCode}, URL: {Url}, ProblemTitle: {Title}",
                             (int)response.StatusCode,
                             requestPath,
-                            problemDetails?.Title ?? "(none)",
-                            problemDetails?.Detail ?? "(none)",
-                            errorContent?.Length > 2000 ? errorContent.Substring(0, 2000) : errorContent);
+                            problemDetails?.Title ?? "(none)");
 
                         var title = problemDetails?.Title ?? $"Sidecar returned {(int)response.StatusCode}";
-                        var message = string.IsNullOrEmpty(problemDetails?.Detail)
-                            ? title
-                            : $"{title}: {problemDetails.Detail}";
 
-                        throw new ErrorResponseException(message)
+                        throw new ErrorResponseException(title)
                         {
                             StatusCode = (int)response.StatusCode
                         };
