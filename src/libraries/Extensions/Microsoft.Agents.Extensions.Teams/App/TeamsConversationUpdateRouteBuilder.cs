@@ -4,9 +4,8 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.App;
 
-namespace Microsoft.Agents.Extensions.Teams
+namespace Microsoft.Agents.Extensions.Teams.App
 {
 
     public class TeamsConversationUpdateRouteBuilder : ConversationUpdateRouteBuilderBase<TeamsConversationUpdateRouteBuilder>
