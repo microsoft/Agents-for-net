@@ -6,6 +6,7 @@ using Microsoft.Agents.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -28,6 +29,19 @@ public static class AspNetExtensions
         return AuthenticationConstants.BotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase)
             || AuthenticationConstants.GovBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase)
             || AuthenticationConstants.ChinaBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Adds JWT bearer token validation for Azure Bot Service and agent-to-agent requests.
+    /// This overload is designed for use with <c>AgentHostBuilder.WithAuthorization</c>.
+    /// </summary>
+    /// <param name="builder">The host application builder.</param>
+    /// <param name="tokenValidationSectionName">
+    /// Name of the configuration section to read <see cref="TokenValidationOptions"/> from.  Defaults to <c>"TokenValidation"</c>.
+    /// </param>
+    public static void AddAgentAspNetAuthentication(this IHostApplicationBuilder builder, string tokenValidationSectionName = "TokenValidation")
+    {
+        builder.Services.AddAgentAspNetAuthentication(builder.Configuration, tokenValidationSectionName);
     }
 
     /// <summary>
@@ -91,7 +105,6 @@ public static class AspNetExtensions
     public static void AddAgentAspNetAuthentication(this IServiceCollection services, TokenValidationOptions validationOptions)
     {
         AssertionHelpers.ThrowIfNull(validationOptions, nameof(validationOptions));
-        services.AddControllers();
 
         // Must have at least one Audience.
         if (validationOptions.Audiences == null || validationOptions.Audiences.Count == 0)

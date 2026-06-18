@@ -9,25 +9,15 @@ using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Net.Http;
 using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHttpClient();
-
-// Register IStorage.  For development, MemoryStorage is suitable.
-// For production Agents, persisted storage should be used so
-// that state survives Agent restarts, and operates correctly
-// in a cluster of Agent instances.
-builder.Services.AddSingleton<IStorage, MemoryStorage>();
-
-// Add the AgentApplication, which contains the logic for responding to
-// user messages.
-builder.AddAgent(sp =>
-{
+builder.AddAgentDefaults()
+    .AddAgent(sp =>
+    {
     const string MCSConversationPropertyName = "MCSConversationId";
 
     var app = new AgentApplication(sp.GetRequiredService<AgentApplicationOptions>());
@@ -106,27 +96,18 @@ builder.AddAgent(sp =>
     });
 
     return app;
-});
+    })
+    .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
 
-
-// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
-// configured in the appsettings.json "TokenValidation" section.
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
-}
+// Register IStorage.  For development, MemoryStorage is suitable.
+// For production Agents, persisted storage should be used so
+// that state survives Agent restarts, and operates correctly
+// in a cluster of Agent instances.
+builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 WebApplication app = builder.Build();
 
-// Enable AspNet authentication and authorization
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Map GET "/"
-app.MapAgentRootEndpoint();
-
-// Map the endpoints for all agents using the [AgentInterface] attribute.
-// If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
-app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+app.UseAgents()
+    .MapDefaultAgentEndpoints();
 
 app.Run();

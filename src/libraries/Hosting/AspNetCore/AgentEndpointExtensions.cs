@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly using the AgentInterfaceAttribute.  Each AgentApplication must have 
-        /// been added using <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/>.
+        /// been added using <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/>.
         /// </summary>
         /// <param name="endpoints"></param>
         /// <param name="requireAuth"></param>

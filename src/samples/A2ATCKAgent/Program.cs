@@ -12,15 +12,14 @@ using A2AAgent;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddHttpClient();
 builder.Logging.AddConsole();
 
 // Add AgentApplicationOptions from appsettings section "AgentApplication".
 builder.AddAgentApplicationOptions();
 
-// Add the Agent
-builder.AddAgent<MyAgent>();
+builder.AddAgentDefaults()
+    .AddAgent<MyAgent>()
+    .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -31,25 +30,10 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 // Add the A2A adapter to handle A2A requests
 builder.Services.AddA2AAdapter();
 
-// Configure the HTTP request pipeline.
-
-// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
-// configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddControllers();
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
-}
-
 WebApplication app = builder.Build();
 
-// Enable AspNet authentication and authorization
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Add endpoints for the AgentApplication registered above.
-app.MapAgentRootEndpoint();
-app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+app.UseAgents()
+    .MapDefaultAgentEndpoints();
 
 // Add A2A endpoints.  By default A2A will respond on '/a2a'.
 app.MapA2AEndpoints(requireAuth: !app.Environment.IsDevelopment());

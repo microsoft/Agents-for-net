@@ -6,15 +6,12 @@ using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using OpenAI.Chat;
 using StreamingMessageAgent;
 using System;
 using System.ClientModel;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddHttpClient();
 
 builder.Services.AddTransient<ChatClient>(sp =>
 {
@@ -24,9 +21,9 @@ builder.Services.AddTransient<ChatClient>(sp =>
     .GetChatClient(builder.Configuration["AIServices:AzureOpenAI:DeploymentName"]);
 });
 
-// Add the AgentApplication, which contains the logic for responding to
-// user messages.
-builder.AddAgent<StreamingAgent>();
+builder.AddAgentDefaults()
+    .AddAgent<StreamingAgent>()
+    .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -34,24 +31,9 @@ builder.AddAgent<StreamingAgent>();
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
-// configured in the appsettings.json "TokenValidation" section.
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
-}
-
 WebApplication app = builder.Build();
 
-// Enable AspNet authentication and authorization
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Map GET "/"
-app.MapAgentRootEndpoint();
-
-// Map the endpoints for all agents using the [AgentInterface] attribute.
-// If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
-app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+app.UseAgents()
+    .MapDefaultAgentEndpoints();
 
 app.Run();
