@@ -8,6 +8,11 @@ using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.App;
+using Microsoft.Agents.Extensions.Teams.Config;
+using Microsoft.Agents.Extensions.Teams.FileConsents;
+using Microsoft.Agents.Extensions.Teams.Messages;
+using Microsoft.Agents.Extensions.Teams.TeamsChannels;
+using Microsoft.Agents.Extensions.Teams.TeamsTeams;
 using Microsoft.Agents.Extensions.Teams.Tests.Model;
 using Moq;
 using System;
@@ -113,6 +118,46 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public async Task TeamsFeedbackRouteBuilder_WithHandler_DoesNotSelectNonFeedbackActivity()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var nonMatchingActivity = CreateActivity(
+                ActivityTypes.Invoke,
+                Channels.Msteams,
+                name: "message/submitAction",
+                value: ProtocolJsonSerializer.ToJsonElements(new
+                {
+                    actionName = "not-feedback",
+                    actionValue = new
+                    {
+                        reaction = "like"
+                    }
+                }));
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsFeedbackRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, feedbackData, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+            Assert.Empty(sentActivities);
+        }
+
+        [Fact]
         public void TeamsHandoffRouteBuilder_Create_ReturnsNewInstance()
         {
             var builder = TeamsHandoffRouteBuilder.Create();
@@ -186,6 +231,39 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public async Task TeamsHandoffRouteBuilder_WithHandler_DoesNotSelectWrongInvokeName()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var nonMatchingActivity = CreateActivity(
+                ActivityTypes.Invoke,
+                Channels.Msteams,
+                name: "handoff/ignored",
+                value: new { Continuation = "ignored-token" });
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsHandoffRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, continuation, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+            Assert.Empty(sentActivities);
+        }
+
+        [Fact]
         public void TeamsMessageRouteBuilder_Create_ReturnsNewInstance()
         {
             var builder = TeamsMessageRouteBuilder.Create();
@@ -244,6 +322,29 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public async Task TeamsMessageRouteBuilder_WithText_String_DoesNotSelectNonMatchingText()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.Message, Channels.Msteams, text: "goodbye");
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsMessageRouteBuilder.Create()
+                .WithText("hello")
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
         public async Task TeamsMessageRouteBuilder_WithText_Regex_UsesTeamsTurnContext_AndMatchesTeamsOnly()
         {
             var adapter = new NotImplementedAdapter();
@@ -273,6 +374,29 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.IsType<TeamsTurnContext>(contexts[0]);
             Assert.Single(texts);
             Assert.Equal("status 200", texts[0]);
+        }
+
+        [Fact]
+        public async Task TeamsMessageRouteBuilder_WithText_Regex_DoesNotSelectNonMatchingText()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.Message, Channels.Msteams, text: "hello");
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsMessageRouteBuilder.Create()
+                .WithText(new Regex("^status \\d+$"))
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
         }
 
         [Fact]
@@ -334,6 +458,29 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public async Task TeamsEventRouteBuilder_WithName_String_DoesNotSelectNonMatchingName()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.Event, Channels.Msteams, name: "ignored");
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsEventRouteBuilder.Create()
+                .WithName("ping")
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
         public async Task TeamsEventRouteBuilder_WithName_Regex_UsesTeamsTurnContext_AndMatchesTeamsOnly()
         {
             var adapter = new NotImplementedAdapter();
@@ -363,6 +510,29 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.IsType<TeamsTurnContext>(contexts[0]);
             Assert.Single(names);
             Assert.Equal("status:ok", names[0]);
+        }
+
+        [Fact]
+        public async Task TeamsEventRouteBuilder_WithName_Regex_DoesNotSelectNonMatchingName()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.Event, Channels.Msteams, name: "ping");
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsEventRouteBuilder.Create()
+                .WithName(new Regex("^status:"))
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
         }
 
         [Fact]
@@ -427,6 +597,30 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public async Task TeamsConversationUpdateRouteBuilder_WithUpdateEvent_DoesNotSelectNonMatchingUpdateEvent()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.ConversationUpdate, Channels.Msteams);
+            nonMatchingActivity.MembersRemoved = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } };
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsConversationUpdateRouteBuilder.Create()
+                .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
         public async Task TeamsConversationUpdateRouteBuilder_WithSelector_UsesTeamsTurnContext_AndMatchesTeamsOnly()
         {
             var adapter = new NotImplementedAdapter();
@@ -456,6 +650,29 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.IsType<TeamsTurnContext>(contexts[0]);
             Assert.Single(texts);
             Assert.Equal("selector", texts[0]);
+        }
+
+        [Fact]
+        public async Task TeamsConversationUpdateRouteBuilder_WithSelector_DoesNotSelectWhenSelectorReturnsFalse()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.ConversationUpdate, Channels.Msteams, text: "ignored");
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsConversationUpdateRouteBuilder.Create()
+                .WithSelector((context, cancellationToken) => Task.FromResult(false))
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
         }
 
         [Fact]
@@ -517,6 +734,29 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
         }
 
         [Fact]
+        public async Task TeamsTypeRouteBuilder_WithType_String_DoesNotSelectNonMatchingType()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.Event, Channels.Msteams, name: "hello");
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsTypeRouteBuilder.Create()
+                .WithType(ActivityTypes.Message)
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
         public async Task TeamsTypeRouteBuilder_WithType_Regex_UsesTeamsTurnContext_AndMatchesTeamsOnly()
         {
             var adapter = new NotImplementedAdapter();
@@ -546,6 +786,354 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             Assert.IsType<TeamsTurnContext>(contexts[0]);
             Assert.Single(types);
             Assert.Equal("invoke/custom", types[0]);
+        }
+
+        [Fact]
+        public async Task TeamsTypeRouteBuilder_WithType_Regex_DoesNotSelectNonMatchingType()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.Message, Channels.Msteams, text: "hello");
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamsTypeRouteBuilder.Create()
+                .WithType(new Regex("^invoke/.+"))
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
+        public async Task ChannelUpdateRouteBuilder_ForChannelCreated_DoesNotSelectDifferentChannelEvent()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.ConversationUpdate, Channels.Msteams);
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            {
+                EventType = Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType.ChannelDeleted,
+                Channel = new Microsoft.Teams.Api.Channel { Id = "channel1" }
+            };
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(ChannelUpdateRouteBuilder.Create()
+                .ForChannelCreated()
+                .WithHandler((turnContext, turnState, channel, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
+        public async Task TeamUpdateRouteBuilder_ForTeamArchived_DoesNotSelectDifferentTeamEvent()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.ConversationUpdate, Channels.Msteams);
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            {
+                EventType = Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType.TeamDeleted,
+                Team = new Microsoft.Teams.Api.Team { Id = "team1" }
+            };
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(TeamUpdateRouteBuilder.Create()
+                .ForTeamArchived()
+                .WithHandler((turnContext, turnState, team, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
+        public async Task MessageEditRouteBuilder_DoesNotSelectDifferentMessageEvent()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.MessageUpdate, Channels.Msteams);
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            {
+                EventType = "undeleteMessage"
+            };
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITurnContext>();
+
+            app.AddRoute(MessageEditRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
+        public async Task MessageDeleteRouteBuilder_DoesNotSelectDifferentMessageEvent()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.MessageDelete, Channels.Msteams);
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            {
+                EventType = "unknown"
+            };
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITurnContext>();
+
+            app.AddRoute(MessageDeleteRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
+        public async Task MessageUndeleteRouteBuilder_DoesNotSelectDifferentMessageEvent()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(ActivityTypes.MessageUpdate, Channels.Msteams);
+            nonMatchingActivity.ChannelData = new Microsoft.Teams.Api.ChannelData
+            {
+                EventType = "editMessage"
+            };
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITurnContext>();
+
+            app.AddRoute(MessageUndeleteRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
+        public async Task ExecuteActionRouteBuilder_DoesNotSelectDifferentInvokeName()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var nonMatchingActivity = CreateActivity(
+                ActivityTypes.Invoke,
+                Channels.Msteams,
+                name: Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Query,
+                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Teams.Api.O365.ConnectorCardActionQuery()));
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(ExecuteActionRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, query, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+            Assert.Empty(sentActivities);
+        }
+
+        [Fact]
+        public async Task ReadReceiptRouteBuilder_DoesNotSelectDifferentEventName()
+        {
+            var adapter = new NotImplementedAdapter();
+            var nonMatchingActivity = CreateActivity(
+                ActivityTypes.Event,
+                Channels.Msteams,
+                name: "ignored",
+                value: ProtocolJsonSerializer.ToJsonElements(new { lastReadMessageId = "1" }));
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(ReadReceiptRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, data, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+        }
+
+        [Fact]
+        public async Task FileConsentAcceptRouteBuilder_DoesNotSelectDifferentAction()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var nonMatchingActivity = CreateActivity(
+                ActivityTypes.Invoke,
+                Channels.Msteams,
+                name: Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent,
+                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Teams.Api.FileConsentCardResponse { Action = Microsoft.Teams.Api.Action.Decline }));
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(FileConsentAcceptRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, response, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+            Assert.Empty(sentActivities);
+        }
+
+        [Fact]
+        public async Task FileConsentDeclineRouteBuilder_DoesNotSelectDifferentAction()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var nonMatchingActivity = CreateActivity(
+                ActivityTypes.Invoke,
+                Channels.Msteams,
+                name: Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent,
+                value: ProtocolJsonSerializer.ToJsonElements(new Microsoft.Teams.Api.FileConsentCardResponse { Action = Microsoft.Teams.Api.Action.Accept }));
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(FileConsentDeclineRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, response, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.CompletedTask;
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+            Assert.Empty(sentActivities);
+        }
+
+        [Fact]
+        public async Task ConfigFetchRouteBuilder_DoesNotSelectDifferentInvokeName()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var nonMatchingActivity = CreateActivity(
+                ActivityTypes.Invoke,
+                Channels.Msteams,
+                name: Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Submit,
+                value: ProtocolJsonSerializer.ToJsonElements(new { key = "value" }));
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(ConfigFetchRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, configData, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.FromResult<Microsoft.Teams.Api.Config.ConfigResponse>(null);
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+            Assert.Empty(sentActivities);
+        }
+
+        [Fact]
+        public async Task ConfigSubmitRouteBuilder_DoesNotSelectDifferentInvokeName()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var nonMatchingActivity = CreateActivity(
+                ActivityTypes.Invoke,
+                Channels.Msteams,
+                name: Microsoft.Teams.Api.Activities.Invokes.Name.Configs.Fetch,
+                value: ProtocolJsonSerializer.ToJsonElements(new { key = "value" }));
+
+            var app = CreateApp(CreateTurnContext(adapter, nonMatchingActivity));
+            var contexts = new List<ITeamsTurnContext>();
+
+            app.AddRoute(ConfigSubmitRouteBuilder.Create()
+                .WithHandler((turnContext, turnState, configData, cancellationToken) =>
+                {
+                    contexts.Add(turnContext);
+                    return Task.FromResult<Microsoft.Teams.Api.Config.ConfigResponse>(null);
+                })
+                .Build());
+
+            await app.OnTurnAsync(CreateTurnContext(adapter, nonMatchingActivity), CancellationToken.None);
+
+            Assert.Empty(contexts);
+            Assert.Empty(sentActivities);
         }
 
         private static TurnContext CreateTurnContext(IChannelAdapter adapter, Activity activity)
