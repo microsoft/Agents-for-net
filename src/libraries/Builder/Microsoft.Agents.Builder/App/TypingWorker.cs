@@ -127,7 +127,20 @@ namespace Microsoft.Agents.Builder.App
         {
             while (true)
             {
-                var resetTask = _resetTcs.Task;
+                var currentTcs = Volatile.Read(ref _resetTcs);
+                var resetTask = currentTcs.Task;
+
+                // A reset may have fired while we were outside WaitAsync (e.g., during
+                // SendTypingActivityAsync). Consume the signal and restart the countdown.
+                if (resetTask.IsCompleted)
+                {
+                    Interlocked.CompareExchange(
+                        ref _resetTcs,
+                        new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously),
+                        currentTcs);
+                    continue;
+                }
+
                 await Task.WhenAny(Task.Delay(ms, stopToken), resetTask).ConfigureAwait(false);
 
                 stopToken.ThrowIfCancellationRequested();
@@ -137,7 +150,11 @@ namespace Microsoft.Agents.Builder.App
                     return; // Delay elapsed without reset — done.
                 }
 
-                // Reset fired — restart the countdown.
+                // Reset fired — replace TCS and restart the countdown.
+                Interlocked.CompareExchange(
+                    ref _resetTcs,
+                    new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously),
+                    currentTcs);
             }
         }
 
@@ -170,8 +187,23 @@ namespace Microsoft.Agents.Builder.App
 
         private void ResetInterval()
         {
-            var old = Interlocked.Exchange(ref _resetTcs, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
-            old.TrySetResult(true);
+            while (true)
+            {
+                var tcs = Volatile.Read(ref _resetTcs);
+                if (tcs.TrySetResult(true))
+                {
+                    return; // Successfully signaled the active TCS.
+                }
+
+                // TCS already completed — either WaitAsync is about to swap it, or a
+                // prior reset already signaled it.  If _resetTcs was replaced (WaitAsync
+                // consumed the signal and installed a new TCS), retry so the new TCS is
+                // signaled.  Otherwise the pending signal will be consumed on next entry.
+                if (Volatile.Read(ref _resetTcs) == tcs)
+                {
+                    return;
+                }
+            }
         }
 
         private async Task SendTypingActivityAsync(CancellationToken cancellationToken)
