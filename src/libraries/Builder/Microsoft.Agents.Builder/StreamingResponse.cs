@@ -182,6 +182,8 @@ namespace Microsoft.Agents.Builder
         /// <param name="attachment">The attachment to add. Must not be <see langword="null"/>.</param>
         public void AddAttachment(Attachment attachment)
         {
+            AssertionHelpers.ThrowIfNull(attachment, nameof(attachment));
+
             Attachments ??= [];
             Attachments.Add(attachment);
         }
@@ -482,17 +484,28 @@ namespace Microsoft.Agents.Builder
             // Add Attachments if there are any
             if (Attachments != null && Attachments.Count > 0)
             {
-                if (activity.Attachments == null)
-                {
-                    activity.Attachments = Attachments;
-                }
-                else if (!ReferenceEquals(activity.Attachments, Attachments))
-                {
-                    foreach (var attachment in Attachments)
-                    {
-                        activity.Attachments.Add(attachment);
-                    }
-                }
+                if (activity.Attachments == null)
+
+                {
+
+                    activity.Attachments = Attachments;
+
+                }
+
+                else if (!ReferenceEquals(activity.Attachments, Attachments))
+
+                {
+
+                    foreach (var attachment in Attachments)
+
+                    {
+
+                        activity.Attachments.Add(attachment);
+
+                    }
+
+                }
+
             }
 
             return activity;
