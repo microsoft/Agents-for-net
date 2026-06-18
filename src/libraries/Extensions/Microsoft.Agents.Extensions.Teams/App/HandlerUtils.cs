@@ -1,4 +1,7 @@
-﻿using Microsoft.Agents.Builder;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using System;

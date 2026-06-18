@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Core;
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.Configuration;
@@ -326,6 +327,135 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var msalProvider = msal as IMSALProvider;
             Assert.NotNull(msalProvider);
             Assert.IsAssignableFrom<IManagedIdentityApplication>(msalProvider.CreateClientApplication());
+        }
+
+        [Fact]
+        public void MSALProvider_SystemManagedIdentityShouldReturnManagedIdentityApplication()
+        {
+            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+                { "Connections:ServiceConnection:Settings:AuthType", "SystemManagedIdentity" },
+            };
+            string settingsSection = "Connections:ServiceConnection:Settings";
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+            var returnedOptions = new MsalAuthConfigurationOptions { MSALEnabledLogPII = false };
+            options.Setup(x => x.Value).Returns(returnedOptions);
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object);
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory());
+
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+
+            var msalProvider = msal as IMSALProvider;
+            Assert.NotNull(msalProvider);
+            Assert.IsAssignableFrom<IManagedIdentityApplication>(msalProvider.CreateClientApplication());
+        }
+
+        [Fact]
+        public void MSALProvider_FederatedCredentialsShouldReturnConfidentialClient()
+        {
+            Dictionary<string, string> configSettings = new Dictionary<string, string> {
+                { "Connections:ServiceConnection:Settings:AuthType", "FederatedCredentials" },
+                { "Connections:ServiceConnection:Settings:ClientId", "test-client-id" },
+                { "Connections:ServiceConnection:Settings:FederatedClientId", "federated-client-id" },
+                { "Connections:ServiceConnection:Settings:TenantId", "test-tenant" },
+            };
+            string settingsSection = "Connections:ServiceConnection:Settings";
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(configSettings)
+                .Build();
+
+            var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+            var returnedOptions = new MsalAuthConfigurationOptions { MSALEnabledLogPII = false };
+            options.Setup(x => x.Value).Returns(returnedOptions);
+
+            var logger = new Mock<ILogger<MsalAuth>>();
+
+            var service = new Mock<IServiceProvider>();
+            service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                .Returns(options.Object);
+            service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                .Returns(logger.Object);
+            service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                .Returns(new TestHttpClientFactory());
+
+            var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+
+            var msalProvider = msal as IMSALProvider;
+            Assert.NotNull(msalProvider);
+            Assert.IsAssignableFrom<IConfidentialClientApplication>(msalProvider.CreateClientApplication());
+        }
+
+        [Fact]
+        public void MSALProvider_WorkloadIdentityShouldReturnConfidentialClient()
+        {
+            var tokenFilePath = System.IO.Path.Combine(AppContext.BaseDirectory, $"workload-token-{Guid.NewGuid():N}.txt");
+            try
+            {
+                System.IO.File.WriteAllText(tokenFilePath, "fake-token-content");
+
+                Dictionary<string, string> configSettings = new Dictionary<string, string> {
+                    { "Connections:ServiceConnection:Settings:AuthType", "WorkloadIdentity" },
+                    { "Connections:ServiceConnection:Settings:ClientId", "test-client-id" },
+                    { "Connections:ServiceConnection:Settings:TenantId", "test-tenant" },
+                    { "Connections:ServiceConnection:Settings:FederatedTokenFile", tokenFilePath },
+                };
+                string settingsSection = "Connections:ServiceConnection:Settings";
+
+                IConfiguration configuration = new ConfigurationBuilder()
+                    .AddInMemoryCollection(configSettings)
+                    .Build();
+
+                var options = new Mock<IOptions<MsalAuthConfigurationOptions>>();
+                var returnedOptions = new MsalAuthConfigurationOptions { MSALEnabledLogPII = false };
+                options.Setup(x => x.Value).Returns(returnedOptions);
+
+                var logger = new Mock<ILogger<MsalAuth>>();
+
+                var service = new Mock<IServiceProvider>();
+                service.Setup(x => x.GetService(typeof(IOptions<MsalAuthConfigurationOptions>)))
+                    .Returns(options.Object);
+                service.Setup(x => x.GetService(typeof(ILogger<MsalAuth>)))
+                    .Returns(logger.Object);
+                service.Setup(sp => sp.GetService(typeof(IHttpClientFactory)))
+                    .Returns(new TestHttpClientFactory());
+
+                var msal = new MsalAuth(service.Object, configuration.GetSection(settingsSection));
+
+                var msalProvider = msal as IMSALProvider;
+                Assert.NotNull(msalProvider);
+                Assert.IsAssignableFrom<IConfidentialClientApplication>(msalProvider.CreateClientApplication());
+            }
+            finally
+            {
+                if (System.IO.File.Exists(tokenFilePath))
+                {
+                    System.IO.File.Delete(tokenFilePath);
+                }
+            }
+        }
+
+        [Fact]
+        public void GetTokenCredential_ReturnsTokenCredentialInstance()
+        {
+            var msal = new MsalAuth(_service.Object, _configuration.GetSection(SettingsSection));
+
+            var credential = msal.GetTokenCredential();
+
+            Assert.NotNull(credential);
+            Assert.IsAssignableFrom<TokenCredential>(credential);
         }
 
         [Fact]

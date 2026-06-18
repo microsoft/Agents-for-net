@@ -1,8 +1,10 @@
-﻿using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Extensions.Teams.App;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Builder.App;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.Agents.Extensions.Teams
+namespace Microsoft.Agents.Extensions.Teams.App
 {
     /// <summary>
     /// Provides <see cref="AgentApplication"/> extension methods for registering Teams-aware route handlers.
@@ -19,10 +21,15 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnActivity(this AgentApplication app, string type, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsActivity(this AgentApplication app, string type, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnActivity(type, newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsTypeRouteBuilder.Create()
+                .WithType(type)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -35,10 +42,15 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnActivity(this AgentApplication app, Regex typePattern, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsActivity(this AgentApplication app, Regex typePattern, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnActivity(typePattern, newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsTypeRouteBuilder.Create()
+                .WithType(typePattern)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -51,10 +63,15 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnConversationUpdate(this AgentApplication app, string conversationUpdateEvent, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsConversationUpdate(this AgentApplication app, string conversationUpdateEvent, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnConversationUpdate(conversationUpdateEvent, newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsConversationUpdateRouteBuilder.Create()
+                .WithUpdateEvent(conversationUpdateEvent)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -67,10 +84,15 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnMessage(this AgentApplication app, string text, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsMessage(this AgentApplication app, string text, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnMessage(text, newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsMessageRouteBuilder.Create()
+                .WithText(text)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -83,10 +105,15 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnMessage(this AgentApplication app, Regex textPattern, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsMessage(this AgentApplication app, Regex textPattern, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnMessage(textPattern, newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsMessageRouteBuilder.Create()
+                .WithText(textPattern)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -99,10 +126,15 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnEvent(this AgentApplication app, string eventName, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsEvent(this AgentApplication app, string eventName, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnEvent(eventName, newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsEventRouteBuilder.Create()
+                .WithName(eventName)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -115,10 +147,15 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnEvent(this AgentApplication app, Regex namePattern, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsEvent(this AgentApplication app, Regex namePattern, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnEvent(namePattern, newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsEventRouteBuilder.Create()
+                .WithName(namePattern)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -131,10 +168,15 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnEvent(this AgentApplication app, RouteSelector routeSelector, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsEvent(this AgentApplication app, RouteSelector routeSelector, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnEvent(routeSelector, newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsEventRouteBuilder.Create()
+                .WithSelector(routeSelector)
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -146,10 +188,14 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnMessageReactionsAdded(this AgentApplication app, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsMessageReactionsAdded(this AgentApplication app, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnMessageReactionsAdded(newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsReactionsAddedRouteBuilder.Create()
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -161,10 +207,14 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnMessageReactionsRemoved(this AgentApplication app, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsMessageReactionsRemoved(this AgentApplication app, TeamsRouteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnMessageReactionsRemoved(newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsReactionsRemovedRouteBuilder.Create()
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -176,10 +226,14 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnHandoff(this AgentApplication app, TeamsHandoffHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsHandoff(this AgentApplication app, TeamsHandoffHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnHandoff(newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsHandoffRouteBuilder.Create()
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
 
         /// <summary>
@@ -191,10 +245,14 @@ namespace Microsoft.Agents.Extensions.Teams
         /// <param name="autoSignInHandlers">The OAuth sign-in handlers to associate with the route.</param>
         /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns.</param>
         /// <returns>The configured agent application.</returns>
-        public static AgentApplication OnFeedbackLoop(this AgentApplication app, TeamsFeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
+        public static AgentApplication OnTeamsFeedbackLoop(this AgentApplication app, TeamsFeedbackLoopHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
-            var newHandler = HandlerUtils.WrapHandler(handler);
-            return app.OnFeedbackLoop(newHandler, rank, autoSignInHandlers, isAgenticOnly);
+            return app.AddRoute(TeamsFeedbackRouteBuilder.Create()
+                .WithHandler(handler)
+                .WithOrderRank(rank)
+                .WithOAuthHandlers(autoSignInHandlers)
+                .AsAgentic(isAgenticOnly)
+                .Build());
         }
     }
 }

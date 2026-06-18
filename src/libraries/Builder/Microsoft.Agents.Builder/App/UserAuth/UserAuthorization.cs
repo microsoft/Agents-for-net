@@ -236,6 +236,11 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
                     await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
+                    if (response.Cause == AuthExceptionReason.UserCancelled)
+                    {
+                        return false;
+                    }
+
                     if (turnContext.Activity.IsType(ActivityTypes.Invoke))
                     {
                         if (!turnContext.StackState.Has(ChannelAdapter.InvokeResponseKey))

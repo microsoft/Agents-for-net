@@ -6,7 +6,7 @@ using Microsoft.Agents.Builder.State;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams
+namespace Microsoft.Agents.Extensions.Teams.App
 {
     /// <summary>
     /// Function for feedback loop activities

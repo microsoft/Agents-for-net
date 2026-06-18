@@ -58,14 +58,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var routes = new List<string>();
             var contexts = new List<ITeamsTurnContext>();
 
-            Assert.Same(app, app.OnActivity(ActivityTypes.Message, (turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsActivity(ActivityTypes.Message, (turnContext, _, _) =>
             {
                 routes.Add("string");
                 contexts.Add(turnContext);
                 return Task.CompletedTask;
             }));
 
-            Assert.Same(app, app.OnActivity(new Regex($"^{ActivityTypes.MessageDelete}$"), (turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsActivity(new Regex($"^{ActivityTypes.MessageDelete}$"), (turnContext, _, _) =>
             {
                 routes.Add("regex");
                 contexts.Add(turnContext);
@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var names = new List<string>();
             var contexts = new List<ITeamsTurnContext>();
 
-            Assert.Same(app, app.OnConversationUpdate(ConversationUpdateEvents.MembersAdded, (turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsConversationUpdate(ConversationUpdateEvents.MembersAdded, (turnContext, _, _) =>
             {
                 names.Add(turnContext.Activity.Name);
                 contexts.Add(turnContext);
@@ -166,14 +166,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var messages = new List<string>();
             var contexts = new List<ITeamsTurnContext>();
 
-            Assert.Same(app, app.OnMessage("hello", (turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsMessage("hello", (turnContext, _, _) =>
             {
                 messages.Add(turnContext.Activity.Text);
                 contexts.Add(turnContext);
                 return Task.CompletedTask;
             }));
 
-            Assert.Same(app, app.OnMessage(new Regex("^status \\d+$"), (turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsMessage(new Regex("^status \\d+$"), (turnContext, _, _) =>
             {
                 messages.Add(turnContext.Activity.Text);
                 contexts.Add(turnContext);
@@ -240,21 +240,21 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var names = new List<string>();
             var contexts = new List<ITeamsTurnContext>();
 
-            Assert.Same(app, app.OnEvent("ping", (turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsEvent("ping", (turnContext, _, _) =>
             {
                 names.Add(turnContext.Activity.Name);
                 contexts.Add(turnContext);
                 return Task.CompletedTask;
             }));
 
-            Assert.Same(app, app.OnEvent(new Regex("^status:"), (turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsEvent(new Regex("^status:"), (turnContext, _, _) =>
             {
                 names.Add(turnContext.Activity.Name);
                 contexts.Add(turnContext);
                 return Task.CompletedTask;
             }));
 
-            Assert.Same(app, app.OnEvent((context, _) => Task.FromResult(context.Activity.Text == "selector"), (turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsEvent((context, _) => Task.FromResult(context.Activity.Text == "selector"), (turnContext, _, _) =>
             {
                 names.Add(turnContext.Activity.Name);
                 contexts.Add(turnContext);
@@ -312,14 +312,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var names = new List<string>();
             var contexts = new List<ITeamsTurnContext>();
 
-            Assert.Same(app, app.OnMessageReactionsAdded((turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsMessageReactionsAdded((turnContext, _, _) =>
             {
                 names.Add(turnContext.Activity.Name);
                 contexts.Add(turnContext);
                 return Task.CompletedTask;
             }));
 
-            Assert.Same(app, app.OnMessageReactionsRemoved((turnContext, _, _) =>
+            Assert.Same(app, app.OnTeamsMessageReactionsRemoved((turnContext, _, _) =>
             {
                 names.Add(turnContext.Activity.Name);
                 contexts.Add(turnContext);
@@ -393,14 +393,14 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             var feedbackReplies = new List<string>();
             var contexts = new List<ITeamsTurnContext>();
 
-            Assert.Same(app, app.OnHandoff((turnContext, _, continuation, _) =>
+            Assert.Same(app, app.OnTeamsHandoff((turnContext, _, continuation, _) =>
             {
                 continuations.Add(continuation);
                 contexts.Add(turnContext);
                 return Task.CompletedTask;
             }));
 
-            Assert.Same(app, app.OnFeedbackLoop((turnContext, _, feedbackData, _) =>
+            Assert.Same(app, app.OnTeamsFeedbackLoop((turnContext, _, feedbackData, _) =>
             {
                 feedbackReplies.Add(feedbackData.ReplyToId);
                 contexts.Add(turnContext);
@@ -423,6 +423,363 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 Assert.Equal("invokeResponse", activity.Type);
                 Assert.Equivalent(new InvokeResponse { Status = 200 }, activity.Value);
             });
+        }
+
+        [Fact]
+        public async Task Test_OnTeamsActivity_IgnoresNonMsteamsChannelId()
+        {
+            var teamsActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var otherActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = "webchat",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var teamsTurnContext = new TurnContext(adapter, teamsActivity);
+            var otherTurnContext = new TurnContext(adapter, otherActivity);
+            var app = CreateApp(teamsTurnContext, teamsTurnContext, otherTurnContext);
+            var handled = new List<string>();
+
+            app.OnTeamsActivity(ActivityTypes.Message, (turnContext, _, _) =>
+            {
+                handled.Add(turnContext.Activity.ChannelId);
+                return Task.CompletedTask;
+            });
+
+            await app.OnTurnAsync(teamsTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(otherTurnContext, CancellationToken.None);
+
+            Assert.Single(handled);
+            Assert.Equal(Channels.Msteams, handled[0]);
+        }
+
+        [Fact]
+        public async Task Test_OnTeamsConversationUpdate_IgnoresNonMsteamsChannelId()
+        {
+            var teamsActivity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelId = Channels.Msteams,
+                MembersAdded = new List<ChannelAccount> { new() },
+                Name = "member-added",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var otherActivity = new Activity
+            {
+                Type = ActivityTypes.ConversationUpdate,
+                ChannelId = "webchat",
+                MembersAdded = new List<ChannelAccount> { new() },
+                Name = "member-added",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var teamsTurnContext = new TurnContext(adapter, teamsActivity);
+            var otherTurnContext = new TurnContext(adapter, otherActivity);
+            var app = CreateApp(teamsTurnContext, teamsTurnContext, otherTurnContext);
+            var handled = new List<string>();
+
+            app.OnTeamsConversationUpdate(ConversationUpdateEvents.MembersAdded, (turnContext, _, _) =>
+            {
+                handled.Add(turnContext.Activity.ChannelId);
+                return Task.CompletedTask;
+            });
+
+            await app.OnTurnAsync(teamsTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(otherTurnContext, CancellationToken.None);
+
+            Assert.Single(handled);
+            Assert.Equal(Channels.Msteams, handled[0]);
+        }
+
+        [Fact]
+        public async Task Test_OnTeamsMessage_IgnoresNonMsteamsChannelId()
+        {
+            var teamsActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                ChannelId = Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var otherActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                ChannelId = "webchat",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var teamsTurnContext = new TurnContext(adapter, teamsActivity);
+            var otherTurnContext = new TurnContext(adapter, otherActivity);
+            var app = CreateApp(teamsTurnContext, teamsTurnContext, otherTurnContext);
+            var handled = new List<string>();
+
+            app.OnTeamsMessage("hello", (turnContext, _, _) =>
+            {
+                handled.Add(turnContext.Activity.ChannelId);
+                return Task.CompletedTask;
+            });
+
+            await app.OnTurnAsync(teamsTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(otherTurnContext, CancellationToken.None);
+
+            Assert.Single(handled);
+            Assert.Equal(Channels.Msteams, handled[0]);
+        }
+
+        [Fact]
+        public async Task Test_OnTeamsEvent_IgnoresNonMsteamsChannelId()
+        {
+            var teamsActivity = new Activity
+            {
+                Type = ActivityTypes.Event,
+                Name = "ping",
+                ChannelId = Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var otherActivity = new Activity
+            {
+                Type = ActivityTypes.Event,
+                Name = "ping",
+                ChannelId = "webchat",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var teamsTurnContext = new TurnContext(adapter, teamsActivity);
+            var otherTurnContext = new TurnContext(adapter, otherActivity);
+            var app = CreateApp(teamsTurnContext, teamsTurnContext, otherTurnContext);
+            var handled = new List<string>();
+
+            app.OnTeamsEvent("ping", (turnContext, _, _) =>
+            {
+                handled.Add(turnContext.Activity.ChannelId);
+                return Task.CompletedTask;
+            });
+
+            await app.OnTurnAsync(teamsTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(otherTurnContext, CancellationToken.None);
+
+            Assert.Single(handled);
+            Assert.Equal(Channels.Msteams, handled[0]);
+        }
+
+        [Fact]
+        public async Task Test_OnTeamsMessageReactionsAdded_IgnoresNonMsteamsChannelId()
+        {
+            var teamsActivity = new Activity
+            {
+                Type = ActivityTypes.MessageReaction,
+                ChannelId = Channels.Msteams,
+                ReactionsAdded = new List<MessageReaction> { new() },
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var otherActivity = new Activity
+            {
+                Type = ActivityTypes.MessageReaction,
+                ChannelId = "webchat",
+                ReactionsAdded = new List<MessageReaction> { new() },
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var teamsTurnContext = new TurnContext(adapter, teamsActivity);
+            var otherTurnContext = new TurnContext(adapter, otherActivity);
+            var app = CreateApp(teamsTurnContext, teamsTurnContext, otherTurnContext);
+            var handled = new List<string>();
+
+            app.OnTeamsMessageReactionsAdded((turnContext, _, _) =>
+            {
+                handled.Add(turnContext.Activity.ChannelId);
+                return Task.CompletedTask;
+            });
+
+            await app.OnTurnAsync(teamsTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(otherTurnContext, CancellationToken.None);
+
+            Assert.Single(handled);
+            Assert.Equal(Channels.Msteams, handled[0]);
+        }
+
+        [Fact]
+        public async Task Test_OnTeamsMessageReactionsRemoved_IgnoresNonMsteamsChannelId()
+        {
+            var teamsActivity = new Activity
+            {
+                Type = ActivityTypes.MessageReaction,
+                ChannelId = Channels.Msteams,
+                ReactionsRemoved = new List<MessageReaction> { new() },
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var otherActivity = new Activity
+            {
+                Type = ActivityTypes.MessageReaction,
+                ChannelId = "webchat",
+                ReactionsRemoved = new List<MessageReaction> { new() },
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var teamsTurnContext = new TurnContext(adapter, teamsActivity);
+            var otherTurnContext = new TurnContext(adapter, otherActivity);
+            var app = CreateApp(teamsTurnContext, teamsTurnContext, otherTurnContext);
+            var handled = new List<string>();
+
+            app.OnTeamsMessageReactionsRemoved((turnContext, _, _) =>
+            {
+                handled.Add(turnContext.Activity.ChannelId);
+                return Task.CompletedTask;
+            });
+
+            await app.OnTurnAsync(teamsTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(otherTurnContext, CancellationToken.None);
+
+            Assert.Single(handled);
+            Assert.Equal(Channels.Msteams, handled[0]);
+        }
+
+        [Fact]
+        public async Task Test_OnTeamsHandoff_IgnoresNonMsteamsChannelId()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var teamsActivity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "handoff/action",
+                Value = new { Continuation = "continue-token" },
+                Id = "handoff-id",
+                ChannelId = Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var otherActivity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "handoff/action",
+                Value = new { Continuation = "continue-token" },
+                Id = "handoff-id",
+                ChannelId = "webchat",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+
+            var teamsTurnContext = new TurnContext(adapter, teamsActivity);
+            var otherTurnContext = new TurnContext(adapter, otherActivity);
+            var app = CreateApp(teamsTurnContext, teamsTurnContext, otherTurnContext);
+            var handled = new List<string>();
+
+            app.OnTeamsHandoff((turnContext, _, _, _) =>
+            {
+                handled.Add(turnContext.Activity.ChannelId);
+                return Task.CompletedTask;
+            });
+
+            await app.OnTurnAsync(teamsTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(otherTurnContext, CancellationToken.None);
+
+            Assert.Single(handled);
+            Assert.Equal(Channels.Msteams, handled[0]);
+        }
+
+        [Fact]
+        public async Task Test_OnTeamsFeedbackLoop_IgnoresNonMsteamsChannelId()
+        {
+            var sentActivities = new List<IActivity>();
+            void CaptureSend(IActivity[] activities)
+            {
+                sentActivities.AddRange(activities);
+            }
+
+            var adapter = new SimpleAdapter(CaptureSend);
+            var feedbackValue = ProtocolJsonSerializer.ToJsonElements(new
+            {
+                actionName = "feedback",
+                actionValue = new
+                {
+                    reaction = "like",
+                    feedback = "great"
+                }
+            });
+            var teamsActivity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "message/submitAction",
+                ReplyToId = "reply-id",
+                Value = feedbackValue,
+                ChannelId = Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+            var otherActivity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "message/submitAction",
+                ReplyToId = "reply-id",
+                Value = feedbackValue,
+                ChannelId = "webchat",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            };
+
+            var teamsTurnContext = new TurnContext(adapter, teamsActivity);
+            var otherTurnContext = new TurnContext(adapter, otherActivity);
+            var app = CreateApp(teamsTurnContext, teamsTurnContext, otherTurnContext);
+            var handled = new List<string>();
+
+            app.OnTeamsFeedbackLoop((turnContext, _, _, _) =>
+            {
+                handled.Add(turnContext.Activity.ChannelId);
+                return Task.CompletedTask;
+            });
+
+            await app.OnTurnAsync(teamsTurnContext, CancellationToken.None);
+            await app.OnTurnAsync(otherTurnContext, CancellationToken.None);
+
+            Assert.Single(handled);
+            Assert.Equal(Channels.Msteams, handled[0]);
         }
 
         private static AgentApplication CreateApp(ITurnContext referenceTurnContext, params ITurnContext[] turnContexts)

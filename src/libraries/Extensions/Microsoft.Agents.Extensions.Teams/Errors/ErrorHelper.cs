@@ -1,4 +1,6 @@
-﻿
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Extensions.Teams.Errors
