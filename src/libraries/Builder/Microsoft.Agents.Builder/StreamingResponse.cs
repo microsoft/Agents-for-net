@@ -482,7 +482,17 @@ namespace Microsoft.Agents.Builder
             // Add Attachments if there are any
             if (Attachments != null && Attachments.Count > 0)
             {
-                activity.Attachments = Attachments;
+                if (activity.Attachments == null)
+                {
+                    activity.Attachments = Attachments;
+                }
+                else if (!ReferenceEquals(activity.Attachments, Attachments))
+                {
+                    foreach (var attachment in Attachments)
+                    {
+                        activity.Attachments.Add(attachment);
+                    }
+                }
             }
 
             return activity;
