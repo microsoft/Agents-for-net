@@ -104,6 +104,11 @@ namespace Microsoft.Agents.Builder
         public SensitivityUsageInfo? SensitivityLabel { get; set; }
 
         /// <summary>
+        /// Attachments to be included in the final message.  This is only used for the final message, and not for intermediate messages.
+        /// </summary>
+        public List<Attachment>? Attachments { get; set; } = [];
+
+        /// <summary>
         /// The interval in milliseconds at which intermediate messages are sent.
         /// </summary>
         /// <remarks>
@@ -169,6 +174,16 @@ namespace Microsoft.Agents.Builder
 
             _context = turnContext;
             SetDefaults(turnContext);
+        }
+
+        /// <summary>
+        /// Adds an attachment to the collection of attachments for the final message.
+        /// </summary>
+        /// <param name="attachment">The attachment to add. Must not be <see langword="null"/>.</param>
+        public void AddAttachment(Attachment attachment)
+        {
+            Attachments ??= [];
+            Attachments.Add(attachment);
         }
 
         /// <summary>
@@ -462,6 +477,12 @@ namespace Microsoft.Agents.Builder
                 }
 
                 activity.Entities.Add(entity);
+            }
+
+            // Add Attachments if there are any
+            if (Attachments != null && Attachments.Count > 0)
+            {
+                activity.Attachments = Attachments;
             }
 
             return activity;
