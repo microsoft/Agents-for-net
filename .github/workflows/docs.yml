@@ -1,0 +1,76 @@
+name: Generate API Documentation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/libraries/**"
+      - "docs/**"
+      - "docfx/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/libraries/**"
+      - "docs/**"
+      - "docfx/**"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install DocFX
+        run: dotnet tool install -g docfx
+
+      - name: Copy conceptual docs
+        run: |
+          cp docs/architecture.md docfx/articles/architecture.md
+          cp docs/cloudadapter-sequence-diagram.md docfx/articles/cloudadapter-sequence-diagram.md
+          cp docs/full-cloudadapter-sequence-diagram.md docfx/articles/full-cloudadapter-sequence-diagram.md
+          cp docs/oauth-internal-sequence-diagram.md docfx/articles/oauth-internal-sequence-diagram.md
+          cp docs/proactive-sequence-diagram.md docfx/articles/proactive-sequence-diagram.md
+          cp docs/streaming-response-sequence-diagram.md docfx/articles/streaming-response-sequence-diagram.md
+          cp docs/teams-sso-sequence-diagram.md docfx/articles/teams-sso-sequence-diagram.md
+
+      - name: Restore dependencies
+        run: dotnet restore AgentSdk.proj
+
+      - name: Build DocFX metadata and site
+        run: docfx docfx/docfx.json
+
+      - name: Upload artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docfx/_site
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

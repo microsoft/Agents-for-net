@@ -1,0 +1,15 @@
+apiRules:
+  - exclude:
+      uidRegex: ^Microsoft\.Agents\.Core\.Analyzers
+      type: Namespace
+  - exclude:
+      uidRegex: \.Internal($|\.)
+      type: Namespace
+  - exclude:
+      hasAttribute:
+        uid: System.ComponentModel.EditorBrowsableAttribute
+        ctorArguments:
+          - System.ComponentModel.EditorBrowsableState.Never
+  - include:
+      uidRegex: ^Microsoft\.Agents
+      type: Namespace

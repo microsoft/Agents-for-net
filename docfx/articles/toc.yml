@@ -1,0 +1,14 @@
+- name: Architecture Overview
+  href: architecture.md
+- name: CloudAdapter Pipeline
+  href: cloudadapter-sequence-diagram.md
+- name: CloudAdapter Pipeline (Full)
+  href: full-cloudadapter-sequence-diagram.md
+- name: OAuth Internal Flow
+  href: oauth-internal-sequence-diagram.md
+- name: Proactive Messaging
+  href: proactive-sequence-diagram.md
+- name: Streaming Response
+  href: streaming-response-sequence-diagram.md
+- name: Teams SSO
+  href: teams-sso-sequence-diagram.md

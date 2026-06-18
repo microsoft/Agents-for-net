@@ -1,0 +1,79 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "src/libraries/Core/Microsoft.Agents.Core/Microsoft.Agents.Core.csproj",
+            "src/libraries/Core/Microsoft.Agents.Authentication/Microsoft.Agents.Authentication.csproj",
+            "src/libraries/Builder/Microsoft.Agents.Builder/Microsoft.Agents.Builder.csproj",
+            "src/libraries/Builder/Microsoft.Agents.Builder.Dialogs/Microsoft.Agents.Builder.Dialogs.csproj",
+            "src/libraries/Builder/Microsoft.Agents.Builder.Testing/Microsoft.Agents.Builder.Testing.csproj",
+            "src/libraries/Hosting/AspNetCore/Microsoft.Agents.Hosting.AspNetCore.csproj",
+            "src/libraries/Client/Microsoft.Agents.Client/Microsoft.Agents.Client.csproj",
+            "src/libraries/Client/Microsoft.Agents.Connector/Microsoft.Agents.Connector.csproj",
+            "src/libraries/Client/Microsoft.Agents.CopilotStudio.Client/Microsoft.Agents.CopilotStudio.Client.csproj",
+            "src/libraries/Authentication/Authentication.Msal/Microsoft.Agents.Authentication.Msal.csproj",
+            "src/libraries/Storage/Microsoft.Agents.Storage/Microsoft.Agents.Storage.csproj",
+            "src/libraries/Storage/Microsoft.Agents.Storage.Blobs/Microsoft.Agents.Storage.Blobs.csproj",
+            "src/libraries/Storage/Microsoft.Agents.Storage.CosmosDb/Microsoft.Agents.Storage.CosmosDb.csproj",
+            "src/libraries/Storage/Microsoft.Agents.Storage.Transcript/Microsoft.Agents.Storage.Transcript.csproj"
+          ],
+          "src": ".."
+        }
+      ],
+      "dest": "api",
+      "properties": {
+        "TargetFramework": "net8.0"
+      },
+      "filter": "filterConfig.yml"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "api/**.yml",
+          "api/index.md"
+        ]
+      },
+      {
+        "files": [
+          "articles/**.md",
+          "articles/**/toc.yml",
+          "toc.yml",
+          "*.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "images/**"
+        ]
+      }
+    ],
+    "globalMetadataFiles": [],
+    "fileMetadataFiles": [],
+    "template": [
+      "default",
+      "modern"
+    ],
+    "globalMetadata": {
+      "_appTitle": "Microsoft 365 Agents SDK for .NET",
+      "_appName": "Microsoft 365 Agents SDK",
+      "_appFooter": "Microsoft 365 Agents SDK for .NET — API Documentation",
+      "_enableSearch": true,
+      "_enableNewTab": true,
+      "_disableContribution": false,
+      "_gitContribute": {
+        "repo": "https://github.com/microsoft/Agents-for-net",
+        "branch": "main"
+      }
+    },
+    "dest": "_site",
+    "xrefService": [
+      "https://xref.docs.microsoft.com/query?uid={uid}"
+    ]
+  }
+}

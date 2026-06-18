@@ -1,0 +1,6 @@
+- name: API Reference
+  href: api/
+- name: Architecture & Concepts
+  href: articles/
+- name: Getting Started
+  href: https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/
