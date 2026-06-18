@@ -10,6 +10,7 @@ using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams;
+using Microsoft.Agents.Extensions.Teams.App;
 using Microsoft.Agents.Extensions.Teams.TeamsChannels;
 using Microsoft.Agents.Extensions.Teams.TeamsTeams;
 using System;
@@ -126,8 +127,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         await turnContext.SendActivityAsync(card.ToMessage(), cancellationToken);
     }
 
-    [MessageRoute("targeted")]
-    public async Task SendTargetedMessagesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [TeamsMessageRoute("targeted")]
+    public async Task SendTargetedMessagesAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var api = TeamsExtension.GetTeamsClient(turnContext);
         var members = await api.Conversations.Members.GetAsync(turnContext.Activity.Conversation.Id, cancellationToken);
