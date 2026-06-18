@@ -55,6 +55,11 @@ namespace Microsoft.Agents.Builder.App
             _connections = connections;
         }
 
+        public Task<string> GetAgenticInstanceTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            return GetAgenticInstanceTokenAsync(turnContext, null, cancellationToken);
+        }
+
         public async Task<string> GetAgenticInstanceTokenAsync(ITurnContext turnContext, IList<string> scopes = null, CancellationToken cancellationToken = default)
         {
             if (!IsAgenticRequest(turnContext))
