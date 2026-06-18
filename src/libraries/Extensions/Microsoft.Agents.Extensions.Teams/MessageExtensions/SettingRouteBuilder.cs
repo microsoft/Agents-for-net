@@ -14,23 +14,23 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// Provides a builder for configuring settings routes in an AgentApplication.
 /// </summary>
 /// <remarks>
-/// Use <see cref="ConfigureSettingsRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="SettingRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Setting"/>.
 /// </remarks>
-public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsRouteBuilder>
+public class SettingRouteBuilder : RouteBuilderBase<SettingRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the ConfigureSettingsRouteBuilder class for constructing route definitions.
+    /// Creates a new instance of the SettingRouteBuilder class for constructing route definitions.
     /// </summary>
-    /// <returns>A ConfigureSettingsRouteBuilder instance that can be used to configure and build routes.</returns>
-    public static ConfigureSettingsRouteBuilder Create()
+    /// <returns>A SettingRouteBuilder instance that can be used to configure and build routes.</returns>
+    public static SettingRouteBuilder Create()
     {
-        var builder = Activator.CreateInstance<ConfigureSettingsRouteBuilder>();
+        var builder = Activator.CreateInstance<SettingRouteBuilder>();
         return builder;
     }
 
-    public ConfigureSettingsRouteBuilder() : base()
+    public SettingRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
     }
@@ -42,7 +42,7 @@ public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsR
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the action's payload.</remarks>
     /// <returns>The current instance of ConfigureSettingsRouteBuilder, enabling method chaining.</returns>
-    public ConfigureSettingsRouteBuilder WithHandler(ConfigureSettingsHandler handler)
+    public SettingRouteBuilder WithHandler(SettingHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
@@ -61,8 +61,8 @@ public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsR
     /// maintaining consistency with the route's initial setup.</remarks>
     /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
     /// route is always configured for Invoke routing.</param>
-    /// <returns>The current instance of <see cref="ConfigureSettingsRouteBuilder"/> with Invoke routing enabled.</returns>
-    public override ConfigureSettingsRouteBuilder AsInvoke(bool isInvoke = true)
+    /// <returns>The current instance of <see cref="SettingRouteBuilder"/> with Invoke routing enabled.</returns>
+    public override SettingRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;
     }
@@ -71,7 +71,7 @@ public class ConfigureSettingsRouteBuilder : RouteBuilderBase<ConfigureSettingsR
     {
         if (_route.Handler == null)
         {
-            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, typeof(ConfigureSettingsRouteBuilder).Name, "Handler");
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, typeof(SettingRouteBuilder).Name, "Handler");
         }
 
         _route.ChannelId ??= Channels.Msteams;

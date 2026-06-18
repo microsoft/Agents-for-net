@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// The method must match the <see cref="QueryHandler"/> delegate signature.
 /// <code>
 /// [QueryRoute("searchProducts")]
-/// public async Task&lt;Response&gt; OnSearchProductsAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnSearchProductsAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
 /// {
 ///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
 ///     var items = await _catalog.SearchAsync(keyword, cancellationToken);
@@ -61,7 +61,7 @@ public class QueryRouteAttribute(string commandId = null, string commandIdPatter
 /// The method must match the <see cref="QueryLinkHandler"/> delegate signature.
 /// <code>
 /// [QueryLinkRoute]
-/// public async Task&lt;Response&gt; OnQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
 /// {
 ///     var preview = await _service.FetchPreviewAsync(url, cancellationToken);
 ///     var attachment = preview.ToCard().ToMessagingExtensionAttachment();
@@ -93,7 +93,7 @@ public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = R
 /// The method must match the <see cref="QueryLinkHandler"/> delegate signature.
 /// <code>
 /// [AnonQueryLinkRoute]
-/// public async Task&lt;Response&gt; OnAnonQueryLinkAsync(ITurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnAnonQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
 /// {
 ///     var preview = await _service.FetchPreviewAsync(url, cancellationToken);
 ///     var attachment = preview.ToCard().ToMessagingExtensionAttachment();
@@ -122,10 +122,10 @@ public class AnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension query URL setting events in Teams.
-/// The method must match the <see cref="QueryUrlSettingHandler"/> delegate signature.
+/// The method must match the <see cref="QuerySettingUrlHandler"/> delegate signature.
 /// <code>
-/// [QueryUrlSettingRoute]
-/// public Task&lt;Response&gt; OnQueryUrlSettingAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+/// [QuerySettingUrlRoute]
+/// public Task&lt;Response&gt; OnQuerySettingUrlAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     return Task.FromResult(new Response
 ///     {
@@ -140,18 +140,18 @@ public class AnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank
 ///     });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnQueryUrlSetting"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="MessageExtension.OnQuerySettingUrl"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class QuerySettingUrlRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<QueryUrlSettingHandler>(app, method);
-        var builder = QueryUrlSettingRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<QuerySettingUrlHandler>(app, method);
+        var builder = QuerySettingUrlRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -165,7 +165,7 @@ public class QueryUrlSettingRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The method must match the <see cref="FetchActionHandler"/> delegate signature.
 /// <code>
 /// [FetchActionRoute("myCommand")]
-/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
+/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
 /// {
 ///     return Task.FromResult(new ActionResponse
 ///     {
@@ -214,7 +214,7 @@ public class FetchActionRouteAttribute(string commandId = null, string commandId
 /// The method must match the <see cref="MessagePreviewEditHandler"/> delegate signature.
 /// <code>
 /// [MessagePreviewEditRoute("composeCmd")]
-/// public Task&lt;Response&gt; OnMessagePreviewEditAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
+/// public Task&lt;Response&gt; OnMessagePreviewEditAsync(ITeamsTurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
 /// {
 ///     // Re-open the compose form populated with the draft content
 ///     var draft = activityPreview.Attachments?.FirstOrDefault()?.Content;
@@ -258,7 +258,7 @@ public class MessagePreviewEditRouteAttribute(string commandId = null, string co
 /// The method must match the <see cref="MessagePreviewSendHandler"/> delegate signature.
 /// <code>
 /// [MessagePreviewSendRoute("composeCmd")]
-/// public async Task OnMessagePreviewSendAsync(ITurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
+/// public async Task OnMessagePreviewSendAsync(ITeamsTurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
 /// {
 ///     // Post the confirmed message to a channel or external system
 ///     var content = activityPreview.Attachments?.FirstOrDefault()?.Content;
@@ -299,10 +299,10 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension configure settings events in Teams.
-/// The method must match the <see cref="ConfigureSettingsHandler"/> delegate signature.
+/// The method must match the <see cref="SettingHandler"/> delegate signature.
 /// <code>
-/// [ConfigureSettingsRoute]
-/// public Task&lt;Response&gt; OnConfigureSettingsAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
+/// [SettingRoute]
+/// public Task&lt;Response&gt; OnSettingAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
 /// {
 ///     // Persist user settings and return an updated result
 ///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
@@ -310,18 +310,18 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
 ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.Config } });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnConfigureSettings"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="MessageExtension.OnSetting"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class SettingRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<ConfigureSettingsHandler>(app, method);
-        var builder = ConfigureSettingsRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<SettingHandler>(app, method);
+        var builder = SettingRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
         RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
         app.AddRoute(builder.Build());
     }
@@ -336,7 +336,7 @@ public class ConfigureSettingsRouteAttribute(bool isAgenticOnly = false, ushort 
 /// the third parameter must be <see cref="Microsoft.Teams.Api.MessageExtensions.Action"/>.
 /// <code>
 /// [SubmitActionRoute("createTask")]
-/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
 /// {
 ///     var task = await _taskService.CreateAsync(action.Data["title"]?.ToString(), action.Data["assignedTo"]?.ToString(), cancellationToken);
 ///     var card = task.ToAdaptiveCard().ToMessagingExtensionAttachment();
@@ -385,7 +385,7 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
 /// public record ProductSummary(string Id, string Name);
 ///
 /// [SelectItemRoute]
-/// public async Task&lt;Response&gt; OnSelectProductAsync(ITurnContext turnContext, ITurnState turnState, ProductSummary item, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnSelectProductAsync(ITeamsTurnContext turnContext, ITurnState turnState, ProductSummary item, CancellationToken cancellationToken)
 /// {
 ///     var details = await _catalog.GetDetailsAsync(item.Id, cancellationToken);
 ///     var card = details.ToHeroCard().ToMessagingExtensionAttachment();
@@ -422,7 +422,7 @@ public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 /// public record ApprovalAction(string ItemId, string Decision);
 ///
 /// [CardButtonClickedRoute]
-/// public async Task OnApprovalClickedAsync(ITurnContext turnContext, ITurnState turnState, ApprovalAction cardData, CancellationToken cancellationToken)
+/// public async Task OnApprovalClickedAsync(ITeamsTurnContext turnContext, ITurnState turnState, ApprovalAction cardData, CancellationToken cancellationToken)
 /// {
 ///     await _approvalService.RecordAsync(cardData.ItemId, cardData.Decision, cancellationToken);
 ///     await turnContext.SendActivityAsync($"Decision '{cardData.Decision}' recorded.", cancellationToken: cancellationToken);

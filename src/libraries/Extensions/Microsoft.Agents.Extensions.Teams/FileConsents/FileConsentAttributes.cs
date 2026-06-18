@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.Teams.FileConsents;
 /// Decorate a method with this attribute to register it as a handler for Teams file consent accept invocations.
 /// <code>
 /// [FileConsentAcceptRoute]
-/// public async Task OnFileConsentAcceptAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
+/// public async Task OnFileConsentAcceptAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
 /// {
 ///     using var fileStream = File.OpenRead("report.txt");
 ///     var fileContent = new StreamContent(fileStream);
@@ -54,7 +54,7 @@ public class FileConsentAcceptRouteAttribute(bool isAgenticOnly = false, ushort 
 /// Decorate a method with this attribute to register it as a handler for Teams file consent decline invocations.
 /// <code>
 /// [FileConsentDeclineRoute]
-/// public Task OnFileConsentDeclineAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
+/// public Task OnFileConsentDeclineAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
 /// {
 ///     return turnContext.SendActivityAsync("File upload was declined.", cancellationToken: cancellationToken);
 /// }

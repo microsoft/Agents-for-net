@@ -551,13 +551,13 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
 
         [QueryLinkRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(
-            ITurnContext turnContext,
+            ITeamsTurnContext turnContext,
             ITurnState turnState,
-            string url,
+            Microsoft.Teams.Api.AppBasedQueryLink query,
             CancellationToken cancellationToken)
         {
             HandlerCalled = true;
-            Assert.Equal("https://example.com", url);
+            Assert.Equal("https://example.com", query.Url);
             var response = new Microsoft.Teams.Api.MessageExtensions.Response();
             return Task.FromResult(response);
         }
@@ -574,7 +574,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [QueryUrlSettingRoute]
+        [QuerySettingUrlRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryUrlSettingAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -597,7 +597,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [ConfigureSettingsRoute]
+        [SettingRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnConfigureSettingsAsync(
             ITurnContext turnContext,
             ITurnState turnState,

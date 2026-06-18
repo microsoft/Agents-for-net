@@ -5,20 +5,20 @@ using Microsoft.Agents.Builder.App;
 using System;
 using System.Reflection;
 
-namespace Microsoft.Agents.Extensions.Teams.Configurations;
+namespace Microsoft.Agents.Extensions.Teams.Config;
 
 /// <summary>
 /// Attribute to define a route that handles Teams config fetch invocations.
-/// The decorated method must match the <see cref="ConfigurationHandler"/> delegate signature —
+/// The decorated method must match the <see cref="ConfigHandler"/> delegate signature —
 /// the third parameter must be <see langword="object"/> and the return type must be
 /// <c>Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;</c>.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams config fetch invocations.
 /// <code>
-/// [ConfigurationFetchRoute]
+/// [ConfigFetchRoute]
 /// public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigFetchAsync(
-///     ITurnContext turnContext,
+///     ITeamsTurnContext turnContext,
 ///     ITurnState turnState,
 ///     object configData,
 ///     CancellationToken cancellationToken)
@@ -26,19 +26,19 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 ///     return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse { /* ... */ });
 /// }
 /// </code>
-/// Alternatively, <see cref="Configuration.OnConfigFetch"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="TeamsConfig.OnConfigFetch"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ConfigurationFetchRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class ConfigFetchRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<ConfigurationHandler>(app, method);
-        var builder = ConfigurationFetchRouteBuilder.Create()
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<ConfigHandler>(app, method);
+        var builder = ConfigFetchRouteBuilder.Create()
             .WithHandler(handler)
             .AsAgentic(isAgenticOnly)
             .WithOrderRank(rank);
@@ -49,16 +49,16 @@ public class ConfigurationFetchRouteAttribute(bool isAgenticOnly = false, ushort
 
 /// <summary>
 /// Attribute to define a route that handles Teams config submit invocations.
-/// The decorated method must match the <see cref="ConfigurationHandler"/> delegate signature —
+/// The decorated method must match the <see cref="ConfigHandler"/> delegate signature —
 /// the third parameter must be <see langword="object"/> and the return type must be
 /// <c>Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;</c>.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams config submit invocations.
 /// <code>
-/// [ConfigurationSubmitRoute]
+/// [ConfigSubmitRoute]
 /// public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigSubmitAsync(
-///     ITurnContext turnContext,
+///     ITeamsTurnContext turnContext,
 ///     ITurnState turnState,
 ///     object configData,
 ///     CancellationToken cancellationToken)
@@ -66,19 +66,19 @@ public class ConfigurationFetchRouteAttribute(bool isAgenticOnly = false, ushort
 ///     return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse { /* ... */ });
 /// }
 /// </code>
-/// Alternatively, <see cref="Configuration.OnConfigSubmit"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="TeamsConfig.OnConfigSubmit"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ConfigurationSubmitRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class ConfigSubmitRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<ConfigurationHandler>(app, method);
-        var builder = ConfigurationSubmitRouteBuilder.Create()
+        var handler = RouteAttributeHelper.CreateHandlerDelegate<ConfigHandler>(app, method);
+        var builder = ConfigSubmitRouteBuilder.Create()
             .WithHandler(handler)
             .AsAgentic(isAgenticOnly)
             .WithOrderRank(rank);

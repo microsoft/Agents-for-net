@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams;
 /// public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 /// {
 ///     [ChannelCreatedRoute]
-///     public async Task OnChannelCreatedAsync(ITurnContext turnContext, ITurnState turnState,
+///     public async Task OnChannelCreatedAsync(ITeamsTurnContext turnContext, ITurnState turnState,
 ///         ChannelInfo channelInfo, CancellationToken cancellationToken)
 ///     {
 ///         // Teams property is available here

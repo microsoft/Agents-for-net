@@ -6,7 +6,7 @@ using Microsoft.Agents.Builder.State;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.Teams.Configurations;
+namespace Microsoft.Agents.Extensions.Teams.Config;
 
 /// <summary>
 /// Function for handling config events.
@@ -17,4 +17,4 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A <see cref="Microsoft.Teams.Api.Config.ConfigResponse"/>.</returns>
-public delegate Task<Microsoft.Teams.Api.Config.ConfigResponse> ConfigurationHandler(ITeamsTurnContext turnContext, ITurnState turnState, object configData, CancellationToken cancellationToken);
+public delegate Task<Microsoft.Teams.Api.Config.ConfigResponse> ConfigHandler(ITeamsTurnContext turnContext, ITurnState turnState, object configData, CancellationToken cancellationToken);

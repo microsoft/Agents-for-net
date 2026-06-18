@@ -46,7 +46,7 @@ public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuil
         _route.Handler = async (ctx, ts, ct) =>
         {
             AppBasedQueryLink? value = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(ctx.Activity.Value);
-            var response = await handler(new TeamsTurnContext(ctx), ts, value?.Url, ct).ConfigureAwait(false);
+            var response = await handler(new TeamsTurnContext(ctx), ts, value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
         return this;

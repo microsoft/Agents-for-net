@@ -53,7 +53,7 @@ public class TaskModule
     /// <code>
     /// [TaskFetchRoute("simple_form")]
     /// public Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSimpleFormFetchAsync(
-    ///     ITurnContext turnContext, ITurnState turnState,
+    ///     ITeamsTurnContext turnContext, ITurnState turnState,
     ///     Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     /// {
     ///     // Simple Adaptive Card form.  The submit action data includes "task": "simple_form"
@@ -124,7 +124,7 @@ public class TaskModule
     /// <code>
     /// [TaskSubmitRoute("simple_form")]
     /// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSimpleFormSubmitAsync(
-    ///     ITurnContext turnContext, ITurnState turnState,
+    ///     ITeamsTurnContext turnContext, ITurnState turnState,
     ///     Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     /// {
     ///     var name = request.GetDataString("name", "Unknown");

@@ -5,7 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.Configurations;
+using Microsoft.Agents.Extensions.Teams.Config;
 using Microsoft.Agents.Extensions.Teams.FileConsents;
 using Microsoft.Agents.Extensions.Teams.Meetings;
 using Microsoft.Agents.Extensions.Teams.MessageExtensions;
@@ -51,7 +51,7 @@ public class TeamsAgentExtension : AgentExtension
         Teams = new TeamsTeam(agentApplication, ChannelId);
         FileConsent = new FileConsent(agentApplication, ChannelId);
         Messages = new Message(agentApplication, ChannelId);
-        Configuration = new Configuration(agentApplication, ChannelId);
+        Config = new TeamsConfig(agentApplication, ChannelId);
 
         _agentApplication = agentApplication;
         _agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
@@ -104,9 +104,9 @@ public class TeamsAgentExtension : AgentExtension
     public Message Messages { get; }
 
     /// <summary>
-    /// Teams Configuration features.
+    /// Teams config features.
     /// </summary>
-    public Configuration Configuration { get; }
+    public TeamsConfig Config { get; }
 
     /// <summary>
     /// Gets the Teams API client for the specified turn context.

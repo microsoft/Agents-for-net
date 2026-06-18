@@ -4,24 +4,24 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 
-namespace Microsoft.Agents.Extensions.Teams.Configurations;
+namespace Microsoft.Agents.Extensions.Teams.Config;
 
 /// <summary>
-/// Provides routing for Microsoft Teams bot configuration interactions.
+/// Provides routing for Microsoft Teams bot config interactions.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Teams allows users to configure a bot directly from its description card by clicking the
-/// settings (gear) icon. The configuration flow is:
+/// settings (gear) icon. The config flow is:
 /// </para>
 /// <list type="number">
 ///   <item>Register fetch and submit handlers via <see cref="OnConfigFetch"/> and <see cref="OnConfigSubmit"/>.</item>
 ///   <item>On fetch, return a <see cref="Microsoft.Teams.Api.Config.ConfigTaskResponse"/> containing a
 ///     <see cref="Microsoft.Teams.Api.TaskModules.ContinueTask"/> with a <see cref="Microsoft.Teams.Api.TaskModules.TaskInfo"/>
-///     that holds the configuration adaptive card.</item>
+///     that holds the config adaptive card.</item>
 ///   <item>When the user submits the form, the submit handler receives the form data via <c>configData</c>.
 ///     Return a <see cref="Microsoft.Teams.Api.Config.ConfigTaskResponse"/> containing a
-///     <see cref="Microsoft.Teams.Api.TaskModules.MessageTask"/> to close the configuration pane.</item>
+///     <see cref="Microsoft.Teams.Api.TaskModules.MessageTask"/> to close the config pane.</item>
 /// </list>
 /// <example>
 /// The following example handles fetch and submit using route attributes.
@@ -29,9 +29,9 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 /// [TeamsExtension]
 /// public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 /// {
-///     [ConfigurationFetchRoute]
+///     [ConfigFetchRoute]
 ///     public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigFetchAsync(
-///         ITurnContext turnContext,
+///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
 ///         object configData,
 ///         CancellationToken cancellationToken)
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 ///                 "type": "AdaptiveCard",
 ///                 "version": "1.4",
 ///                 "body": [
-///                     { "type": "TextBlock", "text": "Bot Configuration", "weight": "bolder" },
+///                     { "type": "TextBlock", "text": "Bot Config", "weight": "bolder" },
 ///                     { "type": "Input.Text", "id": "setting", "label": "Setting", "placeholder": "Enter a value" }
 ///                 ],
 ///                 "actions": [
@@ -67,16 +67,16 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 ///         return Task.FromResult&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;(response);
 ///     }
 ///
-///     [ConfigurationSubmitRoute]
+///     [ConfigSubmitRoute]
 ///     public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigSubmitAsync(
-///         ITurnContext turnContext,
+///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
 ///         object configData,
 ///         CancellationToken cancellationToken)
 ///     {
 ///         // configData contains the submitted form values
 ///         var response = new Microsoft.Teams.Api.Config.ConfigTaskResponse(
-///             new Microsoft.Teams.Api.TaskModules.MessageTask("Configuration saved!"));
+///             new Microsoft.Teams.Api.TaskModules.MessageTask("Config saved!"));
 ///
 ///         return Task.FromResult&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;(response);
 ///     }
@@ -84,12 +84,12 @@ namespace Microsoft.Agents.Extensions.Teams.Configurations;
 /// </code>
 /// </example>
 /// </remarks>
-public class Configuration
+public class TeamsConfig
 {
     private readonly AgentApplication _app;
     private readonly ChannelId _channelId;
 
-    internal Configuration(AgentApplication app, ChannelId channelId)
+    internal TeamsConfig(AgentApplication app, ChannelId channelId)
     {
         _app = app;
         _channelId = channelId;
@@ -98,14 +98,14 @@ public class Configuration
     /// <summary>
     /// Handles config fetch events for Microsoft Teams.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="ConfigurationFetchRouteAttribute"/> can be used to decorate a <see cref="ConfigurationHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="ConfigFetchRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Configuration OnConfigFetch(ConfigurationHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public TeamsConfig OnConfigFetch(ConfigHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(ConfigurationFetchRouteBuilder.Create()
+        _app.AddRoute(ConfigFetchRouteBuilder.Create()
             .WithHandler(handler)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)
@@ -117,14 +117,14 @@ public class Configuration
     /// <summary>
     /// Handles config submit events for Microsoft Teams.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="ConfigurationSubmitRouteAttribute"/> can be used to decorate a <see cref="ConfigurationHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="ConfigSubmitRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Configuration OnConfigSubmit(ConfigurationHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public TeamsConfig OnConfigSubmit(ConfigHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(ConfigurationSubmitRouteBuilder.Create()
+        _app.AddRoute(ConfigSubmitRouteBuilder.Create()
             .WithHandler(handler)
             .WithChannelId(_channelId)
             .WithOrderRank(rank)

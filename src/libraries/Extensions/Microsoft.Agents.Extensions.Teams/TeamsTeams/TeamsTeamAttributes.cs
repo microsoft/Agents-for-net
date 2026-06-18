@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Teams.TeamsTeams;
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamArchivedRoute]
-/// public async Task OnTeamArchivedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamArchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team archived event
 /// }
@@ -46,7 +46,7 @@ public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamUnarchivedRoute]
-/// public async Task OnTeamUnarchivedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamUnarchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team unarchived event
 /// }
@@ -77,7 +77,7 @@ public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamDeletedRoute]
-/// public async Task OnTeamDeletedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team deleted event
 /// }
@@ -108,7 +108,7 @@ public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamHardDeletedRoute]
-/// public async Task OnTeamHardDeletedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamHardDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team hard deleted event
 /// }
@@ -139,7 +139,7 @@ public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamRenamedRoute]
-/// public async Task OnTeamRenamedAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team renamed event
 /// }
@@ -170,7 +170,7 @@ public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamRestoredRoute]
-/// public async Task OnTeamRestoredAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team restored event
 /// }
@@ -203,7 +203,7 @@ public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamUpdateRoute]
-/// public async Task OnAnyTeamEventAsync(ITurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnAnyTeamEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle any team update event
 /// }

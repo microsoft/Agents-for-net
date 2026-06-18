@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Teams.Messages;
 /// <param name="cancellationToken">A cancellation token that can be used by other objects
 /// or threads to receive notice of cancellation.</param>
 /// <returns>A task that represents the work queued to execute.</returns>
-public delegate Task O365ConnectorCardActionHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken);
+public delegate Task ExecuteActionRouteHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken);
 
 /// <summary>
 /// Function for handling read receipt events.

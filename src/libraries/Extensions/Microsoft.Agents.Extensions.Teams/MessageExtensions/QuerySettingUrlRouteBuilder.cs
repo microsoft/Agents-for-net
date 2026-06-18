@@ -13,23 +13,23 @@ namespace Microsoft.Agents.Extensions.Teams.MessageExtensions;
 /// Provides a builder for configuring query URL setting routes in an AgentApplication.
 /// </summary>
 /// <remarks>
-/// Use <see cref="QueryUrlSettingRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="QuerySettingUrlRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.QuerySettingUrl"/>.
 /// </remarks>
-public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRouteBuilder>
+public class QuerySettingUrlRouteBuilder : RouteBuilderBase<QuerySettingUrlRouteBuilder>
 {
     /// <summary>
     /// Creates a new instance of the QueryUrlSettingRouteBuilder class for constructing route definitions.
     /// </summary>
     /// <returns>A QueryUrlSettingRouteBuilder instance that can be used to configure and build routes.</returns>
-    public static QueryUrlSettingRouteBuilder Create()
+    public static QuerySettingUrlRouteBuilder Create()
     {
-        var builder = Activator.CreateInstance<QueryUrlSettingRouteBuilder>();
+        var builder = Activator.CreateInstance<QuerySettingUrlRouteBuilder>();
         return builder;
     }
 
-    public QueryUrlSettingRouteBuilder() : base()
+    public QuerySettingUrlRouteBuilder() : base()
     {
         _route.Flags |= RouteFlags.Invoke;
     }
@@ -39,7 +39,7 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the query URL settings.</param>
     /// <returns>The current instance of QueryUrlSettingRouteBuilder, enabling method chaining.</returns>
-    public QueryUrlSettingRouteBuilder WithHandler(QueryUrlSettingHandler handler)
+    public QuerySettingUrlRouteBuilder WithHandler(QuerySettingUrlHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
@@ -57,8 +57,8 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     /// maintaining consistency with the route's initial setup.</remarks>
     /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
     /// route is always configured for Invoke routing.</param>
-    /// <returns>The current instance of <see cref="QueryUrlSettingRouteBuilder"/> with Invoke routing enabled.</returns>
-    public override QueryUrlSettingRouteBuilder AsInvoke(bool isInvoke = true)
+    /// <returns>The current instance of <see cref="QuerySettingUrlRouteBuilder"/> with Invoke routing enabled.</returns>
+    public override QuerySettingUrlRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;
     }
@@ -67,7 +67,7 @@ public class QueryUrlSettingRouteBuilder : RouteBuilderBase<QueryUrlSettingRoute
     {
         if (_route.Handler == null)
         {
-            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, typeof(QueryUrlSettingRouteBuilder).Name, "Handler");
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteBuilderMissingProperty, null, typeof(QuerySettingUrlRouteBuilder).Name, "Handler");
         }
 
         _route.ChannelId ??= Channels.Msteams;

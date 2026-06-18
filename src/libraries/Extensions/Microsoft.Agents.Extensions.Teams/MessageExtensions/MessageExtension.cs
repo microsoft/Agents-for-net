@@ -294,7 +294,7 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// TeamsExtension.MessageExtensions.OnQueryUrlSetting((ctx, state, ct) =>
+    /// TeamsExtension.MessageExtensions.OnQuerySettingUrl((ctx, state, ct) =>
     ///     Task.FromResult(new Response
     ///     {
     ///         ComposeExtension = new Result
@@ -307,15 +307,15 @@ public class MessageExtension
     ///         }
     ///     }));
     /// </code>
-    /// Alternatively, the <see cref="QueryUrlSettingRouteAttribute"/> can be used to decorate a <see cref="QueryUrlSettingHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="QuerySettingUrlRouteAttribute"/> can be used to decorate a <see cref="QueryUrlSettingHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
-    public MessageExtension OnQueryUrlSetting(QueryUrlSettingHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public MessageExtension OnQueryUrlSetting(QuerySettingUrlHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(QueryUrlSettingRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(QuerySettingUrlRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 
@@ -324,23 +324,23 @@ public class MessageExtension
     /// </summary>
     /// <remarks>
     /// <code>
-    /// TeamsExtension.MessageExtensions.OnConfigureSettings((ctx, state, query, ct) =>
+    /// TeamsExtension.MessageExtensions.OnSetting((ctx, state, query, ct) =>
     /// {
     ///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
     ///     _settingsStore.Save(ctx.Activity.From.Id, setting);
     ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.Config } });
     /// });
     /// </code>
-    /// Alternatively, the <see cref="ConfigureSettingsRouteAttribute"/> can be used to decorate a <see cref="ConfigureSettingsHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="SettingRouteAttribute"/> can be used to decorate a <see cref="SettingHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">A delegate that processes the settings event. The handler receives the turn context, turn state, deserialized
     /// settings data of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token. Cannot be null.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The current MessageExtension instance for method chaining.</returns>
-    public MessageExtension OnConfigureSettings(ConfigureSettingsHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public MessageExtension OnConfigureSettings(SettingHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        _app.AddRoute(ConfigureSettingsRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
+        _app.AddRoute(SettingRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler(handler).WithOAuthHandlers(autoSignInHandlers).Build());
         return this;
     }
 

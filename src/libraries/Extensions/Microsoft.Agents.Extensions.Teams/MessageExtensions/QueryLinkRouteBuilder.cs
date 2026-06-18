@@ -46,7 +46,7 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
         {
             var ttc = new TeamsTurnContext(ctx);
             AppBasedQueryLink? value = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(ttc.Activity.Value);
-            var response = await handler(ttc, ts, value?.Url, ct).ConfigureAwait(false);
+            var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
         return this;
