@@ -75,11 +75,8 @@ namespace Microsoft.Agents.Core.Serialization
         {
             lock (_optionsLock)
             {
-                var newOptions = SerializationOptions;
-                if (newOptions.IsReadOnly)
-                {
-                    newOptions = new JsonSerializerOptions(SerializationOptions);
-                }
+                // Always copy to avoid race with concurrent readers freezing the instance.
+                var newOptions = new JsonSerializerOptions(SerializationOptions);
 
                 foreach (var converter in extensionConverters)
                 {
@@ -116,11 +113,8 @@ namespace Microsoft.Agents.Core.Serialization
         {
             lock (_optionsLock)
             {
-                var newOptions = SerializationOptions;
-                if (newOptions.IsReadOnly)
-                {
-                    newOptions = new JsonSerializerOptions(SerializationOptions);
-                }
+                // Always copy to avoid race with concurrent readers freezing the instance.
+                var newOptions = new JsonSerializerOptions(SerializationOptions);
 
                 SerializationOptions = applyFunc(newOptions);
             }
@@ -142,11 +136,10 @@ namespace Microsoft.Agents.Core.Serialization
         {
             lock (_optionsLock)
             {
-                var newOptions = SerializationOptions;
-                if (newOptions.IsReadOnly)
-                {
-                    newOptions = new JsonSerializerOptions(SerializationOptions);
-                }
+                // Always copy: a concurrent reader (e.g., a parallel test or another thread
+                // calling JsonSerializer) can freeze the current instance between our read
+                // and the TypeInfoResolver assignment below, causing InvalidOperationException.
+                var newOptions = new JsonSerializerOptions(SerializationOptions);
 
                 newOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
                     resolver,

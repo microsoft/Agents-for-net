@@ -267,11 +267,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // Send attachment in proper framed chunks (4096 max each), last with End=true
             await harness.WriteChunkedStreamAsync(attachmentId1, attachmentData, FrameChunkSize, sendFinalEndFlag: true);
 
-            // Wait for the probe timeout (20ms) to expire before sending the next request.
-            // In production, DLFlex has a meaningful gap between operations; in tests with
-            // anonymous pipes, data arrives instantly so without this delay the probe would
-            // incorrectly consume the next frame's header byte.
-            await Task.Delay(50);
+            // Wait for the first request to be dispatched before sending the next one.
+            // Dispatch occurs only after the probe completes (timeout or drain), so this
+            // guarantees the protocol is back in its normal read loop and won't consume
+            // the next frame's header byte during the probe.
+            var r1 = await tcs1.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
             // --- Second request: must parse correctly immediately ---
             var req2Id = Guid.NewGuid();
@@ -280,8 +280,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRequestAsync(req2Id, primaryStreamId2, body2.Length);
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId2, body2, end: true);
 
-            // Both requests should dispatch after the probe timeout (~20ms for mismatch detection)
-            var r1 = await tcs1.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            // Second request should dispatch normally
             var r2 = await tcs2.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
             // First request: attachment has the ACTUAL data (not padded to declared length)

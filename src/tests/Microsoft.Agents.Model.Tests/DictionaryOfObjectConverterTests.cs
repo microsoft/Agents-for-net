@@ -742,5 +742,107 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         #endregion
+
+        #region Assembly culture metadata safety (CultureNotFoundException regression)
+
+        [Fact]
+        public void Serialize_DictionaryWithGenericListValue_DoesNotThrowCultureNotFoundException()
+        {
+            // Regression: Assembly.GetName() internally calls CultureInfo.GetCultureInfo()
+            // which can throw CultureNotFoundException for assemblies whose AssemblyName
+            // contains invalid Culture metadata. The fix extracts the simple assembly
+            // name from Assembly.FullName without invoking GetName().
+            var dictionary = new Dictionary<string, object>
+            {
+                ["items"] = new List<string> { "a", "b", "c" }
+            };
+
+            string json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
+
+            Assert.Contains("a", json);
+            Assert.Contains("b", json);
+            Assert.Contains("c", json);
+        }
+
+        [Fact]
+        public void Serialize_DictionaryWithNestedGenericDictionary_DoesNotThrowCultureNotFoundException()
+        {
+            var inner = new Dictionary<string, object>
+            {
+                ["key1"] = "value1",
+                ["key2"] = 42
+            };
+            var dictionary = new Dictionary<string, object>
+            {
+                ["nested"] = inner
+            };
+
+            string json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
+
+            using (JsonDocument doc = JsonDocument.Parse(json))
+            {
+                JsonElement nested = doc.RootElement.GetProperty("nested");
+                Assert.Equal("value1", nested.GetProperty("key1").GetString());
+                Assert.Equal(42, nested.GetProperty("key2").GetInt32());
+            }
+        }
+
+        [Fact]
+        public void Roundtrip_DictionaryWithGenericListValue_PreservesData()
+        {
+            var dictionary = new Dictionary<string, object>
+            {
+                ["tags"] = new List<string> { "alpha", "beta" },
+                ["counts"] = new List<int> { 10, 20 }
+            };
+
+            string json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
+            IDictionary<string, object> deserialized = JsonSerializer.Deserialize<IDictionary<string, object>>(json, SdkOptions);
+
+            Assert.NotNull(deserialized);
+
+            IList tags = (IList)deserialized["tags"];
+            Assert.Equal(2, tags.Count);
+            Assert.Equal("alpha", tags[0].ToString());
+            Assert.Equal("beta", tags[1].ToString());
+
+            IList counts = (IList)deserialized["counts"];
+            Assert.Equal(2, counts.Count);
+            Assert.Equal(10, Convert.ToInt32(counts[0]));
+            Assert.Equal(20, Convert.ToInt32(counts[1]));
+        }
+
+        [Fact]
+        public void Serialize_TypeAssemblyMetadata_ContainsSimpleNameOnly()
+        {
+            var inner = new Dictionary<string, object>
+            {
+                ["value"] = "test"
+            };
+            var dictionary = new Dictionary<string, object>
+            {
+                ["child"] = inner
+            };
+
+            string json = JsonSerializer.Serialize<IDictionary<string, object>>(dictionary, SdkOptions);
+
+            // $typeAssembly values written by AddTypeInfo must be simple assembly
+            // names (no Version=, Culture=, PublicKeyToken= qualifiers).
+            using (JsonDocument doc = JsonDocument.Parse(json))
+            {
+                JsonElement root = doc.RootElement;
+                JsonElement child = root.GetProperty("child");
+                string typeAssembly = child.GetProperty("$typeAssembly").GetString();
+
+                Assert.NotNull(typeAssembly);
+                Assert.NotEmpty(typeAssembly);
+                Assert.DoesNotContain(",", typeAssembly);
+                Assert.DoesNotContain("Version=", typeAssembly);
+                Assert.DoesNotContain("Culture=", typeAssembly);
+                Assert.DoesNotContain("PublicKeyToken=", typeAssembly);
+            }
+        }
+
+        #endregion
     }
 }

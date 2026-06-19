@@ -95,6 +95,12 @@ namespace Microsoft.Agents.Builder
         List<ClientCitation>? Citations { get; }
 
         /// <summary>
+        /// Adds an attachment to the collection of attachments for the final message.
+        /// </summary>
+        /// <param name="attachment">The attachment to add. Must not be <see langword="null"/>.</param>
+        void AddAttachment(Attachment attachment);
+
+        /// <summary>
         /// Adds a citation for the response.
         /// </summary>
         /// <param name="citation"></param>

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text.Json.Nodes;
 
 namespace Microsoft.Agents.Core.Serialization
@@ -11,8 +12,9 @@ namespace Microsoft.Agents.Core.Serialization
     {
         public static void AddTypeInfo(this JsonObject jsonObject, object value)
         {
-            jsonObject["$type"] = value.GetType().FullName;
-            jsonObject["$typeAssembly"] = value.GetType().Assembly.GetName().Name;
+            Type type = value.GetType();
+            jsonObject["$type"] = type.FullName;
+            jsonObject["$typeAssembly"] = GetAssemblySimpleName(type.Assembly);
         }
 
         public static void AddTypeInfo(this JsonNode jsonNode, object value)
@@ -92,7 +94,7 @@ namespace Microsoft.Agents.Core.Serialization
         public static void AddCollectionTypeInfo(this JsonNode jsonNode, Type collectionType)
         {
             jsonNode.AsObject()["$collectionType"] = collectionType.FullName;
-            jsonNode.AsObject()["$collectionTypeAssembly"] = collectionType.Assembly.GetName().Name;
+            jsonNode.AsObject()["$collectionTypeAssembly"] = GetAssemblySimpleName(collectionType.Assembly);
         }
 
         public static void RemoveCollectionTypeInfo(this JsonNode jsonNode)
@@ -115,6 +117,16 @@ namespace Microsoft.Agents.Core.Serialization
 
             var assembly = AppDomain.CurrentDomain.Load((string)jsonArray[0].AsObject()["$collectionTypeAssembly"]);
             return assembly?.GetType((string)jsonArray[0].AsObject()["$collectionType"]) ?? typeof(object);
+        }
+
+        // Extract the simple assembly name from Assembly.FullName without calling
+        // Assembly.GetName(), which internally invokes CultureInfo.GetCultureInfo()
+        // and can throw CultureNotFoundException for assemblies with invalid or
+        // synthetic culture metadata (e.g. runtime-generated generic type assemblies).
+        private static string GetAssemblySimpleName(Assembly assembly)
+        {
+            int commaIndex = assembly.FullName.IndexOf(',');
+            return commaIndex > 0 ? assembly.FullName.Substring(0, commaIndex) : assembly.FullName;
         }
 
         private static Type GetType(JsonObject jsonObject)

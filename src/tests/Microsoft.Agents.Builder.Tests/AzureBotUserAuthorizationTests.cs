@@ -321,6 +321,11 @@ namespace Microsoft.Agents.Builder.Tests
             var ex = await Assert.ThrowsAsync<AuthException>(() =>
                 handler.SignInUserAsync(continueContext, forceSignIn: false, cancellationToken: CancellationToken.None));
             Assert.Equal(AuthExceptionReason.Timeout, ex.Cause);
+
+            // The timed-out flow should be cleared so a new sign-in can start.
+            var restartContext = CreateTeamsMessageTurnContext(mockTokenClient.Object);
+            var restartResult = await handler.SignInUserAsync(restartContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(restartResult);
         }
 
         #endregion
@@ -633,6 +638,11 @@ namespace Microsoft.Agents.Builder.Tests
             var ex = await Assert.ThrowsAsync<AuthException>(() =>
                 handler.SignInUserAsync(badCode2, cancellationToken: CancellationToken.None));
             Assert.Equal(AuthExceptionReason.InvalidSignIn, ex.Cause);
+
+            // Retry exhaustion should clear the stale flow state.
+            var restartContext = CreateTurnContext(ActivityTypes.Message, mockTokenClient.Object);
+            var restartResult = await handler.SignInUserAsync(restartContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(restartResult);
         }
 
         #endregion
@@ -1325,6 +1335,213 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal((int)HttpStatusCode.OK, ((InvokeResponse)verifyStateResponse.Value).Status);
         }
 
+        [Fact]
+        public async Task SignInUserAsync_ThrowsAuthException_WhenTextMessageDuringFlow()
+        {
+            // Arrange - Teams may deliver a user message before the expected signin invoke arrives.
+            var settings = new OAuthSettings
+            {
+                AzureBotOAuthConnectionName = ConnectionName,
+                Timeout = 900000,
+                InvalidSignInRetryMax = 1,
+            };
+
+            var sentActivities = new List<IActivity>();
+            var mockTokenClient = new Mock<IUserTokenClient>();
+
+            mockTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenOrSignInResourceResponse
+                {
+                    SignInResource = new SignInResource
+                    {
+                        SignInLink = "https://login.test.com",
+                        TokenExchangeResource = new TokenExchangeResource { Id = "id", Uri = "uri" }
+                    }
+                });
+
+            var handler = new AzureBotUserAuthorization(HandlerName, _storage, _mockConnections.Object, settings);
+
+            // Start the flow.
+            var startContext = CreateTurnContext(ActivityTypes.Message, mockTokenClient.Object);
+            var startResult = await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(startResult);
+
+            // User sends a text message before the expected signin/tokenExchange arrives.
+            sentActivities.Clear();
+            var textDuringFlow = CreateMessageActivity(text: "hello?");
+            var textContext = CreateTurnContextWithCapture(textDuringFlow, mockTokenClient.Object, sentActivities);
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<AuthException>(() =>
+                handler.SignInUserAsync(textContext, forceSignIn: false, cancellationToken: CancellationToken.None));
+            Assert.Equal(AuthExceptionReason.InvalidSignIn, ex.Cause);
+        }
+
+        [Fact]
+        public async Task TeamsSSO_TextMessageDuringFlow_SendsInProgressMessage_AndDoesNotConsumeRetry()
+        {
+            // Arrange - Teams may deliver a user message before the expected signin invoke arrives.
+            var settings = new OAuthSettings
+            {
+                AzureBotOAuthConnectionName = ConnectionName,
+                Timeout = 900000,
+                InvalidSignInRetryMax = 1,
+                TeamsSignInInProgressMessage = "Please finish signing and wait for completion"
+            };
+
+            var sentActivities = new List<IActivity>();
+            var mockTokenClient = new Mock<IUserTokenClient>();
+            var finalToken = new TokenResponse { Token = "teams-sso-token", Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30) };
+
+            mockTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenOrSignInResourceResponse
+                {
+                    SignInResource = new SignInResource
+                    {
+                        SignInLink = "https://login.test.com",
+                        TokenExchangeResource = new TokenExchangeResource { Id = "id", Uri = "uri" }
+                    }
+                });
+
+            mockTokenClient
+                .Setup(c => c.ExchangeTokenAsync(It.IsAny<string>(), ConnectionName, It.IsAny<ChannelId>(), It.IsAny<TokenExchangeRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(finalToken);
+
+            var handler = new AzureBotUserAuthorization(HandlerName, _storage, _mockConnections.Object, settings);
+
+            // Start the flow.
+            var startContext = CreateTeamsMessageTurnContext(mockTokenClient.Object);
+            var startResult = await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(startResult);
+
+            // User sends a text message before Teams sends signin/tokenExchange.
+            sentActivities.Clear();
+            var textDuringFlow = CreateMessageActivity(Channels.Msteams, "Hello?");
+            var textContext = CreateTurnContextWithCapture(textDuringFlow, mockTokenClient.Object, sentActivities);
+
+            var pendingResult = await handler.SignInUserAsync(textContext, cancellationToken: CancellationToken.None);
+
+            // Assert - flow remains pending and user gets a Teams-specific in-progress message.
+            Assert.Null(pendingResult);
+            var inProgressMessage = sentActivities.OfType<Activity>().LastOrDefault(a => a.Type == ActivityTypes.Message);
+            Assert.NotNull(inProgressMessage);
+            Assert.Equal(settings.TeamsSignInInProgressMessage, inProgressMessage.Text);
+
+            // The delayed signin/tokenExchange should still succeed even though retry max is 1.
+            sentActivities.Clear();
+            var tokenExchangeActivity = CreateTokenExchangeInvokeActivity("teams-sso-jwt");
+            var tokenExchangeContext = CreateTurnContextWithCapture(tokenExchangeActivity, mockTokenClient.Object, sentActivities);
+
+            var finalResult = await handler.SignInUserAsync(tokenExchangeContext, cancellationToken: CancellationToken.None);
+
+            Assert.NotNull(finalResult);
+            Assert.Equal("teams-sso-token", finalResult.Token);
+        }
+
+        [Fact]
+        public async Task TeamsSso_CancelCommand_DuringFlow_CancelsFlow_AndSendsConfiguredMessage()
+        {
+            // Arrange
+            var settings = new OAuthSettings
+            {
+                AzureBotOAuthConnectionName = ConnectionName,
+                Timeout = 900000,
+                TeamsSignInInProgressMessage = "Please finish signing and wait for completion",
+                CancelSignInCommands = ["-cancel", "/cancel"],
+                SignInCancelledMessage = "Authentication cancelled."
+            };
+
+            var sentActivities = new List<IActivity>();
+            var mockTokenClient = new Mock<IUserTokenClient>();
+
+            mockTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenOrSignInResourceResponse
+                {
+                    SignInResource = new SignInResource
+                    {
+                        SignInLink = "https://login.test.com",
+                        TokenExchangeResource = new TokenExchangeResource { Id = "id", Uri = "uri" }
+                    }
+                });
+
+            var handler = new AzureBotUserAuthorization(HandlerName, _storage, _mockConnections.Object, settings);
+
+            var startContext = CreateTeamsMessageTurnContext(mockTokenClient.Object);
+            var startResult = await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+            Assert.Null(startResult);
+
+            sentActivities.Clear();
+            var cancelActivity = CreateMessageActivity(Channels.Msteams, "-cancel");
+            var cancelContext = CreateTurnContextWithCapture(cancelActivity, mockTokenClient.Object, sentActivities);
+
+            var pendingResult = await handler.SignInUserAsync(cancelContext, cancellationToken: CancellationToken.None);
+            Assert.Null(pendingResult);
+
+            var cancelMessage = sentActivities.OfType<Activity>().LastOrDefault(a => a.Type == ActivityTypes.Message);
+            Assert.NotNull(cancelMessage);
+            Assert.Equal(settings.SignInCancelledMessage, cancelMessage.Text);
+            Assert.DoesNotContain(sentActivities, a => a.Type == ActivityTypes.Message && ((Activity)a).Text == settings.TeamsSignInInProgressMessage);
+
+            // Flow state should be cleared so a new message starts a fresh flow instead of continuing the old one.
+            sentActivities.Clear();
+            var restartContext = CreateTurnContextWithCapture(CreateTeamsMessageTurnContext(mockTokenClient.Object).Activity, mockTokenClient.Object, sentActivities);
+            var restartResult = await handler.SignInUserAsync(restartContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+
+            Assert.Null(restartResult);
+            Assert.Contains(sentActivities.OfType<Activity>(), a => a.Attachments?.Any(att => att.ContentType == OAuthCard.ContentType) == true);
+        }
+
+        [Fact]
+        public async Task SignInUserAsync_CancelCommand_IsCaseInsensitive_AndDoesNotUseRetryBudget()
+        {
+            // Arrange
+            var settings = new OAuthSettings
+            {
+                AzureBotOAuthConnectionName = ConnectionName,
+                Timeout = 900000,
+                InvalidSignInRetryMax = 1,
+                CancelSignInCommands = ["-cancel"],
+                SignInCancelledMessage = "Sign in cancelled."
+            };
+
+            var sentActivities = new List<IActivity>();
+            var mockTokenClient = new Mock<IUserTokenClient>();
+
+            mockTokenClient
+                .Setup(c => c.GetTokenOrSignInResourceAsync(It.IsAny<string>(), It.IsAny<IActivity>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenOrSignInResourceResponse
+                {
+                    SignInResource = new SignInResource
+                    {
+                        SignInLink = "https://login.test.com",
+                        TokenExchangeResource = new TokenExchangeResource { Id = "id", Uri = "uri" }
+                    }
+                });
+
+            var handler = new AzureBotUserAuthorization(HandlerName, _storage, _mockConnections.Object, settings);
+
+            var startContext = CreateTurnContext(ActivityTypes.Message, mockTokenClient.Object);
+            await handler.SignInUserAsync(startContext, forceSignIn: true, cancellationToken: CancellationToken.None);
+
+            var cancelActivity = CreateMessageActivity("test", "  -CANCEL  ");
+            var cancelContext = CreateTurnContextWithCapture(cancelActivity, mockTokenClient.Object, sentActivities);
+
+            var pendingResult = await handler.SignInUserAsync(cancelContext, cancellationToken: CancellationToken.None);
+
+            Assert.Null(pendingResult);
+            Assert.Contains(sentActivities.OfType<Activity>(), a => a.Text == settings.SignInCancelledMessage);
+
+            sentActivities.Clear();
+            var nextMessage = CreateTurnContextWithCapture(CreateMessageActivity("test", "hello"), mockTokenClient.Object, sentActivities);
+            var result = await handler.SignInUserAsync(nextMessage, forceSignIn: true, cancellationToken: CancellationToken.None);
+
+            Assert.Null(result);
+            Assert.Contains(sentActivities.OfType<Activity>(), a => a.Attachments?.Any(att => att.ContentType == OAuthCard.ContentType) == true);
+        }
+
         #endregion
 
         #region Helpers
@@ -1419,7 +1636,7 @@ namespace Microsoft.Agents.Builder.Tests
             return context;
         }
 
-        private static Activity CreateMessageActivity(string channelId = "test")
+        private static Activity CreateMessageActivity(string channelId = "test", string text = null)
         {
             return new Activity
             {
@@ -1427,7 +1644,8 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = channelId
+                ChannelId = channelId,
+                Text = text
             };
         }
 

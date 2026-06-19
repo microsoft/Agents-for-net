@@ -585,4 +585,195 @@ public class SlackChannelDataTests
             original.Envelope.Get<string>("event.item.channel"),
             restored.Envelope.Get<string>("event.item.channel"));
     }
+
+    // ── SlackChannelData.Channel / ThreadTs (from Envelope) ───────────────────
+
+    [Fact]
+    public void Channel_FromEnvelope_ReturnsEventChannel()
+    {
+        var cd = Deserialize(MessageEventJson);
+        Assert.Equal("D0AT8AL9LA0", cd.Channel);
+    }
+
+    [Fact]
+    public void ThreadTs_FromEnvelope_FallsBackToEventTs()
+    {
+        // MessageEventJson has no "thread_ts" in the event, so it should fall back to "event.ts"
+        var cd = Deserialize(MessageEventJson);
+        Assert.Equal("1776271070.726439", cd.ThreadTs);
+    }
+
+    [Fact]
+    public void ThreadTs_FromEnvelope_PrefersThreadTs()
+    {
+        var json = """
+            {
+              "SlackMessage": {
+                "type": "event_callback",
+                "event": {
+                  "type": "message",
+                  "channel": "C123",
+                  "ts": "111.000",
+                  "thread_ts": "222.000"
+                }
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.Equal("222.000", cd.ThreadTs);
+    }
+
+    // ── SlackChannelData.Channel / ThreadTs (from Payload) ────────────────────
+
+    [Fact]
+    public void Channel_FromPayload_WhenNoEnvelope()
+    {
+        var json = """
+            {
+              "Payload": {
+                "type": "interactive_message",
+                "channel": "C456ABC",
+                "message": { "ts": "333.000", "thread_ts": "444.000" },
+                "actions": [{ "name": "action1", "value": "v1" }]
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.Null(cd.Envelope);
+        Assert.Equal("C456ABC", cd.Channel);
+    }
+
+    [Fact]
+    public void ThreadTs_FromPayload_PrefersMessageThreadTs()
+    {
+        var json = """
+            {
+              "Payload": {
+                "type": "interactive_message",
+                "channel": "C456ABC",
+                "message": { "ts": "333.000", "thread_ts": "444.000" },
+                "actions": []
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.Equal("444.000", cd.ThreadTs);
+    }
+
+    [Fact]
+    public void ThreadTs_FromPayload_FallsBackToMessageTs()
+    {
+        var json = """
+            {
+              "Payload": {
+                "type": "interactive_message",
+                "channel": "C456ABC",
+                "message": { "ts": "555.000" },
+                "actions": []
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.Equal("555.000", cd.ThreadTs);
+    }
+
+    [Fact]
+    public void Channel_NullWhenBothEnvelopeAndPayloadNull()
+    {
+        var json = """{ "ApiToken": "tok" }""";
+        var cd = Deserialize(json);
+        Assert.Null(cd.Channel);
+    }
+
+    [Fact]
+    public void ThreadTs_NullWhenBothEnvelopeAndPayloadNull()
+    {
+        var json = """{ "ApiToken": "tok" }""";
+        var cd = Deserialize(json);
+        Assert.Null(cd.ThreadTs);
+    }
+
+    // ── ActionPayload deserialization ─────────────────────────────────────────
+
+    [Fact]
+    public void ActionPayload_Deserialize_TypeAndChannel()
+    {
+        var json = """
+            {
+              "Payload": {
+                "type": "interactive_message",
+                "channel": "C789XYZ",
+                "message": { "text": "Pick one", "ts": "999.000" },
+                "actions": [{ "name": "btn", "value": "clicked" }]
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.NotNull(cd.Payload);
+        Assert.Equal("interactive_message", cd.Payload.type);
+        Assert.Equal("C789XYZ", cd.Payload.channel);
+    }
+
+    [Fact]
+    public void ActionPayload_Get_NestedPath()
+    {
+        var json = """
+            {
+              "Payload": {
+                "type": "interactive_message",
+                "channel": "C789XYZ",
+                "message": { "text": "Pick one", "ts": "999.000" },
+                "actions": [{ "name": "btn", "value": "clicked" }]
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.Equal("Pick one", cd.Payload.Get<string>("message.text"));
+        Assert.Equal("999.000", cd.Payload.Get<string>("message.ts"));
+    }
+
+    [Fact]
+    public void ActionPayload_Get_ArrayIndex()
+    {
+        var json = """
+            {
+              "Payload": {
+                "type": "interactive_message",
+                "channel": "C789XYZ",
+                "message": null,
+                "actions": [{ "name": "btn", "value": "clicked" }]
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.Equal("btn", cd.Payload.Get<string>("actions[0].name"));
+        Assert.Equal("clicked", cd.Payload.Get<string>("actions[0].value"));
+    }
+
+    [Fact]
+    public void ActionPayload_ExtensionData_CatchesUnknownFields()
+    {
+        var json = """
+            {
+              "Payload": {
+                "type": "interactive_message",
+                "channel": "C789",
+                "trigger_id": "123456.789",
+                "response_url": "https://hooks.slack.com/actions/xxx"
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.True(cd.Payload.AdditionalProperties.ContainsKey("trigger_id"));
+        Assert.Equal("123456.789", cd.Payload.AdditionalProperties["trigger_id"].GetString());
+        Assert.Equal("https://hooks.slack.com/actions/xxx", cd.Payload.Get<string>("response_url"));
+    }
 }

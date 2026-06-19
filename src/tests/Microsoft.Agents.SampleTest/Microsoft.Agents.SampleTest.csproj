@@ -25,12 +25,14 @@
 	  <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" />
 	  <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
 	  <PackageReference Include="Azure.AI.OpenAI" />
-    </ItemGroup>
+	  <PackageReference Include="Microsoft.Agents.A365.Notifications" />
+	</ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
       <ProjectReference Include="..\..\samples\EmptyAgent\EmptyAgent.csproj" />
       <ProjectReference Include="..\..\samples\SemanticKernel\WeatherAgent\WeatherAgent.csproj" />
+      <ProjectReference Include="..\..\samples\A365LoopTest\A365LoopTest.csproj" />
     </ItemGroup>
 
 	<ItemGroup>

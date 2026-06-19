@@ -748,6 +748,28 @@ namespace Microsoft.Agents.Builder.App
         #region Turn Handling
 
         /// <summary>
+        /// Registers the application-scoped services needed for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// This stores the current <see cref="ITurnState"/>, <see cref="AdaptiveCard"/>, and
+        /// <see cref="Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
+        /// When user authorization is configured, the current <see cref="UserAuthorization"/>
+        /// instance is also registered.
+        /// </remarks>
+        /// <param name="turnContext">The turn context to populate with services.</param>
+        /// <param name="turnState">The turn state for the current turn.</param>
+        internal void SetTurnContextServices(ITurnContext turnContext, ITurnState turnState)
+        {
+            if (_userAuth != null)
+            {
+                turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+            turnContext.Services.Set<Proactive.Proactive>(Proactive);
+            turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);
+            turnContext.Services.Set<ITurnState>(turnState);
+        }
+
+        /// <summary>
         /// Called by the adapter (for example, a <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/>)
         /// at runtime in order to process an inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
@@ -776,16 +798,17 @@ namespace Microsoft.Agents.Builder.App
 
             using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
 
-            if (_userAuth != null)
-            {
-                turnContext.Services.Set<UserAuthorization>(_userAuth);
-            }
-
             bool routeMatched = false;
             bool routeAuthorized = false;
 
             try
             {
+                // Load turn state
+                ITurnState turnState = Options.TurnStateFactory!();
+                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                SetTurnContextServices(turnContext, turnState);
+
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
                 {
@@ -804,10 +827,6 @@ namespace Microsoft.Agents.Builder.App
                         turnContext.Activity.Text = turnContext.Activity.RemoveRecipientMention();
                     }
                 }
-
-                // Load turn state
-                ITurnState turnState = Options.TurnStateFactory!();
-                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 try
                 {
