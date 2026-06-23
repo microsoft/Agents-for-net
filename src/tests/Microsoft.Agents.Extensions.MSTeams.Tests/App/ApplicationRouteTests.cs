@@ -8,7 +8,6 @@ using Microsoft.Agents.Builder.Tests;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.MSTeams.Compat;
 using Microsoft.Agents.Extensions.MSTeams.Models;
 using Microsoft.Agents.Extensions.MSTeams.Tests.Model;
 using Microsoft.Teams.Api;

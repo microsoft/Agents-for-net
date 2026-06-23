@@ -181,7 +181,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     {
         try
         {
-            var member = await TeamsInfo.GetMemberAsync(turnContext, turnContext.Activity.From.Id, cancellationToken);
+            var api = TeamsExtension.GetTeamsClient(turnContext);
+            var member = await api.Conversations.Members.GetByIdAsync(turnContext.Activity.TeamsGetTeamInfo()?.Id!, turnContext.Activity.From.Id, cancellationToken);
             await turnContext.SendActivityAsync($"You are: {member.Name}.", cancellationToken: cancellationToken);
         }
         catch (ErrorResponseException e)
@@ -214,10 +215,11 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         string? continuationToken = null;
         do
         {
-            var currentPage = await TeamsInfo.GetPagedMembersAsync(turnContext, 100, continuationToken!, cancellationToken);
+            var api = TeamsExtension.GetTeamsClient(turnContext);
+            var currentPage = await api.Conversations.Members.GetPagedAsync(turnContext.Activity.TeamsGetTeamInfo()?.Id!, 100, continuationToken, cancellationToken);
             continuationToken = currentPage.ContinuationToken;
 
-            foreach (var teamMember in currentPage.Members)
+            foreach (var teamMember in currentPage.Members!)
             {
                 var createOptions = CreateConversationOptionsBuilder
                     .Create(turnContext.Identity.GetIncomingAudience(), Microsoft.Agents.Core.Models.Channels.Msteams, turnContext.Activity.ServiceUrl)
@@ -246,7 +248,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     {
         try
         {
-            var member = await TeamsInfo.GetMemberAsync(turnContext, turnContext.Activity.From.Id, cancellationToken);
+            var api = TeamsExtension.GetTeamsClient(turnContext);
+            var member = await api.Conversations.Members.GetByIdAsync(turnContext.Activity.TeamsGetTeamInfo()?.Id!, turnContext.Activity.From.Id, cancellationToken);
 
             var card = new Microsoft.Teams.Cards.AdaptiveCard([
                 new Microsoft.Teams.Cards.TextBlock($"Mention a user by User Principle Name: Hello <at>${member.Name} UPN</at>"),
