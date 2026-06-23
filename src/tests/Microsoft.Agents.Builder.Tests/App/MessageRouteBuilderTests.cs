@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -490,7 +490,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Message,
                 Text = "hello",
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             });
 
             // Arrange - Non-matching channel
@@ -499,12 +499,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Message,
                 Text = "hello",
-                ChannelId = Channels.Directline
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
             });
 
             var builder = MessageRouteBuilder.Create()
                 .WithText("hello")
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithHandler((context, state, token) => Task.CompletedTask);
 
             var route = builder.Build();
@@ -529,7 +529,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = MessageRouteBuilder.Create()
                 .WithText("hello")
                 .WithHandler((context, state, token) => Task.CompletedTask)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(10)
                 .AsAgentic()
                 .AsNonTerminal()
@@ -538,7 +538,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(route);
-            Assert.Equal(Channels.Msteams, route.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, route.ChannelId);
             Assert.Equal((ushort)10, route.Rank);
             Assert.True(route.Flags.HasFlag(RouteFlags.Agentic));
             Assert.True(route.Flags.HasFlag(RouteFlags.NonTerminal));
@@ -556,7 +556,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Message,
                 Text = "hello world",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
@@ -567,7 +567,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     handlerExecuted = true;
                     return Task.CompletedTask;
                 })
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .AsAgentic()
                 .Build();
 
@@ -721,14 +721,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task MessageRouteBuilder_WithTextAndSelector_BothMustMatch()
         {
             RouteSelector customSelector = (ctx, ct) =>
-                Task.FromResult(ctx.Activity.ChannelId == Channels.Msteams);
+                Task.FromResult(ctx.Activity.ChannelId == Microsoft.Agents.Core.Models.Channels.Msteams);
 
             var matchContext = new Mock<ITurnContext>();
             matchContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = ActivityTypes.Message,
                 Text = "hello",
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             });
 
             var wrongTextContext = new Mock<ITurnContext>();
@@ -736,7 +736,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Message,
                 Text = "goodbye",
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             });
 
             var wrongChannelContext = new Mock<ITurnContext>();
@@ -744,7 +744,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Message,
                 Text = "hello",
-                ChannelId = Channels.Directline
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
             });
 
             var route = MessageRouteBuilder.Create()

@@ -5,8 +5,8 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams;
-using Microsoft.Agents.Extensions.Teams.TaskModules;
+using Microsoft.Agents.Extensions.MSTeams;
+using Microsoft.Agents.Extensions.MSTeams.TaskModules;
 
 namespace TaskModules;
 

@@ -3,7 +3,7 @@
   "manifestVersion": "1.16",
   "version": "1.0.0",
   "id": "<<AAD_APP_CLIENT_ID>>",
-  "packageName": "com.Microsoft.Agents.Extensions.Teams.taskmodule",
+  "packageName": "com.Microsoft.Agents.Extensions.MSTeams.taskmodule",
   "developer": {
     "name": "Microsoft",
     "websiteUrl": "https://example.azurewebsites.net",

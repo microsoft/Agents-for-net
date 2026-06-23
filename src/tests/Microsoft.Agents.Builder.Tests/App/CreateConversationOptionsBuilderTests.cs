@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.Proactive;
@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithAgentClientId_ShouldReturnBuilder()
         {
             // Act
-            var builder = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams);
+            var builder = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams);
 
             // Assert
             Assert.NotNull(builder);
@@ -35,21 +35,21 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithAgentClientId_ShouldThrowOnNullAgentClientId()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create((string) null, Channels.Msteams));
+            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create((string) null, Microsoft.Agents.Core.Models.Channels.Msteams));
         }
 
         [Fact]
         public void Create_WithAgentClientId_ShouldThrowOnEmptyAgentClientId()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(string.Empty, Channels.Msteams));
+            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(string.Empty, Microsoft.Agents.Core.Models.Channels.Msteams));
         }
 
         [Fact]
         public void Create_WithAgentClientId_ShouldThrowOnWhitespaceAgentClientId()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create("   ", Channels.Msteams));
+            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create("   ", Microsoft.Agents.Core.Models.Channels.Msteams));
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithAgentClientId_ShouldInitializeWithDefaultParameters()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams, parameters: parameters)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams, parameters: parameters)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var parameters = new ConversationParameters();
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams, parameters: parameters)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams, parameters: parameters)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams, parameters: parameters)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams, parameters: parameters)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -143,7 +143,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act
-            var builder = CreateConversationOptionsBuilder.Create(claims, Channels.Msteams);
+            var builder = CreateConversationOptionsBuilder.Create(claims, Microsoft.Agents.Core.Models.Channels.Msteams);
 
             // Assert
             Assert.NotNull(builder);
@@ -153,7 +153,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithClaims_ShouldThrowOnNullClaims()
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create((IDictionary<string, string>)null, Channels.Msteams));
+            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create((IDictionary<string, string>)null, Microsoft.Agents.Core.Models.Channels.Msteams));
         }
 
         [Fact]
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(claims, Channels.Msteams));
+            var ex = Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(claims, Microsoft.Agents.Core.Models.Channels.Msteams));
             Assert.Contains("aud", ex.Message);
         }
 
@@ -193,7 +193,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(claims, Channels.Msteams));
+            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(claims, Microsoft.Agents.Core.Models.Channels.Msteams));
         }
 
         [Fact]
@@ -206,7 +206,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(claims, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(claims, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -226,7 +226,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(claims, Channels.Msteams, TestServiceUrl)
+            var result = CreateConversationOptionsBuilder.Create(claims, Microsoft.Agents.Core.Models.Channels.Msteams, TestServiceUrl)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -242,7 +242,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithUser_WithUserIdAndName_ShouldSetUser()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -258,7 +258,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithUser_WithUserIdOnly_ShouldSetUser()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId)
                 .Build();
 
@@ -272,7 +272,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithUser_ShouldThrowOnNullUserId()
         {
             // Arrange
-            var builder = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams);
+            var builder = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams);
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => builder.WithUser((string)null));
@@ -282,7 +282,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithUser_ShouldThrowOnEmptyUserId()
         {
             // Arrange
-            var builder = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams);
+            var builder = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams);
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => builder.WithUser(string.Empty));
@@ -295,7 +295,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var user = new ChannelAccount(TestUserId, TestUserName);
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(user)
                 .Build();
 
@@ -307,19 +307,19 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public void WithUser_WithNullChannelAccount_ShouldThrow()
         {
-            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams).WithUser((ChannelAccount)null));
+            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams).WithUser((ChannelAccount)null));
         }
 
         [Fact]
         public void WithUser_WithNullChannelAccountId_ShouldThrow()
         {
-            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams).WithUser(new ChannelAccount(null)));
+            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams).WithUser(new ChannelAccount(null)));
         }
 
         [Fact]
         public void WithUser_WithWhitespaceChannelAccountId_ShouldThrow()
         {
-            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams).WithUser(new ChannelAccount("    ")));
+            Assert.Throws<ArgumentException>(() => CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams).WithUser(new ChannelAccount("    ")));
         }
 
         #endregion
@@ -330,7 +330,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithScope_ShouldSetScope()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .WithScope(TestScope)
                 .Build();
@@ -354,7 +354,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .WithActivity(activity)
                 .Build();
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .WithActivity(activity)
                 .Build();
@@ -395,7 +395,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var channelData = new { customProperty = "customValue" };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .WithChannelData(channelData)
                 .Build();
@@ -409,7 +409,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithChannelData_WithNull_ShouldSetNullChannelData()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .WithChannelData(null)
                 .Build();
@@ -426,7 +426,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void IsGroup_ShouldSetIsGroupToTrue()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .IsGroup(true)
                 .Build();
@@ -439,7 +439,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void IsGroup_ShouldSetIsGroupToFalse()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .IsGroup(false)
                 .Build();
@@ -456,7 +456,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithTopicName_ShouldSetTopicName()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .WithTopicName(TestTopicName)
                 .Build();
@@ -473,7 +473,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithTenantId_ShouldSetTenantId()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .WithTenantId(TestTenantId)
                 .Build();
@@ -489,7 +489,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_ForMsteams_ShouldMergeTeamsTenantAndChannelId()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithTenantId("teams-tenant-id")
                 .WithTeamsChannelId("teams-channel-id")
                 .WithUser(TestUserId, TestUserName)
@@ -506,7 +506,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_ForMsteams_ShouldMergeWithChannelData()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithTeamsChannelId("teams-channel-id")
                 .WithChannelData(new { tenant = new { id = "teams-tenant-id" } })
                 .WithUser(TestUserId, TestUserName)
@@ -527,7 +527,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_ShouldThrowWhenMembersNotSet()
         {
             // Arrange
-            var builder = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams);
+            var builder = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams);
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => builder.Build());
@@ -537,7 +537,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_ShouldSetDefaultScope_WhenNotSpecified()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -549,7 +549,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_ShouldNotOverrideScope_WhenSpecified()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .WithScope(TestScope)
                 .Build();
@@ -562,7 +562,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_ShouldReturnCompleteCreateConversation()
         {
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithUser(TestUserId, TestUserName)
                 .Build();
 
@@ -570,7 +570,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(result);
             Assert.NotNull(result.ChannelId);
             Assert.NotNull(result.ServiceUrl);
-            Assert.Equal(ConversationReferenceBuilder.ServiceUrlForChannel(Channels.Msteams), result.ServiceUrl);
+            Assert.Equal(ConversationReferenceBuilder.ServiceUrlForChannel(Microsoft.Agents.Core.Models.Channels.Msteams), result.ServiceUrl);
             Assert.NotNull(result.Parameters);
             Assert.NotNull(result.Scope);
         }
@@ -587,7 +587,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var channelData = new { data = "value" };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Webchat)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Webchat)
                 .WithUser(TestUserId, TestUserName)
                 .WithScope(TestScope)
                 .WithActivity(activity)
@@ -624,7 +624,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var teamsChannelData = new { teamsChannelId = "19:123@thread.skype" };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Channels.Msteams, TestServiceUrl)
+            var result = CreateConversationOptionsBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams, TestServiceUrl)
                 .WithUser(TestUserId, TestUserName)
                 .WithActivity(activity)
                 .WithChannelData(teamsChannelData)
@@ -635,7 +635,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(Channels.Msteams, result.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, result.ChannelId);
             Assert.Equal(TestServiceUrl, result.ServiceUrl);
             Assert.Single(result.Parameters.Members);
             Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
@@ -656,14 +656,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
             // Act
-            var result = CreateConversationOptionsBuilder.Create(claims, Channels.Directline)
+            var result = CreateConversationOptionsBuilder.Create(claims, Microsoft.Agents.Core.Models.Channels.Directline)
                 .WithUser(TestUserId, TestUserName)
                 .WithTopicName("DirectLine Chat")
                 .Build();
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(Channels.Directline, result.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Directline, result.ChannelId);
             Assert.Single(result.Parameters.Members);
             Assert.Equal(TestUserId, result.Parameters.Members[0].Id);
             Assert.Equal("DirectLine Chat", result.Parameters.TopicName);

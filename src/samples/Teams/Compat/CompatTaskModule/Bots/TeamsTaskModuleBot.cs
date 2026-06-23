@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using AdaptiveCards;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.Compat;
-using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.Agents.Extensions.MSTeams.Compat;
+using Microsoft.Agents.Extensions.MSTeams.Models;
 using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.IO;

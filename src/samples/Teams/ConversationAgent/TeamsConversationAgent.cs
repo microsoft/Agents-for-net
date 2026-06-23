@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -8,10 +8,10 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams;
-using Microsoft.Agents.Extensions.Teams.App;
-using Microsoft.Agents.Extensions.Teams.TeamsChannels;
-using Microsoft.Agents.Extensions.Teams.TeamsTeams;
+using Microsoft.Agents.Extensions.MSTeams;
+using Microsoft.Agents.Extensions.MSTeams.App;
+using Microsoft.Agents.Extensions.MSTeams.Channels;
+using Microsoft.Agents.Extensions.MSTeams.Teams;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -220,7 +220,7 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             foreach (var teamMember in currentPage.Members)
             {
                 var createOptions = CreateConversationOptionsBuilder
-                    .Create(turnContext.Identity.GetIncomingAudience(), Channels.Msteams, turnContext.Activity.ServiceUrl)
+                    .Create(turnContext.Identity.GetIncomingAudience(), Microsoft.Agents.Core.Models.Channels.Msteams, turnContext.Activity.ServiceUrl)
                     .WithUser(teamMember.ToCoreChannelAccount())
                     .WithTenantId(turnContext.Activity.Conversation.TenantId)
                     .IsGroup(false)

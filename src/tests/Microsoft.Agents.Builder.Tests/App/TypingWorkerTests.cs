@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
 
         private static (TestAdapter adapter, TurnContext context) CreateMessageTurn(
-            string channelId = Channels.Test)
+            string channelId = Microsoft.Agents.Core.Models.Channels.Test)
         {
             var adapter = new TestAdapter(channelId);
             var activity = new Activity
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var activity = new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
-                ChannelId = Channels.Test,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
                 Conversation = new ConversationAccount { Id = "c" },
                 From = new ChannelAccount { Id = "u" },
                 Recipient = new ChannelAccount { Id = "b" }
@@ -167,7 +167,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var finalTyping = new Activity
             {
                 Type = ActivityTypes.Typing,
-                ChannelId = Channels.Test,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
                 Entities = [new StreamInfo { StreamType = StreamTypes.Final }]
             };
             await context.SendActivityAsync(finalTyping, CancellationToken.None);
@@ -304,7 +304,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     Type = ActivityTypes.Event,
                     Name = "ping",
-                    ChannelId = Channels.Test,
+                    ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
                     Conversation = new ConversationAccount { Id = "conv1" }
                 },
                 CancellationToken.None);
@@ -335,7 +335,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Message,
                 Text = "hello",
-                ChannelId = Channels.Test,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
                 Conversation = new ConversationAccount { Id = "conv1" },
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot1" },
@@ -353,7 +353,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     Type = ActivityTypes.Event,
                     Name = "ping",
-                    ChannelId = Channels.Test,
+                    ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
                     Conversation = new ConversationAccount { Id = "conv1" }
                 },
                 CancellationToken.None);
@@ -397,7 +397,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             /// </summary>
             public SemaphoreSlim TypingSendStarted => _typingSendStarted;
 
-            public SlowSendAdapter(int sendDelayMs) : base(Channels.Test)
+            public SlowSendAdapter(int sendDelayMs) : base(Microsoft.Agents.Core.Models.Channels.Test)
             {
                 _sendDelayMs = sendDelayMs;
             }

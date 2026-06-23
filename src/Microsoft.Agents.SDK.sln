@@ -1,7 +1,6 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.37301.10 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11806.211 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{4269F3C3-6B42-419B-B64A-3E6DC0F1574A}"
 EndProject
@@ -27,7 +26,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Builder.Di
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Model.Tests", "tests\Microsoft.Agents.Model.Tests\Microsoft.Agents.Model.Tests.csproj", "{53FEE87D-2E52-4064-93DB-BD27E3996B59}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Extensions.Teams.Tests", "tests\Microsoft.Agents.Extensions.Teams.Tests\Microsoft.Agents.Extensions.Teams.Tests.csproj", "{D790E414-979D-4FF9-8EB6-08C205423037}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Extensions.MSTeams.Tests", "tests\Microsoft.Agents.Extensions.MSTeams.Tests\Microsoft.Agents.Extensions.MSTeams.Tests.csproj", "{D790E414-979D-4FF9-8EB6-08C205423037}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Agents.Authentication.Msal", "libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj", "{AC905963-D232-4679-888B-22A3D6D39ACB}"
 EndProject
@@ -79,7 +78,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.SharePoint", "libraries\Extensions\Microsoft.Agents.Extensions.SharePoint\Microsoft.Agents.Extensions.SharePoint.csproj", "{A8EDAEA3-4057-4862-BC92-F9CFA645246A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.Teams", "libraries\Extensions\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj", "{348A61E5-E16A-47ED-B621-F2C61E1E316D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.MSTeams", "libraries\Extensions\Microsoft.Agents.Extensions.MSTeams\Microsoft.Agents.Extensions.MSTeams.csproj", "{348A61E5-E16A-47ED-B621-F2C61E1E316D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CopilotStudioClient", "CopilotStudioClient", "{295CD61D-DB20-4DF5-A917-2665DB79A6E4}"
 EndProject
@@ -88,8 +87,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CopilotStudioClient", "samples\CopilotStudioClient\CopilotStudioClient\CopilotStudioClient.csproj", "{CA58CF4C-2D7E-49CE-974C-9939321B1612}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EvalClient", "samples\CopilotStudioClient\EvalClient\EvalClient.csproj", "{A2C3344E-80B0-48B5-9828-45DC5CE7BD3C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeamsConversationSsoQuickstart", "samples\Compat\TeamsConversationSsoQuickstart\TeamsConversationSsoQuickstart.csproj", "{B27560C2-0125-4775-807E-DA2F2E5D4B1C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AgentToAgent", "AgentToAgent", "{E87BA6D5-6007-408C-B01A-916F3F86F28A}"
 EndProject
@@ -189,7 +186,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompatMessageExtensions", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompatTaskModule", "samples\Teams\Compat\CompatTaskModule\CompatTaskModule.csproj", "{8EEA060A-0ADB-29F3-0A0F-45B5C6CC29A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.Teams.Analyzers", "libraries\Extensions\Microsoft.Agents.Extensions.Teams.Analyzers\Microsoft.Agents.Extensions.Teams.Analyzers.csproj", "{994236F0-DFEE-52C1-EAD3-EFB4C2293D0C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Extensions.MSTeams.Analyzers", "libraries\Extensions\Microsoft.Agents.Extensions.MSTeams.Analyzers\Microsoft.Agents.Extensions.MSTeams.Analyzers.csproj", "{994236F0-DFEE-52C1-EAD3-EFB4C2293D0C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -561,18 +558,6 @@ Global
 		{A2C3344E-80B0-48B5-9828-45DC5CE7BD3C}.Release|x64.Build.0 = Release|Any CPU
 		{A2C3344E-80B0-48B5-9828-45DC5CE7BD3C}.Release|x86.ActiveCfg = Release|Any CPU
 		{A2C3344E-80B0-48B5-9828-45DC5CE7BD3C}.Release|x86.Build.0 = Release|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Debug|x64.Build.0 = Debug|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Debug|x86.Build.0 = Debug|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Release|x64.ActiveCfg = Release|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Release|x64.Build.0 = Release|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Release|x86.ActiveCfg = Release|Any CPU
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C}.Release|x86.Build.0 = Release|Any CPU
 		{7B41FB1B-F45C-41B7-B064-EB1BECB5BD49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7B41FB1B-F45C-41B7-B064-EB1BECB5BD49}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B41FB1B-F45C-41B7-B064-EB1BECB5BD49}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1158,7 +1143,6 @@ Global
 		{36494671-1A2D-47F9-B53D-354E0690DA82} = {674A812C-7287-4883-97F9-697D83750648}
 		{CA58CF4C-2D7E-49CE-974C-9939321B1612} = {295CD61D-DB20-4DF5-A917-2665DB79A6E4}
 		{A2C3344E-80B0-48B5-9828-45DC5CE7BD3C} = {295CD61D-DB20-4DF5-A917-2665DB79A6E4}
-		{B27560C2-0125-4775-807E-DA2F2E5D4B1C} = {36494671-1A2D-47F9-B53D-354E0690DA82}
 		{E87BA6D5-6007-408C-B01A-916F3F86F28A} = {674A812C-7287-4883-97F9-697D83750648}
 		{7B41FB1B-F45C-41B7-B064-EB1BECB5BD49} = {E87BA6D5-6007-408C-B01A-916F3F86F28A}
 		{D13DF019-D0FF-400F-AFD3-05B62C8C6FA6} = {E87BA6D5-6007-408C-B01A-916F3F86F28A}

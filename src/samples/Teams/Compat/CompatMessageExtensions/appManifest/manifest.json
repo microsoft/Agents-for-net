@@ -3,7 +3,7 @@
   "manifestVersion": "1.14",
   "version": "1.0.0",
   "id": "<<AAD_APP_CLIENT_ID>>",
-  "packageName": "com.Microsoft.Agents.Extensions.Teams.messageextension",
+  "packageName": "com.Microsoft.Agents.Extensions.MSTeams.messageextension",
   "developer": {
     "name": "TeamsMessagingExtensionsSearch",
     "websiteUrl": "https://www.microsoft.com",

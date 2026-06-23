@@ -4,9 +4,9 @@
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams;
-using Microsoft.Agents.Extensions.Teams.App;
-using Microsoft.Agents.Extensions.Teams.MessageExtensions;
+using Microsoft.Agents.Extensions.MSTeams;
+using Microsoft.Agents.Extensions.MSTeams.App;
+using Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 using Microsoft.Teams.Cards;
 
 namespace MessageExtensions;

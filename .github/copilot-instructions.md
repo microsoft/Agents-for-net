@@ -62,7 +62,7 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 
 ### Extensions
 
-**Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
+**Microsoft.Agents.Extensions.MSTeams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/`)
 - Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/read receipts, config pages
 - Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
 - Two routing styles: **fluent builders** (`TeamsExtension.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[QueryRoute("cmdId")]`)

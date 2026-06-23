@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -12,8 +12,8 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams;
-using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Extensions.MSTeams;
+using Microsoft.Agents.Extensions.MSTeams.Compat;
 using Microsoft.Agents.Builder;
 
 #nullable disable

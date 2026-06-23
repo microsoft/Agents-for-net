@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector.RestClients;
@@ -272,7 +272,7 @@ namespace Microsoft.Agents.Connector.Tests
             var activity = new Activity
             {
                 Id = "activity-id",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 From = new ChannelAccount { Role = RoleTypes.AgenticUser },
                 Conversation = new ConversationAccount { Id = "conversation/with\\bad#chars?x" }
             };
@@ -1126,7 +1126,7 @@ namespace Microsoft.Agents.Connector.Tests
             var activity = new Activity
             {
                 Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             };
             activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
 
@@ -1154,7 +1154,7 @@ namespace Microsoft.Agents.Connector.Tests
             var activity = new Activity
             {
                 Conversation = new ConversationAccount { Id = "conversation-id" },
-                ChannelId = Channels.Webchat
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat
             };
             activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
 
@@ -1184,7 +1184,7 @@ namespace Microsoft.Agents.Connector.Tests
                 Id = "test-id",
                 Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
                 ReplyToId = "reply-id",
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             };
             activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
 
@@ -1214,7 +1214,7 @@ namespace Microsoft.Agents.Connector.Tests
                 Id = "test-id",
                 Conversation = new ConversationAccount { Id = "conversation-id" },
                 ReplyToId = "reply-id",
-                ChannelId = Channels.Directline
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
             };
             activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
 

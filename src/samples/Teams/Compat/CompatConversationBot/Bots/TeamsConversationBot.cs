@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -11,10 +11,10 @@ using System.Xml;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.Teams.Compat;
+using Microsoft.Agents.Extensions.MSTeams.Compat;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Errors;
-using Microsoft.Agents.Extensions.Teams;
+using Microsoft.Agents.Extensions.MSTeams;
 using Microsoft.Agents.Authentication;
 
 namespace CompatConversationBot.Bots
