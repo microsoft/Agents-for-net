@@ -2,12 +2,10 @@
 
 ## About
 
-Provides Microsoft Teams-specific extensions for the Microsoft 365 Agents SDK. Includes Teams activity models, Teams channel data, and `TeamsInfo` helpers for accessing Teams context, roster, and meeting information within agent turns.
-
-Also includes a `TeamsActivityHandler` compatibility base class to ease migration from Bot Framework SDK bots.
+Provides Microsoft Teams-specific extensions for the Microsoft 365 Agents SDK. Includes the Teams AgentExtension for accessing Teams context, roster, and meeting information within agent turns.
 
 ## Main Types
 
-- Teams activity models, channel data, and card types
-- `TeamsInfo`: Static helpers for accessing Teams roster, meeting, and channel information
-- `TeamsActivityHandler` (compat): Compatibility base class for migrating from Bot Framework SDK
+- TeamsAgentExtension: Provides access to Microsoft Teams context, roster, and meeting information within agent turns.
+- TeamsTurnContext: Represents the context of a turn in a Microsoft Teams conversation, including information about the user, channel, and meeting.
+- Teams specific route attributes: Provides attributes for routing messages and events to specific Teams channels or meetings.
