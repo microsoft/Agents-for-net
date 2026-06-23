@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams;
 /// instance.<br/><br/>
 /// This creates HttpClients named "TeamsHttpClientFactory".
 /// </remarks>
-public static class TeamsApiClientExtensions
+internal static class TeamsApiClientExtensions
 {
     /// <summary>
     /// Configures the Teams API client for the specified turn context using the provided agent application
@@ -33,7 +33,7 @@ public static class TeamsApiClientExtensions
     /// <param name="context">The turn context in which to set up the Teams API client.</param>
     /// <param name="application">The agent application containing configuration options for the Teams API client. Cannot be null.</param>
     /// <param name="ct">A cancellation token that can be used to cancel the operation.</param>
-    public static void SetTeamsApiClient(this ITurnContext context, AgentApplication application, CancellationToken ct = default)
+    internal static void SetTeamsApiClient(this ITurnContext context, AgentApplication application, CancellationToken ct = default)
     {
         SetTeamsApiClient(context, application?.Options?.Connections, application?.Options?.HttpClientFactory, ct);
     }
@@ -49,7 +49,7 @@ public static class TeamsApiClientExtensions
     /// <param name="connections">The connections provider used to obtain authentication tokens for Teams API requests. Cannot be null.</param>
     /// <param name="httpClientFactory">The factory used to create HTTP clients for communicating with the Teams API. Cannot be null.</param>
     /// <param name="ct">A cancellation token that can be used to cancel the registration operation. Optional.</param>
-    public static void SetTeamsApiClient(this ITurnContext context, IConnections connections, System.Net.Http.IHttpClientFactory httpClientFactory, CancellationToken ct = default)
+    internal static void SetTeamsApiClient(this ITurnContext context, IConnections connections, System.Net.Http.IHttpClientFactory httpClientFactory, CancellationToken ct = default)
     {
         AssertionHelpers.ThrowIfNull(connections, nameof(connections));
         AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
@@ -69,7 +69,7 @@ public static class TeamsApiClientExtensions
         context.Services.Set<Microsoft.Teams.Api.Clients.ApiClient>(client);
     }
 
-    public static Microsoft.Teams.Api.Clients.ApiClient GetTeamsApiClient(this ITurnContext context)
+    internal static Microsoft.Teams.Api.Clients.ApiClient GetTeamsApiClient(this ITurnContext context)
     {
         return context.Services.Get<Microsoft.Teams.Api.Clients.ApiClient>();
     }
