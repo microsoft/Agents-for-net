@@ -15,6 +15,6 @@ internal class HeaderPropagation
 {
     public static void LoadHeaders(HeaderPropagationEntryCollection collection)
     {
-        // Propagate headers to the outgoing request by adding them to the HeaderPropagationEntryCollection.
+        collection.Append("User-Agent", $"agents-sdk-net-teams/{ThisAssembly.AssemblyFileVersion}");
     }
 }
