@@ -1616,7 +1616,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
 
             private IConversations getMockedConversations()
             {
-                var result = new PagedMembersResult
+                var result = new Core.Models.PagedMembersResult
                 {
                     ContinuationToken = "",
                     Members =

@@ -121,8 +121,8 @@
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.3.0" />
     <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.3.0" />
     <!-- Teams -->
-	<PackageVersion Include="Microsoft.Teams.Api" Version="2.0.8" />
-	<PackageVersion Include="Microsoft.Teams.Cards" Version="2.0.8" />
+	<PackageVersion Include="Microsoft.Teams.Api" Version="2.0.9" />
+	<PackageVersion Include="Microsoft.Teams.Cards" Version="2.0.9" />
     <!-- MCP -->
     <PackageVersion Include="ModelContextProtocol" Version="0.2.0-preview.2" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.2" />
