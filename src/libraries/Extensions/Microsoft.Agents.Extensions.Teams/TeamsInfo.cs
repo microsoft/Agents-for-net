@@ -3,10 +3,12 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Extensions.Teams.Models;
+using Microsoft.Teams.Api.Clients;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,8 +38,7 @@ public static class TeamsInfo
         participantId ??= turnContext.Activity.From.AadObjectId ?? throw new InvalidOperationException($"{nameof(participantId)} is required.");
         tenantId ??= turnContext.Activity.GetChannelData<Microsoft.Teams.Api.ChannelData>()?.Tenant?.Id ?? throw new InvalidOperationException($"{nameof(tenantId)} is required.");
 
-        var teamsClient = GetTeamsApiClient(turnContext);
-        return await teamsClient.Meetings.GetParticipantAsync(meetingId, participantId, tenantId, cancellationToken);
+        return await GetTeamsApiClient(turnContext).Meetings.GetParticipantAsync(meetingId, participantId, tenantId, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -51,8 +52,7 @@ public static class TeamsInfo
     public static async Task<Microsoft.Teams.Api.Meetings.Meeting> GetMeetingInfoAsync(ITurnContext turnContext, string meetingId = null, CancellationToken cancellationToken = default)
     {
         meetingId ??= turnContext.Activity.TeamsGetMeetingInfo()?.Id ?? throw new InvalidOperationException("The meetingId can only be null if turnContext is within the scope of a MS Teams Meeting.");
-        var teamsClient = GetTeamsApiClient(turnContext);
-        return await teamsClient.Meetings.GetByIdAsync(meetingId, cancellationToken);
+        return await GetTeamsApiClient(turnContext).Meetings.GetByIdAsync(meetingId, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -66,8 +66,7 @@ public static class TeamsInfo
     public static async Task<Microsoft.Teams.Api.Team> GetTeamDetailsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
     {
         teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
-        var teamsClient = GetTeamsApiClient(turnContext);
-        return await teamsClient.Teams.GetByIdAsync(teamId, cancellationToken);
+        return await GetTeamsApiClient(turnContext).Teams.GetByIdAsync(teamId, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -82,8 +81,7 @@ public static class TeamsInfo
     public static async Task<IList<Microsoft.Teams.Api.Channel>> GetTeamChannelsAsync(ITurnContext turnContext, string teamId = null, CancellationToken cancellationToken = default)
     {
         teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
-        var teamsClient = GetTeamsApiClient(turnContext);
-        return await teamsClient.Teams.GetConversationsAsync(teamId, cancellationToken);
+        return await GetTeamsApiClient(turnContext).Teams.GetConversationsAsync(teamId, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -95,19 +93,24 @@ public static class TeamsInfo
     /// <param name="pageSize"> Suggested number of entries on a page. </param>
     /// <param name="continuationToken"> ContinuationToken token. </param>
     /// /// <param name="cancellationToken"> Cancellation token. </param>
-    /// <returns>TeamsPagedMembersResult.</returns>
-    public static Task<TeamsPagedMembersResult> GetPagedMembersAsync(ITurnContext turnContext, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default)
+    /// <returns>PagedMembersResult.</returns>
+    public static async Task<PagedMembersResult> GetPagedMembersAsync(ITurnContext turnContext, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default)
     {
         var teamInfo = turnContext.Activity.TeamsGetTeamInfo();
 
         if (teamInfo?.Id != null)
         {
-            return GetPagedTeamMembersAsync(turnContext, teamInfo.Id, pageSize, continuationToken, cancellationToken);
+            return await GetPagedTeamMembersAsync(turnContext, teamInfo.Id, pageSize, continuationToken, cancellationToken);
         }
         else
         {
             var conversationId = turnContext.Activity?.Conversation?.Id;
-            return GetPagedMembersAsync(GetConnectorClient(turnContext), conversationId, pageSize, continuationToken, cancellationToken);
+            var corePagedResult = await GetConnectorClient(turnContext).Conversations.GetConversationPagedMembersAsync(conversationId, pageSize, continuationToken, cancellationToken).ConfigureAwait(false);
+            return new PagedMembersResult
+            {
+                ContinuationToken = corePagedResult.ContinuationToken,
+                Members = [.. corePagedResult.Members.Select(m => m.ToTeamsAccount())],
+            };
         }
     }
 
@@ -120,12 +123,12 @@ public static class TeamsInfo
     /// <param name="continuationToken"> continuationToken token. </param>
     /// <param name="pageSize"> number of entries on the page. </param>
     /// /// <param name="cancellationToken"> cancellation token. </param>
-    /// <returns>TeamsPagedMembersResult.</returns>
+    /// <returns>PagedMembersResult.</returns>
     /// <exception cref="InvalidOperationException">Thrown when teamId is not provided and cannot be found on the turnContext. </exception>
-    public static Task<TeamsPagedMembersResult> GetPagedTeamMembersAsync(ITurnContext turnContext, string teamId = null, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default)
+    public static Task<PagedMembersResult> GetPagedTeamMembersAsync(ITurnContext turnContext, string teamId = null, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default)
     {
         teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
-        return GetPagedMembersAsync(GetConnectorClient(turnContext), teamId, pageSize, continuationToken, cancellationToken);
+        return GetTeamsApiClient(turnContext).Conversations.Members.GetPagedAsync(teamId, pageSize, continuationToken, cancellationToken);
     }
 
     /// <summary>
@@ -140,7 +143,7 @@ public static class TeamsInfo
     public static Task<Microsoft.Teams.Api.Account> GetTeamMemberAsync(ITurnContext turnContext, string userId, string teamId = null, CancellationToken cancellationToken = default)
     {
         teamId ??= turnContext.Activity.TeamsGetTeamInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of MS Teams Team.");
-        return GetMemberAsync(GetConnectorClient(turnContext), userId, teamId, cancellationToken);
+        return GetTeamsApiClient(turnContext).Conversations.Members.GetByIdAsync(teamId, userId, cancellationToken);
     }
 
     /// <summary>
@@ -156,46 +159,21 @@ public static class TeamsInfo
     /// <param name="cancellationToken"> cancellation token. </param>
     /// <returns>A <see cref="Microsoft.Teams.Api.Account"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when teamId is not provided and cannot be found on the turnContext.</exception>
-    public static Task<Microsoft.Teams.Api.Account> GetMemberAsync(ITurnContext turnContext, string userId, CancellationToken cancellationToken = default)
+    public static async Task<Microsoft.Teams.Api.Account> GetMemberAsync(ITurnContext turnContext, string userId, CancellationToken cancellationToken = default)
     {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
+
         var teamInfo = turnContext.Activity.TeamsGetTeamInfo();
         if (teamInfo?.Id != null)
         {
-            return GetTeamMemberAsync(turnContext, userId, teamInfo.Id, cancellationToken);
+            return await GetTeamMemberAsync(turnContext, userId, teamInfo.Id, cancellationToken).ConfigureAwait(false);
         }
         else
         {
             var conversationId = turnContext.Activity?.Conversation?.Id;
-            return GetMemberAsync(GetConnectorClient(turnContext), userId, conversationId, cancellationToken);
+            var channelAccount = await GetConnectorClient(turnContext).Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
+            return channelAccount.ToTeamsAccount();
         }
-    }
-
-    private static async Task<Microsoft.Teams.Api.Account> GetMemberAsync(IConnectorClient connectorClient, string userId, string conversationId, CancellationToken cancellationToken)
-    {
-        if (conversationId == null)
-        {
-            throw new InvalidOperationException("The GetMembers operation needs a valid conversation Id.");
-        }
-
-        if (userId == null)
-        {
-            throw new InvalidOperationException("The GetMembers operation needs a valid user Id.");
-        }
-
-        // Use API client
-        var channelAccount = await connectorClient.Conversations.GetConversationMemberAsync(userId, conversationId, cancellationToken).ConfigureAwait(false);
-        return channelAccount.ToTeamsAccount();
-    }
-
-    private static async Task<TeamsPagedMembersResult> GetPagedMembersAsync(IConnectorClient connectorClient, string conversationId, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default)
-    {
-        if (conversationId == null)
-        {
-            throw new InvalidOperationException("The GetMembers operation needs a valid conversation Id.");
-        }
-
-        var corePagedResult = await connectorClient.Conversations.GetConversationPagedMembersAsync(conversationId, pageSize, continuationToken, cancellationToken).ConfigureAwait(false);
-        return new TeamsPagedMembersResult(corePagedResult.ContinuationToken, corePagedResult.Members);
     }
 
     private static IConnectorClient GetConnectorClient(ITurnContext turnContext)

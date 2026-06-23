@@ -91,6 +91,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             var activity = CreateTestActivity("GetPagedMembersAsync", channelData);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
             var handler = new TestTeamsActivityHandler();
 
             await handler.OnTurnAsync(turnContext);
@@ -452,6 +453,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
             var activity = CreateTestActivity("GetTeamMemberAsync", channelData);
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set<IConnectorClient>(_connectorClient);
+            turnContext.Services.Set<ApiClient>(_apiClient);
 
             var member = await TeamsInfo.GetTeamMemberAsync(turnContext, "id-1");
 
@@ -1287,8 +1289,28 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
                     response.StatusCode = HttpStatusCode.OK;
                     response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
                 }
+                // TeamsInfo.GetTeamMemberAsync / GetMemberAsync (individual member)
+                else if (request.RequestUri.PathAndQuery.Contains("/members/id-1"))
+                {
+                    var content = new { id = "id-1", name = "name-1", aadObjectId = "aad-id-1" };
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
+                }
+                // TeamsInfo.GetPagedTeamMembersAsync
+                else if (request.RequestUri.PathAndQuery.Contains("/pagedmembers"))
+                {
+                    var content = new
+                    {
+                        members = new[]
+                        {
+                            new { id = "id-1", name = "name-1", aadObjectId = "aad-id-1" },
+                            new { id = "id-2", name = "name-2", aadObjectId = "aad-id-2" },
+                        }
+                    };
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Content = new StringContent(ProtocolJsonSerializer.ToJson(content));
+                }
                 /*
-                // SendMeetingNotification
                 else if (request.RequestUri.PathAndQuery.EndsWith("v1/meetings/meeting-id/notification"))
                 {
                     var requestBody = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -1616,7 +1638,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests
 
             private IConversations getMockedConversations()
             {
-                var result = new Core.Models.PagedMembersResult
+                var result = new Microsoft.Agents.Connector.Types.PagedMembersResult
                 {
                     ContinuationToken = "",
                     Members =

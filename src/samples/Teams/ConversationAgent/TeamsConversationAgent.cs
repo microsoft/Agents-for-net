@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
@@ -17,6 +16,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Linq;
 
 namespace ConversationAgent;
 
@@ -131,19 +131,26 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     public async Task SendTargetedMessagesAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var api = TeamsExtension.GetTeamsClient(turnContext);
-        var members = await api.Conversations.Members.GetAsync(turnContext.Activity.Conversation.Id, cancellationToken);
+        string? continuationToken = null;
 
-        foreach (var member in members)
+        do
         {
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
-                Text = $"{member.Name}, this is a **targeted message** - only you can see this.",
-                Recipient = new ChannelAccount() { Id = member.Id, Name = member.Name, Role = RoleTypes.User }
-            };
+            var currentPage = await api.Conversations.Members.GetPagedAsync(turnContext.Activity.Conversation.Id, 100, continuationToken!, cancellationToken);
+            continuationToken = currentPage.ContinuationToken;
 
-            await turnContext.SendTargetedActivityAsync(activity, cancellationToken);
+            foreach (var activity in from teamMember in currentPage.Members
+                let activity = new Activity
+                {
+                    Type = ActivityTypes.Message,
+                    Text = $"{teamMember.Name}, this is a **targeted message** - only you can see this.",
+                    Recipient = new ChannelAccount() { Id = teamMember.Id, Name = teamMember.Name, Role = RoleTypes.User }
+                }
+                select activity)
+            {
+                await turnContext.SendTargetedActivityAsync(activity, cancellationToken);
+            }
         }
+        while (continuationToken != null);
     }
 
     [TeamsMessageRoute("update")]

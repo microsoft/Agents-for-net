@@ -143,6 +143,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Handler
 
             var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
             turnContext.Services.Set(connectorMock.Object);
+            turnContext.Services.Set(new Microsoft.Teams.Api.Clients.ApiClient("https://localhost/", new Microsoft.Teams.Common.Http.HttpClient(new HttpClient(new RosterHttpMessageHandler()))));
 
             var bot = new TestActivityHandler();
             await ((IAgent)bot).OnTurnAsync(turnContext);

@@ -3,9 +3,10 @@
 
 #nullable disable
 
+using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Core.Models
+namespace Microsoft.Agents.Connector.Types
 {
     /// <summary> Page of members. </summary>
     public class PagedMembersResult
