@@ -6,8 +6,8 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Authentication;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
@@ -105,20 +105,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="configure">Action that configures authentication on the builder. The sample-provided
         /// <c>AddAgentAspNetAuthentication</c> is the default implementation, but developers may use MISE
         /// or any other ASP.NET Core authentication mechanism.</param>
-        /// <param name="enabled">
+        /// <param name="forceEnable">
         /// Override for whether authorization is enabled. When <c>null</c> (the default), authorization is
         /// enabled in all environments except Development. Pass an explicit value to override — for example:
-        /// <c>enabled: !builder.Environment.IsDevelopment() &amp;&amp; !builder.Environment.IsEnvironment("Staging")</c>.
+        /// <c>forceEnable: !builder.Environment.IsDevelopment() &amp;&amp; !builder.Environment.IsEnvironment("Staging")</c>.
         /// </param>
         /// <returns>The same builder for chaining.</returns>
         /// <remarks>
         /// <para>
-        /// When <paramref name="enabled"/> resolves to <c>true</c>, the <paramref name="configure"/> action
+        /// When <paramref name="forceEnable"/> resolves to <c>true</c>, the <paramref name="configure"/> action
         /// is invoked and a marker service is registered in DI. <see cref="MapDefaultAgentEndpoints"/> checks
         /// for this marker to decide whether to call <c>RequireAuthorization()</c> on agent endpoints.
         /// </para>
         /// <para>
-        /// If this method is not called or <paramref name="enabled"/> resolves to <c>false</c>,
+        /// If this method is not called or <paramref name="forceEnable"/> resolves to <c>false</c>,
         /// no authentication is configured and endpoints will allow anonymous access.
         /// </para>
         /// <para>
@@ -127,9 +127,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <see cref="AgentEndpointExtensions.MapAgentApplicationEndpoints"/> with <c>requireAuth: true</c>.
         /// </para>
         /// </remarks>
-        public static IHostApplicationBuilder AddAgentAuthorization(this IHostApplicationBuilder builder, Action<IHostApplicationBuilder> configure, bool? enabled = null)
+        public static IHostApplicationBuilder AddAgentAuthorization(this IHostApplicationBuilder builder, Action<IHostApplicationBuilder> configure, bool? forceEnable = null)
         {
-            bool shouldEnable = enabled ?? !builder.Environment.IsDevelopment();
+            bool shouldEnable = forceEnable ?? !builder.Environment.IsDevelopment();
 
             if (shouldEnable)
             {
@@ -159,6 +159,32 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             var list = GetOrCreateMiddlewareList(builder.Services);
             list.Add(middleware);
 
+            return builder;
+        }
+
+        /// <summary>
+        /// Registers the <see cref="HeaderPropagationMiddleware"/> so that incoming request headers are
+        /// propagated to outgoing requests. This builder-phase overload allows header propagation to be
+        /// configured fluently alongside the other agent registration calls:
+        /// <code>
+        /// builder.AddAgentDefaults()
+        ///     .AddAgent&lt;MyAgent&gt;()
+        ///     .UseHeaderPropagation()
+        ///     .AddAgentAuthorization(b =&gt; b.AddAgentAspNetAuthentication());
+        /// </code>
+        /// </summary>
+        /// <param name="builder">The host application builder.</param>
+        /// <returns>The same builder for chaining.</returns>
+        /// <remarks>
+        /// This registers an <see cref="IStartupFilter"/> that inserts the middleware at the start of the
+        /// request pipeline, ensuring request headers are captured before any agent endpoints run. This is
+        /// equivalent to calling <see cref="UseHeaderPropagation(IApplicationBuilder)"/> on the built
+        /// <see cref="WebApplication"/>; use one or the other, not both.
+        /// </remarks>
+        public static IHostApplicationBuilder UseHeaderPropagation(this IHostApplicationBuilder builder)
+        {
+            ArgumentNullException.ThrowIfNull(builder);
+            builder.Services.AddTransient<IStartupFilter, HeaderPropagationStartupFilter>();
             return builder;
         }
 
@@ -409,18 +435,33 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Adds authentication and authorization middleware to the request pipeline.
         /// </summary>
         /// <param name="app">The web application.</param>
+        /// <param name="useRouting">
+        /// When <see langword="true"/>, calls <c>app.UseRouting()</c> before the authentication and
+        /// authorization middleware. Routing is order dependent and must be added before
+        /// authentication/authorization. Set this to <see langword="false"/> (the default) if routing is
+        /// already configured elsewhere in the pipeline, otherwise it will be added twice.
+        /// </param>
         /// <returns>The same <see cref="WebApplication"/> for chaining.</returns>
         /// <remarks>
         /// <para>This calls <c>app.UseAuthentication()</c> and <c>app.UseAuthorization()</c> in the
         /// correct order. Call this before <see cref="MapDefaultAgentEndpoints"/>.</para>
+        /// <para>
+        /// If <paramref name="useRouting"/> is <see langword="true"/>, <c>app.UseRouting()</c> is called
+        /// first, since routing must be registered before authentication and authorization.
+        /// </para>
         /// <para>
         /// If you need to insert additional middleware between authentication and authorization
         /// (e.g., custom claims transformation), call <c>UseAuthentication()</c> and <c>UseAuthorization()</c>
         /// manually instead of using this method.
         /// </para>
         /// </remarks>
-        public static WebApplication UseAgents(this WebApplication app)
+        public static WebApplication UseAgents(this WebApplication app, bool useRouting = false)
         {
+            if (useRouting)
+            {
+                app.UseRouting();
+            }
+
             app.UseAuthentication();
             app.UseAuthorization();
             return app;
@@ -473,6 +514,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         #endregion
 
         #region Private Helpers
+
+        private sealed class HeaderPropagationStartupFilter : IStartupFilter
+        {
+            public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+            {
+                return app =>
+                {
+                    app.UseMiddleware<HeaderPropagationMiddleware>();
+                    next(app);
+                };
+            }
+        }
 
         private static List<IMiddleware> GetOrCreateMiddlewareList(IServiceCollection services)
         {
