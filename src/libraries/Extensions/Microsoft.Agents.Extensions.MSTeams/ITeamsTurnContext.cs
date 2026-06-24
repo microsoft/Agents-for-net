@@ -14,6 +14,11 @@ namespace Microsoft.Agents.Extensions.MSTeams
     public interface ITeamsTurnContext : ITurnContext
     {
         /// <summary>
+        /// Returns the ApiClient instance registered for Microsoft Teams API access in the current turn context.
+        /// </summary>
+        Microsoft.Teams.Api.Clients.ApiClient Client { get; }
+
+        /// <summary>
         /// Sends an activity to the conversation with a targeted treatment, allowing the activity to be directed to a
         /// specific recipient or group within the conversation.
         /// </summary>

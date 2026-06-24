@@ -11,7 +11,12 @@ namespace Microsoft.Agents.Extensions.MSTeams
 {
     public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
     {
-        public TeamsTurnContext(ITurnContext turnContext) : base(turnContext) { }
+        public TeamsTurnContext(ITurnContext turnContext) : base(turnContext)
+        {
+        }
+
+        /// <inheritdoc/>
+        public Microsoft.Teams.Api.Clients.ApiClient Client => _turnContext.Services.Get<Microsoft.Teams.Api.Clients.ApiClient>();
 
         /// <inheritdoc/>
         public Task<ResourceResponse> SendTargetedActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
