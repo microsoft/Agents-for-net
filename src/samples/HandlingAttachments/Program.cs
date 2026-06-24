@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using HandlingAttachments;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
@@ -11,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddAgentDefaults()
     .AddAgentAttachmentDownloader()
     .AddAgentM365AttachmentDownloader()
-    .AddAgent<HandlingAttachments.AttachmentsAgent>()
+    .AddAgent<AttachmentsAgent>()
     .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
 
 // Register IStorage.  For development, MemoryStorage is suitable.

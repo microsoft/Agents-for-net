@@ -14,9 +14,6 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddConsole();
 
-// Add AgentApplicationOptions from appsettings section "AgentApplication".
-builder.AddAgentApplicationOptions();
-
 builder.AddAgentDefaults()
     .AddAgent<MyAgent>()
     .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
