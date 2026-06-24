@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// Decorate a method with this attribute to register it as a handler for message extension query events in Teams.
 /// The method must match the <see cref="QueryHandler"/> delegate signature.
 /// <code>
-/// [QueryRoute("searchProducts")]
+/// [TeamsQueryRoute("searchProducts")]
 /// public async Task&lt;Response&gt; OnSearchProductsAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
 /// {
 ///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class QueryRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsQueryRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -60,7 +60,7 @@ public class QueryRouteAttribute(string commandId = null, string commandIdPatter
 /// Decorate a method with this attribute to register it as a handler for message extension link unfurling events in Teams.
 /// The method must match the <see cref="QueryLinkHandler"/> delegate signature.
 /// <code>
-/// [QueryLinkRoute]
+/// [TeamsQueryLinkRoute]
 /// public async Task&lt;Response&gt; OnQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
 /// {
 ///     var preview = await _service.FetchPreviewAsync(url, cancellationToken);
@@ -74,7 +74,7 @@ public class QueryRouteAttribute(string commandId = null, string commandIdPatter
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -92,7 +92,7 @@ public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = R
 /// Decorate a method with this attribute to register it as a handler for message extension anonymous query link events in Teams.
 /// The method must match the <see cref="QueryLinkHandler"/> delegate signature.
 /// <code>
-/// [AnonQueryLinkRoute]
+/// [TeamsAnonQueryLinkRoute]
 /// public async Task&lt;Response&gt; OnAnonQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
 /// {
 ///     var preview = await _service.FetchPreviewAsync(url, cancellationToken);
@@ -106,7 +106,7 @@ public class QueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = R
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class AnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsAnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -124,7 +124,7 @@ public class AnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// Decorate a method with this attribute to register it as a handler for message extension query URL setting events in Teams.
 /// The method must match the <see cref="QuerySettingUrlHandler"/> delegate signature.
 /// <code>
-/// [QuerySettingUrlRoute]
+/// [TeamsQuerySettingUrlRoute]
 /// public Task&lt;Response&gt; OnQuerySettingUrlAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     return Task.FromResult(new Response
@@ -146,7 +146,7 @@ public class AnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class QuerySettingUrlRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsQuerySettingUrlRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -164,7 +164,7 @@ public class QuerySettingUrlRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// Decorate a method with this attribute to register it as a handler for message extension <c>composeExtension/fetchTask</c> Invokes in Teams.
 /// The method must match the <see cref="FetchActionHandler"/> delegate signature.
 /// <code>
-/// [FetchActionRoute("myCommand")]
+/// [TeamsFetchActionRoute("myCommand")]
 /// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
 /// {
 ///     return Task.FromResult(new ActionResponse
@@ -185,7 +185,7 @@ public class QuerySettingUrlRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class FetchActionRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsFetchActionRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -213,7 +213,7 @@ public class FetchActionRouteAttribute(string commandId = null, string commandId
 /// Decorate a method with this attribute to register it as a handler for message extension agent message preview edit events in Teams.
 /// The method must match the <see cref="MessagePreviewEditHandler"/> delegate signature.
 /// <code>
-/// [MessagePreviewEditRoute("composeCmd")]
+/// [TeamsMessagePreviewEditRoute("composeCmd")]
 /// public Task&lt;Response&gt; OnMessagePreviewEditAsync(ITeamsTurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
 /// {
 ///     // Re-open the compose form populated with the draft content
@@ -229,7 +229,7 @@ public class FetchActionRouteAttribute(string commandId = null, string commandId
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessagePreviewEditRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMessagePreviewEditRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -257,7 +257,7 @@ public class MessagePreviewEditRouteAttribute(string commandId = null, string co
 /// Decorate a method with this attribute to register it as a handler for message extension agent message preview send events in Teams.
 /// The method must match the <see cref="MessagePreviewSendHandler"/> delegate signature.
 /// <code>
-/// [MessagePreviewSendRoute("composeCmd")]
+/// [TeamsMessagePreviewSendRoute("composeCmd")]
 /// public async Task OnMessagePreviewSendAsync(ITeamsTurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
 /// {
 ///     // Post the confirmed message to a channel or external system
@@ -273,7 +273,7 @@ public class MessagePreviewEditRouteAttribute(string commandId = null, string co
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessagePreviewSendRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMessagePreviewSendRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -301,7 +301,7 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
 /// Decorate a method with this attribute to register it as a handler for message extension configure settings events in Teams.
 /// The method must match the <see cref="SettingHandler"/> delegate signature.
 /// <code>
-/// [SettingRoute]
+/// [TeamsSettingRoute]
 /// public Task&lt;Response&gt; OnSettingAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
 /// {
 ///     // Persist user settings and return an updated result
@@ -316,7 +316,7 @@ public class MessagePreviewSendRouteAttribute(string commandId = null, string co
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SettingRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsSettingRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -335,7 +335,7 @@ public class SettingRouteAttribute(bool isAgenticOnly = false, ushort rank = Rou
 /// The method must match the <see cref="SubmitActionHandler"/> delegate signature —
 /// the third parameter must be <see cref="Microsoft.Teams.Api.MessageExtensions.Action"/>.
 /// <code>
-/// [SubmitActionRoute("createTask")]
+/// [TeamsSubmitActionRoute("createTask")]
 /// public async Task&lt;Response&gt; OnCreateTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
 /// {
 ///     var task = await _taskService.CreateAsync(action.Data["title"]?.ToString(), action.Data["assignedTo"]?.ToString(), cancellationToken);
@@ -351,7 +351,7 @@ public class SettingRouteAttribute(bool isAgenticOnly = false, ushort rank = Rou
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SubmitActionRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsSubmitActionRouteAttribute(string commandId = null, string commandIdPattern = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -384,7 +384,7 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
 /// <code>
 /// public record ProductSummary(string Id, string Name);
 ///
-/// [SelectItemRoute]
+/// [TeamsSelectItemRoute]
 /// public async Task&lt;Response&gt; OnSelectProductAsync(ITeamsTurnContext turnContext, ITurnState turnState, ProductSummary item, CancellationToken cancellationToken)
 /// {
 ///     var details = await _catalog.GetDetailsAsync(item.Id, cancellationToken);
@@ -398,7 +398,7 @@ public class SubmitActionRouteAttribute(string commandId = null, string commandI
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsSelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -421,7 +421,7 @@ public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 /// <code>
 /// public record ApprovalAction(string ItemId, string Decision);
 ///
-/// [CardButtonClickedRoute]
+/// [TeamsCardButtonClickedRoute]
 /// public async Task OnApprovalClickedAsync(ITeamsTurnContext turnContext, ITurnState turnState, ApprovalAction cardData, CancellationToken cancellationToken)
 /// {
 ///     await _approvalService.RecordAsync(cardData.ItemId, cardData.Decision, cancellationToken);
@@ -434,7 +434,7 @@ public class SelectItemRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class CardButtonClickedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsCardButtonClickedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {

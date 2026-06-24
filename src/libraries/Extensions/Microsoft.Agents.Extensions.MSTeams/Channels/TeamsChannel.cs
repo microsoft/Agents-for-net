@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;
         /// </code>
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelUpdateRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelUpdateRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles any channel update event.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// <summary>
         /// Registers a handler to be invoked when a new Teams channel is created.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelCreatedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelCreatedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel creation event. This handler is called with information about the channel.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// <summary>
         /// Registers a handler to be invoked when a Teams channel is deleted.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelDeletedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelDeletedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel deletion event. This handler is called with information about the channel.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// <summary>
         /// Registers a handler to be invoked when a Teams channel is renamed.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelRenamedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelRenamedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel renamed event. This handler is called with information about the channel.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// <summary>
         /// Registers a handler to be invoked when a Teams channel is shared.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelSharedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelSharedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel shared event. This handler is called with information about the channel.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// <summary>
         /// Registers a handler to be invoked when a Teams channel is unshared.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelUnsharedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelUnsharedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel unshared event. This handler is called with information about the channel.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// <summary>
         /// Registers a handler to be invoked when a Teams channel is restored.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelRestoredRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelRestoredRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel restored event. This handler is called with information about the channel.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -160,7 +160,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// <summary>
         /// Registers a handler to be invoked when a Teams channel member is added.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelMemberAddedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelMemberAddedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel member added event. This handler is called with information about the channel.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -179,7 +179,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels
         /// <summary>
         /// Registers a handler to be invoked when a Teams channel member is removed.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="ChannelMemberRemovedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsChannelMemberRemovedRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the channel member removed event. This handler is called with information about the channel.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

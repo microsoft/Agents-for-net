@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [ChannelCreatedRoute]
+        [TeamsChannelCreatedRoute]
         public Task OnChannelCreatedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelCreated;
@@ -298,7 +298,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.CompletedTask;
         }
 
-        [ChannelDeletedRoute]
+        [TeamsChannelDeletedRoute]
         public Task OnChannelDeletedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelDeleted;
@@ -306,7 +306,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.CompletedTask;
         }
 
-        [ChannelMemberAddedRoute]
+        [TeamsChannelMemberAddedRoute]
         public Task OnChannelMemberAddedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelMemberAdded;
@@ -314,7 +314,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.CompletedTask;
         }
 
-        [ChannelMemberRemovedRoute]
+        [TeamsChannelMemberRemovedRoute]
         public Task OnChannelMemberRemovedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelMemberRemoved;
@@ -322,7 +322,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.CompletedTask;
         }
 
-        [ChannelRenamedRoute]
+        [TeamsChannelRenamedRoute]
         public Task OnChannelRenamedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelRenamed;
@@ -330,7 +330,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.CompletedTask;
         }
 
-        [ChannelRestoredRoute]
+        [TeamsChannelRestoredRoute]
         public Task OnChannelRestoredAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelRestored;
@@ -338,7 +338,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.CompletedTask;
         }
 
-        [ChannelSharedRoute]
+        [TeamsChannelSharedRoute]
         public Task OnChannelSharedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelShared;
@@ -346,7 +346,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.CompletedTask;
         }
 
-        [ChannelUnsharedRoute]
+        [TeamsChannelUnsharedRoute]
         public Task OnChannelUnsharedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             LastCalledEvent = EventType.ChannelUnShared;
@@ -366,7 +366,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [ChannelUpdateRoute]
+        [TeamsChannelUpdateRoute]
         public Task OnAnyChannelEventAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             HandlerCalled = true;
@@ -386,7 +386,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [ChannelCreatedRoute]
+        [TeamsChannelCreatedRoute]
         public static Task OnChannelCreatedAsync(ITurnContext turnContext, ITurnState turnState, Channel channel, CancellationToken cancellationToken)
         {
             HandlerCalled = true;

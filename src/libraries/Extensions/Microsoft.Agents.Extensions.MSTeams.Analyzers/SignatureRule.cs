@@ -8,10 +8,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers
     /// </summary>
     internal sealed class SignatureRule
     {
-        /// <summary>Fully-qualified metadata name of the attribute type (e.g. "...QueryRouteAttribute").</summary>
+        /// <summary>Fully-qualified metadata name of the attribute type (e.g. "...TeamsQueryRouteAttribute").</summary>
         public string AttributeMetadataName { get; set; } = "";
 
-        /// <summary>Short display name used in diagnostics (e.g. "QueryRoute").</summary>
+        /// <summary>Short display name used in diagnostics (e.g. "TeamsQueryRoute").</summary>
         public string AttributeDisplayName { get; set; } = "";
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers
         /// <summary>
         /// Expected parameter types, in order (0 = first parameter).
         /// A <c>null</c> entry means "accept any type" — used for generic <c>TData</c> parameters
-        /// in <c>SubmitActionRoute</c>, <c>SelectItemRoute</c>, <c>CardButtonClickedRoute</c>, and
+        /// in <c>TeamsSubmitActionRoute</c>, <c>TeamsSelectItemRoute</c>, <c>TeamsCardButtonClickedRoute</c>, and
         /// meeting-participant routes.
         /// </summary>
         public string?[] ParameterTypes { get; set; } = [];

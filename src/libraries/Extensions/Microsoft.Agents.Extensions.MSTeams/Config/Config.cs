@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 /// [TeamsExtension]
 /// public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 /// {
-///     [ConfigFetchRoute]
+///     [TeamsConfigFetchRoute]
 ///     public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigFetchAsync(
 ///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 ///         return Task.FromResult&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt;(response);
 ///     }
 ///
-///     [ConfigSubmitRoute]
+///     [TeamsConfigSubmitRoute]
 ///     public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigSubmitAsync(
 ///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
@@ -98,7 +98,7 @@ public class TeamsConfig
     /// <summary>
     /// Handles config fetch events for Microsoft Teams.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="ConfigFetchRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsConfigFetchRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -117,7 +117,7 @@ public class TeamsConfig
     /// <summary>
     /// Handles config submit events for Microsoft Teams.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="ConfigSubmitRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsConfigSubmitRouteAttribute"/> can be used to decorate a <see cref="ConfigHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

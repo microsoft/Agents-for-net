@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Messages;
 /// Decorate a method with this attribute to register it as a handler for message edit events in Teams.
 /// The decorated method must match the <see cref="RouteHandler"/> delegate signature.
 /// <code>
-/// [MessageEditRoute]
+/// [TeamsMessageEditRoute]
 /// public async Task OnMessageEditAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     // Handle message edit event
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Messages;
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessageEditRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMessageEditRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -45,7 +45,7 @@ public class MessageEditRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// Decorate a method with this attribute to register it as a handler for message undelete events in Teams.
 /// The decorated method must match the <see cref="RouteHandler"/> delegate signature.
 /// <code>
-/// [MessageUndeleteRoute]
+/// [TeamsMessageUndeleteRoute]
 /// public async Task OnMessageUndeleteAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     // Handle message undelete event
@@ -57,7 +57,7 @@ public class MessageEditRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessageUndeleteRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMessageUndeleteRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -76,7 +76,7 @@ public class MessageUndeleteRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// Decorate a method with this attribute to register it as a handler for message soft-delete events in Teams.
 /// The decorated method must match the <see cref="RouteHandler"/> delegate signature.
 /// <code>
-/// [MessageDeleteRoute]
+/// [TeamsMessageDeleteRoute]
 /// public async Task OnMessageDeleteAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 /// {
 ///     // Handle message soft-delete event
@@ -88,7 +88,7 @@ public class MessageUndeleteRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MessageDeleteRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMessageDeleteRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -108,7 +108,7 @@ public class MessageDeleteRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// The decorated method must match the <see cref="ReadReceiptHandler"/> delegate signature —
 /// the third parameter must be <see cref="System.Text.Json.JsonElement"/>.
 /// <code>
-/// [ReadReceiptRoute]
+/// [TeamsReadReceiptRoute]
 /// public async Task OnReadReceiptAsync(ITeamsTurnContext turnContext, ITurnState turnState, System.Text.Json.JsonElement data, CancellationToken cancellationToken)
 /// {
 ///     // Handle read receipt event
@@ -120,7 +120,7 @@ public class MessageDeleteRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ReadReceiptRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsReadReceiptRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -140,7 +140,7 @@ public class ReadReceiptRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// The decorated method must match the <see cref="O365ConnectorCardActionHandler"/> delegate signature —
 /// the third parameter must be <see cref="Microsoft.Teams.Api.O365.ConnectorCardActionQuery"/>.
 /// <code>
-/// [O365ConnectorCardActionRoute]
+/// [TeamsExecuteActionRoute]
 /// public async Task OnO365ConnectorCardActionAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.O365.ConnectorCardActionQuery query, CancellationToken cancellationToken)
 /// {
 ///     // Handle O365 connector card action
@@ -152,7 +152,7 @@ public class ReadReceiptRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ExecuteActionRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsExecuteActionRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)

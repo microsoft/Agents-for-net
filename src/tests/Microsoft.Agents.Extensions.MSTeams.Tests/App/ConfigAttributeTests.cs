@@ -198,7 +198,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         public TestConfigAttributeApp(AgentApplicationOptions options) : base(options) { }
 
-        [ConfigFetchRoute]
+        [TeamsConfigFetchRoute]
         public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnConfigFetchAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -210,7 +210,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.FromResult(new Microsoft.Teams.Api.Config.ConfigResponse());
         }
 
-        [ConfigSubmitRoute]
+        [TeamsConfigSubmitRoute]
         public Task<Microsoft.Teams.Api.Config.ConfigResponse> OnConfigSubmitAsync(
             ITurnContext turnContext,
             ITurnState turnState,

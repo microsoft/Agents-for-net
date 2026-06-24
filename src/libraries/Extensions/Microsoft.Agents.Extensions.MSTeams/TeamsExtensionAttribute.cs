@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.MSTeams;
 /// [TeamsExtension]
 /// public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 /// {
-///     [ChannelCreatedRoute]
+///     [TeamsChannelCreatedRoute]
 ///     public async Task OnChannelCreatedAsync(ITeamsTurnContext turnContext, ITurnState turnState,
 ///         ChannelInfo channelInfo, CancellationToken cancellationToken)
 ///     {

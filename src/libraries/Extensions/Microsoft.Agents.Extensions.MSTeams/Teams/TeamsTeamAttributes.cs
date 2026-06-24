@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams;
 /// Decorate a method with this attribute to register it as a handler for team archived events in Teams.
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
-/// [TeamArchivedRoute]
+/// [TeamsTeamArchivedRoute]
 /// public async Task OnTeamArchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team archived event
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams;
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -45,7 +45,7 @@ public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// Decorate a method with this attribute to register it as a handler for team unarchived events in Teams.
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
-/// [TeamUnarchivedRoute]
+/// [TeamsTeamUnarchivedRoute]
 /// public async Task OnTeamUnarchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team unarchived event
@@ -57,7 +57,7 @@ public class TeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -76,7 +76,7 @@ public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// Decorate a method with this attribute to register it as a handler for team deleted events in Teams.
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
-/// [TeamDeletedRoute]
+/// [TeamsTeamDeletedRoute]
 /// public async Task OnTeamDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team deleted event
@@ -88,7 +88,7 @@ public class TeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -107,7 +107,7 @@ public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// Decorate a method with this attribute to register it as a handler for team hard deleted events in Teams.
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
-/// [TeamHardDeletedRoute]
+/// [TeamsTeamHardDeletedRoute]
 /// public async Task OnTeamHardDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team hard deleted event
@@ -119,7 +119,7 @@ public class TeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -138,7 +138,7 @@ public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// Decorate a method with this attribute to register it as a handler for team renamed events in Teams.
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
-/// [TeamRenamedRoute]
+/// [TeamsTeamRenamedRoute]
 /// public async Task OnTeamRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team renamed event
@@ -150,7 +150,7 @@ public class TeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -169,7 +169,7 @@ public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// Decorate a method with this attribute to register it as a handler for team restored events in Teams.
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
-/// [TeamRestoredRoute]
+/// [TeamsTeamRestoredRoute]
 /// public async Task OnTeamRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team restored event
@@ -181,7 +181,7 @@ public class TeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -199,10 +199,10 @@ public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for all team update events in Teams,
 /// including archived, unarchived, deleted, hard deleted, renamed, and restored.
-/// Use the specific event attributes (e.g., <see cref="TeamArchivedRouteAttribute"/>) to handle individual event types.
+/// Use the specific event attributes (e.g., <see cref="TeamsTeamArchivedRouteAttribute"/>) to handle individual event types.
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
-/// [TeamUpdateRoute]
+/// [TeamsTeamUpdateRoute]
 /// public async Task OnAnyTeamEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle any team update event
@@ -214,7 +214,7 @@ public class TeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TeamUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTeamUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)

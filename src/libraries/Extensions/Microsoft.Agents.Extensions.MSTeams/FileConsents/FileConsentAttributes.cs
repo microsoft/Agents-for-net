@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams file consent accept invocations.
 /// <code>
-/// [FileConsentAcceptRoute]
+/// [TeamsFileConsentAcceptRoute]
 /// public async Task OnFileConsentAcceptAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
 /// {
 ///     using var fileStream = File.OpenRead("report.txt");
@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class FileConsentAcceptRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsFileConsentAcceptRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -53,7 +53,7 @@ public class FileConsentAcceptRouteAttribute(bool isAgenticOnly = false, ushort 
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams file consent decline invocations.
 /// <code>
-/// [FileConsentDeclineRoute]
+/// [TeamsFileConsentDeclineRoute]
 /// public Task OnFileConsentDeclineAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.FileConsentCardResponse response, CancellationToken cancellationToken)
 /// {
 ///     return turnContext.SendActivityAsync("File upload was declined.", cancellationToken: cancellationToken);
@@ -65,7 +65,7 @@ public class FileConsentAcceptRouteAttribute(bool isAgenticOnly = false, ushort 
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class FileConsentDeclineRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsFileConsentDeclineRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)

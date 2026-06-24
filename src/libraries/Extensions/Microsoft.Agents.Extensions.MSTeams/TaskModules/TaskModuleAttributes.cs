@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.TaskModules;
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams task module fetch events.
 /// <code>
-/// [TaskFetchRoute("myKey")]
+/// [TeamsTaskFetchRoute("myKey")]
 /// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnFetchAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module fetch event
@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.TaskModules;
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TaskFetchRouteAttribute(string value = null, string key = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTaskFetchRouteAttribute(string value = null, string key = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
@@ -55,7 +55,7 @@ public class TaskFetchRouteAttribute(string value = null, string key = null, boo
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams task module submit events.
 /// <code>
-/// [TaskSubmitRoute("myKey")]
+/// [TeamsTaskSubmitRoute("myKey")]
 /// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSubmitAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module submit event
@@ -69,7 +69,7 @@ public class TaskFetchRouteAttribute(string value = null, string key = null, boo
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class TaskSubmitRouteAttribute(string value = null, string key = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsTaskSubmitRouteAttribute(string value = null, string key = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     public void AddRoute(AgentApplication app, MethodInfo method)
     {

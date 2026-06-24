@@ -32,7 +32,7 @@ public class MessageExtension
     ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] } });
     /// });
     /// </code>
-    /// Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsMessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
@@ -49,7 +49,7 @@ public class MessageExtension
     /// Registers a handler to process the 'edit' action of a message that's being previewed by the
     /// user prior to sending.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="MessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsMessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -73,7 +73,7 @@ public class MessageExtension
     ///     await _channel.PostAsync(content, ct);
     /// });
     /// </code>
-    /// Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsMessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
@@ -90,7 +90,7 @@ public class MessageExtension
     /// Registers a handler to process the 'send' action of a message that's being previewed by the
     /// user prior to sending.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="MessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsMessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -117,7 +117,7 @@ public class MessageExtension
     ///         }
     ///     }));
     /// </code>
-    /// Alternatively, the <see cref="FetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsFetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
@@ -133,7 +133,7 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler to process the initial fetch task for an Action based message extension.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="FetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsFetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -158,7 +158,7 @@ public class MessageExtension
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [task.ToCard()] } };
     /// });
     /// </code>
-    /// Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsSubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
@@ -174,7 +174,7 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the submit action for an Action based Message Extension.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="SubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsSubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -199,7 +199,7 @@ public class MessageExtension
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = attachments } };
     /// });
     /// </code>
-    /// Alternatively, the <see cref="QueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsQueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
@@ -215,7 +215,7 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements a Search based Message Extension.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="QueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsQueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -239,7 +239,7 @@ public class MessageExtension
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [details.ToHeroCard().ToMessagingExtensionAttachment()] } };
     /// });
     /// </code>
-    /// Alternatively, the <see cref="SelectItemRouteAttribute"/> can be used to decorate a <see cref="SelectItemHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsSelectItemRouteAttribute"/> can be used to decorate a <see cref="SelectItemHandler"/> method for the same purpose.
     /// </remarks>
     /// <typeparam name="TData">The type of the <c>data</c> argument on the handler.</typeparam>
     /// <param name="handler">Function to call when the event is triggered.</param>
@@ -263,7 +263,7 @@ public class MessageExtension
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [preview.ToCard().ToMessagingExtensionAttachment()] } };
     /// });
     /// </code>
-    /// Alternatively, the <see cref="QueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsQueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -278,7 +278,7 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the logic to handle anonymous link unfurling.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="AnonQueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsAnonQueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -307,7 +307,7 @@ public class MessageExtension
     ///         }
     ///     }));
     /// </code>
-    /// Alternatively, the <see cref="QuerySettingUrlRouteAttribute"/> can be used to decorate a <see cref="QuerySettingUrlHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsQuerySettingUrlRouteAttribute"/> can be used to decorate a <see cref="QuerySettingUrlHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -331,7 +331,7 @@ public class MessageExtension
     ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.Config } });
     /// });
     /// </code>
-    /// Alternatively, the <see cref="SettingRouteAttribute"/> can be used to decorate a <see cref="SettingHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsSettingRouteAttribute"/> can be used to decorate a <see cref="SettingHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">A delegate that processes the settings event. The handler receives the turn context, turn state, deserialized
     /// settings data of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token. Cannot be null.</param>
@@ -355,7 +355,7 @@ public class MessageExtension
     ///     await ctx.SendActivityAsync($"Decision '{cardData.Decision}' recorded.", cancellationToken: ct);
     /// });
     /// </code>
-    /// Alternatively, the <see cref="CardButtonClickedRouteAttribute"/> can be used to decorate a <see cref="CardButtonClickedHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsCardButtonClickedRouteAttribute"/> can be used to decorate a <see cref="CardButtonClickedHandler"/> method for the same purpose.
     /// </remarks>
     /// <typeparam name="TData">The type of the <c>cardData</c> argument on the handler.</typeparam>
     /// <param name="handler">A delegate that handles the card button click event. The delegate receives the turn context, turn state,

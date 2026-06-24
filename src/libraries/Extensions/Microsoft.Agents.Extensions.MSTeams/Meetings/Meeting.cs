@@ -23,7 +23,7 @@ public class Meeting
     /// <summary>
     /// Handles Microsoft Teams meeting start events.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="MeetingStartRouteAttribute"/> can be used to decorate a <see cref="MeetingStartHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsMeetingStartRouteAttribute"/> can be used to decorate a <see cref="MeetingStartHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting start event activity is received from the connector.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -37,7 +37,7 @@ public class Meeting
     /// <summary>
     /// Handles Microsoft Teams meeting end events.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="MeetingEndRouteAttribute"/> can be used to decorate a <see cref="MeetingEndHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsMeetingEndRouteAttribute"/> can be used to decorate a <see cref="MeetingEndHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting end event activity is received from the connector.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -51,7 +51,7 @@ public class Meeting
     /// <summary>
     /// Handles Microsoft Teams meeting participants join events.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="MeetingParticipantsJoinRouteAttribute"/> can be used to decorate a <see cref="MeetingParticipantsEventHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsMeetingParticipantsJoinRouteAttribute"/> can be used to decorate a <see cref="MeetingParticipantsEventHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting participants join event activity is received from the connector.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -65,7 +65,7 @@ public class Meeting
     /// <summary>
     /// Handles Microsoft Teams meeting participants leave events.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="MeetingParticipantsLeaveRouteAttribute"/> can be used to decorate a <see cref="MeetingParticipantsEventHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsMeetingParticipantsLeaveRouteAttribute"/> can be used to decorate a <see cref="MeetingParticipantsEventHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when a Microsoft Teams meeting participants leave event activity is received from the connector.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

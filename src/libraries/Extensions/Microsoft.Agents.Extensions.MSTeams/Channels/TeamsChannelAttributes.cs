@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 /// Decorate a method with this attribute to register it as a handler for channel created events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelCreatedRoute]
+/// [TeamsChannelCreatedRoute]
 /// public async Task OnChannelCreatedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel created event
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -45,7 +45,7 @@ public class ChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// Decorate a method with this attribute to register it as a handler for channel deleted events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelDeletedRoute]
+/// [TeamsChannelDeletedRoute]
 /// public async Task OnChannelDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel deleted event
@@ -57,7 +57,7 @@ public class ChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -76,7 +76,7 @@ public class ChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// Decorate a method with this attribute to register it as a handler for channel member added events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelMemberAddedRoute]
+/// [TeamsChannelMemberAddedRoute]
 /// public async Task OnChannelMemberAddedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel member added event
@@ -88,7 +88,7 @@ public class ChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -107,7 +107,7 @@ public class ChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, ushort
 /// Decorate a method with this attribute to register it as a handler for channel member removed events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelMemberRemovedRoute]
+/// [TeamsChannelMemberRemovedRoute]
 /// public async Task OnChannelMemberRemovedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel member removed event
@@ -119,7 +119,7 @@ public class ChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, ushort
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -138,7 +138,7 @@ public class ChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false, usho
 /// Decorate a method with this attribute to register it as a handler for channel renamed events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelRenamedRoute]
+/// [TeamsChannelRenamedRoute]
 /// public async Task OnChannelRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel renamed event
@@ -150,7 +150,7 @@ public class ChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false, usho
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -169,7 +169,7 @@ public class ChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// Decorate a method with this attribute to register it as a handler for channel restored events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelRestoredRoute]
+/// [TeamsChannelRestoredRoute]
 /// public async Task OnChannelRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel restored event
@@ -181,7 +181,7 @@ public class ChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelRestoredRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -200,7 +200,7 @@ public class ChannelRestoredRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// Decorate a method with this attribute to register it as a handler for channel shared events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelSharedRoute]
+/// [TeamsChannelSharedRoute]
 /// public async Task OnChannelSharedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel shared event
@@ -212,7 +212,7 @@ public class ChannelRestoredRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -231,7 +231,7 @@ public class ChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// Decorate a method with this attribute to register it as a handler for channel unshared events in Teams.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelUnsharedRoute]
+/// [TeamsChannelUnsharedRoute]
 /// public async Task OnChannelUnsharedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel unshared event
@@ -243,7 +243,7 @@ public class ChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort rank
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelUnsharedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelUnsharedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -261,10 +261,10 @@ public class ChannelUnsharedRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for all channel update events in Teams,
 /// including created, deleted, renamed, restored, shared, unshared, member added, and member removed.
-/// Use the specific event attributes (e.g., <see cref="ChannelCreatedRouteAttribute"/>) to handle individual event types.
+/// Use the specific event attributes (e.g., <see cref="TeamsChannelCreatedRouteAttribute"/>) to handle individual event types.
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
-/// [ChannelUpdateRoute]
+/// [TeamsChannelUpdateRoute]
 /// public async Task OnAnyChannelEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle any channel update event
@@ -276,7 +276,7 @@ public class ChannelUnsharedRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ChannelUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsChannelUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)

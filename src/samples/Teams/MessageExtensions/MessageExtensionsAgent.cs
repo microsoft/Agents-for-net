@@ -18,7 +18,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     public Task OnMessageAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
         => turnContext.SendActivityAsync($"Echo: {turnContext.Activity.Text}\n\nThis is a message extension bot. Use the message extension commands in Teams to test functionality.", cancellationToken: cancellationToken);
 
-    [QueryRoute("searchQuery")]
+    [TeamsQueryRoute("searchQuery")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchQueryAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
     {
         bool initialRun = query.Parameters?.FirstOrDefault(p => p.Name == "initialRun")?.Value?.ToString() == "true";
@@ -61,7 +61,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
                 Title = $"Result {i}",
                 Text = $"This is a preview of result {i} for query '{searchQuery}'.",
 
-                // This Value is sent to the SelectItemRoute below
+                // This Value is sent to the TeamsSelectItemRoute below
                 Tap = new CardAction { Type = "invoke", Value = $"{{\"index\": \"{i}\", \"query\":\"{searchQuery}\" }}" }
             };
 
@@ -90,7 +90,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         });
     }
 
-    [SelectItemRoute]
+    [TeamsSelectItemRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITeamsTurnContext turnContext, ITurnState turnState, Dictionary<string,string> items, CancellationToken cancellationToken)
     {
         var index = items.TryGetValue("index", out string? value) ? value : "No Index";
@@ -133,7 +133,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         });
     }
 
-    [SubmitActionRoute("createCard")]
+    [TeamsSubmitActionRoute("createCard")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnCreateCardAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
     {
         var title = action.GetDataString("title", "Default Title");
@@ -180,7 +180,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         });
     }
 
-    [QueryLinkRoute]
+    [TeamsQueryLinkRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Link query received: {Url}", url);
@@ -243,7 +243,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         });
     }
 
-    [QuerySettingUrlRoute]
+    [TeamsQuerySettingUrlRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuerySettingsUrlAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Query settings URL requested");
@@ -267,7 +267,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         });
     }
 
-    [FetchActionRoute]
+    [TeamsFetchActionRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchAction(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Fetch MessageExtensions.Action requested");
@@ -296,7 +296,7 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         });
     }
 
-    [SettingRoute]
+    [TeamsSettingRoute]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnMessageExtensionSettingAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query settings, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Message extension settings submitted with state: {State}", settings.State);

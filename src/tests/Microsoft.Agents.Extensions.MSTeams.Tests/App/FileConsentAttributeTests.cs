@@ -211,7 +211,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         public TestFileConsentAttributeApp(AgentApplicationOptions options) : base(options) { }
 
-        [FileConsentAcceptRoute]
+        [TeamsFileConsentAcceptRoute]
         public Task OnFileConsentAcceptAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -223,7 +223,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             return Task.CompletedTask;
         }
 
-        [FileConsentDeclineRoute]
+        [TeamsFileConsentDeclineRoute]
         public Task OnFileConsentDeclineAsync(
             ITurnContext turnContext,
             ITurnState turnState,

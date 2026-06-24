@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams config fetch invocations.
 /// <code>
-/// [ConfigFetchRoute]
+/// [TeamsConfigFetchRoute]
 /// public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigFetchAsync(
 ///     ITeamsTurnContext turnContext,
 ///     ITurnState turnState,
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Config;
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ConfigFetchRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsConfigFetchRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -56,7 +56,7 @@ public class ConfigFetchRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams config submit invocations.
 /// <code>
-/// [ConfigSubmitRoute]
+/// [TeamsConfigSubmitRoute]
 /// public Task&lt;Microsoft.Teams.Api.Config.ConfigResponse&gt; OnConfigSubmitAsync(
 ///     ITeamsTurnContext turnContext,
 ///     ITurnState turnState,
@@ -72,7 +72,7 @@ public class ConfigFetchRouteAttribute(bool isAgenticOnly = false, ushort rank =
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class ConfigSubmitRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsConfigSubmitRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)

@@ -65,7 +65,7 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 **Microsoft.Agents.Extensions.MSTeams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/`)
 - Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/read receipts, config pages
 - Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
-- Two routing styles: **fluent builders** (`TeamsExtension.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[QueryRoute("cmdId")]`)
+- Two routing styles: **fluent builders** (`TeamsExtension.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[TeamsQueryRoute("cmdId")]`)
 - Feature areas exposed as properties on `TeamsAgentExtension`:
   - `TeamsExtension.MessageExtensions` — search queries, link unfurling, anonymous link unfurling, action commands, compose previews, card button clicks, settings
   - `TeamsExtension.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
@@ -86,7 +86,7 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 [TeamsExtension]
 public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    [QueryRoute("searchCmd")]
+    [TeamsQueryRoute("searchCmd")]
     public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchAsync(
         ITurnContext ctx, ITurnState state,
         Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken ct)

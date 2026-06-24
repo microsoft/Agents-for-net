@@ -500,7 +500,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [SubmitActionRoute("testCommand")]
+        [TeamsSubmitActionRoute("testCommand")]
 
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSubmitActionAsync(
             ITurnContext turnContext,
@@ -525,7 +525,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [QueryRoute("queryCommand")]
+        [TeamsQueryRoute("queryCommand")]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -549,7 +549,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [QueryLinkRoute]
+        [TeamsQueryLinkRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
@@ -574,7 +574,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [QuerySettingUrlRoute]
+        [TeamsQuerySettingUrlRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuerySettingUrlAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -597,7 +597,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [SettingRoute]
+        [TeamsSettingRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSettingAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -620,7 +620,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [FetchActionRoute("fetchCommand")]
+        [TeamsFetchActionRoute("fetchCommand")]
         public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTaskAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -644,7 +644,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [CardButtonClickedRoute]
+        [TeamsCardButtonClickedRoute]
         public Task OnCardButtonClickedAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -675,7 +675,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [MessagePreviewEditRoute("previewEditCommand")]
+        [TeamsMessagePreviewEditRoute("previewEditCommand")]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnMessagePreviewEditAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -700,7 +700,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [MessagePreviewSendRoute("previewSendCommand")]
+        [TeamsMessagePreviewSendRoute("previewSendCommand")]
         public Task OnMessagePreviewSendAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -724,7 +724,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             this.RegisterExtension(extension, (ext) => { });
         }
 
-        [SelectItemRoute]
+        [TeamsSelectItemRoute]
         public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(
             ITurnContext turnContext,
             ITurnState turnState,

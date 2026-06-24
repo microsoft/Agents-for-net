@@ -22,7 +22,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     }
 
     #region Simple Form
-    [TaskFetchRoute("simple_form")]
+    [TeamsTaskFetchRoute("simple_form")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormFetchAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
@@ -36,7 +36,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
                 })));
     }
 
-    [TaskSubmitRoute("simple_form")]
+    [TeamsTaskSubmitRoute("simple_form")]
     public async Task<Microsoft.Teams.Api.TaskModules.Response> OnSimpleFormSubmitAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
@@ -47,7 +47,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     #endregion
 
     #region Dialog with Webpage Content
-    [TaskFetchRoute("webpage_dialog")]
+    [TeamsTaskFetchRoute("webpage_dialog")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogFetchAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
@@ -61,7 +61,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
                 })));
     }
 
-    [TaskSubmitRoute("webpage_dialog")]
+    [TeamsTaskSubmitRoute("webpage_dialog")]
     public async Task<Microsoft.Teams.Api.TaskModules.Response> OnWebpageDialogSubmitAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
@@ -73,7 +73,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     #endregion
 
     #region Multi-Step Form
-    [TaskFetchRoute("multi_step_form")]
+    [TeamsTaskFetchRoute("multi_step_form")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepFetchAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
@@ -87,7 +87,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
                 })));
     }
 
-    [TaskSubmitRoute("multi_step_form_submit_name")]
+    [TeamsTaskSubmitRoute("multi_step_form_submit_name")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitNameAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
@@ -103,7 +103,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
                 })));
     }
 
-    [TaskSubmitRoute("multi_step_form_submit_email")]
+    [TeamsTaskSubmitRoute("multi_step_form_submit_email")]
     public async Task<Microsoft.Teams.Api.TaskModules.Response> OnMultiStepSubmitEmailAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
     {
         var name = request.GetDataString("name", "Unknown");
@@ -115,7 +115,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
     #endregion
 
     #region Mixed Example with Card and Webpage
-    [TaskFetchRoute("mixed_example")]
+    [TeamsTaskFetchRoute("mixed_example")]
     public Task<Microsoft.Teams.Api.TaskModules.Response> OnMixedExampleFetchAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
     {
         return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(

@@ -25,7 +25,7 @@ public class Message
     /// Handles message edit events.
     /// </summary>
     /// <remarks>
-    /// Alternatively, the <see cref="MessageEditRouteAttribute"/> can be used to decorate a <see cref="RouteHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsMessageEditRouteAttribute"/> can be used to decorate a <see cref="RouteHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -45,7 +45,7 @@ public class Message
     /// Handles message undelete (undo soft-delete) events.
     /// </summary>
     /// <remarks>
-    /// Alternatively, the <see cref="MessageUndeleteRouteAttribute"/> can be used to decorate a <see cref="RouteHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsMessageUndeleteRouteAttribute"/> can be used to decorate a <see cref="RouteHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -65,7 +65,7 @@ public class Message
     /// Handles message soft-delete events.
     /// </summary>
     /// <remarks>
-    /// Alternatively, the <see cref="MessageDeleteRouteAttribute"/> can be used to decorate a <see cref="RouteHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsMessageDeleteRouteAttribute"/> can be used to decorate a <see cref="RouteHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -85,7 +85,7 @@ public class Message
     /// Handles read receipt events for messages sent by the agent in personal scope.
     /// </summary>
     /// <remarks>
-    /// Alternatively, the <see cref="ReadReceiptRouteAttribute"/> can be used to decorate a <see cref="ReadReceiptHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsReadReceiptRouteAttribute"/> can be used to decorate a <see cref="ReadReceiptHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
@@ -105,7 +105,7 @@ public class Message
     /// Handles O365 Connector Card Action activities.
     /// </summary>
     /// <remarks>
-    /// Alternatively, the <see cref="ExecuteActionRouteAttribute"/> can be used to decorate an <see cref="O365ConnectorCardActionHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="TeamsExecuteActionRouteAttribute"/> can be used to decorate an <see cref="O365ConnectorCardActionHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>

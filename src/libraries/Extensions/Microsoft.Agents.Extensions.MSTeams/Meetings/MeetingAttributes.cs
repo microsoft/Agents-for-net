@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Meetings;
 /// Decorate a method with this attribute to register it as a handler for meeting start events in Teams.
 /// The method must match the <see cref="MeetingStartHandler"/> delegate signature.
 /// <code>
-/// [MeetingStartRoute]
+/// [TeamsMeetingStartRoute]
 /// public async Task OnMeetingStartAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
 /// {
 ///     // Handle meeting start event
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Meetings;
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MeetingStartRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMeetingStartRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -45,7 +45,7 @@ public class MeetingStartRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// Decorate a method with this attribute to register it as a handler for meeting end events in Teams.
 /// The method must match the <see cref="MeetingEndHandler"/> delegate signature.
 /// <code>
-/// [MeetingEndRoute]
+/// [TeamsMeetingEndRoute]
 /// public async Task OnMeetingEndAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Meetings.MeetingDetails meeting, CancellationToken cancellationToken)
 /// {
 ///     // Handle meeting end event
@@ -57,7 +57,7 @@ public class MeetingStartRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MeetingEndRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMeetingEndRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -76,7 +76,7 @@ public class MeetingEndRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 /// Decorate a method with this attribute to register it as a handler for meeting participants join events in Teams.
 /// The method must match the <see cref="MeetingParticipantsEventHandler"/> delegate signature.
 /// <code>
-/// [MeetingParticipantsJoinRoute]
+/// [TeamsMeetingParticipantsJoinRoute]
 /// public async Task OnParticipantsJoinAsync(ITeamsTurnContext turnContext, ITurnState turnState, MeetingParticipantsEventDetails participants, CancellationToken cancellationToken)
 /// {
 ///     // Handle participants join event
@@ -88,7 +88,7 @@ public class MeetingEndRouteAttribute(bool isAgenticOnly = false, ushort rank = 
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MeetingParticipantsJoinRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMeetingParticipantsJoinRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)
@@ -107,7 +107,7 @@ public class MeetingParticipantsJoinRouteAttribute(bool isAgenticOnly = false, u
 /// Decorate a method with this attribute to register it as a handler for meeting participants leave events in Teams.
 /// The method must match the <see cref="MeetingParticipantsEventHandler"/> delegate signature.
 /// <code>
-/// [MeetingParticipantsLeaveRoute]
+/// [TeamsMeetingParticipantsLeaveRoute]
 /// public async Task OnParticipantsLeaveAsync(ITeamsTurnContext turnContext, ITurnState turnState, MeetingParticipantsEventDetails participants, CancellationToken cancellationToken)
 /// {
 ///     // Handle participants leave event
@@ -119,7 +119,7 @@ public class MeetingParticipantsJoinRouteAttribute(bool isAgenticOnly = false, u
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
-public class MeetingParticipantsLeaveRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
+public class TeamsMeetingParticipantsLeaveRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
 {
     /// <inheritdoc />
     public void AddRoute(AgentApplication app, MethodInfo method)

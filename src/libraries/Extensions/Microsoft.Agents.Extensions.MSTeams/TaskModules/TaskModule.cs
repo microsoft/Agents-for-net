@@ -45,13 +45,13 @@ public class TaskModule
     /// <paramref name="value"/> to determine whether this handler should be triggered.
     /// </summary>
     /// <remarks>
-    /// <para>Alternatively, the <see cref="TaskFetchRouteAttribute"/> can be used to decorate a
+    /// <para>Alternatively, the <see cref="TeamsTaskFetchRouteAttribute"/> can be used to decorate a
     /// <see cref="TaskFetchHandler"/> method for the same purpose.</para>
     /// <para>The following example opens a simple Adaptive Card form inside a task module dialog.
     /// The card's submit action includes <c>"task": "simple_form"</c> so that the matching submit
     /// handler is triggered when the user submits the form.</para>
     /// <code>
-    /// [TaskFetchRoute("simple_form")]
+    /// [TeamsTaskFetchRoute("simple_form")]
     /// public Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSimpleFormFetchAsync(
     ///     ITeamsTurnContext turnContext, ITurnState turnState,
     ///     Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
@@ -99,7 +99,7 @@ public class TaskModule
     /// (or the specified <paramref name="key"/>) in the activity data is matched against
     /// <paramref name="valuePattern"/> to determine whether this handler should be triggered.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TaskFetchRouteAttribute"/> can be used to decorate a <see cref="TaskFetchHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsTaskFetchRouteAttribute"/> can be used to decorate a <see cref="TaskFetchHandler"/> method for the same purpose.</remarks>
     /// <param name="valuePattern">Regular expression to match against the key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
@@ -118,11 +118,11 @@ public class TaskModule
     /// <paramref name="value"/> to determine whether this handler should be triggered.
     /// </summary>
     /// <remarks>
-    /// <para>Alternatively, the <see cref="TaskSubmitRouteAttribute"/> can be used to decorate a
+    /// <para>Alternatively, the <see cref="TeamsTaskSubmitRouteAttribute"/> can be used to decorate a
     /// <see cref="TaskSubmitHandler"/> method for the same purpose.</para>
     /// <para>The following example reads a field from the submitted form data and returns a completion message.</para>
     /// <code>
-    /// [TaskSubmitRoute("simple_form")]
+    /// [TeamsTaskSubmitRoute("simple_form")]
     /// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSimpleFormSubmitAsync(
     ///     ITeamsTurnContext turnContext, ITurnState turnState,
     ///     Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
@@ -151,7 +151,7 @@ public class TaskModule
     /// (or the specified <paramref name="key"/>) in the activity data is matched against
     /// <paramref name="valuePattern"/> to determine whether this handler should be triggered.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TaskSubmitRouteAttribute"/> can be used to decorate a <see cref="TaskSubmitHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsTaskSubmitRouteAttribute"/> can be used to decorate a <see cref="TaskSubmitHandler"/> method for the same purpose.</remarks>
     /// <param name="valuePattern">Regular expression to match against the task data key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>

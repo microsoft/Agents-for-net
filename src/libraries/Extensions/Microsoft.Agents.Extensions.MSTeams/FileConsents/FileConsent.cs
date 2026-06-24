@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 ///         return turnContext.SendActivityAsync(MessageFactory.Attachment(attachment), cancellationToken);
 ///     }
 ///
-///     [FileConsentAcceptRoute]
+///     [TeamsFileConsentAcceptRoute]
 ///     public async Task OnFileConsentAcceptAsync(
 ///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 ///             cancellationToken: cancellationToken);
 ///     }
 ///
-///     [FileConsentDeclineRoute]
+///     [TeamsFileConsentDeclineRoute]
 ///     public Task OnFileConsentDeclineAsync(
 ///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
@@ -101,7 +101,7 @@ public class FileConsent
     /// <summary>
     /// Handles when a file consent card is accepted by the user.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="FileConsentAcceptRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsFileConsentAcceptRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -120,7 +120,7 @@ public class FileConsent
     /// <summary>
     /// Handles when a file consent card is declined by the user.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="FileConsentDeclineRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="TeamsFileConsentDeclineRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

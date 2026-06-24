@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
         /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;
         /// </code>
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="TeamUpdateRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsTeamUpdateRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team update event. This handler is called with information about the team.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -47,7 +47,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
         /// <summary>
         /// Registers a handler to be invoked when a team is archived.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="TeamArchivedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsTeamArchivedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team archived event. This handler is called with information about the team.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
         /// <summary>
         /// Registers a handler to be invoked when a team is unarchived.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="TeamUnarchivedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsTeamUnarchivedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team unarchived event. This handler is called with information about the team.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
         /// <summary>
         /// Registers a handler to be invoked when a team is renamed.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="TeamRenamedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsTeamRenamedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team renamed event. This handler is called with information about the team.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
         /// <summary>
         /// Registers a handler to be invoked when a team is restored.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="TeamRestoredRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsTeamRestoredRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team restored event. This handler is called with information about the team.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
         /// <summary>
         /// Registers a handler to be invoked when a team is deleted.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="TeamDeletedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsTeamDeletedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team deleted event. This handler is called with information about the team.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams
         /// <summary>
         /// Registers a handler to be invoked when a team is hard deleted.
         /// </summary>
-        /// <remarks>Alternatively, the <see cref="TeamHardDeletedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
+        /// <remarks>Alternatively, the <see cref="TeamsTeamHardDeletedRouteAttribute"/> can be used to decorate a <see cref="TeamUpdateHandler"/> method for the same purpose.</remarks>
         /// <param name="handler">The delegate that handles the team hard deleted event. This handler is called with information about the team.</param>
         /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
         /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>

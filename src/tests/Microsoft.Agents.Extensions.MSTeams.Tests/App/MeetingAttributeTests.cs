@@ -218,7 +218,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         public TestMeetingStartAppWithAttribute(AgentApplicationOptions options) : base(options) { }
 
-        [MeetingStartRoute]
+        [TeamsMeetingStartRoute]
         public Task OnMeetingStartAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -237,7 +237,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         public TestMeetingEndAppWithAttribute(AgentApplicationOptions options) : base(options) { }
 
-        [MeetingEndRoute]
+        [TeamsMeetingEndRoute]
         public Task OnMeetingEndAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -256,7 +256,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         public TestMeetingParticipantsJoinAppWithAttribute(AgentApplicationOptions options) : base(options) { }
 
-        [MeetingParticipantsJoinRoute]
+        [TeamsMeetingParticipantsJoinRoute]
         public Task OnParticipantsJoinAsync(
             ITurnContext turnContext,
             ITurnState turnState,
@@ -275,7 +275,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         public TestMeetingParticipantsLeaveAppWithAttribute(AgentApplicationOptions options) : base(options) { }
 
-        [MeetingParticipantsLeaveRoute]
+        [TeamsMeetingParticipantsLeaveRoute]
         public Task OnParticipantsLeaveAsync(
             ITurnContext turnContext,
             ITurnState turnState,
