@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingStartEventDetails : MeetingEventDetails
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingStartEventDetails"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingStartEventDetails"/> class.
         /// </summary>
         public MeetingStartEventDetails()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingStartEventDetails"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingStartEventDetails"/> class.
         /// </summary>
         /// <param name="id">The meeting's Id, encoded as a BASE64 string.</param>
         /// <param name="joinUrl">The URL used to join the meeting.</param>

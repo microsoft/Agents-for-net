@@ -9,16 +9,16 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessagingExtensionResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionResponse"/> class.
         /// </summary>
         public MessagingExtensionResponse()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionResponse"/> class.
         /// </summary>
-        /// <param name="composeExtension">A <see cref="MessagingExtensionResult"/> that initializes the current object's ComposeExension property.</param>
+        /// <param name="composeExtension">A <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionResult"/> that initializes the current object's ComposeExension property.</param>
         public MessagingExtensionResponse(MessagingExtensionResult composeExtension = default)
         {
             ComposeExtension = composeExtension;
@@ -31,10 +31,10 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public MessagingExtensionResult ComposeExtension { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="CacheInfo"/> for this <see cref="MessagingExtensionResponse"/>.
+        /// Gets or sets the <see cref="Microsoft.Agents.Extensions.Teams.Models.CacheInfo"/> for this <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionResponse"/>.
         /// module.
         /// </summary>
-        /// <value>The <see cref="CacheInfo"/> for this <see cref="MessagingExtensionResponse"/>.</value>
+        /// <value>The <see cref="Microsoft.Agents.Extensions.Teams.Models.CacheInfo"/> for this <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionResponse"/>.</value>
         public CacheInfo CacheInfo { get; set; }
     }
 }

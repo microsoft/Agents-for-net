@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     public class ConfirmationDialog
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfirmationDialog"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.ConfirmationDialog"/> class.
         /// </summary>
         public ConfirmationDialog()
         {
@@ -17,13 +17,13 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         }
 
         /// <summary>
-        /// Gets or Sets the title of type <see cref="string"/>.
+        /// Gets or Sets the title of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the title to display.</value>
         public string Title { get; set; }
 
         /// <summary>
-        /// Gets or Sets the message of type <see cref="string"/>.
+        /// Gets or Sets the message of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the message to display.</value>
         public string Message { get; set; }

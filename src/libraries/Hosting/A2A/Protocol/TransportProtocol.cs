@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Hosting.A2A.Protocol;
 
 /// <summary>
-/// A transport protocol for an <see cref="AgentInterface"/>.
+/// A transport protocol for an <see cref="Microsoft.Agents.Hosting.A2A.Protocol.AgentInterface"/>.
 /// </summary>
 [JsonConverter(typeof(TransportProtocolConverter))]
 public class TransportProtocol : IEquatable<TransportProtocol>

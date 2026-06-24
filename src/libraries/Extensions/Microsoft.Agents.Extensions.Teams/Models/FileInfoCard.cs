@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public const string ContentType = "application/vnd.microsoft.teams.card.file.info";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileInfoCard"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileInfoCard"/> class.
         /// </summary>
         public FileInfoCard()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileInfoCard"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileInfoCard"/> class.
         /// </summary>
         /// <param name="uniqueId">Unique Id for the file.</param>
         /// <param name="fileType">Type of file.</param>

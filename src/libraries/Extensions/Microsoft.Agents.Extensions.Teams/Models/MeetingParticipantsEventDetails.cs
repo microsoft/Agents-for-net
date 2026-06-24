@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingParticipantsEventDetails
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingParticipantsEventDetails"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingParticipantsEventDetails"/> class.
         /// </summary>
         public MeetingParticipantsEventDetails()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingParticipantsEventDetails"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingParticipantsEventDetails"/> class.
         /// </summary>
         /// <param name="members">The members involved in the meeting event.</param>
         public MeetingParticipantsEventDetails(

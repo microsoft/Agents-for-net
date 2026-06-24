@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class PropertyPaneDropDownOption
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PropertyPaneDropDownOption"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneDropDownOption"/> class.
         /// </summary>
         public PropertyPaneDropDownOption()
         {
@@ -38,25 +38,25 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets index for this option of type <see cref="int"/>.
+        /// Gets or Sets index for this option of type <see cref="System.Int32"/>.
         /// </summary>
         /// <value>This value is the index of the drop down.</value>
         public int Index { get; set; }
 
         /// <summary>
-        /// Gets or Sets a key to uniquely identify this option of type <see cref="string"/>.
+        /// Gets or Sets a key to uniquely identify this option of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the key of the drop down.</value>
         public string Key { get; set; }
 
         /// <summary>
-        /// Gets or Sets text to render for this option of type <see cref="string"/>.
+        /// Gets or Sets text to render for this option of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the text of the drop down.</value>
         public string Text { get; set; }
 
         /// <summary>
-        /// Gets or Sets the type of option. If omitted, the default is PropertyPaneDropdownMenuItemType.Normal of type <see cref="DropDownOptionType"/>.
+        /// Gets or Sets the type of option. If omitted, the default is PropertyPaneDropdownMenuItemType.Normal of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneDropDownOption.DropDownOptionType"/>.
         /// </summary>
         /// <value>This value is the type of the drop down.</value>
         public DropDownOptionType Type { get; set; }

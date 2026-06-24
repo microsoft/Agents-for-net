@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Treatment types for <see cref="ActivityTreatment"/>.
+    /// Treatment types for <see cref="Microsoft.Agents.Core.Models.ActivityTreatment"/>.
     /// </summary>
     public class ActivityTreatmentTypes
     {

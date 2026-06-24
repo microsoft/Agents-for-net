@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TaskModuleResponseBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleResponseBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleResponseBase"/> class.
         /// </summary>
         public TaskModuleResponseBase()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleResponseBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleResponseBase"/> class.
         /// </summary>
         /// <param name="type">Choice of action options when responding to the task/submit message. Possible values include: 'message', 'continue'.</param>
         public TaskModuleResponseBase(string type = default)
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public string Type { get; set; }
 
         /// <summary>
-        /// Gets properties that are not defined by the <see cref="TaskModuleResponseBase"/> type but that
+        /// Gets properties that are not defined by the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleResponseBase"/> type but that
         /// might appear in the serialized REST JSON object.  In this case, it would properties defined
         /// by derived types.
         /// </summary>

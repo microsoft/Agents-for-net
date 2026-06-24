@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Builder
     /// <para>For each activity, the adapter calls middleware in the order in which you
     /// added it.</para>
     /// </remarks>
-    /// <seealso cref="IAgent"/>
+    /// <seealso cref="Microsoft.Agents.Builder.IAgent"/>
     public interface IMiddleware
     {
         /// <summary>
@@ -48,8 +48,8 @@ namespace Microsoft.Agents.Builder
         /// <para>The <paramref name="turnContext"/> provides information about the
         /// incoming activity, and other data needed to process the activity.</para>
         /// </remarks>
-        /// <seealso cref="ITurnContext"/>
-        /// <seealso cref="Activity"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.Activity"/>
         Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default);
     }
 }

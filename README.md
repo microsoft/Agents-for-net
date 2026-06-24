@@ -12,13 +12,78 @@ For more information please see the parent project information here [Microsoft 3
 The best way to consume this SDK is via our Nuget packages found here: [nuget.org](https://www.nuget.org/packages?q=microsoft.agents+AND+nugetbotbuilder&includeComputedFrameworks=true&prerel=false&sortby=relevance). They will all begin with **Microsoft.Agents**
 
 ### Nightly Nuget feed.
-**Updated March 11 2025** :  Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**  and have a version number that ends with **-alpha.**
+Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**  and have a version number that ends with **-beta.**
 - This feed is updated overnight (PT) whenever commits occur in our repo. 
-- This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessary stable.
+- This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessarily stable.
 
 ## Working with this codebase
 
 Please read [this](GettingStarted.md) for directions on what is needed and how to setup to build this codebase locally
+
+## AI Coding Assistant Setup
+
+### Agent Plugins (Skills)
+
+This SDK provides AI coding assistant plugins that give your assistant deep knowledge of the Agents SDK APIs, patterns, and common mistakes. Skills activate automatically based on what you're working on.
+
+The plugins are hosted in [microsoft/Agents — agent-plugins](https://github.com/microsoft/Agents/tree/main/agent-plugins).
+
+**Available plugins for .NET:**
+
+| Plugin | Skills Included |
+|--------|----------------|
+| `agents-sdk-common` | Azure provisioning, identity credentials, OAuth setup via `az` CLI |
+| `agents-for-net` | Building agents in C#/.NET, debugging (auth failures, startup crashes), Bot Framework migration, ActivityHandler→AgentApplication migration |
+
+**Installation (GitHub Copilot CLI or Claude Code):**
+
+```
+/plugin marketplace add microsoft/Agents
+/plugin install agents-sdk-common@microsoft-agents-sdk
+/plugin install agents-for-net@microsoft-agents-sdk
+```
+
+Skills activate automatically — no manual loading needed. Run `/plugin` to verify installation.
+
+### Custom Agents (Code Review)
+
+This repository includes custom agents in `.github/agents/` for multi-model adversarial code review:
+
+| Agent | Model | Description |
+|-------|-------|-------------|
+| `review` | Claude Sonnet 4.5 | User-invocable coordinator — triggers both reviewers and synthesizes findings |
+| `reviewer-opus` | Claude Opus 4.8 | Adversarial reviewer (high-reasoning lens) |
+| `reviewer-gpt` | GPT-5.5 | Independent second-model reviewer |
+
+**Usage in GitHub Copilot CLI:**
+
+```
+/agent              # Browse and select from available agents
+```
+
+Or reference it directly in a prompt:
+
+```
+Use the review agent to review my current changes
+```
+
+Or from the command line:
+
+```bash
+copilot --agent=review --prompt "Review my changes"
+```
+
+The reviewers are tailored to this codebase — they understand System.Text.Json serialization, multi-targeting (net8.0/netstandard2.0), Central Package Management, the Activity Protocol, and the layered library architecture.
+
+### Contextual Instructions
+
+Path-scoped instruction files in `.github/instructions/` provide AI assistants with architectural context (including mermaid sequence diagrams) that activates automatically when working on relevant code:
+
+| Instruction File | Activates For |
+|-----------------|---------------|
+| `oauth-flows.instructions.md` | UserAuth, Authentication, OAuth, SignIn code |
+| `cloudadapter-pipeline.instructions.md` | CloudAdapter, Hosting/AspNetCore, TurnContext, Middleware |
+| `streaming-response.instructions.md` | StreamingResponse, StreamInfo, LLMClient code |
 
 ## Support
 
@@ -59,5 +124,3 @@ Any use of third-party trademarks or logos are subject to those third-party's po
 - [agents-for-python Repository]( https://github.com/Microsoft/Agents-for-python)
 - [Official Agents Documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
 - [.NET Documentation](https://learn.microsoft.com/en-us/dotnet/api/?view=m365-agents-sdk&preserve-view=true)
-- [JavaScript Documentation - Coming Soon](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
-- [Python Documentation- Coming Soon](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)

@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TargetedMeetingNotification : MeetingNotification<TargetedMeetingNotificationValue>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TargetedMeetingNotification"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TargetedMeetingNotification"/> class.
         /// </summary>
         public TargetedMeetingNotification()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TargetedMeetingNotification"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TargetedMeetingNotification"/> class.
         /// </summary>
         /// <param name="targetedMeetingNotificationValue">The value of the TargetedMeetingNotification.</param>
         public TargetedMeetingNotification(TargetedMeetingNotificationValue targetedMeetingNotificationValue)

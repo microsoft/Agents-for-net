@@ -220,13 +220,12 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         // Queue the activity to be processed by the ActivityBackgroundService, and stop ChannelResponseQueue when the
         // turn is done.
-        _activityTaskQueue.QueueBackgroundActivity(identity, this, activity, agentType: agent.GetType(), onComplete: (response) =>
+        _activityTaskQueue.QueueBackgroundActivity(identity, this, activity, agentType: agent.GetType(), onComplete: async (response) =>
         {
             invokeResponse = response;
 
             // Stops response handling and waits for HandleResponsesAsync to finish
-            _responseQueue.CompleteHandlerForRequest(activity.RequestId);
-            return Task.CompletedTask;
+            await _responseQueue.CompleteHandlerForRequestAsync(activity.RequestId).ConfigureAwait(false);
         });
 
         // Block until turn is complete. This is triggered by CompleteHandlerForRequest and all responses read.

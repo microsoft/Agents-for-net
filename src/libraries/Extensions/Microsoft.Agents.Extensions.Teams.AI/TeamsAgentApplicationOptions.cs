@@ -6,7 +6,7 @@ using Microsoft.Agents.Extensions.Teams.AI;
 namespace Microsoft.Agents.Extensions.Teams.AI
 {
     /// <summary>
-    /// Options for the <see cref="TeamsApplication"/> class.
+    /// Options for the <see cref="Microsoft.Agents.Extensions.Teams.AI.TeamsApplication"/> class.
     /// </summary>
     public class TeamsAgentApplicationOptions : AgentApplicationOptions
     {
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI
         /// Optional. Application ID of the bot.
         /// </summary>
         /// <remarks>
-        /// If using the <see cref="ApplicationOptions{TState}.LongRunningMessages"/> option, calling the <see cref="CloudAdapterBase.ContinueConversationAsync(string, Bot.Schema.Activity, BotCallbackHandler, CancellationToken)"/> method, or configuring user authentication, this property is required.
+        /// If using the <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.LongRunningMessages"/> option, calling the <see cref="Microsoft.Agents.Builder.ChannelAdapter.ContinueConversationAsync(string, Microsoft.Agents.Core.Models.IActivity, Microsoft.Agents.Builder.AgentCallbackHandler, System.Threading.CancellationToken)"/> method, or configuring user authentication, this property is required.
         /// </remarks>
         public string? BotAppId { get; set; }
 

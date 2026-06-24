@@ -147,6 +147,90 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
+        public async Task Test_AutoSignIn_UserCancelled_DoesNotSendFailureMessage()
+        {
+            var storage = new MemoryStorage();
+
+            var graphMock = new Mock<IUserAuthorization>();
+            graphMock
+                .SetupSequence(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult((TokenResponse)null))
+                .Throws(new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled));
+            graphMock
+                .Setup(e => e.Name)
+                .Returns(GraphName);
+
+            bool signInFailedMessageCalled = false;
+            var options = new TestApplicationOptions(storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, storage, MockConnections.Object, graphMock.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny,
+                    SignInFailedMessage = (_, _) =>
+                    {
+                        signInFailedMessageCalled = true;
+                        return [MessageFactory.Text("SignIn Failed")];
+                    }
+                }
+            };
+            var app = new TestApplication(options);
+
+            var firstTurn = MockTurnContext();
+            var firstState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(firstTurn);
+            var started = await app.UserAuthorization.StartOrContinueSignInUserAsync(firstTurn, firstState);
+
+            var secondTurn = MockTurnContext();
+            var secondState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(secondTurn);
+            var continued = await app.UserAuthorization.StartOrContinueSignInUserAsync(secondTurn, secondState);
+
+            Assert.False(started);
+            Assert.False(continued);
+            Assert.False(signInFailedMessageCalled);
+        }
+
+        [Fact]
+        public async Task Test_AutoSignIn_UserCancelled_DoesNotInvokeFailureHandler()
+        {
+            var storage = new MemoryStorage();
+            var graphMock = new Mock<IUserAuthorization>();
+            graphMock
+                .SetupSequence(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult((TokenResponse)null))
+                .Throws(new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled));
+            graphMock
+                .Setup(e => e.Name)
+                .Returns(GraphName);
+
+            var options = new TestApplicationOptions(storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, storage, MockConnections.Object, graphMock.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
+                }
+            };
+            var app = new TestApplication(options);
+
+            bool failureHandlerCalled = false;
+            app.UserAuthorization.OnUserSignInFailure((turnContext, turnState, handlerName, response, activity, cancellationToken) =>
+            {
+                failureHandlerCalled = true;
+                return Task.CompletedTask;
+            });
+
+            var firstTurn = MockTurnContext();
+            var firstState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(firstTurn);
+            var started = await app.UserAuthorization.StartOrContinueSignInUserAsync(firstTurn, firstState);
+
+            var secondTurn = MockTurnContext();
+            var secondState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(secondTurn);
+            var continued = await app.UserAuthorization.StartOrContinueSignInUserAsync(secondTurn, secondState);
+
+            Assert.False(started);
+            Assert.False(continued);
+            Assert.False(failureHandlerCalled);
+        }
+
+        [Fact]
         public async Task Test_SignOut_DefaultHandler()
         {
             // arrange

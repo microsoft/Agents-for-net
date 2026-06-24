@@ -53,11 +53,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         /// <summary>
         /// Creates a new instance of the <see cref="SourcePoint"/>. All properties are recursively cloned.
         /// </summary>
-        /// <returns>A new instace of the <see cref="SourcePoint"/>.</returns>
+        /// <returns>A new instance of the <see cref="SourcePoint"/>.</returns>
         public SourcePoint DeepClone() => new SourcePoint() { LineIndex = LineIndex, CharIndex = CharIndex };
 
         /// <summary>
-        /// Indicates wether the current <see cref="SourcePoint"/> is equal to another object.
+        /// Indicates whether the current <see cref="SourcePoint"/> is equal to another object.
         /// </summary>
         /// <param name="obj">An object to compare with this <see cref="SourcePoint"/>.</param>
         /// <returns><c>true</c> if the current <see cref="SourcePoint"/> is equal to the object parameter; otherwise, <c>false</c>.</returns>
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         }
 
         /// <summary>
-        /// Indicates wether the current <see cref="SourcePoint"/> is equal to another object of the same type.
+        /// Indicates whether the current <see cref="SourcePoint"/> is equal to another object of the same type.
         /// </summary>
         /// <param name="other">An object to compare with this <see cref="SourcePoint"/>.</param>
         /// <returns><c>true</c> if the current <see cref="SourcePoint"/> is equal to the other parameter; otherwise, <c>false</c>.</returns>

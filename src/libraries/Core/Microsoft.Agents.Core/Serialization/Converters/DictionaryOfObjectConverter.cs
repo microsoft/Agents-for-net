@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Core.Serialization.Converters
 {
     /// <summary>
-    /// This is an attempt to handle adding type info to IDictionary string, object.  It does have a limitation of 1 nested level.
+    /// This handles serializing a Dictionary&lt;string, object> with type information.
     /// </summary>
     internal class DictionaryOfObjectConverter : JsonConverter<IDictionary<string, object>>
     {
@@ -21,6 +21,7 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             {
                 throw new JsonException();
             }
+
             var value = new Dictionary<string, object>();
             while (reader.Read())
             {
@@ -94,6 +95,18 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                                         dict[child.Key] = valValue.GetBoolean();
 #endif
                                         break;
+
+                                    case JsonValueKind.Array:
+                                        JsonArray childArray = JsonArray.Create(valValue);
+                                        if (childArray != null)
+                                        {
+#if NETSTANDARD
+                                            changes.Add(new KeyValuePair<string, object>(child.Key, DeserializeJsonArray(childArray, options)));
+#else
+                                            dict[child.Key] = DeserializeJsonArray(childArray, options);
+#endif
+                                        }
+                                        break;
                                 }
                             }
                         }
@@ -106,45 +119,13 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     }
                     value.Add(keyString, obj);
                 }
+                else if (itemValue is JsonArray jArray)
+                {
+                    value.Add(keyString, DeserializeJsonArray(jArray, options));
+                }
                 else
                 {
-                    object objValue = null;
-                    if (itemValue != null)
-                    {
-                        var valValue = itemValue.AsValue();
-                        switch (valValue.GetValueKind())
-                        {
-                            case JsonValueKind.Number:
-                                if (valValue.TryGetValue<int>(out var intValue))
-                                {
-                                    objValue = intValue;
-                                }
-                                break;
-
-                            case JsonValueKind.String:
-                                if (valValue.TryGetValue<DateTime>(out var dateValue))
-                                {
-                                    objValue = dateValue;
-                                }
-                                else if (valValue.TryGetValue<string>(out var strValue))
-                                {
-                                    objValue = strValue;
-                                }
-                                break;
-
-                            case JsonValueKind.True:
-                            case JsonValueKind.False:
-                                if (valValue.TryGetValue<bool>(out var boolValue))
-                                {
-                                    objValue = boolValue;
-                                }
-                                break;
-
-                            default:
-                                objValue = itemValue; break;
-                        }
-                    }
-                    value.Add(keyString, objValue);
+                    value.Add(keyString, DeserializeJsonValue(itemValue));
                 }
             }
             throw new JsonException($"JSON did not contain the end of {typeToConvert.FullName}!");
@@ -169,28 +150,195 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                     newValue = JsonSerializer.SerializeToNode(item.Value, options);
                     if (newValue is JsonObject jObj)
                     {
-                        jObj.AddTypeInfo(item.Value);
-
-                        // Update dictionary elements with type info
-                        if (item.Value is IDictionary<string, object> children)
-                        {
-                            foreach (KeyValuePair<string, object> child in children)
-                            {
-                                var newChildValue = JsonSerializer.SerializeToNode(child.Value, options);
-                                if (newChildValue is JsonObject childJObj)
-                                {
-                                    childJObj.AddTypeInfo(child.Value);
-                                    children[child.Key] = childJObj;
-                                }
-                            }
-                        }
+                        SerializeJsonObject(jObj, item.Value, options);
+                    }
+                    else if (newValue is JsonArray jArray && item.Value is IList sourceList && !(item.Value is Array arr && arr.Rank > 1))
+                    {
+                        SerializeJsonArray(jArray, sourceList);
                     }
                 }
 
-                var json = JsonSerializer.Serialize(newValue, newValue.GetType(), options);
-                JsonDocument.Parse(json).WriteTo(writer);
+                var element = JsonSerializer.SerializeToElement(newValue, options);
+                element.WriteTo(writer);
             }
             writer.WriteEndObject();
+        }
+
+        private static void SerializeJsonObject(JsonObject jObj, object value, JsonSerializerOptions options)
+        {
+            jObj.AddTypeInfo(value);
+
+            // Update dictionary elements with type info
+            if (value is IDictionary<string, object> children)
+            {
+                foreach (KeyValuePair<string, object> child in children)
+                {
+                    var newChildValue = JsonSerializer.SerializeToNode(child.Value, options);
+                    if (newChildValue is JsonObject childJObj)
+                    {
+                        childJObj.AddTypeInfo(child.Value);
+                        children[child.Key] = childJObj;
+                    }
+                }
+            }
+        }
+
+        private static object DeserializeJsonValue(JsonNode itemValue)
+        {
+            if (itemValue == null)
+            {
+                return null;
+            }
+
+            object objValue = null;
+            var valValue = itemValue.AsValue();
+            switch (valValue.GetValueKind())
+            {
+                case JsonValueKind.Number:
+                    if (valValue.TryGetValue<int>(out var intValue))
+                    {
+                        objValue = intValue;
+                    }
+                    break;
+
+                case JsonValueKind.String:
+                    if (valValue.TryGetValue<DateTime>(out var dateValue))
+                    {
+                        objValue = dateValue;
+                    }
+                    else if (valValue.TryGetValue<string>(out var strValue))
+                    {
+                        objValue = strValue;
+                    }
+                    break;
+
+                case JsonValueKind.True:
+                case JsonValueKind.False:
+                    if (valValue.TryGetValue<bool>(out var boolValue))
+                    {
+                        objValue = boolValue;
+                    }
+                    break;
+
+                default:
+                    objValue = itemValue; 
+                    break;
+
+            }
+
+            return objValue;
+        }
+
+        private static void SerializeJsonArray(JsonArray jArray, IList sourceList)
+        {
+            for (int i = 0; i < jArray.Count; i++)
+            {
+                // JsonObject
+                if (jArray[i] is JsonObject jObj)
+                {
+                    jObj.AddTypeInfo(sourceList[i]);
+                    if (i == 0)
+                    {
+                        jObj.AddCollectionTypeInfo(sourceList.GetType());
+                    }
+                }
+
+                // JsonArray
+                else if (jArray[i] is JsonArray nestedArray && sourceList[i] is IList nestedList)
+                {
+                    SerializeJsonArray(nestedArray, nestedList);
+                }
+
+                // JsonValue (primitives like string, int, bool): no type info to add
+            }
+        }
+
+        private static object DeserializeJsonArray(JsonArray jArray, JsonSerializerOptions options)
+        {
+            IList objValue = null;
+            bool isArray = false;
+            for (int i = 0; i < jArray.Count; i++)
+            {
+                var aItem = jArray[i];
+                if (aItem.GetTypeInfo(out var childType))
+                {
+                    if (i == 0)
+                    {
+                        var collectionType = jArray.GetCollectionTypeInfo();
+                        if (collectionType.BaseType == typeof(Array))
+                        {
+                            var dataType = new Type[] { collectionType.GetElementType() };
+                            var genericBase = typeof(List<>);
+                            var combinedType = genericBase.MakeGenericType(dataType);
+                            objValue = (IList)Activator.CreateInstance(combinedType);
+                            isArray = true;
+                        }
+                        else
+                        {
+                            objValue = (IList)Activator.CreateInstance(collectionType);
+                        }
+
+                        aItem.RemoveCollectionTypeInfo();
+                    }
+
+                    aItem.RemoveTypeInfo();
+
+                    objValue.Add(JsonSerializer.Deserialize(aItem, childType, options));
+                }
+                else
+                {
+                    // Primitive array elements (string, int, bool) have no $type metadata.
+                    // Initialize the list on first encounter since typed-element path was never entered.
+                    objValue ??= new List<object>();
+
+                    objValue.Add(DeserializeJsonValue(aItem));
+                }
+            }
+
+            if (objValue != null && isArray)
+            {
+                var array = Array.CreateInstance(objValue.GetType().GenericTypeArguments[0], objValue.Count);
+                for (int i = 0; i < objValue.Count; i++)
+                {
+                    array.SetValue(objValue[i], i);
+                }
+                return array;
+            }
+
+            // Promote homogeneous primitive lists to typed arrays so that
+            // round-tripped primitive arrays (e.g. string[], int[], bool[])
+            // come back as their original CLR type instead of List<object>.
+            if (objValue is List<object> list && list.Count > 0)
+            {
+                Type elementType = list[0]?.GetType();
+                if (elementType != null
+                    && (elementType == typeof(string)
+                        || elementType == typeof(int)
+                        || elementType == typeof(bool)))
+                {
+                    bool allSameType = true;
+                    for (int i = 1; i < list.Count; i++)
+                    {
+                        if (list[i]?.GetType() != elementType)
+                        {
+                            allSameType = false;
+                            break;
+                        }
+                    }
+
+                    if (allSameType)
+                    {
+                        Array typedArray = Array.CreateInstance(elementType, list.Count);
+                        for (int i = 0; i < list.Count; i++)
+                        {
+                            typedArray.SetValue(list[i], i);
+                        }
+                        return typedArray;
+                    }
+                }
+            }
+
+            return objValue;
         }
     }
 }

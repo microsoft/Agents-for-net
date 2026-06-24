@@ -21,7 +21,7 @@ public class TeamsApplication : AgentApplication
 #endif
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TeamsApplication"/> class with the specified options.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.TeamsApplication"/> class with the specified options.
     /// </summary>
     /// <param name="options">The agent application options to leverage.</param>
     public TeamsApplication(TeamsAgentApplicationOptions options) : base(options)

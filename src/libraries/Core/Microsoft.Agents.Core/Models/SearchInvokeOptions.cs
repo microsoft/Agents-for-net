@@ -4,15 +4,15 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Defines the query options in the <see cref="SearchInvokeValue"/> for Invoke activity with Name of 'application/search'.
+    /// Defines the query options in the <see cref="Microsoft.Agents.Core.Models.SearchInvokeValue"/> for Invoke activity with Name of 'application/search'.
     /// </summary>
     public class SearchInvokeOptions
     {
         /// <summary>
-        /// Gets or sets the the starting reference number from which ordered search results should be returned.
+        /// Gets or sets the starting reference number from which ordered search results should be returned.
         /// </summary>
         /// <value>
-        /// The the starting reference number from which ordered search results should be returned.
+        /// The starting reference number from which ordered search results should be returned.
         /// </value>
         public int Skip { get; set; }
 

@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class ConfigResponseBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigResponseBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ConfigResponseBase"/> class.
         /// </summary>
         protected ConfigResponseBase()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigResponseBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ConfigResponseBase"/> class.
         /// </summary>
         /// <param name="responseType"> response type for invoke.</param>
         protected ConfigResponseBase(string responseType)

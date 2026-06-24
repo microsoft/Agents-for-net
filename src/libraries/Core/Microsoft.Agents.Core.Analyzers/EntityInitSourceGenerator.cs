@@ -4,9 +4,9 @@
 using Microsoft.Agents.Core.Analyzers.Extensions;
 using Microsoft.Agents.Core.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -23,76 +23,42 @@ namespace Microsoft.Agents.Core.Analyzers
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            if (!Debugger.IsAttached)
-            {
-                //Debugger.Launch();
-            }
+            // Use SyntaxProvider to filter at the syntax level first (fast, no semantic analysis),
+            // then do semantic checks only for classes that actually have a base list.
+            // Results are cached per syntax node — only changed classes are re-analyzed.
+            var derivedTypes = context.SyntaxProvider.CreateSyntaxProvider(
+                predicate: static (node, _) => node is ClassDeclarationSyntax { BaseList: not null },
+                transform: static (ctx, ct) =>
+                {
+                    ct.ThrowIfCancellationRequested();
 
-            // Step 1: get the Compilation
-            var compilationProvider = context.CompilationProvider;
+                    if (ctx.SemanticModel.GetDeclaredSymbol(ctx.Node, ct) is not INamedTypeSymbol typeSymbol)
+                        return null;
 
-            // Step 2: resolve Entity type
-            var myTypeProvider = compilationProvider
-                .Select(static (compilation, _) => compilation.GetTypeByMetadataName(EntityTypeFullName));
+                    var entityType = ctx.SemanticModel.Compilation.GetTypeByMetadataName(EntityTypeFullName);
+                    if (entityType is null)
+                        return null;
 
-            // Step 3: find derived types
-            var derivedTypesProvider =
-                compilationProvider
-                    .Combine(myTypeProvider)
-                    .Select(static (pair, ct) => FindDerivedTypes(pair.Left, pair.Right))
+                    return typeSymbol.InheritsFrom(entityType)
+                        ? typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                        : null;
+                })
+                .Where(static x => x is not null)
+                .Collect()
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-                    // Custom comparer expects string?, but we guarantee non-null strings in FindDerivedTypes.
-                    .WithComparer(new ObjectImmutableArraySequenceEqualityComparer<string>());
-#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+                // Custom comparer expects string?, but we guarantee non-null strings via the Where filter above.
+                .WithComparer(new ObjectImmutableArraySequenceEqualityComparer<string>());
+#pragma warning restore CS8620
 
-            // Step 4: generate EntityInitAssemblyAttributes for found derived types
-            context.RegisterSourceOutput(
-                derivedTypesProvider,
-                static (spc, derivedTypes) =>
-                {
-                    if (derivedTypes.IsDefaultOrEmpty)
-                    {
-                        return;
-                    }
-
-                    var entityAttributes = string.Join("\r\n", derivedTypes.Distinct().Select(x => $"[assembly: {EntityInitAssemblyAttributeFullName}(typeof({x}))]"));
-                    spc.AddSource("EntityInitAssemblyAttribute.g.cs", SourceText.From(entityAttributes, Encoding.UTF8));
-                });
-        }
-
-        private static ImmutableArray<string> FindDerivedTypes(
-            Compilation compilation,
-            INamedTypeSymbol? myType)
-        {
-            if (myType is null)
-                return ImmutableArray<string>.Empty;
-
-            var builder = ImmutableArray.CreateBuilder<string>();
-
-            CollectAnyDerivedType(compilation.Assembly.GlobalNamespace, myType, builder);
-
-            return builder.ToImmutable();
-        }
-
-        private static void CollectAnyDerivedType(
-            INamespaceSymbol ns,
-            INamedTypeSymbol baseType,
-            ImmutableArray<string>.Builder builder)
-        {
-            foreach (var member in ns.GetMembers())
+            context.RegisterSourceOutput(derivedTypes, static (spc, types) =>
             {
-                if (member is INamespaceSymbol childNs)
-                {
-                    CollectAnyDerivedType(childNs, baseType, builder);
-                }
-                else if (member is INamedTypeSymbol type)
-                {
-                    if (type.InheritsFrom(baseType))
-                    {
-                        builder.Add(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-                    }
-                }
-            }
+                if (types.IsDefaultOrEmpty)
+                    return;
+
+                var entityAttributes = string.Join("\r\n", types.Distinct().Select(x =>
+                    $"[assembly: {EntityInitAssemblyAttributeFullName}(typeof({x}))]"));
+                spc.AddSource("EntityInitAssemblyAttribute.g.cs", SourceText.From(entityAttributes, Encoding.UTF8));
+            });
         }
     }
 }

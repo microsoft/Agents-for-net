@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
 
 
         /// <summary>
-        /// Creates a new instance of the <see cref="ActionEntry{TState}"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Action.ActionEntry{TState}"/> class.
         /// </summary>
         /// <param name="name">The action name.</param>
         /// <param name="handler">The action handler function.</param>
@@ -40,13 +40,13 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Action
         }
 
         /// <summary>
-        /// Converts a method with the <see cref="ActionAttribute"/> to an <see cref="ActionEntry{TState}"/>.
+        /// Converts a method with the <see cref="Microsoft.Agents.Extensions.Teams.AI.Action.ActionAttribute"/> to an <see cref="Microsoft.Agents.Extensions.Teams.AI.Action.ActionEntry{TState}"/>.
         /// </summary>
         /// <param name="methodSignature">The method signature.</param>
         /// <param name="methodContainerInstance">The instance of a class which contains the method.</param>
         /// <returns>
-        /// The <see cref="ActionEntry{TState}"/> if the given method adheres to the <see cref="ActionHandler{TState}"/> delegate
-        /// and has the <see cref="ActionAttribute"/>. Otherwise, returns null.
+        /// The <see cref="Microsoft.Agents.Extensions.Teams.AI.Action.ActionEntry{TState}"/> if the given method adheres to the <see cref="Microsoft.Agents.Extensions.Teams.AI.Action.ActionHandler{TState}"/> delegate
+        /// and has the <see cref="Microsoft.Agents.Extensions.Teams.AI.Action.ActionAttribute"/>. Otherwise, returns null.
         /// </returns>
         /// <exception cref="System.Exception"></exception>
         public static ActionEntry<TState>? FromNativeMethod(MethodInfo methodSignature, object methodContainerInstance)

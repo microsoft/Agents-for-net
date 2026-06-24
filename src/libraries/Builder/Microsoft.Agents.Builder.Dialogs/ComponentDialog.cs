@@ -49,8 +49,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
-        /// <seealso cref="OnBeginDialogAsync(DialogContext, object, CancellationToken)"/>
-        /// <seealso cref="DialogContext.BeginDialogAsync(string, object, CancellationToken)"/>
+        /// <seealso cref="OnBeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext outerDc, object options = null, CancellationToken cancellationToken = default)
         {
             if (options is CancellationToken)
@@ -98,8 +98,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// a <see cref="DialogTurnResult.Result"/> is available, the component dialog uses that as
         /// its return value.
         /// </remarks>
-        /// <seealso cref="OnContinueDialogAsync(DialogContext, CancellationToken)"/>
-        /// <seealso cref="DialogContext.ContinueDialogAsync(CancellationToken)"/>
+        /// <seealso cref="OnContinueDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.ContinueDialogAsync(System.Threading.CancellationToken)"/>
         public override async Task<DialogTurnResult> ContinueDialogAsync(DialogContext outerDc, CancellationToken cancellationToken = default)
         {
             await EnsureInitializedAsync(outerDc).ConfigureAwait(false);
@@ -145,7 +145,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <see cref="RepromptDialogAsync(ITurnContext, DialogInstance, CancellationToken)"/> when
         /// the user replies.
         /// </remarks>
-        /// <seealso cref="RepromptDialogAsync(ITurnContext, DialogInstance, CancellationToken)"/>
+        /// <seealso cref="RepromptDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, System.Threading.CancellationToken)"/>
         public override async Task<DialogTurnResult> ResumeDialogAsync(DialogContext outerDc, DialogReason reason, object result = null, CancellationToken cancellationToken = default)
         {
             if (result is CancellationToken)
@@ -174,8 +174,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <seealso cref="OnRepromptDialogAsync(ITurnContext, DialogInstance, CancellationToken)"/>
-        /// <seealso cref="DialogContext.RepromptDialogAsync(CancellationToken)"/>
+        /// <seealso cref="OnRepromptDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.RepromptDialogAsync(System.Threading.CancellationToken)"/>
         public override async Task RepromptDialogAsync(ITurnContext turnContext, DialogInstance instance, CancellationToken cancellationToken = default)
         {
             // Delegate to inner dialog.
@@ -198,8 +198,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <remarks>When this method is called from the parent dialog's context, the component dialog
         /// cancels all of the dialogs on its inner dialog stack before ending.</remarks>
-        /// <seealso cref="OnEndDialogAsync(ITurnContext, DialogInstance, DialogReason, CancellationToken)"/>
-        /// <seealso cref="DialogContext.EndDialogAsync(object, CancellationToken)"/>
+        /// <seealso cref="OnEndDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, Microsoft.Agents.Builder.Dialogs.DialogReason, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(object, System.Threading.CancellationToken)"/>
         public override async Task EndDialogAsync(ITurnContext turnContext, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default)
         {
             // Forward cancel to inner dialogs
@@ -286,7 +286,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// of the component dialog's initial dialog, as defined by <see cref="InitialDialogId"/>.
         ///
         /// Override this method in a derived class to implement interrupt logic.</remarks>
-        /// <seealso cref="BeginDialogAsync(DialogContext, object, CancellationToken)"/>
+        /// <seealso cref="BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, object, System.Threading.CancellationToken)"/>
         protected virtual Task<DialogTurnResult> OnBeginDialogAsync(DialogContext innerDc, object options, CancellationToken cancellationToken = default)
         {
             return innerDc.BeginDialogAsync(InitialDialogId, options, cancellationToken);
@@ -326,7 +326,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <remarks>Override this method in a derived class to implement any additional logic that
         /// should happen at the component level, after all inner dialogs have been canceled.</remarks>
-        /// <seealso cref="EndDialogAsync(ITurnContext, DialogInstance, DialogReason, CancellationToken)"/>
+        /// <seealso cref="EndDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, Microsoft.Agents.Builder.Dialogs.DialogReason, System.Threading.CancellationToken)"/>
         protected virtual Task OnEndDialogAsync(ITurnContext context, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
@@ -344,7 +344,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <remarks>Override this method in a derived class to implement any additional logic that
         /// should happen at the component level, after the re-prompt operation completes for the inner
         /// dialog.</remarks>
-        /// <seealso cref="RepromptDialogAsync(ITurnContext, DialogInstance, CancellationToken)"/>
+        /// <seealso cref="RepromptDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, System.Threading.CancellationToken)"/>
         protected virtual Task OnRepromptDialogAsync(ITurnContext turnContext, DialogInstance instance, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
@@ -370,8 +370,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         ///
         /// The returned <see cref="DialogTurnResult"/> contains the return value in its
         /// <see cref="DialogTurnResult.Result"/> property.</remarks>
-        /// <seealso cref="BeginDialogAsync(DialogContext, object, CancellationToken)"/>
-        /// <seealso cref="ContinueDialogAsync(DialogContext, CancellationToken)"/>
+        /// <seealso cref="BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="ContinueDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Threading.CancellationToken)"/>
         protected virtual Task<DialogTurnResult> EndComponentAsync(DialogContext outerDc, object result, CancellationToken cancellationToken)
         {
             return outerDc.EndDialogAsync(result, cancellationToken);

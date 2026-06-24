@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
     public class CardButtonComponent : BaseCardComponent, ICardButtonBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CardButtonComponent"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardView.CardButtonComponent"/> class.
         /// </summary>
         public CardButtonComponent()
             : base(CardComponentName.CardButton)

@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingDetailsBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingDetailsBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingDetailsBase"/> class.
         /// </summary>
         internal MeetingDetailsBase()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingDetailsBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingDetailsBase"/> class.
         /// </summary>
         /// <param name="id">The meeting's Id, encoded as a BASE64 string.</param>
         /// <param name="joinUrl">The URL used to join the meeting.</param>

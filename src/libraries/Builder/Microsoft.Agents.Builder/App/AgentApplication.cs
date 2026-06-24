@@ -5,7 +5,9 @@ using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.Telemetry.App.Scopes;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using System;
@@ -23,17 +25,16 @@ namespace Microsoft.Agents.Builder.App
     /// <summary>
     /// Application class for routing and processing incoming requests.
     /// </summary>
-    public class AgentApplication : IAgent
+    public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
-        private readonly int _typingTimerDelay = 1000;
-        private TypingTimer? _typingTimer;
+        private readonly string _agentName;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
         private readonly ConcurrentQueue<TurnEventHandler> _afterTurn;
         private readonly ConcurrentQueue<AgentApplicationTurnError> _turnErrorHandlers;
-        
+
         public List<IAgentExtension> RegisteredExtensions { get; private set; } = new List<IAgentExtension>();
 
         /// <summary>
@@ -46,7 +47,9 @@ namespace Microsoft.Agents.Builder.App
 
             Options = options;
 
-            Logger = options.LoggerFactory?.CreateLogger<AgentApplication>() ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+            Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+
+            _agentName = GetType().GetCustomAttribute<AgentAttribute>()?.Name ?? GetType().Name;
 
             if (Options.TurnStateFactory == null)
             {
@@ -62,6 +65,7 @@ namespace Microsoft.Agents.Builder.App
             // Application Features
 
             AdaptiveCards = new AdaptiveCard(this);
+            Proactive = new Proactive.Proactive(this);
 
             if (options.UserAuthorization != null)
             {
@@ -69,7 +73,23 @@ namespace Microsoft.Agents.Builder.App
             }
 
             ApplyRouteAttributes();
+            ConfigureExtensions();
         }
+
+        /// <summary>
+        /// Called during construction after route attributes are applied.
+        /// Override (via source-generated code from <c>AgentExtensionAttribute</c>) to eagerly
+        /// initialize agent extensions so their <c>OnBeforeTurn</c> handlers and other
+        /// infrastructure are registered before the first turn arrives.
+        /// </summary>
+        /// <remarks>
+        /// This method is called from the <see cref="AgentApplication"/> constructor via virtual
+        /// dispatch, so derived-class constructor bodies have not yet run when it executes.
+        /// Overrides must only depend on state initialized by <see cref="AgentApplication"/> itself
+        /// (e.g., <see cref="Options"/>, storage, and routing infrastructure) and must not access
+        /// fields or properties set in a derived constructor body.
+        /// </remarks>
+        protected virtual void ConfigureExtensions() { }
 
         #region Application Features
 
@@ -77,6 +97,8 @@ namespace Microsoft.Agents.Builder.App
         /// Fluent interface for accessing Adaptive Card specific features.
         /// </summary>
         public AdaptiveCard AdaptiveCards { get; }
+
+        public Proactive.Proactive Proactive { get; }
 
         /// <summary>
         /// The application's configured options.
@@ -260,7 +282,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles conversation update events.
         /// </summary>
-        /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="ConversationUpdateEvents"/>.  If </param>
+        /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/>.  If </param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
@@ -313,7 +335,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Handles conversation update events.
         /// </summary>
-        /// <param name="conversationUpdateEvents">Name of the conversation update events to handle, can use <see cref="ConversationUpdateEvents"/> as array item.</param>
+        /// <param name="conversationUpdateEvents">Name of the conversation update events to handle, can use <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/> as array item.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers"></param>
@@ -671,32 +693,54 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="turnContext">The turn context.</param>
         public void StartTypingTimer(ITurnContext turnContext)
         {
-            if (turnContext.Activity.Type != ActivityTypes.Message)
+            // Idempotent — if already started for this turn, do nothing.
+            if (turnContext.Services.Get<TypingWorker>() != null)
             {
                 return;
             }
 
-            if (_typingTimer == null)
+            var worker = TypingWorker.Create(turnContext, Options.TypingOptions);
+            if (worker == null)
             {
-                _typingTimer = new TypingTimer(_typingTimerDelay);
+                return;
             }
 
-            if (!_typingTimer.IsRunning())
+            turnContext.Services.Set<TypingWorker>(worker);
+            worker.Start();
+        }
+
+        /// <summary>
+        /// Manually stop the typing timer for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// Stops the typing worker immediately and waits for it to finish. Subsequent calls for
+        /// the same turn are no-ops. The worker is also stopped automatically at end of turn.
+        /// </remarks>
+        /// <param name="turnContext">The turn context.</param>
+#pragma warning disable CA1822 // Method is intentionally an instance member for API symmetry with StartTypingTimer.
+        public async Task StopTypingTimer(ITurnContext turnContext)
+        {
+            var worker = turnContext.Services.Get<TypingWorker>();
+            if (worker != null)
             {
-                _typingTimer.Start(turnContext);
+                await worker.DisposeAsync().ConfigureAwait(false);
+                // Remove the entry so StartTypingTimer can create a new worker if called again.
+                turnContext.Services.TryRemove(typeof(TypingWorker).FullName, out _);
             }
         }
+#pragma warning restore CA1822
 
         /// <summary>
         /// Manually stop the typing timer.
         /// </summary>
         /// <remarks>
         /// If the timer isn't running nothing happens.
+        /// Per-turn workers are definitively stopped in the turn's finally block via DisposeAsync.
         /// </remarks>
+        [Obsolete("Use StopTypingTimer(ITurnContext) instead.")]
         public void StopTypingTimer()
         {
-            _typingTimer?.Dispose();
-            _typingTimer = null;
+            // No-op: use StopTypingTimer(ITurnContext) to stop the per-turn worker explicitly.
         }
 
         #endregion
@@ -704,8 +748,30 @@ namespace Microsoft.Agents.Builder.App
         #region Turn Handling
 
         /// <summary>
-        /// Called by the adapter (for example, a <see cref="CloudAdapter"/>)
-        /// at runtime in order to process an inbound <see cref="Activity"/>.
+        /// Registers the application-scoped services needed for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// This stores the current <see cref="ITurnState"/>, <see cref="AdaptiveCard"/>, and
+        /// <see cref="Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
+        /// When user authorization is configured, the current <see cref="UserAuthorization"/>
+        /// instance is also registered.
+        /// </remarks>
+        /// <param name="turnContext">The turn context to populate with services.</param>
+        /// <param name="turnState">The turn state for the current turn.</param>
+        internal void SetTurnContextServices(ITurnContext turnContext, ITurnState turnState)
+        {
+            if (_userAuth != null)
+            {
+                turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+            turnContext.Services.Set<Proactive.Proactive>(Proactive);
+            turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);
+            turnContext.Services.Set<ITurnState>(turnState);
+        }
+
+        /// <summary>
+        /// Called by the adapter (for example, a <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/>)
+        /// at runtime in order to process an inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
@@ -716,13 +782,33 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
-            if (_userAuth != null)
+            // Register Activity-derived header provider for agentic requests.
+            if (turnContext.Activity.IsAgenticRequest())
             {
-                turnContext.Services.Set<UserAuthorization>(_userAuth);
+                HeaderPropagationContext.HeaderProviders.Add(
+                    new AgenticHeaderProvider(turnContext.Activity, _agentName));
             }
+
+            using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
+            {
+                ["RequestId"] = turnContext.Activity.RequestId,
+                ["ConversationId"] = turnContext.Activity.Conversation?.Id,
+                ["ActivityType"] = turnContext.Activity.Type
+            });
+
+            using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
+
+            bool routeMatched = false;
+            bool routeAuthorized = false;
 
             try
             {
+                // Load turn state
+                ITurnState turnState = Options.TurnStateFactory!();
+                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                SetTurnContextServices(turnContext, turnState);
+
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
                 {
@@ -742,10 +828,6 @@ namespace Microsoft.Agents.Builder.App
                     }
                 }
 
-                // Load turn state
-                ITurnState turnState = Options.TurnStateFactory!();
-                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
-
                 try
                 {
                     // Handle user auth
@@ -764,6 +846,7 @@ namespace Microsoft.Agents.Builder.App
                     IList<IInputFileDownloader>? fileDownloaders = Options.FileDownloaders;
                     if (fileDownloaders != null && fileDownloaders.Count > 0)
                     {
+                        using var telemetryScope = new ScopeDownloadFiles(turnContext);
                         foreach (IInputFileDownloader downloader in fileDownloaders)
                         {
                             var files = await downloader.DownloadFilesAsync(turnContext, turnState, cancellationToken).ConfigureAwait(false);
@@ -772,17 +855,26 @@ namespace Microsoft.Agents.Builder.App
                     }
 
                     // Call before turn handler
-                    foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
+                    using (var telemetryScope = new ScopeBeforeTurn())
                     {
-                        if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                        foreach (TurnEventHandler beforeTurnHandler in _beforeTurn)
                         {
-                            // Save turn state
-                            // - This lets the Agent keep track of why it ended the previous turn. It also
-                            //   allows the dialog system to be used before the AI system is called.
-                            await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                            if (!await beforeTurnHandler(turnContext, turnState, cancellationToken))
+                            {
+                                // Save turn state
+                                // - This lets the Agent keep track of why it ended the previous turn. It also
+                                //   allows the dialog system to be used before the AI system is called.
+                                await turnState!.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                            return;
+                                return;
+                            }
                         }
+                    }
+
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        var (routeCount, routeListFormatted) = _routes.FormatRouteList(turnContext);
+                        LogRouteList(Logger, routeCount, routeListFormatted);
                     }
 
                     // Execute first matching handler.  The RouteList enumerator is ordered by Invoke & Rank, then by Rank & add order.
@@ -790,9 +882,15 @@ namespace Microsoft.Agents.Builder.App
                     {
                         if (await route.Selector(turnContext, cancellationToken))
                         {
+                            routeMatched = true;
                             var handlers = route.OAuthHandlers(turnContext);
                             if (_userAuth == null || handlers?.Length == 0)
                             {
+                                routeAuthorized = true;
+                                using var routeTelemetryScope = new ScopeRouteHandler(
+                                        isAgentic: route.Flags.HasFlag(RouteFlags.Agentic),
+                                        isInvoke: route.Flags.HasFlag(RouteFlags.Invoke)
+                                    );
                                 await route.Handler(turnContext, turnState, cancellationToken);
                             }
                             else
@@ -810,6 +908,11 @@ namespace Microsoft.Agents.Builder.App
 
                                 if (signInComplete)
                                 {
+                                    routeAuthorized = true;
+                                    using var routeTelemetryScope = new ScopeRouteHandler(
+                                        isAgentic: route.Flags.HasFlag(RouteFlags.Agentic),
+                                        isInvoke: route.Flags.HasFlag(RouteFlags.Invoke)
+                                    );
                                     await route.Handler(turnContext, turnState, cancellationToken);
                                 }
                             }
@@ -820,18 +923,28 @@ namespace Microsoft.Agents.Builder.App
                             }
                         }
                     }
+                    onTurnTelemetryScope.Share(routeAuthorized, routeMatched);
+
+                    if (!routeMatched)
+                    {
+                        LogNoRouteMatched(Logger, turnContext.Activity.Type);
+                    }
 
                     // Call after turn handler
-                    foreach (TurnEventHandler afterTurnHandler in _afterTurn)
+                    using (var telemetryScope = new ScopeAfterTurn())
                     {
-                        if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                        foreach (TurnEventHandler afterTurnHandler in _afterTurn)
                         {
-                            return;
+                            if (!await afterTurnHandler(turnContext, turnState, cancellationToken))
+                            {
+                                return;
+                            }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
+                    onTurnTelemetryScope.Share(routeAuthorized, routeMatched);
                     foreach (AgentApplicationTurnError errorHandler in _turnErrorHandlers)
                     {
                         await errorHandler(turnContext, turnState, ex, cancellationToken).ConfigureAwait(false);
@@ -844,9 +957,12 @@ namespace Microsoft.Agents.Builder.App
             }
             finally
             {
-                // Stop the timer if configured
-                StopTypingTimer();
-
+                // Stop the typing worker for this turn if one was started.
+                var typingWorker = turnContext.Services?.Get<TypingWorker>();
+                if (typingWorker != null)
+                {
+                    await typingWorker.DisposeAsync().ConfigureAwait(false);
+                }
 
                 if (turnContext.StreamingResponse != null && turnContext.StreamingResponse.IsStreamStarted())
                 {

@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Connector
 
         public static void AddDefaultUserAgent(this HttpClient httpClient, ProductInfoHeaderValue[] additionalProductInfo = null)
         {
-            if (httpClient.DefaultRequestHeaders.Contains("User-Agent"))
+            if (httpClient == null || httpClient.DefaultRequestHeaders.Contains("User-Agent"))
             {
                 return;    
             }

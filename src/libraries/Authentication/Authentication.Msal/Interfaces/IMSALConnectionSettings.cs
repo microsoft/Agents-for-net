@@ -48,5 +48,20 @@ namespace Microsoft.Agents.Authentication.Msal.Interfaces
         /// Token path used for the workload identity, like the MSAL example for AKS, equal to AZURE_FEDERATED_TOKEN_FILE. 
         /// </summary>
         public string FederatedTokenFile { get; set; }
+
+        /// <summary>
+        /// Sets the resourceUrl for Identity Proxy Manager (IDPM).
+        /// </summary>
+        /// <remarks>
+        /// Set this to the appropriate resource identifier when the application is running in an environment, such as a Foundry container,
+        /// that exposes Managed Identity through a container-specific IMDS endpoint. This setting is only meaningful when
+        /// <see cref="AuthType"/> is <see cref="AuthTypes.IdentityProxyManager"/>.
+        /// </remarks>
+        public string IdpmResource { get; set; }
+        
+        /// <summary>
+        /// Azure regional token service. This feature is currently available to first-party applications only.
+        /// </summary>
+        public string AzureRegion { get; set; }
     }
 }

@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class O365ConnectorCardFact
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardFact"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardFact"/> class.
         /// </summary>
         public O365ConnectorCardFact()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardFact"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardFact"/> class.
         /// </summary>
         /// <param name="name">Display name of the fact.</param>
         /// <param name="value">Display value for the fact.</param>

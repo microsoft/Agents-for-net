@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Builder.State
     ///
     /// You can define additional scopes for your Agent.
     /// </remarks>
-    /// <seealso cref="IStorage"/>
+    /// <seealso cref="Microsoft.Agents.Storage.IStorage"/>
     public interface IAgentState
     {
         /// <summary>

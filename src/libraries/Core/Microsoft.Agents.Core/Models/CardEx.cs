@@ -4,14 +4,14 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Extension methods for converting strongly typed Card objects to <see cref="Attachment"/>.
+    /// Extension methods for converting strongly typed Card objects to <see cref="Microsoft.Agents.Core.Models.Attachment"/>.
     /// </summary>
     public static class Extensions
     {
         /// <summary>
-        /// Creates a new attachment from <see cref="HeroCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.HeroCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="HeroCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.HeroCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public static Attachment ToAttachment(this HeroCard card)
         {
@@ -19,9 +19,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates a new attachment from <see cref="ThumbnailCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.ThumbnailCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="ThumbnailCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.ThumbnailCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public static Attachment ToAttachment(this ThumbnailCard card)
         {
@@ -29,9 +29,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates a new attachment from <see cref="SigninCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.SigninCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="SigninCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.SigninCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public static Attachment ToAttachment(this SigninCard card)
         {
@@ -39,9 +39,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates a new attachment from <see cref="ReceiptCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.ReceiptCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="ReceiptCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.ReceiptCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public static Attachment ToAttachment(this ReceiptCard card)
         {
@@ -49,9 +49,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates a new attachment from <see cref="AudioCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.AudioCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="AudioCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.AudioCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public static Attachment ToAttachment(this AudioCard card)
         {
@@ -59,9 +59,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates a new attachment from <see cref="VideoCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.VideoCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="VideoCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.VideoCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public static Attachment ToAttachment(this VideoCard card)
         {
@@ -69,9 +69,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates a new attachment from <see cref="AnimationCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.AnimationCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="AnimationCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.AnimationCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public static Attachment ToAttachment(this AnimationCard card)
         {
@@ -79,9 +79,9 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Creates a new attachment from <see cref="OAuthCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.OAuthCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="OAuthCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.OAuthCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public static Attachment ToAttachment(this OAuthCard card)
         {

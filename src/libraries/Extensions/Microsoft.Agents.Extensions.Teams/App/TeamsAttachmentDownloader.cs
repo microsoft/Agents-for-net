@@ -8,7 +8,7 @@ using System.Net.Http;
 namespace Microsoft.Agents.Extensions.Teams.App
 {
     /// <summary>
-    /// Downloads attachments from Teams using the configure Token Provider (from IConnections).
+    /// Downloads attachments from Teams using the configured Token Provider (from IConnections).
     /// </summary>
     [Obsolete("Use Microsoft.Agents.Builder.App.M365AttachmentDownloader instead.")]
     public class TeamsAttachmentDownloader(

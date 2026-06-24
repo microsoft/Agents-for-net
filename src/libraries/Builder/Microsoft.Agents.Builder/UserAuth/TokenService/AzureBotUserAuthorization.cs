@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Telemetry.Authorization.Scopes;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,6 +72,8 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeAzureBotSignIn(Name, exchangeConnection, exchangeScopes, turnContext);
+
             if (forceSignIn || await IsValidActivity(turnContext, cancellationToken).ConfigureAwait(false))
             {
                 var token = await OnFlowTurn(turnContext, cancellationToken).ConfigureAwait(false);
@@ -96,6 +101,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeAzureBotSignOut(Name, _settings.AzureBotOAuthConnectionName, turnContext);
             await ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             await UserTokenClientWrapper.SignOutUserAsync(turnContext, _settings.AzureBotOAuthConnectionName, cancellationToken);
         }
@@ -103,6 +109,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <inheritdoc/>
         public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeAzureBotToken(Name, exchangeConnection, exchangeScopes);
             var response = await UserTokenClientWrapper.GetUserTokenAsync(turnContext, _settings.AzureBotOAuthConnectionName, null, cancellationToken).ConfigureAwait(false);
             return await HandleOBO(turnContext, response, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
         }
@@ -132,6 +139,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 var state = await GetFlowStateAsync(context, cancellationToken).ConfigureAwait(false);
                 if (state.FlowStarted && OAuthFlow.HasTimedOut(context, state.FlowExpires))
                 {
+                    await ResetFlowStateAsync(context, state, cancellationToken).ConfigureAwait(false);
                     throw new AuthException("Authorization flow timed out.", AuthExceptionReason.Timeout);
                 }
             }
@@ -158,8 +166,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             var state = await GetFlowStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
 
             // Handle start or continue of the flow.
-            // Either path can throw.  This is intentionally not trapping the exception to give the caller the chance
-            // to determine if a retry is applicable.  Otherwise, caller should call ResetState.
+            // BeginFlowAsync can still throw. Continue-flow terminal failures reset persisted state before surfacing.
             var flowTask = !state.FlowStarted
                             ? OnGetOrStartFlowAsync(turnContext, state, cancellationToken)
                             : OnContinueFlow(turnContext, state, cancellationToken);
@@ -197,41 +204,100 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         private async Task<TokenResponse> OnContinueFlow(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)
         {
-            TokenResponse tokenResponse;
+            if (ShouldCancelFlow(turnContext))
+            {
+                await ResetFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
 
-            try
-            {
-                tokenResponse = await _flow.ContinueFlowAsync(turnContext, state.FlowExpires, cancellationToken).ConfigureAwait(false);
-            }
-            catch (TimeoutException)
-            {
-                throw new AuthException("Authorization flow timed out.", AuthExceptionReason.Timeout);
-            }
-            catch (UserCancelledException)
-            {
-                throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
-            }
-
-            if (tokenResponse == null)
-            {
-                if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
+                if (!string.IsNullOrWhiteSpace(_settings.SignInCancelledMessage))
                 {
-                    state.ContinueCount++;
-                    if (state.ContinueCount >= _settings.InvalidSignInRetryMax)
-                    {
-                        // The only way this happens is if C2 sent a bogus code
-                        throw new AuthException("Retry max", AuthExceptionReason.InvalidSignIn);
-                    }
-
-                    await turnContext.SendActivityAsync(_settings.InvalidSignInRetryMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    await turnContext.SendActivityAsync(_settings.SignInCancelledMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
                 }
 
-                // token still pending.
                 return null;
             }
+            
+            OAuthFlowResult flowResult;
+            try
+            {
+                flowResult = await _flow.ContinueFlowAsync(turnContext, state.FlowExpires, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                await ResetFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
+                throw;
+            }
 
-            state.FlowStarted = false;
-            return tokenResponse;
+            switch (flowResult.Status)
+            {
+                case OAuthFlowStatus.TimedOut:
+                    await ResetFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
+                    throw new AuthException("Authorization flow timed out.", AuthExceptionReason.Timeout);
+
+                case OAuthFlowStatus.UserCancelled:
+                    await ResetFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
+                    throw new AuthException("User cancelled authorization", AuthExceptionReason.UserCancelled);
+
+                case OAuthFlowStatus.SignInFailed:
+                    await ResetFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
+                    throw CreateSignInFailureException(flowResult.ErrorResponse);
+
+                case OAuthFlowStatus.Complete:
+                    if (flowResult.TokenResponse == null)
+                    {
+                        await ResetFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
+                        throw new InvalidOperationException("OAuth flow completed without a token response.");
+                    }
+
+                    state.FlowStarted = false;
+                    return flowResult.TokenResponse;
+
+                default: // Pending
+                    if (ShouldSendTeamsSignInInProgressMessage(turnContext))
+                    {
+                        await turnContext.SendActivityAsync(_settings.TeamsSignInInProgressMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    }
+                    else if (!OAuthFlow.IsTokenExchangeRequestInvoke(turnContext))
+                    {
+                        state.ContinueCount++;
+                        if (state.ContinueCount >= _settings.InvalidSignInRetryMax)
+                        {
+                            // The only way this happens is if C2 sent a bogus code
+                            await ResetFlowStateAsync(turnContext, state, cancellationToken).ConfigureAwait(false);
+                            throw new AuthException("Retry max", AuthExceptionReason.InvalidSignIn);
+                        }
+
+                        await turnContext.SendActivityAsync(_settings.InvalidSignInRetryMessage, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    }
+
+                    // token still pending.
+                    return null;
+            }
+        }
+
+        private bool ShouldSendTeamsSignInInProgressMessage(ITurnContext turnContext)
+        {
+            return turnContext.Activity.ChannelId.IsParentChannel(Channels.Msteams)
+                && turnContext.Activity.IsType(ActivityTypes.Message)
+                && !ShouldCancelFlow(turnContext)
+                && !string.IsNullOrWhiteSpace(_settings.TeamsSignInInProgressMessage);
+        }
+
+        private bool ShouldCancelFlow(ITurnContext turnContext)
+        {
+            if (!turnContext.Activity.IsType(ActivityTypes.Message) || string.IsNullOrWhiteSpace(turnContext.Activity.Text))
+            {
+                return false;
+            }
+
+            foreach (var command in _settings.CancelSignInCommands ?? [])
+            {
+                if (!string.IsNullOrWhiteSpace(command) && string.Equals(turnContext.Activity.Text.Trim(), command.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private async Task<FlowState> GetFlowStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -251,11 +317,25 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             await _storage.WriteAsync(items, cancellationToken).ConfigureAwait(false);
         }
 
+        private async Task ResetFlowStateAsync(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)
+        {
+            state.FlowStarted = false;
+            state.FlowExpires = DateTime.MinValue;
+            state.ContinueCount = 0;
+            await ResetStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+        }
+
         private string GetStorageKey(ITurnContext turnContext)
         {
             var channelId = turnContext.Activity.ChannelId ?? throw new InvalidOperationException("invalid activity-missing channelId");
             var conversationId = turnContext.Activity.Conversation?.Id ?? throw new InvalidOperationException("invalid activity-missing Conversation.Id");
             return $"oauth/{Name}/{channelId}/{conversationId}/flowState";
+        }
+
+        private static ErrorResponseException CreateSignInFailureException(ErrorResponse errorResponse)
+        {
+            var error = errorResponse?.Error;
+            return new ErrorResponseException($"SignInFailure: ({error?.Code}) {error?.Message}") { Body = errorResponse };
         }
     }
 

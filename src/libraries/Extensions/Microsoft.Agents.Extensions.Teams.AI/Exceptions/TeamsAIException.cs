@@ -7,7 +7,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Exceptions
     public class TeamsAIException : Exception
     {
         /// <summary>
-        /// Create an instance of the <see cref="TeamsAIException"/> class.
+        /// Create an instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Exceptions.TeamsAIException"/> class.
         /// </summary>
         /// <param name="message">Exception message.</param>
         public TeamsAIException(string message) : base(message)
@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Exceptions
         }
 
         /// <summary>
-        /// Create an instance of the <see cref="TeamsAIException"/> class.
+        /// Create an instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Exceptions.TeamsAIException"/> class.
         /// </summary>
         /// <param name="message">Exception message.</param>
         /// <param name="innerException">Inner exception.</param>

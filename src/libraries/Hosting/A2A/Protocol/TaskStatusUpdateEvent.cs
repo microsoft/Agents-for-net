@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Hosting.A2A.Protocol;
 
 /// <summary>
 /// Carries information about a change in the task's status during streaming. 
-/// This is one of the possible result types in a <see cref="SendStreamingMessageResponse"/>.
+/// This is one of the possible result types in a <see cref="Microsoft.Agents.Hosting.A2A.Protocol.SendStreamingMessageResponse"/>.
 /// </summary>
 public sealed class TaskStatusUpdateEvent
 {

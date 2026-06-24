@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TaskModuleContinueResponse : TaskModuleResponseBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleContinueResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleContinueResponse"/> class.
         /// </summary>
         public TaskModuleContinueResponse()
             : base("continue")
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TaskModuleContinueResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TaskModuleContinueResponse"/> class.
         /// </summary>
         /// <param name="value">The JSON for the Adaptive card to appear in the task module.</param>
         public TaskModuleContinueResponse(TaskModuleTaskInfo value = default)

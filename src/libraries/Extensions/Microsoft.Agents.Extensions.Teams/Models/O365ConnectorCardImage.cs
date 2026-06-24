@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class O365ConnectorCardImage
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardImage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardImage"/> class.
         /// </summary>
         public O365ConnectorCardImage()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardImage"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardImage"/> class.
         /// </summary>
         /// <param name="image">URL for the image.</param>
         /// <param name="title">Alternative text for the image.</param>

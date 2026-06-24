@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class BatchFailedEntry
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="BatchFailedEntry"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.BatchFailedEntry"/> class.
         /// </summary>
         public BatchFailedEntry()
         {

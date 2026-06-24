@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Connector
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        /// <returns>A task that represents the <see cref="ResourceResponse"/>.</returns>
+        /// <returns>A task that represents the <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/>.</returns>
         Task<ResourceResponse> SendToConversationAsync(IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace Microsoft.Agents.Connector
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        /// <returns>A task that represents the <see cref="ResourceResponse"/>.</returns>
+        /// <returns>A task that represents the <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/>.</returns>
         Task<ResourceResponse> SendConversationHistoryAsync(string conversationId, Transcript transcript, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -158,7 +158,7 @@ namespace Microsoft.Agents.Connector
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        /// <returns>A task that represents the <see cref="ResourceResponse"/>.</returns>
+        /// <returns>A task that represents the <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/>.</returns>
         Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Connector
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        /// <returns>A task that represents the <see cref="ChannelAccount"/>.</returns>
+        /// <returns>A task that represents the <see cref="Microsoft.Agents.Core.Models.ChannelAccount"/>.</returns>
         Task<IReadOnlyList<ChannelAccount>> GetConversationMembersAsync(string conversationId, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -287,7 +287,7 @@ namespace Microsoft.Agents.Connector
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        /// <returns>A task that represents the <see cref="PagedMembersResult"/>.</returns>
+        /// <returns>A task that represents the <see cref="Microsoft.Agents.Core.Models.PagedMembersResult"/>.</returns>
         Task<PagedMembersResult> GetConversationPagedMembersAsync(string conversationId, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -334,7 +334,7 @@ namespace Microsoft.Agents.Connector
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        /// <returns>A task that represents the list of <see cref="ChannelAccount"/>.</returns>
+        /// <returns>A task that represents the list of <see cref="Microsoft.Agents.Core.Models.ChannelAccount"/>.</returns>
         Task<IReadOnlyList<ChannelAccount>> GetActivityMembersAsync(string conversationId, string activityId, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Connector
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        /// <returns>A task that represents the <see cref="ResourceResponse"/>.</returns>
+        /// <returns>A task that represents the <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/>.</returns>
         Task<ResourceResponse> UploadAttachmentAsync(string conversationId, AttachmentData attachmentUpload, CancellationToken cancellationToken = default);
     }
 }

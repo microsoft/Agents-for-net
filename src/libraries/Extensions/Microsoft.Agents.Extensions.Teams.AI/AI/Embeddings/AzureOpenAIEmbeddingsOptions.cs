@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Embeddings
         public string? AzureApiVersion { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureOpenAIEmbeddingsOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Embeddings.AzureOpenAIEmbeddingsOptions"/> class.
         /// </summary>
         /// <param name="azureApiKey">API key to use when making requests to Azure OpenAI.</param>
         /// <param name="azureDeployment">Name of the Azure OpenAI deployment (model) to use.</param>
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Embeddings
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureOpenAIEmbeddingsOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Embeddings.AzureOpenAIEmbeddingsOptions"/> class.
         /// </summary>
         /// <param name="tokenCredential">token credential</param>
         /// <param name="azureDefaultDeployment">the deployment name</param>

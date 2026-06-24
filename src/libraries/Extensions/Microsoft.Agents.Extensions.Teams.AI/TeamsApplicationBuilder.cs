@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsApplicationBuilder"/> class with the specified options.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.TeamsApplicationBuilder"/> class with the specified options.
         /// </summary>
         /// <param name="options">The agent application options to leverage.</param>
         public TeamsApplicationBuilder(TeamsAgentApplicationOptions options)

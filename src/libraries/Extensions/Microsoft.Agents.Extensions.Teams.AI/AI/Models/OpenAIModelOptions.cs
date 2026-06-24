@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         public string? Organization { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OpenAIModelOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.OpenAIModelOptions"/> class.
         /// </summary>
         /// <param name="apiKey">API key to use when calling the OpenAI API.</param>
         /// <param name="defaultModel">Default model to use for completion.</param>

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 namespace Microsoft.Agents.Core.Models
@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Core.Models
         /// Name for the signin invoke to verify the 6-digit authentication code as part of sign-in.
         /// </summary>
         /// <remarks>
-        /// This invoke operation includes a value containing a state property for the magic code or <see cref="CancelledByUser"/>
+        /// This invoke operation includes a value containing a state property for the magic code or <see cref="Microsoft.Agents.Core.Models.SignInConstants.CancelledByUser"/>
         /// </remarks>
         public const string VerifyStateOperationName = "signin/verifyState";
 

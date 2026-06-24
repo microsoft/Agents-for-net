@@ -19,6 +19,7 @@ using Microsoft.Agents.Core.Errors;
 using System.Text;
 using Microsoft.Agents.TestSupport;
 using Microsoft.Agents.Builder.Errors;
+using System.Security.Claims;
 
 namespace Microsoft.Agents.Builder.Tests
 {
@@ -86,7 +87,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             try
             {
-                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None);
+                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), cancellationToken: CancellationToken.None);
                 await u.GetUserTokenAsync(userId: "ABC", connectionName: "ConnNAM", channelId: "TEST", magicCode: "Im Magic", CancellationToken.None);
             }
             catch (Exception e)
@@ -123,7 +124,7 @@ namespace Microsoft.Agents.Builder.Tests
             var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", audience, CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestConnectorClient>(connector);
 
-            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
+            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), true, CancellationToken.None);
             Assert.IsType<RestUserTokenClient>(tokeClient);
         }
 
@@ -157,7 +158,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             try
             {
-                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None);
+                IUserTokenClient u = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), false, CancellationToken.None);
                 await u.GetUserTokenAsync(userId: "ABC", connectionName: "ConnNAM", channelId: "TEST", magicCode: "Im Magic", CancellationToken.None);
             }
             catch (Exception e)
@@ -200,10 +201,190 @@ namespace Microsoft.Agents.Builder.Tests
             var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestConnectorClient>(connector);
 
-            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
+            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), true,  CancellationToken.None);
             Assert.IsType<RestUserTokenClient>(tokeClient);
             Assert.Equal(new Uri(AuthenticationConstants.BotFrameworkOAuthUrl).ToString(), ((RestUserTokenClient)tokeClient).BaseUri.ToString());
         }
+
+        [Fact]
+        public void NullBotServiceAudienceThrows()
+        {
+            var config = new ConfigurationBuilder().Build();
+            var connections = new Mock<IConnections>();
+            var httpFactory = new Mock<IHttpClientFactory>();
+
+            Assert.Throws<ArgumentNullException>(() => new RestChannelServiceClientFactory(
+                config, httpFactory.Object, connections.Object, botServiceAudience: null));
+        }
+
+        [Fact]
+        public async Task BotServiceAudienceFromConstructorIsUsedAsync()
+        {
+            var config = new ConfigurationBuilder().Build();
+            string capturedAudience = null;
+
+            var tokenProvider = new Mock<IAccessTokenProvider>();
+            tokenProvider
+                .Setup(x => x.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Callback<string, IList<string>, bool>((aud, scopes, force) => capturedAudience = aud)
+                .ReturnsAsync("fake-token");
+
+            var connections = new Mock<IConnections>();
+            connections
+                .Setup(x => x.GetTokenProvider(It.IsAny<ClaimsIdentity>(), It.IsAny<string>()))
+                .Returns(tokenProvider.Object);
+
+            var httpFactory = new Mock<IHttpClientFactory>();
+            httpFactory
+                .Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient());
+
+            var factory = new RestChannelServiceClientFactory(
+                config, httpFactory.Object, connections.Object,
+                botServiceAudience: AuthenticationConstants.GovBotFrameworkAudience);
+
+            var connector = await factory.CreateConnectorClientAsync(
+                new ClaimsIdentity(), "http://serviceurl", null, CancellationToken.None);
+
+            await ((IRestTransport)connector).GetHttpClientAsync();
+
+            Assert.Equal(AuthenticationConstants.GovBotFrameworkAudience, capturedAudience);
+        }
+
+        [Fact]
+        public async Task BotServiceAudienceFromConfigIsUsedAsync()
+        {
+            var config = new ConfigurationRoot(new List<IConfigurationProvider>
+            {
+                new MemoryConfigurationProvider(new MemoryConfigurationSource
+                {
+                    InitialData = new Dictionary<string, string>
+                    {
+                        { "RestChannelServiceClientFactory:BotServiceAudience", AuthenticationConstants.GovBotFrameworkAudience }
+                    }
+                })
+            });
+            string capturedAudience = null;
+
+            var tokenProvider = new Mock<IAccessTokenProvider>();
+            tokenProvider
+                .Setup(x => x.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Callback<string, IList<string>, bool>((aud, scopes, force) => capturedAudience = aud)
+                .ReturnsAsync("fake-token");
+
+            var connections = new Mock<IConnections>();
+            connections
+                .Setup(x => x.GetTokenProvider(It.IsAny<ClaimsIdentity>(), It.IsAny<string>()))
+                .Returns(tokenProvider.Object);
+
+            var httpFactory = new Mock<IHttpClientFactory>();
+            httpFactory
+                .Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient());
+
+            // Default botServiceAudience is BotFrameworkAudience, but config key overrides it
+            var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections.Object);
+
+            var connector = await factory.CreateConnectorClientAsync(
+                new ClaimsIdentity(), "http://serviceurl", null, CancellationToken.None);
+
+            await ((IRestTransport)connector).GetHttpClientAsync();
+
+            Assert.Equal(AuthenticationConstants.GovBotFrameworkAudience, capturedAudience);
+        }
+
+        [Fact]
+        public async Task AgentIdentityUsesScopesFromClaimsAsync()
+        {
+            // When the incoming identity is an agent-to-agent call (IsAgent == true),
+            // scopes are derived from the caller's appId in the claims: ["{callerAppId}/.default"]
+            var config = new ConfigurationBuilder().Build();
+            IList<string> capturedScopes = null;
+
+            var callerAppId = "caller-app-id";
+            var myAppId = "my-app-id";
+            var agentIdentity = AgentClaims.CreateIdentity(audience: myAppId, appId: callerAppId);
+
+            var tokenProvider = new Mock<IAccessTokenProvider>();
+            tokenProvider
+                .Setup(x => x.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Callback<string, IList<string>, bool>((aud, scopes, force) => capturedScopes = scopes)
+                .ReturnsAsync("fake-token");
+
+            var connections = new Mock<IConnections>();
+            connections
+                .Setup(x => x.GetTokenProvider(It.IsAny<ClaimsIdentity>(), It.IsAny<string>()))
+                .Returns(tokenProvider.Object);
+
+            var httpFactory = new Mock<IHttpClientFactory>();
+            httpFactory
+                .Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient());
+
+            var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections.Object);
+
+            var connector = await factory.CreateConnectorClientAsync(
+                agentIdentity, "http://serviceurl", null, CancellationToken.None);
+
+            await ((IRestTransport)connector).GetHttpClientAsync();
+
+            Assert.NotNull(capturedScopes);
+            Assert.Single(capturedScopes);
+            Assert.Equal($"{callerAppId}/.default", capturedScopes[0]);
+        }
+
+        [Theory]
+        [InlineData(AuthenticationConstants.BotFrameworkTokenIssuer, AuthenticationConstants.BotFrameworkDefaultScope)]
+        [InlineData(AuthenticationConstants.GovBotFrameworkTokenIssuer, AuthenticationConstants.GovBotFrameworkDefaultScope)]
+        public async Task AbsIdentityUsesConnectionSettingsScopesAsync(string absAudience, string configuredScope)
+        {
+            // When the incoming identity is from Azure Bot Service (any cloud, IsAgent == false),
+            // the factory passes null scopes to GetAccessTokenAsync. The IAccessTokenProvider then
+            // uses its ConnectionSettings.Scopes — i.e., the Scopes value from appsettings.
+            var config = new ConfigurationBuilder().Build();
+            IList<string> effectiveScopes = null;
+
+            var absIdentity = AgentClaims.CreateIdentity(audience: absAudience);
+
+            // Simulate the connection's settings as loaded from appsettings (e.g., Connections:...:Settings:Scopes)
+            var connectionSettings = new ImmutableConnectionSettings(
+                new TestConnectionSettings { Scopes = [configuredScope] });
+
+            var tokenProvider = new Mock<IAccessTokenProvider>();
+            tokenProvider.Setup(x => x.ConnectionSettings).Returns(connectionSettings);
+            tokenProvider
+                .Setup(x => x.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>()))
+                .Returns<string, IList<string>, bool>((aud, scopes, force) =>
+                {
+                    // Simulate real IAccessTokenProvider: when the factory passes null scopes for ABS,
+                    // fall back to the configured ConnectionSettings.Scopes from appsettings.
+                    effectiveScopes = scopes ?? tokenProvider.Object.ConnectionSettings.Scopes;
+                    return Task.FromResult("fake-token");
+                });
+
+            var connections = new Mock<IConnections>();
+            connections
+                .Setup(x => x.GetTokenProvider(It.IsAny<ClaimsIdentity>(), It.IsAny<string>()))
+                .Returns(tokenProvider.Object);
+
+            var httpFactory = new Mock<IHttpClientFactory>();
+            httpFactory
+                .Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient());
+
+            var factory = new RestChannelServiceClientFactory(config, httpFactory.Object, connections.Object);
+
+            var connector = await factory.CreateConnectorClientAsync(
+                absIdentity, "http://serviceurl", null, CancellationToken.None);
+
+            await ((IRestTransport)connector).GetHttpClientAsync();
+
+            Assert.NotNull(effectiveScopes);
+            Assert.Single(effectiveScopes);
+            Assert.Equal(configuredScope, effectiveScopes[0]);
+        }
+
+        private sealed class TestConnectionSettings : ConnectionSettingsBase { }
 
         [Fact]
         public async Task ConnectionFoundWithConfigTokenEndpointAsync()
@@ -238,7 +419,7 @@ namespace Microsoft.Agents.Builder.Tests
             var connector = await factory.CreateConnectorClientAsync(new System.Security.Claims.ClaimsIdentity(), "http://serviceurl", "audience", CancellationToken.None, useAnonymous: true);
             Assert.IsType<RestConnectorClient>(connector);
 
-            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), CancellationToken.None, useAnonymous: true);
+            var tokeClient = await factory.CreateUserTokenClientAsync(new System.Security.Claims.ClaimsIdentity(), true, CancellationToken.None);
             Assert.IsType<RestUserTokenClient>(tokeClient);
             Assert.Equal("https://test.token.endpoint/", ((RestUserTokenClient)tokeClient).BaseUri.ToString());
         }

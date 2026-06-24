@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.OpenAI
         };
 
         /// <summary>
-        /// Creates a new instance of the <see cref="OpenAIClient"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.OpenAI.OpenAIClient"/> class.
         /// </summary>
         /// <param name="options">The OpenAI client options.</param>
         /// <param name="loggerFactory">Optional. The logger factory instance.</param>

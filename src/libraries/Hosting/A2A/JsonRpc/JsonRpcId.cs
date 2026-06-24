@@ -11,19 +11,19 @@ namespace Microsoft.Agents.Hosting.A2A.JsonRpc;
 public readonly struct JsonRpcId : IEquatable<JsonRpcId>
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="JsonRpcId"/> struct with a string value.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.A2A.JsonRpc.JsonRpcId"/> struct with a string value.
     /// </summary>
     /// <param name="value">The string value.</param>
     public JsonRpcId(string? value) => Value = value;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="JsonRpcId"/> struct with a numeric value.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.A2A.JsonRpc.JsonRpcId"/> struct with a numeric value.
     /// </summary>
     /// <param name="value">The numeric value.</param>
     public JsonRpcId(long value) => Value = value;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="JsonRpcId"/> struct with a numeric value.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.A2A.JsonRpc.JsonRpcId"/> struct with a numeric value.
     /// </summary>
     /// <param name="value">The numeric value.</param>
     public JsonRpcId(int value) => Value = (long)value;

@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class O365ConnectorCardSection
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardSection"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardSection"/> class.
         /// </summary>
         public O365ConnectorCardSection()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardSection"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardSection"/> class.
         /// </summary>
         /// <param name="title">Title of the section.</param>
         /// <param name="text">Text for the section.</param>

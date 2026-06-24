@@ -299,7 +299,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Tells is if we should intercept the OAuthCard message.
+        /// Tells us if we should intercept the OAuthCard message.
         /// </summary>
         /// <remarks>
         /// The SkillDialog only attempts to intercept OAuthCards when the following criteria are met:

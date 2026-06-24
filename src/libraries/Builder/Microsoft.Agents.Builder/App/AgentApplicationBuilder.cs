@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Creates the builder and uses IStorage to create the default TurnStateFactory to use for managing the Agent's turn state.
         /// </summary>
-        /// <param name="storage">The <see cref="IStorage"/> to use with <see cref="TurnState"/>.</param>
+        /// <param name="storage">The <see cref="Microsoft.Agents.Storage.IStorage"/> to use with <see cref="Microsoft.Agents.Builder.State.TurnState"/>.</param>
         /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
         public AgentApplicationBuilder(IStorage storage)
         {

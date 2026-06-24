@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Client
 {
     /// <summary>
-    /// Represents a host the contains a collection of Agents for Agent-to-Agent communication.
+    /// Represents a host that contains a collection of Agents for Agent-to-Agent communication.
     /// </summary>
     public interface IAgentHost
     {
@@ -38,15 +38,15 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <remarks>
         /// This is used for Activity.DeliverMode == 'normal'.  In order to get the asynchronous replies from the Agent, the
-        /// <see cref="AgentResponses.OnAgentReply"/> handler must be set on the AgentApplication.
+        /// <see cref="Microsoft.Agents.Client.AgentResponses.OnAgentReply"/> handler must be set on the AgentApplication.
         /// </remarks>
         /// <remarks>
-        /// This will not properly handle Invoke or ExpectReplies requests as it's doesn't return a value.  Use <see cref="GetClient(string)"/> and 
-        /// use the returned <see cref="IAgentClient"/> directly for those.
+        /// This will not properly handle Invoke or ExpectReplies requests as it doesn't return a value.  Use <see cref="Microsoft.Agents.Client.IAgentHost.GetClient(string)"/> and
+        /// use the returned <see cref="Microsoft.Agents.Client.IAgentClient"/> directly for those.
         /// </remarks>
         /// <param name="turnContext">Context for a turn of the Agent.</param>
         /// <param name="agentName">An Agent name from configuration.</param>
-        /// <param name="agentConversationId">An Agent conversation identifier. More info: <see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
+        /// <param name="agentConversationId">An Agent conversation identifier. More info: <see cref="Microsoft.Agents.Client.IAgentHost.GetOrCreateConversationAsync"/> or <see cref="Microsoft.Agents.Client.IAgentHost.GetConversation"/></param>
         /// <param name="activity">The activity to send.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <exception cref="System.ArgumentException">If the specified agentName is null or not found.</exception>
@@ -57,14 +57,14 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <param name="turnContext">Context for a turn of the Agent.</param>
         /// <param name="agentName">An Agent name from configuration.</param>
-        /// <param name="agentConversationId">An Agent conversation identifier. More info: <see cref="GetOrCreateConversationAsync"/> or <see cref="GetConversation"/></param>
+        /// <param name="agentConversationId">An Agent conversation identifier. More info: <see cref="Microsoft.Agents.Client.IAgentHost.GetOrCreateConversationAsync"/> or <see cref="Microsoft.Agents.Client.IAgentHost.GetConversation"/></param>
         /// <param name="activity">The activity to send.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns></returns>
         IAsyncEnumerable<object> SendToAgentStreamedAsync(ITurnContext turnContext, string agentName, string agentConversationId, IActivity activity, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Returns the conversationId for an existing conversation for a Agent, relative to the current Turns Conversation.
+        /// Returns the conversationId for an existing conversation for an Agent, relative to the current Turns Conversation.
         /// </summary>
         /// <remarks>
         /// IAgentHost currently only supports a single active conversation per Agent per Turn Conversation.
@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Client
         /// </summary>
         /// <param name="turnContext"></param>
         /// <param name="cancellationToken"></param>
-        /// <returns>Non-null list of <see cref="AgentConversation"/>.</returns>
+        /// <returns>Non-null list of <see cref="Microsoft.Agents.Client.AgentConversation"/>.</returns>
         Task<IList<AgentConversation>> GetConversations(ITurnContext turnContext, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Client
         /// A received Activity of type EndOfConversation is one instance where the conversation should be deleted.
         /// </remarks>
         /// <param name="turnContext"></param>
-        /// <param name="agentConversationId">A conversationId return from <see cref="GetConversation"/> or <see cref="GetOrCreateConversationAsync"/>.</param>
+        /// <param name="agentConversationId">A conversationId return from <see cref="Microsoft.Agents.Client.IAgentHost.GetConversation"/> or <see cref="Microsoft.Agents.Client.IAgentHost.GetOrCreateConversationAsync"/>.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task DeleteConversationAsync(ITurnContext turnContext, string agentConversationId, CancellationToken cancellationToken = default);

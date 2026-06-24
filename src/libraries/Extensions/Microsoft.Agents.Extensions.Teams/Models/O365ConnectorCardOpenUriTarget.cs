@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class O365ConnectorCardOpenUriTarget
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardOpenUriTarget"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardOpenUriTarget"/> class.
         /// </summary>
         public O365ConnectorCardOpenUriTarget()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardOpenUriTarget"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardOpenUriTarget"/> class.
         /// </summary>
         /// <param name="os">Target operating system. Possible values include:
         /// 'default', 'iOS', 'android', 'windows'.</param>

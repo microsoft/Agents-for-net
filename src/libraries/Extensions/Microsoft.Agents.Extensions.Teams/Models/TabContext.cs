@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TabContext
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TabContext"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabContext"/> class.
         /// </summary>
         public TabContext()
         {

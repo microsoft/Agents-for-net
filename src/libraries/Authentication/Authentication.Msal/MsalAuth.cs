@@ -4,6 +4,7 @@
 using Azure.Core;
 using Microsoft.Agents.Authentication.Msal.Model;
 using Microsoft.Agents.Authentication.Msal.Utils;
+using Microsoft.Agents.Authentication.Telemetry.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
@@ -38,7 +39,7 @@ namespace Microsoft.Agents.Authentication.Msal
     {
         private readonly MSALHttpClientFactory _msalHttpClient;
         private readonly IServiceProvider _systemServiceProvider;
-        private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList;
+        private ConcurrentDictionary<Uri, ExecuteAuthenticationResults> _cacheList = new();
         private readonly ConnectionSettings _connectionSettings;
         private readonly ILogger _logger;
         private readonly ICertificateProvider _certificateProvider;
@@ -47,7 +48,7 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
         /// </summary>
-        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
+        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and an instance of the MsalAuthConfigurationOptions object</param>
         /// <param name="msalConfigurationSection"></param>
         public MsalAuth(IServiceProvider systemServiceProvider, IConfigurationSection msalConfigurationSection)
             : this(systemServiceProvider, new ConnectionSettings(msalConfigurationSection))
@@ -57,13 +58,13 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <summary>
         /// Creates a MSAL Authentication Instance. 
         /// </summary>
-        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and a instance of the MsalAuthConfigurationOptions object</param>
+        /// <param name="systemServiceProvider">Should contain the following objects: a httpClient factory called "MSALClientFactory" and an instance of the MsalAuthConfigurationOptions object</param>
         /// <param name="settings">Settings for this instance.</param>
         public MsalAuth(IServiceProvider systemServiceProvider, ConnectionSettings settings)
         {
             AssertionHelpers.ThrowIfNull(systemServiceProvider, nameof(systemServiceProvider));
 
-            _systemServiceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
+            _systemServiceProvider = systemServiceProvider;
             _msalHttpClient = new MSALHttpClientFactory(systemServiceProvider);
             _connectionSettings = settings ?? throw new ArgumentNullException(nameof(settings));
             _logger = (ILogger)systemServiceProvider.GetService(typeof(ILogger<MsalAuth>));
@@ -88,6 +89,8 @@ namespace Microsoft.Agents.Authentication.Msal
 
             Uri instanceUri = new(resourceUrl);
             var localScopes = ResolveScopesList(instanceUri, scopes);
+
+            using var telemetryScope = new ScopeGetAccessToken(localScopes, _connectionSettings.AuthType.ToString());
 
             // Get or create existing token. 
             var cacheEntry = CacheGet(instanceUri, forceRefresh);
@@ -144,6 +147,7 @@ namespace Microsoft.Agents.Authentication.Msal
         #region IOBOExchange
         public async Task<TokenResponse> AcquireTokenOnBehalfOf(IEnumerable<string> scopes, string token)
         {
+            using var telemetryScope = new ScopeAcquireTokenOnBehalfOf(scopes);
             var msal = InnerCreateClientApplication();
             if (msal is IConfidentialClientApplication confidentialClient)
             {
@@ -167,7 +171,8 @@ namespace Microsoft.Agents.Authentication.Msal
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
-            if (InnerCreateClientApplication(tenantId) is IConfidentialClientApplication msalApplication)
+            var app = InnerCreateClientApplication(tenantId);
+            if (app is IConfidentialClientApplication msalApplication)
             {
                 var tokenResult = await msalApplication
                     .AcquireTokenForClient(["api://AzureAdTokenExchange/.default"]).WithFmiPath(agentAppInstanceId)
@@ -175,13 +180,23 @@ namespace Microsoft.Agents.Authentication.Msal
 
                 return tokenResult.AccessToken;
             }
+            else if (_connectionSettings.AuthType == AuthTypes.IdentityProxyManager && app is IManagedIdentityApplication msiApp)
+            {
+                var tokenResult = await msiApp
+                    .AcquireTokenForManagedIdentity(_connectionSettings.IdpmResource)
+                    .ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-            throw new InvalidOperationException("Only IConfidentialClientApplication is supported for Agentic.");
+                return tokenResult.AccessToken;
+            }
+
+            throw new InvalidOperationException("Only IConfidentialClientApplication or AuthType.IdentityProxyManager is supported for Agentic.");
         }
 
         public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
+
+            using var telemetryScope = new ScopeGetAgenticInstanceToken(agentAppInstanceId);
 
             var agentTokenResult = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
 
@@ -206,6 +221,8 @@ namespace Microsoft.Agents.Authentication.Msal
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agenticUserId, nameof(agenticUserId));
+
+            using var telemetryScope = new ScopeGetAgenticUserToken(agentAppInstanceId, agenticUserId, scopes);
 
             var agentToken = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
             var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
@@ -280,7 +297,7 @@ namespace Microsoft.Agents.Authentication.Msal
                     .WithHttpClientFactory(_msalHttpClient)
                     .Build();
             }
-            else if (_connectionSettings.AuthType == AuthTypes.UserManagedIdentity)
+            else if (_connectionSettings.AuthType == AuthTypes.UserManagedIdentity || _connectionSettings.AuthType == AuthTypes.IdentityProxyManager)
             {
                 msalAuthClient = ManagedIdentityApplicationBuilder.Create(
                         ManagedIdentityId.WithUserAssignedClientId(_connectionSettings.ClientId))
@@ -311,6 +328,11 @@ namespace Microsoft.Agents.Authentication.Msal
                 else
                 {
                     cAppBuilder.WithTenantId(ResolveTenantId(_connectionSettings, tenantId));
+                }
+
+                if (!string.IsNullOrWhiteSpace(_connectionSettings.AzureRegion))
+                {
+                    cAppBuilder.WithAzureRegion(_connectionSettings.AzureRegion);
                 }
 
                 // If Client secret was passed in , get the secret and create it that way 
@@ -359,8 +381,6 @@ namespace Microsoft.Agents.Authentication.Msal
         /// <exception cref="System.ArgumentNullException"></exception>
         private string[] ResolveScopesList(Uri instanceUrl, IList<string> scopes = null)
         {
-            IList<string> _localScopesResolver = new List<string>();
-
             if (scopes != null && scopes.Count > 0)
             {
                 return scopes.ToArray();
@@ -391,13 +411,12 @@ namespace Microsoft.Agents.Authentication.Msal
 
         private ExecuteAuthenticationResults CacheGet(Uri instanceUri, bool forceRefresh = false)
         {
-            _cacheList ??= new ConcurrentDictionary<Uri, ExecuteAuthenticationResults>();
             if (_cacheList.TryGetValue(instanceUri, out ExecuteAuthenticationResults authResultFromCache))
             {
                 if (!forceRefresh)
                 {
                     var tokenExpiresOn = authResultFromCache.MsalAuthResult.ExpiresOn;
-                    if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Subtract(TimeSpan.FromSeconds(30)))
+                    if (tokenExpiresOn != null && tokenExpiresOn < DateTimeOffset.UtcNow.Add(TimeSpan.FromSeconds(30)))
                     {
                         // flush the access token if it is about to expire.
 #if !NETSTANDARD
@@ -425,14 +444,7 @@ namespace Microsoft.Agents.Authentication.Msal
 
         private void CacheSet(Uri instanceUri, ExecuteAuthenticationResults authResultPayload)
         {
-            if (_cacheList.ContainsKey(instanceUri))
-            {
-                _cacheList[instanceUri] = authResultPayload;
-            }
-            else
-            {
-                _cacheList.TryAdd(instanceUri, authResultPayload);
-            }
+            _cacheList[instanceUri] = authResultPayload;
         }
     }
 

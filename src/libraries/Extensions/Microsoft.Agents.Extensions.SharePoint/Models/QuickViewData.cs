@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class QuickViewData
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="QuickViewData"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.QuickViewData"/> class.
         /// </summary>
         public QuickViewData()
         {
@@ -17,13 +17,13 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets the title of type <see cref="string"/>.
+        /// Gets or Sets the title of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the title of the quick view data.</value>
         public string Title { get; set; }
 
         /// <summary>
-        /// Gets or Sets the description of type <see cref="string"/>.
+        /// Gets or Sets the description of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the description of the quick view data.</value>
         public string Description { get; set; }

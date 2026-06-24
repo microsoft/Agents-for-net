@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TabRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TabRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabRequest"/> class.
         /// </summary>
         public TabRequest()
         {
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets current tab entity request context.
         /// </summary>
         /// <value>
-        /// Tab context for this <see cref="TabRequest"/>.
+        /// Tab context for this <see cref="Microsoft.Agents.Extensions.Teams.Models.TabRequest"/>.
         /// </value>
         public TabEntityContext TabEntityContext { get; set; }
 

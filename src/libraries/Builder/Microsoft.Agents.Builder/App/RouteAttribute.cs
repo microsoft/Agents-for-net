@@ -21,18 +21,16 @@ namespace Microsoft.Agents.Builder.App
 
     /// <summary>
     /// Adds an AgentApplication Routes
-    /// 
-    /// RouteType:
-    /// <code>
-    ///    Activity,       // { Type | RegEx | Selector}, Rank, AutoHandlers
-    ///    Message,        // { Text | RegEx | Selector}, Rank, AutoHandlers
-    ///    Event,          // { EventName | RegEx | Selector}, Rank, AutoHandlers
-    ///    Conversation,   // { EventName | Selector}, Rank, AutoHandlers
-    ///    HandOff,        // Selector, Rank, AutoHandlers
-    ///    ReactionAdded,  // Rank, AutoHandlers
-    ///    ReactionRemoved // Rank, AutoHandlers
-    /// </code>
     /// </summary>
+    /// <remarks>
+    /// This attribute is obsolete. Use the specific route attributes instead:
+    /// <see cref="ActivityRouteAttribute"/>, <see cref="MessageRouteAttribute"/>, <see cref="EventRouteAttribute"/>,
+    /// <see cref="ConversationUpdateRouteAttribute"/>, <see cref="MembersAddedRouteAttribute"/>,
+    /// <see cref="MembersRemovedRouteAttribute"/>, <see cref="MessageReactionsAddedRouteAttribute"/>,
+    /// <see cref="MessageReactionsRemovedRouteAttribute"/>, <see cref="HandoffRouteAttribute"/>,
+    /// <see cref="FeedbackLoopRouteAttribute"/>.
+    /// </remarks>
+    [Obsolete("Use specific route attributes: ActivityRouteAttribute, MessageRouteAttribute, EventRouteAttribute, ConversationUpdateRouteAttribute, MembersAddedRouteAttribute, MembersRemovedRouteAttribute, MessageReactionsAddedRouteAttribute, MessageReactionsRemovedRouteAttribute, HandoffRouteAttribute, FeedbackLoopRouteAttribute.")]
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     public class RouteAttribute : Attribute, IRouteAttribute
     {
@@ -86,6 +84,8 @@ namespace Microsoft.Agents.Builder.App
 
         public void AddRoute(AgentApplication app, MethodInfo attributedMethod)
         {
+            string[] autoSignInHandlers = DelimitedToList(SignInHandlers);
+
             if (RouteType == RouteType.Activity)
             {
                 CreateHandlerDelegate<RouteHandler>(app, attributedMethod, out var delegateHandler);
@@ -307,15 +307,26 @@ namespace Microsoft.Agents.Builder.App
             try
             {
 #if !NETSTANDARD
-                delegateHandler = attributedMethod.CreateDelegate<T>(app);
+                delegateHandler = attributedMethod.IsStatic ? attributedMethod.CreateDelegate<T>() : attributedMethod.CreateDelegate<T>(app);
 #else
-                delegateHandler = (T)attributedMethod.CreateDelegate(typeof(T), app);
+                delegateHandler = attributedMethod.IsStatic
+                    ? (T)attributedMethod.CreateDelegate(typeof(T))
+                    : (T)attributedMethod.CreateDelegate(typeof(T), app);
 #endif
             }
             catch (ArgumentException ex)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeHandlerInvalid, ex);
             }
+        }
+
+        public static string[] DelimitedToList(string delimitedTokenHandlers)
+        {
+#if !NETSTANDARD
+            return !string.IsNullOrEmpty(delimitedTokenHandlers) ? delimitedTokenHandlers.Split([',', ' ', ';'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : null;
+#else
+            return !string.IsNullOrEmpty(delimitedTokenHandlers) ? delimitedTokenHandlers.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries) : null;
+#endif
         }
     }
 }

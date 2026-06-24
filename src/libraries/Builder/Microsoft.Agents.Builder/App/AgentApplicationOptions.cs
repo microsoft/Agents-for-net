@@ -11,6 +11,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Logging;
+using Microsoft.Agents.Builder.App.Proactive;
+using System.Net.Http;
 
 namespace Microsoft.Agents.Builder.App
 {
@@ -36,16 +38,16 @@ namespace Microsoft.Agents.Builder.App
     ///    });
     /// </code>
     /// </remarks>
-    /// <seealso cref="TurnState"/>
+    /// <seealso cref="Microsoft.Agents.Builder.State.TurnState"/>
     /// See MemoryStorage, BlobsStorage, or CosmosDbStorage.
     public delegate ITurnState TurnStateFactory();
 
     /// <summary>
-    /// Options for the <see cref="AgentApplication"/> class.  AgentApplicationOptions can be constructed
+    /// Options for the <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> class.  AgentApplicationOptions can be constructed
     /// via <c>IConfiguration</c> values or programmatically.
     /// </summary>
-    /// <seealso cref="TurnStateFactory"/>
-    /// <seealso cref="UserAuthorizationOptions"/>
+    /// <seealso cref="Microsoft.Agents.Builder.App.TurnStateFactory"/>
+    /// <seealso cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions"/>
     public class AgentApplicationOptions
     {
         internal static readonly ILoggerFactory DefaultLoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddFilter("Microsoft.Agents", LogLevel.Warning));
@@ -127,14 +129,14 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="loggerFactory"></param>
         public AgentApplicationOptions(
             IServiceProvider sp,
-            IConfiguration configuration, 
-            IChannelAdapter channelAdapter, 
-            IStorage storage = null, 
+            IConfiguration configuration,
+            IChannelAdapter channelAdapter,
+            IStorage storage = null,
             UserAuthorizationOptions authOptions = null,
             AdaptiveCardsOptions cardOptions = null,
             IList<IInputFileDownloader> fileDownloaders = null,
             string configKey = "AgentApplication",
-            ILoggerFactory loggerFactory = null) 
+            ILoggerFactory loggerFactory = null)
         {
             LoggerFactory = loggerFactory ?? DefaultLoggerFactory;
 
@@ -142,9 +144,8 @@ namespace Microsoft.Agents.Builder.App
             Adapter = channelAdapter;
 #pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
-
-            storage ??= new MemoryStorage();
-            TurnStateFactory = () => new TurnState(storage);  // Null storage will just create a TurnState with TempState.
+            TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>() ?? new MemoryStorage());  // Null storage will just create a TurnState with TempState.
+            HttpClientFactory = sp.GetService<IHttpClientFactory>();
 
             var section = configuration.GetSection(configKey);
             if (!section.Exists())
@@ -172,6 +173,8 @@ namespace Microsoft.Agents.Builder.App
                 AdaptiveCards = cardOptions ?? section.Get<AdaptiveCardsOptions>();
             }
 
+            Proactive = new ProactiveOptions(storage ?? sp.GetService<IStorage>(), configuration, configKey: $"{configKey}:Proactive");
+
             // Can't get these from config at the moment
             FileDownloaders = fileDownloaders;
         }
@@ -195,11 +198,13 @@ namespace Microsoft.Agents.Builder.App
         /// </summary>
         public AdaptiveCardsOptions? AdaptiveCards { get; set; }
 
+        public ProactiveOptions Proactive { get; set; }
+
         /// <summary>
         /// Optional. Factory used to create a custom turn state instance.
         /// </summary>
         /// <remarks>
-        /// Not setting the TurnStateFactory would result in an in-memory <see cref="TurnState"/> that provides just TempState.  This could
+        /// Not setting the TurnStateFactory would result in an in-memory <see cref="Microsoft.Agents.Builder.State.TurnState"/> that provides just TempState.  This could
         /// be appropriate for Agents not needing persisted state.
         /// <see cref="Microsoft.Agents.Builder.App.TurnStateFactory"/>
         /// </remarks>
@@ -225,9 +230,15 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Optional. If true, the Agent will automatically start a typing timer when messages are received.
         /// This allows the Agent to automatically indicate that it's received the message and is processing
-        /// the request. Defaults to true.
+        /// the request. Defaults to false.
         /// </summary>
         public bool StartTypingTimer { get; set; } = false;
+
+        /// <summary>
+        /// Optional. Options for controlling typing indicator timing and per-channel behavior.
+        /// Only used when <see cref="StartTypingTimer"/> is true.
+        /// </summary>
+        public TypingOptions TypingOptions { get; set; } = new TypingOptions();
 
         /// <summary>
         /// Optional. Options used to enable user authorization for the application.
@@ -238,5 +249,7 @@ namespace Microsoft.Agents.Builder.App
         /// 
         /// </summary>
         public ILoggerFactory LoggerFactory { get; set; }
+
+        public IHttpClientFactory HttpClientFactory { get; set; }
     }
 }

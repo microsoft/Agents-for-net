@@ -200,4 +200,7 @@
   <data name="TokenServiceExchangeErrorResponse" xml:space="preserve">
     <value>The Token Service was unable to exchange the token.  Check OAuth Connection configuration for '{0}' on the Azure Bot and try again.  The response is '{1}'</value>
   </data>
+  <data name="TeamsTargetedRequiresGroupChat" xml:space="preserve">
+    <value>Targeted activities can only be sent in a group chat or channel.</value>
+  </data>
 </root>

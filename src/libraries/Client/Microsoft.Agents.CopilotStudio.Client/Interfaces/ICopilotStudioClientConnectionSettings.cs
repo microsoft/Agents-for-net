@@ -34,7 +34,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Interfaces
         AgentType? CopilotAgentType { get; set; }
 
         /// <summary>
-        /// URL provided to connect direclty to Copilot Studio endpoint,  When provided all other settings are ignored. 
+        /// URL provided to connect directly to Copilot Studio endpoint,  When provided all other settings are ignored.
         /// </summary>
         string? DirectConnectUrl { get; set; }
         

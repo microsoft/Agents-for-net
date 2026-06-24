@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Storage.Transcript
         private readonly StorageTransferOptions _storageTransferOptions;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlobsTranscriptStore"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Transcript.BlobsTranscriptStore"/> class.
         /// </summary>
         /// <param name="dataConnectionString">Azure Storage connection string.</param>
         /// <param name="containerName">Name of the Blob container where entities will be stored.</param>
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Storage.Transcript
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlobsTranscriptStore"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Transcript.BlobsTranscriptStore"/> class.
         /// </summary>
         /// <param name="blobServiceUri">A Uri referencing the blob container that includes the name of the account and the name of the container.</param>
         /// <param name="tokenCredential">The token credential to authenticate to the Azure storage.</param>
@@ -63,11 +63,11 @@ namespace Microsoft.Agents.Storage.Transcript
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlobsTranscriptStore"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Transcript.BlobsTranscriptStore"/> class.
         /// </summary>
         /// <param name="dataConnectionString">Azure Storage connection string.</param>
         /// <param name="containerName">Name of the Blob container where entities will be stored.</param>
-        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
+        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="Azure.Storage.StorageTransferOptions"/>.</param>
         /// <param name="jsonSerializer">If passing in a custom JsonSerializerOptions.</param>
         public BlobsTranscriptStore(string dataConnectionString, string containerName, StorageTransferOptions storageTransferOptions, JsonSerializerOptions jsonSerializer = null)
         {
@@ -102,12 +102,12 @@ namespace Microsoft.Agents.Storage.Transcript
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlobsTranscriptStore"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Transcript.BlobsTranscriptStore"/> class.
         /// </summary>
         /// <param name="blobServiceUri">A Uri referencing the blob container that includes the name of the account and the name of the container.</param>
         /// <param name="tokenCredential">The token credential to authenticate to the Azure storage.</param>
         /// <param name="containerName">Name of the Blob container where entities will be stored.</param>
-        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
+        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="Azure.Storage.StorageTransferOptions"/>.</param>
         /// <param name="jsonSerializer">If passing in a custom JsonSerializerOptions.</param>
         public BlobsTranscriptStore(Uri blobServiceUri, TokenCredential tokenCredential, string containerName, StorageTransferOptions storageTransferOptions, JsonSerializerOptions jsonSerializer = null)
         {
@@ -139,10 +139,10 @@ namespace Microsoft.Agents.Storage.Transcript
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BlobsTranscriptStore"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Transcript.BlobsTranscriptStore"/> class.
         /// </summary>
         /// <param name="containerClient">The custom implementation of BlobContainerClient.</param>
-        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="StorageTransferOptions"/>.</param>
+        /// <param name="storageTransferOptions">Used for providing options for parallel transfers <see cref="Azure.Storage.StorageTransferOptions"/>.</param>
         /// <param name="jsonSerializer">If passing in a custom JsonSerializerOptions.</param>
         public BlobsTranscriptStore(BlobContainerClient containerClient, StorageTransferOptions storageTransferOptions = default, JsonSerializerOptions jsonSerializer = null)
         {
@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Storage.Transcript
         /// Log an activity to the transcript.
         /// </summary>
         /// <param name="activity">Activity being logged.</param>
-        /// <returns>A <see cref="Task"/>A task that represents the work queued to execute.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/>A task that represents the work queued to execute.</returns>
         public async Task LogActivityAsync(IActivity activity)
         {
             AssertionHelpers.ThrowIfNull(activity, nameof(activity));
@@ -304,7 +304,7 @@ namespace Microsoft.Agents.Storage.Transcript
         /// </summary>
         /// <param name="channelId">Channel Id.</param>
         /// <param name="continuationToken">Continuation token to page through results.</param>
-        /// <returns>A <see cref="Task"/> A task that represents the work queued to execute.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> A task that represents the work queued to execute.</returns>
         public async Task<PagedResult<TranscriptInfo>> ListTranscriptsAsync(string channelId, string continuationToken = null)
         {
             const int PageSize = 20;
@@ -366,7 +366,7 @@ namespace Microsoft.Agents.Storage.Transcript
         /// </summary>
         /// <param name="channelId">Channel Id where conversation took place.</param>
         /// <param name="conversationId">Id of the conversation to delete.</param>
-        /// <returns>A <see cref="Task"/>A task that represents the work queued to execute.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/>A task that represents the work queued to execute.</returns>
         public async Task DeleteTranscriptAsync(string channelId, string conversationId)
         {
             if (string.IsNullOrEmpty(channelId))

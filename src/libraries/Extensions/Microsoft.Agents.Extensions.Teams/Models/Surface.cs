@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         private Surface() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Surface"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.Surface"/> class.
         /// </summary>
         /// <param name="type">Type of Surface.</param>
         protected Surface(SurfaceType type)

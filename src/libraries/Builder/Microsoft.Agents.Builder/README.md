@@ -2,20 +2,11 @@
 
 ## About
 
-Contains the implementation for building an Agent with Agents SDK.
-
-## Changelog
-| Version | Date | Changelog |
-|------|----|------------|
-| 1.2.0 | 2025-08-19 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/releases/tag/v1.2.0) |
-| 1.3.0 | 2025-10-22 | [Detailed Changelog](https://github.com/microsoft/Agents-for-net/blob/main/changelog.md) |
+The primary package for building agents with the Microsoft 365 Agents SDK. Provides the `AgentApplication` routing framework, middleware pipeline, and turn context model for handling conversational activities across channels and platforms.
 
 ## Main Types
 
-The main types provided by this library are:
-
-- `AgentApplication`
-- `IAgent`
-- `ITurnContext`
-- `ITurnState`
-- `AzureBotUserAuthorization`
+- `AgentApplication`: Base class for agents with route-based activity handling and middleware support
+- `IAgent`: Core agent interface implemented by all agents
+- `ITurnContext`: Provides access to the current activity, channel, and services for a given turn
+- `ITurnState`: Per-turn state container

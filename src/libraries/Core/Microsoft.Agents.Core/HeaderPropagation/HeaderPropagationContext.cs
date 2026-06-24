@@ -10,11 +10,12 @@ using Microsoft.Extensions.Primitives;
 namespace Microsoft.Agents.Core.HeaderPropagation;
 
 /// <summary>
-/// Shared context to manage request headers that will be used to propagate them in the <see cref="HeaderPropagationExtensions.AddHeaderPropagation"/>.
+/// Shared context to manage request headers that will be used to propagate them in the <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationExtensions.AddHeaderPropagation"/>.
 /// </summary>
 public class HeaderPropagationContext()
 {
     private static readonly AsyncLocal<IDictionary<string, StringValues>> _headersFromRequest = new();
+    private static readonly AsyncLocal<IList<IHeaderValueProvider>> _headerProviders = new();
     private static HeaderPropagationEntryCollection _headersToPropagate = new();
 
     static HeaderPropagationContext()
@@ -23,7 +24,7 @@ public class HeaderPropagationContext()
     }
 
     /// <summary>
-    /// Gets or sets the request headers that will be propagated based on what's inside the <see cref="HeadersToPropagate"/> property.
+    /// Gets or sets the request headers that will be propagated based on what's inside the <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationContext.HeadersToPropagate"/> property.
     /// </summary>
     public static IDictionary<string, StringValues> HeadersFromRequest
     {
@@ -59,7 +60,17 @@ public class HeaderPropagationContext()
     }
 
     /// <summary>
-    /// Filters the request headers based on the keys provided in <see cref="HeadersToPropagate"/>.
+    /// Gets the per-request list of <see cref="IHeaderValueProvider"/> instances that supply
+    /// dynamically resolved headers for outgoing requests.
+    /// </summary>
+    public static IList<IHeaderValueProvider> HeaderProviders
+    {
+        get => _headerProviders.Value ??= new List<IHeaderValueProvider>();
+        set => _headerProviders.Value = value;
+    }
+
+    /// <summary>
+    /// Filters the request headers based on the keys provided in <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationContext.HeadersToPropagate"/>.
     /// </summary>
     /// <param name="requestHeaders">Headers collection from an Http request.</param>
     /// <returns>Filtered headers.</returns>

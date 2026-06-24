@@ -19,10 +19,10 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         /// <param name="settings">Configuration Settings to use</param>
         /// <param name="conversationId">Optional, Conversation ID to address</param>
-        /// <param name="agentType">Type of Agent being addressed. <see cref="AgentType"/></param>
-        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
+        /// <param name="agentType">Type of Agent being addressed. <see cref="Microsoft.Agents.CopilotStudio.Client.Discovery.AgentType"/></param>
+        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="Microsoft.Agents.CopilotStudio.Client.Discovery.PowerPlatformCloud"/></param>
         /// <param name="createSubscribeLink">Whether to create a subscribe link for the conversation</param>
-        /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
+        /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="Microsoft.Agents.CopilotStudio.Client.Discovery.PowerPlatformCloud.Other"/> </param>
         /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentException"></exception>
@@ -104,8 +104,8 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// Returns the Power Platform API Audience.
         /// </summary>
         /// <param name="settings">Configuration Settings to use</param>
-        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
-        /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="PowerPlatformCloud.Other"/> </param>
+        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="Microsoft.Agents.CopilotStudio.Client.Discovery.PowerPlatformCloud"/></param>
+        /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other". <see cref="Microsoft.Agents.CopilotStudio.Client.Discovery.PowerPlatformCloud.Other"/> </param>
         /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent, if provided all other settings are ignored</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentException"></exception>
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         /// <param name="settings">Configuration Settings to use</param>
         /// <param name="conversationId">Conversation ID to address</param>
-        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="PowerPlatformCloud"/></param>
+        /// <param name="cloud">Power Platform Cloud Hosting Agent <see cref="Microsoft.Agents.CopilotStudio.Client.Discovery.PowerPlatformCloud"/></param>
         /// <param name="cloudBaseAddress">Power Platform API endpoint to use if Cloud is configured as "other"</param>
         /// <param name="directConnectUrl">DirectConnection URL to a given Copilot Studio agent</param>
         /// <returns>The URI for the ExternalOrchestration API endpoint</returns>

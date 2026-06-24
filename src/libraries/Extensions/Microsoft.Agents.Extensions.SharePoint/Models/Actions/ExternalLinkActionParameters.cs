@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     public class ExternalLinkActionParameters
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExternalLinkActionParameters"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.ExternalLinkActionParameters"/> class.
         /// </summary>
         public ExternalLinkActionParameters()
         {
@@ -17,13 +17,13 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         }
 
         /// <summary>
-        /// Gets or Sets a value indicating whether this is a teams deep link property of type <see cref="bool"/>. 
+        /// Gets or Sets a value indicating whether this is a teams deep link property of type <see cref="System.Boolean"/>. 
         /// </summary>
         /// <value>This value indicates whether this is a Teams Deep Link.</value>
         public bool IsTeamsDeepLink { get; set; }
 
         /// <summary>
-        /// Gets or Sets the target of type <see cref="string"/>.
+        /// Gets or Sets the target of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is external link to navigate to.</value>
         public string Target { get; set; }

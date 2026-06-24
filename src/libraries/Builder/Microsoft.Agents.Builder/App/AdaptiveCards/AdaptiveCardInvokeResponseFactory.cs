@@ -8,12 +8,12 @@ using System.Net;
 namespace Microsoft.Agents.Builder.App.AdaptiveCards
 {
     /// <summary>
-    /// Contains utility methods for creating various types of <see cref="AdaptiveCardInvokeResponse"/>.
+    /// Contains utility methods for creating various types of <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCardInvokeResponse"/>.
     /// </summary>
     public static class AdaptiveCardInvokeResponseFactory
     {
         /// <summary>
-        /// Returns response with type <see cref="ContentTypes.AdaptiveCard"/>.
+        /// Returns response with type <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ContentTypes.AdaptiveCard"/>.
         /// </summary>
         /// <param name="adaptiveCardJson">An AdaptiveCard JSON value.</param>
         /// <returns>The response that includes an Adaptive Card that the client should display.</returns>
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         }
 
         /// <summary>
-        /// Returns response with type <see cref="ContentTypes.Message"/>.
+        /// Returns response with type <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ContentTypes.Message"/>.
         /// </summary>
         /// <param name="message">A message.</param>
         /// <returns>The response that includes a message that the client should display.</returns>
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         }
 
         /// <summary>
-        /// Returns response with type <see cref="ContentTypes.LoginRequest"/>.
+        /// Returns response with type <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ContentTypes.LoginRequest"/>.
         /// </summary>
         /// <param name="card">An OAuthCard</param>
         /// <returns>The response that includes a response that the client should display.</returns>
@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         }
 
         /// <summary>
-        /// Returns response with type <see cref="ContentTypes.IncorrectAuthCode"/>.
+        /// Returns response with type <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ContentTypes.IncorrectAuthCode"/>.
         /// </summary>
         /// <returns>The response that includes a response that the client should display.</returns>
         public static AdaptiveCardInvokeResponse IncorrectAuthCode()
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         }
 
         /// <summary>
-        /// Returns response with type <see cref="ContentTypes.PreConditionFailed"/>.
+        /// Returns response with type <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ContentTypes.PreConditionFailed"/>.
         /// </summary>
         /// <returns>The response that includes a response that the client should display.</returns>
         public static AdaptiveCardInvokeResponse PreConditionFailed(string message, string code = null)

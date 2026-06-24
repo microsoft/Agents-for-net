@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayloadConversation
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadConversation"/> class.
         /// </summary>
         public MessageActionsPayloadConversation()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadConversation"/> class.
         /// </summary>
         /// <param name="conversationIdentityType">The type of conversation,
         /// whether a team or channel. Possible values include: 'team',

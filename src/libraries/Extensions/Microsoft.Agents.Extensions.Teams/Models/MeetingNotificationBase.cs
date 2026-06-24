@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingNotificationBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingNotificationBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingNotificationBase"/> class.
         /// </summary>
         protected MeetingNotificationBase()
         {

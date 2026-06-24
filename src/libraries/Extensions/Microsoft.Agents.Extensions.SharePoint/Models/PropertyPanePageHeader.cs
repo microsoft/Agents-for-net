@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class PropertyPanePageHeader
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PropertyPanePageHeader"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPanePageHeader"/> class.
         /// </summary>
         public PropertyPanePageHeader()
         {
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets the description of type <see cref="string"/>.
+        /// Gets or Sets the description of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the description of the property pane page header.</value>
         public string Description { get; set; }

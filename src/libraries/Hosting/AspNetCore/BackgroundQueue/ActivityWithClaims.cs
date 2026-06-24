@@ -15,6 +15,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     /// </summary>
     public class ActivityWithClaims
     {
+        /// <summary>
+        /// Gets or sets the channel adapter used to send and receive messages.
+        /// </summary>
         public IChannelAdapter ChannelAdapter { get; set; }
 
         /// <summary>
@@ -23,16 +26,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         public Type AgentType { get; set; }
 
         /// <summary>
-        /// <see cref="ClaimsIdentity"/> retrieved from a call to authentication.
+        /// <see cref="System.Security.Claims.ClaimsIdentity"/> retrieved from a call to authentication.
         /// </summary>
         public ClaimsIdentity ClaimsIdentity { get; set; }
 
         /// <summary>
-        /// <see cref="Activity"/> to be processed.
+        /// <see cref="Microsoft.Agents.Core.Models.Activity"/> to be processed.
         /// </summary>
         public IActivity Activity { get; set; }
         
+        /// <summary>
+        /// Gets or sets a value indicating whether the operation should be performed proactively.
+        /// </summary>
         public bool IsProactive { get; set; }
+
+        /// <summary>
+        /// Gets or sets the audience claim value used for proactive authentication requests.
+        /// </summary>
         public string ProactiveAudience { get; set; }
 
         /// <summary>
@@ -41,7 +51,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         public Func<InvokeResponse, Task> OnComplete { get; set; }
 
         /// <summary>
-        /// Headers used for the current <see cref="Activity"/> request.
+        /// Headers used for the current <see cref="Microsoft.Agents.Core.Models.Activity"/> request.
         /// </summary>
         public IHeaderDictionary Headers { get; set; }
 

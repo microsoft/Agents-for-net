@@ -9,14 +9,14 @@ using Microsoft.AspNetCore.Http;
 namespace Microsoft.Agents.Hosting.AspNetCore;
 
 /// <summary>
-/// A middleware to propagate incoming request headers to outgoing ones by internally using the <see cref="HeaderPropagationContext"/> static class.
+/// A middleware to propagate incoming request headers to outgoing ones by internally using the <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationContext"/> static class.
 /// </summary>
 public class HeaderPropagationMiddleware
 {
     private readonly RequestDelegate _next;
 
     /// <summary>
-    /// Initializes a new instance of <see cref="HeaderPropagationMiddleware"/>.
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Hosting.AspNetCore.HeaderPropagationMiddleware"/>.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
     public HeaderPropagationMiddleware(RequestDelegate next)
@@ -27,9 +27,9 @@ public class HeaderPropagationMiddleware
     }
 
     /// <summary>
-    /// Executes the middleware to set the request headers in <see cref="HeaderPropagationContext"/>.
+    /// Executes the middleware to set the request headers in <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationContext"/>.
     /// </summary>
-    /// <param name="context">The <see cref="HttpContext"/> for the current request.</param>
+    /// <param name="context">The <see cref="Microsoft.AspNetCore.Http.HttpContext"/> for the current request.</param>
     public Task Invoke(HttpContext context)
     {
         HeaderPropagationContext.HeadersFromRequest = context.Request.Headers;

@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingInfo"/> class.
         /// </summary>
         public MeetingInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingInfo"/> class.
         /// </summary>
         /// <param name="details">The meeting's detailed information.</param>
         /// <param name="conversation">Conversation Account for the meeting.</param>

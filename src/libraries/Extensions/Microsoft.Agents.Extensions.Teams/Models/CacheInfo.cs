@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class CacheInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CacheInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.CacheInfo"/> class.
         /// </summary>
         public CacheInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CacheInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.CacheInfo"/> class.
         /// </summary>
         /// <param name="cacheType">Type of Cache Info.</param>
         /// <param name="cacheDuration">Duration of the Cached Info.</param>

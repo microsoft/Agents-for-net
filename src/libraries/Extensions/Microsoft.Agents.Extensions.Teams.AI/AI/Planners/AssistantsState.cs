@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
 {
     /// <summary>
     /// Model represents assistants state.
-    /// A default implementation is <see cref="AssistantsState"/>.
+    /// A default implementation is <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental.AssistantsState"/>.
     /// </summary>
     public interface IAssistantsState
     {
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
     }
 
     /// <summary>
-    /// The default implementation of <see cref="IAssistantsState"/>.
+    /// The default implementation of <see cref="Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental.IAssistantsState"/>.
     /// </summary>
     public class AssistantsState : TurnState, IAssistantsState
     {

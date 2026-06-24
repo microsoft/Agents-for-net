@@ -62,16 +62,16 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
     }
 
     /// <summary>
-    /// Extension methods for parsing <see cref="OrchestratedErrorCode"/> from error code strings.
+    /// Extension methods for parsing <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedErrorCode"/> from error code strings.
     /// </summary>
     public static class OrchestratedErrorCodeExtensions
     {
         /// <summary>
-        /// Parses a string error code into an <see cref="OrchestratedErrorCode"/> enum value.
-        /// Returns <see cref="OrchestratedErrorCode.Unknown"/> if the code is null, empty, or not recognized.
+        /// Parses a string error code into an <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedErrorCode"/> enum value.
+        /// Returns <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedErrorCode.Unknown"/> if the code is null, empty, or not recognized.
         /// </summary>
         /// <param name="code">The error code string from the error payload.</param>
-        /// <returns>The corresponding <see cref="OrchestratedErrorCode"/> value.</returns>
+        /// <returns>The corresponding <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestratedErrorCode"/> value.</returns>
         public static OrchestratedErrorCode ToOrchestratedErrorCode(this string? code)
         {
             if (!string.IsNullOrEmpty(code)

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TabResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TabResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabResponse"/> class.
         /// </summary>
         public TabResponse()
         {
@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Possible values for the tab type include: 'continue', 'auth' or 'silentAuth'.
         /// </summary>
         /// <value>
-        /// Cards in response to a <see cref="TabRequest"/>.
+        /// Cards in response to a <see cref="Microsoft.Agents.Extensions.Teams.Models.TabRequest"/>.
         /// </value>
         public TabResponsePayload Tab { get; set; }
     }

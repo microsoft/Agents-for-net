@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         private readonly ViewResponseType responseType;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BaseHandleActionResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.BaseHandleActionResponse"/> class.
         /// </summary>
         /// <param name="responseType">Response type.</param>
         protected BaseHandleActionResponse(ViewResponseType responseType)

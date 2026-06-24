@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class NoOpHandleActionResponse : BaseHandleActionResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="NoOpHandleActionResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.NoOpHandleActionResponse"/> class.
         /// </summary>
         public NoOpHandleActionResponse() 
             : base(ViewResponseType.NoOp)

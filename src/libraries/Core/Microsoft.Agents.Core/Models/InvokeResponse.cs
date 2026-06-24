@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <returns>
         /// A value that indicates if the HTTP response was successful.
-        /// true if <see cref="Status"/> was in the Successful range (200-299); otherwise false.
+        /// true if <see cref="Microsoft.Agents.Core.Models.InvokeResponse.Status"/> was in the Successful range (200-299); otherwise false.
         /// </returns>
         public bool IsSuccessStatusCode() => Status >= 200 && Status <= 299;
 

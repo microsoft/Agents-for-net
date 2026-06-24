@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessagingExtensionQuery
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionQuery"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionQuery"/> class.
         /// </summary>
         public MessagingExtensionQuery()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionQuery"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionQuery"/> class.
         /// </summary>
         /// <param name="commandId">Id of the command assigned by Bot.</param>
         /// <param name="parameters">Parameters for the query.</param>

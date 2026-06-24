@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TenantInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TenantInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TenantInfo"/> class.
         /// </summary>
         public TenantInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TenantInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TenantInfo"/> class.
         /// </summary>
         /// <param name="id">Unique identifier representing a tenant.</param>
         public TenantInfo(string id = default)

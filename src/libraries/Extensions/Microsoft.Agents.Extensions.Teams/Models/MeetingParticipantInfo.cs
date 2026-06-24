@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingParticipantInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingParticipantInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingParticipantInfo"/> class.
         /// </summary>
         public MeetingParticipantInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingParticipantInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingParticipantInfo"/> class.
         /// </summary>
         /// <param name="role">Role of the participant in the current meeting.</param>
         /// <param name="inMeeting">True, if the participant is in the meeting.</param>

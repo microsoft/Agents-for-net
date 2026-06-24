@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TeamMember
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamMember"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamMember"/> class.
         /// </summary>
         public TeamMember()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamMember"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamMember"/> class.
         /// </summary>
         /// <param name="id">Unique identifier representing a member (user or channel).</param>
         public TeamMember(string id = default)

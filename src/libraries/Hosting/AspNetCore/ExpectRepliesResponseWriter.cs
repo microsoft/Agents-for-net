@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Telemetry.Adapter.Scopes;
 using Microsoft.Agents.Core.Models;
 using Microsoft.AspNetCore.Http;
 using System.Net;
@@ -29,12 +30,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         public async Task ResponseEnd(HttpResponse httpResponse, object data, CancellationToken cancellationToken = default)
         {
+            using var telemetryScope = new ScopeWriteResponse(_expectedReplies.Activities);
             if (data is InvokeResponse invokeResponse)
             {
                 if (incomingActivity.DeliveryMode == DeliveryModes.ExpectReplies)
                 {
                     // The case for Invoke with ExpectReplies
-                    _expectedReplies.Body = invokeResponse.Body;
+                    _expectedReplies.Body = invokeResponse.Body; 
                     invokeResponse = new InvokeResponse()
                     {
                         Status = invokeResponse.Status,
@@ -51,6 +53,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     Body = _expectedReplies
                 };
             }
+
 
             await HttpHelper.WriteResponseAsync(httpResponse, invokeResponse).ConfigureAwait(false);
         }

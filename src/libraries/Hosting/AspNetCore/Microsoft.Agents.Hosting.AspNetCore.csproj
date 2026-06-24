@@ -7,6 +7,9 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<TargetFrameworks>net8.0</TargetFrameworks>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+
+		<!-- Suppress AD0001 because the route analyzer will generate this for route extensions that are generic, but otherwise work -->
+		<NoWarn>AD0001</NoWarn>
 	</PropertyGroup>
 	<Import Project="..\..\..\Build.Common.core.props" />
 
@@ -53,4 +56,20 @@
 	<ItemGroup>
 	  <None Include="README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Properties\Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="Properties\Resources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+
 </Project>

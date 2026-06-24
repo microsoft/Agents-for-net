@@ -15,21 +15,21 @@ namespace Microsoft.Agents.Storage
         /// <summary>
         /// Reads storage items from storage.
         /// </summary>
-        /// <param name="keys">keys of the <see cref="IStoreItem"/> objects to read.</param>
+        /// <param name="keys">keys of the <see cref="Microsoft.Agents.Storage.IStoreItem"/> objects to read.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activities are successfully sent, the task result contains
         /// the items read, indexed by key.</remarks>
-        /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
-        /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.DeleteAsync(string[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.WriteAsync(System.Collections.Generic.IDictionary{string, object}, System.Threading.CancellationToken)"/>
         Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Reads storage items from storage.
         /// </summary>
         /// <typeparam name="TStoreItem">The type of item to get from storage.</typeparam>
-        /// <param name="keys">keys of the <see cref="IStoreItem"/> objects to read.</param>
+        /// <param name="keys">keys of the <see cref="Microsoft.Agents.Storage.IStoreItem"/> objects to read.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
@@ -44,8 +44,8 @@ namespace Microsoft.Agents.Storage
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="DeleteAsync(string[], CancellationToken)"/>
-        /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.DeleteAsync(string[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.ReadAsync(string[], System.Threading.CancellationToken)"/>
         Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -61,12 +61,12 @@ namespace Microsoft.Agents.Storage
         /// <summary>
         /// Deletes storage items from storage.
         /// </summary>
-        /// <param name="keys">keys of the <see cref="IStoreItem"/> objects to delete.</param>
+        /// <param name="keys">keys of the <see cref="Microsoft.Agents.Storage.IStoreItem"/> objects to delete.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="ReadAsync(string[], CancellationToken)"/>
-        /// <seealso cref="WriteAsync(IDictionary{string, object}, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.ReadAsync(string[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.WriteAsync(System.Collections.Generic.IDictionary{string, object}, System.Threading.CancellationToken)"/>
         Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default);
     }
 

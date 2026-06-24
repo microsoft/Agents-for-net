@@ -8,6 +8,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization.Converters;
 
@@ -49,6 +50,10 @@ namespace Microsoft.Agents.Core.Serialization
             var options = new JsonSerializerOptions()
                 .ApplyCoreOptions();
 
+            options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                CoreJsonContext.Default,
+                new DefaultJsonTypeInfoResolver());
+
             return options;
         }
 
@@ -68,13 +73,10 @@ namespace Microsoft.Agents.Core.Serialization
 
         public static void ApplyExtensionConverters(IList<JsonConverter> extensionConverters)
         {
-            lock(_optionsLock)
+            lock (_optionsLock)
             {
-                var newOptions = SerializationOptions;
-                if (newOptions.IsReadOnly)
-                {
-                    newOptions = new JsonSerializerOptions(SerializationOptions);
-                }
+                // Always copy to avoid race with concurrent readers freezing the instance.
+                var newOptions = new JsonSerializerOptions(SerializationOptions);
 
                 foreach (var converter in extensionConverters)
                 {
@@ -85,17 +87,65 @@ namespace Microsoft.Agents.Core.Serialization
             }
         }
 
+        /// <summary>
+        /// Applies a transformation function to <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.SerializationOptions"/>, replacing it with
+        /// the result. This is an advanced escape hatch — prefer <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.ApplyExtensionConverters"/>
+        /// or <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.AddTypeInfoResolver"/> for typical extensions.
+        /// </summary>
+        /// <param name="applyFunc">
+        /// A function that receives the current options and returns the new options.
+        /// </param>
+        /// <remarks>
+        /// <para>
+        /// <b>Important:</b> If your function replaces <see cref="System.Text.Json.JsonSerializerOptions.TypeInfoResolver"/>,
+        /// you must include <c>CoreJsonContext.Default</c> in the new resolver chain.
+        /// Omitting it silently removes source-generated metadata for all core model types.
+        /// Use <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver[])"/> to chain resolvers:
+        /// <code>
+        /// options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+        ///     YourContext.Default,
+        ///     CoreJsonContext.Default,
+        ///     new DefaultJsonTypeInfoResolver());
+        /// </code>
+        /// </para>
+        /// </remarks>
         public static void ApplyExtensionOptions(Func<JsonSerializerOptions, JsonSerializerOptions> applyFunc)
         {
             lock (_optionsLock)
             {
-                var newOptions = SerializationOptions;
-                if (newOptions.IsReadOnly)
-                {
-                    newOptions = new JsonSerializerOptions(SerializationOptions);
-                }
+                // Always copy to avoid race with concurrent readers freezing the instance.
+                var newOptions = new JsonSerializerOptions(SerializationOptions);
 
                 SerializationOptions = applyFunc(newOptions);
+            }
+        }
+
+        /// <summary>
+        /// Prepends a <see cref="System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver"/> (e.g., a source-generated
+        /// <see cref="System.Text.Json.Serialization.JsonSerializerContext"/>) to the resolver chain
+        /// used by <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.SerializationOptions"/>. The resolver is consulted before any previously
+        /// registered resolvers and before the reflection fallback.
+        /// Call from a <see cref="Microsoft.Agents.Core.Serialization.SerializationInitAssemblyAttribute"/>-decorated <c>Init()</c> method.
+        /// </summary>
+        /// <remarks>
+        /// Each call prepends the new resolver at the front of the chain.
+        /// <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver[])"/> returns the first non-null result in order,
+        /// so the most-recently-added resolver wins for any given type.
+        /// </remarks>
+        public static void AddTypeInfoResolver(IJsonTypeInfoResolver resolver)
+        {
+            lock (_optionsLock)
+            {
+                // Always copy: a concurrent reader (e.g., a parallel test or another thread
+                // calling JsonSerializer) can freeze the current instance between our read
+                // and the TypeInfoResolver assignment below, causing InvalidOperationException.
+                var newOptions = new JsonSerializerOptions(SerializationOptions);
+
+                newOptions.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                    resolver,
+                    newOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver());
+
+                SerializationOptions = newOptions;
             }
         }
 
@@ -111,31 +161,27 @@ namespace Microsoft.Agents.Core.Serialization
             options.PropertyNameCaseInsensitive = true;
             options.IncludeFields = true;
             options.NumberHandling = JsonNumberHandling.AllowReadingFromString;
-            //options.UnknownTypeHandling = JsonUnknownTypeHandling.JsonNode;
-
-            //options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());
-            options.Converters.Add(new AnimationCardConverter());
-            options.Converters.Add(new AttachmentConverter());
-            options.Converters.Add(new AudioCardConverter());
-            options.Converters.Add(new CardActionConverter());
-            options.Converters.Add(new ChannelAccountConverter());
-            options.Converters.Add(new ConversationAccountConverter());
+            //options.Converters.Add(new ObjectTypeConverter());
             options.Converters.Add(new EntityConverter());
-            options.Converters.Add(new AIEntityConverter());
-            options.Converters.Add(new TokenExchangeInvokeResponseConverter());
-            options.Converters.Add(new TokenExchangeInvokeRequestConverter());
-            options.Converters.Add(new TokenResponseConverter());
-            options.Converters.Add(new VideoCardConverter());
+
+            // Move to Dialogs
             options.Converters.Add(new Array2DConverter());
             options.Converters.Add(new DictionaryOfObjectConverter());
-            options.Converters.Add(new SuggestedActionsConverter());
-            options.Converters.Add(new AdaptiveCardInvokeResponseConverter());
-            options.Converters.Add(new MessageReactionConverter());
 
             return options;
+        }
+
+        /// <summary>
+        /// Object to JsonElement conversion.
+        /// </summary>
+        /// <param name="value">The object to convert to a <see cref="System.Text.Json.JsonElement"/>.</param>
+        /// <returns>A <see cref="System.Text.Json.JsonElement"/> representing the specified object.</returns>
+        public static JsonElement ToJsonElement(this object value)
+        {
+            return ToObject<JsonElement>(value);
         }
 
         /// <summary>
@@ -218,7 +264,12 @@ namespace Microsoft.Agents.Core.Serialization
             {
                 if (string.IsNullOrWhiteSpace(json))
                 {
-                    throw new ArgumentNullException(nameof(value));
+                    if (defaultFactory != null)
+                    {
+                        return defaultFactory();
+                    }
+
+                    return default;
                 }
 
                 return JsonSerializer.Deserialize<T>(json, SerializationOptions);
@@ -240,7 +291,7 @@ namespace Microsoft.Agents.Core.Serialization
                 return JsonSerializer.Deserialize<T>(jsonNode, SerializationOptions);
             }
 
-            var serialized = JsonSerializer.Serialize(value, SerializationOptions);
+            JsonElement serialized = JsonSerializer.SerializeToElement(value, value.GetType(), SerializationOptions);
             return JsonSerializer.Deserialize<T>(serialized, SerializationOptions);
         }
 

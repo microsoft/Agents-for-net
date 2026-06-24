@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TeamsChannelData
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsChannelData"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelData"/> class.
         /// </summary>
         public TeamsChannelData()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsChannelData"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelData"/> class.
         /// </summary>
         /// <param name="channel">Information about the channel in which the message was sent.</param>
         /// <param name="eventType">Type of event.</param>
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsChannelData"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelData"/> class.
         /// </summary>
         /// <param name="channel">Information about the channel in which the message was sent.</param>
         /// <param name="eventType">Type of event.</param>
@@ -93,9 +93,9 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public TeamsMeetingInfo Meeting { get; set; }
 
         /// <summary>
-        /// Gets or sets information about the settings sent with this <see cref="TeamsChannelData"/>.
+        /// Gets or sets information about the settings sent with this <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelData"/>.
         /// </summary>
-        /// <value>The <see cref="TeamsChannelDataSettings"/> for this <see cref="TeamsChannelData"/>.</value>
+        /// <value>The <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelDataSettings"/> for this <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelData"/>.</value>
         public TeamsChannelDataSettings Settings { get; set; }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public MembershipSource? MembershipSource { get; set; }
 
         /// <summary>
-        /// Gets or sets properties that are not otherwise defined by the <see cref="TeamsChannelData"/> type but that
+        /// Gets or sets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelData"/> type but that
         /// might appear in the REST JSON object.
         /// </summary>
         /// <value>The extended properties for the object.</value>

@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TabSuggestedActions
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TabSuggestedActions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabSuggestedActions"/> class.
         /// </summary>
         public TabSuggestedActions()
         {
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         /// Gets or sets actions for a card tab response.
         /// </summary>
         /// <value>
-        /// Actions for this <see cref="TabSuggestedActions"/>.
+        /// Actions for this <see cref="Microsoft.Agents.Extensions.Teams.Models.TabSuggestedActions"/>.
         /// </value>
         public IList<CardAction> Actions { get; set; }
     }

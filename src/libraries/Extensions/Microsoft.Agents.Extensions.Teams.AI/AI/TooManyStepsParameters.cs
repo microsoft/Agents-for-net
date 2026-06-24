@@ -26,7 +26,7 @@
         public int StepCount { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TooManyStepsParameters"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.TooManyStepsParameters"/> class.
         /// </summary>
         /// <param name="maxSteps"></param>
         /// <param name="maxTime"></param>

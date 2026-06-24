@@ -3,7 +3,6 @@
 
 using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
@@ -22,7 +21,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     public static class HttpHelper
     {
         /// <summary>
-        /// Accepts an incoming HttpRequest and deserializes it using the <see cref="ProtocolJsonSerializer"/>.
+        /// Accepts an incoming HttpRequest and deserializes it using the <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer"/>.
         /// </summary>
         /// <typeparam name="T">The type to deserialize the request into.</typeparam>
         /// <param name="request">The HttpRequest.</param>
@@ -32,12 +31,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             try
             {
                 ArgumentNullException.ThrowIfNull(request);
-
-                using var memoryStream = new MemoryStream();
-                await request.Body.CopyToAsync(memoryStream).ConfigureAwait(false);
-                memoryStream.Seek(0, SeekOrigin.Begin);
-
-                return ProtocolJsonSerializer.ToObject<T>(memoryStream);
+                return await JsonSerializer.DeserializeAsync<T>(request.Body, ProtocolJsonSerializer.SerializationOptions).ConfigureAwait(false);
             }
             catch (JsonException)
             {
@@ -46,12 +40,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// If an <see cref="InvokeResponse"/> is provided, the status and body of the <see cref="InvokeResponse"/>
-        /// are used to set the status and body of the <see cref="HttpResponse"/>. If no <see cref="InvokeResponse"/>
-        /// is provided, then the status of the <see cref="HttpResponse"/> is set to 200.
+        /// If an <see cref="Microsoft.Agents.Core.Models.InvokeResponse"/> is provided, the status and body of the <see cref="Microsoft.Agents.Core.Models.InvokeResponse"/>
+        /// are used to set the status and body of the <see cref="Microsoft.AspNetCore.Http.HttpResponse"/>. If no <see cref="Microsoft.Agents.Core.Models.InvokeResponse"/>
+        /// is provided, then the status of the <see cref="Microsoft.AspNetCore.Http.HttpResponse"/> is set to 200.
         /// </summary>
         /// <param name="response">A HttpResponse.</param>
-        /// <param name="invokeResponse">An instance of <see cref="InvokeResponse"/>.</param>
+        /// <param name="invokeResponse">An instance of <see cref="Microsoft.Agents.Core.Models.InvokeResponse"/>.</param>
         /// <returns>A Task representing the work to be executed.</returns>
         public static async Task WriteResponseAsync(HttpResponse response, InvokeResponse invokeResponse)
         {
@@ -67,17 +61,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                 if (invokeResponse.Body != null)
                 {
-                    response.ContentType = "application/json";
+                    response.ContentType = "application/json; charset=utf-8";
 
                     var json = ProtocolJsonSerializer.ToJson(invokeResponse.Body);
-                    using var memoryStream = new MemoryStream(Encoding.ASCII.GetBytes(json));
-                    await memoryStream.CopyToAsync(response.Body).ConfigureAwait(false);
+                    await response.Body.WriteAsync(Encoding.UTF8.GetBytes(json)).ConfigureAwait(false);
                 }
             }
         }
 
         /// <summary>
-        /// Get the <see cref="ClaimsIdentity"/> from the <see cref="HttpRequest"/>.
+        /// Get the <see cref="System.Security.Claims.ClaimsIdentity"/> from the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/>.
         /// </summary>
         /// <param name="request">The HttpRequest.</param>
         /// <returns>The ClaimsIdentity from the request.</returns>

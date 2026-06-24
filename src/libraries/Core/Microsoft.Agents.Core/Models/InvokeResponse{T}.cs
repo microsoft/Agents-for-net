@@ -7,7 +7,7 @@ namespace Microsoft.Agents.Core.Models
     /// A tuple class containing an HTTP status code and a JSON-serializable
     /// object. The HTTP status code is, in the invoke activity scenario, what will
     /// be set in the resulting POST. The body of the resulting POST will be
-    /// the JSON-serialized content from the <see cref="Body"/> property.
+    /// the JSON-serialized content from the <see cref="Microsoft.Agents.Core.Models.InvokeResponse.Body"/> property.
     /// </summary>
     /// <typeparam name="T">The type of body in the InvokeResponse.</typeparam>
     public class InvokeResponse<T> : InvokeResponse

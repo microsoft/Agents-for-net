@@ -8,7 +8,7 @@ using Microsoft.Agents.Builder.State;
 namespace Microsoft.Agents.Extensions.Teams.AI.Moderator
 {
     /// <summary>
-    /// An moderator that uses Azure Content Safety API.
+    /// A moderator that uses Azure Content Safety API.
     /// </summary>
     /// <typeparam name="TState">The turn state class.</typeparam>
     public class AzureContentSafetyModerator<TState> : IModerator<TState> where TState : ITurnState

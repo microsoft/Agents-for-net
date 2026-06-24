@@ -14,14 +14,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public const string ContentType = "application/vnd.microsoft.teams.file.download.info";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileDownloadInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileDownloadInfo"/> class.
         /// </summary>
         public FileDownloadInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FileDownloadInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.FileDownloadInfo"/> class.
         /// </summary>
         /// <param name="downloadUrl">File download url.</param>
         /// <param name="uniqueId">Unique Id for the file.</param>

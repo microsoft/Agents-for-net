@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class PropertyPaneLinkPopupWindowProperties
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PropertyPaneLinkPopupWindowProperties"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneLinkPopupWindowProperties"/> class.
         /// </summary>
         public PropertyPaneLinkPopupWindowProperties()
         {
@@ -48,25 +48,25 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets the height of the pop up window of type <see cref="int"/>.
+        /// Gets or Sets the height of the pop up window of type <see cref="System.Int32"/>.
         /// </summary>
         /// <value>This value is the height of the property pane popup.</value>
         public int Height { get; set; }
 
         /// <summary>
-        /// Gets or Sets the position of pop up window <see cref="PopupWindowPosition"/> enum.
+        /// Gets or Sets the position of pop up window <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneLinkPopupWindowProperties.PopupWindowPosition"/> enum.
         /// </summary>
         /// <value>This value is the window position of the property pane popup.</value>
         public PopupWindowPosition PositionWindowPosition { get; set; }
 
         /// <summary>
-        /// Gets or Sets the title of pop up window of type <see cref="string"/>.
+        /// Gets or Sets the title of pop up window of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the title of the property pane popup.</value>
         public string Title { get; set; }
 
         /// <summary>
-        /// Gets or Sets the width of the pop up window of type <see cref="int"/>.
+        /// Gets or Sets the width of the pop up window of type <see cref="System.Int32"/>.
         /// </summary>
         /// <value>This value is the width of the property pane popup.</value>
         public int Width { get; set; }

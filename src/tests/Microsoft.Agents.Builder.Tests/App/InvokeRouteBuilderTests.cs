@@ -147,18 +147,6 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithName_String_AlreadyHasSelector_ThrowsException()
-        {
-            // Arrange
-            var builder = new InvokeRouteBuilder()
-                .WithName("firstInvoke");
-
-            // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => builder.WithName("secondInvoke"));
-            Assert.Contains("selector", exception.Message, StringComparison.OrdinalIgnoreCase);
-        }
-
-        [Fact]
         public async Task WithName_Regex_ValidPattern_SetsSelector()
         {
             // Arrange
@@ -220,15 +208,19 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void WithName_Regex_AlreadyHasSelector_ThrowsException()
+        public void WithName_Regex_AlreadyHasSelector_ThrowsWhenNameAlreadyDefined()
         {
-            // Arrange
-            var builder = new InvokeRouteBuilder()
-                .WithName(new Regex("^first.*"));
+            Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
+                .WithName("name")
+                .WithName(new Regex("^second.*")));
+        }
 
-            // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => builder.WithName(new Regex("^second.*")));
-            Assert.Contains("selector", exception.Message, StringComparison.OrdinalIgnoreCase);
+        [Fact]
+        public void WithName_Name_DuplicateNameCriteria_Throws()
+        {
+            Assert.Throws<InvalidOperationException>(() => InvokeRouteBuilder.Create()
+                .WithName(new Regex("^second.*"))
+                .WithName("name"));
         }
 
         [Fact]
@@ -287,11 +279,10 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = new InvokeRouteBuilder()
-                .WithName("testInvoke");
+                .WithSelector((context, ct) => Task.FromResult(true));
 
             // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => builder.WithSelector((context, ct) => Task.FromResult(true)));
-            Assert.Contains("selector", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Throws<InvalidOperationException>(() => builder.WithSelector((context, ct) => Task.FromResult(true)));
         }
 
         [Fact]
@@ -484,14 +475,46 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public void Build_NoSelector_ThrowsException()
+        public async Task Build_NoNameOrSelector_MatchesAnyInvoke()
         {
             // Arrange
-            var builder = new InvokeRouteBuilder()
-                .WithHandler((context, state, ct) => Task.CompletedTask);
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "anyInvokeName"
+            };
+            var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
 
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => builder.Build());
+            var route = new InvokeRouteBuilder()
+                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task Build_NoNameOrSelector_DoesNotMatchNonInvoke()
+        {
+            // Arrange
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message
+            };
+            var mockContext = InvokeRouteBuilderTests.CreateMockTurnContext(activity);
+
+            var route = new InvokeRouteBuilder()
+                .WithHandler((context, state, ct) => Task.CompletedTask)
+                .Build();
+
+            // Act
+            var result = await route.Selector(mockContext.Object, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
         }
 
         [Fact]

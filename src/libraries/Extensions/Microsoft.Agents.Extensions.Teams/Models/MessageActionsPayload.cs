@@ -13,14 +13,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayload
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayload"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayload"/> class.
         /// </summary>
         public MessageActionsPayload()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayload"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayload"/> class.
         /// </summary>
         /// <param name="id">Unique id of the message.</param>
         /// <param name="replyToId">Id of the parent/root message of the

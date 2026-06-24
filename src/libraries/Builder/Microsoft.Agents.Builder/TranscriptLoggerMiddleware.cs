@@ -29,8 +29,8 @@ namespace Microsoft.Agents.Builder
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="ITurnContext"/>
-        /// <seealso cref="Activity"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.Activity"/>
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate nextTurn, CancellationToken cancellationToken)
         {
             var transcript = new Queue<IActivity>();

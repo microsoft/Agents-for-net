@@ -7,21 +7,21 @@ namespace Microsoft.Agents.Extensions.Teams.Models
 {
     /// <summary>
     /// Specifies Bot meeting notification response.
-    /// Contains list of <see cref="MeetingNotificationRecipientFailureInfo"/>.
+    /// Contains list of <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingNotificationRecipientFailureInfo"/>.
     /// </summary>
     public class MeetingNotificationResponse
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingNotificationResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingNotificationResponse"/> class.
         /// </summary>
         public MeetingNotificationResponse()
         {
         }
 
         /// <summary>
-        /// Gets or sets the list of <see cref="MeetingNotificationRecipientFailureInfo"/>.
+        /// Gets or sets the list of <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingNotificationRecipientFailureInfo"/>.
         /// </summary>
-        /// <value>The list of <see cref="MeetingNotificationRecipientFailureInfo"/>.</value>
+        /// <value>The list of <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingNotificationRecipientFailureInfo"/>.</value>
         public IList<MeetingNotificationRecipientFailureInfo> RecipientsFailureInfo { get; set; }
     }
 }

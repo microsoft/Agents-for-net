@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <param name="compatibilityMode">True if running in compatibility mode and keys should
         /// be truncated in order to support previous CosmosDb max key length of 255. 
         /// This behavior can be overridden by setting
-        /// <see cref="CosmosDbPartitionedStorageOptions.CompatibilityMode"/> to false.</param>
+        /// <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorageOptions.CompatibilityMode"/> to false.</param>
         /// <returns>An escaped key that can be used safely with CosmosDB.</returns>
         public static string EscapeKey(string key, string suffix, bool compatibilityMode)
         {

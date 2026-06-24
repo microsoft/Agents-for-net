@@ -541,6 +541,93 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             Assert.True(Guid.TryParse(clientRequestIdValues[0], out _), $"Expected a valid GUID but got: {clientRequestIdValues[0]}");
         }
 
+        [Fact]
+        public async Task ExecuteTurnAsync_WithRequestProperties_SendsAdditionalHeaders()
+        {
+            // Arrange
+            var handler = new CapturingHttpMessageHandler("event: end\ndata: done\n\n");
+            SetupHttpClient(handler);
+            var client = CreateClient();
+
+            var request = new OrchestratedTurnRequest
+            {
+                Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
+            };
+            var properties = new RequestProperties
+            {
+                CorrelationId = "test-correlation-id",
+                AgentVersion = "1.0.0",
+                AcceptLanguage = "en-US"
+            };
+
+            // Act
+            await foreach (var _ in client.ExecuteTurnAsync("conv-1", request, properties)) { }
+
+            // Assert
+            Assert.NotNull(handler.CapturedRequest);
+
+            Assert.True(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.CorrelationId));
+            Assert.Equal("test-correlation-id", handler.CapturedRequest.Headers.GetValues(CopilotStudioHeaderNames.CorrelationId).Single());
+
+            Assert.True(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.AgentVersion));
+            Assert.Equal("1.0.0", handler.CapturedRequest.Headers.GetValues(CopilotStudioHeaderNames.AgentVersion).Single());
+
+            Assert.True(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.AcceptLanguage));
+            Assert.Equal("en-US", handler.CapturedRequest.Headers.GetValues(CopilotStudioHeaderNames.AcceptLanguage).Single());
+        }
+
+        [Fact]
+        public async Task ExecuteTurnAsync_WithNullRequestProperties_DoesNotSendAdditionalHeaders()
+        {
+            // Arrange
+            var handler = new CapturingHttpMessageHandler("event: end\ndata: done\n\n");
+            SetupHttpClient(handler);
+            var client = CreateClient();
+
+            var request = new OrchestratedTurnRequest
+            {
+                Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
+            };
+
+            // Act
+            await foreach (var _ in client.ExecuteTurnAsync("conv-1", request, null)) { }
+
+            // Assert
+            Assert.NotNull(handler.CapturedRequest);
+            Assert.False(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.CorrelationId));
+            Assert.False(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.AgentVersion));
+            Assert.False(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.AcceptLanguage));
+        }
+
+        [Fact]
+        public async Task ExecuteTurnAsync_WithPartialRequestProperties_SendsOnlyNonNullHeaders()
+        {
+            // Arrange
+            var handler = new CapturingHttpMessageHandler("event: end\ndata: done\n\n");
+            SetupHttpClient(handler);
+            var client = CreateClient();
+
+            var request = new OrchestratedTurnRequest
+            {
+                Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
+            };
+            var properties = new RequestProperties
+            {
+                CorrelationId = "partial-correlation-id"
+                // AgentVersion and AcceptLanguage intentionally omitted
+            };
+
+            // Act
+            await foreach (var _ in client.ExecuteTurnAsync("conv-1", request, properties)) { }
+
+            // Assert
+            Assert.NotNull(handler.CapturedRequest);
+            Assert.True(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.CorrelationId));
+            Assert.Equal("partial-correlation-id", handler.CapturedRequest.Headers.GetValues(CopilotStudioHeaderNames.CorrelationId).Single());
+            Assert.False(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.AgentVersion));
+            Assert.False(handler.CapturedRequest.Headers.Contains(CopilotStudioHeaderNames.AcceptLanguage));
+        }
+
         #endregion
 
         #region Constructor Tests

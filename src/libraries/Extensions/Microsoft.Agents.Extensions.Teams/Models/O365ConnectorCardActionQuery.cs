@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class O365ConnectorCardActionQuery
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardActionQuery"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardActionQuery"/> class.
         /// </summary>
         public O365ConnectorCardActionQuery()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardActionQuery"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardActionQuery"/> class.
         /// </summary>
         /// <param name="body">The results of body string defined in
         /// IO365ConnectorCardHttpPOST with substituted input values.</param>

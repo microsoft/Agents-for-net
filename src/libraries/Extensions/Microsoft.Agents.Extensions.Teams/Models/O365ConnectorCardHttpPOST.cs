@@ -14,14 +14,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public new const string Type = "HttpPOST";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardHttpPOST"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardHttpPOST"/> class.
         /// </summary>
         public O365ConnectorCardHttpPOST()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="O365ConnectorCardHttpPOST"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.O365ConnectorCardHttpPOST"/> class.
         /// </summary>
         /// <param name="type">Type of the action. Possible values include:
         /// 'ViewAction', 'OpenUri', 'HttpPOST', 'ActionCard'.</param>

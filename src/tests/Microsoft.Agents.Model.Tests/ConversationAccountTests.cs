@@ -12,14 +12,45 @@ namespace Microsoft.Agents.Model.Tests
         [Fact]
         public void ConversationAccount_RoundTrip()
         {
-            var jsonIn = "{\"isGroup\":true,\"conversationType\":\"convType\",\"tenantId\":\"tenant_id\",\"id\":\"id\",\"name\":\"convName\",\"aadObjectId\":\"aadObject_id\",\"role\":\"convRole\",\"custom1\":\"custom1Value\",\"custom2\":\"custom2Value\"}";
+            var conversationAccount = new ConversationAccount
+            {
+                Id = "conversation-id",
+                Name = "Conversation Name",
+                IsGroup = false,
+                ConversationType = "personal",
+                TenantId = "tenant-id"
+            };
 
-            var conversationAccountIn = ProtocolJsonSerializer.ToObject<ConversationAccount>(jsonIn);
+            var goodJson = LoadTestJson.LoadJson(conversationAccount);
 
-            Assert.Equal(2, conversationAccountIn.Properties.Count);
+            // Out
+            var outJson = ProtocolJsonSerializer.ToJson(conversationAccount);
 
-            var jsonOut = ProtocolJsonSerializer.ToJson(conversationAccountIn);
-            Assert.Equal(jsonIn, jsonOut);
+            Assert.Equal(goodJson, outJson);
+
+            // In
+            var inObj = ProtocolJsonSerializer.ToObject<ConversationAccount>(outJson);
+            Assert.Equal(conversationAccount.Id, inObj.Id);
+        }
+
+        [Fact]
+        public void ConversationAccount_RoundTripExtension()
+        {
+            var goodJson = "{\"isGroup\":false,\"conversationType\":\"personal\",\"tenantId\":\"tenant-id\",\"id\":\"conversation-id\",\"name\":\"Conversation Name\",\"extensionProperty\":\"extensionValue\"}";
+            var conversationAccount = ProtocolJsonSerializer.ToObject<ConversationAccount>(goodJson);
+
+            Assert.Equal("conversation-id", conversationAccount.Id);
+            Assert.Equal("extensionValue", conversationAccount.Properties["extensionProperty"].GetString()); 
+
+            // Out
+            var outJson = ProtocolJsonSerializer.ToJson(conversationAccount);
+
+            Assert.Equal(goodJson, outJson);
+
+            // In
+            var inObj = ProtocolJsonSerializer.ToObject<ConversationAccount>(outJson);
+            Assert.Equal(conversationAccount.Id, inObj.Id);
+            Assert.Equal("extensionValue", inObj.Properties["extensionProperty"].GetString());
         }
     }
 }

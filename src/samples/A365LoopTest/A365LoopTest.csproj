@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UserSecretsId>0492ab17-727e-472e-ae12-184d1b103b10</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="msteams\**" />
+		<Compile Remove="msteams_COPILOT\**" />
+		<Compile Remove="wwwroot\**" />
+		<Content Remove="msteams\**" />
+		<Content Remove="msteams_COPILOT\**" />
+		<Content Remove="wwwroot\**" />
+		<EmbeddedResource Remove="msteams\**" />
+		<EmbeddedResource Remove="msteams_COPILOT\**" />
+		<EmbeddedResource Remove="wwwroot\**" />
+		<None Remove="msteams\**" />
+		<None Remove="msteams_COPILOT\**" />
+		<None Remove="wwwroot\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Agents.A365.Notifications" />
+		<ProjectReference Include="..\..\libraries\Authentication\Authentication.Msal\Microsoft.Agents.Authentication.Msal.csproj" />
+		<ProjectReference Include="..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
+	</ItemGroup>
+
+</Project>

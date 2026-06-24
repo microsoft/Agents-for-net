@@ -16,11 +16,23 @@ namespace Microsoft.Agents.Builder.App
     /// RouteBuilder for routing Invoke activities in an AgentApplication.
     /// </summary>
     /// <remarks>Use this builder to define routing logic for activities of type 'invoke', such as those
-    /// triggered by adaptive cards or other client-initiated operations. The builder allows specifying matching
-    /// criteria based on the activity's name, enabling precise control over which invoke activities are handled by the
-    /// route.</remarks>
+    /// triggered by adaptive cards or other client-initiated operations. The builder allows optionally specifying
+    /// matching criteria based on the activity's name. If neither <see cref="WithName(string)"/> nor
+    /// <see cref="WithName(Regex)"/> is called, the route will match any invoke activity regardless of name.</remarks>
     public class InvokeRouteBuilder : RouteBuilderBase<InvokeRouteBuilder>
     {
+        private string _invokeName;
+        private Regex _invokeRegex;
+
+        /// <summary>
+        /// Creates a new instance of the InvokeRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A InvokeRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static InvokeRouteBuilder Create()
+        {
+            return new InvokeRouteBuilder();
+        }
+
         public InvokeRouteBuilder() : base()
         {
             _route.Flags |= RouteFlags.Invoke;
@@ -38,18 +50,17 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
-            if (_route.Selector != null)
+            if (_invokeName != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name})");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name}) with Name already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Invoke)
-                    && name.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase)
-                );
+            if (_invokeRegex != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({name}) with Name Regex already set");
+            }
 
+            _invokeName = name;
             return this;
         }
 
@@ -66,18 +77,17 @@ namespace Microsoft.Agents.Builder.App
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));
 
-            if (_route.Selector != null)
+            if (_invokeRegex != null)
             {
-                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName({namePattern})");
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName(Regex({namePattern})) with Name Regex already set");
             }
 
-            _route.Selector = (context, ct) => Task.FromResult
-                (
-                    IsContextMatch(context, _route)
-                    && context.Activity.IsType(ActivityTypes.Invoke)
-                    && namePattern.IsMatch(context.Activity.Name)
-                );
+            if (_invokeName != null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.RouteSelectorAlreadyDefined, null, $"InvokeRouteBuilder.WithName(Regex({namePattern})) with Name already set");
+            }
 
+            _invokeRegex = namePattern;
             return this;
         }
 
@@ -85,10 +95,11 @@ namespace Microsoft.Agents.Builder.App
         /// Sets a custom route selector used to determine how incoming requests are matched to this route builder.
         /// </summary>
         /// <remarks>Use this method to customize the matching logic for routes. This allows for advanced
-        /// routing scenarios where requests are selected based on custom rules or patterns.</remarks>
+        /// routing scenarios where requests are selected based on custom rules or patterns. If WithName was
+        /// also called, this selector is in addition to the Name selector.</remarks>
         /// <param name="selector">The route selector that defines the criteria for matching requests to the route. The supplied selector does
         /// not need to validate base route properties like ChannelId, Agentic, etc. An Activity type of "invoke" is enforced.</param>
-        /// <returns>The current instance of <see cref="InvokeRouteBuilder"/> with the specified selector applied.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.InvokeRouteBuilder"/> with the specified selector applied.</returns>
         public override InvokeRouteBuilder WithSelector(RouteSelector selector)
         {
             if (_route.Selector != null)
@@ -124,10 +135,47 @@ namespace Microsoft.Agents.Builder.App
         /// maintaining consistency with the route's initial setup.</remarks>
         /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
         /// route is always configured for Invoke routing.</param>
-        /// <returns>The current instance of <see cref="InvokeRouteBuilder"/> with Invoke routing enabled.</returns>
+        /// <returns>The current instance of <see cref="Microsoft.Agents.Builder.App.InvokeRouteBuilder"/> with Invoke routing enabled.</returns>
         public override InvokeRouteBuilder AsInvoke(bool isInvoke = true)
         {
             return this;
+        }
+
+        protected override void PreBuild()
+        {
+            if (_route.Selector != null)
+            {
+                if (_invokeName != null || _invokeRegex != null)
+                {
+                    // Match on both the existing selector and the Activity.Name
+                    var existingSelector = _route.Selector;
+                    _route.Selector = async (context, ct) =>
+                        IsContextMatch(context, _route)
+                        && context.Activity.IsType(ActivityTypes.Invoke)
+                        && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _invokeRegex.IsMatch(context.Activity.Name))
+                        && await existingSelector(context, ct);
+                }
+                return;
+            }
+
+            if (_invokeName == null && _invokeRegex == null)
+            {
+                // match on any invoke activity if no name or name pattern specified and no existing selector
+                _route.Selector = (context, ct) => Task.FromResult
+                    (
+                        IsContextMatch(context, _route)
+                        && context.Activity.IsType(ActivityTypes.Invoke)
+                    );
+                return;
+            }
+
+            // Activity.Name
+            _route.Selector = (context, ct) => Task.FromResult
+                (
+                    IsContextMatch(context, _route)
+                    && context.Activity.IsType(ActivityTypes.Invoke)
+                    && (_invokeName != null ? _invokeName.Equals(context.Activity.Name, StringComparison.OrdinalIgnoreCase) : context.Activity.Name != null && _invokeRegex.IsMatch(context.Activity.Name))
+                );
         }
     }
 }

@@ -14,14 +14,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TeamsPagedMembersResult
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsPagedMembersResult"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsPagedMembersResult"/> class.
         /// </summary>
         public TeamsPagedMembersResult()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsPagedMembersResult"/> class
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsPagedMembersResult"/> class
         /// using the given continuation token and members list.
         /// </summary>
         /// <param name="continuationToken">A paging token.</param>

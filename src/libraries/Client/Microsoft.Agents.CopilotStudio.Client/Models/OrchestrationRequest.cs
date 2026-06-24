@@ -25,7 +25,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
 #endif
 
         /// <summary>
-        /// Tool invocation details. Required when <see cref="Operation"/> is <see cref="OrchestrationOperation.InvokeTool"/>.
+        /// Tool invocation details. Required when <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestrationRequest.Operation"/> is <see cref="Microsoft.Agents.CopilotStudio.Client.Models.OrchestrationOperation.InvokeTool"/>.
         /// </summary>
         [JsonPropertyName("toolInputs")]
 #if !NETSTANDARD

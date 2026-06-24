@@ -16,11 +16,11 @@ namespace Microsoft.Agents.Connector
 
         /// <summary>
         /// Gets the IAttachments.</summary>
-        /// <value>See <see cref="IAttachments" /> class.</value>
+        /// <value>See <see cref="Microsoft.Agents.Connector.IAttachments" /> class.</value>
         IAttachments Attachments { get; }
 
         /// <summary> Gets the IConversations.</summary>
-        /// <value>See <see cref="IConversations "/> class.</value>
+        /// <value>See <see cref="Microsoft.Agents.Connector.IConversations" /> class.</value>
         IConversations Conversations { get; }
     }
 }

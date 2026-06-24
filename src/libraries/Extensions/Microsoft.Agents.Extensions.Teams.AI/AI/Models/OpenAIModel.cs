@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         public PromptCompletionModelEmitter? Events { get; set; } = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OpenAIModel"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.OpenAIModel"/> class.
         /// </summary>
         /// <param name="options">Options for configuring an `OpenAIModel` to call an OpenAI hosted model.</param>
         /// <param name="loggerFactory">The logger factory instance.</param>
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OpenAIModel"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.OpenAIModel"/> class.
         /// </summary>
         /// <param name="options">Options for configuring an `OpenAIModel` to call an Azure OpenAI hosted model.</param>
         /// <param name="loggerFactory">The logger factory instance.</param>

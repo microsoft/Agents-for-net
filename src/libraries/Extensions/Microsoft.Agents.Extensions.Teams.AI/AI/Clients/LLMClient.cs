@@ -15,16 +15,16 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Clients
     /// LLMClient class that's used to complete prompts.
     /// </summary>
     /// <remarks>
-    /// Each LLMClient, at a minimum needs to be configured with a <see cref="LLMClientOptions{TContent}.Model"/> and <see cref="LLMClientOptions{TContent}.Template"/>.
+    /// Each LLMClient, at a minimum needs to be configured with a <see cref="Microsoft.Agents.Extensions.Teams.AI.Clients.LLMClientOptions{TContent}.Model"/> and <see cref="Microsoft.Agents.Extensions.Teams.AI.Clients.LLMClientOptions{TContent}.Template"/>.
     ///
-    /// Configuring the LLMClient to use a <see cref="LLMClientOptions{TContent}.Validator"/> is optional but recommended. The primary benefit to
+    /// Configuring the LLMClient to use a <see cref="Microsoft.Agents.Extensions.Teams.AI.Clients.LLMClientOptions{TContent}.Validator"/> is optional but recommended. The primary benefit to
     /// using LLMClient is it's response validation and automatic response repair features. The
     /// validator acts as guard and guarantees that you never get an malformed response back from the
     /// model. At least not without it being flagged as an `invalid_response`.
     ///
-    /// Using the <see cref="JsonResponseValidator"/>, for example, guarantees that you only ever get a valid
-    /// object back from <see cref="CompletePromptAsync(ITurnContext, TurnState, IPromptFunctions{List{string}}, CancellationToken)"/>. In fact, you'll get back a fully parsed object and any
-    /// additional response text from the model will be dropped. If you give the <see cref="JsonResponseValidator"/>
+    /// Using the <see cref="Microsoft.Agents.Extensions.Teams.AI.Validators.JsonResponseValidator"/>, for example, guarantees that you only ever get a valid
+    /// object back from <see cref="CompletePromptAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.State.TurnState, Microsoft.Agents.Extensions.Teams.AI.Prompts.IPromptFunctions{System.Collections.Generic.List{string}}, System.Threading.CancellationToken)"/>. In fact, you'll get back a fully parsed object and any
+    /// additional response text from the model will be dropped. If you give the <see cref="Microsoft.Agents.Extensions.Teams.AI.Validators.JsonResponseValidator"/>
     /// a JSON Schema, you will get back a strongly typed and validated instance of an object in
     /// the returned `response.message.content`.
     ///
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Clients
     /// future turns with the model. If the response can't be repaired, a response status of
     /// `invalid_response` will be returned.
     ///
-    /// When using a well designed validator, like the <see cref="JsonResponseValidator"/>, the LLMClient can typically
+    /// When using a well designed validator, like the <see cref="Microsoft.Agents.Extensions.Teams.AI.Validators.JsonResponseValidator"/>, the LLMClient can typically
     /// repair a bad response in a single additional model call. Sometimes it takes a couple of calls
     /// to effect a repair and occasionally it won't be able to repair it at all. If your prompt is
     /// well designed and you only occasionally see failed repair attempts, I'd recommend just calling

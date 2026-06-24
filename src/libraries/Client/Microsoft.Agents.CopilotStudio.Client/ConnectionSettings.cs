@@ -40,7 +40,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConnectionSettings"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.CopilotStudio.Client.ConnectionSettings"/> class.
         /// </summary>
         /// <param name="config">Configuration Section containing DirectToEngine Connection settings</param>
         /// <exception cref="System.ArgumentException">Thrown when required configuration values are missing</exception>

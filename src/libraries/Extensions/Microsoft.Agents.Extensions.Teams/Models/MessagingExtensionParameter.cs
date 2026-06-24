@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessagingExtensionParameter
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionParameter"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionParameter"/> class.
         /// </summary>
         public MessagingExtensionParameter()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagingExtensionParameter"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessagingExtensionParameter"/> class.
         /// </summary>
         /// <param name="name">Name of the parameter.</param>
         /// <param name="value">Value of the parameter.</param>

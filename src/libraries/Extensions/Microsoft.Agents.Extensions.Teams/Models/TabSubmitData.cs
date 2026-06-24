@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TabSubmitData
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TabSubmitData"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabSubmitData"/> class.
         /// </summary>
         public TabSubmitData()
         {

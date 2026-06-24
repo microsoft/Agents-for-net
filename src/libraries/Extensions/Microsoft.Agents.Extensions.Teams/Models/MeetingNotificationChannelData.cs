@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MeetingNotificationChannelData
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MeetingNotificationChannelData"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingNotificationChannelData"/> class.
         /// </summary>
         public MeetingNotificationChannelData()
         {

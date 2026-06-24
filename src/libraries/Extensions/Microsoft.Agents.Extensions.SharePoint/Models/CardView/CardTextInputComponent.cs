@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.CardView
     public class CardTextInputComponent : BaseCardComponent
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CardTextInputComponent"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.CardView.CardTextInputComponent"/> class.
         /// </summary>
         public CardTextInputComponent()
             : base(CardComponentName.TextInput)

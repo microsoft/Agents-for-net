@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts
         /// Maximum number of tokens to of conversation history to include in prompts.
         ///
         /// The default is to let conversation history consume the remainder of the prompts
-        /// `max_input_tokens` budget. Setting this a value greater then 1 will override that and
+        /// `max_input_tokens` budget. Setting this to a value greater than 1 will override that and
         /// all prompts will use a fixed token budget.
         ///
         /// Default: 1
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Prompts
         /// <summary>
         /// Maximum number of tokens user input to include in prompts.
         ///
-        /// This defaults to unlimited but can set to a value greater then `1` to limit the length of
+        /// This defaults to unlimited but can be set to a value greater than `1` to limit the length of
         /// user input included in prompts. For example, if set to `100` then the any user input over
         /// 100 tokens in length will be truncated.
         /// </summary>

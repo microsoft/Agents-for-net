@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
 using Xunit;
 
@@ -75,5 +76,35 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotNull(cardAction);
             Assert.IsType<CardAction>(cardAction);
         }
+
+        [Fact]
+        public void CardActionRoundTrip()
+        {
+            var cardAction = new CardAction
+            {
+                Text = "text",
+                Title = "title",
+                Value = new CardActionValue() { PropertyA = "propA", PropertyB = "propB" },
+                ChannelData = new CardActionChannelData() { Property1 = "prop1", Property2 = "prop2" }
+            };
+
+            var outJson = ProtocolJsonSerializer.ToJson(cardAction);
+
+            var inCardAction = ProtocolJsonSerializer.ToObject<CardAction>(outJson);
+
+            Assert.Equal(outJson, ProtocolJsonSerializer.ToJson(inCardAction));
+        }
+    }
+
+    class CardActionChannelData
+    {
+        public string Property1 { get; set; }
+        public string Property2 { get; set; }
+    }
+
+    class CardActionValue
+    {
+        public string PropertyA { get; set; }
+        public string PropertyB { get; set; }
     }
 }

@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="participantId">The id of the Teams meeting participant. From.AadObjectId will be used if none provided.</param>
         /// <param name="tenantId">The id of the Teams meeting Tenant. TeamsChannelData.Tenant.Id will be used if none provided.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <remarks> <see cref="InvalidOperationException"/> will be thrown if meetingId, participantId or tenantId have not been
+        /// <remarks> <see cref="System.InvalidOperationException"/> will be thrown if meetingId, participantId or tenantId have not been
         /// provided, and also cannot be retrieved from turnContext.Activity.</remarks>
         /// <returns>Team participant channel account.</returns>
         public static async Task<TeamsMeetingParticipant> GetMeetingParticipantAsync(ITurnContext turnContext, string meetingId = null, string participantId = null, string tenantId = null, CancellationToken cancellationToken = default)
@@ -288,7 +288,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <remarks>InvalidOperationException will be thrown if meetingId or notification have not been
         /// provided, and also cannot be retrieved from turnContext.Activity.</remarks>
-        /// <returns> <see cref="MeetingNotificationResponse"/>.</returns>
+        /// <returns> <see cref="Microsoft.Agents.Extensions.Teams.Models.MeetingNotificationResponse"/>.</returns>
         public static async Task<MeetingNotificationResponse> SendMeetingNotificationAsync(ITurnContext turnContext, MeetingNotificationBase notification, string meetingId = null, CancellationToken cancellationToken = default)
         {
             meetingId ??= turnContext.Activity.TeamsGetMeetingInfo()?.Id ?? throw new InvalidOperationException("This method is only valid within the scope of a MS Teams Meeting.");
@@ -423,7 +423,7 @@ namespace Microsoft.Agents.Extensions.Teams.Connector
         /// <param name="turnContext"> The turn context. </param>
         /// <param name="operationId"> The id of the operation to cancel. </param>
         /// <param name="cancellationToken"> The cancellation token. </param>
-        /// <returns> A <see cref="Task"/> representing the asynchronous operation. </returns>
+        /// <returns> A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation. </returns>
         public static async Task CancelOperationAsync(ITurnContext turnContext, string operationId, CancellationToken cancellationToken = default)
         {
             operationId = operationId ?? throw new InvalidOperationException($"{nameof(operationId)} is required.");

@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class NotificationInfo
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="NotificationInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.NotificationInfo"/> class.
         /// </summary>
         public NotificationInfo()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NotificationInfo"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.NotificationInfo"/> class.
         /// </summary>
         /// <param name="alert">true if notification is to be sent to the user,
         /// false otherwise.</param>

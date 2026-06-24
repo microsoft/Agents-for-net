@@ -33,7 +33,7 @@ internal class OrchestratedChatConsoleService(OrchestratedClient orchestratedCli
             PrintRequest("StartConversation", startRequest);
 
             AgentStatePayload? lastState = null;
-            await foreach (var response in orchestratedClient.ExecuteTurnAsync(_conversationId, startRequest, cancellationToken))
+            await foreach (var response in orchestratedClient.ExecuteTurnAsync(_conversationId, startRequest, cancellationToken: cancellationToken))
             {
                 System.Diagnostics.Trace.WriteLine($">>>>Duration: {sw.Elapsed.ToDurationString()}");
                 sw.Restart();
@@ -92,7 +92,7 @@ internal class OrchestratedChatConsoleService(OrchestratedClient orchestratedCli
                 sw.Restart();
 
                 AgentStatePayload? lastState = null;
-                await foreach (var response in orchestratedClient.ExecuteTurnAsync(_conversationId, request, cancellationToken))
+                await foreach (var response in orchestratedClient.ExecuteTurnAsync(_conversationId, request, cancellationToken: cancellationToken))
                 {
                     System.Diagnostics.Trace.WriteLine($">>>>Duration: {sw.Elapsed.ToDurationString()}");
                     sw.Restart();

@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Connector.Types
         {
         }
 
-        /// <summary>Initializes a new instance of the <see cref="AttachmentData"/> class.</summary>
+        /// <summary>Initializes a new instance of the <see cref="Microsoft.Agents.Connector.Types.AttachmentData"/> class.</summary>
         /// <param name="type">Content-Type of the attachment.</param>
         /// <param name="name">Name of the attachment.</param>
         /// <param name="originalBase64">Attachment content.</param>

@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TeamsChannelAccount : ChannelAccount
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsChannelAccount"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelAccount"/> class.
         /// </summary>
         public TeamsChannelAccount()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsChannelAccount"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelAccount"/> class.
         /// </summary>
         /// <param name="id">Channel id for the user or bot on this channel.
         /// (Example: joe@smith.com, or @joesmith or 123456).</param>
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsChannelAccount"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelAccount"/> class.
         /// </summary>
         /// <param name="id">Channel id for the user or bot on this channel.
         /// (Example: joe@smith.com, or @joesmith or 123456).</param>

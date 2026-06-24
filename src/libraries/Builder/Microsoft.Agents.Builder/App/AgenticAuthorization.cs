@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Builder.App
             }
 
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
+                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{turnContext.Identity.GetIncomingAudience()}:{turnContext.Activity.ServiceUrl}");
         }
 
         public async Task<string> GetAgenticUserTokenAsync(ITurnContext turnContext, IList<string> scopes, CancellationToken cancellationToken = default)
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.App
             }
 
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{AgentClaims.GetAppId(turnContext.Identity)}:{turnContext.Activity.ServiceUrl}");
+                    ErrorHelper.AgenticTokenProviderNotFound, null, $"{turnContext.Identity.GetIncomingAudience()}:{turnContext.Activity.ServiceUrl}");
         }
     }
 }

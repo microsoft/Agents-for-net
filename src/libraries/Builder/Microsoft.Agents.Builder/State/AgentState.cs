@@ -16,10 +16,11 @@ namespace Microsoft.Agents.Builder.State
     /// <summary>
     /// Base class for AgentState key/value state.
     /// </summary>
-    /// <seealso cref="IStorage"/>
+    /// <seealso cref="Microsoft.Agents.Storage.IStorage"/>
     public abstract class AgentState : IPropertyManager, IAgentState
     {
         private readonly IStorage _storage;
+        private readonly object _stateLock = new object();
         private CachedAgentState _cachedAgentState;
 
         /// <summary>
@@ -34,7 +35,7 @@ namespace Microsoft.Agents.Builder.State
         /// </remarks>
         /// <exception cref="System.ArgumentNullException"><paramref name="storage"/> or <paramref name="stateName"/>
         /// is <c>null</c>.</exception>
-        /// <seealso cref="ITurnContext"/>
+        /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
         public AgentState(IStorage storage, string stateName)
         {
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
@@ -67,8 +68,13 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            var cachedState = GetCachedState();
-            return cachedState.State.ContainsKey(name);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
+            lock (_stateLock)
+            {
+                var cachedState = GetCachedState();
+                return cachedState.State.ContainsKey(name);
+            }
         }
 
         /// <inheritdoc/>
@@ -79,7 +85,12 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            DeletePropertyValue(name);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
+            lock (_stateLock)
+            {
+                DeletePropertyValueCore(name);
+            }
         }
 
         /// <inheritdoc/>
@@ -90,32 +101,37 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            T result = default;
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
 
-            try
+            lock (_stateLock)
             {
-                // if T is a value type, lookup up will throw key not found if not found, but as perf
-                // optimization it will return null if not found for types which are not value types (string and object).
-                result = GetPropertyValue<T>(name);
+                T result = default;
 
-                if (result == null && defaultValueFactory != null)
+                try
                 {
-                    // use default Value Factory and save default value for any further calls
-                    result = defaultValueFactory();
-                    SetValue(name, result);
-                }
-            }
-            catch (KeyNotFoundException)
-            {
-                if (defaultValueFactory != null)
-                {
-                    // use default Value Factory and save default value for any further calls
-                    result = defaultValueFactory();
-                    SetValue(name, result);
-                }
-            }
+                    // if T is a value type, lookup up will throw key not found if not found, but as perf
+                    // optimization it will return null if not found for types which are not value types (string and object).
+                    result = GetPropertyValueCore<T>(name);
 
-            return result;
+                    if (result == null && defaultValueFactory != null)
+                    {
+                        // use default Value Factory and save default value for any further calls
+                        result = defaultValueFactory();
+                        SetPropertyValueCore(name, result);
+                    }
+                }
+                catch (KeyNotFoundException)
+                {
+                    if (defaultValueFactory != null)
+                    {
+                        // use default Value Factory and save default value for any further calls
+                        result = defaultValueFactory();
+                        SetPropertyValueCore(name, result);
+                    }
+                }
+
+                return result;
+            }
         }
 
         public bool TryGetValue<T>(string name, out T result)
@@ -126,14 +142,18 @@ namespace Microsoft.Agents.Builder.State
                 return false;
             }
 
-            if (!HasValue(name))
+            lock (_stateLock)
             {
-                result = default;
-                return false;
-            }
+                var cachedState = GetCachedState();
+                if (!cachedState.State.ContainsKey(name))
+                {
+                    result = default;
+                    return false;
+                }
 
-            result = GetPropertyValue<T>(name);
-            return true;
+                result = GetPropertyValueCore<T>(name);
+                return true;
+            }
         }
 
         /// <inheritdoc/>
@@ -144,7 +164,12 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            SetPropertyValue(name, value);
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
+
+            lock (_stateLock)
+            {
+                SetPropertyValueCore(name, value);
+            }
         }
 
         /// <summary>
@@ -201,16 +226,32 @@ namespace Microsoft.Agents.Builder.State
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             var cachedState = GetCachedState();
-            if (cachedState != null && (force || cachedState.IsChanged()))
+            if (cachedState != null)
             {
-                var key = GetStorageKey(turnContext);
-                var changes = new Dictionary<string, object>
+                // Snapshot state and compute new hash under lock to prevent concurrent
+                // mutations from being reflected during serialization.
+                Dictionary<string, object> snapshot;
+                string newHash;
+                lock (_stateLock)
                 {
-                    { key, cachedState.State },
-                };
-                await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
-                cachedState.Hash = CachedAgentState.ComputeHash(cachedState.State);
-                return;
+                    snapshot = new Dictionary<string, object>(cachedState.State);
+                    newHash = CachedAgentState.ComputeHash(snapshot);
+                }
+
+                // Check if changed outside the lock (cheap string comparison)
+                if (force || cachedState.Hash != newHash)
+                {
+                    var key = GetStorageKey(turnContext);
+                    var changes = new Dictionary<string, object>
+                    {
+                        { key, snapshot },
+                    };
+                    await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
+                    
+                    // Update hash after successful write
+                    cachedState.Hash = newHash;
+                    return;
+                }
             }
         }
 
@@ -222,8 +263,11 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
-            // Explicitly setting the hash will mean IsChanged is always true. And that will force a Save.
-            GetCachedState().Clear();
+            lock (_stateLock)
+            {
+                // Explicitly setting the hash will mean IsChanged is always true. And that will force a Save.
+                GetCachedState().Clear();
+            }
         }
 
         /// <inheritdoc/>
@@ -251,7 +295,8 @@ namespace Microsoft.Agents.Builder.State
         /// <typeparam name="T">The value type of the property.</typeparam>
         /// <param name="propertyName">The name of the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).</remarks>
+        /// <remarks>If the task is successful, the result contains the property value, otherwise it will be default(T).
+        /// This method is thread-safe and can be called directly by derived classes.</remarks>
         protected T GetPropertyValue<T>(string propertyName)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
@@ -261,6 +306,50 @@ namespace Microsoft.Agents.Builder.State
                 throw new InvalidOperationException($"{Name} is not loaded");
             }
 
+            lock (_stateLock)
+            {
+                return GetPropertyValueCore<T>(propertyName);
+            }
+        }
+
+        /// <summary>
+        /// Deletes a property from the state cache for this <see cref="AgentState"/>.
+        /// </summary>
+        /// <param name="propertyName">The name of the property.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>This method is thread-safe and can be called directly by derived classes.</remarks>
+        protected void DeletePropertyValue(string propertyName)
+        {
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
+
+            lock (_stateLock)
+            {
+                DeletePropertyValueCore(propertyName);
+            }
+        }
+
+        /// <summary>
+        /// Sets the value of a property in the state cache for this <see cref="AgentState"/>.
+        /// </summary>
+        /// <param name="propertyName">The name of the property to set.</param>
+        /// <param name="value">The value to set on the property.</param>
+        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <remarks>This method is thread-safe and can be called directly by derived classes.</remarks>
+        protected void SetPropertyValue(string propertyName, object value)
+        {
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
+
+            lock (_stateLock)
+            {
+                SetPropertyValueCore(propertyName, value);
+            }
+        }
+
+        /// <summary>
+        /// Core implementation for getting a property value. Must be called under _stateLock.
+        /// </summary>
+        private T GetPropertyValueCore<T>(string propertyName)
+        {
             var cachedState = GetCachedState();
             if (cachedState.State.TryGetValue(propertyName, out object result))
             {
@@ -290,36 +379,30 @@ namespace Microsoft.Agents.Builder.State
         }
 
         /// <summary>
-        /// Deletes a property from the state cache for this <see cref="AgentState"/>.
+        /// Core implementation for deleting a property value. Must be called under _stateLock.
         /// </summary>
-        /// <param name="propertyName">The name of the property.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        protected void DeletePropertyValue(string propertyName)
+        private void DeletePropertyValueCore(string propertyName)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
-
             var cachedState = GetCachedState();
             cachedState.State.Remove(propertyName);
         }
 
         /// <summary>
-        /// Sets the value of a property in the state cache for this <see cref="AgentState"/>.
+        /// Core implementation for setting a property value. Must be called under _stateLock.
         /// </summary>
-        /// <param name="propertyName">The name of the property to set.</param>
-        /// <param name="value">The value to set on the property.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        protected void SetPropertyValue(string propertyName, object value)
+        private void SetPropertyValueCore(string propertyName, object value)
         {
-            AssertionHelpers.ThrowIfNullOrWhiteSpace(propertyName, nameof(propertyName));
-
             var cachedState = GetCachedState();
             cachedState.State[propertyName] = value;
         }
 
         internal JsonElement Get()
         {
-            var cachedState = GetCachedState();
-            return JsonSerializer.SerializeToElement(cachedState.State, ProtocolJsonSerializer.SerializationOptions);
+            lock (_stateLock)
+            {
+                var cachedState = GetCachedState();
+                return JsonSerializer.SerializeToElement(cachedState.State, ProtocolJsonSerializer.SerializationOptions);
+            }
         }
 
         internal CachedAgentState GetCachedState()

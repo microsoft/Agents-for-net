@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// The value field of a <see cref="ICommandResultActivity"/> contains metadata related to a command result.
+    /// The value field of a <see cref="Microsoft.Agents.Core.Models.ICommandResultActivity"/> contains metadata related to a command result.
     /// An optional extensible data payload may be included if defined by the command result activity name. 
     /// The presence of an error field indicates that the original command failed to complete.
     /// </summary>

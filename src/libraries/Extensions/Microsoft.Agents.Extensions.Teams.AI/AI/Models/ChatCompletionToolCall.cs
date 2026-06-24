@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Models
         public string Id { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChatCompletionsToolCall"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.ChatCompletionsToolCall"/> class.
         /// </summary>
         /// <param name="type">The type of the tool.</param>
         /// <param name="id">Id of the tool call.</param>

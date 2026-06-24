@@ -8,19 +8,32 @@ namespace Microsoft.Agents.Core.HeaderPropagation;
 public static class HeaderPropagationExtensions
 {
     /// <summary>
-    /// Loads incoming request headers based on a list of headers to propagate into the HttpClient.
+    /// Loads incoming request headers based on a list of headers to propagate into the HttpClient,
+    /// then applies any dynamically resolved headers from registered <see cref="IHeaderValueProvider"/> instances.
     /// </summary>
-    /// <param name="httpClient">The <see cref="HttpClient"/>.</param>
+    /// <param name="httpClient">The <see cref="System.Net.Http.HttpClient"/>.</param>
     public static void AddHeaderPropagation(this HttpClient httpClient)
     {
-        if (HeaderPropagationContext.HeadersFromRequest == null)
+        // Apply headers captured from the incoming HTTP request.
+        if (HeaderPropagationContext.HeadersFromRequest != null)
         {
-            return;
+            foreach (var header in HeaderPropagationContext.HeadersFromRequest)
+            {
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, [header.Value]);
+            }
         }
 
-        foreach (var header in HeaderPropagationContext.HeadersFromRequest)
+        // Apply headers from registered providers (e.g., Activity-derived headers).
+        var providers = HeaderPropagationContext.HeaderProviders;
+        if (providers != null)
         {
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, [header.Value]);
+            foreach (var provider in providers)
+            {
+                foreach (var entry in provider.GetHeaders())
+                {
+                    httpClient.DefaultRequestHeaders.TryAddWithoutValidation(entry.Key, [entry.Value]);
+                }
+            }
         }
     }
 }

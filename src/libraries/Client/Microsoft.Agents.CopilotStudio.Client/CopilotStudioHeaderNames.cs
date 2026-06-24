@@ -28,5 +28,20 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// Header for the island experimental URL returned in Direct-to-Engine responses.
         /// </summary>
         internal const string D2EExperimentalUrl = "x-ms-d2e-experimental";
+
+        /// <summary>
+        /// Header for the correlation ID used for end-to-end request tracing.
+        /// </summary>
+        internal const string CorrelationId = "x-ms-correlation-id";
+
+        /// <summary>
+        /// Header for the agent version.
+        /// </summary>
+        internal const string AgentVersion = "x-cci-agent-version";
+
+        /// <summary>
+        /// Header for the preferred natural language of the response.
+        /// </summary>
+        internal const string AcceptLanguage = "Accept-Language";
     }
 }

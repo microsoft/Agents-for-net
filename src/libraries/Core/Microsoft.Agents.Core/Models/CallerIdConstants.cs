@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Constants used to populate the <see cref="Activity.CallerId"/> property.
+    /// Constants used to populate the <see cref="Microsoft.Agents.Core.Models.Activity.CallerId"/> property.
     /// </summary>
     public static class CallerIdConstants
     {
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Core.Models
         public const string USGovChannel = "urn:botframework:azureusgov";
 
         /// <summary>
-        /// The caller ID prefix when a Agent initiates a request to another Agent.
+        /// The caller ID prefix when an Agent initiates a request to another Agent.
         /// </summary>
         /// <remarks>
         /// This prefix will be followed by the Azure Active Directory App ID of the Agent that initiated the call.

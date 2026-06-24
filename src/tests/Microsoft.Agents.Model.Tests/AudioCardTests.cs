@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
+using System.Text.Json;
 using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
@@ -63,5 +65,40 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotNull(audioCard);
             Assert.IsType<AudioCard>(audioCard);
         }
+
+        [Fact]
+        public void AudioCard_Roundtrip()
+        {
+            var card = new AudioCard(
+                title: "title",
+                subtitle: "subtitle",
+                text: "text",
+                image: new ThumbnailUrl("https://example.com", "example image"),
+                media: new List<MediaUrl>() { new MediaUrl("http://exampleMedia.com", "profile") },
+                buttons: new List<CardAction>() { new CardAction("type", "title", "image", "text", "displayText") },
+                shareable: true,
+                autoloop: true,
+                autostart: true,
+                aspect: "aspect",
+                value: new AudioCardValue { Property1 = "value1", Property2 = 2 },
+                duration: "duration");
+            
+            var json = ProtocolJsonSerializer.ToJson(card);
+
+            var deserializedCard = ProtocolJsonSerializer.ToObject<AudioCard>(json);
+            Assert.NotNull(deserializedCard);
+            Assert.NotNull(deserializedCard.Value);
+            Assert.IsType<JsonElement>(deserializedCard.Value, exactMatch: false); 
+            Assert.Equal("value1", ((JsonElement)deserializedCard.Value).GetProperty("property1").GetString());
+            Assert.Equal(2, ((JsonElement)deserializedCard.Value).GetProperty("property2").GetInt32());
+
+            Assert.Equal(json, ProtocolJsonSerializer.ToJson(deserializedCard));
+        }
+    }
+
+    class AudioCardValue
+    {
+        public string Property1 { get; set; }
+        public int Property2 { get; set; }
     }
 }

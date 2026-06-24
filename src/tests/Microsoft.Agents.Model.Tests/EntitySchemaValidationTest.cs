@@ -30,8 +30,7 @@ namespace Microsoft.Agents.Model.Tests
 
             Entity deserializedEntity = ProtocolJsonSerializer.ToObject<Entity>(serialized);
             Assert.Equal(deserializedEntity.Type, geoCoordinates.Type);
-            var geo = deserializedEntity.GetAs<GeoCoordinates>();
-            Assert.Equal(geo.Type, geoCoordinates.Type);
+            Assert.IsType<GeoCoordinates>(deserializedEntity);
         }
 
         /// <summary>
@@ -50,8 +49,7 @@ namespace Microsoft.Agents.Model.Tests
 
             Entity deserializedEntity = ProtocolJsonSerializer.ToObject<Entity>(serialized);
             Assert.Equal(deserializedEntity.Type, mentionEntity.Type);
-            var mentionDeserialized = deserializedEntity.GetAs<Mention>();
-            Assert.Equal(mentionDeserialized.Type, mentionEntity.Type);
+            Assert.IsType<Mention>(deserializedEntity);
         }
 
         /// <summary>
@@ -70,8 +68,7 @@ namespace Microsoft.Agents.Model.Tests
 
             Entity deserializedEntity = ProtocolJsonSerializer.ToObject<Entity>(serialized);
             Assert.Equal(deserializedEntity.Type, placeEntity.Type);
-            var placeDeserialized = deserializedEntity.GetAs<Place>();
-            Assert.Equal(placeDeserialized.Type, placeEntity.Type);
+            Assert.IsType<Place>(deserializedEntity);
         }
     }
 }

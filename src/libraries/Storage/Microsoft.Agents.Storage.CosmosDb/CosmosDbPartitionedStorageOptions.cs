@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <summary>
         /// Gets or sets the suffix to be added to every key.
         /// 
-        /// Note: <see cref="CompatibilityMode"/> must be set to 'false' to use a KeySuffix.
+        /// Note: <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbPartitionedStorageOptions.CompatibilityMode"/> must be set to 'false' to use a KeySuffix.
         /// When KeySuffix is used, keys will NOT be truncated but an exception will be thrown if
         /// the key length is longer than allowed by CosmosDb.
         /// </summary>
@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <value>
         /// Currently, max key length for cosmosdb is 1023:
         /// https://docs.microsoft.com/en-us/azure/cosmos-db/concepts-limits#per-item-limits
-        /// The default for backwards compatibility is 255 <see cref="CosmosDbKeyEscape.MaxKeyLength"/>.
+        /// The default for backwards compatibility is 255 <see cref="Microsoft.Agents.Storage.CosmosDb.CosmosDbKeyEscape.MaxKeyLength"/>.
         /// </value>
         public bool CompatibilityMode { get; set; } = true;
 

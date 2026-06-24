@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class ConfigTaskResponse : ConfigResponse<TaskModuleResponseBase>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigTaskResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ConfigTaskResponse"/> class.
         /// </summary>
         public ConfigTaskResponse()
         {

@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         private readonly string type;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BaseAction"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.BaseAction"/> class.
         /// </summary>
         /// <param name="actionType">Type of the action.</param>
         protected BaseAction(string actionType)

@@ -99,7 +99,7 @@ namespace Microsoft.Agents.Core.Models
         /// <remarks>This is used for a return payload in response to an invoke activity.
         /// Invoke activities communicate programmatic information from a client or channel to an Agent, and
         /// have a corresponding return payload for use within the channel. The meaning of an invoke activity
-        /// is defined by the <see cref="Activity.Name"/> field, which is meaningful within the scope of a channel.
+        /// is defined by the <see cref="Microsoft.Agents.Core.Models.Activity.Name"/> field, which is meaningful within the scope of a channel.
         /// </remarks>
         public const string InvokeResponse = "invokeResponse";
     }

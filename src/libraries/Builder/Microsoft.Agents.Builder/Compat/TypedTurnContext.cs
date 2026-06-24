@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// Gets a value indicating whether at least one response was sent for the current turn.
         /// </summary>
         /// <value><c>true</c> if at least one response was sent for the current turn; otherwise, <c>false</c>.</value>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         public bool Responded => _innerTurnContext.Responded;
 
         public ClaimsIdentity Identity => _innerTurnContext.Identity;

@@ -79,7 +79,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> StartConversationAsync(string conversationId, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> StartConversationAsync(string conversationId, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required.");
 
@@ -92,7 +92,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.StartConversation }
                 };
 
-                await foreach (var result in ExecuteTurnAsync(conversationId, request, cancellationToken))
+                await foreach (var result in ExecuteTurnAsync(conversationId, request, requestProperties, cancellationToken))
                 {
                     yield return result;
                 }
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> InvokeToolAsync(string conversationId, ToolInvocationInput toolInputs, IActivity? activity = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> InvokeToolAsync(string conversationId, ToolInvocationInput toolInputs, IActivity? activity = null, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required.");
             _ = toolInputs ?? throw new ArgumentNullException(nameof(toolInputs), "ToolInvocationInput is required.");
@@ -119,7 +119,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     Activity = (Activity?)activity
                 };
 
-                await foreach (var result in ExecuteTurnAsync(conversationId, request, cancellationToken))
+                await foreach (var result in ExecuteTurnAsync(conversationId, request, requestProperties, cancellationToken))
                 {
                     yield return result;
                 }
@@ -127,7 +127,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> HandleUserResponseAsync(string conversationId, IActivity activity, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> HandleUserResponseAsync(string conversationId, IActivity activity, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required.");
             _ = activity ?? throw new ArgumentNullException(nameof(activity), "An Activity is required.");
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     Activity = (Activity)activity
                 };
 
-                await foreach (var result in ExecuteTurnAsync(conversationId, request, cancellationToken))
+                await foreach (var result in ExecuteTurnAsync(conversationId, request, requestProperties, cancellationToken))
                 {
                     yield return result;
                 }
@@ -150,7 +150,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> ConversationUpdateAsync(string conversationId, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> ConversationUpdateAsync(string conversationId, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required.");
 
@@ -163,7 +163,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     Orchestration = new OrchestrationRequest { Operation = OrchestrationOperation.ConversationUpdate }
                 };
 
-                await foreach (var result in ExecuteTurnAsync(conversationId, request, cancellationToken))
+                await foreach (var result in ExecuteTurnAsync(conversationId, request, requestProperties, cancellationToken))
                 {
                     yield return result;
                 }
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         }
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<OrchestratedResponse> ExecuteTurnAsync(string conversationId, OrchestratedTurnRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<OrchestratedResponse> ExecuteTurnAsync(string conversationId, OrchestratedTurnRequest request, RequestProperties? requestProperties = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId));
             _ = request ?? throw new ArgumentNullException(nameof(request));
@@ -199,6 +199,22 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 httpRequest.Headers.UserAgent.ParseAdd(UserAgentHelper.UserAgentHeader);
                 httpRequest.Headers.Add(CopilotStudioHeaderNames.ConversationId, conversationId);
                 httpRequest.Headers.Add(CopilotStudioHeaderNames.ClientRequestId, Guid.NewGuid().ToString());
+
+                if (requestProperties != null)
+                {
+                    if (!string.IsNullOrEmpty(requestProperties.CorrelationId))
+                    {
+                        httpRequest.Headers.Add(CopilotStudioHeaderNames.CorrelationId, requestProperties.CorrelationId);
+                    }
+                    if (!string.IsNullOrEmpty(requestProperties.AgentVersion))
+                    {
+                        httpRequest.Headers.Add(CopilotStudioHeaderNames.AgentVersion, requestProperties.AgentVersion);
+                    }
+                    if (!string.IsNullOrEmpty(requestProperties.AcceptLanguage))
+                    {
+                        httpRequest.Headers.Add(CopilotStudioHeaderNames.AcceptLanguage, requestProperties.AcceptLanguage);
+                    }
+                }
 
                 using HttpResponseMessage resp = await SetupAndExecutePostRequest(httpRequest, cancellationToken).ConfigureAwait(false);
 

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
     public class GetLocationActionParameters
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="GetLocationActionParameters"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.Actions.GetLocationActionParameters"/> class.
         /// </summary>
         public GetLocationActionParameters()
         {
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models.Actions
         }
 
         /// <summary>
-        /// Gets or Sets a value indicating whether the location on the map can be chosen of type <see cref="bool"/>. 
+        /// Gets or Sets a value indicating whether the location on the map can be chosen of type <see cref="System.Boolean"/>. 
         /// </summary>
         /// <value>This value indicates whether a location on the map can be chosen.</value>
         public bool ChooseLocationOnMap { get; set; }

@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class TeamsChannelDataSettings
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsChannelDataSettings"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelDataSettings"/> class.
         /// </summary>
         public TeamsChannelDataSettings()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsChannelDataSettings"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelDataSettings"/> class.
         /// </summary>
         /// <param name="channel">Information about the channel in which the message was sent.</param>
         public TeamsChannelDataSettings(ChannelInfo channel = default)
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public ChannelInfo SelectedChannel { get; set; }
 
         /// <summary>
-        /// Gets or sets properties that are not otherwise defined by the <see cref="TeamsChannelDataSettings"/> type but that
+        /// Gets or sets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Extensions.Teams.Models.TeamsChannelDataSettings"/> type but that
         /// might appear in the REST JSON object.
         /// </summary>
         /// <value>The extended properties for the object.</value>

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Core.HeaderPropagation;
 /// Attribute to register a type for header propagation initialization.
 /// </summary>
 /// <remarks>
-/// Should be applied to classes that implement the <see cref="IHeaderPropagationAttribute"/> interface.
+/// Should be applied to classes that implement the <see cref="Microsoft.Agents.Core.HeaderPropagation.IHeaderPropagationAttribute"/> interface.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
 public sealed class HeaderPropagationAttribute : Attribute

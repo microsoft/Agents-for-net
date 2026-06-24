@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 namespace System;
 
 /// <summary>
-/// A polyfill type that mirrors some methods from <see cref="HashCode"/>
+/// A polyfill type that mirrors some methods from <see cref="System.HashCode"/>
 /// </summary>
 /// <remarks>
 /// Copied from dotnet comminity tools repository <see href="https://github.com/CommunityToolkit/dotnet/blob/main/src/CommunityToolkit.Mvvm.SourceGenerators/Helpers/HashCode.cs"/>

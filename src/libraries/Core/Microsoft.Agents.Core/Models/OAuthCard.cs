@@ -28,14 +28,14 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// The content type value of a <see cref="OAuthCard"/>.
+        /// The content type value of a <see cref="Microsoft.Agents.Core.Models.OAuthCard"/>.
         /// </summary>
         public const string ContentType = Models.ContentTypes.OAuthCard;
 
         /// <summary>
-        /// Creates a new attachment from <see cref="OAuthCard"/>.
+        /// Creates a new attachment from <see cref="Microsoft.Agents.Core.Models.OAuthCard"/>.
         /// </summary>
-        /// <param name="card"> The instance of <see cref="OAuthCard"/>.</param>
+        /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.OAuthCard"/>.</param>
         /// <returns> The generated attachment.</returns>
         public Attachment ToAttachment()
         {

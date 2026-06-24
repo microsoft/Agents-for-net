@@ -1,10 +1,22 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.AdaptiveCards;
+using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
+using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using ProactiveApp = Microsoft.Agents.Builder.App.Proactive.Proactive;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -63,6 +75,250 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal("3", values[1]);
             Assert.Equal("4", values[2]);
             Assert.Equal("1", values[3]);
+        }
+
+        [Fact]
+        public void Test_RouteList_Count_Empty()
+        {
+            RouteList routes = new();
+            Assert.Equal(0, routes.FormatRouteList().Count);
+        }
+
+        [Fact]
+        public void Test_RouteList_Count_WithRoutes()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler((ctx, ts, ct) => Task.CompletedTask)
+                .Build());
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler((ctx, ts, ct) => Task.CompletedTask)
+                .Build());
+            Assert.Equal(2, routes.FormatRouteList().Count);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_Empty()
+        {
+            RouteList routes = new();
+            string result = routes.FormatRouteList().Formatted;
+            Assert.Equal("[]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NoFlags()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Index\":0", result);
+            Assert.Contains("\"Handler\":\"ApplicationRouteTests.MyNamedHandler\"", result);
+            Assert.Contains("\"Flags\":\"None\"", result);
+            Assert.Contains($"\"Rank\":{RouteRank.Unspecified}", result);
+            Assert.Contains("\"Channel\":\"*\"", result);
+            Assert.DoesNotContain("OAuthHandlers", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_InvokeAndAgenticFlags()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .AsAgentic(true)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Flags\":\"Invoke,Agentic\"", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NonTerminalFlag()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsNonTerminal()
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Flags\":\"NonTerminal\"", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithChannel()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithChannelId(Channels.Msteams)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Channel\":\"msteams\"", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_MultipleRoutes_OrderedByIndex()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .Build());
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            // Invoke route comes first (higher priority)
+            int idx0 = result.IndexOf("\"Index\":0");
+            int idx1 = result.IndexOf("\"Index\":1");
+            Assert.True(idx0 >= 0);
+            Assert.True(idx1 >= 0);
+            Assert.True(idx0 < idx1);
+            Assert.Contains("\"Flags\":\"Invoke\"", result);
+        }
+
+        private static Task MyNamedHandler(ITurnContext ctx, ITurnState state, CancellationToken ct)
+            => Task.CompletedTask;
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithOAuthHandlers()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph", "sharepoint" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"graph\",\"sharepoint\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithSingleOAuthHandler()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"graph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_NullChannelId_LogsWildcard()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Channel\":\"*\"", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_WithCustomRank()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOrderRank(100)
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.Contains("\"Rank\":100", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_AllProperties()
+        {
+            var turnContext = new TurnContext(new NotImplementedAdapter(), MessageFactory.Text("test"));
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .AsInvoke(true)
+                .AsAgentic(true)
+                .WithChannelId(Channels.Msteams)
+                .WithOrderRank(500)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            var (count, result) = routes.FormatRouteList(turnContext);
+
+            Assert.Equal(1, count);
+            Assert.Contains("\"Handler\":\"ApplicationRouteTests.MyNamedHandler\"", result);
+            Assert.Contains("\"Flags\":\"Invoke,Agentic\"", result);
+            Assert.Contains("\"Channel\":\"msteams\"", result);
+            Assert.Contains("\"Rank\":500", result);
+            Assert.Contains("\"OAuthHandlers\":[\"graph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_ContextDependentOAuthHandlers()
+        {
+            var activity = MessageFactory.Text("test");
+            activity.CallerId = "urn:botframework:aadappid:some-app-id";
+            var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(context => context.Activity.CallerId != null
+                    ? new[] { "agenticGraph" }
+                    : new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList(turnContext).Formatted;
+
+            Assert.Contains("\"OAuthHandlers\":[\"agenticGraph\"]", result);
+        }
+
+        [Fact]
+        public void Test_RouteList_FormatRouteList_OAuthHandlers_OmittedWithoutContext()
+        {
+            RouteList routes = new();
+            routes.AddRoute(RouteBuilder.Create()
+                .WithSelector((ctx, ct) => Task.FromResult(true))
+                .WithHandler(MyNamedHandler)
+                .WithOAuthHandlers(new[] { "graph" })
+                .Build());
+
+            string result = routes.FormatRouteList().Formatted;
+
+            Assert.DoesNotContain("OAuthHandlers", result);
         }
 
         [Fact]
@@ -236,6 +492,119 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.Single(messages);
             Assert.Equal("hello.1", messages[0]);
+        }
+
+        [Fact]
+        public async Task Test_Application_Route_CanResolveServicesFromTurnContext()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            ITurnState resolvedTurnState = null;
+            AdaptiveCard resolvedAdaptiveCards = null;
+            ProactiveApp resolvedProactive = null;
+
+            var app = new AgentApplication(new(() => turnState)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            app.AddRoute(
+                (context, _) => Task.FromResult(string.Equals("hello.services", context.Activity.Text)),
+                (context, state, _) =>
+                {
+                    resolvedTurnState = context.Services.Get<ITurnState>();
+                    resolvedAdaptiveCards = context.Services.Get<AdaptiveCard>();
+                    resolvedProactive = context.Services.Get<ProactiveApp>();
+
+                    Assert.Same(state, resolvedTurnState);
+                    return Task.CompletedTask;
+                },
+                false);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Same(turnState, resolvedTurnState);
+            Assert.Same(app.AdaptiveCards, resolvedAdaptiveCards);
+            Assert.Same(app.Proactive, resolvedProactive);
+        }
+
+        [Fact]
+        public void Test_Application_SetTurnContextServices_SetsCoreServices()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services.core");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            ITurnState turnState = new TurnState();
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)null)
+            {
+                StartTypingTimer = false,
+            });
+
+            // Act
+            app.SetTurnContextServices(turnContext, turnState);
+
+            // Assert
+            Assert.Same(turnState, turnContext.Services.Get<ITurnState>());
+            Assert.Same(app.AdaptiveCards, turnContext.Services.Get<AdaptiveCard>());
+            Assert.Same(app.Proactive, turnContext.Services.Get<ProactiveApp>());
+            Assert.Null(turnContext.Services.Get<UserAuthorization>());
+        }
+
+        [Fact]
+        public void Test_Application_SetTurnContextServices_SetsUserAuthorization_WhenConfigured()
+        {
+            // Arrange
+            var activity = MessageFactory.Text("hello.services.auth");
+            activity.Recipient = new() { Id = "recipientId" };
+            activity.Conversation = new() { Id = "conversationId" };
+            activity.From = new() { Id = "fromId" };
+            activity.ChannelId = "channelId";
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, activity);
+            ITurnState turnState = new TurnState();
+            var connections = new Moq.Mock<IConnections>();
+            var handler = new Moq.Mock<Microsoft.Agents.Builder.UserAuth.IUserAuthorization>();
+            handler.SetupGet(h => h.Name).Returns("test");
+
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)new MemoryStorage())
+            {
+                StartTypingTimer = false,
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    new MemoryStorage(),
+                    connections.Object,
+                    handler.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                    DefaultHandlerName = "test"
+                }
+            });
+
+            // Act
+            app.SetTurnContextServices(turnContext, turnState);
+
+            // Assert
+            Assert.Same(turnState, turnContext.Services.Get<ITurnState>());
+            Assert.Same(app.AdaptiveCards, turnContext.Services.Get<AdaptiveCard>());
+            Assert.Same(app.Proactive, turnContext.Services.Get<ProactiveApp>());
+            Assert.Same(app.UserAuthorization, turnContext.Services.Get<UserAuthorization>());
         }
 
         [Fact]
@@ -1631,6 +2000,290 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             Assert.Single(agenticIds);
             Assert.Equal("agentic test", agenticIds[0]);
+        }
+
+        [Fact]
+        public async Task Test_AgenticRoute_BeatsNonAgenticRoute_ForAgenticRequest()
+        {
+            // Arrange - An agentic message should be handled by the agentic route,
+            // not by a competing non-agentic route registered first.
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, agenticActivity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            string handlerCalled = null;
+
+            // Register non-agentic route first
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "nonAgentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: false);
+
+            // Register agentic route second
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "agentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert - agentic route wins due to route ordering priority
+            Assert.Equal("agentic", handlerCalled);
+        }
+
+        [Fact]
+        public async Task Test_TwoAgenticRoutes_SameRank_FirstMatchingWins()
+        {
+            // Arrange - Two agentic routes with the same rank; first matching selector wins.
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, agenticActivity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            string handlerCalled = null;
+
+            // Both agentic, same rank, both match - first registered wins
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "first";
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "second";
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Equal("first", handlerCalled);
+        }
+
+        [Fact]
+        public async Task Test_NonAgenticRequest_SkipsAgenticRoutes()
+        {
+            // Arrange - A regular (non-agentic) message must not match an agentic-only route
+            // and should fall through to the non-agentic handler.
+            var normalActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, normalActivity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            string handlerCalled = null;
+
+            // Agentic route registered first (higher priority in ordering)
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "agentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: true);
+
+            // Non-agentic route registered second
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "nonAgentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: false);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert - non-agentic request should skip the agentic route
+            Assert.Equal("nonAgentic", handlerCalled);
+        }
+
+        [Fact]
+        public async Task Test_AgentExtension_AddRoute_PropagatesAgenticFlag()
+        {
+            // Arrange - Verify that isAgenticOnly=true flows through AgentExtension.AddRoute
+            // and results in the route being ordered above non-agentic routes.
+            // This is the pattern used by A365 Notifications and other extensions.
+            var agenticActivity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                Recipient = new() { Id = "recipientId", Role = RoleTypes.AgenticUser },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "testChannel",
+            };
+
+            var adapter = new NotImplementedAdapter();
+            var turnContext = new TurnContext(adapter, agenticActivity);
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new AgentApplication(new(() => turnState.Result)
+            {
+                RemoveRecipientMention = false,
+                StartTypingTimer = false,
+            });
+
+            string handlerCalled = null;
+
+            // Register non-agentic route directly on the app first
+            app.OnActivity(ActivityTypes.Message, (context, _, _) =>
+            {
+                handlerCalled = "nonAgentic";
+                return Task.CompletedTask;
+            }, isAgenticOnly: false);
+
+            // Register agentic route through the extension model (mimics A365 Notifications pattern)
+            var extension = new TestExtension("testChannel");
+            extension.AddRoute(
+                app,
+                (context, _) => Task.FromResult(context.Activity.Type == ActivityTypes.Message),
+                (context, _, _) =>
+                {
+                    handlerCalled = "extensionAgentic";
+                    return Task.CompletedTask;
+                },
+                isAgenticOnly: true);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert - extension's agentic route wins due to ordering priority
+            Assert.Equal("extensionAgentic", handlerCalled);
+        }
+
+        private class TestExtension : AgentExtension
+        {
+            public TestExtension(string channelId)
+            {
+                ChannelId = new ChannelId(channelId);
+            }
+        }
+
+        [Fact]
+        public async Task Test_AgentApplication_LogsRouteList_WhenDebugEnabled()
+        {
+            // Arrange: create a logger that captures debug messages
+            var logMessages = new List<string>();
+            var loggerFactory = LoggerFactory.Create(builder =>
+                builder
+                    .AddProvider(new CaptureLoggerProvider(logMessages))
+                    .SetMinimumLevel(LogLevel.Debug));
+
+            var adapter = new SimpleAdapter();
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Text = "hi",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+
+            var options = new AgentApplicationOptions((IStorage)null, loggerFactory)
+            {
+                StartTypingTimer = false,
+            };
+            var app = new AgentApplication(options);
+            app.OnActivity(ActivityTypes.Message, (ctx, ts, ct) => Task.CompletedTask);
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert: at least one debug message contains route evaluation order text
+            Assert.Contains(logMessages, m => m.Contains("route evaluation order"));
+        }
+
+        [Fact]
+        public async Task Test_AgentApplication_DoesNotLogRouteList_WhenDebugDisabled()
+        {
+            var logMessages = new List<string>();
+            var loggerFactory = LoggerFactory.Create(builder =>
+                builder
+                    .AddProvider(new CaptureLoggerProvider(logMessages))
+                    .SetMinimumLevel(LogLevel.Information));
+
+            var adapter = new SimpleAdapter();
+            var turnContext = new TurnContext(adapter, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                Text = "hi",
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+
+            var options = new AgentApplicationOptions((IStorage)null, loggerFactory)
+            {
+                StartTypingTimer = false,
+            };
+            var app = new AgentApplication(options);
+            app.OnActivity(ActivityTypes.Message, (ctx, ts, ct) => Task.CompletedTask);
+
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            Assert.DoesNotContain(logMessages, m => m.Contains("route evaluation order"));
+        }
+
+        private class CaptureLoggerProvider(List<string> messages) : ILoggerProvider
+        {
+            public ILogger CreateLogger(string categoryName) => new CaptureLogger(messages);
+            public void Dispose() { }
+        }
+
+        private class CaptureLogger(List<string> messages) : ILogger
+        {
+            private static readonly IDisposable _noopScope = new NoopDisposable();
+            public IDisposable BeginScope<TState>(TState state) where TState : notnull => _noopScope;
+            public bool IsEnabled(LogLevel logLevel) => true;
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+                Exception exception, Func<TState, Exception, string> formatter)
+                => messages.Add(formatter(state, exception));
+            private sealed class NoopDisposable : IDisposable { public void Dispose() { } }
         }
     }
 }

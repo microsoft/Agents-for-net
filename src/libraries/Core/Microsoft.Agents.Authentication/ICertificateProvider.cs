@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Authentication
     public interface ICertificateProvider
     {
         /// <summary>
-        /// Gets an <see cref="X509Certificate2"/> instance.
+        /// Gets an <see cref="System.Security.Cryptography.X509Certificates.X509Certificate2"/> instance.
         /// </summary>
         /// <returns>
         /// An X.509 certificate.

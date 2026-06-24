@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
         }
 
         /// <summary>
-        /// Static helper method for programatically creating an assistant.
+        /// Static helper method for programmatically creating an assistant.
         /// </summary>
         /// <param name="apiKey">OpenAI or Azure OpenAI API key.</param>
         /// <param name="request">Definition of the assistant to create.</param>
@@ -93,7 +93,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Planners.Experimental
         }
 
         /// <summary>
-        /// Static helper method for programatically creating an assistant.
+        /// Static helper method for programmatically creating an assistant.
         /// </summary>
         /// <param name="tokenCredential">Azure token credential to authenticate requests</param>
         /// <param name="request">Definition of the assistant to create.</param>

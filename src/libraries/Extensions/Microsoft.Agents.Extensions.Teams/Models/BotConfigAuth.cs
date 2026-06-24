@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class BotConfigAuth
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="BotConfigAuth"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.BotConfigAuth"/> class.
         /// </summary>
         public BotConfigAuth()
         {

@@ -36,5 +36,10 @@ namespace Microsoft.Agents.Builder
             if (!activity.IsAgenticRequest()) return null;
             return activity?.Recipient?.AgenticUserId;
         }
+
+        public static bool IsConnectorUser(this IActivity activity)
+        {
+            return string.Equals(activity?.Recipient?.Role, RoleTypes.ConnectorUser, System.StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

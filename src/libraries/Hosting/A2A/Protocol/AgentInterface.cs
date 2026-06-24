@@ -14,7 +14,7 @@ public sealed class AgentInterface
     /// <summary>
     /// The transport protocol supported at this URL.
     /// <para>
-    /// See <see cref="TransportProtocol"/> for the defined types.
+    /// See <see cref="Microsoft.Agents.Hosting.A2A.Protocol.TransportProtocol"/> for the defined types.
     /// </para>
     /// </summary>
     [JsonPropertyName("transport")]

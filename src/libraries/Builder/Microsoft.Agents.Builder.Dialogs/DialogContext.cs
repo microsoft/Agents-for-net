@@ -142,9 +142,9 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
-        /// <seealso cref="EndDialogAsync(object, CancellationToken)"/>
-        /// <seealso cref="PromptAsync(string, PromptOptions, CancellationToken)"/>
-        /// <seealso cref="Dialog.BeginDialogAsync(DialogContext, object, CancellationToken)"/>
+        /// <seealso cref="EndDialogAsync(object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="PromptAsync(string, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Dialog.BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> BeginDialogAsync(string dialogId, object options = null, CancellationToken cancellationToken = default)
         {
             try
@@ -196,8 +196,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
-        /// <seealso cref="BeginDialogAsync(string, object, CancellationToken)"/>
-        /// <seealso cref="Prompt{T}.BeginDialogAsync(DialogContext, object, CancellationToken)"/>
+        /// <seealso cref="BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Prompts.Prompt{T}.BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> PromptAsync(string dialogId, PromptOptions options, CancellationToken cancellationToken = default)
         {
             try
@@ -231,7 +231,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Check the <see cref="TurnContext.Responded"/> property after the call completes
         /// to determine if the active dialog sent a reply message to the user.
         /// </remarks>
-        /// <seealso cref="Dialog.ContinueDialogAsync(DialogContext, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Dialog.ContinueDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> ContinueDialogAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -297,10 +297,10 @@ namespace Microsoft.Agents.Builder.Dialogs
         ///
         /// The returned <see cref="DialogTurnResult"/> contains the return value in its
         /// <see cref="DialogTurnResult.Result"/> property.</remarks>
-        /// <seealso cref="BeginDialogAsync(string, object, CancellationToken)"/>
-        /// <seealso cref="PromptAsync(string, PromptOptions, CancellationToken)"/>
-        /// <seealso cref="ReplaceDialogAsync(string, object, CancellationToken)"/>
-        /// <seealso cref="Dialog.EndDialogAsync(ITurnContext, DialogInstance, DialogReason, CancellationToken)"/>
+        /// <seealso cref="BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="PromptAsync(string, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>
+        /// <seealso cref="ReplaceDialogAsync(string, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Dialog.EndDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, Microsoft.Agents.Builder.Dialogs.DialogReason, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> EndDialogAsync(object result = null, CancellationToken cancellationToken = default)
         {
             try
@@ -354,7 +354,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// method to return a result to the parent dialog. If the parent dialog does not implement
         /// `ResumeDialogAsync`, then the parent will end, too, and the result is passed to the next
         /// parent context.</remarks>
-        /// <seealso cref="EndDialogAsync(object, CancellationToken)"/>
+        /// <seealso cref="EndDialogAsync(object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> CancelAllDialogsAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -386,7 +386,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// method to return a result to the parent dialog. If the parent dialog does not implement
         /// `ResumeDialogAsync`, then the parent will end, too, and the result is passed to the next
         /// parent context.</remarks>
-        /// <seealso cref="EndDialogAsync(object, CancellationToken)"/>
+        /// <seealso cref="EndDialogAsync(object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> CancelAllDialogsAsync(bool cancelParents, string eventName = null, object eventValue = null, CancellationToken cancellationToken = default)
         {
             try
@@ -456,8 +456,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
-        /// <seealso cref="BeginDialogAsync(string, object, CancellationToken)"/>
-        /// <seealso cref="EndDialogAsync(object, CancellationToken)"/>
+        /// <seealso cref="BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="EndDialogAsync(object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> ReplaceDialogAsync(string dialogId, object options = null, CancellationToken cancellationToken = default)
         {
             try
@@ -490,7 +490,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="Dialog.RepromptDialogAsync(ITurnContext, DialogInstance, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Dialog.RepromptDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, System.Threading.CancellationToken)"/>
         public async Task RepromptDialogAsync(CancellationToken cancellationToken = default)
         {
             try

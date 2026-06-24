@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class PropertyPaneChoiceGroupImageSize
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PropertyPaneChoiceGroupImageSize"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneChoiceGroupImageSize"/> class.
         /// </summary>
         public PropertyPaneChoiceGroupImageSize()
         {
@@ -17,13 +17,13 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets the width of the image of type <see cref="int"/>.
+        /// Gets or Sets the width of the image of type <see cref="System.Int32"/>.
         /// </summary>
         /// <value>This value is the width of the choice group.</value>
         public int Width { get; set; }
 
         /// <summary>
-        /// Gets or Sets the height of the image of type <see cref="int"/>.
+        /// Gets or Sets the height of the image of type <see cref="System.Int32"/>.
         /// </summary>
         /// <value>This value is the height of the choice group.</value>
         public int Height { get; set; }

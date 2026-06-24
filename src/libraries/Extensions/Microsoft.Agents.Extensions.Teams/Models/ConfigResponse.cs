@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class ConfigResponse<T> : ConfigResponseBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigResponse{T}"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.ConfigResponse{T}"/> class.
         /// </summary>
         public ConfigResponse()
             : base("config")

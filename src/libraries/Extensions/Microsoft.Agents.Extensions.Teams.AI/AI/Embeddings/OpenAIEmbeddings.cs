@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Embeddings
         private static readonly string _userAgent = "AlphaWave";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OpenAIEmbeddings"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Embeddings.OpenAIEmbeddings"/> class.
         /// </summary>
         /// <param name="options">Options for configuring an `OpenAIEmbeddings` to call an OpenAI hosted model.</param>
         /// <param name="loggerFactory">The logger factory instance.</param>
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Extensions.Teams.AI.Embeddings
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OpenAIModel"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.AI.Models.OpenAIModel"/> class.
         /// </summary>
         /// <param name="options">Options for configuring an `OpenAIModel` to call an Azure OpenAI hosted model.</param>
         /// <param name="loggerFactory">The logger factory instance.</param>

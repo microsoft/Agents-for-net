@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// Defines values for SearchInvokeTypes. See <see cref="SearchInvokeValue"/>.
+    /// Defines values for SearchInvokeTypes. See <see cref="Microsoft.Agents.Core.Models.SearchInvokeValue"/>.
     /// </summary>
     public static class SearchInvokeTypes
     {

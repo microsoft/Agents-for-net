@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Extensions.Teams.Models
     public class MessageActionsPayloadUser
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadUser"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadUser"/> class.
         /// </summary>
         public MessageActionsPayloadUser()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageActionsPayloadUser"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayloadUser"/> class.
         /// </summary>
         /// <param name="userIdentityType">The identity type of the user.
         /// Possible values include: 'aadUser', 'onPremiseAadUser',

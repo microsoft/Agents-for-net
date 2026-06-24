@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary>
-    /// The value field of a <see cref="ICommandActivity"/> contains metadata related to a command.
+    /// The value field of a <see cref="Microsoft.Agents.Core.Models.ICommandActivity"/> contains metadata related to a command.
     /// An optional extensible data payload may be included if defined by the command activity name.
     /// </summary>
     /// <typeparam name="T">Type for Data feild.</typeparam>

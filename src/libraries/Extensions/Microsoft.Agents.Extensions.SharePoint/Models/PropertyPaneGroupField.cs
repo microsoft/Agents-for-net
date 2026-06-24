@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
     public class PropertyPaneGroupField
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PropertyPaneGroupField"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneGroupField"/> class.
         /// </summary>
         public PropertyPaneGroupField()
         {
@@ -68,25 +68,25 @@ namespace Microsoft.Agents.Extensions.SharePoint.Models
         }
 
         /// <summary>
-        /// Gets or Sets the type of field <see cref="FieldType"/> enum.
+        /// Gets or Sets the type of field <see cref="Microsoft.Agents.Extensions.SharePoint.Models.PropertyPaneGroupField.FieldType"/> enum.
         /// </summary>
         /// <value>This value is the type of the property pane field.</value>
         public FieldType Type { get; set; }
 
         /// <summary>
-        /// Gets or Sets the properties property of type <see cref="IPropertyPaneFieldProperties"/>.
+        /// Gets or Sets the properties property of type <see cref="Microsoft.Agents.Extensions.SharePoint.Models.IPropertyPaneFieldProperties"/>.
         /// </summary>
         /// <value>This value is the properties of the property pane field.</value>
         public IPropertyPaneFieldProperties Properties { get; set; }
 
         /// <summary>
-        /// Gets or Sets a value indicating whether this control should be focused of type <see cref="bool"/>.
+        /// Gets or Sets a value indicating whether this control should be focused of type <see cref="System.Boolean"/>.
         /// </summary>
         /// <value>This value indicates whether the property pane field should focus.</value>
         public bool ShouldFocus { get; set; }
 
         /// <summary>
-        /// Gets or Sets the target property of type <see cref="string"/>.
+        /// Gets or Sets the target property of type <see cref="System.String"/>.
         /// </summary>
         /// <value>This value is the target property of the property pane field.</value>
         public string TargetProperty { get; set; }

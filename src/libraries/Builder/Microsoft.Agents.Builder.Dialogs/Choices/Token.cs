@@ -6,7 +6,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
     /// <summary>
     /// Represents an individual token, such as a word in an input string.
     /// </summary>
-    /// <seealso cref="Tokenizer"/>
+    /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Choices.Tokenizer"/>
     public class Token
     {
         /// <summary>

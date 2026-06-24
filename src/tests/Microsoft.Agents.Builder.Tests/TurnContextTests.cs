@@ -622,6 +622,39 @@ namespace Microsoft.Agents.Builder.Tests
             }
         }
 
+        [Fact]
+        public async Task SendActivityAsync_ShouldThrowAfterDispose()
+        {
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+            context.Dispose();
+
+            await Assert.ThrowsAsync<ObjectDisposedException>(
+                () => context.SendActivityAsync("hello"));
+        }
+
+        [Fact]
+        public async Task UpdateActivityAsync_ShouldThrowAfterDispose()
+        {
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+            context.Dispose();
+
+            await Assert.ThrowsAsync<ObjectDisposedException>(
+                () => context.UpdateActivityAsync(new Activity()));
+        }
+
+        [Fact]
+        public async Task DeleteActivityAsync_ShouldThrowAfterDispose()
+        {
+            var adapter = new SimpleAdapter();
+            var context = new TurnContext(adapter, new Activity());
+            context.Dispose();
+
+            await Assert.ThrowsAsync<ObjectDisposedException>(
+                () => context.DeleteActivityAsync("some-activity-id"));
+        }
+
         private async Task MyBotLogic(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             if (turnContext.Activity.Text == "TestResponded")

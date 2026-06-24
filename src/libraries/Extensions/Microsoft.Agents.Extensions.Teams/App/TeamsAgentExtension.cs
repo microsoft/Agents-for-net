@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
 
         /// <summary>
         /// Creates a new TeamsAgentExtension instance.
-        /// To leverage this extension, call <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/> with an instance of this class.
+        /// To leverage this extension, call <see cref="Microsoft.Agents.Builder.App.AgentApplication.RegisterExtension{TExtension}(TExtension, System.Action{TExtension})"/> with an instance of this class.
         /// Use the callback method to register routes for handling Teams-specific events.
         /// </summary>
         /// <param name="agentApplication">The agent application to leverage for route registration.</param>
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
         /// <summary>
         /// Handles conversation update events.
         /// </summary>
-        /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="ConversationUpdateEvents"/>.</param>
+        /// <param name="conversationUpdateEvent">Name of the conversation update event to handle, can use <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/>.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
         /// <param name="autoSignInHandlers">List of UserAuthorization handlers to get token for.</param>
@@ -330,7 +330,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
 
         /// <summary>
         /// Registers a handler for feedback loop events when a user clicks the thumbsup or thumbsdown button on a response sent from the AI module.
-        /// <see cref="AIOptions{TState}.EnableFeedbackLoop"/> must be set to true.
+        /// <see cref="Microsoft.Agents.Extensions.Teams.AI.AIOptions{TState}.EnableFeedbackLoop"/> must be set to true.
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>

@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Storage.Transcript
     /// Represents a transcript logger that writes activities to a Trace object.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="TraceTranscriptLogger"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Storage.Transcript.TraceTranscriptLogger"/> class.
     /// </remarks>
     /// <param name="traceActivity">Indicates if trace information should be logged.</param>
     public class TraceTranscriptLogger(bool traceActivity = true) : ITranscriptLogger
