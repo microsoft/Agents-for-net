@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             await Task.Delay(300);
             await worker.DisposeAsync();
 
-            var typingCount = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var typingCount = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             Assert.True(typingCount >= 1, $"Expected at least 1 typing activity, got {typingCount}");
         }
 
@@ -124,7 +124,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // A 10s deadline is far beyond what is needed on any machine; the loop exits as soon
             // as the condition is met so the test remains fast in the normal case.
             var deadline = DateTimeOffset.UtcNow.AddSeconds(10);
-            while (adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing) < 4
+            while (adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing) < 4
                    && DateTimeOffset.UtcNow < deadline)
             {
                 await Task.Delay(20);
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             await worker.DisposeAsync();
 
-            var typingCount = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var typingCount = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             Assert.True(typingCount >= 4, $"Expected at least 4 typing activities, got {typingCount}");
         }
 
@@ -146,11 +146,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             await Task.Delay(150); // Let a few typing activities fire.
 
             await worker.DisposeAsync();
-            var countAfterDispose = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterDispose = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
             // After dispose, the count must not increase.
             await Task.Delay(150);
-            var countAfterWait = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterWait = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
             Assert.Equal(countAfterDispose, countAfterWait);
         }
@@ -174,11 +174,11 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Give the cancellation a moment to propagate.
             await Task.Delay(100);
-            var countAfterStop = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterStop = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
             // No further typing should appear.
             await Task.Delay(200);
-            var countAfterWait = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterWait = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             await worker.DisposeAsync();
 
             Assert.Equal(countAfterStop, countAfterWait);
@@ -294,7 +294,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // First typing fires at t~=0ms.
             await Task.Delay(50);
-            var countBeforeReset = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countBeforeReset = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             Assert.True(countBeforeReset >= 1, "First typing should have fired");
 
             // Reset the interval at t~=50ms. Without reset the next typing would fire at ~400ms.
@@ -312,16 +312,111 @@ namespace Microsoft.Agents.Builder.Tests.App
             // At t~=300ms (250ms after reset): without reset, typing would fire at ~400ms total.
             // With reset at t=50ms, next typing fires at ~450ms — so at t=300ms it hasn't fired yet.
             await Task.Delay(250); // t~=300ms
-            var countBeforeExpected = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countBeforeExpected = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             Assert.Equal(countBeforeReset, countBeforeExpected);
 
             // At t~=600ms (550ms after reset, > 400ms interval): second typing fires.
             await Task.Delay(300); // t~=600ms
-            var countAfterExpected = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterExpected = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             await worker.DisposeAsync();
 
             Assert.True(countAfterExpected > countBeforeReset,
                 $"Second typing should have fired after reset interval elapsed, got {countAfterExpected}");
+        }
+
+        [Fact]
+        public async Task Start_ResetsInterval_WhenResetFiresDuringSend()
+        {
+            // Exercises the race where ResetInterval fires while SendTypingActivityAsync is
+            // in-flight (i.e., outside WaitAsync). The adapter signals when the typing send
+            // has started, so we can deterministically inject a reset during the send window.
+            var slowAdapter = new SlowSendAdapter(sendDelayMs: 300);
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                ChannelId = Channels.Test,
+                Conversation = new ConversationAccount { Id = "conv1" },
+                From = new ChannelAccount { Id = "user1" },
+                Recipient = new ChannelAccount { Id = "bot1" },
+            };
+            var context = new TurnContext(slowAdapter, activity);
+            var worker = TypingWorker.Create(context, MakeOptions(initialDelayMs: 0, intervalMs: 500))!;
+            worker.Start();
+
+            // Wait until the adapter confirms the typing send is in-flight.
+            await slowAdapter.TypingSendStarted.WaitAsync(TimeSpan.FromSeconds(5));
+
+            // Now fire a reset while the worker is inside SendTypingActivityAsync.
+            await context.SendActivityAsync(
+                new Activity
+                {
+                    Type = ActivityTypes.Event,
+                    Name = "ping",
+                    ChannelId = Channels.Test,
+                    Conversation = new ConversationAccount { Id = "conv1" }
+                },
+                CancellationToken.None);
+
+            // The adapter's 300ms send completes, then WaitAsync sees the pending reset and
+            // restarts a fresh 500ms countdown. At ~400ms after the reset the second typing
+            // hasn't started yet.
+            await Task.Delay(400);
+            var countAtMid = slowAdapter.TypingSendCount;
+            Assert.Equal(1, countAtMid); // Only the initial typing.
+
+            // Poll until the second typing arrives (interval + adapter delay = ~800ms more).
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
+            while (slowAdapter.TypingSendCount < 2 && DateTimeOffset.UtcNow < deadline)
+            {
+                await Task.Delay(50);
+            }
+
+            var countAtEnd = slowAdapter.TypingSendCount;
+            await worker.DisposeAsync();
+
+            Assert.True(countAtEnd >= 2,
+                $"Expected at least 2 typing sends after reset-during-send, got {countAtEnd}");
+        }
+
+        /// <summary>
+        /// A <see cref="TestAdapter"/> that introduces an artificial delay in
+        /// <see cref="SendActivitiesAsync"/> for typing activities, simulating a slow network.
+        /// Exposes <see cref="TypingSendStarted"/> so tests can synchronize on the send window.
+        /// </summary>
+        private sealed class SlowSendAdapter : TestAdapter
+        {
+            private readonly int _sendDelayMs;
+            private int _typingSendCount;
+            private readonly SemaphoreSlim _typingSendStarted = new(0);
+
+            public int TypingSendCount => Volatile.Read(ref _typingSendCount);
+
+            /// <summary>
+            /// Signaled when a typing send begins (before the artificial delay).
+            /// </summary>
+            public SemaphoreSlim TypingSendStarted => _typingSendStarted;
+
+            public SlowSendAdapter(int sendDelayMs) : base(Channels.Test)
+            {
+                _sendDelayMs = sendDelayMs;
+            }
+
+            public override async Task<ResourceResponse[]> SendActivitiesAsync(
+                ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
+            {
+                foreach (var a in activities)
+                {
+                    if (a.Type == ActivityTypes.Typing)
+                    {
+                        _typingSendStarted.Release();
+                        await Task.Delay(_sendDelayMs, cancellationToken);
+                        Interlocked.Increment(ref _typingSendCount);
+                    }
+                }
+
+                return await base.SendActivitiesAsync(turnContext, activities, cancellationToken);
+            }
         }
     }
 }

@@ -233,5 +233,31 @@ namespace Microsoft.Agents.Authentication.Tests.Telemetry
         }
 
         #endregion
+
+        #region ScopeTokenRequest (base class behavior)
+
+        [Fact]
+        public void ScopeTokenRequest_Callback_RecordsAuthMethodFromDerivedClass()
+        {
+            // ScopeTokenRequest is internal - test via ScopeGetAccessToken
+            var scope = new ScopeGetAccessToken(new[] { "scope1" }, "client_credentials");
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal("client_credentials", stopped.GetTagItem(TagNames.AuthMethod));
+        }
+
+        [Fact]
+        public void ScopeTokenRequest_NullScopes_HandledGracefully()
+        {
+            // Verify null scopes don't throw and produce "unknown"
+            var scope = new ScopeGetAccessToken(null!, "client_credentials");
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(TelemetryUtils.Unknown, stopped.GetTagItem(TagNames.AuthScopes));
+        }
+
+        #endregion
     }
 }
