@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -129,6 +129,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </remarks>
         public static IHostApplicationBuilder AddAgentAuthorization(this IHostApplicationBuilder builder, Action<IHostApplicationBuilder> configure, bool? forceEnable = null)
         {
+            ArgumentNullException.ThrowIfNull(builder);
+            ArgumentNullException.ThrowIfNull(configure);
+
             bool shouldEnable = forceEnable ?? !builder.Environment.IsDevelopment();
 
             if (shouldEnable)

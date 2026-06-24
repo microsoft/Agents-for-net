@@ -33,7 +33,7 @@ public static class AspNetExtensions
 
     /// <summary>
     /// Adds JWT bearer token validation for Azure Bot Service and agent-to-agent requests.
-    /// This overload is designed for use with <c>AgentHostBuilder.WithAuthorization</c>.
+    /// This overload is designed for use with <c>AddAgentAuthorization</c>.
     /// </summary>
     /// <param name="builder">The host application builder.</param>
     /// <param name="tokenValidationSectionName">
@@ -260,13 +260,13 @@ public static class AspNetExtensions
                     if (!isBotFrameworkToken
                         && validationOptions.AllowedCallers != null
                         && validationOptions.AllowedCallers.Count > 0
-                        && !validationOptions.AllowedCallers.Contains("*"))
+                        && !validationOptions.AllowedCallers.Any(c => c.Equals("*", StringComparison.Ordinal)))
                     {
                         // azp (v2 tokens) or appid (v1 tokens)
                         var callerAppId = context.Principal?.FindFirst("azp")?.Value
                             ?? context.Principal?.FindFirst("appid")?.Value;
 
-                        if (string.IsNullOrEmpty(callerAppId) || !validationOptions.AllowedCallers.Contains(callerAppId))
+                        if (string.IsNullOrEmpty(callerAppId) || !validationOptions.AllowedCallers.Any(c => c.Equals(callerAppId, StringComparison.OrdinalIgnoreCase)))
                         {
                             context.Fail($"Caller App ID '{callerAppId}' is not in the AllowedCallers list.");
                         }

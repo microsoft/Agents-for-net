@@ -14,13 +14,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 {
     /// <summary>
     /// Provides extension methods for registering agent-related services, adapters, and middleware with dependency
-    /// injection containers and application builders.
+    /// injection containers.
     /// </summary>
-    /// <remarks>These extension methods simplify the setup of agent applications by enabling the registration
-    /// of agents, adapters, options, and supporting middleware. They are intended to be used during application startup
-    /// to configure required services for agent-based architectures, such as those using CloudAdapter and
-    /// AgentApplication. Methods in this class support both default and custom agent/adapters, and facilitate
-    /// integration with ASP.NET Core's dependency injection and middleware pipelines.</remarks>
+    /// <remarks>These extension methods operate on <see cref="IServiceCollection"/> (and
+    /// <c>IHostApplicationBuilder.Services</c>) to register agents, adapters, options, and supporting
+    /// services during application startup, such as those using CloudAdapter and AgentApplication. The
+    /// application-builder and request-pipeline APIs (fluent startup, middleware ordering, and endpoint mapping)
+    /// live in <see cref="AgentHostExtensions"/>.</remarks>
     public static class ServiceCollectionExtensions
     {
         #region IServiceCollection Extensions
