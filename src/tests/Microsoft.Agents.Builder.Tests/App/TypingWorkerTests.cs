@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             await Task.Delay(300);
             await worker.DisposeAsync();
 
-            var typingCount = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var typingCount = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             Assert.True(typingCount >= 1, $"Expected at least 1 typing activity, got {typingCount}");
         }
 
@@ -124,7 +124,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // A 10s deadline is far beyond what is needed on any machine; the loop exits as soon
             // as the condition is met so the test remains fast in the normal case.
             var deadline = DateTimeOffset.UtcNow.AddSeconds(10);
-            while (adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing) < 4
+            while (adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing) < 4
                    && DateTimeOffset.UtcNow < deadline)
             {
                 await Task.Delay(20);
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             await worker.DisposeAsync();
 
-            var typingCount = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var typingCount = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             Assert.True(typingCount >= 4, $"Expected at least 4 typing activities, got {typingCount}");
         }
 
@@ -146,11 +146,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             await Task.Delay(150); // Let a few typing activities fire.
 
             await worker.DisposeAsync();
-            var countAfterDispose = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterDispose = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
             // After dispose, the count must not increase.
             await Task.Delay(150);
-            var countAfterWait = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterWait = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
             Assert.Equal(countAfterDispose, countAfterWait);
         }
@@ -174,11 +174,11 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Give the cancellation a moment to propagate.
             await Task.Delay(100);
-            var countAfterStop = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterStop = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
             // No further typing should appear.
             await Task.Delay(200);
-            var countAfterWait = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterWait = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             await worker.DisposeAsync();
 
             Assert.Equal(countAfterStop, countAfterWait);
@@ -294,7 +294,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // First typing fires at t~=0ms.
             await Task.Delay(50);
-            var countBeforeReset = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countBeforeReset = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             Assert.True(countBeforeReset >= 1, "First typing should have fired");
 
             // Reset the interval at t~=50ms. Without reset the next typing would fire at ~400ms.
@@ -312,12 +312,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             // At t~=300ms (250ms after reset): without reset, typing would fire at ~400ms total.
             // With reset at t=50ms, next typing fires at ~450ms — so at t=300ms it hasn't fired yet.
             await Task.Delay(250); // t~=300ms
-            var countBeforeExpected = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countBeforeExpected = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             Assert.Equal(countBeforeReset, countBeforeExpected);
 
             // At t~=600ms (550ms after reset, > 400ms interval): second typing fires.
             await Task.Delay(300); // t~=600ms
-            var countAfterExpected = adapter.ActiveQueue.Count(a => a.Type == ActivityTypes.Typing);
+            var countAfterExpected = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
             await worker.DisposeAsync();
 
             Assert.True(countAfterExpected > countBeforeReset,
