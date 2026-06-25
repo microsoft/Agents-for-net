@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.State
     /// <seealso cref="Microsoft.Agents.Storage.IStorage"/>
     public abstract class AgentState : IPropertyManager, IAgentState
     {
-        private readonly IStorage _storage;
+        private readonly IStorageV2 _storage;
         private readonly object _stateLock = new object();
         private CachedAgentState _cachedAgentState;
 
@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder.State
         /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
         public AgentState(IStorage storage, string stateName)
         {
-            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _storage = StorageCompatibility.AsV2(storage ?? throw new ArgumentNullException(nameof(storage)));
             Name = stateName ?? throw new ArgumentNullException(nameof(stateName));
         }
 
@@ -189,8 +189,8 @@ namespace Microsoft.Agents.Builder.State
 
             if (ShouldLoad(turnContext, storageKey, force))
             {
-                var items = await _storage.ReadAsync([storageKey], cancellationToken).ConfigureAwait(false);
-                items.TryGetValue(storageKey, out object val);
+                var results = await _storage.ReadAsync([storageKey], cancellationToken).ConfigureAwait(false);
+                var val = results[storageKey].Status == StorageOperationStatus.Succeeded ? results[storageKey].Value : null;
 
                 if (val is IDictionary<string, object> asDictionary)
                 {
