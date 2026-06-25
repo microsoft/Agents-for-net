@@ -34,6 +34,7 @@
     <PackageVersion Include="Microsoft.Identity.Web.Certificateless" Version="4.3.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.AzureAppServices" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(Microsoft_Extentions_PkgVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="$(Microsoft_Extentions_PkgVer)" />
@@ -44,6 +45,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="$(Microsoft_Extentions_PkgVer)" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="$(Microsoft_Extentions_PkgVer)" />
     <PackageVersion Include="System.Text.Json" Version="$(Microsoft_System_PkgVer)" />
     <PackageVersion Include="System.Memory.Data" Version="$(Microsoft_System_PkgVer)" />
     <PackageVersion Include="System.Runtime.Caching" Version="$(Microsoft_System_PkgVer)" />
