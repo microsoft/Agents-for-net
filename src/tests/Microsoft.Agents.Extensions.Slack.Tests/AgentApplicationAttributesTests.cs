@@ -333,7 +333,7 @@ class EventRouteApp(AgentApplicationOptions options) : AgentApplication(options)
     [SlackEventRoute(name: "myEvent")]
     public Task OnMyEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMyEvent"); return Task.CompletedTask; }
 
-    [SlackEventRoute(nameRegex: "my.*Event")]
+    [SlackEventRoute(nameRegex: "my.+Event")]
     public Task OnRegexEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnRegexEvent"); return Task.CompletedTask; }
 
     [SlackEventRoute]
