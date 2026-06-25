@@ -141,6 +141,33 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             Assert.Fail("RouteAttributeTest_MissingArgs did not throw");
         }
+
+        [Theory]
+        [InlineData(typeof(ActivityRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(InstallationUpdateRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(MessageRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(EventRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(ConversationUpdateRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(MembersAddedRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(MembersRemovedRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(MessageReactionsAddedRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(MessageReactionsRemovedRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(EndOfConversationRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(HandoffRouteAttribute), typeof(HandoffHandler))]
+        [InlineData(typeof(FeedbackLoopRouteAttribute), typeof(FeedbackLoopHandler))]
+        public void GetDeclaredHandlerType_ReturnsDeclaredDelegate(Type attributeType, Type expectedHandlerType)
+        {
+            Assert.Equal(expectedHandlerType, RouteAttributeHelper.GetDeclaredHandlerType(attributeType));
+        }
+
+        [Fact]
+        public void GetDeclaredHandlerType_LegacyAttribute_ReturnsNull()
+        {
+            // The legacy RouteAttribute declares no RouteHandlerType, so the static lookup returns null.
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.Null(RouteAttributeHelper.GetDeclaredHandlerType(typeof(RouteAttribute)));
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
     }
 
     class TestActivityTypeApp(AgentApplicationOptions options) : AgentApplication(options)

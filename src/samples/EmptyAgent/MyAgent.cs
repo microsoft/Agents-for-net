@@ -14,7 +14,7 @@ namespace EmptyAgent;
 public class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
     [MembersAddedRoute]
-    public async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -26,7 +26,7 @@ public class MyAgent(AgentApplicationOptions options) : AgentApplication(options
     }
 
     [MessageRoute]
-    public async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.SendActivityAsync($"You said: {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
