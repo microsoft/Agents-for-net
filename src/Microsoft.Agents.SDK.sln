@@ -181,8 +181,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "A365LoopTest", "samples\A36
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SidecarAuth", "samples\Authorization\SidecarAuth\SidecarAuth.csproj", "{E39BD602-432C-D76C-633B-1DC913200119}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Authentication.EntraAuthSidecar", "Authentication.EntraAuthSidecar", "{C5BACCC6-3702-67EA-9DC6-831CC04B1F5B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Authentication.EntraAuthSidecar", "libraries\Authentication\Authentication.EntraAuthSidecar\Microsoft.Agents.Authentication.EntraAuthSidecar.csproj", "{AF001213-900E-4F54-9854-F4CD32E04946}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Authentication.EntraAuthSidecar.Tests", "tests\Microsoft.Agents.Authentication.EntraAuthSidecar.Tests\Microsoft.Agents.Authentication.EntraAuthSidecar.Tests.csproj", "{9F5BA7CE-D039-4D28-A93E-B6A46B56DC5A}"
@@ -1188,8 +1186,7 @@ Global
 		{31259C2B-611F-FC2A-9DFA-BD678A4BD271} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 		{B3DB54FE-4B52-2E96-A710-A812AA43B9E2} = {674A812C-7287-4883-97F9-697D83750648}
 		{E39BD602-432C-D76C-633B-1DC913200119} = {0F9D3F0D-C131-4D3B-A86F-59CC781E8A02}
-		{C5BACCC6-3702-67EA-9DC6-831CC04B1F5B} = {5C0A039F-B639-40D7-BC3D-759DA8AEAA66}
-		{AF001213-900E-4F54-9854-F4CD32E04946} = {C5BACCC6-3702-67EA-9DC6-831CC04B1F5B}
+		{AF001213-900E-4F54-9854-F4CD32E04946} = {5C0A039F-B639-40D7-BC3D-759DA8AEAA66}
 		{9F5BA7CE-D039-4D28-A93E-B6A46B56DC5A} = {AD743B78-D61F-4FBF-B620-FA83CE599A50}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
