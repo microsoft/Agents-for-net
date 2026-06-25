@@ -133,7 +133,7 @@ public class TeamsAgentExtension : AgentExtension
     /// <param name="handlerName">The name of the handler to use for token acquisition. If null, the default handler is used.</param>
     /// <param name="graphBaseUrl">The base URL for the Microsoft Graph API. Defaults to "https://graph.microsoft.com/v1.0".</param>
     /// <returns>A GraphServiceClient instance configured with authentication for the current turn context.</returns>
-    public GraphServiceClient GetGraph(ITurnContext turnContext, string handlerName = null, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
+    public GraphServiceClient GetGraphClient(ITurnContext turnContext, string handlerName = null, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
     {
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         return new GraphServiceClient(new TokenProvider(_agentApplication, turnContext, handlerName), graphBaseUrl);

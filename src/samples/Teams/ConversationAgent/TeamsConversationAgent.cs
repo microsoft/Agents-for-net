@@ -198,7 +198,7 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             }
         }
 
-        var graphClient = TeamsExtension.GetGraph(turnContext);
+        var graphClient = TeamsExtension.GetGraphClient(turnContext);
         var me = await graphClient.Me.GetAsync(cancellationToken: cancellationToken);
         await turnContext.SendActivityAsync($"Graph thinks you are: {me?.DisplayName}.", cancellationToken: cancellationToken);
     }
