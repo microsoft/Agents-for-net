@@ -35,7 +35,8 @@ app.UseAgents();
 // Map the default agent endpoints: GET "/" and the agent message endpoints.
 app.MapDefaultAgentEndpoints();
 
-// Add A2A endpoints.  By default A2A will respond on '/a2a'.
-app.MapA2AEndpoints(requireAuth: !app.Environment.IsDevelopment());
+// Add A2A endpoints.  By default A2A will respond on '/a2a'.  Require auth to match the
+// agent endpoints (enabled when AddAgentAuthorization configured authorization).
+app.MapA2AEndpoints(requireAuth: app.IsAgentAuthorizationConfigured());
 
 app.Run();

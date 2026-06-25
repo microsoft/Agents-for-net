@@ -472,6 +472,44 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
+        /// Indicates whether agent authorization was configured via
+        /// <see cref="AddAgentAuthorization(IHostApplicationBuilder, Action{IHostApplicationBuilder}, bool?)"/>.
+        /// </summary>
+        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="WebApplication"/>).</param>
+        /// <returns>
+        /// <see langword="true"/> if <c>AddAgentAuthorization</c> enabled authorization (and therefore registered
+        /// authentication services); otherwise <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// This is the same signal <see cref="MapDefaultAgentEndpoints"/> uses to decide whether to require
+        /// authorization. Third-party endpoint-mapping helpers (for example a custom <c>MapA2AEndpoints</c>)
+        /// can call this to align their <c>requireAuth</c> decision with the rest of the agent's endpoints
+        /// instead of re-deriving it (e.g. from the hosting environment). For example:
+        /// <code>
+        /// app.MapA2AEndpoints(requireAuth: app.IsAgentAuthorizationConfigured());
+        /// </code>
+        /// </remarks>
+        public static bool IsAgentAuthorizationConfigured(this IEndpointRouteBuilder endpoints)
+        {
+            ArgumentNullException.ThrowIfNull(endpoints);
+            return endpoints.ServiceProvider.IsAgentAuthorizationConfigured();
+        }
+
+        /// <summary>
+        /// Indicates whether agent authorization was configured via
+        /// <see cref="AddAgentAuthorization(IHostApplicationBuilder, Action{IHostApplicationBuilder}, bool?)"/>.
+        /// </summary>
+        /// <param name="services">The application's service provider (e.g. <c>app.Services</c>).</param>
+        /// <returns>
+        /// <see langword="true"/> if <c>AddAgentAuthorization</c> enabled authorization; otherwise <see langword="false"/>.
+        /// </returns>
+        public static bool IsAgentAuthorizationConfigured(this IServiceProvider services)
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            return services.GetService<AgentAuthConfigured>() != null;
+        }
+
+        /// <summary>
         /// Maps the default agent endpoints: a root health endpoint (<c>GET /</c>) and agent message
         /// endpoints for all registered <c>AgentApplication</c> types.
         /// </summary>
@@ -500,7 +538,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </remarks>
         public static IEndpointConventionBuilder MapDefaultAgentEndpoints(this IEndpointRouteBuilder endpoints, string path = "/api/messages")
         {
-            bool requireAuth = endpoints.ServiceProvider.GetService<AgentAuthConfigured>() != null;
+            bool requireAuth = endpoints.IsAgentAuthorizationConfigured();
 
             var rootEndpoint = endpoints.MapAgentRootEndpoint();
             var agentEndpoints = endpoints.MapAgentApplicationEndpoints(requireAuth: requireAuth, defaultPath: path);
