@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -36,8 +37,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     ///
     /// var app = builder.Build();
     ///
-    /// app.UseAgents()
-    ///     .MapDefaultAgentEndpoints();
+    /// app.UseAgents();
+    /// app.MapDefaultAgentEndpoints();
     /// </code>
     /// </para>
     /// <para>
@@ -474,9 +475,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Maps the default agent endpoints: a root health endpoint (<c>GET /</c>) and agent message
         /// endpoints for all registered <c>AgentApplication</c> types.
         /// </summary>
-        /// <param name="app">The web application.</param>
+        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="WebApplication"/>).</param>
         /// <param name="path">The route path for agent message endpoints. Defaults to <c>"/api/messages"</c>.</param>
-        /// <returns>The same <see cref="WebApplication"/> for chaining.</returns>
+        /// <returns>
+        /// An <see cref="IEndpointConventionBuilder"/> covering all mapped endpoints so that additional
+        /// conventions can be chained (e.g. <c>.WithMetadata(...)</c>, <c>.RequireRateLimiting(...)</c>),
+        /// consistent with framework endpoint-mapping methods such as <c>MapHealthChecks</c>.
+        /// </returns>
         /// <remarks>
         /// <para>
         /// Authorization is automatically required if <see cref="AddAgentAuthorization"/> was called
@@ -484,8 +489,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </para>
         /// <para>This is equivalent to calling:</para>
         /// <code>
-        /// app.MapAgentRootEndpoint();
-        /// app.MapAgentApplicationEndpoints(requireAuth: true/false, defaultPath: path);
+        /// endpoints.MapAgentRootEndpoint();
+        /// endpoints.MapAgentApplicationEndpoints(requireAuth: true/false, defaultPath: path);
         /// </code>
         /// <para>
         /// For custom endpoint routing (e.g., different paths per agent, additional middleware per route,
@@ -493,14 +498,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// and <see cref="AgentEndpointExtensions.MapAgentApplicationEndpoints"/> directly.
         /// </para>
         /// </remarks>
-        public static WebApplication MapDefaultAgentEndpoints(this WebApplication app, string path = "/api/messages")
+        public static IEndpointConventionBuilder MapDefaultAgentEndpoints(this IEndpointRouteBuilder endpoints, string path = "/api/messages")
         {
-            bool requireAuth = app.Services.GetService<AgentAuthConfigured>() != null;
+            bool requireAuth = endpoints.ServiceProvider.GetService<AgentAuthConfigured>() != null;
 
-            app.MapAgentRootEndpoint();
-            app.MapAgentApplicationEndpoints(requireAuth: requireAuth, defaultPath: path);
+            var rootEndpoint = endpoints.MapAgentRootEndpoint();
+            var agentEndpoints = endpoints.MapAgentApplicationEndpoints(requireAuth: requireAuth, defaultPath: path);
 
-            return app;
+            return new CompositeEndpointConventionBuilder(new[] { rootEndpoint, agentEndpoints });
         }
 
         /// <summary>
@@ -517,6 +522,38 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// An <see cref="IEndpointConventionBuilder"/> that fans out conventions to a set of underlying
+        /// builders. Used so that a single helper which maps multiple endpoints (e.g.
+        /// <see cref="MapDefaultAgentEndpoints"/>) can return one convention builder that applies chained
+        /// conventions to all of them, mirroring framework patterns such as <c>MapControllers</c>.
+        /// </summary>
+        private sealed class CompositeEndpointConventionBuilder : IEndpointConventionBuilder
+        {
+            private readonly IReadOnlyList<IEndpointConventionBuilder> _builders;
+
+            public CompositeEndpointConventionBuilder(IReadOnlyList<IEndpointConventionBuilder> builders)
+            {
+                _builders = builders;
+            }
+
+            public void Add(Action<EndpointBuilder> convention)
+            {
+                foreach (var builder in _builders)
+                {
+                    builder.Add(convention);
+                }
+            }
+
+            public void Finally(Action<EndpointBuilder> finallyConvention)
+            {
+                foreach (var builder in _builders)
+                {
+                    builder.Finally(finallyConvention);
+                }
+            }
+        }
 
         private sealed class HeaderPropagationStartupFilter : IStartupFilter
         {

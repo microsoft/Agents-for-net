@@ -13,7 +13,10 @@ builder.AddAgentDefaults()
 
 WebApplication app = builder.Build();
 
-app.UseAgents()
-    .MapDefaultAgentEndpoints();
+// Add the authentication and authorization middleware to the request pipeline.
+app.UseAgents();
+
+// Map the default agent endpoints: GET "/" and the agent message endpoints.
+app.MapDefaultAgentEndpoints();
 
 app.Run();
