@@ -46,6 +46,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. When no type filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-type routes take priority.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class ActivityRouteAttribute(string type = null, string typeRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -84,6 +85,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class InstallationUpdateRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -132,6 +134,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. When no text filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-text routes take priority.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class MessageRouteAttribute(string text = null, string textRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -190,6 +193,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. When no name filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-name routes take priority.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class EventRouteAttribute(string name = null, string nameRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -240,6 +244,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class ConversationUpdateRouteAttribute(string eventName = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -284,6 +289,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class MembersAddedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -313,6 +319,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class MembersRemovedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -342,6 +349,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class MessageReactionsAddedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -371,6 +379,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class MessageReactionsRemovedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -400,6 +409,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(HandoffHandler))]
     public class HandoffRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -430,6 +440,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(FeedbackLoopHandler))]
     public class FeedbackLoopRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -459,6 +470,7 @@ namespace Microsoft.Agents.Builder.App
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class EndOfConversationRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -475,6 +487,36 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     public static class RouteAttributeHelper
     {
+        /// <summary>
+        /// Returns the first handler delegate <see cref="Type"/> declared on a route attribute class via
+        /// <see cref="RouteHandlerTypeAttribute"/>, or <see langword="null"/> when none is declared.
+        /// </summary>
+        /// <param name="attributeType">The route attribute <see cref="Type"/> to inspect.</param>
+        public static Type GetDeclaredHandlerType(Type attributeType)
+        {
+            return attributeType?.GetCustomAttribute<RouteHandlerTypeAttribute>(inherit: true)?.HandlerType;
+        }
+
+        /// <summary>
+        /// Returns all handler delegate <see cref="Type"/> values declared on a route attribute class via
+        /// one or more <see cref="RouteHandlerTypeAttribute"/> applications. A method decorated with the
+        /// attribute is valid if it matches any of them. Returns an empty array when none are declared.
+        /// </summary>
+        /// <param name="attributeType">The route attribute <see cref="Type"/> to inspect.</param>
+        public static Type[] GetDeclaredHandlerTypes(Type attributeType)
+        {
+            if (attributeType == null)
+            {
+                return [];
+            }
+
+            return attributeType
+                .GetCustomAttributes<RouteHandlerTypeAttribute>(inherit: true)
+                .Select(a => a.HandlerType)
+                .Where(t => t != null)
+                .ToArray();
+        }
+
         /// <summary>
         /// Creates a bound delegate from <paramref name="method"/>, handling both instance and static methods.
         /// For instance methods the delegate is bound to <paramref name="app"/>; for static methods no target is bound.
