@@ -1,19 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Builder.App.Proactive;
-using System;
-using System.Linq;
-using System.Reflection;
-
 
 namespace Microsoft.Agents.Extensions.MSTeams.App;
 
 internal static class HandlerUtils
 {
-
     public static RouteHandler WrapHandler(TeamsRouteHandler handler)
     {
         return async (ctx, turnState, cancellationToken) =>

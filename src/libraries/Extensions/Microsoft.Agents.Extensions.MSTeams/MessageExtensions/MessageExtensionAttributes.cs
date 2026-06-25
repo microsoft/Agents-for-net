@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// Alternatively, <see cref="MessageExtension.OnQuery(string, QueryHandler)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
-/// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID.  Mutually exclusive with commandId.</param>
+/// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
 /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>

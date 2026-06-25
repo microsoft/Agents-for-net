@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.MSTeams.Config;
@@ -42,6 +43,8 @@ public class TeamsAgentExtension : AgentExtension
     /// <param name="agentApplication">The AgentApplication for this extension.</param>
     public TeamsAgentExtension(AgentApplication agentApplication)
     {
+        AssertionHelpers.ThrowIfNull(agentApplication, nameof(agentApplication));
+
         ChannelId = Core.Models.Channels.Msteams;
 
         Meetings = new Meeting(agentApplication, ChannelId);
@@ -115,6 +118,7 @@ public class TeamsAgentExtension : AgentExtension
     /// <returns>The Teams API client.</returns>
     public Microsoft.Teams.Api.Clients.ApiClient GetTeamsClient(ITurnContext turnContext)
     {
+        AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         return turnContext.GetTeamsApiClient();
     }
 
@@ -131,6 +135,7 @@ public class TeamsAgentExtension : AgentExtension
     /// <returns>A GraphServiceClient instance configured with authentication for the current turn context.</returns>
     public GraphServiceClient GetGraph(ITurnContext turnContext, string handlerName = null, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
     {
+        AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         return new GraphServiceClient(new TokenProvider(_agentApplication, turnContext, handlerName), graphBaseUrl);
     }
 

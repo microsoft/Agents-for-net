@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core;
-using Microsoft.Agents.Core.Models;
 
 namespace Microsoft.Agents.Extensions.MSTeams.App;
 
@@ -25,7 +24,6 @@ public class TeamsFeedbackRouteBuilder : FeedbackRouteBuilderBase<TeamsFeedbackR
     /// Assigns the specified Teams feedback loop handler to the current route.
     /// </summary>
     /// <param name="handler">The Teams feedback loop handler to associate with the route.</param>
-    /// <param name="proactive">The proactive messaging service used to create the Teams turn context.</param>
     /// <returns>The current builder instance.</returns>
     public TeamsFeedbackRouteBuilder WithHandler(TeamsFeedbackLoopHandler handler)
     {

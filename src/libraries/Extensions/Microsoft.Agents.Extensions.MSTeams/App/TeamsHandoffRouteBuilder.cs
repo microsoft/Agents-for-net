@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
-
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core;
 
@@ -28,7 +24,6 @@ public class TeamsHandoffRouteBuilder : HandoffRouteBuilderBase<TeamsHandoffRout
     /// Assigns the specified Teams handoff handler to the current route.
     /// </summary>
     /// <param name="handler">The Teams handoff handler to associate with the route.</param>
-    /// <param name="proactive">The proactive messaging service used to create the Teams turn context.</param>
     /// <returns>The current builder instance.</returns>
     public TeamsHandoffRouteBuilder WithHandler(TeamsHandoffHandler handler)
     {
