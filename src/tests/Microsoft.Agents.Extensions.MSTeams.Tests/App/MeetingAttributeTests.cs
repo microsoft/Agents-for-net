@@ -220,7 +220,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsMeetingStartRoute]
         public Task OnMeetingStartAsync(
-            ITurnContext turnContext,
+            ITeamsTurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.Meetings.MeetingDetails meeting,
             CancellationToken cancellationToken)
@@ -239,7 +239,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsMeetingEndRoute]
         public Task OnMeetingEndAsync(
-            ITurnContext turnContext,
+            ITeamsTurnContext turnContext,
             ITurnState turnState,
             Microsoft.Teams.Api.Meetings.MeetingDetails meeting,
             CancellationToken cancellationToken)
@@ -258,7 +258,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsMeetingParticipantsJoinRoute]
         public Task OnParticipantsJoinAsync(
-            ITurnContext turnContext,
+            ITeamsTurnContext turnContext,
             ITurnState turnState,
             MeetingParticipantsEventDetails participants,
             CancellationToken cancellationToken)
@@ -277,7 +277,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsMeetingParticipantsLeaveRoute]
         public Task OnParticipantsLeaveAsync(
-            ITurnContext turnContext,
+            ITeamsTurnContext turnContext,
             ITurnState turnState,
             MeetingParticipantsEventDetails participants,
             CancellationToken cancellationToken)

@@ -252,7 +252,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsTaskFetchRoute("test-verb")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAsync(
-            ITurnContext turnContext, ITurnState turnState,
+            ITeamsTurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
             CancellationToken cancellationToken)
         {
@@ -262,7 +262,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsTaskSubmitRoute("test-verb")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAsync(
-            ITurnContext turnContext, ITurnState turnState,
+            ITeamsTurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
             CancellationToken cancellationToken)
         {
@@ -272,7 +272,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsTaskFetchRoute("fetch-action", key: "action")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchCustomKeyAsync(
-            ITurnContext turnContext, ITurnState turnState,
+            ITeamsTurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
             CancellationToken cancellationToken)
         {
@@ -282,7 +282,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsTaskSubmitRoute("submit-action", key: "action")]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitCustomKeyAsync(
-            ITurnContext turnContext, ITurnState turnState,
+            ITeamsTurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
             CancellationToken cancellationToken)
         {
@@ -292,7 +292,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsTaskFetchRoute]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAnyAsync(
-            ITurnContext turnContext, ITurnState turnState,
+            ITeamsTurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
             CancellationToken cancellationToken)
         {
@@ -302,7 +302,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [TeamsTaskSubmitRoute]
         public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAnyAsync(
-            ITurnContext turnContext, ITurnState turnState,
+            ITeamsTurnContext turnContext, ITurnState turnState,
             Microsoft.Teams.Api.TaskModules.Request data,
             CancellationToken cancellationToken)
         {

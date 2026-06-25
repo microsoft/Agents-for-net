@@ -181,8 +181,9 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
     }
 
     [TeamsQueryLinkRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.AppBasedQueryLink? query, CancellationToken cancellationToken)
     {
+        var url = query?.Url;
         Logger.LogInformation("Link query received: {Url}", url);
         if (string.IsNullOrEmpty(url))
         {

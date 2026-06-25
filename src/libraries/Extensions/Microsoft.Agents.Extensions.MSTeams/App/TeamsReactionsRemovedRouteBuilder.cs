@@ -8,57 +8,56 @@ using Microsoft.Agents.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.MSTeams.App
+namespace Microsoft.Agents.Extensions.MSTeams.App;
+
+/// <summary>
+/// Provides a fluent builder for Teams message reactions removed routes.
+/// </summary>
+public class TeamsReactionsRemovedRouteBuilder : RouteBuilderBase<TeamsReactionsRemovedRouteBuilder>
 {
     /// <summary>
-    /// Provides a fluent builder for Teams message reactions removed routes.
+    /// Creates a new instance of the <see cref="TeamsReactionsRemovedRouteBuilder"/> class.
     /// </summary>
-    public class TeamsReactionsRemovedRouteBuilder : RouteBuilderBase<TeamsReactionsRemovedRouteBuilder>
+    /// <returns>A new <see cref="TeamsReactionsRemovedRouteBuilder"/>.</returns>
+    public static TeamsReactionsRemovedRouteBuilder Create()
     {
-        /// <summary>
-        /// Creates a new instance of the <see cref="TeamsReactionsRemovedRouteBuilder"/> class.
-        /// </summary>
-        /// <returns>A new <see cref="TeamsReactionsRemovedRouteBuilder"/>.</returns>
-        public static TeamsReactionsRemovedRouteBuilder Create()
-        {
-            return new TeamsReactionsRemovedRouteBuilder();
-        }
+        return new TeamsReactionsRemovedRouteBuilder();
+    }
 
-        /// <summary>
-        /// Assigns the specified Teams route handler to the current route.
-        /// </summary>
-        /// <param name="handler">The Teams-aware handler to associate with the route.</param>
-        /// <returns>The current builder instance.</returns>
-        public TeamsReactionsRemovedRouteBuilder WithHandler(TeamsRouteHandler handler)
-        {
-            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+    /// <summary>
+    /// Assigns the specified Teams route handler to the current route.
+    /// </summary>
+    /// <param name="handler">The Teams-aware handler to associate with the route.</param>
+    /// <returns>The current builder instance.</returns>
+    public TeamsReactionsRemovedRouteBuilder WithHandler(TeamsRouteHandler handler)
+    {
+        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 
-            _route.Selector = (ITurnContext context, CancellationToken _) => Task.FromResult
-            (
-                IsContextMatch(context, _route)
-                && context.Activity.IsType(ActivityTypes.MessageReaction)
-                && context.Activity?.ReactionsRemoved != null
-                && context.Activity.ReactionsRemoved.Count > 0
-            );
+        _route.Selector = (ITurnContext context, CancellationToken _) => Task.FromResult
+        (
+            IsContextMatch(context, _route)
+            && context.Activity.IsType(ActivityTypes.MessageReaction)
+            && context.Activity?.ReactionsRemoved != null
+            && context.Activity.ReactionsRemoved.Count > 0
+        );
 
-            _route.Handler = HandlerUtils.WrapHandler(handler);
+        _route.Handler = HandlerUtils.WrapHandler(handler);
 
-            return this;
-        }
+        return this;
+    }
 
-        /// <inheritdoc/>
-        public override TeamsReactionsRemovedRouteBuilder AsInvoke(bool isInvoke = true)
-        {
-            return this;
-        }
+    /// <inheritdoc/>
+    public override TeamsReactionsRemovedRouteBuilder AsInvoke(bool isInvoke = true)
+    {
+        return this;
+    }
 
-        /// <summary>
-        /// Applies Teams-specific defaults before the route is built.
-        /// </summary>
-        protected override void PreBuild()
-        {
-            _route.ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams;
-            base.PreBuild();
-        }
+    /// <summary>
+    /// Applies Teams-specific defaults before the route is built.
+    /// </summary>
+    protected override void PreBuild()
+    {
+        _route.ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams;
+        base.PreBuild();
     }
 }

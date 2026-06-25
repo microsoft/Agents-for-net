@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.MSTeams;
+using Microsoft.Agents.Extensions.MSTeams.App;
 using Microsoft.Agents.Extensions.MSTeams.TaskModules;
 
 namespace TaskModules;
@@ -15,7 +16,7 @@ public partial class TaskModulesAgent(AgentApplicationOptions options, IConfigur
 {
     private readonly string _appBaseUrl = configuration.GetValue<string>("AppBaseUrl") ?? "http://localhost:3978";
 
-    [MessageRoute]
+    [TeamsMessageRoute]
     public Task OnMessageAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         return turnContext.SendActivityAsync(MessageFactory.Attachment(new Attachment(contentType: ContentTypes.AdaptiveCard, content: CardLoader.LoadCardJson("launcher-card.json"))), cancellationToken);

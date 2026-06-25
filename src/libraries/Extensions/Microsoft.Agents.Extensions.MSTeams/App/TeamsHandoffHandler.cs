@@ -5,16 +5,15 @@ using Microsoft.Agents.Builder.State;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.MSTeams.App
-{
-    /// <summary>
-    /// Function for handling handoff activities.
-    /// </summary>
-    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
-    /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
-    /// <param name="continuation">The continuation token.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used by other objects
-    /// or threads to receive notice of cancellation.</param>
-    /// <returns>A task that represents the work queued to execute.</returns>
-    public delegate Task TeamsHandoffHandler(ITeamsTurnContext turnContext, ITurnState turnState, string continuation, CancellationToken cancellationToken);
-}
+namespace Microsoft.Agents.Extensions.MSTeams.App;
+
+/// <summary>
+/// Function for handling handoff activities.
+/// </summary>
+/// <param name="turnContext">A strongly-typed context object for this turn.</param>
+/// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+/// <param name="continuation">The continuation token.</param>
+/// <param name="cancellationToken">A cancellation token that can be used by other objects
+/// or threads to receive notice of cancellation.</param>
+/// <returns>A task that represents the work queued to execute.</returns>
+public delegate Task TeamsHandoffHandler(ITeamsTurnContext turnContext, ITurnState turnState, string continuation, CancellationToken cancellationToken);
