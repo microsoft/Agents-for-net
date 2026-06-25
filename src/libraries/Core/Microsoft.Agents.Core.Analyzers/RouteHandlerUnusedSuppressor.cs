@@ -48,6 +48,13 @@ namespace Microsoft.Agents.Core.Analyzers
 
             foreach (var diagnostic in context.ReportedDiagnostics)
             {
+                // ReportedDiagnostics is already filtered to our SupportedSuppressions, but guard explicitly
+                // to avoid any semantic-model work for diagnostics we don't suppress.
+                if (!string.Equals(diagnostic.Id, SuppressedDiagnosticId, System.StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
                 var tree = diagnostic.Location.SourceTree;
                 if (tree == null)
                 {

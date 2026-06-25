@@ -151,8 +151,8 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         }
 
         /// <summary>
-        /// Stand-in for the built-in IDE0051 analyzer: reports IDE0051 on every private, parameterless,
-        /// ordinary method so the suppressor has a diagnostic to act on without depending on Roslyn internals.
+        /// Stand-in for the built-in IDE0051 analyzer: reports IDE0051 on every private, ordinary method so
+        /// the suppressor has a diagnostic to act on without depending on Roslyn internals.
         /// </summary>
         [DiagnosticAnalyzer(LanguageNames.CSharp)]
         private sealed class FakeUnusedMemberAnalyzer : DiagnosticAnalyzer

@@ -492,7 +492,7 @@ namespace Microsoft.Agents.Builder.App
         /// <see cref="RouteHandlerTypeAttribute"/>, or <see langword="null"/> when none is declared.
         /// </summary>
         /// <param name="attributeType">The route attribute <see cref="Type"/> to inspect.</param>
-        public static Type GetDeclaredHandlerType(Type attributeType)
+        public static Type? GetDeclaredHandlerType(Type? attributeType)
         {
             return attributeType?.GetCustomAttribute<RouteHandlerTypeAttribute>(inherit: true)?.HandlerType;
         }
@@ -503,7 +503,7 @@ namespace Microsoft.Agents.Builder.App
         /// attribute is valid if it matches any of them. Returns an empty array when none are declared.
         /// </summary>
         /// <param name="attributeType">The route attribute <see cref="Type"/> to inspect.</param>
-        public static Type[] GetDeclaredHandlerTypes(Type attributeType)
+        public static Type[] GetDeclaredHandlerTypes(Type? attributeType)
         {
             if (attributeType == null)
             {
