@@ -445,6 +445,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// authentication/authorization. Set this to <see langword="false"/> (the default) if routing is
         /// already configured elsewhere in the pipeline, otherwise it will be added twice.
         /// </param>
+        /// <param name="useHeaderPropagation">When <see langword="true"/>, calls <c>app.UseHeaderPropagation()</c> to enable header propagation middleware.</param>
         /// <returns>The same <see cref="WebApplication"/> for chaining.</returns>
         /// <remarks>
         /// <para>This calls <c>app.UseAuthentication()</c> and <c>app.UseAuthorization()</c> in the
@@ -459,7 +460,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// manually instead of using this method.
         /// </para>
         /// </remarks>
-        public static WebApplication UseAgents(this WebApplication app, bool useRouting = false)
+        public static WebApplication UseAgents(this WebApplication app, bool useRouting = false, bool useHeaderPropagation = true)
         {
             if (useRouting)
             {
@@ -468,6 +469,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            if (useHeaderPropagation)
+            {
+                // Use Microsoft.Agents.Core.HeaderPropagation
+                app.UseHeaderPropagation();
+            }
+
             return app;
         }
 

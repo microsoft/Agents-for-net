@@ -60,9 +60,39 @@ app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 
 See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 
-### Agent-to-Agent Communication
+### Extensions
 
-Parent agents use `IAgentHost` to talk to child agents. Child agents need no special code. Two delivery modes: `DeliveryModes.Normal` (async replies) and `DeliveryModes.Stream` (SSE streaming).
+**Microsoft.Agents.Extensions.MSTeams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/`)
+- Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/read receipts, config pages
+- Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
+- Two routing styles: **fluent builders** (`TeamsExtension.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[TeamsQueryRoute("cmdId")]`)
+- Feature areas exposed as properties on `TeamsAgentExtension`:
+  - `TeamsExtension.MessageExtensions` — search queries, link unfurling, anonymous link unfurling, action commands, compose previews, card button clicks, settings
+  - `TeamsExtension.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
+  - `TeamsExtension.Meetings` — start/end, participants join/leave
+  - `TeamsExtension.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
+  - `TeamsExtension.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
+  - `TeamsExtension.FileConsent` — file upload consent accept/decline
+  - `TeamsExtension.Messages` — message edit/delete/undelete, read receipts, O365 connector card actions
+  - `TeamsExtension.Config` — config fetch/submit (bot configuration UI)
+- `TeamsInfo` static helper — `GetMeetingInfoAsync()`, `GetMeetingParticipantAsync()`, `GetTeamDetailsAsync()`, `GetTeamChannelsAsync()`, `GetPagedMembersAsync()`, `GetPagedTeamMembersAsync()`, `GetTeamMemberAsync()`, `GetMemberAsync()`
+- `TeamsTurnContextExtensions` — `SendTargetedActivityAsync()` for sending to specific recipients
+- `TeamsActivityExtensions` — `TeamsGetChannelId()`, `TeamsNotifyUser()`, `TeamsEnableFeedbackLoop()`, etc.
+- Route builders accept `autoSignInHandlers` and route attributes accept `signInHandlers` parameter for per-route OAuth/SSO flows; Teams SSO and OBO via Azure Bot Token Service are supported
+- Legacy `TeamsActivityHandler` in `Compat/` namespace for migration from Bot Framework SDK
+
+```csharp
+// Minimal Teams agent setup
+[TeamsExtension]
+public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
+{
+    [TeamsQueryRoute("searchCmd")]
+    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchAsync(
+        ITurnContext ctx, ITurnState state,
+        Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken ct)
+        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response { ComposeExtension = BuildResults(query) });
+}
+```
 
 ## Key Conventions
 

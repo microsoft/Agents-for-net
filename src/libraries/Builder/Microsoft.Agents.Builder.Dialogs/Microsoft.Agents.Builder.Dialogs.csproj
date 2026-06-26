@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Client\Microsoft.Agents.Client\Microsoft.Agents.Client.csproj" />
     <ProjectReference Include="..\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
+	<ProjectReference Include="..\..\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
   </ItemGroup>
 
 	<ItemGroup>
