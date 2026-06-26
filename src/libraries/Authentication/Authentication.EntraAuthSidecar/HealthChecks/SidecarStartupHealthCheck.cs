@@ -127,5 +127,37 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
 
             return services;
         }
+
+        /// <summary>
+        /// Registers an opt-in hosted service that probes the Microsoft Entra ID Agent ID sidecar once at
+        /// startup. This builder-phase overload allows the startup probe to be configured fluently alongside
+        /// the other agent registration calls:
+        /// <code>
+        /// builder.AddAgentDefaults()
+        ///     .AddAgent&lt;MyAgent&gt;()
+        ///     .AddSidecarStartupProbe(failOnUnreachable: false)
+        ///     .AddAgentAuthorization(b =&gt; b.AddAgentAspNetAuthentication());
+        /// </code>
+        /// </summary>
+        /// <remarks>
+        /// This is equivalent to <c>builder.Services.AddSidecarStartupProbe(...)</c>. See
+        /// <see cref="AddSidecarStartupProbe(IServiceCollection, bool, string, bool, TimeSpan?)"/> for parameter details.
+        /// </remarks>
+        /// <param name="builder">The host application builder.</param>
+        /// <param name="failOnUnreachable">When <c>true</c>, an unreachable sidecar throws and prevents startup. Defaults to <c>false</c>.</param>
+        /// <param name="sidecarBaseUrl">Optional sidecar base URL used only when no <see cref="SidecarHttpClient"/> is registered.</param>
+        /// <param name="bypassLocalNetworkRestriction">When <c>true</c>, disables the loopback/private-address safety check. <b>UNSAFE</b>.</param>
+        /// <param name="timeout">Optional probe timeout. Defaults to <see cref="SidecarHttpClient.DefaultTimeout"/>.</param>
+        /// <returns>The same host application builder for chaining.</returns>
+        public static IHostApplicationBuilder AddSidecarStartupProbe(
+            this IHostApplicationBuilder builder,
+            bool failOnUnreachable = false,
+            string sidecarBaseUrl = null,
+            bool bypassLocalNetworkRestriction = false,
+            TimeSpan? timeout = null)
+        {
+            builder.Services.AddSidecarStartupProbe(failOnUnreachable, sidecarBaseUrl, bypassLocalNetworkRestriction, timeout);
+            return builder;
+        }
     }
 }
