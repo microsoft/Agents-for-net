@@ -15,9 +15,6 @@ WebApplication app = builder.Build();
 
 app.UseAgents();
 
-// Use Microsoft.Agents.Core.HeaderPropagation
-app.UseHeaderPropagation();
-
 // Map agent endpoints for "/" and "/api/messages".
 app.MapDefaultAgentEndpoints();
 

@@ -17,9 +17,6 @@ WebApplication app = builder.Build();
 // Add the authentication and authorization middleware to the request pipeline.
 app.UseAgents();
 
-// Use Microsoft.Agents.Core.HeaderPropagation
-app.UseHeaderPropagation();
-
 // Map the default agent endpoints: GET "/" and the agent message endpoints.
 app.MapDefaultAgentEndpoints();
 
