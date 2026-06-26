@@ -1,50 +1,26 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using ConversationAgent;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHttpClient();
-
-// Add AgentApplicationOptions from appsettings section "AgentApplication".
-builder.AddAgentApplicationOptions();
-
-// Add basic bot functionality
-builder.AddAgent<TeamsConversationAgent>();
-
-// Register IStorage.  For development, MemoryStorage is suitable.
-// For production Agents, persisted storage should be used so
-// that state survives Agent restarts, and operates correctly
-// in a cluster of Agent instances.
-builder.Services.AddSingleton<IStorage, MemoryStorage>();
-
-// Configure the HTTP request pipeline.
-
-// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
-// configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddControllers();
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+builder.AddAgentDefaults()
+    .AddAgent<TeamsConversationAgent>()
+    .AddAgentM365AttachmentDownloader()
+    .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
 
 WebApplication app = builder.Build();
+
+// Add the authentication and authorization middleware to the request pipeline.
+app.UseAgents();
 
 // Use Microsoft.Agents.Core.HeaderPropagation
 app.UseHeaderPropagation();
 
-// Enable AspNet authentication and authorization
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Map GET "/"
-app.MapAgentRootEndpoint();
-
-// Map the endpoints for all agents using the [AgentInterface] attribute.
-// If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
-app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+// Map the default agent endpoints: GET "/" and the agent message endpoints.
+app.MapDefaultAgentEndpoints();
 
 app.Run();

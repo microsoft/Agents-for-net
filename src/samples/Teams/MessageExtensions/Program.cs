@@ -2,49 +2,27 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Storage;
 using MessageExtensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHttpClient();
-
-// Add the AgentApplication, which contains the logic for responding to
-// user messages.
-builder.AddAgent<MessageExtensionsAgent>();
-
-// Register IStorage.  For development, MemoryStorage is suitable.
-// For production Agents, persisted storage should be used so
-// that state survives Agent restarts, and operates correctly
-// in a cluster of Agent instances.
-builder.Services.AddSingleton<IStorage, MemoryStorage>();
-
-// Configure the HTTP request pipeline.
-
-// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
-// configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddControllers();
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+builder.AddAgentDefaults()
+    .AddAgent<MessageExtensionsAgent>()
+    .AddAgentM365AttachmentDownloader()
+    .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
 
 WebApplication app = builder.Build();
+
+app.UseAgents();
 
 // Use Microsoft.Agents.Core.HeaderPropagation
 app.UseHeaderPropagation();
 
-// Enable AspNet authentication and authorization
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Map GET "/"
-app.MapAgentRootEndpoint();
-
-// Map the endpoints for all agents using the [AgentInterface] attribute.
-// If there is a single IAgent/AgentApplication, the endpoints will be mapped to (e.g. "/api/message").
-app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
+// Map agent endpoints for "/" and "/api/messages".
+app.MapDefaultAgentEndpoints();
 
 // Map GET "/settings" to return the HTML for the settings page, which is defined in MessageExtensionsAgent.GetSettingsHtml().
 app.UseStaticFiles();
-
 app.MapGet("/settings", async context =>
 {
     var filePath = Path.Combine(app.Environment.WebRootPath, "settings.html");
@@ -59,12 +37,5 @@ app.MapGet("/settings", async context =>
     context.Response.ContentType = "text/html";
     await context.Response.SendFileAsync(filePath);
 });
-
-if (app.Environment.IsDevelopment())
-{
-    // Hardcoded for brevity and ease of testing. 
-    // In production, this should be set in configuration.
-    app.Urls.Add($"http://localhost:3978");
-}
 
 app.Run();
