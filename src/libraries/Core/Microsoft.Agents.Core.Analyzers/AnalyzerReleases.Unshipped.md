@@ -6,3 +6,4 @@
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 MAA001 | Usage | Error | AgentExtensionSourceGenerator
+MAA002 | Usage | Error | RouteHandlerSignatureAnalyzer
