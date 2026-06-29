@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Storage.Tests
                     { "change1", outer.State },
                 };
 
-            await storage.WriteAsync(changes, default);
+            await storage.WriteAsync((IDictionary<string, object>)changes, default);
             var items = await storage.ReadAsync(new[] { "change1" }, default);
 
             Assert.NotEmpty(items);
@@ -88,7 +88,7 @@ namespace Microsoft.Agents.Storage.Tests
         {
             var storage = new MemoryStorage();
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() => storage.WriteAsync<StoreItem>(null, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => storage.WriteAsync((IDictionary<string, StoreItem>)null, CancellationToken.None));
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var storage = new MemoryStorage();
 
-            await storage.WriteAsync(changes, CancellationToken.None);
+            await storage.WriteAsync((IDictionary<string, StoreItem>)changes, CancellationToken.None);
 
             var readStoreItems = new Dictionary<string, StoreItem>(await storage.ReadAsync<StoreItem>([key], CancellationToken.None));
 
@@ -119,6 +119,139 @@ namespace Microsoft.Agents.Storage.Tests
             Assert.Equal(storeItem.Id, readStoreItems[key].Id);
             Assert.Equal(storeItem.Topic, readStoreItems[key].Topic);
             Assert.NotNull(readStoreItems[key].ETag);
+        }
+
+        [Fact]
+        public async Task MemoryStorageV2_ReadAsync_ReturnsExplicitResults()
+        {
+            IStorageV2 storageV2 = new MemoryStorage();
+
+            var writeResults = await storageV2.WriteAsync(
+                new Dictionary<string, object>
+                {
+                    ["existing"] = new PocoItem() { Id = "1", Count = 7 },
+                },
+                cancellationToken: CancellationToken.None);
+
+            var readResults = await storageV2.ReadAsync(
+                new List<string> { "existing", "missing" },
+                cancellationToken: CancellationToken.None);
+
+            Assert.Equal(StorageOperationStatus.Succeeded, writeResults["existing"].Status);
+            Assert.NotNull(writeResults["existing"].Version);
+
+            Assert.Equal(2, readResults.Count);
+            Assert.Equal("existing", readResults["existing"].Key);
+            Assert.Equal(StorageOperationStatus.Succeeded, readResults["existing"].Status);
+            Assert.NotNull(readResults["existing"].Version);
+            Assert.IsType<PocoItem>(readResults["existing"].Value);
+            Assert.Equal("1", ((PocoItem)readResults["existing"].Value).Id);
+
+            Assert.Equal("missing", readResults["missing"].Key);
+            Assert.Equal(StorageOperationStatus.NotFound, readResults["missing"].Status);
+            Assert.Null(readResults["missing"].Value);
+            Assert.Null(readResults["missing"].Version);
+        }
+
+        [Fact]
+        public async Task MemoryStorageV2_WriteAsync_CreateOnly_ReturnsConflictWhenItemExists()
+        {
+            IStorageV2 storageV2 = new MemoryStorage();
+
+            var firstWrite = await storageV2.WriteAsync(
+                new Dictionary<string, object>
+                {
+                    ["item"] = new PocoItem() { Id = "1" },
+                },
+                new StorageWriteOptions() { Mode = StorageWriteMode.CreateOnly },
+                cancellationToken: CancellationToken.None);
+
+            var secondWrite = await storageV2.WriteAsync(
+                new Dictionary<string, object>
+                {
+                    ["item"] = new PocoItem() { Id = "2" },
+                },
+                new StorageWriteOptions() { Mode = StorageWriteMode.CreateOnly },
+                cancellationToken: CancellationToken.None);
+
+            Assert.Equal(StorageOperationStatus.Succeeded, firstWrite["item"].Status);
+            Assert.Equal(StorageOperationStatus.Conflict, secondWrite["item"].Status);
+            Assert.Equal(firstWrite["item"].Version, secondWrite["item"].Version);
+        }
+
+        [Fact]
+        public async Task MemoryStorageV2_WriteAsync_Replace_UsesVersionCondition()
+        {
+            IStorageV2 storageV2 = new MemoryStorage();
+
+            var initialWrite = await storageV2.WriteAsync(
+                new Dictionary<string, object>
+                {
+                    ["item"] = new PocoItem() { Id = "1", Count = 1 },
+                },
+                cancellationToken: CancellationToken.None);
+
+            var replaceWrite = await storageV2.WriteAsync(
+                new Dictionary<string, object>
+                {
+                    ["item"] = new PocoItem() { Id = "1", Count = 2 },
+                },
+                new StorageWriteOptions() { Mode = StorageWriteMode.Replace, ExpectedVersion = initialWrite["item"].Version },
+                cancellationToken: CancellationToken.None);
+
+            var staleWrite = await storageV2.WriteAsync(
+                new Dictionary<string, object>
+                {
+                    ["item"] = new PocoItem() { Id = "1", Count = 3 },
+                },
+                new StorageWriteOptions() { Mode = StorageWriteMode.Replace, ExpectedVersion = initialWrite["item"].Version },
+                cancellationToken: CancellationToken.None);
+
+            Assert.Equal(StorageOperationStatus.Succeeded, replaceWrite["item"].Status);
+            Assert.NotEqual(initialWrite["item"].Version, replaceWrite["item"].Version);
+            Assert.Equal(StorageOperationStatus.ConditionNotMet, staleWrite["item"].Status);
+            Assert.Equal(replaceWrite["item"].Version, staleWrite["item"].Version);
+        }
+
+        [Fact]
+        public async Task MemoryStorageV2_DeleteAsync_ReturnsExplicitOutcome()
+        {
+            IStorageV2 storageV2 = new MemoryStorage();
+
+            var writeResults = await storageV2.WriteAsync(
+                new Dictionary<string, object>
+                {
+                    ["item"] = new PocoItem() { Id = "1" },
+                },
+                cancellationToken: CancellationToken.None);
+
+            var conditionalDelete = await storageV2.DeleteAsync(
+                new List<string>
+                {
+                    "item",
+                },
+                new StorageDeleteOptions() { ExpectedVersion = "stale" },
+                cancellationToken: CancellationToken.None);
+
+            var successfulDelete = await storageV2.DeleteAsync(
+                new List<string>
+                {
+                    "item",
+                },
+                new StorageDeleteOptions() { ExpectedVersion = writeResults["item"].Version },
+                cancellationToken: CancellationToken.None);
+
+            var missingDelete = await storageV2.DeleteAsync(
+                new List<string>
+                {
+                    "item",
+                },
+                cancellationToken: CancellationToken.None);
+
+            Assert.Equal(StorageOperationStatus.ConditionNotMet, conditionalDelete["item"].Status);
+            Assert.Equal(StorageOperationStatus.Succeeded, successfulDelete["item"].Status);
+            Assert.Equal(writeResults["item"].Version, successfulDelete["item"].Version);
+            Assert.Equal(StorageOperationStatus.NotFound, missingDelete["item"].Status);
         }
     }
 
