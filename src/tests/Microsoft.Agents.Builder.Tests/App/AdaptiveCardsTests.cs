@@ -345,17 +345,21 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 return Task.FromResult(true);
             };
+            var called = false;
             ActionSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
             {
+                called = true;
                 return Task.CompletedTask;
             };
 
             // Act
+            // WithSelector is additive to the base Action.Submit matching (message activity with no text).
+            // The activity has text, so the route does not match and the handler is not invoked.
             app.AdaptiveCards.OnActionSubmit(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
-            Assert.Equal("Unexpected AdaptiveCards.OnActionSubmit() triggered for activity type: message", exception.Message);
+            Assert.False(called);
         }
 
         [Fact]
@@ -512,19 +516,21 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 return Task.FromResult(true);
             };
+            var called = false;
             SearchHandler handler = (turnContext, turnState, query, cancellationToken) =>
             {
-                Assert.Equal("test-query", query.Parameters.QueryText);
-                Assert.Equal("test-dataset", query.Parameters.Dataset);
+                called = true;
                 return Task.FromResult(searchResults);
             };
 
             // Act
+            // WithSelector is additive to the base search matching (invoke activity named "application/search").
+            // The activity name is "adaptiveCard/action", so the route does not match and the handler is not invoked.
             app.AdaptiveCards.OnSearch(routeSelector, handler);
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await app.OnTurnAsync(turnContext, CancellationToken.None));
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
-            Assert.Equal("Unexpected AdaptiveCards.OnSearch() triggered for activity type: invoke", exception.Message);
+            Assert.False(called);
         }
 
         [Fact]
