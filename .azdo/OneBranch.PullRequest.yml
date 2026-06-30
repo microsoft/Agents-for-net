@@ -7,11 +7,6 @@
 # Retail Tasks:   https://aka.ms/obpipelines/tasks                              #
 # Support:        https://aka.ms/onebranchsup                                   #
 #                                                                               #
-# NOTE: This definition lives in the microsoft/Agents-for-net repo. Because the #
-# shared build template (build-sign-package.yaml) lives in the                  #
-# Microsoft.Botframework.Builds repo, that repo is registered below under       #
-# resources.repositories (alias: builds) and the template is imported via       #
-# '...build-sign-package.yaml@builds' instead of '@self'.                       #
 #################################################################################
 
 trigger: none # https://aka.ms/obpipelines/triggers
@@ -46,11 +41,11 @@ resources:
       type: git
       name: OneBranch.Pipelines/GovernedTemplates
       ref: refs/heads/main
-    - repository: agentsdotnet
-      type: github
+    - repository: tools
+      type: githubenterprise
       endpoint: CopilotGitHub
-      name: microsoft/Agents-for-net
-      ref: $(ProjectBranch)
+      name: bic/Microsoft.Botframework.Builds
+      ref: refs/heads/main
 
 extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
@@ -81,8 +76,8 @@ extends:
           # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
 
         steps:
-          - checkout: agentsdotnet
-            displayName: 'Checkout agentsdotnet:$(ProjectBranch) to s/$(ProjectFolder)'
+          - checkout: self
+            displayName: 'Checkout self to s/$(ProjectFolder)'
             path: s/$(ProjectFolder)
             #env:
             #  ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
@@ -94,7 +89,7 @@ extends:
             env:
               ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
 
-          - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@self
+          - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
               configuration: debug
               rootProjectFolder: $(ProjectFolder)
