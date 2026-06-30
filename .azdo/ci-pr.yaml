@@ -1,0 +1,44 @@
+# Azure DevOps CI / PR build definition
+# Trigger mirrors microsoft/Agents-for-python (.azdo/ci-pr.yaml)
+# Operations mirror .github/workflows/ci.yml
+
+pr:
+- main
+- dev
+- release/*
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  configuration: 'debug'
+
+steps:
+- checkout: self
+  fetchDepth: 0
+
+- task: UseDotNet@2
+  displayName: 'Setup .NET'
+  inputs:
+    packageType: 'sdk'
+    version: '8.0.x'
+
+- pwsh: |
+    dotnet tool install --tool-path . nbgv
+    ./nbgv cloud -a
+  displayName: 'Set version variables (nbgv)'
+
+- script: echo NuGetPackageVersion $(NuGetPackageVersion)
+  displayName: 'Display NuGetPackageVersion'
+
+- script: dotnet restore AgentSdk.proj
+  displayName: 'Restore'
+
+- script: dotnet build --no-restore -c $(configuration) AgentSdk.proj
+  displayName: 'Build'
+
+- script: dotnet pack --no-build --no-restore -c $(configuration) src/Microsoft.Agents.SDK.sln
+  displayName: 'Package'
+
+- script: dotnet test --no-build --no-restore -c $(configuration) ./src/
+  displayName: 'Test'
