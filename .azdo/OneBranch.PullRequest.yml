@@ -43,7 +43,7 @@ resources:
       ref: refs/heads/main
     - repository: tools
       type: github
-      endpoint: GHE-NEXT-BIC-AgentsSdk
+      endpoint: bic-proxima-shared-stamp
       name: bic/Microsoft.Botframework.Builds
       ref: refs/heads/main
 
