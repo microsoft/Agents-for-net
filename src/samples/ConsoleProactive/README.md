@@ -21,20 +21,18 @@ All values are passed as command-line arguments (no `appsettings.json`):
 
 ```bash
 dotnet run --project src/samples/ConsoleProactive/ConsoleProactive.csproj -- \
-  <ChannelId> <ClientId> <ClientSecret> <ConversationId> <Text...>
+  [--tenant <TenantId>] <ChannelId> <ClientId> <ClientSecret> <ConversationId> <Text...>
 ```
 
 | Argument | Description |
 | --- | --- |
+| `--tenant <TenantId>` | *(Optional)* Tenant ID. If supplied, a single-tenant authority is used; otherwise the multi-tenant `botframework.com` authority is used. |
 | `ChannelId` | Channel of the target conversation (for example `msteams`). |
 | `ClientId` | Client ID of the Azure Bot / Entra app registration. |
 | `ClientSecret` | Client secret of the app registration. |
 | `ConversationId` | ID of an existing conversation to send to. |
 | `Text...` | The message text (remaining arguments are joined with spaces). |
 
-> A multi-tenant authority (`https://login.microsoftonline.com/botframework.com`) is used so a
-> Tenant Id is not required on the command line.
->
 > The `ConversationId` identifies an **existing** conversation. In a real Agent this is captured
 > during a prior turn (for example via `new Conversation(turnContext)` or
 > `Proactive.StoreConversationAsync`) and persisted to storage.

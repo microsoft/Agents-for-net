@@ -14,19 +14,35 @@ using Microsoft.Extensions.DependencyInjection;
 // RestConnectorClient directly.
 //
 // Usage:
-//   dotnet run -- <ChannelId> <ClientId> <ClientSecret> <ConversationId> <Text...>
+//   dotnet run -- [--tenant <TenantId>] <ChannelId> <ClientId> <ClientSecret> <ConversationId> <Text...>
 
-if (args.Length < 5)
+// Extract the optional "--tenant <TenantId>" flag before parsing positional arguments so it
+// can appear anywhere on the command line (the trailing Text is variadic).
+string? tenantId = null;
+var positional = new List<string>();
+for (var i = 0; i < args.Length; i++)
 {
-    Console.WriteLine("Usage: <ChannelId> <ClientId> <ClientSecret> <ConversationId> <Text...>");
+    if ((args[i] == "--tenant" || args[i] == "-t") && i + 1 < args.Length)
+    {
+        tenantId = args[++i];
+    }
+    else
+    {
+        positional.Add(args[i]);
+    }
+}
+
+if (positional.Count < 5)
+{
+    Console.WriteLine("Usage: [--tenant <TenantId>] <ChannelId> <ClientId> <ClientSecret> <ConversationId> <Text...>");
     return;
 }
 
-var channelId = args[0];
-var clientId = args[1];
-var clientSecret = args[2];
-var conversationId = args[3];
-var text = string.Join(' ', args[4..]);
+var channelId = positional[0];
+var clientId = positional[1];
+var clientSecret = positional[2];
+var conversationId = positional[3];
+var text = string.Join(' ', positional.Skip(4));
 
 // IHttpClientFactory is the only service we need from DI: MsalAuth and RestConnectorClient
 // both create HttpClient instances through it.
@@ -50,13 +66,18 @@ IActivity activity = new Activity(ActivityTypes.Message)
 .ApplyConversationReference(conversationReference);
 
 // Acquires the token used to call the channel service (Azure Bot Service connector).
-// A multi-tenant authority is used so a Tenant Id is not required on the command line.
+// When a Tenant Id is supplied a single-tenant authority is used; otherwise the multi-tenant
+// "botframework.com" authority is used.
+var authority = string.IsNullOrEmpty(tenantId)
+    ? "https://login.microsoftonline.com/botframework.com"
+    : $"https://login.microsoftonline.com/{tenantId}";
+
 IAccessTokenProvider tokenProvider = new MsalAuth(serviceProvider, new ConnectionSettings()
 {
     AuthType = AuthTypes.ClientSecret,
     ClientId = clientId,
     ClientSecret = clientSecret,
-    Authority = "https://login.microsoftonline.com/botframework.com",
+    Authority = authority,
     Scopes = [AuthenticationConstants.BotFrameworkDefaultScope]
 });
 
