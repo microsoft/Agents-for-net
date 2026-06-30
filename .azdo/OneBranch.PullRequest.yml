@@ -85,6 +85,7 @@ extends:
           - task: NuGetAuthenticate@1
           - script: dotnet tool restore
             displayName: Dotnet tools restore
+            workingDirectory: $(Pipeline.Workspace)\s\$(ProjectFolder)
             env:
               ob_restore_phase: true
 
