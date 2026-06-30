@@ -43,7 +43,7 @@ resources:
       ref: refs/heads/main
     - repository: tools
       type: githubenterprise
-      endpoint: CopilotGitHub
+      endpoint: Agents-SDK-GHE
       name: bic/Microsoft.Botframework.Builds
       ref: refs/heads/main
 
