@@ -11,13 +11,8 @@ using System.Text.Json;
 
 namespace OutlookUAM;
 
-public partial class UAMAgent : AgentApplication
+public partial class UAMAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    public UAMAgent(AgentApplicationOptions options) : base(options)
-    {
-        AdaptiveCards.OnActionExecute("personalDetailsFormSubmit", ActionExecuteHandler);
-    }
-
     [MessageRoute("-signout")]
     public Task OnSignOutAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -25,6 +20,7 @@ public partial class UAMAgent : AgentApplication
         return UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken).ContinueWith(_ => turnContext.SendActivityAsync("You have been signed out", cancellationToken: cancellationToken));
     }
 
+    [AdaptiveCardActionExecuteRoute("personalDetailsFormSubmit")]
     private async Task<AdaptiveCardInvokeResponse> ActionExecuteHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
     {
         var tokenClient = turnContext.Services.Get<IUserTokenClient>();
