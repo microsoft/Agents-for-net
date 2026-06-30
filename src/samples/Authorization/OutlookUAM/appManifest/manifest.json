@@ -1,0 +1,55 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.22",
+  "version": "1.0.0",
+  "id": "bbfe2abc-2e83-4bcb-ab04-bb040919b3d3",
+  "developer": {
+    "name": "Microsoft, Inc.",
+    "websiteUrl": "https://example.azurewebsites.net",
+    "privacyUrl": "https://example.azurewebsites.net/privacy",
+    "termsOfUseUrl": "https://example.azurewebsites.net/termsofuse"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "AgentSDK Adaptive Card OAuth",
+    "full": "AgentSDK Adaptive Card OAuth Sample"
+  },
+  "description": {
+    "short": "Sample demonstrating AgentSDK + Azure Bot Services for user authorization.",
+    "full": "This sample demonstrates how to integrate Azure AD authorization in an Agent with Single Sign-On (SSO) capabilities using Adaptive Cards built with the AgentSDK"
+  },
+  "accentColor": "#FFFFFF",
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "bbfe2abc-2e83-4bcb-ab04-bb040919b3d3",
+        "type": "bot"
+      }
+    ]
+  },
+  "bots": [
+    {
+      "botId": "bbfe2abc-2e83-4bcb-ab04-bb040919b3d3",
+      "scopes": [
+        "personal"
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "token.botframework.com",
+    "nvr248sq-3979.usw3.devtunnels.ms"
+  ],
+  "webApplicationInfo": {
+    "id": "bbfe2abc-2e83-4bcb-ab04-bb040919b3d3",
+    "resource": "api://botid-bbfe2abc-2e83-4bcb-ab04-bb040919b3d3"
+  }
+}
