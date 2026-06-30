@@ -42,7 +42,7 @@ resources:
       name: OneBranch.Pipelines/GovernedTemplates
       ref: refs/heads/main
     - repository: tools
-      type: githubenterprise
+      type: github
       endpoint: GHE-NEXT-BIC-AgentsSdk
       name: bic/Microsoft.Botframework.Builds
       ref: refs/heads/main
