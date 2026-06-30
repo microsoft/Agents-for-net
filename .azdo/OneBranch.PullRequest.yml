@@ -76,8 +76,8 @@ extends:
           # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
 
         steps:
-          - checkout: self
-            displayName: 'Checkout self to s/$(ProjectFolder)'
+          - checkout: tools
+            displayName: 'Checkout tools to s/$(ProjectFolder)'
             path: s/$(ProjectFolder)
             #env:
             #  ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
@@ -92,14 +92,14 @@ extends:
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
               configuration: debug
-              rootProjectFolder: $(ProjectFolder)
+              rootProjectFolder: $(Pipeline.Workspace)
               isOfficialBuild: false
               OutputDirectoryRoot: '$(OUTPUTROOT)'
 
           - task: CopyFiles@2
             displayName: "Copy Files for 'Publish packages (Debug)' publish task"
             inputs:
-              SourceFolder: '$(ProjectFolder)\bin'
+              SourceFolder: '$(Pipeline.Workspace)\bin'
               Contents: '**/*.nupkg'
               FlattenFolders : true
               TargetFolder: $(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT/packagesDebug
