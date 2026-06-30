@@ -20,20 +20,65 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
         return UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken).ContinueWith(_ => turnContext.SendActivityAsync("You have been signed out", cancellationToken: cancellationToken));
     }
 
+    [MessageRoute("-card")]
+    public Task OnCardAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var card = $$"""
+            {
+              "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+              "type": "AdaptiveCard",
+              "version": "1.4",
+              "body": [
+                {
+                  "type": "TextBlock",
+                  "text": "Present a form and submit it back to the originator"
+                },
+                {
+                  "type": "Input.Text",
+                  "id": "firstName",
+                  "placeholder": "What is your first name?"
+                },
+                {
+                  "type": "Input.Text",
+                  "id": "lastName",
+                  "placeholder": "What is your last name?"
+                },
+                {
+                  "type": "ActionSet",
+                  "actions": [
+                    {
+                      "type": "Action.Execute",
+                      "title": "Submit",
+                      "verb": "personalDetailsFormSubmit"
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
+        return turnContext.SendActivityAsync(MessageFactory.Attachment(new Attachment
+        {
+            ContentType = "application/vnd.microsoft.card.adaptive",
+            Content = JsonSerializer.Deserialize<JsonElement>(card)
+        }), cancellationToken: cancellationToken);
+    }
+    
     [ActionExecuteRoute("personalDetailsFormSubmit")]
-    private async Task<AdaptiveCardInvokeResponse> ActionExecuteHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
+    private async Task<AdaptiveCardInvokeResponse> ActionExecuteHandler(ITurnContext turnContext, ITurnState turnState, AdaptiveCardInvokeValue invokeValue, CancellationToken cancellationToken)
     {
         var tokenClient = turnContext.Services.Get<IUserTokenClient>();
 
         // The Action.Execute data will contain an "authentication" object to provide the token
-        if (data is JsonElement jsonElement && jsonElement.TryGetProperty("authentication", out var authenticationProperty))
+        if (!string.IsNullOrWhiteSpace(invokeValue.Authentication?.Token))
         {
-            if (authenticationProperty.TryGetProperty("token", out var tokenProperty) && !string.IsNullOrWhiteSpace(tokenProperty.ToString()))
+            // should likely exchange with UserTokenClient
+            await tokenClient.ExchangeTokenAsync(turnContext.Activity.From.Id, "graph", turnContext.Activity.ChannelId, new TokenExchangeRequest
             {
-                // should likely exchange with UserTokenClient
-                await turnContext.SendActivityAsync("You are signed in", cancellationToken: cancellationToken);
-                return AdaptiveCardInvokeResponseFactory.Message("Sign in complete");
-            }
+                Token = invokeValue.Authentication.Token
+            }, cancellationToken);
+            await turnContext.SendActivityAsync("You are signed in", cancellationToken: cancellationToken);
+            return AdaptiveCardInvokeResponseFactory.Message("Sign in complete");
         }
 
         // check if the user is already signed in
@@ -54,12 +99,16 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
                         {
                             Title = "Sign In",
                             Text = "Please sign-in",
-                            Type = "signin",
+                            Type = ActionTypes.Signin,
                             Value = response!.SignInResource.SignInLink
                         },
                     ],
-            TokenExchangeResource = response!.SignInResource.TokenExchangeResource,
-            TokenPostResource = response!.SignInResource.TokenPostResource
+            //TokenExchangeResource = response!.SignInResource.TokenExchangeResource,
+            //TokenPostResource = response!.SignInResource.TokenPostResource
+            TokenExchangeResource = new TokenExchangeResource
+            {
+                Id = Guid.NewGuid().ToString()
+            },
         };
 
         return AdaptiveCardInvokeResponseFactory.Login(oauthCard);
