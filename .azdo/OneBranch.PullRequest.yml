@@ -77,26 +77,21 @@ extends:
 
         steps:
           - checkout: self
-            displayName: 'Checkout self to s/$(ProjectFolder)'
-            path: s/$(ProjectFolder)
+            path: s/$(ProjectFolder)        # C:\__w\1\s\agnts
 
           - checkout: tools
-            displayName: 'Checkout tools to s/$(ProjectFolder)'
-            path: s/$(ProjectFolder)
-            #env:
-            #  ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
+            path: s/tools                   # keep tools separate
 
           - task: NuGetAuthenticate@1
-
           - script: dotnet tool restore
             displayName: Dotnet tools restore
             env:
-              ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
+              ob_restore_phase: true
 
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
               configuration: debug
-              rootProjectFolder: $(Pipeline.Workspace)
+              rootProjectFolder: $(Pipeline.Workspace)\s\$(ProjectFolder)   # -> ...\src\libraries exists
               isOfficialBuild: false
               OutputDirectoryRoot: '$(OUTPUTROOT)'
 
