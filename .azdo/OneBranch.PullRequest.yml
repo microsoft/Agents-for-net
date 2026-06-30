@@ -46,15 +46,11 @@ resources:
       type: git
       name: OneBranch.Pipelines/GovernedTemplates
       ref: refs/heads/main
-    # The Microsoft.Botframework.Builds repo hosts the shared build-sign-package.yaml
-    # template. It is hosted on GitHub Enterprise (microsoft.ghe.com/bic), so it is
-    # referenced with type 'githubenterprise'. Update 'endpoint' to the service
-    # connection configured for microsoft.ghe.com if it differs.
-    - repository: builds
-      type: githubenterprise
-      endpoint: MicrosoftGHE # <-- service connection to microsoft.ghe.com (update if named differently)
-      name: bic/Microsoft.Botframework.Builds
-      ref: refs/heads/main
+    - repository: agentsdotnet
+      type: github
+      endpoint: CopilotGitHub
+      name: microsoft/Agents-for-net
+      ref: $(ProjectBranch)
 
 extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
@@ -85,8 +81,8 @@ extends:
           # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
 
         steps:
-          - checkout: self
-            displayName: 'Checkout self to s/$(ProjectFolder)'
+          - checkout: agentsdotnet
+            displayName: 'Checkout agentsdotnet:$(ProjectBranch) to s/$(ProjectFolder)'
             path: s/$(ProjectFolder)
             #env:
             #  ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
@@ -98,7 +94,7 @@ extends:
             env:
               ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
 
-          - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@builds
+          - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@self
             parameters:
               configuration: debug
               rootProjectFolder: $(ProjectFolder)
