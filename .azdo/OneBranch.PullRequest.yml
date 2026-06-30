@@ -76,6 +76,10 @@ extends:
           # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
 
         steps:
+          - checkout: self
+            displayName: 'Checkout self to s/$(ProjectFolder)'
+            path: s/$(ProjectFolder)
+
           - checkout: tools
             displayName: 'Checkout tools to s/$(ProjectFolder)'
             path: s/$(ProjectFolder)
