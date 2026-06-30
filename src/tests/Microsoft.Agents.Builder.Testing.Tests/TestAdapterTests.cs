@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
@@ -173,15 +173,15 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         [Theory]
-        [InlineData(Channels.Test)]
-        [InlineData(Channels.Emulator)]
-        [InlineData(Channels.Msteams)]
-        [InlineData(Channels.Webchat)]
-        [InlineData(Channels.Cortana)]
-        [InlineData(Channels.Directline)]
-        [InlineData(Channels.Facebook)]
-        [InlineData(Channels.Slack)]
-        [InlineData(Channels.Telegram)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Test)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Emulator)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Msteams)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Webchat)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Cortana)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Directline)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Facebook)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Slack)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Telegram)]
         public async Task ShouldUseCustomChannelId(string targetChannel)
         {
             var sut = new TestAdapter(targetChannel);
@@ -222,7 +222,7 @@ namespace Microsoft.Agents.Builder.Testing
         {
             var adapter = TestAdapter.Create();
 
-            Assert.Equal(Channels.Test, adapter.Conversation.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Test, adapter.Conversation.ChannelId);
             Assert.Equal("user1", adapter.Conversation.User.Id);
             Assert.Equal("User1", adapter.Conversation.User.Name);
             Assert.Equal("bot", adapter.Conversation.Agent.Id);
