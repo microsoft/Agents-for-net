@@ -50,6 +50,39 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
+        public async Task AdaptiveCardActionExecuteRouteAttribute_InvokeValueSignature_MatchesVerb()
+        {
+            // Arrange
+            var turnContext = new TurnContext(new SimpleAdapter(), new Activity()
+            {
+                Type = ActivityTypes.Invoke,
+                Name = "adaptiveCard/action",
+                Value = ProtocolJsonSerializer.ToObject<JsonElement>(new
+                {
+                    action = new
+                    {
+                        type = "Action.Execute",
+                        verb = "doInvoke",
+                        data = new { testKey = "test-value" }
+                    }
+                }),
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelId = "channelId",
+            });
+            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            var app = new TestAdaptiveCardAttributeApp(new(() => turnState.Result) { StartTypingTimer = false });
+
+            // Act
+            await app.OnTurnAsync(turnContext, CancellationToken.None);
+
+            // Assert
+            Assert.Contains(nameof(TestAdaptiveCardAttributeApp.OnActionExecuteInvokeAsync), app.Calls);
+            Assert.DoesNotContain(nameof(TestAdaptiveCardAttributeApp.OnActionExecuteAsync), app.Calls);
+        }
+
+        [Fact]
         public async Task AdaptiveCardActionSubmitRouteAttribute_MatchesVerb()
         {
             // Arrange
@@ -141,21 +174,28 @@ namespace Microsoft.Agents.Builder.Tests.App
     {
         public List<string> Calls { get; } = [];
 
-        [AdaptiveCardActionExecuteRoute("doStuff")]
+        [ActionExecuteRoute("doStuff")]
         public Task<AdaptiveCardInvokeResponse> OnActionExecuteAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
         {
             Calls.Add(nameof(OnActionExecuteAsync));
             return Task.FromResult(AdaptiveCardInvokeResponseFactory.Message("ok"));
         }
 
-        [AdaptiveCardActionSubmitRoute("ok")]
+        [ActionExecuteRoute("doInvoke")]
+        public Task<AdaptiveCardInvokeResponse> OnActionExecuteInvokeAsync(ITurnContext turnContext, ITurnState turnState, AdaptiveCardInvokeValue value, CancellationToken cancellationToken)
+        {
+            Calls.Add(nameof(OnActionExecuteInvokeAsync));
+            return Task.FromResult(AdaptiveCardInvokeResponseFactory.Message(value.Action.Verb));
+        }
+
+        [ActionSubmitRoute("ok")]
         public Task OnActionSubmitAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
         {
             Calls.Add(nameof(OnActionSubmitAsync));
             return Task.CompletedTask;
         }
 
-        [AdaptiveCardSearchRoute("npm")]
+        [SearchRoute("npm")]
         public Task<IList<AdaptiveCardsSearchResult>> OnSearchAsync(ITurnContext turnContext, ITurnState turnState, Query<AdaptiveCardsSearchParams> query, CancellationToken cancellationToken)
         {
             Calls.Add(nameof(OnSearchAsync));

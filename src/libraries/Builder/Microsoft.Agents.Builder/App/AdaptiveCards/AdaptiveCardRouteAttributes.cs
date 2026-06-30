@@ -31,12 +31,24 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(ActionExecuteHandler))]
+    [RouteHandlerType(typeof(ActionExecuteInvokeHandler))]
     public class ActionExecuteRouteAttribute(string verb = null, string verbRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
-            var handler = RouteAttributeHelper.CreateHandlerDelegate<ActionExecuteHandler>(app, method);
-            var builder = ActionExecuteRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            var handler = RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType());
+            var builder = ActionExecuteRouteBuilder.Create();
+
+            if (handler is ActionExecuteInvokeHandler invokeHandler)
+            {
+                builder.WithHandler(invokeHandler);
+            }
+            else
+            {
+                builder.WithHandler((ActionExecuteHandler)handler);
+            }
+
+            builder.AsAgentic(isAgenticOnly).WithOrderRank(rank);
             RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
 
             if (!string.IsNullOrWhiteSpace(verb))

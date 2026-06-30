@@ -119,7 +119,33 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                     response = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken).ConfigureAwait(false);
                 }
 
-                var activity = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
+                // The InvokeResponse.Status is set to 200 OK by default. The AdaptiveCardInvokeResponse has its own status code.
+                var activity = Activity.CreateInvokeResponseActivity(response, (int)HttpStatusCode.OK);
+                await turnContext.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+            }
+
+            _route.Handler = routeHandler;
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the route to handle Action.Execute events using the specified handler.
+        /// </summary>
+        /// <param name="handler">The handler to invoke when a matching Action.Execute activity is received. Cannot be null.</param>
+        /// <returns>The current <see cref="ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
+        public ActionExecuteRouteBuilder WithHandler(ActionExecuteInvokeHandler handler)
+        {
+            AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+
+            async Task routeHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+            {
+                if (AdaptiveCardInvokeResponseFactory.TryValidateActionInvokeValue(turnContext.Activity, ActionExecuteType, out AdaptiveCardInvokeValue invokeValue, out var response))
+                {
+                    response = await handler(turnContext, turnState, invokeValue, cancellationToken).ConfigureAwait(false);
+                }
+
+                // The InvokeResponse.Status is set to 200 OK by default. The AdaptiveCardInvokeResponse has its own status code.
+                var activity = Activity.CreateInvokeResponseActivity(response, (int)HttpStatusCode.OK);
                 await turnContext.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
             }
 
