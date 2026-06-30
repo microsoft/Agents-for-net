@@ -20,7 +20,7 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
         return UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken).ContinueWith(_ => turnContext.SendActivityAsync("You have been signed out", cancellationToken: cancellationToken));
     }
 
-    [AdaptiveCardActionExecuteRoute("personalDetailsFormSubmit")]
+    [ActionExecuteRoute("personalDetailsFormSubmit")]
     private async Task<AdaptiveCardInvokeResponse> ActionExecuteHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
     {
         var tokenClient = turnContext.Services.Get<IUserTokenClient>();
@@ -43,7 +43,7 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
             return AdaptiveCardInvokeResponseFactory.Message("Already signed in");
         }
 
-        // return an OAuthCard in an login response
+        // return an OAuthCard in the InvokeResponse
         var oauthCard = new OAuthCard
         {
             Text = "Please sign-in",

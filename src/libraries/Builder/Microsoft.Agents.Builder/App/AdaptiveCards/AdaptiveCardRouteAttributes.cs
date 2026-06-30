@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// neither to match any verb. <paramref name="verb"/> and <paramref name="verbRegex"/> are mutually exclusive.
     /// The method must match the <see cref="ActionExecuteHandler"/> delegate signature.
     /// <code>
-    /// [AdaptiveCardActionExecuteRoute("doStuff")]
+    /// [ActionExecuteRoute("doStuff")]
     /// public async Task&lt;AdaptiveCardInvokeResponse&gt; OnDoStuffAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
     /// {
     ///     // Handle Action.Execute with verb "doStuff"
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(ActionExecuteHandler))]
-    public class AdaptiveCardActionExecuteRouteAttribute(string verb = null, string verbRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
+    public class ActionExecuteRouteAttribute(string verb = null, string verbRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <c>actionSubmitFilter</c> option (defaults to <c>verb</c>) is used.
     /// The method must match the <see cref="ActionSubmitHandler"/> delegate signature.
     /// <code>
-    /// [AdaptiveCardActionSubmitRoute("ok")]
+    /// [ActionSubmitRoute("ok")]
     /// public async Task OnOkAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
     /// {
     ///     // Handle Action.Submit with verb "ok"
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(ActionSubmitHandler))]
-    public class AdaptiveCardActionSubmitRouteAttribute(string verb = null, string verbRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
+    public class ActionSubmitRouteAttribute(string verb = null, string verbRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
@@ -115,7 +115,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// neither to match any dataset. <paramref name="dataset"/> and <paramref name="datasetRegex"/> are mutually
     /// exclusive. The method must match the <see cref="SearchHandler"/> delegate signature.
     /// <code>
-    /// [AdaptiveCardSearchRoute("npm")]
+    /// [SearchRoute("npm")]
     /// public async Task&lt;IList&lt;AdaptiveCardsSearchResult&gt;&gt; OnNpmSearchAsync(ITurnContext turnContext, ITurnState turnState, Query&lt;AdaptiveCardsSearchParams&gt; query, CancellationToken cancellationToken)
     /// {
     ///     // Handle search for dataset "npm"
@@ -129,7 +129,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(SearchHandler))]
-    public class AdaptiveCardSearchRouteAttribute(string dataset = null, string datasetRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
+    public class SearchRouteAttribute(string dataset = null, string datasetRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
         {
