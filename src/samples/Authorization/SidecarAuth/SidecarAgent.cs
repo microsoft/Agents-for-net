@@ -5,7 +5,6 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +24,6 @@ public class SidecarAgent : AgentApplication
 
         OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
 
-        UserAuthorization.OnUserSignInFailure(OnUserSignInFailure);
     }
 
     /// <summary>
@@ -61,19 +59,4 @@ public class SidecarAgent : AgentApplication
         await turnContext.SendActivityAsync($"**You said:** {turnContext.Activity.Text}", cancellationToken: cancellationToken);
     }
 
-    /// <summary>
-    /// This method is called when the sign-in process fails with an error indicating why . 
-    /// </summary>
-    /// <param name="turnContext"></param>
-    /// <param name="turnState"></param>
-    /// <param name="handlerName"></param>
-    /// <param name="response"></param>
-    /// <param name="initiatingActivity"></param>
-    /// <param name="cancellationToken"></param>
-    private async Task OnUserSignInFailure(ITurnContext turnContext, ITurnState turnState, string handlerName, SignInResponse response, IActivity initiatingActivity, CancellationToken cancellationToken)
-    {
-        // Raise a notification to the user that the sign-in process failed.  In a production Agent, this would be used
-        // to display alternative ways to get help, or in some cases transfer to a live agent.
-        await turnContext.SendActivityAsync($"Sign In: Failed to login to '{handlerName}': {response.Cause}/{response.Error!.Message}", cancellationToken: cancellationToken);
-    }
 }
