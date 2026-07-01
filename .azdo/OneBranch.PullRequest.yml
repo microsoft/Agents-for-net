@@ -86,6 +86,8 @@ extends:
           - script: dotnet tool restore
             displayName: Dotnet tools restore
             workingDirectory: $(Pipeline.Workspace)\s\$(ProjectFolder)
+            env:
+              ob_restore_phase: true
 
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
