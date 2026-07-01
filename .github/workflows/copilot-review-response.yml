@@ -1,0 +1,63 @@
+name: Copilot Review Response
+
+# When GitHub Copilot leaves a review (or inline review comments) on a draft PR
+# opened by the issue-triage automation, this workflow runs Copilot CLI to
+# resolve or dispute each suggestion.
+
+on:
+  pull_request_review:
+    types: [submitted]
+  pull_request_review_comment:
+    types: [created]
+
+concurrency:
+  group: copilot-review-response-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  respond:
+    # Only react to reviews authored by GitHub Copilot on triage-authored PRs
+    # (branch prefix `ai-triage/`). Guarding on the author avoids reacting to
+    # human reviews or looping on the bot's own replies.
+    if: >-
+      startsWith(github.event.pull_request.head.ref, 'ai-triage/') &&
+      (
+        contains(github.event.review.user.login, 'copilot') ||
+        contains(github.event.comment.user.login, 'copilot')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.COPILOT_CLI_PAT }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run review-response agent
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          GH_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          PROMPT="$(envsubst < .github/prompts/copilot-review-response.md)"
+          copilot -p "$PROMPT" --allow-all-tools
