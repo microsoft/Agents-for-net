@@ -83,10 +83,9 @@ extends:
             path: s/tools                   # keep tools separate
 
           - task: NuGetAuthenticate@1
-          - script: |
-              dotnet tool install nbgv --tool-path "$(Agent.TempDirectory)\dotnet-tools" --version 3.6.146
-              echo ##vso[task.prependpath]$(Agent.TempDirectory)\dotnet-tools
-            displayName: Install nbgv (local tool-path)
+          - script: dotnet tool restore
+            displayName: Dotnet tools restore
+            workingDirectory: $(Pipeline.Workspace)\s\$(ProjectFolder)
             env:
               ob_restore_phase: true
 
