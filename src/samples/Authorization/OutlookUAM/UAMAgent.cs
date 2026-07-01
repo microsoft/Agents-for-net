@@ -59,8 +59,8 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
 
         return turnContext.SendActivityAsync(MessageFactory.Attachment(new Attachment
         {
-            ContentType = "application/vnd.microsoft.card.adaptive",
-            Content = JsonSerializer.Deserialize<JsonElement>(card)
+            ContentType = ContentTypes.AdaptiveCard,
+            Content = card
         }), cancellationToken: cancellationToken);
     }
     
@@ -69,15 +69,28 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
     {
         var tokenClient = turnContext.Services.Get<IUserTokenClient>();
 
-        // The Action.Execute data will contain an "authentication" object to provide the token
+        // The Action.Execute data can contain an "authentication" object to provide the token
         if (!string.IsNullOrWhiteSpace(invokeValue.Authentication?.Token))
         {
-            // should likely exchange with UserTokenClient
-            await tokenClient.ExchangeTokenAsync(turnContext.Activity.From.Id, "graph", turnContext.Activity.ChannelId, new TokenExchangeRequest
+            try
             {
-                Token = invokeValue.Authentication.Token
-            }, cancellationToken);
-            await turnContext.SendActivityAsync("You are signed in", cancellationToken: cancellationToken);
+                TokenResponse tokenExchangeResponse = await tokenClient.ExchangeTokenAsync(turnContext.Activity.From.Id, "graph", turnContext.Activity.ChannelId, new TokenExchangeRequest
+                {
+                    Token = invokeValue.Authentication.Token
+                }, cancellationToken);
+            }
+            catch (Exception)
+            {
+                return AdaptiveCardInvokeResponseFactory.BadRequest("Token exchange failed");
+            }
+
+            return AdaptiveCardInvokeResponseFactory.Message("Sign in complete");
+        }
+
+        // State is the 6-digit code sent by the user.
+        if (!string.IsNullOrWhiteSpace(invokeValue.State))
+        {
+            var token = await tokenClient.GetUserTokenAsync(turnContext.Activity.From.Id, "graph", turnContext.Activity.ChannelId, invokeValue.State, cancellationToken);
             return AdaptiveCardInvokeResponseFactory.Message("Sign in complete");
         }
 
@@ -103,12 +116,8 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
                             Value = response!.SignInResource.SignInLink
                         },
                     ],
-            //TokenExchangeResource = response!.SignInResource.TokenExchangeResource,
-            //TokenPostResource = response!.SignInResource.TokenPostResource
-            TokenExchangeResource = new TokenExchangeResource
-            {
-                Id = Guid.NewGuid().ToString()
-            },
+            TokenExchangeResource = response!.SignInResource.TokenExchangeResource,
+            TokenPostResource = response!.SignInResource.TokenPostResource
         };
 
         return AdaptiveCardInvokeResponseFactory.Login(oauthCard);

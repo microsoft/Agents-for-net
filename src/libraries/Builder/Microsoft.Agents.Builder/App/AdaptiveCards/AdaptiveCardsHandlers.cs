@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
     /// <returns>An instance of AdaptiveCardInvokeResponse, which can be created using <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCardInvokeResponseFactory"/>.</returns>
-    public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteInvokeHandler(ITurnContext turnContext, ITurnState turnState, AdaptiveCardInvokeValue value, CancellationToken cancellationToken);
+    public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteValueHandler(ITurnContext turnContext, ITurnState turnState, AdaptiveCardInvokeValue value, CancellationToken cancellationToken);
 
     /// <summary>
     /// Function for handling Adaptive Card Action.Submit events.

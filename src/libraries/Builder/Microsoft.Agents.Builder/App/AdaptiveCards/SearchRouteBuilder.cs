@@ -168,7 +168,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                     return false;
                 }
 
-                AdaptiveCardSearchInvokeValue searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(context.Activity.Value);
+                Microsoft.Agents.Core.Models.AdaptiveCardSearchInvokeValue searchInvokeValue = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.AdaptiveCardSearchInvokeValue>(context.Activity.Value);
                 if (!IsDatasetMatch(searchInvokeValue?.Dataset))
                 {
                     return false;

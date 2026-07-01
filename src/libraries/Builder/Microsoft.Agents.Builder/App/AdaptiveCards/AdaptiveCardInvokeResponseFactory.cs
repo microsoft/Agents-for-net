@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Returns response with type <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ContentTypes.PreConditionFailed"/>.
         /// </summary>
         /// <returns>The response that includes a response that the client should display.</returns>
-        public static AdaptiveCardInvokeResponse PreConditionFailed(string message, string code = null)
+        public static AdaptiveCardInvokeResponse PreConditionFailed(string message, string code = null, string id = null, string connection = null)
         {
             return new AdaptiveCardInvokeResponse
             {
@@ -157,9 +157,9 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="searchInvokeValue">If successful, the AdaptiveCardSearchInvokeValue instance.</param>
         /// <param name="errorResponse">If failed, the AdaptiveCardInvokeResponse to reply with.</param>
         /// <returns>True if Acitivity.Value contains a valid AdaptiveCardSearchInvokeValue.</returns>
-        public static bool TryValidateSearchInvokeValue(IActivity activity, out AdaptiveCardSearchInvokeValue searchInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
+        public static bool TryValidateSearchInvokeValue(IActivity activity, out Microsoft.Agents.Core.Models.AdaptiveCardSearchInvokeValue searchInvokeValue, out AdaptiveCardInvokeResponse errorResponse)
         {
-            searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(activity.Value);
+            searchInvokeValue = ProtocolJsonSerializer.ToObject<Microsoft.Agents.Core.Models.AdaptiveCardSearchInvokeValue>(activity.Value);
 
             if (searchInvokeValue == null)
             {

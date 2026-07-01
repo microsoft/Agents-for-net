@@ -133,7 +133,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </summary>
         /// <param name="handler">The handler to invoke when a matching Action.Execute activity is received. Cannot be null.</param>
         /// <returns>The current <see cref="ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
-        public ActionExecuteRouteBuilder WithHandler(ActionExecuteInvokeHandler handler)
+        public ActionExecuteRouteBuilder WithHandler(ActionExecuteValueHandler handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
 

@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(ActionExecuteHandler))]
-    [RouteHandlerType(typeof(ActionExecuteInvokeHandler))]
+    [RouteHandlerType(typeof(ActionExecuteValueHandler))]
     public class ActionExecuteRouteAttribute(string verb = null, string verbRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
     {
         public void AddRoute(AgentApplication app, MethodInfo method)
@@ -39,7 +39,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
             var handler = RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType());
             var builder = ActionExecuteRouteBuilder.Create();
 
-            if (handler is ActionExecuteInvokeHandler invokeHandler)
+            if (handler is ActionExecuteValueHandler invokeHandler)
             {
                 builder.WithHandler(invokeHandler);
             }
