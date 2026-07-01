@@ -61,4 +61,9 @@ jobs:
         run: |
           # Expand ${REPO}, ${ISSUE_NUMBER}, ${ISSUE_TITLE} in the prompt template.
           PROMPT="$(envsubst < .github/prompts/issue-triage.md)"
+          # NOTE: --allow-all-tools is required so the agent can build/test and
+          # implement a fix. Because this workflow ingests untrusted issue content
+          # while holding a write-capable PAT, the prompt hardens against
+          # prompt-injection (see the "Security" section of the prompt template).
+          # Review that guidance before widening this workflow's capabilities.
           copilot -p "$PROMPT" --allow-all-tools
