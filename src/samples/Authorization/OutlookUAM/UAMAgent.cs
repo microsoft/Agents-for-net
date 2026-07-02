@@ -7,17 +7,17 @@ using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
-using System.Text.Json;
 
 namespace OutlookUAM;
 
 public partial class UAMAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
     [MessageRoute("-signout")]
-    public Task OnSignOutAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task OnSignOutAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // "me" is our handler, but it is using the "graph" OAuth Connection
-        return UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken).ContinueWith(_ => turnContext.SendActivityAsync("You have been signed out", cancellationToken: cancellationToken));
+        await UserAuthorization.SignOutUserAsync(turnContext, turnState, "me", cancellationToken);
+        await turnContext.SendActivityAsync("You have been signed out", cancellationToken: cancellationToken);
     }
 
     [MessageRoute("-card")]
@@ -74,7 +74,7 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
         {
             try
             {
-                TokenResponse tokenExchangeResponse = await tokenClient.ExchangeTokenAsync(turnContext.Activity.From.Id, "graph", turnContext.Activity.ChannelId, new TokenExchangeRequest
+                await tokenClient.ExchangeTokenAsync(turnContext.Activity.From.Id, "graph", turnContext.Activity.ChannelId, new TokenExchangeRequest
                 {
                     Token = invokeValue.Authentication.Token
                 }, cancellationToken);
@@ -90,7 +90,7 @@ public partial class UAMAgent(AgentApplicationOptions options) : AgentApplicatio
         // State is the 6-digit code sent by the user.
         if (!string.IsNullOrWhiteSpace(invokeValue.State))
         {
-            var token = await tokenClient.GetUserTokenAsync(turnContext.Activity.From.Id, "graph", turnContext.Activity.ChannelId, invokeValue.State, cancellationToken);
+            await tokenClient.GetUserTokenAsync(turnContext.Activity.From.Id, "graph", turnContext.Activity.ChannelId, invokeValue.State, cancellationToken);
             return AdaptiveCardInvokeResponseFactory.Message("Sign in complete");
         }
 
