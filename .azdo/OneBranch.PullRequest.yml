@@ -50,7 +50,7 @@ resources:
       type: github
       endpoint: CopilotGitHub
       name: microsoft/Agents-for-net
-      ref: $(ProjectBranch)
+      ref: $(Build.SourceBranch)
 
 extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
