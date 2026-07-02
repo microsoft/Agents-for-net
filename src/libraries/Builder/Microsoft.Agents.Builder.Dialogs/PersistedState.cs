@@ -67,6 +67,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
         {
+            ((ICollection<KeyValuePair<string, object>>)_state).CopyTo(array, arrayIndex);
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()

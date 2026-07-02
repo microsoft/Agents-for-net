@@ -163,13 +163,13 @@ namespace Microsoft.Agents.Core.Models
                 return activity;
             }
 
-            activity.Entities ??= [];
-            activity.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
-
             if (activity.Recipient == null && user == null)
             {
                 throw new InvalidOperationException("Cannot mark activity as targeted because both the Activity.Recipient and `user` argument are null. At least one must be provided.");
             }
+
+            activity.Entities ??= [];
+            activity.Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
 
             activity.Recipient = user ?? activity.Recipient;
 
