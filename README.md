@@ -47,33 +47,64 @@ Skills activate automatically — no manual loading needed. Run `/plugin` to ver
 
 ### Custom Agents (Code Review)
 
-This repository includes custom agents in `.github/agents/` for multi-model adversarial code review:
+This repository includes custom agents in `.github/agents/` that reproduce the **GitHub Copilot PR review dynamic locally**, so you can run the reviewer-vs-challenger loop *before* opening a PR and skip the review round-trips:
 
 | Agent | Model | Description |
 |-------|-------|-------------|
-| `review` | Claude Sonnet 4.5 | User-invocable coordinator — triggers both reviewers and synthesizes findings |
-| `reviewer-opus` | Claude Opus 4.8 | Adversarial reviewer (high-reasoning lens) |
-| `reviewer-gpt` | GPT-5.5 | Independent second-model reviewer |
+| `review` | Claude Opus 4.8 | User-invocable **challenger**. Invokes `reviewer-github`, then disputes or resolves each finding with a per-finding verdict: **Fix / Push back / Needs judgment** (with paste-ready rebuttals). |
+| `reviewer-github` | GPT-5.5 | **GitHub emulator** (different model, on purpose). Loads the exact instruction files GitHub Copilot code review reads and produces the findings GitHub would post. |
 
-**Usage in GitHub Copilot CLI:**
+Both agents read the same instruction files GitHub uses, so the emulated review is realistic. The review rules are a **single source of truth**: they live in `.github/instructions/code-review.instructions.md` (repository-wide) and the path-specific `*.instructions.md` files. Editing those files changes what **both** GitHub's PR review and this local loop enforce, keeping them in sync.
 
-```
-/agent              # Browse and select from available agents
-```
+#### How the loop works
 
-Or reference it directly in a prompt:
+1. **You invoke `review`** on your uncommitted changes or current branch (diff against `main`).
+2. **`review` dispatches `reviewer-github`** (GPT-5.5) to emulate GitHub Copilot code review. It
+   loads the same instruction files GitHub reads and returns the findings GitHub would post.
+3. **`review` (Claude Opus 4.8) challenges each finding** — reading the actual code at HEAD and
+   applying the anti-false-positive checks — then renders a per-finding verdict:
+   - ✅ **Fix** — valid; address it before pushing (with a fix direction).
+   - ⛔ **Push back** — false positive; you get a **paste-ready rebuttal** for the PR.
+   - 🤔 **Needs judgment** — a subjective trade-off; you decide.
 
-```
-Use the review agent to review my current changes
-```
+The result is that you arrive at the PR with fixes made and rebuttals ready, so GitHub's review has
+little left to say — eliminating the review round-trips.
 
-Or from the command line:
+#### How to run it
+
+Run this **before opening a PR**, on your current branch:
 
 ```bash
 copilot --agent=review --prompt "Review my changes"
 ```
 
-The reviewers are tailored to this codebase — they understand System.Text.Json serialization, multi-targeting (net8.0/netstandard2.0), Central Package Management, the Activity Protocol, and the layered library architecture.
+Or inside the GitHub Copilot CLI:
+
+```
+/agent                                      # Browse and select the `review` agent
+Use the review agent to review my changes   # …or invoke it directly in a prompt
+```
+
+You can also point it at specific files or a commit, e.g. `Review commit <sha>` or
+`Review src/libraries/.../Foo.cs`.
+
+#### How to customize the rules
+
+The review rules are a **single source of truth**, so local review and GitHub's PR review never
+diverge. To change what gets flagged, edit the instruction files — **not** the agents:
+
+- **Repository-wide rules:** `.github/instructions/code-review.instructions.md` (`applyTo: "**"`).
+  Add, remove, or tighten lenses and anti-false-positive checks here.
+- **Subsystem-specific rules:** the path-specific `*.instructions.md` files (they apply only when a
+  changed file matches their `applyTo` globs).
+
+Because GitHub Copilot code review reads these same files, any edit changes **both** GitHub's PR
+review and this local loop at once. (Note: organization-level instructions set in GitHub org
+settings are not stored in the repo, so the local emulator cannot see them.)
+
+The agents are tailored to this codebase — they understand System.Text.Json serialization,
+multi-targeting (net8.0/netstandard2.0), Central Package Management, the Activity Protocol, and the
+layered library architecture, all via the shared instruction files.
 
 ### Contextual Instructions
 
@@ -81,9 +112,12 @@ Path-scoped instruction files in `.github/instructions/` provide AI assistants w
 
 | Instruction File | Activates For |
 |-----------------|---------------|
+| `code-review.instructions.md` | All files — repository-wide code review rules (edit to customize what GitHub Copilot and the local `review` agent enforce) |
 | `oauth-flows.instructions.md` | UserAuth, Authentication, OAuth, SignIn code |
 | `cloudadapter-pipeline.instructions.md` | CloudAdapter, Hosting/AspNetCore, TurnContext, Middleware |
 | `streaming-response.instructions.md` | StreamingResponse, StreamInfo, LLMClient code |
+| `serialization-extension.instructions.md` | ProtocolJsonSerializer, Serialization/Converters, Entity/Serialization init |
+| `proactive-messaging.instructions.md` | Proactive, ContinueConversation, Conversation builders |
 
 ## Support
 
