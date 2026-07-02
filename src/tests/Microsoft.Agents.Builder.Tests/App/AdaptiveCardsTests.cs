@@ -180,10 +180,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
             var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
-            Assert.Equal(400, invokeResponse.Status);
+            Assert.Equal(200, invokeResponse.Status);
             Assert.IsAssignableFrom<AdaptiveCardInvokeResponse>(invokeResponse.Body);
             var acResponse = (AdaptiveCardInvokeResponse)invokeResponse.Body;
             Assert.Equal("application/vnd.microsoft.error", acResponse.Type);
+            Assert.Equal(400, acResponse.StatusCode);
             Assert.Equal("NotSupported", ((Error)acResponse.Value).Code);
         }
 
@@ -231,10 +232,11 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal(ActivityTypes.InvokeResponse, activitiesToSend[0].Type);
             Assert.IsAssignableFrom<InvokeResponse>(activitiesToSend[0].Value);
             var invokeResponse = (InvokeResponse)activitiesToSend[0].Value;
-            Assert.Equal(400, invokeResponse.Status);
+            Assert.Equal(200, invokeResponse.Status);
             Assert.IsAssignableFrom<AdaptiveCardInvokeResponse>(invokeResponse.Body);
             var acResponse = (AdaptiveCardInvokeResponse)invokeResponse.Body;
             Assert.Equal("application/vnd.microsoft.error", acResponse.Type);
+            Assert.Equal(400, acResponse.StatusCode);
             Assert.Equal("BadRequest", ((Error)acResponse.Value).Code);
         }
 

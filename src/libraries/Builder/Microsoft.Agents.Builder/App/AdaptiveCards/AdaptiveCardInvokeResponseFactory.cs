@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Returns response with type <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ContentTypes.PreConditionFailed"/>.
         /// </summary>
         /// <returns>The response that includes a response that the client should display.</returns>
-        public static AdaptiveCardInvokeResponse PreConditionFailed(string message, string code = null, string id = null, string connection = null)
+        public static AdaptiveCardInvokeResponse PreConditionFailed(string message, string code = null)
         {
             return new AdaptiveCardInvokeResponse
             {
