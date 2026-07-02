@@ -32,10 +32,11 @@ review rules and always applies.
 
 1. **Get the changes.** The coordinator passes you a diff or file set. Otherwise use
    `git diff main...HEAD` (list files with `git diff --name-only main...HEAD`).
-2. **Load applicable instructions.** Always load `copilot-instructions.md` and
-   `code-review.instructions.md`. For every other file under `.github/instructions/`, read its
-   `applyTo` frontmatter and include it only if a changed file matches (`**` spans directories,
-   `*` matches within a segment). List which files you loaded and what triggered each.
+2. **Load applicable instructions.** Always load `.github/copilot-instructions.md` and
+   `.github/instructions/code-review.instructions.md`. For every other file under
+   `.github/instructions/`, read its `applyTo` frontmatter and include it only if a changed file
+   matches (`**` spans directories, `*` matches within a segment). List which files you loaded and
+   what triggered each.
 3. **Review against those instructions.** Apply their lenses, anti-false-positive checks, and
    severities. Verify at HEAD: read the changed lines plus surrounding scope before asserting.
    Cite an exact `path:line` for every finding.
@@ -45,9 +46,9 @@ review rules and always applies.
 ## Output Format
 
 ### Instructions applied
-- `copilot-instructions.md` (repo-wide)
-- `code-review.instructions.md` (repo-wide)
-- `<name>.instructions.md` — triggered by `<changed file>` matching `<glob>`
+- `.github/copilot-instructions.md` (repo-wide)
+- `.github/instructions/code-review.instructions.md` (repo-wide)
+- `.github/instructions/<name>.instructions.md` — triggered by `<changed file>` matching `<glob>`
 - (Note if organization-level instructions may exist but are not visible locally.)
 
 ### Findings

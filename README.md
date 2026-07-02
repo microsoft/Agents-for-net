@@ -54,7 +54,7 @@ This repository includes custom agents in `.github/agents/` that reproduce the *
 | `review` | Claude Opus 4.8 | User-invocable **challenger**. Invokes `reviewer-github`, then disputes or resolves each finding with a per-finding verdict: **Fix / Push back / Needs judgment** (with paste-ready rebuttals). |
 | `reviewer-github` | GPT-5.5 | **GitHub emulator** (different model, on purpose). Loads the exact instruction files GitHub Copilot code review reads and produces the findings GitHub would post. |
 
-Both agents read the same instruction files GitHub uses, so the emulated review is realistic. The review rules are a **single source of truth**: they live in `.github/instructions/code-review.instructions.md` (repository-wide) and the path-specific `*.instructions.md` files. Editing those files changes what **both** GitHub's PR review and this local loop enforce, keeping them in sync.
+Both agents read the same instruction files GitHub uses, so the emulated review is realistic. The review rules are a **single source of truth**: they live in `.github/copilot-instructions.md` (repository-wide) and the `.github/instructions/*.instructions.md` files — `code-review.instructions.md` (repo-wide rules) plus the path-specific ones. Editing any of these changes what **both** GitHub's PR review and this local loop enforce, keeping them in sync.
 
 #### How the loop works
 
