@@ -53,40 +53,36 @@ resources:
       ref: refs/heads/main
 
 extends:
-  template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
+  template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates
   parameters:
-    globalSdl: # https://aka.ms/obpipelines/sdl
+    featureFlags:
+      WindowsHostVersion:
+        Version: 2022
+        Network: KS1
+
+    globalSdl:
       tsa:
-        enabled: false # onebranch publish all sdl results to TSA. If TSA is disabled all SDL tools will forced into 'break' build mode.
-      # credscan:
-      #   suppressionsFile: $(Build.SourcesDirectory)\.config\CredScanSuppressions.json
+        enabled: false
       binskim:
-        break: true # always break the build on binskim issues. You can disable it by setting to 'false'
+        break: true
       policheck:
-        break: true # always break the build on policheck issues. You can disable it by setting to 'false'
-      # suppression:
-      #   suppressionFile: $(Build.SourcesDirectory)\.gdn\global.gdnsuppress
+        break: true
 
     stages:
     - stage: Build_Assets
       jobs:
       - job: Debug
         pool:
-          type: windows  # read more about custom job pool types at https://aka.ms/obpipelines/yaml/jobs
-
-        variables: # More settings at https://aka.ms/obpipelines/yaml/jobs
-          ob_outputDirectory: '$(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
-          ob_sdl_binskim_break: true # https://aka.ms/obpipelines/sdl
-          ob_git_fetchDepth: -1 # https://aka.ms/obpipelines/git
-          # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
-
+          type: windows
+        variables:
+          ob_outputDirectory: '$(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT'
+          ob_sdl_binskim_break: true
+          ob_git_fetchDepth: -1
         steps:
           - checkout: agentsdotnet
-            path: s/$(ProjectFolder)        # C:\__w\1\s\agnts
-
+            path: s/$(ProjectFolder)
           - checkout: tools
-            path: s/tools                   # keep tools separate
-
+            path: s/tools
           - task: NuGetAuthenticate@1
           - script: dotnet tool restore
             displayName: Dotnet tools restore
