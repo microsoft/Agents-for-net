@@ -76,15 +76,14 @@ extends:
           # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
 
         steps:
-          - checkout: self
-            path: s          # OneBranch pre-syncs self to the 's' root; pinning path: s
-                             # keeps it there so no relocation (updaterepositorypath) is
-                             # attempted. A second checkout would otherwise force self into
-                             # s\Agents-for-net, and that blocked move triggers a network
-                             # git fetch that fails in the isolated build container.
-
-          - checkout: tools
-            # No custom path: lands at s\Microsoft.Botframework.Builds.
+          # No explicit '- checkout' steps.
+          # OneBranch syncs sources on the host during its network-enabled restore phase,
+          # then runs job steps in a sealed, network-isolated container. An explicit
+          # '- checkout' runs the "Get sources" task INSIDE that container, which always
+          # issues a 'git fetch' and fails (no network -> github.com:443 unreachable).
+          # Omitting checkout lets 'self' be host-synced to $(Build.SourcesDirectory) ('s').
+          # The '@tools' template is resolved at compile time from resources.repositories,
+          # so it does not require a runtime checkout of the tools repo.
 
           - task: NuGetAuthenticate@1
           - script: dotnet tool restore
