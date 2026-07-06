@@ -30,7 +30,7 @@ variables:
   OUTPUTROOT: $(REPOROOTDIRECTORY)\bin
   NUGET_XMLDOC_MODE: none
   EnableLocalization: true
-  ProjectFolder : "agnts"
+  ProjectFolder : "Agents-for-net"   # default checkout folder name under 's' (matches repo name)
   system_accesstoken: $(System.AccessToken)
 
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest' # https://aka.ms/obpipelines/containers
@@ -77,23 +77,24 @@ extends:
 
         steps:
           - checkout: self
-            # No custom path: reuse the location OneBranch pre-synced (D:\a\_work\1\s)
-            # to avoid a move + git fetch inside the network-isolated build container.
+            # No custom path: OneBranch pre-syncs self to s\Agents-for-net.
+            # Setting a custom path is blocked by OneBranch policy (updaterepositorypath),
+            # which forces a re-init + git fetch that fails in the network-isolated container.
 
           - checkout: tools
-            path: tools                     # sibling of 's', keep tools separate
+            # No custom path: lands at s\Microsoft.Botframework.Builds.
 
           - task: NuGetAuthenticate@1
           - script: dotnet tool restore
             displayName: Dotnet tools restore
-            workingDirectory: $(Build.SourcesDirectory)
+            workingDirectory: $(Build.SourcesDirectory)\$(ProjectFolder)
             env:
               ob_restore_phase: true
 
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
               configuration: debug
-              rootProjectFolder: $(Build.SourcesDirectory)   # contains src\libraries
+              rootProjectFolder: $(Build.SourcesDirectory)\$(ProjectFolder)   # contains src\libraries
               isOfficialBuild: false
               OutputDirectoryRoot: '$(OUTPUTROOT)'
 
