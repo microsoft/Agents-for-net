@@ -77,10 +77,11 @@ extends:
 
         steps:
           - checkout: self
-            path: s/$(ProjectFolder)        # C:\__w\1\s\agnts
+            # No custom path: reuse the location OneBranch pre-synced (D:\a\_work\1\s)
+            # to avoid a move + git fetch inside the network-isolated build container.
 
           - checkout: tools
-            path: s/tools                   # keep tools separate
+            path: tools                     # sibling of 's', keep tools separate
 
           - task: NuGetAuthenticate@1
           - script: dotnet tool restore
@@ -92,7 +93,7 @@ extends:
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
               configuration: debug
-              rootProjectFolder: $(Pipeline.Workspace)\s\$(ProjectFolder)   # -> ...\src\libraries exists
+              rootProjectFolder: $(Build.SourcesDirectory)   # contains src\libraries
               isOfficialBuild: false
               OutputDirectoryRoot: '$(OUTPUTROOT)'
 
