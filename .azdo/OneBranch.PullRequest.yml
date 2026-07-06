@@ -77,9 +77,11 @@ extends:
 
         steps:
           - checkout: self
-            # No custom path: OneBranch pre-syncs self to s\Agents-for-net.
-            # Setting a custom path is blocked by OneBranch policy (updaterepositorypath),
-            # which forces a re-init + git fetch that fails in the network-isolated container.
+            path: s          # OneBranch pre-syncs self to the 's' root; pinning path: s
+                             # keeps it there so no relocation (updaterepositorypath) is
+                             # attempted. A second checkout would otherwise force self into
+                             # s\Agents-for-net, and that blocked move triggers a network
+                             # git fetch that fails in the isolated build container.
 
           - checkout: tools
             # No custom path: lands at s\Microsoft.Botframework.Builds.
