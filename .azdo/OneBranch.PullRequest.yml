@@ -30,7 +30,7 @@ variables:
   OUTPUTROOT: $(REPOROOTDIRECTORY)\bin
   NUGET_XMLDOC_MODE: none
   EnableLocalization: true
-  ProjectFolder : "Agents-for-net"   # default checkout folder name under 's' (matches repo name)
+  ProjectFolder : "agnts"
   system_accesstoken: $(System.AccessToken)
 
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest' # https://aka.ms/obpipelines/containers
@@ -45,6 +45,11 @@ resources:
       type: github
       endpoint: bic-proxima-shared-stamp
       name: bic/Microsoft.Botframework.Builds
+      ref: refs/heads/main
+    - repository: agentsdotnet
+      type: github
+      endpoint: CopilotGitHub
+      name: microsoft/Agents-for-net
       ref: refs/heads/main
 
 extends:
@@ -76,14 +81,11 @@ extends:
           # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
 
         steps:
-          # No explicit '- checkout' steps.
-          # OneBranch syncs sources on the host during its network-enabled restore phase,
-          # then runs job steps in a sealed, network-isolated container. An explicit
-          # '- checkout' runs the "Get sources" task INSIDE that container, which always
-          # issues a 'git fetch' and fails (no network -> github.com:443 unreachable).
-          # Omitting checkout lets 'self' be host-synced to $(Build.SourcesDirectory) ('s').
-          # The '@tools' template is resolved at compile time from resources.repositories,
-          # so it does not require a runtime checkout of the tools repo.
+          - checkout: agentsdotnet
+            path: s/$(ProjectFolder)        # C:\__w\1\s\agnts
+
+          - checkout: tools
+            path: s/tools                   # keep tools separate
 
           - task: NuGetAuthenticate@1
           - script: dotnet tool restore
@@ -95,7 +97,7 @@ extends:
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
               configuration: debug
-              rootProjectFolder: $(Build.SourcesDirectory)   # s root, contains src\libraries
+              rootProjectFolder: $(Pipeline.Workspace)\s\$(ProjectFolder)   # -> ...\src\libraries exists
               isOfficialBuild: false
               OutputDirectoryRoot: '$(OUTPUTROOT)'
 
