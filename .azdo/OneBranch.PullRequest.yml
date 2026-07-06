@@ -46,11 +46,6 @@ resources:
       endpoint: bic-proxima-shared-stamp
       name: bic/Microsoft.Botframework.Builds
       ref: refs/heads/main
-    - repository: agentsdotnet
-      type: github
-      endpoint: CopilotGitHub
-      name: microsoft/Agents-for-net
-      ref: $(Build.SourceBranch)
 
 extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
@@ -81,7 +76,7 @@ extends:
           # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
 
         steps:
-          - checkout: agentsdotnet
+          - checkout: self
             path: s/$(ProjectFolder)        # C:\__w\1\s\agnts
 
           - checkout: tools
