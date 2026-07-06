@@ -87,14 +87,14 @@ extends:
           - task: NuGetAuthenticate@1
           - script: dotnet tool restore
             displayName: Dotnet tools restore
-            workingDirectory: $(Build.SourcesDirectory)\$(ProjectFolder)
+            workingDirectory: $(Build.SourcesDirectory)
             env:
               ob_restore_phase: true
 
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
               configuration: debug
-              rootProjectFolder: $(Build.SourcesDirectory)\$(ProjectFolder)   # contains src\libraries
+              rootProjectFolder: $(Build.SourcesDirectory)   # s root, contains src\libraries
               isOfficialBuild: false
               OutputDirectoryRoot: '$(OUTPUTROOT)'
 
