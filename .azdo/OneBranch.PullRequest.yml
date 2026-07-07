@@ -33,7 +33,7 @@ variables:
   ProjectFolder : "agnts"
   system_accesstoken: $(System.AccessToken)
 
-  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest' # https://aka.ms/obpipelines/containers
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest' # https://aka.ms/obpipelines/containers
 
 resources:
   repositories:
@@ -57,7 +57,7 @@ extends:
   parameters:
     featureFlags:
       WindowsHostVersion:
-        Version: 2022
+        Version: 1ESWindows2022
         Network: KS1
 
     globalSdl:
