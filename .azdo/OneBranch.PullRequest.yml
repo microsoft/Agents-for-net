@@ -59,6 +59,8 @@ extends:
       WindowsHostVersion:
         Version: 1ESWindows2019
         Network: KS1
+      networkisolation:
+        policy: GitHub,Permissive
 
     globalSdl:
       tsa:
@@ -81,8 +83,12 @@ extends:
         steps:
           - checkout: agentsdotnet
             path: s/$(ProjectFolder)
+            env:
+              ob_restore_phase: true
           - checkout: tools
             path: s/tools
+            env:
+              ob_restore_phase: true
           - task: NuGetAuthenticate@1
           - script: dotnet tool restore
             displayName: Dotnet tools restore
