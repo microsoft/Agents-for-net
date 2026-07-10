@@ -74,10 +74,10 @@ extends:
             #env:
               #ob_restore_phase: true
 
-          - checkout: tools
-            path: s/tools
-            #env:
-              #ob_restore_phase: true
+          #- checkout: tools
+          #  path: s/tools
+          #  env:
+          #    ob_restore_phase: true
 
           - task: NuGetAuthenticate@1
 
