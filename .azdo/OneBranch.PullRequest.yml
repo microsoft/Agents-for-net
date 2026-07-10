@@ -116,9 +116,6 @@ extends:
           ob_sdl_binskim_break: true
           ob_git_fetchDepth: -1
         steps:
-          # Rely on the artifact from the 'Templates' job instead of re-checking out.
-          - checkout: none
-
           - download: current
             artifact: drop_Build_Assets_Templates
             displayName: "Download staged sources from 'Templates' job"
