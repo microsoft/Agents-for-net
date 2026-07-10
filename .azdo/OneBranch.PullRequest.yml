@@ -46,20 +46,10 @@ resources:
       endpoint: bic-proxima-shared-stamp
       name: bic/Microsoft.Botframework.Builds
       ref: refs/heads/main
-    - repository: agentsdotnet
-      type: github
-      endpoint: CopilotGitHub
-      name: microsoft/Agents-for-net
-      ref: refs/heads/main
 
 extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates
   parameters:
-    featureFlags:
-      WindowsHostVersion:
-        Version: 1ESWindows2019
-        Network: KS1
-
     globalSdl:
       tsa:
         enabled: false
@@ -71,15 +61,22 @@ extends:
     stages:
     - stage: Build_Assets
       jobs:
-      - job: Debug
+      # ----------------------------------------------------------------------------
+      # Definition 1 ("Templates"): runs first.
+      # Owns everything that only requires the OneBranch governed 'templates' repo /
+      # environment prep (checkout, auth, tool restore). It stages the checked-out
+      # sources into ob_outputDirectory so OneBranch auto-publishes them as the
+      # pipeline artifact 'drop_Build_Assets_Templates', which the 'Tools' job
+      # consumes downstream.
+      # ----------------------------------------------------------------------------
+      - job: Templates
         pool:
           type: windows
         variables:
           ob_outputDirectory: '$(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT'
-          ob_sdl_binskim_break: true
           ob_git_fetchDepth: -1
         steps:
-          - checkout: agentsdotnet
+          - checkout: self
             path: s/$(ProjectFolder)
           - checkout: tools
             path: s/tools
@@ -87,6 +84,65 @@ extends:
           - script: dotnet tool restore
             displayName: Dotnet tools restore
             workingDirectory: $(Build.SourcesDirectory)
+            env:
+              ob_restore_phase: true
+
+          # Stage the checked-out sources so they flow to the downstream 'Tools' job.
+          - task: CopyFiles@2
+            displayName: "Stage self sources for downstream 'Tools' job"
+            inputs:
+              SourceFolder: '$(Pipeline.Workspace)/s/$(ProjectFolder)'
+              Contents: '**'
+              TargetFolder: '$(ob_outputDirectory)/sources/$(ProjectFolder)'
+          - task: CopyFiles@2
+            displayName: "Stage tools sources for downstream 'Tools' job"
+            inputs:
+              SourceFolder: '$(Pipeline.Workspace)/s/tools'
+              Contents: '**'
+              TargetFolder: '$(ob_outputDirectory)/sources/tools'
+
+      # ----------------------------------------------------------------------------
+      # Definition 2 ("Tools"): runs last (dependsOn Templates).
+      # Consumes the sources published by the 'Templates' job, then runs the 'tools'
+      # repo build-sign-package template and copies the produced packages/logs into
+      # ONEBRANCH_ARTIFACT for publishing. Keeps the original build behavior intact.
+      # ----------------------------------------------------------------------------
+      - job: Tools
+        dependsOn: Templates
+        pool:
+          type: windows
+        variables:
+          ob_outputDirectory: '$(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT'
+          ob_sdl_binskim_break: true
+          ob_git_fetchDepth: -1
+        steps:
+          # Rely on the artifact from the 'Templates' job instead of re-checking out.
+          - checkout: none
+
+          - download: current
+            artifact: drop_Build_Assets_Templates
+            displayName: "Download staged sources from 'Templates' job"
+
+          # Restore the sources into the workspace paths expected by the build template.
+          - task: CopyFiles@2
+            displayName: 'Restore self sources from Templates artifact'
+            inputs:
+              SourceFolder: '$(Pipeline.Workspace)/drop_Build_Assets_Templates/sources/$(ProjectFolder)'
+              Contents: '**'
+              TargetFolder: '$(Pipeline.Workspace)/s/$(ProjectFolder)'
+          - task: CopyFiles@2
+            displayName: 'Restore tools sources from Templates artifact'
+            inputs:
+              SourceFolder: '$(Pipeline.Workspace)/drop_Build_Assets_Templates/sources/tools'
+              Contents: '**'
+              TargetFolder: '$(Pipeline.Workspace)/s/tools'
+
+          # Env prep must be repeated because each job runs on a fresh agent; this keeps
+          # the build functionally identical to the original single-job pipeline.
+          - task: NuGetAuthenticate@1
+          - script: dotnet tool restore
+            displayName: Dotnet tools restore
+            workingDirectory: $(Pipeline.Workspace)\s\$(ProjectFolder)
             env:
               ob_restore_phase: true
 
