@@ -77,15 +77,9 @@ extends:
 
           - task: NuGetAuthenticate@1
 
-          - script: dir $(Pipeline.Workspace)
-            displayName: "List files"
-            workingDirectory: $(Build.SourcesDirectory)
-
           - script: dotnet tool restore --configfile $(Pipeline.Workspace)/s/$(ProjectFolder)/.azdo/nuget.config
             displayName: Dotnet tools restore
             workingDirectory: $(Build.SourcesDirectory)
-            env:
-              ob_restore_phase: true
 
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
