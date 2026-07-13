@@ -545,6 +545,68 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
+        /// Selects the first handler delegate <see cref="Type"/> declared on <paramref name="attributeType"/> via
+        /// <see cref="RouteHandlerTypeAttribute"/> whose <c>Invoke</c> signature matches <paramref name="method"/>,
+        /// then creates a bound delegate of that type. This lets a single route attribute accept more than one
+        /// handler signature (for example <c>ActionExecuteHandler</c> or <c>ActionExecuteInvokeHandler</c>),
+        /// resolving the concrete delegate from the decorated method at registration time.
+        /// </summary>
+        /// <remarks>
+        /// Open/unbound generic declared handler types (for example <c>typeof(FetchHandler&lt;&gt;)</c>) are skipped,
+        /// matching the analyzer behavior; use <see cref="InvokeGenericWithHandler"/> for those. When no declared
+        /// handler matches, an exception is thrown — though the MAA002 analyzer normally surfaces the mismatch at
+        /// compile time before this code runs.
+        /// </remarks>
+        /// <param name="app">The agent application to bind the delegate to for instance methods.</param>
+        /// <param name="method">The decorated method to wrap as a delegate.</param>
+        /// <param name="attributeType">The route attribute <see cref="Type"/> declaring the candidate handler types.</param>
+        /// <returns>A delegate of the matching declared handler type, bound to <paramref name="app"/> for instance methods.</returns>
+        public static Delegate CreateMatchingHandlerDelegate(AgentApplication app, MethodInfo method, Type attributeType)
+        {
+            foreach (var handlerType in GetDeclaredHandlerTypes(attributeType))
+            {
+                if (handlerType.ContainsGenericParameters)
+                {
+                    continue;
+                }
+
+                var invoke = handlerType.GetMethod("Invoke");
+                if (invoke != null && SignatureMatches(method, invoke))
+                {
+                    return CreateHandlerDelegate(app, method, handlerType);
+                }
+            }
+
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                Errors.ErrorHelper.RouteHandlerSignatureMismatch, null, method.Name, attributeType.Name);
+        }
+
+        private static bool SignatureMatches(MethodInfo method, MethodInfo invoke)
+        {
+            if (method.ReturnType != invoke.ReturnType)
+            {
+                return false;
+            }
+
+            var methodParams = method.GetParameters();
+            var invokeParams = invoke.GetParameters();
+            if (methodParams.Length != invokeParams.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < methodParams.Length; i++)
+            {
+                if (methodParams[i].ParameterType != invokeParams[i].ParameterType)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Infers the generic type parameter from the method's third parameter, creates a delegate of
         /// <c>openHandlerType&lt;T&gt;</c>, then finds and invokes the generic <c>WithHandler&lt;T&gt;</c>
         /// method on <paramref name="builder"/>.
