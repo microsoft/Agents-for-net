@@ -74,6 +74,8 @@ extends:
         steps:
           - checkout: self
             path: s/$(ProjectFolder)
+            env:
+              ob_restore_phase: true
 
           - checkout: tools
             path: s/tools
@@ -83,8 +85,8 @@ extends:
           - script: dotnet tool restore --configfile $(Pipeline.Workspace)/s/$(ProjectFolder)/.azdo/nuget.config
             displayName: Dotnet tools restore
             workingDirectory: $(Build.SourcesDirectory)
-            #env:
-              #ob_restore_phase: true
+            env:
+              ob_restore_phase: true
 
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
