@@ -30,7 +30,7 @@ variables:
   OUTPUTROOT: $(REPOROOTDIRECTORY)\bin
   NUGET_XMLDOC_MODE: none
   EnableLocalization: true
-  ProjectFolder : "agnts"
+  #ProjectFolder : "agnts"
   system_accesstoken: $(System.AccessToken)
 
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest' # https://aka.ms/obpipelines/containers
@@ -73,7 +73,7 @@ extends:
           ob_git_fetchDepth: -1
         steps:
           - checkout: self
-            path: s/$(ProjectFolder)
+            path: s
             env:
               ob_restore_phase: true
 
@@ -82,7 +82,7 @@ extends:
 
           - task: NuGetAuthenticate@1
 
-          - script: dotnet tool restore --configfile $(Pipeline.Workspace)/s/$(ProjectFolder)/.azdo/nuget.config
+          - script: dotnet tool restore --configfile $(Build.SourcesDirectory)/.azdo/nuget.config
             displayName: Dotnet tools restore
             workingDirectory: $(Build.SourcesDirectory)
             env:
@@ -91,7 +91,7 @@ extends:
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
               configuration: debug
-              rootProjectFolder: '$(Pipeline.Workspace)\s\$(ProjectFolder)'   # -> ...\src\libraries exists
+              rootProjectFolder: '$(Build.SourcesDirectory)'   # -> ...\src\libraries exists
               isOfficialBuild: false
               OutputDirectoryRoot: '$(OUTPUTROOT)'
 
