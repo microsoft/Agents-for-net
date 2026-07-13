@@ -88,10 +88,10 @@ extends:
 
           - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
-            configuration: debug
-            rootProjectFolder: '$(Pipeline.Workspace)\s\$(ProjectFolder)'   # -> ...\src\libraries exists
-            isOfficialBuild: false
-            OutputDirectoryRoot: '$(OUTPUTROOT)'
+              configuration: debug
+              rootProjectFolder: '$(Pipeline.Workspace)\s\$(ProjectFolder)'   # -> ...\src\libraries exists
+              isOfficialBuild: false
+              OutputDirectoryRoot: '$(OUTPUTROOT)'
 
           - task: CopyFiles@2
             displayName: "Copy Files for 'Publish packages (Debug)' publish task"
