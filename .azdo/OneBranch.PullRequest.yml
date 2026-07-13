@@ -9,7 +9,9 @@
 #                                                                               #
 #################################################################################
 
-trigger: none # https://aka.ms/obpipelines/triggers
+trigger:
+- main
+- rel/*
 
 parameters: # parameters are shown up in ADO UI in a build queue time
 - name: 'debug'
@@ -30,7 +32,6 @@ variables:
   OUTPUTROOT: $(REPOROOTDIRECTORY)\bin
   NUGET_XMLDOC_MODE: none
   EnableLocalization: true
-  #ProjectFolder : "agnts"
   system_accesstoken: $(System.AccessToken)
 
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest' # https://aka.ms/obpipelines/containers
