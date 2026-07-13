@@ -99,7 +99,7 @@ extends:
           - task: CopyFiles@2
             displayName: "Copy Files for 'Publish packages (Debug)' publish task"
             inputs:
-              SourceFolder: '$(Pipeline.Workspace)\bin'
+              SourceFolder: '$(Build.SourcesDirectory)\bin'
               Contents: '**/*.nupkg'
               FlattenFolders : true
               TargetFolder: $(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT/packagesDebug
