@@ -50,6 +50,9 @@ resources:
 extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates
   parameters:
+    featureFlags:
+        networkisolation:
+          policy: GitHub,Permissive
     globalSdl:
       tsa:
         enabled: false
