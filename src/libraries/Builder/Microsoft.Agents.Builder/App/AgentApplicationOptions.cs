@@ -138,13 +138,14 @@ namespace Microsoft.Agents.Builder.App
             string configKey = "AgentApplication",
             ILoggerFactory loggerFactory = null)
         {
+            storage ??= sp.GetService<IStorage>() ?? new MemoryStorage();
             LoggerFactory = loggerFactory ?? DefaultLoggerFactory;
 
 #pragma warning disable CS0618 // Type or member is obsolete
             Adapter = channelAdapter;
 #pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
-            TurnStateFactory = () => new TurnState(storage ?? sp.GetService<IStorage>() ?? new MemoryStorage());  // Null storage will just create a TurnState with TempState.
+            TurnStateFactory = () => new TurnState(storage);  // Null storage will just create a TurnState with TempState.
             HttpClientFactory = sp.GetService<IHttpClientFactory>();
 
             var section = configuration.GetSection(configKey);
