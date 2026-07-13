@@ -41,11 +41,11 @@ resources:
       type: git
       name: OneBranch.Pipelines/GovernedTemplates
       ref: refs/heads/main
-    #- repository: tools
-    #  type: github
-    #  endpoint: bic-proxima-shared-stamp
-    #  name: bic/Microsoft.Botframework.Builds
-    #  ref: refs/heads/main
+    - repository: tools
+      type: github
+      endpoint: bic-proxima-shared-stamp
+      name: bic/Microsoft.Botframework.Builds
+      ref: refs/heads/main
 
 extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates
@@ -74,13 +74,9 @@ extends:
         steps:
           - checkout: self
             path: s/$(ProjectFolder)
-            #env:
-              #ob_restore_phase: true
 
-          #- checkout: tools
-          #  path: s/tools
-          #  env:
-          #    ob_restore_phase: true
+          - checkout: tools
+            path: s/tools
 
           - task: NuGetAuthenticate@1
 
@@ -90,12 +86,12 @@ extends:
             #env:
               #ob_restore_phase: true
 
-          #- template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
-          #  parameters:
-          #    configuration: debug
-          #    rootProjectFolder: $(Pipeline.Workspace)\s\$(ProjectFolder)   # -> ...\src\libraries exists
-          #    isOfficialBuild: false
-          #    OutputDirectoryRoot: '$(OUTPUTROOT)'
+          - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
+            parameters:
+            configuration: debug
+            rootProjectFolder: '$(Pipeline.Workspace)\s\$(ProjectFolder)'   # -> ...\src\libraries exists
+            isOfficialBuild: false
+            OutputDirectoryRoot: '$(OUTPUTROOT)'
 
           - task: CopyFiles@2
             displayName: "Copy Files for 'Publish packages (Debug)' publish task"
