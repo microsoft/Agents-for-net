@@ -5,9 +5,11 @@ name: Verify sequence diagrams
 # corrects the affected docs/*sequence-diagram.md files locally and this workflow opens a
 # GitHub issue per changed diagram containing the proposed fix (as a diff) for a maintainer
 # to implement (e.g. via @copilot). Nothing is committed or pushed. Opening issues only
-# needs GITHUB_TOKEN with issues:write, which — unlike PR creation or PAT usage — is not
-# restricted by Microsoft enterprise Actions policy. When everything already matches, the
-# run is a no-op and no issue is created.
+# needs GITHUB_TOKEN with issues:write, which sidesteps the operations Microsoft enterprise
+# Actions policy blocks: PAT-authenticated git/PR operations from runners, and GITHUB_TOKEN
+# pull-request creation. (The COPILOT_CLI_PAT is still used, but only for Copilot model
+# authentication, which is unaffected.) When everything already matches, the run is a no-op
+# and no issue is created.
 
 on:
   schedule:
