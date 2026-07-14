@@ -27,10 +27,9 @@ This is a base sample that responds in the Teams demo env for Agentic AI.
         "ServiceConnection": {
           "Settings": {
             "AuthType": "ClientSecret", // this is the AuthType for the connection, valid values can be found in Microsoft.Agents.Authentication.Msal.Model.AuthTypes.  The default is ClientSecret.
-            "AuthorityEndpoint": "https://login.microsoftonline.com/{{TenantId}}",
-            "ClientId": "{{ClientId}}", // this is the Client ID used for the connection.
-            "ClientSecret": "{{ClientSecret}}", // this is the Client Secret used for the connection.
-            "TenantId": "{{TenantId}}"
+            "AuthorityEndpoint": "https://login.microsoftonline.com/${{TENANT_ID}}",
+            "ClientId": "${{BLUEPRINT_ID}}", // this is the Client ID used for the connection.
+            "ClientSecret": "${{CLIENT_SECRET}}", // this is the Client Secret used for the connection.
             "Scopes": [
               "https://api.botframework.com/.default"
             ]
@@ -39,9 +38,9 @@ This is a base sample that responds in the Teams demo env for Agentic AI.
       },
       ```
 
-      1. Replace all **{{ClientId}}** with the AppId of the Azure Bot.
-      1. Replace all **{{TenantId}}** with the Tenant Id where your application is registered.
-      1. Set the **{{ClientSecret}}** to the Secret that was created on the App Registration.
+      1. Replace all **${{BLUEPRINT_ID}}** with the AppId of the Azure Bot.
+      1. Replace all **${{TENANT_ID}}** with the Tenant Id where your application is registered.
+      1. Set the **${{CLIENT_SECRET}}** to the Secret that was created on the App Registration.
       
       > Storing sensitive values in appsettings is not recommend.  Follow [AspNet Configuration](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-9.0) for best practices.
 
@@ -65,11 +64,10 @@ This is a base sample that responds in the Teams demo env for Agentic AI.
 1. Enable by updating appsettings
    ```json
    "TokenValidation": {
-     "Enabled": false,
      "Audiences": [
-       "{{ClientId}}" // this is the Client ID used for the Azure Bot
+       "${{BLUEPRINT_ID}}" // this is the Client ID used for the Azure Bot
      ],
-     "TenantId": "{{TenantId}}"
+     "TenantId": "${{TENANT_ID}}"
    },
    ```
 
