@@ -7,14 +7,11 @@
 # Retail Tasks:   https://aka.ms/obpipelines/tasks                              #
 # Support:        https://aka.ms/onebranchsup                                   #
 #                                                                               #
-# NOTE: This definition lives in the microsoft/Agents-for-net repo. Because the #
-# shared build template (build-sign-package.yaml) lives in the                  #
-# Microsoft.Botframework.Builds repo, that repo is registered below under       #
-# resources.repositories (alias: builds) and the template is imported via       #
-# '...build-sign-package.yaml@builds' instead of '@self'.                       #
 #################################################################################
 
-trigger: none # https://aka.ms/obpipelines/triggers
+trigger:
+- main
+- rel/*
 
 parameters: # parameters are shown up in ADO UI in a build queue time
 - name: 'debug'
@@ -35,7 +32,6 @@ variables:
   OUTPUTROOT: $(REPOROOTDIRECTORY)\bin
   NUGET_XMLDOC_MODE: none
   EnableLocalization: true
-  ProjectFolder : "agnts"
   system_accesstoken: $(System.AccessToken)
 
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest' # https://aka.ms/obpipelines/containers
@@ -46,65 +42,65 @@ resources:
       type: git
       name: OneBranch.Pipelines/GovernedTemplates
       ref: refs/heads/main
-    - repository: agentsdotnet
+    - repository: tools
       type: github
-      endpoint: CopilotGitHub
-      name: microsoft/Agents-for-net
-      ref: $(ProjectBranch)
+      endpoint: bic-proxima-shared-stamp
+      name: bic/Microsoft.Botframework.Builds
+      ref: refs/heads/main
 
 extends:
-  template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
+  template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates
   parameters:
-    globalSdl: # https://aka.ms/obpipelines/sdl
+    featureFlags:
+        networkisolation:
+          policy: GitHub,Permissive
+    globalSdl:
       tsa:
-        enabled: false # onebranch publish all sdl results to TSA. If TSA is disabled all SDL tools will forced into 'break' build mode.
-      # credscan:
-      #   suppressionsFile: $(Build.SourcesDirectory)\.config\CredScanSuppressions.json
+        enabled: false
       binskim:
-        break: true # always break the build on binskim issues. You can disable it by setting to 'false'
+        break: true
       policheck:
-        break: true # always break the build on policheck issues. You can disable it by setting to 'false'
-      # suppression:
-      #   suppressionFile: $(Build.SourcesDirectory)\.gdn\global.gdnsuppress
+        break: true
 
     stages:
     - stage: Build_Assets
       jobs:
       - job: Debug
         pool:
-          type: windows  # read more about custom job pool types at https://aka.ms/obpipelines/yaml/jobs
-
-        variables: # More settings at https://aka.ms/obpipelines/yaml/jobs
-          ob_outputDirectory: '$(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
-          ob_sdl_binskim_break: true # https://aka.ms/obpipelines/sdl
-          ob_git_fetchDepth: -1 # https://aka.ms/obpipelines/git
-          # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.nonofficial.gdnsuppress
-
+          type: windows
+        variables:
+          ob_outputDirectory: '$(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT'
+          ob_sdl_binskim_break: true
+          ob_git_fetchDepth: -1
         steps:
-          - checkout: agentsdotnet
-            displayName: 'Checkout agentsdotnet:$(ProjectBranch) to s/$(ProjectFolder)'
-            path: s/$(ProjectFolder)
-            #env:
-            #  ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
+          - checkout: self
+            path: s
+            env:
+              ob_restore_phase: true
+
+          - checkout: tools
+            path: s/tools
 
           - task: NuGetAuthenticate@1
 
-          - script: dotnet tool restore
+          - script: dotnet tool restore --configfile $(Build.SourcesDirectory)/.azdo/nuget.config
             displayName: Dotnet tools restore
+            workingDirectory: $(Build.SourcesDirectory)
             env:
-              ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
+              ob_restore_phase: true
 
-          - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@self
+          - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
             parameters:
+              NugetConfg: $(Build.SourcesDirectory)/.azdo/nuget.config
               configuration: debug
-              rootProjectFolder: $(ProjectFolder)
+              rootProjectFolder: '$(Build.SourcesDirectory)'   # -> ...\src\libraries exists
               isOfficialBuild: false
               OutputDirectoryRoot: '$(OUTPUTROOT)'
 
           - task: CopyFiles@2
             displayName: "Copy Files for 'Publish packages (Debug)' publish task"
             inputs:
-              SourceFolder: '$(ProjectFolder)\bin'
+              SourceFolder: '$(Build.SourcesDirectory)\bin'
               Contents: '**/*.nupkg'
               FlattenFolders : true
               TargetFolder: $(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT/packagesDebug
