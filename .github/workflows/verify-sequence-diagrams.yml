@@ -36,6 +36,11 @@ jobs:
       - name: Install GitHub Copilot CLI
         run: npm install -g @github/copilot
 
+      - name: Install Mermaid CLI
+        run: |
+          npm install -g @mermaid-js/mermaid-cli
+          echo '{ "args": ["--no-sandbox"] }' > /tmp/puppeteer-config.json
+
       - name: Audit diagrams against implementation
         env:
           # Fine-grained PAT with Copilot access. Stored as the COPILOT_CLI_PAT secret.
@@ -50,25 +55,70 @@ jobs:
             -p "$(cat .github/prompts/verify-sequence-diagrams.prompt.md)" \
             2>&1 | tee copilot-output.log
 
-      - name: Lint Mermaid diagrams
+      # Lint the (possibly edited) diagrams. If the audit introduced invalid Mermaid,
+      # feed the exact parser errors back to Copilot to auto-fix, then re-lint. This
+      # avoids both opening a PR with broken diagrams and hard-failing the whole run on
+      # the first mistake. Only if Copilot still can't produce valid Mermaid after a
+      # bounded number of attempts does the job fail (see "Fail if diagrams invalid").
+      - name: Lint diagrams and self-correct
+        id: lint
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          GH_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
         run: |
-          npm install -g @mermaid-js/mermaid-cli
-          echo '{ "args": ["--no-sandbox"] }' > /tmp/puppeteer-config.json
-          status=0
+          # Maximum number of Copilot fix attempts after the initial audit.
+          max_fixups=2
           mkdir -p /tmp/mermaid-lint
-          for f in docs/*sequence-diagram.md; do
-            echo "::group::Linting $f"
-            if ! mmdc -i "$f" -o "/tmp/mermaid-lint/$(basename "$f").svg" \
-              -p /tmp/puppeteer-config.json; then
-              echo "::error file=$f::Invalid Mermaid syntax in $f"
-              status=1
+
+          # Lint every diagram, collecting parser errors into lint-errors.log.
+          # Returns non-zero if any diagram is invalid.
+          lint_diagrams() {
+            local rc=0
+            : > lint-errors.log
+            for f in docs/*sequence-diagram.md; do
+              echo "::group::Linting $f"
+              if out=$(mmdc -i "$f" -o "/tmp/mermaid-lint/$(basename "$f").svg" \
+                  -p /tmp/puppeteer-config.json 2>&1); then
+                echo "$out"
+              else
+                echo "$out"
+                echo "::error file=$f::Invalid Mermaid syntax in $f"
+                { echo "## $f"; echo "$out"; echo; } >> lint-errors.log
+                rc=1
+              fi
+              echo "::endgroup::"
+            done
+            return $rc
+          }
+
+          attempt=0
+          while true; do
+            if lint_diagrams; then
+              echo "All Mermaid diagrams are valid."
+              echo "status=success" >> "$GITHUB_OUTPUT"
+              break
             fi
-            echo "::endgroup::"
+            if [ "$attempt" -ge "$max_fixups" ]; then
+              echo "::error::Mermaid diagrams are still invalid after $attempt self-correction attempt(s)."
+              echo "status=failed" >> "$GITHUB_OUTPUT"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "::warning::Invalid Mermaid detected; asking Copilot to fix it (attempt $attempt/$max_fixups)."
+            fix_prompt="$(cat .github/prompts/fix-mermaid-syntax.prompt.md)
+
+          === MERMAID LINT ERRORS ===
+          $(cat lint-errors.log)"
+            copilot \
+              --allow-all-tools \
+              --log-level none \
+              -p "$fix_prompt" \
+              2>&1 | tee -a copilot-output.log
           done
-          exit $status
 
       - name: Build pull request body
         id: pr_body
+        if: steps.lint.outputs.status == 'success'
         run: |
           # Use a random, unguessable heredoc delimiter so that untrusted Copilot
           # output cannot terminate/corrupt the $GITHUB_OUTPUT block.
@@ -82,7 +132,9 @@ jobs:
             echo "## Audit summary"
             echo ""
             if grep -q "=== DIAGRAM AUDIT SUMMARY ===" copilot-output.log; then
-              sed -n '/=== DIAGRAM AUDIT SUMMARY ===/,$p' copilot-output.log | tail -n +2
+              # Copilot may run more than once (initial audit + syntax fix-ups); emit the
+              # content after the LAST summary marker.
+              tac copilot-output.log | sed -n '/=== DIAGRAM AUDIT SUMMARY ===/q;p' | tac
             else
               echo "_No structured summary was produced; see the workflow logs for details._"
             fi
@@ -90,6 +142,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create pull request
+        if: steps.lint.outputs.status == 'success'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.COPILOT_CLI_PAT }}
@@ -101,3 +154,10 @@ jobs:
           title: "docs: sync sequence diagrams with implementation"
           body: ${{ steps.pr_body.outputs.body }}
           labels: Documentation
+
+      - name: Fail if diagrams invalid
+        if: steps.lint.outputs.status == 'failed'
+        run: |
+          echo "Copilot could not produce valid Mermaid after the allotted self-correction attempts." >&2
+          echo "See the 'Lint diagrams and self-correct' step logs for the parser errors." >&2
+          exit 1
