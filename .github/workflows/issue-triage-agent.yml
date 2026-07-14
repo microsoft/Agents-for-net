@@ -1,0 +1,69 @@
+name: Issue Triage Agent
+
+# Runs GitHub Copilot CLI to triage an issue when the `ai-triage` label is added.
+# The agent posts an analysis comment, asks for more info when needed, suggests a
+# mitigation, and — when the problem is reproducible — opens a draft PR with a fix
+# and requests a Copilot review.
+
+on:
+  issues:
+    types: [labeled]
+
+# Only one triage run per issue at a time.
+concurrency:
+  group: issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write        # create branches / push fix commits
+  issues: write          # comment on and label issues
+  pull-requests: write   # open draft PRs and request reviewers
+
+jobs:
+  triage:
+    # Gate on the specific label and ignore pull requests (issues.labeled also
+    # fires for PRs, which carry a pull_request field).
+    if: >-
+      github.event.label.name == 'ai-triage' &&
+      github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use the Copilot PAT so pushes and PRs can trigger downstream workflows
+          # (e.g. Copilot review) that the default GITHUB_TOKEN cannot.
+          token: ${{ secrets.COPILOT_CLI_PAT }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run triage agent
+        env:
+          # Model auth: user PAT with the "Copilot Requests" permission.
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          # gh / git auth for posting comments, pushing, and opening PRs.
+          GH_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          # Expand ${REPO}, ${ISSUE_NUMBER}, ${ISSUE_TITLE} in the prompt template.
+          PROMPT="$(envsubst < .github/prompts/issue-triage.md)"
+          # NOTE: --allow-all-tools is required so the agent can build/test and
+          # implement a fix. Because this workflow ingests untrusted issue content
+          # while holding a write-capable PAT, the prompt hardens against
+          # prompt-injection (see the "Security" section of the prompt template).
+          # Review that guidance before widening this workflow's capabilities.
+          copilot -p "$PROMPT" --allow-all-tools
