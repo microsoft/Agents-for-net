@@ -31,7 +31,7 @@ This is a base sample that responds in the Teams demo env for Agentic AI.
             "ClientId": "${{BLUEPRINT_ID}}", // this is the Client ID used for the connection.
             "ClientSecret": "${{CLIENT_SECRET}}", // this is the Client Secret used for the connection.
             "Scopes": [
-              "https://api.botframework.com/.default"
+              "5a807f24-c9de-44ee-a3a7-329e88a00ffc/.default"
             ]
           }
         }
