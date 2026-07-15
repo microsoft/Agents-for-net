@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Extensions.MSTeams.App;
 using System;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Messages;
@@ -40,9 +41,10 @@ public class MessageEditRouteBuilder : MessageEventRouteBuilderBase<MessageEditR
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message edit event.</param>
     /// <returns>The current <see cref="MessageEditRouteBuilder"/> instance for method chaining.</returns>
-    public MessageEditRouteBuilder WithHandler(RouteHandler handler)
+    public MessageEditRouteBuilder WithHandler(TeamsRouteHandler handler)
     {
-        _route.Handler = handler;
+        AssertionHelpers.ThrowIfNull(handler, nameof(handler));
+        _route.Handler = HandlerUtils.WrapHandler(handler);
         return this;
     }
 }

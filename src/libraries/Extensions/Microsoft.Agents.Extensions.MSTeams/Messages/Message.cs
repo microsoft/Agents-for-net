@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.MSTeams.App;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Messages;
 
@@ -31,7 +32,7 @@ public class Message
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Message OnMessageEdit(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public Message OnMessageEdit(TeamsRouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(MessageEditRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
@@ -51,7 +52,7 @@ public class Message
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Message OnMessageUndelete(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public Message OnMessageUndelete(TeamsRouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(MessageUndeleteRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
@@ -71,7 +72,7 @@ public class Message
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
-    public Message OnMessageDelete(RouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
+    public Message OnMessageDelete(TeamsRouteHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(MessageDeleteRouteBuilder.Create()
             .WithChannelId(_channelId).WithOrderRank(rank)
