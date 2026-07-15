@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.Proactive;
@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithValidParameters_ReturnsReferenceBuilder()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
 
             // Act
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithNullConversationId_ThrowsArgumentNullException()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             string conversationId = null;
 
             // Act & Assert
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Create_WithEmptyConversationId_ThrowsArgumentException()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = string.Empty;
 
             // Act & Assert
@@ -62,7 +62,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithUser_WithUserIdAndUserName_SetsUserCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
             var userId = "user-123";
             var userName = "Test User";
@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithUser_WithUserIdOnly_SetsUserWithNullName()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
             var userId = "user-123";
 
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithUser_WithChannelAccount_SetsUserCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
             var user = new ChannelAccount("user-456", "Another User", RoleTypes.User);
 
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithAgent_WithAgentIdAndAgentName_SetsAgentCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Webchat);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Webchat);
             var conversationId = "test-conversation-id";
             var agentId = "agent-123";
             var agentName = "Test Agent";
@@ -144,7 +144,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithAgent_WithAgentIdOnly_SetsAgentWithNullName()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Webchat);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Webchat);
             var conversationId = "test-conversation-id";
             var agentId = "agent-123";
 
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithAgent_WithChannelAccount_SetsAgentCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
             var agent = new ChannelAccount("agent-456", "Another Agent", RoleTypes.Agent);
 
@@ -184,7 +184,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithServiceUrl_SetsServiceUrlCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
             var serviceUrl = "https://custom.service.url/";
 
@@ -201,7 +201,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithActivityId_SetsActivityIdCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
             var activityId = "activity-123";
 
@@ -218,7 +218,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void WithLocale_SetsLocaleCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
             var locale = "en-US";
 
@@ -235,7 +235,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithMsteamsChannel_SetsCorrectServiceUrl()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
 
             // Act
@@ -250,7 +250,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithWebchatChannel_SetsCorrectServiceUrl()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Webchat);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Webchat);
             var conversationId = "test-conversation-id";
 
             // Act
@@ -265,7 +265,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithDirectlineChannel_SetsCorrectServiceUrl()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Directline);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Directline);
             var conversationId = "test-conversation-id";
 
             // Act
@@ -295,7 +295,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithoutSettingUser_CreatesDefaultUser()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
 
             // Act
@@ -311,7 +311,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithoutSettingAgent_CreatesDefaultAgent()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
 
             // Act
@@ -327,7 +327,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithCustomServiceUrl_DoesNotOverrideServiceUrl()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
             var customServiceUrl = "https://custom.url/";
 
@@ -344,7 +344,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_SetsChannelIdCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
 
             // Act
@@ -359,7 +359,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_SetsConversationCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Msteams);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversationId = "test-conversation-id";
 
             // Act
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void FluentInterface_AllMethodsChainCorrectly()
         {
             // Arrange
-            var channelId = new ChannelId(Channels.Webchat);
+            var channelId = new ChannelId(Microsoft.Agents.Core.Models.Channels.Webchat);
             var conversationId = "test-conversation-id";
             var userId = "user-123";
             var userName = "Test User";
