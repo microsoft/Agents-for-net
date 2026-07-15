@@ -86,12 +86,12 @@ sequenceDiagram
     activate TokenService
     TokenService-->>UserAuthorization: TokenResponse (200)
     deactivate TokenService
+    UserAuthorization-->>Teams: InvokeResponse:200
     UserAuthorization->>UserAuthorization: Set Turn Token
     UserAuthorization->>UserAuthorization: Delete FlowState
     UserAuthorization->>UserAuthorization: Async Proactive(Continuation Activity)
     UserAuthorization-->>AgentApplication: SignIn (complete)
     deactivate UserAuthorization
-    AgentApplication-->>Teams: InvokeResponse:200 (turn ends)
     deactivate AgentApplication
     end
 
@@ -162,9 +162,9 @@ sequenceDiagram
     activate TokenService
     TokenService-->>UserAuthorization: ErrorResponse (ConsentRequired)
     deactivate TokenService
+    UserAuthorization-->>Teams: InvokeResponse:412
     UserAuthorization-->>AgentApplication: SignIn (pending)
     deactivate UserAuthorization
-    AgentApplication-->>Teams: InvokeResponse:412 (turn ends)
     deactivate AgentApplication
     end
 
@@ -181,12 +181,12 @@ sequenceDiagram
     activate TokenService
     TokenService-->>UserAuthorization: TokenResponse (200)
     deactivate TokenService
+    UserAuthorization-->>Teams: InvokeResponse:200
     UserAuthorization->>UserAuthorization: Set Turn Token
     UserAuthorization->>UserAuthorization: Delete FlowState
     UserAuthorization->>UserAuthorization: Async Proactive(Continuation Activity)
     UserAuthorization-->>AgentApplication: SignIn (complete)
     deactivate UserAuthorization
-    AgentApplication-->>Teams: InvokeResponse:200 (turn ends)
     deactivate AgentApplication
     end
 
@@ -257,14 +257,10 @@ sequenceDiagram
     activate TokenService
     TokenService-->>UserAuthorization: ErrorResponse (non-consent error)
     deactivate TokenService
+    UserAuthorization-->>Teams: InvokeResponse:400
     UserAuthorization->>UserAuthorization: Delete FlowState
-    UserAuthorization->>Agent: UserSignInFailureHandler
-    activate Agent
-    Agent->>Teams: Activity Error Response
-    deactivate Agent
-    UserAuthorization-->>AgentApplication: SignIn (complete)
+    UserAuthorization-->>AgentApplication: SignIn (error)
     deactivate UserAuthorization
-    AgentApplication-->>Teams: InvokeResponse:400 (turn ends)
     deactivate AgentApplication
     end
 ```
@@ -273,8 +269,7 @@ sequenceDiagram
 
 | Component | Path |
 |-----------|------|
-| UserAuthorization | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/` |
+| UserAuthorization | `src/libraries/Builder/Microsoft.Agents.Builder/App/UserAuth/UserAuthorization.cs` |
 | Authentication.Msal | `src/libraries/Authentication/Authentication.Msal/` |
 | Token Service Client | `src/libraries/Client/Microsoft.Agents.Connector/` |
 | AgentApplication (SignIn orchestration) | `src/libraries/Builder/Microsoft.Agents.Builder/App/AgentApplication.cs` |
-
