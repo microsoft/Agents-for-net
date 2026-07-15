@@ -42,7 +42,7 @@ variables:
   EnableLocalization: true
   system_accesstoken: $(System.AccessToken)  
 
-  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest' # https://aka.ms/obpipelines/containers
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest' # https://aka.ms/obpipelines/containers
 
 resources:
   repositories: 
