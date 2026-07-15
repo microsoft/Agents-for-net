@@ -39,6 +39,17 @@ For each `docs/*sequence-diagram.md` file:
 5. Keep the Mermaid syntax valid. Do not introduce new participants or steps that are not
    grounded in the code.
 
+## Domain notes (apply when judging call ordering)
+
+- **`InvokeResponse` timing:** An agent may send an `InvokeResponse` at any point during a
+  turn (via an `InvokeResponse` activity), but it is **not returned to the caller until the
+  end of the turn**. For `CloudAdapter`, the `InvokeResponse` is delivered in the body of the
+  `HttpResponse` after the turn completes — not synchronously at the point the agent produces
+  it. A diagram that shows the invoke response being collected mid-turn and returned to the
+  caller only at end-of-turn is therefore **correct**; do not "fix" it to show an immediate
+  return. Only flag it if the diagram actually contradicts this (e.g. shows the response
+  returned to the caller before the turn ends).
+
 ## Important constraints
 
 - Preserve each file's existing encoding (these `.md` files may use a UTF-8 BOM — keep it).
