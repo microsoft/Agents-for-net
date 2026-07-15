@@ -8,7 +8,7 @@ One workflow drives the flow:
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| [`verify-sequence-diagrams.yml`](workflows/verify-sequence-diagrams.yml) | Weekly schedule (Mondays 08:00 UTC) or manual `workflow_dispatch` | Reads each `docs/*sequence-diagram.md`, follows its "Key Components"/"Participants" tables into `src/`, and checks the diagram against the code (renamed/removed methods, call ordering, control-flow branches, stale file paths). When a diagram has drifted, it corrects the markdown locally, validates the Mermaid, and opens a **GitHub issue per changed diagram** containing the proposed fix as a diff. Nothing is committed or pushed. When everything matches, it is a no-op and no issue is created. |
+| [`verify-sequence-diagrams.yml`](workflows/verify-sequence-diagrams.yml) | Weekly schedule (Mondays 08:00 UTC) or manual `workflow_dispatch` | Reads each `docs/*sequence-diagram.md`, follows its "Key Components"/"Participants" tables into `src/`, and checks the diagram against the code (renamed/removed methods, call ordering, control-flow branches, stale file paths). When one or more diagrams have drifted, it corrects the markdown locally, validates the Mermaid, and opens a **single GitHub issue with one comment per changed diagram**, each carrying the proposed fix as a diff. Nothing is committed or pushed. When everything matches, it is a no-op and no issue is created. |
 
 The agent behavior is defined by two prompt templates:
 
@@ -26,9 +26,10 @@ Microsoft enterprise Actions security policy prevents this workflow from opening
   level, so the default `GITHUB_TOKEN` cannot create a PR either.
 
 Filing **issues** is not restricted by that policy: it needs only `GITHUB_TOKEN` with
-`issues: write` (already declared in the workflow's `permissions` block). Each issue carries the
-exact proposed diff, so a maintainer can implement it — for example by commenting
-`@copilot implement the proposed fix in this issue`.
+`issues: write` (already declared in the workflow's `permissions` block). A single issue is
+opened with one comment per drifted diagram, each carrying the exact proposed diff, so a
+maintainer can implement them all in one PR — for example by assigning the issue to
+`@copilot`.
 
 ## Setup
 
@@ -55,8 +56,9 @@ The workflow exposes the PAT to the CLI via `COPILOT_GITHUB_TOKEN` (model auth) 
 (the CLI's own `gh`/`git` reads). Env precedence is
 `COPILOT_GITHUB_TOKEN` > `GH_TOKEN` > `GITHUB_TOKEN`.
 
-Issue creation uses the built-in `GITHUB_TOKEN` (no extra secret required). The `Documentation`
-label is applied best-effort; if it doesn't exist, the issue is still filed (just unlabeled).
+Issue creation and commenting use the built-in `GITHUB_TOKEN` (no extra secret required).
+The `Documentation` label is applied best-effort; if it doesn't exist, the issue is still
+filed (just unlabeled).
 
 ### (Optional) Adjust the schedule
 
@@ -70,15 +72,20 @@ to change it. You can always run it on demand from the **Actions** tab
 The workflow runs automatically each week. To run it now, open the
 **Actions → Verify sequence diagrams** workflow and choose *Run workflow*.
 
-If a diagram is out of date, an issue titled **"docs: sequence diagram drift in
-`docs/<name>-sequence-diagram.md`"** is opened for each changed file, containing:
+If a diagram is out of date, a single issue titled **"docs: sequence diagram drift
+detected"** is opened, with **one comment per changed file**. Each comment contains:
 
 - the per-file line from the audit summary describing what drifted and why,
 - the **proposed fix as a diff** (validated as parseable Mermaid before filing), and
-- a call to action to implement it (e.g. `@copilot implement the proposed fix in this issue`).
+- instructions to apply it (edit only that `docs/*sequence-diagram.md` file).
 
-To avoid noise, the workflow **skips filing** if an open issue with the same title already exists,
-so a recurring weekly run will not create duplicates for drift that hasn't been addressed yet.
+The issue body explains that assigning it to `@copilot` will produce one PR that applies
+every fix.
+
+To avoid noise, the workflow **reuses an existing open issue** with the same title rather
+than opening a new one, and **skips posting a comment** for a file whose drift is already
+tracked by an existing comment. So a recurring weekly run will not create duplicates for
+drift that hasn't been addressed yet.
 
 **Review the proposed change before applying it** — the audit is best-effort and the code is the
 source of documentation truth.
@@ -96,9 +103,10 @@ source of documentation truth.
    `fix-mermaid-syntax.prompt.md`) to repair the syntax, then the diagrams are re-linted. This
    repeats up to a bounded number of attempts (`max_fixups`). Only if Copilot still cannot produce
    valid Mermaid does the job fail — so an issue is never filed with an unparseable diagram.
-3. **Issues** — For each `docs/*sequence-diagram.md` the audit actually changed
-   (`git diff --name-only`), the workflow opens one issue with the audit note and the proposed
-   diff. If nothing changed, no issue is created.
+3. **Issue** — If the audit changed any `docs/*sequence-diagram.md`
+   (`git diff --name-only`), the workflow opens (or reuses) a single issue and adds one
+   comment per changed file, each with the audit note and the proposed diff. If nothing
+   changed, no issue is created.
 
 ## Notes & tuning
 
@@ -106,7 +114,7 @@ source of documentation truth.
   it can point to the specific code that proves the diagram is wrong, and it
   preserves each file's UTF-8 BOM, style, and level of detail.
 - The proposed diff is wrapped in a **4-backtick** code fence so the diagrams' own ` ```mermaid `
-  fences render correctly inside the issue body.
+  fences render correctly inside the issue comment.
 - To change *when* the agent runs, edit the `schedule`/`concurrency` settings in
   the workflow. To change *how* it behaves, edit
   [`prompts/verify-sequence-diagrams.prompt.md`](prompts/verify-sequence-diagrams.prompt.md) (audit)

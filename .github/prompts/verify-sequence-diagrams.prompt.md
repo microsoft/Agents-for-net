@@ -51,4 +51,5 @@ For each `docs/*sequence-diagram.md` file:
 
 After you finish, print a short plain-text summary to stdout under a line
 `=== DIAGRAM AUDIT SUMMARY ===` listing, per file, either `up to date` or a one-line
-description of what you corrected and why. This summary is used as the pull request body.
+description of what you corrected and why. The per-file line is included in that file's
+issue comment to explain the drift.
