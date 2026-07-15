@@ -20,26 +20,28 @@ The agent behavior is defined by the prompt template in
 
 ### 1. Create the `COPILOT_CLI_PAT` secret
 
-The Copilot CLI needs a token for **two** things: authenticating to the model,
-and performing GitHub operations (reading the issue and posting comments). The
-default `GITHUB_TOKEN` cannot authenticate to Copilot, so a user Personal Access
-Token (PAT) is required.
+The Copilot CLI needs a token to authenticate to the **model**. The default
+`GITHUB_TOKEN` cannot authenticate to Copilot, so a user Personal Access Token
+(PAT) is required for that.
+
+GitHub operations (reading the issue, posting comments, editing labels) do **not**
+use the PAT — they use the workflow-scoped `GITHUB_TOKEN`, governed by the
+`permissions:` block in the workflow. This keeps the PAT's blast radius minimal.
 
 1. Create a **fine-grained PAT**: <https://github.com/settings/personal-access-tokens/new>
    - **Resource owner**: your **personal account** (the "Copilot Requests"
      permission is only available on user-owned tokens).
-   - **Repository access**: this repository (or *All repositories*).
    - **Permissions → Account**: `Copilot Requests` → **Read** (model auth).
-   - **Permissions → Repository**:
-     - `Contents` → **Read** (read source to ground the analysis)
-     - `Issues` → **Read and write** (comment, label)
+   - No repository permissions are required — GitHub operations use the
+     workflow-scoped `GITHUB_TOKEN`, not this PAT.
    - The token owner must have an **active Copilot subscription / seat**.
 2. Add it as a repository secret named **`COPILOT_CLI_PAT`**:
    - *Settings → Secrets and variables → Actions → New repository secret*, or
    - `gh secret set COPILOT_CLI_PAT --repo <owner>/<repo>`
 
-The workflow exposes the PAT to the CLI via `COPILOT_GITHUB_TOKEN` (model auth)
-and `GH_TOKEN` (gh). Env precedence is
+The workflow exposes the PAT to the CLI via `COPILOT_GITHUB_TOKEN` (model auth
+only) and uses `GH_TOKEN: ${{ github.token }}` (the workflow-scoped
+`GITHUB_TOKEN`) for gh operations. Env precedence is
 `COPILOT_GITHUB_TOKEN` > `GH_TOKEN` > `GITHUB_TOKEN`.
 
 ### 2. Create the labels

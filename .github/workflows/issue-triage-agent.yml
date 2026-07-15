@@ -56,9 +56,14 @@ jobs:
       - name: Run triage agent
         env:
           # Model auth: user PAT with the "Copilot Requests" permission.
+          # This is the ONLY thing the PAT is used for.
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
-          # gh auth for reading the issue and posting comments/labels.
-          GH_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          # gh auth for reading the issue and posting comments/labels. The
+          # workflow-scoped GITHUB_TOKEN (governed by the `permissions:` block
+          # above) is sufficient for these operations, so we deliberately avoid
+          # exposing the broader PAT here to limit the blast radius when
+          # untrusted issue content is ingested.
+          GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
