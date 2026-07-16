@@ -720,7 +720,7 @@ namespace Microsoft.Agents.Builder.Tests.Handler
             // Arrange
             var value = new SearchInvokeValue { Kind = null, QueryText = "bot" };
             var activity = GetSearchActivity(value);
-            activity.ChannelId = Channels.Msteams;
+            activity.ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams;
             var turnContext = new TurnContext(new TestInvokeAdapter(), activity);
 
             // Act
