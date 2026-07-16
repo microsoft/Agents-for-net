@@ -9,9 +9,14 @@
 #                                                                               #
 #################################################################################
 
+trigger: none # https://aka.ms/obpipelines/triggers - Disable continuous integration builds for this pipeline. PR builds will be triggered by the PR trigger below.
+
 pr:
-- main
-- rel/*
+  autoCancel: true # https://aka.ms/obpipelines/pr-triggers
+  branches:
+    include:
+      - main
+      - rel/*
 
 parameters: # parameters are shown up in ADO UI in a build queue time
 - name: 'debug'
@@ -34,7 +39,7 @@ variables:
   EnableLocalization: true
   system_accesstoken: $(System.AccessToken)
 
-  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2019/vse2022:latest' # https://aka.ms/obpipelines/containers
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest' # https://aka.ms/obpipelines/containers
 
 resources:
   repositories:
@@ -52,6 +57,9 @@ extends:
   template: v2/OneBranch.NonOfficial.CrossPlat.yml@templates
   parameters:
     featureFlags:
+        WindowsHostVersion:
+          Disk: Large
+          Version: 2022
         networkisolation:
           policy: GitHub,Permissive
     globalSdl:
