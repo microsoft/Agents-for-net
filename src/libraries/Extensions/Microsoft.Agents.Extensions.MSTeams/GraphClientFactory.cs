@@ -68,7 +68,12 @@ class AppTokenProvider(Microsoft.Agents.Authentication.IAccessTokenProvider toke
 {
     public async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var token = await tokenProvider.GetAccessTokenAsync(resourceUrl, scopes).ConfigureAwait(false);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!string.IsNullOrEmpty(token))
         {
             request.Headers["Authorization"] = [$"Bearer {token}"];
