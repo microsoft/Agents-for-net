@@ -39,6 +39,37 @@ For each `docs/*sequence-diagram.md` file:
 5. Keep the Mermaid syntax valid. Do not introduce new participants or steps that are not
    grounded in the code.
 
+## What NOT to change (avoid audit churn)
+
+These diagrams were themselves authored by an AI pass. A second AI pass will always find
+*different-but-equally-valid* ways to model the same correct code. Rewriting those is churn,
+not a fix, and it re-opens the same issue every week. **Only edit when the code contradicts a
+stated fact — never merely because you would have phrased or modeled it differently.**
+
+Specifically, do **not**:
+
+- **Reword** prose, notes, or labels that are already accurate (e.g. renaming a participant
+  alias `Class` → `Type`, or a note from "returns true" to "write completes" when both
+  describe the same behavior). A synonym is not a discrepancy.
+- **Re-model at a different granularity** when the existing abstraction is already correct —
+  e.g. splitting one `Assembly` participant into separate `SIA`/`EIA` participants, or
+  collapsing two into one. Only change participant structure if the current one asserts a
+  call/relationship the code does not have.
+- **Swap one valid example for another** (e.g. changing which real converter class is shown in
+  a "usage example") unless the class currently shown **no longer exists** or is no longer
+  valid for that scenario.
+- **Add optional detail** the diagram deliberately omits. A conceptual diagram that abstracts
+  away exact method names is not "wrong" for doing so.
+
+Ask yourself: *"Can I point to a line of code that this diagram states is true but is not?"*
+If the answer is no, leave it exactly as-is — even if you would have written it differently.
+
+## Canonical terminology (use these exact terms; do not reintroduce the alternatives)
+
+- The SSE transport for `DeliveryModes.Stream` (i.e., `IActivity.DeliveryMode == DeliveryModes.Stream`) is **`DeliveryModes.Stream` SSE**. It is
+  **not** "A2A" / "Agent-to-Agent" — that is a separate protocol. Never label the streaming
+  delivery path as A2A.
+
 ## Domain notes (apply when judging call ordering)
 
 - **`InvokeResponse` timing:** An agent may send an `InvokeResponse` at any point during a
