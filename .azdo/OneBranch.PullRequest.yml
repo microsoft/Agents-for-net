@@ -9,6 +9,7 @@
 #                                                                               #
 #################################################################################
 
+trigger: none # https://aka.ms/obpipelines/triggers - Disable continuous integration builds for this pipeline. PR builds will be triggered by the PR trigger below.
 pr:
 - main
 - rel/*
