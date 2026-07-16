@@ -66,7 +66,7 @@ If the answer is no, leave it exactly as-is — even if you would have written i
 
 ## Canonical terminology (use these exact terms; do not reintroduce the alternatives)
 
-- The SSE transport for `DeliveryMode == Stream` is **`DeliveryMode.Stream` SSE**. It is
+- The SSE transport for `DeliveryModes.Stream` (i.e., `IActivity.DeliveryMode == DeliveryModes.Stream`) is **`DeliveryModes.Stream` SSE**. It is
   **not** "A2A" / "Agent-to-Agent" — that is a separate protocol. Never label the streaming
   delivery path as A2A.
 
