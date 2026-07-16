@@ -10,9 +10,13 @@
 #################################################################################
 
 trigger: none # https://aka.ms/obpipelines/triggers - Disable continuous integration builds for this pipeline. PR builds will be triggered by the PR trigger below.
+
 pr:
-- main
-- rel/*
+  autoCancel: true # https://aka.ms/obpipelines/pr-triggers
+  branches:
+    include:
+      - main
+      - rel/*
 
 parameters: # parameters are shown up in ADO UI in a build queue time
 - name: 'debug'
