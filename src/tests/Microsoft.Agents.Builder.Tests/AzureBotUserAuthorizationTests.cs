@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -775,7 +775,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = new TokenExchangeInvokeRequest
                 {
                     Id = "token-exchange-id",
@@ -843,7 +843,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = new TokenExchangeInvokeRequest
                 {
                     Id = "exchange-id",
@@ -912,7 +912,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = new TokenExchangeInvokeRequest
                 {
                     Id = "exchange-id",
@@ -972,7 +972,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = new TokenExchangeInvokeRequest
                 {
                     Id = "exchange-id",
@@ -1036,7 +1036,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = null
             };
 
@@ -1100,7 +1100,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = new TokenExchangeInvokeRequest
                 {
                     Id = "exchange-id",
@@ -1170,7 +1170,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = new TokenExchangeInvokeRequest
                 {
                     Id = "token-exchange-id",
@@ -1356,7 +1356,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             // User sends a text message before Teams sends signin/tokenExchange.
             sentActivities.Clear();
-            var textDuringFlow = CreateMessageActivity(Channels.Msteams, "Hello?");
+            var textDuringFlow = CreateMessageActivity(Microsoft.Agents.Core.Models.Channels.Msteams, "Hello?");
             
             var textContext = CreateTurnContextWithCapture(textDuringFlow, mockTokenClient.Object, sentActivities);
 
@@ -1413,7 +1413,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Null(startResult);
 
             sentActivities.Clear();
-            var cancelActivity = CreateMessageActivity(Channels.Msteams, "-cancel");
+            var cancelActivity = CreateMessageActivity(Microsoft.Agents.Core.Models.Channels.Msteams, "-cancel");
             var cancelContext = CreateTurnContextWithCapture(cancelActivity, mockTokenClient.Object, sentActivities);
 
             var pendingResult = await handler.SignInUserAsync(cancelContext, cancellationToken: CancellationToken.None);
@@ -1523,7 +1523,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Text = "some message"
             };
             return CreateTurnContext(activity, tokenClient);
@@ -1597,7 +1597,7 @@ namespace Microsoft.Agents.Builder.Tests
                 From = new ChannelAccount { Id = "user1" },
                 Recipient = new ChannelAccount { Id = "bot" },
                 Conversation = new ConversationAccount { Id = "convo1" },
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = new TokenExchangeInvokeRequest
                 {
                     Id = "exchange-id",

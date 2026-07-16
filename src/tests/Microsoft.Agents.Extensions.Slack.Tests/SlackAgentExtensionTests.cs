@@ -42,7 +42,7 @@ public class SlackAgentExtensionTests
         return new Activity(
             type: ActivityTypes.Message,
             text: text,
-            channelId: Channels.Slack,
+            channelId: Microsoft.Agents.Core.Models.Channels.Slack,
             recipient: new() { Id = "botId" },
             conversation: new() { Id = "conversationId" },
             from: new() { Id = "userId" }
@@ -54,7 +54,7 @@ public class SlackAgentExtensionTests
         return new Activity(
             type: ActivityTypes.Message,
             text: text,
-            channelId: Channels.Msteams,
+            channelId: Microsoft.Agents.Core.Models.Channels.Msteams,
             recipient: new() { Id = "botId" },
             conversation: new() { Id = "conversationId" },
             from: new() { Id = "userId" }
@@ -65,7 +65,7 @@ public class SlackAgentExtensionTests
     {
         return new Activity(
             type: ActivityTypes.Event,
-            channelId: Channels.Slack,
+            channelId: Microsoft.Agents.Core.Models.Channels.Slack,
             recipient: new() { Id = "botId" },
             conversation: new() { Id = "conversationId" },
             from: new() { Id = "userId" }
@@ -77,7 +77,7 @@ public class SlackAgentExtensionTests
     {
         return new Activity(
             type: ActivityTypes.Event,
-            channelId: Channels.Msteams,
+            channelId: Microsoft.Agents.Core.Models.Channels.Msteams,
             recipient: new() { Id = "botId" },
             conversation: new() { Id = "conversationId" },
             from: new() { Id = "userId" }
@@ -104,7 +104,7 @@ public class SlackAgentExtensionTests
         var (app, _) = CreateApplication();
         var ext = new SlackAgentExtension(app);
 
-        Assert.Equal(Channels.Slack, ext.ChannelId);
+        Assert.Equal(Microsoft.Agents.Core.Models.Channels.Slack, ext.ChannelId);
     }
 
     [Fact]

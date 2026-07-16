@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -121,7 +121,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -159,7 +159,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Message, // Not Invoke
                 Name = "message/submitAction",
                 Value = feedbackValue,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -189,7 +189,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "message/someOtherAction", // Not submitAction
                 Value = feedbackValue,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -249,7 +249,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -275,7 +275,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "message/submitAction",
                 Value = null, // Null value
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -315,7 +315,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ReplyToId = "activity123",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
             mockContext.Setup(c => c.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
@@ -361,7 +361,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -403,7 +403,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Name = "message/submitAction",
                 Value = feedbackValue,
                 ReplyToId = "specificReplyToId",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -448,7 +448,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
@@ -540,7 +540,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Act
             var result = builder
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithHandler((context, state, data, ct) => Task.CompletedTask);
 
             // Assert
@@ -562,13 +562,13 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Type = ActivityTypes.Invoke,
                 Name = "message/submitAction",
                 Value = feedbackValue,
-                ChannelId = Channels.Emulator, // Different channel
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Emulator, // Different channel
                 Recipient = new ChannelAccount { Id = "bot" }
             });
 
             var builder = FeedbackRouteBuilder.Create();
             var route = builder
-                .WithChannelId(Channels.Msteams) // Expecting Teams
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams) // Expecting Teams
                 .WithHandler((context, state, data, ct) => Task.CompletedTask)
                 .Build();
 
@@ -672,7 +672,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Act
             var route = builder
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(10)
                 .AsNonTerminal()
                 .WithOAuthHandlers("oauth1,oauth2")

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot", Role = RoleTypes.AgenticUser }
             });
 
@@ -142,7 +142,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" } // No agentic role
             });
 
@@ -177,7 +177,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         {
             // Arrange
             var builder = RouteBuilder.Create();
-            var channelId = Channels.Msteams;
+            var channelId = Microsoft.Agents.Core.Models.Channels.Msteams;
 
             // Act
             var result = builder.WithChannelId(channelId);
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Act
             var result = builder
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithSelector((context, token) => Task.FromResult(true));
 
             // Assert
@@ -658,7 +658,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var builder = RouteBuilder.Create()
                 .WithSelector(selector)
                 .WithHandler(handler)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(5)
                 .AsInvoke()
                 .AsAgentic()
@@ -671,7 +671,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(route);
             Assert.NotNull(route.Selector);
             Assert.NotNull(route.Handler);
-            Assert.Equal(Channels.Msteams, route.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, route.ChannelId);
             Assert.Equal((ushort)5, route.Rank);
             Assert.True(route.Flags.HasFlag(RouteFlags.Invoke));
             Assert.True(route.Flags.HasFlag(RouteFlags.Agentic));
@@ -730,7 +730,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
@@ -754,7 +754,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.Agent }
             });
 
@@ -778,7 +778,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount()
             });
 
@@ -802,14 +802,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount()
             });
 
             var route = new Route
             {
                 Flags = RouteFlags.None,
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             };
 
             // Act
@@ -826,14 +826,14 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                ChannelId = Channels.Directline,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline,
                 Recipient = new ChannelAccount()
             });
 
             var route = new Route
             {
                 Flags = RouteFlags.None,
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             };
 
             // Act
@@ -854,7 +854,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = RouteBuilder.Create()
                 .WithSelector((context, token) => Task.FromResult(true))
                 .WithHandler((context, state, token) => Task.CompletedTask)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(10)
                 .AsInvoke()
                 .AsAgentic()
@@ -864,7 +864,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(route);
-            Assert.Equal(Channels.Msteams, route.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, route.ChannelId);
             Assert.Equal((ushort)10, route.Rank);
             Assert.True(route.Flags.HasFlag(RouteFlags.Invoke));
             Assert.True(route.Flags.HasFlag(RouteFlags.Agentic));
@@ -881,7 +881,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var mockContext = new Mock<ITurnContext>();
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
@@ -896,7 +896,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     handlerExecuted = true;
                     return Task.CompletedTask;
                 })
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .AsAgentic()
                 .Build();
 
