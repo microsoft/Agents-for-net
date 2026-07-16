@@ -208,7 +208,7 @@ sequenceDiagram
 
 - **Conversation** — A record containing `ConversationReference` + `Claims` (JWT claims for identity reconstruction). Serializable for storage.
 - **ConversationBuilder** — Fluent builder for manually constructing `Conversation` instances without an existing `ITurnContext`.
-- **ProcessProactiveAsync** vs **ContinueConversationAsync** — `ProcessProactiveAsync` creates a full turn pipeline (middleware, state); `ContinueConversationAsync` (on adapter) is simpler and only provides a TurnContext callback.
+- **ProcessProactiveAsync** vs **ContinueConversationAsync** — `Proactive.ContinueConversationAsync` uses `ProcessProactiveAsync` plus `OnTurnAsync` to create a full turn pipeline (middleware, state); `ContinueConversationAsync` (on adapter) is simpler and only provides a TurnContext callback.
 - **Token Handling** — `[ContinueConversation(autoSignInHandlers: "me")]` automatically retrieves user tokens during proactive turns. If the user hasn't signed in, `UserNotSignedIn` is thrown.
 - **Exception Capture** — Exceptions inside the proactive callback are captured via `ExceptionDispatchInfo` and re-thrown after the adapter completes, since they would otherwise be lost.
 - **Query Parameters** — HTTP continue endpoints pass query string values as `Activity.Value` with `ValueType = "application/vnd.microsoft.activity.continueconversation+json"`.

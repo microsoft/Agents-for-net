@@ -37,7 +37,6 @@ sequenceDiagram
     Disp->>ABUA: SignInUserAsync(context, forceSignIn=true)
     activate ABUA
 
-    ABUA->>ABUA: IsValidActivity() → true (Message)
     ABUA->>ABUA: GetFlowStateAsync()
     ABUA->>Storage: ReadAsync(["oauth/{name}/{channel}/{conv}/flowState"])
     Storage-->>ABUA: FlowState { FlowStarted=false }
@@ -99,7 +98,6 @@ sequenceDiagram
     Disp->>ABUA: SignInUserAsync(context, forceSignIn=true)
     activate ABUA
 
-    ABUA->>ABUA: IsValidActivity() → true
     ABUA->>Storage: ReadAsync(flowState key)
     Storage-->>ABUA: FlowState { FlowStarted=false }
 
@@ -216,8 +214,9 @@ sequenceDiagram
     else Error
         ABUA->>ABUA: throws
         Disp-->>UA: SignInResponse { Status=Error, Cause }
+        UA->>Disp: ResetStateAsync(context, handlerName)
         UA->>UA: DeleteSignInStateAsync()
-        UA->>UA: Call _userSignInFailureHandler
+        Note over UA: Invoke turn — no _userSignInFailureHandler
         UA-->>App: false
     end
     deactivate ABUA
@@ -276,9 +275,9 @@ sequenceDiagram
     activate UA
     UA->>UA: Find cached HandlerToken
 
-    alt Token not expired & not exchangeable
+    alt Token not expired & not exchangeable & not agentic request
         UA-->>Agent: token.Token
-    else Token expired or exchangeable
+    else Token expired, exchangeable, or agentic request
         UA->>Disp: Get(handlerName)
         Disp-->>UA: IUserAuthorization instance
         UA->>ABUA: GetRefreshedUserTokenAsync(context, exchangeConn, scopes)
@@ -290,7 +289,7 @@ sequenceDiagram
         ABUA->>ABUA: HandleOBO(context, token, ...)
         ABUA-->>UA: TokenResponse (refreshed/exchanged)
         deactivate ABUA
-        UA->>UA: CacheToken(handlerName, response)
+        UA->>UA: CacheToken(handlerName, response) [if prior token not exchangeable]
         UA-->>Agent: response.Token
     end
     deactivate UA
@@ -312,13 +311,13 @@ sequenceDiagram
 ## Storage Keys
 
 - **FlowState**: `oauth/{handlerName}/{channelId}/{conversationId}/flowState`
-- **SignInState**: Managed by `UserAuthorization` via `ITurnState` (conversation-scoped)
+- **SignInState**: `oauth/{channelId}/{userId}/userAuthorizationState` (managed by `UserAuthorization` via `IStorage`)
 
 ## Important Behaviors
 
 - **AutoSignIn**: If enabled (default), `StartOrContinueSignInUserAsync` is called every turn before route matching. If the user has a cached token, this is a fast path (single Token Service call).
 - **Continuation Activity**: When a multi-turn flow starts, the original user message is banked. After sign-in completes on a different turn (Invoke), the banked activity is replayed via `ProcessProactiveAsync`.
 - **Invoke Response Codes**: `200` = success, `412` = consent required (Teams retries with consent), `400` = critical failure (Teams stops), `404` = invalid magic code, `500` = retriable error.
-- **Timeout**: `OAuthSettings.Timeout` (default from `OAuthSettings.DefaultTimeoutValue`). After expiry, all invokes return errors.
+- **Timeout**: `OAuthSettings.Timeout` (default from `OAuthSettings.DefaultTimeoutValue`). After expiry, `signin/tokenExchange` invokes return `400`; other invokes return `200` with no body.
 - **InvalidSignInRetryMax**: Non-tokenExchange continuations (e.g., bad magic codes) are retried up to this limit before throwing `AuthExceptionReason.InvalidSignIn`.
 - **OBO**: Performed after every successful token acquisition (BeginFlow cached token, ContinueFlow token, GetRefreshedUserToken). Uses `IConnections` to resolve an `IOBOExchange` provider.

@@ -1,6 +1,6 @@
 # CloudAdapter Pipeline Sequence Diagram
 
-Shows the interaction between `CloudAdapter.ProcessAsync`, the middleware pipeline, `ITurnContext.SendActivity`, and `IAgent` — including both response paths.
+Shows the interaction between `CloudAdapter.ProcessAsync`, the middleware pipeline, `ITurnContext.SendActivityAsync`, and `IAgent` — including both response paths.
 
 ## Response Paths
 
@@ -14,6 +14,7 @@ sequenceDiagram
     participant Client
     participant CloudAdapter
     participant ChannelResponseQueue
+    participant ActivityTaskQueue as IActivityTaskQueue
     participant ProcessActivity as ProcessActivityAsync
     participant MiddlewareSet
     participant Middleware as Middleware[0..N]
@@ -25,7 +26,7 @@ sequenceDiagram
 
     Client->>CloudAdapter: POST /api/messages
 
-    alt DeliveryMode == Stream (or ExpectReplies / Invoke)
+    alt DeliveryMode == Stream
         Note over CloudAdapter: Blocking path
         CloudAdapter->>ChannelResponseQueue: StartHandlerForRequest(requestId)
         CloudAdapter->>HttpResponse: ResponseBegin()<br/>(Content-Type: text/event-stream)
@@ -33,7 +34,8 @@ sequenceDiagram
 
         par Background: agent processing
             ProcessActivity->>TurnContext: new TurnContext(adapter, activity)
-            ProcessActivity->>MiddlewareSet: RunPipelineAsync(context, agent.OnTurnAsync)
+            ProcessActivity->>AdapterBase: RunPipelineAsync(context, agent.OnTurnAsync)
+            AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, agent.OnTurnAsync)
 
             loop Middleware chain (recursive)
                 MiddlewareSet->>Middleware: OnTurnAsync(context, next)
@@ -51,7 +53,7 @@ sequenceDiagram
             AdapterBase->>AdapterBase: HostResponseAsync(incomingActivity, outActivity)
             Note over AdapterBase: DeliveryMode == Stream → returns true
             AdapterBase->>ChannelResponseQueue: SendActivitiesAsync(requestId, activities)
-            ChannelResponseQueue-->>AdapterBase: return true
+            ChannelResponseQueue-->>AdapterBase: activities queued
 
         and HTTP thread: consuming response queue
             CloudAdapter->>ChannelResponseQueue: HandleResponsesAsync(requestId, writer.OnResponse)
@@ -62,19 +64,20 @@ sequenceDiagram
             end
         end
 
-        ProcessActivity-->>ChannelResponseQueue: CompleteHandlerForRequest(requestId)
+        CloudAdapter->>ChannelResponseQueue: CompleteHandlerForRequest(requestId)
         ChannelResponseQueue-->>CloudAdapter: HandleResponsesAsync returns
         CloudAdapter->>HttpResponse: ResponseEnd()<br/>(writes invokeResponse event if Invoke)
-        HttpResponse->>Client: final SSE event / close
+        HttpResponse->>Client: stream close
 
     else DeliveryMode == Normal (default)
         Note over CloudAdapter: Fire-and-forget path
-        CloudAdapter->>CloudAdapter: QueueBackgroundActivity(activity)
+        CloudAdapter->>ActivityTaskQueue: QueueBackgroundActivity(activity)
         CloudAdapter->>Client: 202 Accepted (immediate return)
 
         Note over ProcessActivity: Background worker picks up activity
         ProcessActivity->>TurnContext: new TurnContext(adapter, activity)
-        ProcessActivity->>MiddlewareSet: RunPipelineAsync(context, agent.OnTurnAsync)
+        ProcessActivity->>AdapterBase: RunPipelineAsync(context, agent.OnTurnAsync)
+        AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, agent.OnTurnAsync)
 
         loop Middleware chain (recursive)
             MiddlewareSet->>Middleware: OnTurnAsync(context, next)
@@ -111,4 +114,4 @@ In the Stream path, `ChannelResponseQueue` acts as a thread-safe bridge between 
 
 - **Producer**: background agent thread calls `SendActivitiesAsync()` → writes activities to an unbounded `Channel<IActivity>`
 - **Consumer**: HTTP request thread calls `HandleResponsesAsync()` → reads activities and passes them to `ActivityResponseHandler.OnResponse()`, which writes SSE events to `HttpResponse.Body`
-- **Completion**: when `ProcessActivityAsync` finishes, it calls `CompleteHandlerForRequest()` → closes the channel writer → consumer loop exits → `ResponseEnd()` is called
+- **Completion**: when `ProcessActivityAsync` finishes, `CloudAdapter` calls `CompleteHandlerForRequest()` → closes the channel writer → consumer loop exits → `ResponseEnd()` is called

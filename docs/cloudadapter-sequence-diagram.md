@@ -25,7 +25,7 @@ sequenceDiagram
 
     Client->>CloudAdapter: POST /api/messages
 
-    alt DeliveryMode == Stream (or ExpectReplies / Invoke)
+    alt DeliveryMode == Stream
         Note over CloudAdapter: Blocking path
         CloudAdapter->>ChannelResponseQueue: StartHandlerForRequest(requestId)
         CloudAdapter->>HttpResponse: ResponseBegin()<br/>(Content-Type: text/event-stream)
