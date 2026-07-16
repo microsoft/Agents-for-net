@@ -59,6 +59,9 @@ resources:
 extends:
   template: v2/OneBranch.Official.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
   parameters:
+    WindowsHostVersion:
+      Disk: Large
+      Version: 2022
     cloudvault: # https://aka.ms/obpipelines/cloudvault
       enabled: false
     globalSdl: # https://aka.ms/obpipelines/sdl
