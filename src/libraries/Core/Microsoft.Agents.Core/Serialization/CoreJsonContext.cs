@@ -56,7 +56,6 @@ namespace Microsoft.Agents.Core.Serialization
     [JsonSerializable(typeof(Mention))]
     [JsonSerializable(typeof(MessageReaction))]
     [JsonSerializable(typeof(OAuthCard))]
-    [JsonSerializable(typeof(PagedMembersResult))]
     [JsonSerializable(typeof(Place))]
     [JsonSerializable(typeof(ProductInfo))]
     [JsonSerializable(typeof(ReceiptCard))]

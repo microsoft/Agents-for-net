@@ -1,0 +1,149 @@
+#################################################################################
+#                         OneBranch Pipelines - Official                        #
+# This pipeline was created by EasyStart from a sample located at:              #
+#   https://aka.ms/obpipelines/easystart/samples                                #
+# Documentation:  https://aka.ms/obpipelines                                    #
+# Yaml Schema:    https://aka.ms/obpipelines/yaml/schema                        #
+# Retail Tasks:   https://aka.ms/obpipelines/tasks                              #
+# Support:        https://aka.ms/onebranchsup                                   #
+#################################################################################
+
+trigger: none # https://aka.ms/obpipelines/triggers
+pr: none
+
+schedules:
+- cron: '0 3 * * *' # daily at 3:00 AM (UTC)
+  displayName: 'Nightly build (3 AM daily)'
+  branches:
+    include:
+    - main
+  always: false # only run if the source or pipeline has changed since the last successful scheduled run
+
+parameters: # parameters are shown up in ADO UI in a build queue time
+- name: 'debug'
+  displayName: 'Enable debug output'
+  type: boolean
+  default: false
+
+#name: $(MAJOR).$(MINOR).$(BUILD).$(REVISION)
+
+variables:
+  CDP_DEFINITION_BUILD_COUNT: $[counter('', 0)] # needed for onebranch.pipeline.version task https://aka.ms/obpipelines/versioning
+  MAJOR: 1
+  MINOR: 1
+  BUILD: 0
+  REVISION: $[counter(variables['REVISION'], 20)]
+  system.debug: ${{ parameters.debug }}
+  ENABLE_PRS_DELAYSIGN: 1
+  ROOT: $(Build.SourcesDirectory)
+  REPOROOTDIRECTORY: $(Build.SourcesDirectory)
+  OUTPUTROOT: $(REPOROOTDIRECTORY)\bin
+  NUGET_XMLDOC_MODE: none
+  EnableLocalization: true
+  system_accesstoken: $(System.AccessToken)  
+
+  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest' # https://aka.ms/obpipelines/containers
+
+resources:
+  repositories: 
+    - repository: templates
+      type: git
+      name: OneBranch.Pipelines/GovernedTemplates
+      ref: refs/heads/main
+    - repository: tools
+      type: github
+      endpoint: bic-proxima-shared-stamp
+      name: bic/Microsoft.Botframework.Builds
+      ref: refs/heads/main
+
+extends:
+  template: v2/OneBranch.Official.CrossPlat.yml@templates # https://aka.ms/obpipelines/templates
+  parameters:
+    cloudvault: # https://aka.ms/obpipelines/cloudvault
+      enabled: false
+    globalSdl: # https://aka.ms/obpipelines/sdl
+      codeql: # https://eng.ms/docs/cloud-ai-platform/devdiv/one-engineering-system-1es/1es-docs/codeql/one-branch-codeql
+        compiled: 
+          enabled: true
+        tsaEnabled: true
+      tsa:
+        enabled: true # onebranch publish all sdl results to TSA. If TSA is disabled all SDL tools will forced into 'break' build mode.
+      # credscan:
+      #   suppressionsFile: $(Build.SourcesDirectory)\.config\CredScanSuppressions.json
+      binskim:
+        break: true # always break the build on binskim issues in addition to TSA upload
+      policheck:
+        enabled: true
+        exclusionsFile: $(Build.SourcesDirectory)\.config\UserExclusions.xml
+        break: true # always break the build on policheck issues. You can disable it by setting to 'false'
+      suppression:
+         suppressionFile: $(Build.SourcesDirectory)\.gdn\global.gdnsuppress
+
+    stages:
+    - stage: build
+      jobs:
+      - job: Release
+        pool:
+          type: windows  # read more about custom job pool types at https://aka.ms/obpipelines/yaml/jobs
+        
+        variables:
+          ob_outputDirectory: '$(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT' # this directory is uploaded to pipeline artifacts, reddog and cloudvault. More info at https://aka.ms/obpipelines/artifacts
+          ob_git_fetchTags: true    
+          ob_sdl_binskim_break: true # https://aka.ms/obpipelines/sdl
+          ob_git_fetchDepth: -1 # https://aka.ms/obpipelines/git
+          ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}: # conditionally enable symbolsPublishing for master branch only
+            ob_symbolsPublishing_enabled: true # https://aka.ms/obpipelines/symbols
+          
+          # ob_sdl_suppression_suppressionFile: $(Build.SourcesDirectory)\.gdn\build.official.gdnsuppress
+
+        steps:
+          - checkout: self
+            path: s
+            env:
+              ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
+
+          - checkout: tools
+            path: s/tools
+
+          - task: NuGetAuthenticate@1
+
+          - script: dotnet tool restore --configfile $(Build.SourcesDirectory)/.azdo/nuget.config
+            displayName: Dotnet tools restore
+            workingDirectory: $(Build.SourcesDirectory)
+            env:
+              ob_restore_phase: true # # Steps decorated with this env variable will be run with network. All these steps are hoisted to the beginning of the build
+                      
+          # HELD IN COMMENT UNTIL FIX for TELEMETRY 
+          # - task: UseDotNet@2
+          #   continueOnError: true
+          #   inputs:
+          #     packageType: 'sdk'
+          #     useGlobalJson: true
+          #     performMultiLevelLookup: true
+
+          - template: Agents-dotnet/.pipelines/templates/build-sign-package.yaml@tools
+            parameters:
+              NugetConfg: $(Build.SourcesDirectory)/.azdo/nuget.config
+              isNightlyBuild: true
+              configuration: release
+              rootProjectFolder: '$(Build.SourcesDirectory)'
+              isOfficialBuild: true
+              OutputDirectoryRoot: '$(OUTPUTROOT)'
+
+          - task: CopyFiles@2
+            displayName: "Copy Files for 'Publish packages (Release)' publish task"
+            inputs:
+                SourceFolder: '$(Build.SourcesDirectory)\bin'
+                Contents: '**/*.nupkg'
+                FlattenFolders : true
+                TargetFolder: $(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT/packages
+            condition: always()
+
+          - task: CopyFiles@2
+            displayName: "Copy Files for 'Publish diagnostic build logs (Release)' publish task"
+            inputs:
+              SourceFolder: 'bin\logs'
+              Contents: '**'
+              TargetFolder: $(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT/diagnosticLogs
+            condition: always()
+                      
