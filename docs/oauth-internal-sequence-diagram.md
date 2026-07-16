@@ -276,7 +276,7 @@ sequenceDiagram
     activate UA
     UA->>UA: Find cached HandlerToken
 
-    alt Token not expired & not exchangeable
+    alt Token not expired & not exchangeable & not an agentic request
         UA-->>Agent: token.Token
     else Token expired or exchangeable
         UA->>Disp: Get(handlerName)
@@ -312,7 +312,7 @@ sequenceDiagram
 ## Storage Keys
 
 - **FlowState**: `oauth/{handlerName}/{channelId}/{conversationId}/flowState`
-- **SignInState**: Managed by `UserAuthorization` via `ITurnState` (conversation-scoped)
+- **SignInState**: Stored by `UserAuthorization` in configured `IStorage` under `oauth/{channelId}/{userId}/userAuthorizationState`
 
 ## Important Behaviors
 

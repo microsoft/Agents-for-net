@@ -13,7 +13,7 @@ Shows how the SDK discovers and registers serialization extensions (custom conve
 
 | Path | Purpose | Developer Action | Generated Attribute | Runtime Effect |
 |------|---------|-----------------|---------------------|----------------|
-| **Serialization Init** | Register converters / resolvers | Decorate a class with `[SerializationInit]`, add a `public static void Init()` method | `SerializationInitAssemblyAttribute` | `Init()` is called → class calls `ApplyExtensionConverters` or `AddTypeInfoResolver` |
+| **Serialization Init** | Register converters / resolvers | Decorate a class or struct with `[SerializationInit]`, add a `public static void Init()` method | `SerializationInitAssemblyAttribute` | `Init()` is called → type calls `ApplyExtensionConverters` or `AddTypeInfoResolver` |
 | **Entity Init** | Register Entity subclasses for polymorphic deserialization | Subclass `Entity`; optionally add `[EntityName("name")]` | `EntityInitAssemblyAttribute` | Type is registered in `EntityTypes` dictionary |
 
 ## Serialization Init Flow
@@ -23,22 +23,23 @@ sequenceDiagram
     participant Dev as Developer
     participant SG as SerializationInitSourceGenerator
     participant Asm as Assembly (compiled)
+    participant SIA as SerializationInitAssemblyAttribute
     participant PJS as ProtocolJsonSerializer
-    participant InitClass as [SerializationInit] Class
+    participant InitType as [SerializationInit] Type
 
     Note over Dev,SG: Compile Time
-    Dev->>SG: Decorates class with [SerializationInit]
-    SG->>SG: Finds all classes with SerializationInitAttribute
-    SG->>Asm: Emits [assembly: SerializationInitAssemblyAttribute(typeof(InitClass))]
+    Dev->>SG: Decorates type with [SerializationInit]
+    SG->>SG: Finds all classes/structs with SerializationInitAttribute
+    SG->>Asm: Emits [assembly: SerializationInitAssemblyAttribute(typeof(InitType))]
 
     Note over Asm,PJS: Runtime — Static Constructor
     PJS->>PJS: Static ctor fires on first access
-    PJS->>Asm: SerializationInitAssemblyAttribute.InitSerialization()
-    Asm->>Asm: Scans loaded assemblies for SerializationInitAssemblyAttribute
-    Asm->>Asm: Hooks AppDomain.AssemblyLoad for late-loaded assemblies
+    PJS->>SIA: SerializationInitAssemblyAttribute.InitSerialization()
+    SIA->>SIA: Scans loaded assemblies for SerializationInitAssemblyAttribute
+    SIA->>SIA: Hooks AppDomain.AssemblyLoad for late-loaded assemblies
     loop For each assembly with attribute
-        Asm->>InitClass: Invokes static Init() via reflection
-        InitClass->>PJS: ApplyExtensionConverters(converters) or AddTypeInfoResolver(resolver)
+        SIA->>InitType: Invokes static Init() via reflection
+        InitType->>PJS: ApplyExtensionConverters(converters) or AddTypeInfoResolver(resolver)
         PJS->>PJS: Replaces SerializationOptions (copy-on-write under lock)
     end
 ```
@@ -50,6 +51,7 @@ sequenceDiagram
     participant Dev as Developer
     participant EG as EntityInitSourceGenerator
     participant Asm as Assembly (compiled)
+    participant EIA as EntityInitAssemblyAttribute
     participant PJS as ProtocolJsonSerializer
 
     Note over Dev,EG: Compile Time
@@ -60,14 +62,14 @@ sequenceDiagram
 
     Note over Asm,PJS: Runtime — Static Constructor
     PJS->>PJS: Static ctor fires on first access
-    PJS->>Asm: EntityInitAssemblyAttribute.InitSerialization()
-    Asm->>Asm: Scans loaded assemblies for EntityInitAssemblyAttribute
-    Asm->>Asm: Hooks AppDomain.AssemblyLoad for late-loaded assemblies
+    PJS->>EIA: EntityInitAssemblyAttribute.InitSerialization()
+    EIA->>EIA: Scans loaded assemblies for EntityInitAssemblyAttribute
+    EIA->>EIA: Hooks AppDomain.AssemblyLoad for late-loaded assemblies
     loop For each Entity subclass
         alt Has [EntityName("x")]
-            Asm->>PJS: EntityTypes["x"] = typeof(MyEntity)
+            EIA->>PJS: EntityTypes["x"] = typeof(MyEntity)
         else No EntityName attribute
-            Asm->>PJS: EntityTypes["MyEntity"] = typeof(MyEntity)
+            EIA->>PJS: EntityTypes["MyEntity"] = typeof(MyEntity)
         end
     end
 ```
@@ -102,7 +104,7 @@ sequenceDiagram
 
 ## Developer Usage Examples
 
-### Adding Custom Converters (e.g., Teams extension)
+### Adding Custom Converters (e.g., Builder.Dialogs)
 
 ```csharp
 [SerializationInit]
@@ -112,8 +114,8 @@ internal class SerializationInit
     {
         var converters = new List<JsonConverter>
         {
-            new TeamsChannelDataConverter(),
-            new SurfaceConverter()
+            new PersistedStateConverter(),
+            new Array2DConverter()
         };
         ProtocolJsonSerializer.ApplyExtensionConverters(converters);
     }

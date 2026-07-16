@@ -258,13 +258,9 @@ sequenceDiagram
     TokenService-->>UserAuthorization: ErrorResponse (non-consent error)
     deactivate TokenService
     UserAuthorization->>UserAuthorization: Delete FlowState
-    UserAuthorization->>Agent: UserSignInFailureHandler
-    activate Agent
-    Agent->>Teams: Activity Error Response
-    deactivate Agent
-    UserAuthorization-->>AgentApplication: SignIn (complete)
+    UserAuthorization-->>Teams: InvokeResponse:400 (turn ends)
+    UserAuthorization-->>AgentApplication: SignIn (error)
     deactivate UserAuthorization
-    AgentApplication-->>Teams: InvokeResponse:400 (turn ends)
     deactivate AgentApplication
     end
 ```
@@ -273,7 +269,7 @@ sequenceDiagram
 
 | Component | Path |
 |-----------|------|
-| UserAuthorization | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/` |
+| UserAuthorization | `src/libraries/Builder/Microsoft.Agents.Builder/App/UserAuth/UserAuthorization.cs` |
 | Authentication.Msal | `src/libraries/Authentication/Authentication.Msal/` |
 | Token Service Client | `src/libraries/Client/Microsoft.Agents.Connector/` |
 | AgentApplication (SignIn orchestration) | `src/libraries/Builder/Microsoft.Agents.Builder/App/AgentApplication.cs` |

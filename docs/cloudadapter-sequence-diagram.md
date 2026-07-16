@@ -6,6 +6,7 @@ Shows the interaction between `CloudAdapter.ProcessAsync`, the middleware pipeli
 
 - **Normal delivery**: `HostResponseAsync` returns `false` → response sent via `ConnectorClient` (Azure Bot Service pushes to client)
 - **Stream delivery**: `HostResponseAsync` returns `true` → response queued into `ChannelResponseQueue` → HTTP thread writes SSE events directly to `HttpResponse.Body`
+- `Invoke` and `ExpectReplies` also stay on the blocking `ProcessAsync` branch, but they use `ExpectRepliesResponseWriter` to write the final HTTP body instead of SSE.
 
 ## Diagram
 
@@ -25,15 +26,16 @@ sequenceDiagram
 
     Client->>CloudAdapter: POST /api/messages
 
-    alt DeliveryMode == Stream (or ExpectReplies / Invoke)
-        Note over CloudAdapter: Blocking path
+    alt DeliveryMode == Stream
+        Note over CloudAdapter: Blocking stream path
         CloudAdapter->>ChannelResponseQueue: StartHandlerForRequest(requestId)
         CloudAdapter->>HttpResponse: ResponseBegin()<br/>(Content-Type: text/event-stream)
         CloudAdapter-->>ProcessActivity: fire-and-forget task
 
         par Background: agent processing
             ProcessActivity->>TurnContext: new TurnContext(adapter, activity)
-            ProcessActivity->>MiddlewareSet: RunPipelineAsync(context, agent.OnTurnAsync)
+            ProcessActivity->>AdapterBase: RunPipelineAsync(context, agent.OnTurnAsync)
+            AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, agent.OnTurnAsync)
 
             loop Middleware chain (recursive)
                 MiddlewareSet->>Middleware: OnTurnAsync(context, next)
@@ -51,7 +53,7 @@ sequenceDiagram
             AdapterBase->>AdapterBase: HostResponseAsync(incomingActivity, outActivity)
             Note over AdapterBase: DeliveryMode == Stream → returns true
             AdapterBase->>ChannelResponseQueue: SendActivitiesAsync(requestId, activities)
-            ChannelResponseQueue-->>AdapterBase: return true
+            ChannelResponseQueue-->>AdapterBase: write completes
 
         and HTTP thread: consuming response queue
             CloudAdapter->>ChannelResponseQueue: HandleResponsesAsync(requestId, writer.OnResponse)
@@ -74,7 +76,8 @@ sequenceDiagram
 
         Note over ProcessActivity: Background worker picks up activity
         ProcessActivity->>TurnContext: new TurnContext(adapter, activity)
-        ProcessActivity->>MiddlewareSet: RunPipelineAsync(context, agent.OnTurnAsync)
+        ProcessActivity->>AdapterBase: RunPipelineAsync(context, agent.OnTurnAsync)
+        AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, agent.OnTurnAsync)
 
         loop Middleware chain (recursive)
             MiddlewareSet->>Middleware: OnTurnAsync(context, next)

@@ -1,11 +1,12 @@
 # CloudAdapter Pipeline Sequence Diagram
 
-Shows the interaction between `CloudAdapter.ProcessAsync`, the middleware pipeline, `ITurnContext.SendActivity`, and `IAgent` — including both response paths.
+Shows the interaction between `CloudAdapter.ProcessAsync`, the middleware pipeline, `ITurnContext.SendActivityAsync`, and `IAgent` — including both response paths.
 
 ## Response Paths
 
 - **Normal delivery**: `HostResponseAsync` returns `false` → response sent via `ConnectorClient` (Azure Bot Service pushes to client)
 - **Stream delivery**: `HostResponseAsync` returns `true` → response queued into `ChannelResponseQueue` → HTTP thread writes SSE events directly to `HttpResponse.Body`
+- **Synchronous Invoke / ExpectReplies**: `ProcessAsync` also blocks for `Invoke` and `ExpectReplies`, but non-stream requests use `ExpectRepliesResponseWriter` and return a regular HTTP response body from `ResponseEnd()` instead of SSE. Regular non-hosted activities in a non-stream `Invoke` turn still fall back to `ConnectorClient`.
 
 ## Diagram
 
@@ -25,7 +26,7 @@ sequenceDiagram
 
     Client->>CloudAdapter: POST /api/messages
 
-    alt DeliveryMode == Stream (or ExpectReplies / Invoke)
+    alt DeliveryMode == Stream
         Note over CloudAdapter: Blocking path
         CloudAdapter->>ChannelResponseQueue: StartHandlerForRequest(requestId)
         CloudAdapter->>HttpResponse: ResponseBegin()<br/>(Content-Type: text/event-stream)
@@ -65,7 +66,7 @@ sequenceDiagram
         ProcessActivity-->>ChannelResponseQueue: CompleteHandlerForRequest(requestId)
         ChannelResponseQueue-->>CloudAdapter: HandleResponsesAsync returns
         CloudAdapter->>HttpResponse: ResponseEnd()<br/>(writes invokeResponse event if Invoke)
-        HttpResponse->>Client: final SSE event / close
+        HttpResponse->>Client: optional invokeResponse SSE / close
 
     else DeliveryMode == Normal (default)
         Note over CloudAdapter: Fire-and-forget path

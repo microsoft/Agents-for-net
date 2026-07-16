@@ -196,7 +196,7 @@ sequenceDiagram
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/proactive/sendactivity/{conversationId}` | POST | Send an activity to a stored conversation by ID |
-| `/proactive/sendactivity` | POST | Send an activity with a full `Conversation` object in body |
+| `/proactive/sendactivity` | POST | Send an activity with a `SendToConversationBody` body containing `Conversation` + `Activity` |
 | `/proactive/continue/{conversationId}` | POST | Continue a stored conversation using the default `[ContinueConversation]` handler |
 | `/proactive/continue/{key}/{conversationId}` | POST | Continue using a named handler (e.g., `/continue/ext/{id}`) |
 | `/proactive/continue` | POST | Continue with a full `Conversation` object in body |

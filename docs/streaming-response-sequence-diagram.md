@@ -8,7 +8,7 @@ Shows how `StreamingResponse` delivers chunked intermediate messages on a timer 
 - **TurnContext** — Per-turn context; exposes `StreamingResponse` property.
 - **StreamingResponse** — SDK-provided chunked message delivery (internal class).
 - **Timer** — Internal `System.Threading.Timer` that fires at `Interval` ms.
-- **Channel** — The upstream channel (Teams, WebChat, DirectLine, or Agent-to-Agent via SSE).
+- **Channel** — The upstream channel (Teams, WebChat, DirectLine, or a `DeliveryMode.Stream` SSE client).
 
 ## Channel Defaults
 
@@ -16,7 +16,7 @@ Shows how `StreamingResponse` delivers chunked intermediate messages on a timer 
 |---------|----------|----------|-------|
 | Teams | 1000ms | Assigned by first response | MUST use Activity.Id from first send |
 | WebChat / DirectLine | 500ms | Random GUID | |
-| DeliveryMode.Stream (A2A) | 100ms | Random GUID | |
+| DeliveryMode.Stream (SSE) | 100ms | Random GUID | |
 | Other / ExpectReplies | N/A | N/A | Non-streaming; buffers text, sends single final message |
 
 ## Streaming Channel Flow
@@ -143,7 +143,7 @@ sequenceDiagram
 - **Timer is one-shot, re-armed after each send** — prevents overlapping sends if `SendActivityAsync` takes longer than `Interval` (e.g., MSAL token refresh).
 - **InitialDelay** (default 250ms) — used for the first `QueueTextChunk` if no informative was sent, enabling faster stream start.
 - **Message accumulates** — each intermediate message sends the FULL text so far (not a delta). Channel displays latest as replacement.
-- **StreamId** — Teams assigns it from first response; WebChat/DirectLine/A2A uses a pre-generated GUID set on every outgoing `Activity.Id`.
+- **StreamId** — Teams assigns it from first response; WebChat/DirectLine/`DeliveryMode.Stream` uses a pre-generated GUID set on every outgoing `Activity.Id`.
 - **EndStreamTimeout** — defaults to 2 minutes. If queue doesn't drain in time, returns `Timeout`.
 - **ResetAsync** — allows reusing `StreamingResponse` for multiple streams in the same turn (waits for current stream to end first).
 
