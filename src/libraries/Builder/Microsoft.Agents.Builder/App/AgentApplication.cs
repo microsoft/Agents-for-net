@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
@@ -763,6 +764,10 @@ namespace Microsoft.Agents.Builder.App
             if (_userAuth != null)
             {
                 turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+            if (Options.Connections != null)
+            {
+                turnContext.Services.Set<IConnections>(Options.Connections);
             }
             turnContext.Services.Set<Proactive.Proactive>(Proactive);
             turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);

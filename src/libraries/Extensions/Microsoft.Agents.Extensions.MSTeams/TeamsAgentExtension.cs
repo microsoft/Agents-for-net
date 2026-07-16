@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -136,7 +137,63 @@ public class TeamsAgentExtension : AgentExtension
     public GraphServiceClient GetGraphClient(ITurnContext turnContext, string handlerName = null, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
     {
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
-        return new GraphServiceClient(new TokenProvider(_agentApplication, turnContext, handlerName), graphBaseUrl);
+        return GraphClientFactory.CreateUserGraphClient(_agentApplication.UserAuthorization, turnContext, handlerName, graphBaseUrl);
+    }
+
+    /// <summary>
+    /// Creates a new instance of the GraphServiceClient for accessing Microsoft Graph APIs using an
+    /// <b>app-only</b> (application) token from the agent's configured token connection.
+    /// </summary>
+    /// <remarks>
+    /// Unlike <see cref="GetGraphClient(ITurnContext, string, string)"/>, which acquires a token for the
+    /// signed-in user, this method uses the credentials of the token connection resolved for the current turn
+    /// (via <see cref="IConnections.GetTokenProvider(System.Security.Claims.ClaimsIdentity, IActivity)"/>).
+    /// The returned client is authenticated with application permissions, so the caller must specify the
+    /// target resource in the request path (for example <c>client.Users["{userId}"]...</c>). No additional
+    /// configuration beyond the existing token connection is required.
+    /// </remarks>
+    /// <param name="turnContext">The turn context. Its <see cref="ITurnContext.Identity"/> and
+    /// <see cref="ITurnContext.Activity"/> are used to resolve the connection. Cannot be null.</param>
+    /// <param name="graphBaseUrl">The base URL for the Microsoft Graph API. Defaults to "https://graph.microsoft.com/v1.0".</param>
+    /// <returns>A GraphServiceClient instance authenticated with an app-only token.</returns>
+    public GraphServiceClient GetAppGraphClient(ITurnContext turnContext, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
+    {
+        AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
+        var tokenProvider = GetConnections().GetTokenProvider(turnContext.Identity, turnContext.Activity);
+        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl);
+    }
+
+    /// <summary>
+    /// Creates a new instance of the GraphServiceClient for accessing Microsoft Graph APIs using an
+    /// <b>app-only</b> (application) token from the named token connection.
+    /// </summary>
+    /// <remarks>
+    /// This overload uses the credentials of the token connection identified by <paramref name="connectionName"/>
+    /// rather than resolving the connection from the current turn, so it does not require a turn context. The
+    /// returned client is authenticated with application permissions, so the caller must specify the target
+    /// resource in the request path (for example <c>client.Users["{userId}"]...</c>). No additional configuration
+    /// beyond the named token connection is required.
+    /// </remarks>
+    /// <param name="connectionName">The name of the token connection whose credentials are used to acquire the app-only token. Cannot be null or empty.</param>
+    /// <param name="graphBaseUrl">The base URL for the Microsoft Graph API. Defaults to "https://graph.microsoft.com/v1.0".</param>
+    /// <returns>A GraphServiceClient instance authenticated with an app-only token.</returns>
+    public GraphServiceClient GetAppGraphClientForConnection(string connectionName, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
+    {
+        AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
+        var tokenProvider = GetConnections().GetConnection(connectionName);
+        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl);
+    }
+
+    private IConnections GetConnections()
+    {
+        var connections = _agentApplication.Options.Connections;
+        if (connections == null)
+        {
+            throw new System.InvalidOperationException(
+                "IConnections is not configured on the AgentApplication. An app-only Graph client requires a configured token connection.");
+        }
+
+        return connections;
     }
 
     internal static Task SetResponse(ITurnContext context, object result = null, int status = 200)
@@ -148,17 +205,5 @@ public class TeamsAgentExtension : AgentExtension
         }
 
         return Task.CompletedTask;
-    }
-}
-
-class TokenProvider(AgentApplication agentApplication, ITurnContext turnContext, string handlerName) : IAuthenticationProvider
-{
-    public async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
-    {
-        var token = await agentApplication.UserAuthorization.GetTurnTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
-        if (token != null)
-        {
-            request.Headers["Authorization"] = [$"Bearer {token}"];
-        }
     }
 }
