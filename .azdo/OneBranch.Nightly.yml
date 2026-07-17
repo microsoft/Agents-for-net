@@ -12,8 +12,8 @@ trigger: none # https://aka.ms/obpipelines/triggers
 pr: none
 
 schedules:
-- cron: 0 10 * * * # runs at 2am PST (10am UTC) every day
-  displayName: 'Nightly build (3 AM daily)'
+- cron: '0 10 * * *' # daily at 10:00 UTC
+  displayName: 'Nightly build (10 AM UTC daily)'
   branches:
     include:
     - main
