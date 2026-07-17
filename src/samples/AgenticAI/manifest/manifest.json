@@ -1,8 +1,7 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.22",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vdevPreview/MicrosoftTeams.schema.json",
   "version": "1.0.0",
-  "id": "${{AAD_APP_CLIENT_ID}}",
+  "id": "${{BLUEPRINT_ID}}",
   "developer": {
     "name": "Microsoft, Inc.",
     "websiteUrl": "https://example.azurewebsites.net",
@@ -14,25 +13,33 @@
     "outline": "outline.png"
   },
   "name": {
-    "short": "AgentSDK EmptyAgent",
-    "full": "AgentSDK EmptyAgent"
+    "short": "AgentSDK Agentic EmptyAgent",
+    "full": "AgentSDK Agentic EmptyAgent"
   },
   "description": {
     "short": "Sample demonstrating a simple Agent that echos back user messages.",
     "full": "Sample demonstrating AgentSDK + Teams to demonstrate a simple Agent that echos back user messages."
   },
   "accentColor": "#FFFFFF",
+  "agenticUserTemplates": [
+    {
+      "id": "${{AGENT_TEMPLATE_ID}}",
+      "file": "agenticUserTemplateManifest.json"
+    }
+  ],
   "copilotAgents": {
     "customEngineAgents": [
       {
-        "id": "${{AAD_APP_CLIENT_ID}}",
-        "type": "bot"
+        "id": "${{BLUEPRINT_ID}}",
+        "type": "bot",
+        "functionsAs": "agenticUserOnly",
+        "agenticUserTemplateId": "${{AGENT_TEMPLATE_ID}}"
       }
     ]
   },
   "bots": [
     {
-      "botId": "${{AAD_APP_CLIENT_ID}}",
+      "botId": "${{BLUEPRINT_ID}}",
       "scopes": [
         "personal"
       ],
@@ -44,7 +51,12 @@
     "identity",
     "messageTeamMembers"
   ],
+  "webApplicationInfo": {
+    "id": "${{BLUEPRINT_ID}}",
+    "resource": "api://${{BLUEPRINT_ID}}"
+  },
   "validDomains": [
+    "token.botframework.com",
     "<<BOT_DOMAIN>>"
   ]
 }
