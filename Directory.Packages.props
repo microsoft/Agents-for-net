@@ -10,6 +10,8 @@
      The 'library-packs' source is added by the SDK.
     -->
     <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
+    <!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
   <PropertyGroup>
     <Microsoft_Extentions_PkgVer>10.0.7</Microsoft_Extentions_PkgVer>
