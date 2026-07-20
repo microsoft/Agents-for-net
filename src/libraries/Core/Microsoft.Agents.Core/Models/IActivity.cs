@@ -336,6 +336,107 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>The new trace Activity.</returns>
         IActivity CreateTrace(string name, object value = null, string valueType = null, [CallerMemberName] string label = null);
 
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> and returns this activity. </summary>
+        IActivity WithText(string text);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Speak"/> and returns this activity. </summary>
+        IActivity WithSpeak(string speak);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.InputHint"/> and returns this activity. </summary>
+        IActivity WithInputHint(string inputHint);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Summary"/> and returns this activity. </summary>
+        IActivity WithSummary(string summary);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Locale"/> and returns this activity. </summary>
+        IActivity WithLocale(string locale);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.TextFormat"/> and returns this activity. </summary>
+        IActivity WithTextFormat(string textFormat);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.AttachmentLayout"/> and returns this activity. </summary>
+        IActivity WithAttachmentLayout(string attachmentLayout);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.DeliveryMode"/> and returns this activity. </summary>
+        IActivity WithDeliveryMode(string deliveryMode);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/> and returns this activity. </summary>
+        IActivity WithName(string name);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Value"/> and returns this activity. </summary>
+        IActivity WithValue(object value);
+
+        /// <summary> Sets both <see cref="Microsoft.Agents.Core.Models.IActivity.Value"/> and <see cref="Microsoft.Agents.Core.Models.IActivity.ValueType"/> and returns this activity. </summary>
+        IActivity WithValue(object value, string valueType);
+
+        /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.SuggestedActions"/> and returns this activity. </summary>
+        IActivity WithSuggestedActions(SuggestedActions suggestedActions);
+
+        /// <summary> Appends the given text to <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> and returns this activity. </summary>
+        IActivity AddText(string text);
+
+        /// <summary> Adds one or more attachments to <see cref="Microsoft.Agents.Core.Models.IActivity.Attachments"/> and returns this activity. </summary>
+        IActivity AddAttachment(params Attachment[] attachments);
+
+        /// <summary> Adds a <see cref="Microsoft.Agents.Core.Models.Card"/> as an attachment and returns this activity. </summary>
+        IActivity AddCard(Card card);
+
+        /// <summary> Adds one or more entities to <see cref="Microsoft.Agents.Core.Models.IActivity.Entities"/> and returns this activity. </summary>
+        IActivity AddEntity(params Entity[] entities);
+
+        /// <summary>
+        /// Adds a <see cref="Microsoft.Agents.Core.Models.Mention"/> entity for the given account and, optionally,
+        /// prepends the mention markup to <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/>.
+        /// </summary>
+        /// <param name="account">The account being mentioned.</param>
+        /// <param name="text">Optional display text for the mention. Defaults to <see cref="Microsoft.Agents.Core.Models.ChannelAccount.Name"/>.</param>
+        /// <param name="addText">When <c>true</c> (default), the <c>&lt;at&gt;</c> mention markup is prepended to the activity text.</param>
+        /// <returns>This activity.</returns>
+        IActivity AddMention(ChannelAccount account, string text = null, bool addText = true);
+
+        /// <summary>
+        /// Gets the <see cref="Microsoft.Agents.Core.Models.Mention"/> for a specific account, if this activity mentions it.
+        /// </summary>
+        /// <param name="accountId">The <see cref="Microsoft.Agents.Core.Models.ChannelAccount.Id"/> to look for.</param>
+        /// <returns>The matching <see cref="Microsoft.Agents.Core.Models.Mention"/>; or <c>null</c> if the account is not mentioned.</returns>
+        Mention GetAccountMention(string accountId);
+
+        /// <summary>
+        /// Indicates whether the activity's <see cref="Microsoft.Agents.Core.Models.IActivity.Recipient"/> is mentioned in the activity.
+        /// </summary>
+        /// <returns><c>true</c> if the recipient is mentioned; otherwise, <c>false</c>.</returns>
+        bool IsRecipientMentioned();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Message"/>. </summary>
+        bool IsMessage();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/>. </summary>
+        bool IsEvent();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/>. </summary>
+        bool IsInvoke();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Typing"/>. </summary>
+        bool IsTyping();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.ConversationUpdate"/>. </summary>
+        bool IsConversationUpdate();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.EndOfConversation"/>. </summary>
+        bool IsEndOfConversation();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Handoff"/>. </summary>
+        bool IsHandoff();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Trace"/>. </summary>
+        bool IsTrace();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Command"/>. </summary>
+        bool IsCommand();
+
+        /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.CommandResult"/>. </summary>
+        bool IsCommandResult();
+
         /// <summary>
         /// Gets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Core.Models.Activity"/> type but that
         /// might appear in the serialized REST JSON object.

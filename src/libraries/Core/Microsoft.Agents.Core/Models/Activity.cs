@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Core.Models
 {
     /// <inheritdoc/>
-    public class Activity :
+    public partial class Activity :
         IActivity,
         IConversationUpdateActivity,
         IContactRelationUpdateActivity,
