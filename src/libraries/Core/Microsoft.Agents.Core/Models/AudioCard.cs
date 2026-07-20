@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> Audio card. </summary>
-    public class AudioCard
+    public class AudioCard : Card
     {
         /// <summary> Initializes a new instance of AudioCard. </summary>
         public AudioCard()
@@ -57,28 +57,12 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.AudioCard"/>.</param>
         /// <returns> The generated attachment.</returns>
-        public Attachment ToAttachment()
+        public override Attachment ToAttachment()
         {
             return new Attachment
             {
                 Content = this,
                 ContentType = ContentType
-            };
-        }
-
-        /// <summary>
-        /// Creates a new message activity that includes this audio card as an attachment.
-        /// </summary>
-        /// <remarks>Use this method to generate a message activity suitable for sending to a user, with
-        /// the current audio card included as an attachment. The returned activity has its type set to <see
-        /// langword="ActivityTypes.Message"/>.</remarks>
-        /// <returns>An <see cref="IActivity"/> representing a message activity with the audio card attached.</returns>
-        public IActivity ToMessage()
-        {
-            return new Activity
-            {
-                Type = ActivityTypes.Message,
-                Attachments = [ToAttachment()]
             };
         }
 
@@ -107,5 +91,12 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Supplementary parameter for this card. </summary>
         [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
+
+        /// <summary> Adds a media URL and returns this card. </summary>
+        public AudioCard AddMedia(MediaUrl media) { Media ??= []; Media.Add(media); return this; }
+        /// <summary> Adds a media URL by string and returns this card. </summary>
+        public AudioCard AddMedia(string url, string profile = null) { Media ??= []; Media.Add(new MediaUrl(url, profile)); return this; }
+        /// <summary> Adds a button and returns this card. </summary>
+        public AudioCard AddButton(CardAction button) { Buttons ??= []; Buttons.Add(button); return this; }
     }
 }
