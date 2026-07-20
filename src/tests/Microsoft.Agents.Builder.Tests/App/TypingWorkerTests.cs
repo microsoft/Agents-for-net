@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Time.Testing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +45,38 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             var context = new TurnContext(adapter, activity);
             return (adapter, context);
+        }
+
+        private static Activity MakeMessageActivity(
+            string channelId = Microsoft.Agents.Core.Models.Channels.Test) =>
+            new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "hello",
+                ChannelId = channelId,
+                Conversation = new ConversationAccount { Id = "conv1" },
+                From = new ChannelAccount { Id = "user1" },
+                Recipient = new ChannelAccount { Id = "bot1" },
+            };
+
+        private static Activity PingEvent() =>
+            new Activity
+            {
+                Type = ActivityTypes.Event,
+                Name = "ping",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
+                Conversation = new ConversationAccount { Id = "conv1" }
+            };
+
+        // Awaits a synchronization signal with a generous ceiling so a genuine hang fails fast
+        // instead of blocking the test run indefinitely. The ceiling is never reached in the
+        // normal (deterministic, virtual-time) case because the signal is released as soon as
+        // the worker reaches the awaited state.
+        private static async Task AwaitSignal(SemaphoreSlim signal, string what)
+        {
+            Assert.True(
+                await signal.WaitAsync(TimeSpan.FromSeconds(10)),
+                $"Timed out waiting for: {what}.");
         }
 
         [Fact]
@@ -99,71 +132,96 @@ namespace Microsoft.Agents.Builder.Tests.App
         [Fact]
         public async Task Start_SendsTypingActivity_AfterInitialDelay()
         {
-            var (adapter, context) = CreateMessageTurn();
-            var worker = TypingWorker.Create(context, MakeOptions(initialDelayMs: 50, intervalMs: 30_000))!;
+            var time = new SignalingTimeProvider();
+            var adapter = new SignalingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            // Huge interval: only the single initial-delay typing should ever fire.
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 500, intervalMs: 30_000), time)!;
 
             worker.Start();
 
-            // Wait well beyond initial delay; only 1 typing should fire (interval is huge).
-            await Task.Delay(300);
+            await AwaitSignal(time.TimerArmed, "initial-delay timer armed");
+            time.Advance(TimeSpan.FromMilliseconds(500));
+            await AwaitSignal(adapter.TypingSent, "first typing activity");
+
             await worker.DisposeAsync();
 
             var typingCount = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
-            Assert.True(typingCount >= 1, $"Expected at least 1 typing activity, got {typingCount}");
+            Assert.Equal(1, typingCount);
         }
 
         [Fact]
         public async Task Start_SendsMultipleTypingActivities_AtInterval()
         {
-            var (adapter, context) = CreateMessageTurn();
-            var worker = TypingWorker.Create(context, MakeOptions(initialDelayMs: 0, intervalMs: 60))!;
+            var time = new SignalingTimeProvider();
+            var adapter = new SignalingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 100, intervalMs: 100), time)!;
 
             worker.Start();
 
-            // Poll until the expected count accumulates rather than sleeping a fixed amount.
-            // A 10s deadline is far beyond what is needed on any machine; the loop exits as soon
-            // as the condition is met so the test remains fast in the normal case.
-            var deadline = DateTimeOffset.UtcNow.AddSeconds(10);
-            while (adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing) < 4
-                   && DateTimeOffset.UtcNow < deadline)
+            // Deterministically drive four typing activities by advancing virtual time exactly
+            // one interval at a time, synchronizing on the worker's own timer/send signals.
+            for (var i = 0; i < 4; i++)
             {
-                await Task.Delay(20);
+                await AwaitSignal(time.TimerArmed, $"timer #{i + 1} armed");
+                time.Advance(TimeSpan.FromMilliseconds(100));
+                await AwaitSignal(adapter.TypingSent, $"typing #{i + 1}");
             }
 
             await worker.DisposeAsync();
 
             var typingCount = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
-            Assert.True(typingCount >= 4, $"Expected at least 4 typing activities, got {typingCount}");
+            Assert.Equal(4, typingCount);
         }
 
         [Fact]
         public async Task Start_StopsOnDispose()
         {
-            var (adapter, context) = CreateMessageTurn();
-            var worker = TypingWorker.Create(context, MakeOptions(initialDelayMs: 0, intervalMs: 30))!;
+            var time = new SignalingTimeProvider();
+            var adapter = new SignalingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 100, intervalMs: 100), time)!;
 
             worker.Start();
-            await Task.Delay(150); // Let a few typing activities fire.
+
+            // Fire two typing activities deterministically.
+            for (var i = 0; i < 2; i++)
+            {
+                await AwaitSignal(time.TimerArmed, $"timer #{i + 1} armed");
+                time.Advance(TimeSpan.FromMilliseconds(100));
+                await AwaitSignal(adapter.TypingSent, $"typing #{i + 1}");
+            }
 
             await worker.DisposeAsync();
             var countAfterDispose = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
-            // After dispose, the count must not increase.
-            await Task.Delay(150);
-            var countAfterWait = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
+            // Advancing far past several intervals after dispose must not produce any more typing.
+            time.Advance(TimeSpan.FromMilliseconds(100 * 10));
+            var countAfterAdvance = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
-            Assert.Equal(countAfterDispose, countAfterWait);
+            Assert.Equal(countAfterDispose, countAfterAdvance);
         }
 
         [Fact]
         public async Task Start_StopsOnStreamingFinalTypingActivitySent()
         {
-            var (adapter, context) = CreateMessageTurn();
-            // Long initial delay so the worker is still waiting when we send the final activity.
-            var worker = TypingWorker.Create(context, MakeOptions(initialDelayMs: 5000, intervalMs: 30_000))!;
+            var time = new SignalingTimeProvider();
+            var adapter = new SignalingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            // Huge initial delay so the worker is still parked when we send the final activity.
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 30_000, intervalMs: 30_000), time)!;
             worker.Start();
 
-            // Send a streaming-final typing activity through the turn context middleware pipeline.
+            // Ensure the worker is parked on its initial-delay timer before we stop it.
+            await AwaitSignal(time.TimerArmed, "initial-delay timer armed");
+
+            // Send a streaming-final typing activity through the turn context middleware pipeline,
+            // which the worker observes and treats as a stop signal.
             var finalTyping = new Activity
             {
                 Type = ActivityTypes.Typing,
@@ -172,16 +230,15 @@ namespace Microsoft.Agents.Builder.Tests.App
             };
             await context.SendActivityAsync(finalTyping, CancellationToken.None);
 
-            // Give the cancellation a moment to propagate.
-            await Task.Delay(100);
+            // DisposeAsync completes only if the worker actually stopped (it awaits the task).
+            await worker.DisposeAsync();
             var countAfterStop = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
-            // No further typing should appear.
-            await Task.Delay(200);
-            var countAfterWait = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
-            await worker.DisposeAsync();
+            // Advancing past the (huge) initial delay must not resurrect the worker.
+            time.Advance(TimeSpan.FromMilliseconds(60_000));
+            var countAfterAdvance = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
 
-            Assert.Equal(countAfterStop, countAfterWait);
+            Assert.Equal(countAfterStop, countAfterAdvance);
         }
 
         // ── Fix 1: transport errors must not fault the background task ───────────────
@@ -190,14 +247,18 @@ namespace Microsoft.Agents.Builder.Tests.App
         public async Task RunAsync_DoesNotFaultTask_WhenAdapterThrows()
         {
             // Arrange: adapter that throws on every send (simulates a transient transport error).
-            var (_, context) = CreateMessageTurn();
-            var throwingContext = new TurnContext(new ThrowingTestAdapter(), context.Activity);
-            var worker = TypingWorker.Create(throwingContext, MakeOptions(initialDelayMs: 0, intervalMs: 30_000))!;
+            var time = new SignalingTimeProvider();
+            var adapter = new ThrowingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 100, intervalMs: 30_000), time)!;
 
             worker.Start();
 
-            // Act: give the background task time to fire and encounter the error.
-            await Task.Delay(150);
+            // Act: advance to the first send and wait until the adapter has thrown.
+            await AwaitSignal(time.TimerArmed, "initial-delay timer armed");
+            time.Advance(TimeSpan.FromMilliseconds(100));
+            await AwaitSignal(adapter.SendAttempted, "send attempt (that throws)");
 
             // Assert: DisposeAsync must not re-throw; a faulted _workerTask would propagate here.
             await worker.DisposeAsync();
@@ -274,132 +335,141 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         /// <summary>
         /// A <see cref="TestAdapter"/> whose <see cref="SendActivitiesAsync"/> always throws,
-        /// simulating a transient transport failure.
+        /// simulating a transient transport failure. Signals <see cref="SendAttempted"/> before
+        /// throwing so tests can synchronize on the failure without sleeping.
         /// </summary>
         private sealed class ThrowingTestAdapter : TestAdapter
         {
+            private readonly SemaphoreSlim _sendAttempted = new(0);
+
+            public SemaphoreSlim SendAttempted => _sendAttempted;
+
+            public ThrowingTestAdapter() : base(Microsoft.Agents.Core.Models.Channels.Test)
+            {
+            }
+
             public override Task<ResourceResponse[]> SendActivitiesAsync(
                 ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
-                => throw new InvalidOperationException("Simulated transport error");
+            {
+                _sendAttempted.Release();
+                throw new InvalidOperationException("Simulated transport error");
+            }
         }
 
         [Fact]
         public async Task Start_ResetsInterval_AfterNonTypingActivitySent()
         {
-            // Use a 400ms interval and send a reset at ~100ms; the next typing should fire
-            // ~400ms after the reset (~500ms total), not at the original ~400ms mark.
-            var (adapter, context) = CreateMessageTurn();
-            var worker = TypingWorker.Create(context, MakeOptions(initialDelayMs: 0, intervalMs: 400))!;
+            // A reset issued mid-countdown must restart the full interval. With virtual time we
+            // advance partway through the interval, inject a reset, and prove the next typing does
+            // NOT fire at the original deadline but only after a fresh full interval from the reset.
+            var time = new SignalingTimeProvider();
+            var adapter = new SignalingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 400, intervalMs: 400), time)!;
             worker.Start();
 
-            // First typing fires at t~=0ms.
-            await Task.Delay(50);
+            // First typing fires after the initial delay.
+            await AwaitSignal(time.TimerArmed, "initial-delay timer armed");
+            time.Advance(TimeSpan.FromMilliseconds(400));
+            await AwaitSignal(adapter.TypingSent, "first typing");
             var countBeforeReset = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
-            Assert.True(countBeforeReset >= 1, "First typing should have fired");
+            Assert.Equal(1, countBeforeReset);
 
-            // Reset the interval at t~=50ms. Without reset the next typing would fire at ~400ms.
-            // With reset it fires at ~50ms + 400ms = ~450ms.
-            await context.SendActivityAsync(
-                new Activity
-                {
-                    Type = ActivityTypes.Event,
-                    Name = "ping",
-                    ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
-                    Conversation = new ConversationAccount { Id = "conv1" }
-                },
-                CancellationToken.None);
+            // Worker now arms the interval timer (would fire after another 400ms).
+            await AwaitSignal(time.TimerArmed, "interval timer armed");
 
-            // At t~=300ms (250ms after reset): without reset, typing would fire at ~400ms total.
-            // With reset at t=50ms, next typing fires at ~450ms — so at t=300ms it hasn't fired yet.
-            await Task.Delay(250); // t~=300ms
-            var countBeforeExpected = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
-            Assert.Equal(countBeforeReset, countBeforeExpected);
+            // Advance partway (200ms of the 400ms interval), then reset.
+            time.Advance(TimeSpan.FromMilliseconds(200));
+            await context.SendActivityAsync(PingEvent(), CancellationToken.None);
 
-            // At t~=600ms (550ms after reset, > 400ms interval): second typing fires.
-            await Task.Delay(300); // t~=600ms
-            var countAfterExpected = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
+            // The reset makes the worker restart a fresh 400ms countdown.
+            await AwaitSignal(time.TimerArmed, "restarted interval timer armed");
+
+            // Advance the remaining 200ms of the ORIGINAL interval. Because it was reset, the
+            // second typing must NOT have fired yet.
+            time.Advance(TimeSpan.FromMilliseconds(200));
+            var countMid = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
+            Assert.Equal(countBeforeReset, countMid);
+
+            // Advance the remaining 200ms of the RESTARTED interval; now the second typing fires.
+            time.Advance(TimeSpan.FromMilliseconds(200));
+            await AwaitSignal(adapter.TypingSent, "second typing after reset");
+
             await worker.DisposeAsync();
 
-            Assert.True(countAfterExpected > countBeforeReset,
-                $"Second typing should have fired after reset interval elapsed, got {countAfterExpected}");
+            var countAfter = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
+            Assert.Equal(2, countAfter);
         }
 
         [Fact]
         public async Task Start_ResetsInterval_WhenResetFiresDuringSend()
         {
             // Exercises the race where ResetInterval fires while SendTypingActivityAsync is
-            // in-flight (i.e., outside WaitAsync). The adapter signals when the typing send
-            // has started, so we can deterministically inject a reset during the send window.
-            var slowAdapter = new SlowSendAdapter(sendDelayMs: 300);
-            var activity = new Activity
-            {
-                Type = ActivityTypes.Message,
-                Text = "hello",
-                ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
-                Conversation = new ConversationAccount { Id = "conv1" },
-                From = new ChannelAccount { Id = "user1" },
-                Recipient = new ChannelAccount { Id = "bot1" },
-            };
-            var context = new TurnContext(slowAdapter, activity);
-            var worker = TypingWorker.Create(context, MakeOptions(initialDelayMs: 0, intervalMs: 500))!;
+            // in-flight (i.e., outside WaitAsync). A gated adapter holds the send open so we can
+            // deterministically inject a reset during the send window — no wall-clock delays.
+            var time = new SignalingTimeProvider();
+            var adapter = new GatedSendAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 100, intervalMs: 500), time)!;
             worker.Start();
 
-            // Wait until the adapter confirms the typing send is in-flight.
-            await slowAdapter.TypingSendStarted.WaitAsync(TimeSpan.FromSeconds(5));
+            // Drive the first typing send and hold it open.
+            await AwaitSignal(time.TimerArmed, "initial-delay timer armed");
+            time.Advance(TimeSpan.FromMilliseconds(100));
+            await AwaitSignal(adapter.SendStarted, "first typing send in-flight");
 
-            // Now fire a reset while the worker is inside SendTypingActivityAsync.
-            await context.SendActivityAsync(
-                new Activity
-                {
-                    Type = ActivityTypes.Event,
-                    Name = "ping",
-                    ChannelId = Microsoft.Agents.Core.Models.Channels.Test,
-                    Conversation = new ConversationAccount { Id = "conv1" }
-                },
-                CancellationToken.None);
+            // Fire a reset while the worker is inside SendTypingActivityAsync (outside WaitAsync).
+            await context.SendActivityAsync(PingEvent(), CancellationToken.None);
 
-            // The adapter's 300ms send completes, then WaitAsync sees the pending reset and
-            // restarts a fresh 500ms countdown. At ~400ms after the reset the second typing
-            // hasn't started yet.
-            await Task.Delay(400);
-            var countAtMid = slowAdapter.TypingSendCount;
-            Assert.Equal(1, countAtMid); // Only the initial typing.
+            // Let the first send complete. The worker then enters WaitAsync, observes the pending
+            // reset, and arms a fresh full 500ms interval.
+            adapter.ReleaseSend();
+            await AwaitSignal(adapter.SendCompleted, "first typing send completed");
+            Assert.Equal(1, adapter.TypingSendCount);
 
-            // Poll until the second typing arrives (interval + adapter delay = ~800ms more).
-            var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
-            while (slowAdapter.TypingSendCount < 2 && DateTimeOffset.UtcNow < deadline)
-            {
-                await Task.Delay(50);
-            }
+            await AwaitSignal(time.TimerArmed, "post-reset interval timer armed");
 
-            var countAtEnd = slowAdapter.TypingSendCount;
+            // The restarted interval has not elapsed yet — no second send.
+            Assert.Equal(1, adapter.TypingSendCount);
+
+            // Advance the full restarted interval to produce the second typing.
+            time.Advance(TimeSpan.FromMilliseconds(500));
+            await AwaitSignal(adapter.SendStarted, "second typing send in-flight");
+            adapter.ReleaseSend();
+            await AwaitSignal(adapter.SendCompleted, "second typing send completed");
+
             await worker.DisposeAsync();
 
-            Assert.True(countAtEnd >= 2,
-                $"Expected at least 2 typing sends after reset-during-send, got {countAtEnd}");
+            Assert.Equal(2, adapter.TypingSendCount);
         }
 
         /// <summary>
-        /// A <see cref="TestAdapter"/> that introduces an artificial delay in
-        /// <see cref="SendActivitiesAsync"/> for typing activities, simulating a slow network.
-        /// Exposes <see cref="TypingSendStarted"/> so tests can synchronize on the send window.
+        /// A <see cref="TestAdapter"/> that holds each typing send open on a gate until the test
+        /// releases it, letting tests deterministically control the "send in-flight" window
+        /// without any wall-clock delay.
         /// </summary>
-        private sealed class SlowSendAdapter : TestAdapter
+        private sealed class GatedSendAdapter : TestAdapter
         {
-            private readonly int _sendDelayMs;
             private int _typingSendCount;
-            private readonly SemaphoreSlim _typingSendStarted = new(0);
+            private readonly SemaphoreSlim _sendStarted = new(0);
+            private readonly SemaphoreSlim _sendCompleted = new(0);
+            private readonly SemaphoreSlim _gate = new(0);
 
             public int TypingSendCount => Volatile.Read(ref _typingSendCount);
 
-            /// <summary>
-            /// Signaled when a typing send begins (before the artificial delay).
-            /// </summary>
-            public SemaphoreSlim TypingSendStarted => _typingSendStarted;
+            /// <summary>Signaled when a typing send begins (before the gate is awaited).</summary>
+            public SemaphoreSlim SendStarted => _sendStarted;
 
-            public SlowSendAdapter(int sendDelayMs) : base(Microsoft.Agents.Core.Models.Channels.Test)
+            /// <summary>Signaled after a typing send has passed the gate and been recorded.</summary>
+            public SemaphoreSlim SendCompleted => _sendCompleted;
+
+            /// <summary>Releases one held typing send.</summary>
+            public void ReleaseSend() => _gate.Release();
+
+            public GatedSendAdapter() : base(Microsoft.Agents.Core.Models.Channels.Test)
             {
-                _sendDelayMs = sendDelayMs;
             }
 
             public override async Task<ResourceResponse[]> SendActivitiesAsync(
@@ -409,13 +479,76 @@ namespace Microsoft.Agents.Builder.Tests.App
                 {
                     if (a.Type == ActivityTypes.Typing)
                     {
-                        _typingSendStarted.Release();
-                        await Task.Delay(_sendDelayMs, cancellationToken);
+                        _sendStarted.Release();
+                        await _gate.WaitAsync(cancellationToken);
                         Interlocked.Increment(ref _typingSendCount);
+                        _sendCompleted.Release();
                     }
                 }
 
                 return await base.SendActivitiesAsync(turnContext, activities, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// A <see cref="TestAdapter"/> that signals <see cref="TypingSent"/> after each typing
+        /// activity is recorded, allowing tests to await sends deterministically.
+        /// </summary>
+        private sealed class SignalingTestAdapter : TestAdapter
+        {
+            private readonly SemaphoreSlim _typingSent = new(0);
+
+            public SemaphoreSlim TypingSent => _typingSent;
+
+            public SignalingTestAdapter() : base(Microsoft.Agents.Core.Models.Channels.Test)
+            {
+            }
+
+            public override async Task<ResourceResponse[]> SendActivitiesAsync(
+                ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
+            {
+                var result = await base.SendActivitiesAsync(turnContext, activities, cancellationToken);
+                foreach (var a in activities)
+                {
+                    if (a.Type == ActivityTypes.Typing)
+                    {
+                        _typingSent.Release();
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// A <see cref="TimeProvider"/> that wraps a <see cref="FakeTimeProvider"/> and signals
+        /// <see cref="TimerArmed"/> each time a timer is created (i.e., each time the worker begins
+        /// a delay). Tests await that signal before advancing virtual time, eliminating the
+        /// classic race where a test advances the clock before the code under test has armed its
+        /// next timer.
+        /// </summary>
+        private sealed class SignalingTimeProvider : TimeProvider
+        {
+            private readonly FakeTimeProvider _inner = new();
+            private readonly SemaphoreSlim _timerArmed = new(0);
+
+            public SemaphoreSlim TimerArmed => _timerArmed;
+
+            public void Advance(TimeSpan delta) => _inner.Advance(delta);
+
+            public override DateTimeOffset GetUtcNow() => _inner.GetUtcNow();
+
+            public override long GetTimestamp() => _inner.GetTimestamp();
+
+            public override long TimestampFrequency => _inner.TimestampFrequency;
+
+            public override TimeZoneInfo LocalTimeZone => _inner.LocalTimeZone;
+
+            public override ITimer CreateTimer(TimerCallback callback, object state, TimeSpan dueTime, TimeSpan period)
+            {
+                var timer = _inner.CreateTimer(callback, state, dueTime, period);
+                _timerArmed.Release();
+                return timer;
             }
         }
     }
