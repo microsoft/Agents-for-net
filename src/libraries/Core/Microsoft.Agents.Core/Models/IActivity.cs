@@ -270,6 +270,8 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary>
         /// The type field controls the meaning of each Activity, and are by convention short strings (e.g. "message"). 
+        /// In most cases you should assign one of the well-known values from <see cref="Microsoft.Agents.Core.Models.ActivityTypes"/>
+        /// (e.g. <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Message"/>) rather than a raw string literal.
         /// Senders may define their own application-layer types, although they are encouraged to choose values that are 
         /// unlikely to collide with future well-defined values. If senders use URIs as type values, they SHOULD NOT 
         /// implement URI ladder comparisons to establish equivalence.
@@ -436,6 +438,36 @@ namespace Microsoft.Agents.Core.Models
 
         /// <summary> Returns <c>true</c> when the activity type is <see cref="Microsoft.Agents.Core.Models.ActivityTypes.CommandResult"/>. </summary>
         bool IsCommandResult();
+
+        /// <summary>
+        /// Resolves the mentions from the entities of this activity.
+        /// </summary>
+        /// <returns>The array of mentions; or an empty array, if none are found.</returns>
+        /// <remarks>Intended for use with a message activity, where the activity <see cref="Microsoft.Agents.Core.Models.IActivity.Type"/> is
+        /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Message"/>.</remarks>
+        /// <seealso cref="Microsoft.Agents.Core.Models.Mention"/>
+        Mention[] GetMentions();
+
+        /// <summary>
+        /// Determines whether this activity represents a targeted activity treatment.
+        /// </summary>
+        /// <returns><c>true</c> if the activity contains an <see cref="Microsoft.Agents.Core.Models.ActivityTreatment"/> entity with a
+        /// treatment of Targeted; otherwise, <c>false</c>.</returns>
+        bool IsTargetedActivity();
+
+        /// <summary>
+        /// Marks this activity as targeted by adding a targeted treatment entity to its collection.
+        /// </summary>
+        /// <param name="user">Optional user to set as the recipient. Replaces <see cref="Microsoft.Agents.Core.Models.IActivity.Recipient"/> when provided.</param>
+        /// <returns>This activity.</returns>
+        IActivity MakeTargetedActivity(ChannelAccount user = null);
+
+        /// <summary>
+        /// Removes the recipient mention text from the <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> property.
+        /// </summary>
+        /// <remarks>Use with caution because this function alters the <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> on the activity.</remarks>
+        /// <returns>The new <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> value.</returns>
+        string RemoveRecipientMention();
 
         /// <summary>
         /// Gets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Core.Models.Activity"/> type but that
