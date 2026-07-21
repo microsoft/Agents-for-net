@@ -216,7 +216,7 @@ sequenceDiagram
         Disp-->>UA: SignInResponse { Status=Error, Cause }
         UA->>Disp: ResetStateAsync(context, handlerName)
         UA->>UA: DeleteSignInStateAsync()
-        Note over UA: Invoke turn — no _userSignInFailureHandler
+        Note over UA: Invoke turn — InvokeResponse is ensured; _userSignInFailureHandler may still run (sent activities aren’t user-visible)
         UA-->>App: false
     end
     deactivate ABUA
