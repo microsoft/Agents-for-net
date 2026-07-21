@@ -7,7 +7,6 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Slack;
 using Microsoft.Agents.Extensions.Slack.Api;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -46,7 +45,8 @@ public partial class MyAgent : AgentApplication
         var message = $$"""
         {
             "channel": "{{channelData.Channel}}",
-            "text": "You said: {{turnContext.Activity.Text}}"
+            "text": "You said: {{turnContext.Activity.Text}}",
+            "thread_ts": "{{channelData.ThreadTs}}"
         }
         """;
 
@@ -105,69 +105,19 @@ public partial class MyAgent : AgentApplication
 
     private async Task OnSlackStreamMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var stream = await SlackExtension.CreateStreamAsync(turnContext);
+        // ITurnContext.StreamingResponse resolves to the Slack streaming implementation for Slack turns,
+        // which streams via chat.startStream / chat.appendStream / chat.stopStream under the covers.
+        var stream = turnContext.StreamingResponse;
+        stream.FeedbackLoopEnabled = true;
 
-        try
+        await stream.QueueInformativeUpdateAsync("Working it", cancellationToken);
+
+        foreach (var word in new[] { "This ", "is ", "a ", "test." })
         {
-            await stream.AppendAsync(new TaskUpdateChunk(id: "task1", title: "Working it", status: SlackTaskStatus.InProgress));
-            await Task.Delay(2000, cancellationToken);
-
-            await stream.AppendAsync(markdown_text: "This ");
+            stream.QueueTextChunk(word);
             await Task.Delay(1500, cancellationToken);
-
-            await stream.AppendAsync([
-                    new MarkdownTextChunk("is "),
-                    new TaskUpdateChunk(id: "task1", title: "Still working it", status: SlackTaskStatus.InProgress)
-                ]);
-            await Task.Delay(1500, cancellationToken);
-
-            await stream.AppendAsync(markdown_text: "a ");
-            await Task.Delay(1500, cancellationToken);
-
-            await stream.AppendAsync(markdown_text: "test.");
-
-            await stream.AppendAsync(new TaskUpdateChunk(id: "task1", title: "Done", status: SlackTaskStatus.Complete));
         }
-        catch (Exception)
-        {
-            await stream.AppendAsync(new TaskUpdateChunk(id: "task1", title: "Error", status: SlackTaskStatus.Error));
-        }
-        finally
-        {
-            var feedbackButtons = """
-            {
-                "blocks": 
-                [
-                    {
-                        "type": "context_actions",
-                        "elements": [
-                            {
-                                "type": "feedback_buttons",
-                                "action_id": "feedback",
-                                "positive_button": {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "👍"
-                                    },
-                                    "value": "positive_feedback"
-                                },
-                                "negative_button": {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "👎"
-                                    },
-                                    "value": "negative_feedback"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-            """;
 
-            // Legacy: https://docs.slack.dev/legacy/legacy-messaging/legacy-message-buttons/
-            // New: Feedback buttons: https://docs.slack.dev/reference/block-kit/blocks/context-actions-block
-            await stream.StopAsync(blocks: feedbackButtons);
-        }
+        await stream.EndStreamAsync(cancellationToken);
     }
 }

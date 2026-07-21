@@ -9,6 +9,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Claims;
@@ -29,10 +30,26 @@ namespace Microsoft.Agents.Builder
     /// </remarks>
     /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
     /// <param name="logger">The ILogger implementation this adapter should use.</param>
+    /// <param name="serviceProvider">Optional service provider used to instantiate per-channel <see cref="IStreamingResponseFactory"/> implementations discovered via <see cref="StreamingResponseFactoryAttribute"/>, to assign a channel-specific <see cref="IStreamingResponse"/> to each turn.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,
-        ILogger logger = null) : ChannelAdapter(logger)
+        ILogger logger = null,
+        IServiceProvider serviceProvider = null) : ChannelAdapter(logger)
     {
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
+
+        // Per-channel cache of resolved factories, so each factory is instantiated at most once per adapter.
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, IStreamingResponseFactory> _streamingResponseFactories =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        static ChannelServiceAdapterBase()
+        {
+            // Register the AssemblyLoad handler early (at first adapter type use, i.e. host startup) so that
+            // extension assemblies loaded later - including during activity deserialization - are scanned for
+            // their [StreamingResponseFactory] implementations before the pipeline runs.
+            StreamingResponseFactoryCatalog.EnsureInitialized();
+        }
+
         /// <summary>
         /// Gets the <see cref="Microsoft.Agents.Builder.IChannelServiceClientFactory" /> instance for this adapter.
         /// </summary>
@@ -290,6 +307,41 @@ namespace Microsoft.Agents.Builder
             if (userTokenClient != null)
                 turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
+
+            ApplyStreamingResponseFactory(turnContext);
+        }
+
+        /// <summary>
+        /// Assigns a channel-specific <see cref="IStreamingResponse"/> to the turn when a factory is registered
+        /// for the incoming channel (via <see cref="StreamingResponseFactoryAttribute"/>).  When no factory is
+        /// registered, the default <see cref="StreamingResponse"/> is used (created lazily by
+        /// <see cref="TurnContext"/>).
+        /// </summary>
+        private void ApplyStreamingResponseFactory(TurnContext turnContext)
+        {
+            var channel = turnContext.Activity?.ChannelId?.Channel;
+            if (_serviceProvider == null || channel == null)
+            {
+                return;
+            }
+
+            var factory = _streamingResponseFactories.GetOrAdd(channel, CreateStreamingResponseFactory);
+            if (factory != null)
+            {
+                turnContext.SetStreamingResponse(factory.Create(turnContext));
+            }
+        }
+
+        private IStreamingResponseFactory CreateStreamingResponseFactory(string channel)
+        {
+            if (!StreamingResponseFactoryCatalog.TryGetFactoryType(channel, out var factoryType))
+            {
+                return null;
+            }
+
+            // Instantiate the factory from the service provider so its dependencies (e.g. IHttpClientFactory,
+            // IConfiguration) are injected.  Cached per channel by the caller.
+            return (IStreamingResponseFactory)ActivatorUtilities.CreateInstance(_serviceProvider, factoryType);
         }
 
         private static void ValidateContinuationActivity(IActivity continuationActivity)

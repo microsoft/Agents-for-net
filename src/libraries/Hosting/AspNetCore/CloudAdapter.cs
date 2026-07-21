@@ -45,6 +45,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
         /// <param name="config"></param>
+        /// <param name="serviceProvider">Optional service provider used to instantiate per-channel <see cref="IStreamingResponseFactory"/> implementations discovered via <see cref="StreamingResponseFactoryAttribute"/>.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -52,8 +53,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ILogger<CloudAdapter> logger = null,
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
-            IConfiguration config = null)
-            : base(channelServiceClientFactory, logger)
+            IConfiguration config = null,
+            IServiceProvider serviceProvider = null)
+            : base(channelServiceClientFactory, logger, serviceProvider)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? config?.GetSection("CloudAdapterOptions")?.Get<AdapterOptions>() ?? new AdapterOptions();
