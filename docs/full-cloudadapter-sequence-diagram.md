@@ -26,8 +26,8 @@ sequenceDiagram
 
     Client->>CloudAdapter: POST /api/messages
 
-    alt DeliveryMode == Stream
-        Note over CloudAdapter: Blocking path
+    alt DeliveryMode == Stream (SSE)
+        Note over CloudAdapter: Blocking SSE path (Invoke and ExpectReplies are also synchronous but non-SSE)
         CloudAdapter->>ChannelResponseQueue: StartHandlerForRequest(requestId)
         CloudAdapter->>HttpResponse: ResponseBegin()<br/>(Content-Type: text/event-stream)
         CloudAdapter-->>ProcessActivity: fire-and-forget task
