@@ -23,7 +23,7 @@ When working on serialization infrastructure, read `docs/serialization-extension
 
 ## Conventions
 
-- Extension libraries place their `[SerializationInit]` class in a `Serialization/` subfolder (e.g., `Microsoft.Agents.Extensions.Teams/Serialization/SerializationInit.cs`).
+- Extension libraries place their `[SerializationInit]` class in a `Serialization/` subfolder (e.g., `Microsoft.Agents.Extensions.MSTeams/Serialization/SerializationInit.cs`).
 - The `Init()` method must be `public static void Init()` — the runtime invokes it by reflection.
 - Custom `JsonConverter` classes live under `Serialization/Converters/`.
 - Entity subclasses need only inherit from `Entity`; the `EntityInitSourceGenerator` handles registration automatically.

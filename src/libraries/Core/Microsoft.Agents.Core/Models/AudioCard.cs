@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> Audio card. </summary>
-    public class AudioCard
+    public class AudioCard : Card
     {
         /// <summary> Initializes a new instance of AudioCard. </summary>
         public AudioCard()
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.AudioCard"/>.</param>
         /// <returns> The generated attachment.</returns>
-        public Attachment ToAttachment()
+        public override Attachment ToAttachment()
         {
             return new Attachment
             {
@@ -91,5 +91,12 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Supplementary parameter for this card. </summary>
         [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
+
+        /// <summary> Adds a media URL and returns this card. </summary>
+        public AudioCard AddMedia(MediaUrl media) { Media ??= []; Media.Add(media); return this; }
+        /// <summary> Adds a media URL by string and returns this card. </summary>
+        public AudioCard AddMedia(string url, string profile = null) { Media ??= []; Media.Add(new MediaUrl(url, profile)); return this; }
+        /// <summary> Adds a button and returns this card. </summary>
+        public AudioCard AddButton(CardAction button) { Buttons ??= []; Buttons.Add(button); return this; }
     }
 }
