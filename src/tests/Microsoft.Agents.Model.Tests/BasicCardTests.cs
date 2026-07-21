@@ -5,6 +5,8 @@ using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
 using Xunit;
 
+#pragma warning disable CS0618 // Type or member is obsolete - exercising obsolete BasicCard
+
 namespace Microsoft.Agents.Model.Tests
 {
     public class BasicCardTests

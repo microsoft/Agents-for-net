@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> A card representing a request to sign in. </summary>
-    public class SigninCard
+    public class SigninCard : Card
     {
         public SigninCard() 
         {
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.SigninCard"/>.</param>
         /// <returns> The generated attachment.</returns>
-        public Attachment ToAttachment()
+        public override Attachment ToAttachment()
         {
             return new Attachment
             {
