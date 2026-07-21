@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> A receipt card. </summary>
-    public class ReceiptCard
+    public class ReceiptCard : Card
     {
         /// <summary> Initializes a new instance of ReceiptCard. </summary>
         public ReceiptCard()
@@ -49,28 +49,12 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.ReceiptCard"/>.</param>
         /// <returns> The generated attachment.</returns>
-        public Attachment ToAttachment()
+        public override Attachment ToAttachment()
         {
             return new Attachment
             {
                 Content = this,
                 ContentType = ContentType
-            };
-        }
-
-        /// <summary>
-        /// Creates a new message activity that includes this receipt card as an attachment.
-        /// </summary>
-        /// <remarks>Use this method to generate a message activity suitable for sending to a user, with
-        /// the current receipt card included as an attachment. The returned activity has its type set to <see
-        /// langword="ActivityTypes.Message"/>.</remarks>
-        /// <returns>An <see cref="IActivity"/> representing a message activity with the receipt card attached.</returns>
-        public IActivity ToMessage()
-        {
-            return new Activity
-            {
-                Type = ActivityTypes.Message,
-                Attachments = [ToAttachment()]
             };
         }
 
@@ -91,5 +75,12 @@ namespace Microsoft.Agents.Core.Models
         public string Vat { get; set; }
         /// <summary> Set of actions applicable to the current card. </summary>
         public IList<CardAction> Buttons { get; set; }
+
+        /// <summary> Adds a fact and returns this card. </summary>
+        public ReceiptCard AddFact(Fact fact) { Facts ??= []; Facts.Add(fact); return this; }
+        /// <summary> Adds a receipt item and returns this card. </summary>
+        public ReceiptCard AddItem(ReceiptItem item) { Items ??= []; Items.Add(item); return this; }
+        /// <summary> Adds a button and returns this card. </summary>
+        public ReceiptCard AddButton(CardAction button) { Buttons ??= []; Buttons.Add(button); return this; }
     }
 }

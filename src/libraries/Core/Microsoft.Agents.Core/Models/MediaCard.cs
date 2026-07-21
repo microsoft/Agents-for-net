@@ -3,12 +3,14 @@
 
 #nullable disable
 
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> Media card. </summary>
+    [Obsolete("MediaCard is a structural base without an Activity Protocol content type. Use AnimationCard, AudioCard, or VideoCard instead. Will be removed in a future release.")]
     public class MediaCard
     {
         /// <summary> Initializes a new instance of MediaCard. </summary>
@@ -72,5 +74,12 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Supplementary parameter for this card. </summary>
         [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
+
+        /// <summary> Adds a media URL and returns this card. </summary>
+        public MediaCard AddMedia(MediaUrl media) { Media ??= []; Media.Add(media); return this; }
+        /// <summary> Adds a media URL by string and returns this card. </summary>
+        public MediaCard AddMedia(string url, string profile = null) { Media ??= []; Media.Add(new MediaUrl(url, profile)); return this; }
+        /// <summary> Adds a button and returns this card. </summary>
+        public MediaCard AddButton(CardAction button) { Buttons ??= []; Buttons.Add(button); return this; }
     }
 }

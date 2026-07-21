@@ -3,11 +3,13 @@
 
 #nullable disable
 
+using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> A basic card. </summary>
+    [Obsolete("BasicCard is not an Activity Protocol card type (it has no content type) and will be removed in a future release.")]
     public class BasicCard
     {
         /// <summary> Initializes a new instance of BasicCard. </summary>
@@ -46,5 +48,16 @@ namespace Microsoft.Agents.Core.Models
         public IList<CardAction> Buttons { get; set; }
         /// <summary> A clickable action. </summary>
         public CardAction Tap { get; set; }
+
+        /// <summary> Adds an image and returns this card. </summary>
+        public BasicCard AddImage(CardImage image) { Images ??= []; Images.Add(image); return this; }
+        /// <summary> Adds an image by URL and returns this card. </summary>
+        public BasicCard AddImage(string url, string alt = null) { Images ??= []; Images.Add(new CardImage(url, alt)); return this; }
+        /// <summary> Adds a button and returns this card. </summary>
+        public BasicCard AddButton(CardAction button) { Buttons ??= []; Buttons.Add(button); return this; }
+        /// <summary> Adds a button by title/type/value and returns this card. </summary>
+        public BasicCard AddButton(string title, string type = ActionTypes.ImBack, object value = null) { Buttons ??= []; Buttons.Add(new CardAction(type: type, title: title, value: value ?? title)); return this; }
+        /// <summary> Adds one or more buttons and returns this card. </summary>
+        public BasicCard AddButtons(params CardAction[] buttons) { if (buttons == null) { return this; } Buttons ??= []; foreach (var button in buttons) { Buttons.Add(button); } return this; }
     }
 }
