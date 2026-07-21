@@ -238,8 +238,6 @@ namespace Microsoft.Agents.Builder
             => _innerTurnContext.UpdateActivityAsync(activity, cancellationToken);
 
         public Task<ResourceResponse> TraceActivityAsync(string name, object value = null, string valueType = null, [CallerMemberName] string label = null, CancellationToken cancellationToken = default)
-        {
-            throw new System.NotImplementedException();
-        }
+            => _innerTurnContext.TraceActivityAsync(name, value, valueType, label, cancellationToken);
     }
 }

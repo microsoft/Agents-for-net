@@ -9,9 +9,12 @@ namespace Microsoft.Agents.Extensions.Slack.Tests;
 
 /// <summary>
 /// Tests for the polymorphic resolution of inbound Activities to <see cref="SlackActivity"/>.
-/// The resolver (registered in <c>Serialization.SerializationInit.Init</c>) maps any Activity whose
-/// channelId is "slack" to <see cref="SlackActivity"/>, exposing a strongly-typed
-/// <see cref="Api.SlackChannelData"/> via the <see cref="SlackActivity.ChannelData"/> shadow.
+/// Resolution is driven by the <c>[ActivityType(ChannelId = "slack")]</c> annotation on
+/// <see cref="SlackActivity"/>, which the source generator turns into an assembly-level
+/// <see cref="ActivityTypeInitAssemblyAttribute"/> that auto-registers the type at load time.
+/// Any Activity whose channelId is "slack" therefore deserializes to <see cref="SlackActivity"/>,
+/// exposing a strongly-typed <see cref="Api.SlackChannelData"/> via the
+/// <see cref="SlackActivity.ChannelData"/> shadow.
 /// </summary>
 public class SlackActivityTests
 {
