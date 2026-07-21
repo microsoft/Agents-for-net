@@ -63,6 +63,7 @@
     <!-- Test nuget packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.8.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
     <PackageVersion Include="xunit" Version="$(Xunit_PackageVersion)" />
@@ -81,6 +82,7 @@
     <!-- SDK Core -->
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="$(Microsoft_Bcl_PkgVer)" />
     <PackageVersion Include="Microsoft.Bcl.Memory" Version="$(Microsoft_Bcl_PkgVer)" />
+    <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="$(Microsoft_Bcl_PkgVer)" />
     <PackageVersion Include="Azure.Identity" Version="1.17.1" />
     <PackageVersion Include="Azure.Core" Version="1.50.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0" />
