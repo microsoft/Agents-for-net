@@ -326,9 +326,19 @@ namespace Microsoft.Agents.Builder
             }
 
             var factory = _streamingResponseFactories.GetOrAdd(channel, CreateStreamingResponseFactory);
-            if (factory != null)
+            if (factory == null)
+            {
+                return;
+            }
+
+            try
             {
                 turnContext.SetStreamingResponse(factory.Create(turnContext));
+            }
+            catch (Exception ex)
+            {
+                // A misbehaving factory must not fail the turn; fall back to the default StreamingResponse.
+                ChannelServiceAdapterLog.LogStreamingResponseFactoryError(Logger, ex, channel);
             }
         }
 
@@ -339,9 +349,19 @@ namespace Microsoft.Agents.Builder
                 return null;
             }
 
-            // Instantiate the factory from the service provider so its dependencies (e.g. IHttpClientFactory,
-            // IConfiguration) are injected.  Cached per channel by the caller.
-            return (IStreamingResponseFactory)ActivatorUtilities.CreateInstance(_serviceProvider, factoryType);
+            try
+            {
+                // Instantiate the factory from the service provider so its dependencies (e.g. IHttpClientFactory,
+                // IConfiguration) are injected.  Cached per channel by the caller.
+                return (IStreamingResponseFactory)ActivatorUtilities.CreateInstance(_serviceProvider, factoryType);
+            }
+            catch (Exception ex)
+            {
+                // Optional, reflection/source-gen discovered factories may fail to instantiate (missing DI
+                // registrations, invalid type, etc.).  Cache the null result and fall back to the default.
+                ChannelServiceAdapterLog.LogStreamingResponseFactoryError(Logger, ex, channel);
+                return null;
+            }
         }
 
         private static void ValidateContinuationActivity(IActivity continuationActivity)

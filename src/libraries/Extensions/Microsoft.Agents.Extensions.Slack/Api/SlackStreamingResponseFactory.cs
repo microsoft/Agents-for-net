@@ -58,6 +58,8 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         }
 
         private static bool TryGetInt(IConfiguration section, string key, out int value)
-            => int.TryParse(section[key], out value);
+            // Only accept non-negative values; Interval/InitialDelay setters reject negatives, and a bad
+            // config value must not break Slack turns - fall through to the defaults instead.
+            => int.TryParse(section[key], out value) && value >= 0;
     }
 }

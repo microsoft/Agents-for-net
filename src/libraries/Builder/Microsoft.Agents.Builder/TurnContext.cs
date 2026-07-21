@@ -80,8 +80,11 @@ namespace Microsoft.Agents.Builder
                 _onUpdateActivity = tc._onUpdateActivity;
                 _onDeleteActivity = tc._onDeleteActivity;
 
-                // Carry forward any channel-specific streaming response already assigned to the source turn.
-                _streamingResponse = tc._streamingResponse;
+                // Intentionally do NOT carry forward tc._streamingResponse: a StreamingResponse captures
+                // the originating TurnContext and addresses streamed activities using that context's
+                // Activity/ConversationReference.  Since this clone targets a different Activity, reusing the
+                // source instance would misaddress sends.  The clone lazily creates its own default
+                // StreamingResponse bound to this context on first access.
             }
         }
 
