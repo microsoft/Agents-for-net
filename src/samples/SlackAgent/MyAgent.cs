@@ -32,9 +32,9 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     // Demonstrates using the Slack API to reply to a message with the text "You said: {message text}" instead of
     // the typical ITurnContext.SendActivityAsync response.
     [SlackMessageRoute]
-    public async Task OnSlackMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task OnSlackMessageAsync(ITurnContext<ISlackActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
+        var channelData = turnContext.Activity.ChannelData;
 
         var message = $$"""
         {
