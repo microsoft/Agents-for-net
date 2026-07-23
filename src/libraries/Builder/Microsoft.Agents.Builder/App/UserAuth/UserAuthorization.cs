@@ -275,7 +275,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                                 }
                             }, cancellationToken).ConfigureAwait(false);
                         }
-                        return false;
                     }
 
                     if (_userSignInFailureHandler != null)

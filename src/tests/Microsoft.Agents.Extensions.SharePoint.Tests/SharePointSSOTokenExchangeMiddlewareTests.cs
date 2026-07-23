@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -129,14 +129,14 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
             {
                 Type = ActivityTypes.Invoke,
                 Name = "cardExtension/token",
-                ChannelId = Channels.Directline,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline,
                 From = new ChannelAccount(UserId, UserName),
                 Conversation = new ConversationAccount(id: "test-conversation"),
                 Value = ProtocolJsonSerializer.ToObject<JsonElement>(_request)
             };
 
             var adapter = new SharePointSSOAdapter(CaptureSend);
-            adapter.AddExchangeableToken(ConnectionName, Channels.Directline, UserId, FakeExchangeableItem, Token);
+            adapter.AddExchangeableToken(ConnectionName, Microsoft.Agents.Core.Models.Channels.Directline, UserId, FakeExchangeableItem, Token);
 
             var turnContext = adapter.CreateTurnContext(activity);
 

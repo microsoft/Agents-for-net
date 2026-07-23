@@ -1,0 +1,81 @@
+name: Issue Triage Agent
+
+# Runs GitHub Copilot CLI to triage an issue when the `ai-triage` label is added,
+# and again whenever anyone comments on an `ai-triage` issue. The agent posts an
+# analysis comment, asks for more info when needed, suggests a mitigation, and —
+# when the problem is reproducible — posts a detailed, ready-to-apply fix as an
+# issue comment. It never creates branches or pull requests.
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+# Only one triage run per issue at a time.
+concurrency:
+  group: issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read     # read source to ground the analysis
+  issues: write      # comment on and label issues
+
+jobs:
+  triage:
+    # Ignore pull requests (both events also fire for PRs, which carry a
+    # pull_request field) and run when either:
+    #   * the `ai-triage` label was just added, or
+    #   * a new comment was added to an issue that already has the `ai-triage`
+    #     label — but skip the agent's own comments to avoid an infinite loop.
+    if: >-
+      github.event.issue.pull_request == null &&
+      (
+        (github.event_name == 'issues' && github.event.label.name == 'ai-triage') ||
+        (
+          github.event_name == 'issue_comment' &&
+          contains(github.event.issue.labels.*.name, 'ai-triage') &&
+          !startsWith(github.event.comment.body, '> _Automated triage by GitHub Copilot._')
+        )
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install GitHub Copilot CLI
+        run: npm install -g @github/copilot
+
+      - name: Run triage agent
+        env:
+          # Model auth: user PAT with the "Copilot Requests" permission.
+          # This is the ONLY thing the PAT is used for.
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
+          # gh auth for reading the issue and posting comments/labels. The
+          # workflow-scoped GITHUB_TOKEN (governed by the `permissions:` block
+          # above) is sufficient for these operations, so we deliberately avoid
+          # exposing the broader PAT here to limit the blast radius when
+          # untrusted issue content is ingested.
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # Expand ${REPO}, ${ISSUE_NUMBER}, ${ISSUE_TITLE}, ${EVENT_NAME} in the
+          # prompt template.
+          PROMPT="$(envsubst < .github/prompts/issue-triage.md)"
+          # NOTE: --allow-all-tools is required so the agent can inspect the code
+          # and validate hypotheses. Because this workflow ingests untrusted issue
+          # content while holding a token that can comment, the prompt hardens
+          # against prompt-injection (see the "Security" section of the prompt
+          # template). Review that guidance before widening this workflow's
+          # capabilities.
+          copilot -p "$PROMPT" --allow-all-tools
