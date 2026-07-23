@@ -1,8 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.Teams</ComponentAreaName>
-		<TargetFrameworks>net8.0</TargetFrameworks>
 		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
@@ -11,6 +10,12 @@
 	  <Compile Remove="Properties\**" />
 	  <EmbeddedResource Remove="Properties\**" />
 	  <None Remove="Properties\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Model\TestJson\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -24,8 +29,7 @@
     </ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
-	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
+	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.Teams\Microsoft.Agents.Extensions.Teams.csproj" />
 	  <ProjectReference Include="..\Microsoft.Agents.Builder.Tests\Microsoft.Agents.Builder.Tests.csproj" />
 	</ItemGroup>
 </Project>
