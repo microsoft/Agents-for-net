@@ -3,6 +3,9 @@
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.Builder</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
+		<!-- Microsoft.Extensions.TimeProvider.Testing ships a net462 asset that works on net4.8
+		     via the Microsoft.Bcl.TimeProvider polyfill; silence its heuristic TFM-support warning. -->
+		<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 
@@ -15,6 +18,7 @@
 	<ItemGroup>
 		<PackageReference Include="Moq" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
 		<PackageReference Include="xunit" />
 		<PackageReference Include="xunit.runner.visualstudio">
 			<PrivateAssets>all</PrivateAssets>
