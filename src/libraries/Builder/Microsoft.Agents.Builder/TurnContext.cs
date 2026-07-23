@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Builder
         private readonly IList<DeleteActivityHandler> _onDeleteActivity = [];
 
         private bool _disposed;
-        private readonly IStreamingResponse _streamingResponse;
+        private IStreamingResponse _streamingResponse;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TurnContext"/> class.
@@ -50,8 +50,6 @@ namespace Microsoft.Agents.Builder
             Identity = identity;
             StackState = [];
             Services = [];
-
-            _streamingResponse = new StreamingResponse(this);
         }
 
         /// <summary>
@@ -68,7 +66,6 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
             Activity = activity ?? throw new ArgumentNullException(nameof(activity));
-            _streamingResponse = new StreamingResponse(this);
 
             // all properties should be copied over except for activity.
             Adapter = turnContext.Adapter;
@@ -82,6 +79,12 @@ namespace Microsoft.Agents.Builder
                 _onSendActivities = tc._onSendActivities;
                 _onUpdateActivity = tc._onUpdateActivity;
                 _onDeleteActivity = tc._onDeleteActivity;
+
+                // Intentionally do NOT carry forward tc._streamingResponse: a StreamingResponse captures
+                // the originating TurnContext and addresses streamed activities using that context's
+                // Activity/ConversationReference.  Since this clone targets a different Activity, reusing the
+                // source instance would misaddress sends.  The clone lazily creates its own default
+                // StreamingResponse bound to this context on first access.
             }
         }
 
@@ -107,7 +110,32 @@ namespace Microsoft.Agents.Builder
         public IActivity Activity { get; }
 
         /// <inheritdoc/>
-        public IStreamingResponse StreamingResponse { get { return _streamingResponse; } }
+        public IStreamingResponse StreamingResponse
+        {
+            get { return _streamingResponse ??= new StreamingResponse(this); }
+        }
+
+        /// <summary>
+        /// Assigns the channel-specific <see cref="IStreamingResponse"/> for this turn.
+        /// </summary>
+        /// <remarks>
+        /// Called by the adapter after resolving an <see cref="IStreamingResponseFactory"/> for the incoming
+        /// channel, before the pipeline runs.  If a streaming response has already been used (its stream has
+        /// started), it is not replaced.
+        /// </remarks>
+        /// <param name="streamingResponse">The streaming response to use for this turn.</param>
+        internal void SetStreamingResponse(IStreamingResponse streamingResponse)
+        {
+            AssertionHelpers.ThrowIfNull(streamingResponse, nameof(streamingResponse));
+
+            // Don't replace a streaming response that is already in use.
+            if (_streamingResponse != null && _streamingResponse.IsStreamStarted())
+            {
+                return;
+            }
+
+            _streamingResponse = streamingResponse;
+        }
 
         public ClaimsIdentity Identity { get; internal set; }
 
