@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.Builder.UserAuth.TokenService
 {
@@ -35,6 +36,9 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public string InvalidSignInRetryMessage { get; set; } = "Invalid sign in code. Please enter the 6-digit code.";
         public int InvalidSignInRetryMax { get; set; } = 2;
+        public string TeamsSignInInProgressMessage { get; set; } = "Please finish signing and wait for completion";
+        public IList<string> CancelSignInCommands { get; set; } = ["-cancel"];
+        public string SignInCancelledMessage { get; set; } = "Sign in cancelled.";
 
         /// <summary>
         /// Gets or sets the number of milliseconds the prompt waits for the user to authenticate.

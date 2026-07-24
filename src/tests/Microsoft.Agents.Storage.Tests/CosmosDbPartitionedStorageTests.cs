@@ -387,15 +387,15 @@ namespace Microsoft.Agents.Storage.Tests
             _storage = new CosmosDbPartitionedStorage(client.Object, options, jsonSerializerSettings);
         }
 
-        private static Dictionary<string, object> GenerateNestedDict()
+        private static PersistedState GenerateNestedDict()
         {
-            var nested = new Dictionary<string, object>();
-            var current = new Dictionary<string, object>();
+            var nested = new PersistedState();
+            var current = new PersistedState();
 
             nested.Add("0", current);
             for (var i = 1; i <= 127; i++)
             {
-                var child = new Dictionary<string, object>();
+                var child = new PersistedState();
                 current.Add(i.ToString(), child);
                 current = child;
             }

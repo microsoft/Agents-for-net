@@ -45,7 +45,7 @@ public class MyAgent : AgentApplication
 
         // Log what type of notification was received. 
         System.Diagnostics.Trace.WriteLine($"A365 NOTIFICATION TYPE >>> Type: {agentNotificationActivity.NotificationType}");
-        IActivity response = null; 
+        IActivity? response = null; 
         switch (agentNotificationActivity.NotificationType)
         {
             case NotificationTypeEnum.Unknown:

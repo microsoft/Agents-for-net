@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.Testing
                 builder.Services.AddTransient<IAgent, EchoAgent>();
             });
 
-            Assert.Equal(Channels.Test, host.Adapter.Conversation.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Test, host.Adapter.Conversation.ChannelId);
             Assert.Equal("user1", host.Adapter.Conversation.User.Id);
             Assert.Equal("bot", host.Adapter.Conversation.Agent.Id);
             Assert.Equal("convo1", host.Adapter.Conversation.Conversation.Id);

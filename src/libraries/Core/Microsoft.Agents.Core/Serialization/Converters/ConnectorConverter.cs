@@ -329,8 +329,22 @@ namespace Microsoft.Agents.Core.Serialization.Converters
                         ?? namingPolicy?.ConvertName(prop.Name)
                         ?? prop.Name;
 
-                    if (metadata.ContainsKey(resolvedName))
+                    if (metadata.TryGetValue(resolvedName, out var existing))
                     {
+                        // Property shadowing via `new`: the same property name is declared on both a
+                        // base type and a more-derived subclass. Keep the most-derived declaration
+                        // (which carries the stronger typing) rather than treating it as a collision.
+                        if (string.Equals(existing.Item1.Name, prop.Name, StringComparison.Ordinal)
+                            && existing.Item1.DeclaringType != prop.DeclaringType)
+                        {
+                            if (existing.Item1.DeclaringType.IsAssignableFrom(prop.DeclaringType))
+                            {
+                                metadata[resolvedName] = (prop, prop.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition == JsonIgnoreCondition.Always);
+                            }
+
+                            continue;
+                        }
+
                         throw new InvalidOperationException(
                             $"Duplicate JSON property name detected: '{resolvedName}' maps to multiple properties in type '{t.FullName}'."
                         );

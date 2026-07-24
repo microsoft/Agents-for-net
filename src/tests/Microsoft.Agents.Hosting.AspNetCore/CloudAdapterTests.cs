@@ -657,7 +657,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
             record.VerifyMocks();
         }
-        
+
         [Fact]
         public async Task ProcessAsync_CancellationDuringStream_ShouldNotThrow()
         {

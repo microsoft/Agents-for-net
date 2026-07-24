@@ -6,9 +6,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
 
@@ -16,191 +14,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 {
     /// <summary>
     /// Provides extension methods for registering agent-related services, adapters, and middleware with dependency
-    /// injection containers and application builders.
+    /// injection containers.
     /// </summary>
-    /// <remarks>These extension methods simplify the setup of agent applications by enabling the registration
-    /// of agents, adapters, options, and supporting middleware. They are intended to be used during application startup
-    /// to configure required services for agent-based architectures, such as those using CloudAdapter and
-    /// AgentApplication. Methods in this class support both default and custom agent/adapters, and facilitate
-    /// integration with ASP.NET Core's dependency injection and middleware pipelines.</remarks>
+    /// <remarks>These extension methods operate on <see cref="IServiceCollection"/> (and
+    /// <c>IHostApplicationBuilder.Services</c>) to register agents, adapters, options, and supporting
+    /// services during application startup, such as those using CloudAdapter and AgentApplication. The
+    /// application-builder and request-pipeline APIs (fluent startup, middleware ordering, and endpoint mapping)
+    /// live in <see cref="AgentHostExtensions"/>.</remarks>
     public static class ServiceCollectionExtensions
     {
-        #region Builder Extensions
-        /// <summary>
-        /// Adds an Agent which subclasses <c>AgentApplication</c>
-        /// <code>
-        /// builder.Services.AddSingleton&lt;IStorage, MemoryStorage&gt;();
-        /// builder.AddAgent&lt;MyAgent>();
-        /// </code>
-        /// </summary>
-        /// <remarks>
-        /// This will also call <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgentCore(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
-        /// The Agent is registered as Transient. <see cref="AgentApplicationOptions"/> is automatically registered
-        /// if not already present.
-        /// </remarks>
-        /// <typeparam name="TAgent"></typeparam>
-        /// <param name="builder"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddAgent<TAgent>(this IHostApplicationBuilder builder)
-            where TAgent : class, IAgent
-        {
-            return builder.AddAgent<TAgent, CloudAdapter>();
-        }
-
-        /// <summary>
-        /// Same as <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> but allows for use of
-        /// any <c>CloudAdapter</c> subclass.
-        /// <code>
-        /// builder.Services.AddSingleton&lt;IStorage, MemoryStorage&gt;();
-        /// builder.AddAgent&lt;MyAgent, MyCustomAdapter&gt;();
-        /// </code>
-        /// </summary>
-        /// <remarks>
-        /// <see cref="AgentApplicationOptions"/> is automatically registered if not already present.
-        /// </remarks>
-        /// <typeparam name="TAgent"></typeparam>
-        /// <typeparam name="TAdapter"></typeparam>
-        /// <param name="builder"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddAgent<TAgent, TAdapter>(this IHostApplicationBuilder builder)
-            where TAgent : class, IAgent
-            where TAdapter : CloudAdapter
-        {
-            builder.Services.AddAgent<TAgent, TAdapter>();
-            return builder;
-        }
-
-        /// <summary>
-        /// Adds an Agent via lambda construction.
-        /// <code>
-        /// builder.Services.AddSingleton&lt;IStorage, MemoryStorage&gt;();
-        /// builder.AddAgent(sp =>
-        /// {
-        ///    var options = new AgentApplicationOptions()
-        ///    {
-        ///       TurnStateFactory = () => new TurnState(sp.GetService&lt;IStorage&gt;());
-        ///    };
-        ///        
-        ///    var app = new AgentApplication(options);
-        ///
-        ///    ...
-        ///
-        ///    return app;
-        /// });
-        /// </code>
-        /// </summary>
-        /// <remarks>
-        /// This will also call <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgentCore(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
-        /// The Agent is registered as Transient. <see cref="AgentApplicationOptions"/> is automatically registered
-        /// if not already present.
-        /// </remarks>
-        /// <param name="builder"></param>
-        /// <param name="implementationFactory"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddAgent(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory)
-        {
-            return builder.AddAgent<CloudAdapter>(implementationFactory);
-        }
-
-        /// <summary>
-        /// This is the same as <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent(Microsoft.Extensions.Hosting.IHostApplicationBuilder, System.Func{System.IServiceProvider, Microsoft.Agents.Builder.IAgent})"/>, except allows the
-        /// use of any <c>CloudAdapter</c> subclass.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="AgentApplicationOptions"/> is automatically registered if not already present.
-        /// </remarks>
-        /// <typeparam name="TAdapter"></typeparam>
-        /// <param name="builder"></param>
-        /// <param name="implementationFactory"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddAgent<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory)
-            where TAdapter : CloudAdapter
-        {
-            builder.Services.AddAgent<TAdapter>(implementationFactory);
-            return builder;
-        }
-
-        /// <summary>
-        /// Add the default CloudAdapter.
-        /// </summary>
-        /// <param name="builder">The host application builder to which the cloud adapter services will be added. Cannot be null.</param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddCloudAdapter(this IHostApplicationBuilder builder)
-        {
-            builder.Services.AddCloudAdapter();
-            return builder;
-        }
-
-        /// <summary>
-        /// Add a derived CloudAdapter.
-        /// </summary>
-        /// <param name="builder">The host application builder to which the cloud adapter services will be added. Cannot be null.</param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddCloudAdapter<T>(this IHostApplicationBuilder builder) where T : CloudAdapter
-        {
-            builder.Services.AddCloudAdapter<T>();
-            return builder; 
-        }
-
-        /// <summary>
-        /// Registers AgentApplicationOptions for AgentApplication-based Agents.
-        /// </summary>
-        /// <remarks>
-        /// This loads options from IConfiguration and DI.  The <c>AgentApplicationOptions</c> is
-        /// added as a singleton.
-        /// </remarks>
-        /// <param name="builder"></param>
-        /// <param name="autoSignIn"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddAgentApplicationOptions(this IHostApplicationBuilder builder, AutoSignInSelector autoSignIn = null)
-        {
-            builder.Services.AddAgentApplicationOptions(autoSignIn);
-            return builder;
-        }
-
-        /// <summary>
-        /// Adds the core agent services.
-        /// <list type="bullet">
-        /// <item><c>IConnections, which uses IConfiguration for settings.</c></item>
-        /// <item><c>IChannelServiceClientFactory</c> for ConnectorClient and UserTokenClient creations.</item>
-        /// <item><c>CloudAdapter</c>, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.</item>
-        /// </list>
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddAgentCore(this IHostApplicationBuilder builder)
-        {
-            return builder.AddAgentCore<CloudAdapter>();
-        }
-
-        /// <summary>
-        /// Adds the core agent services using a derived CloudAdapter.
-        /// <list type="bullet">
-        /// <item><c>IConnections, which uses IConfiguration for settings.</c></item>
-        /// <item><c>IChannelServiceClientFactory</c> for ConnectorClient and UserTokenClient creations.</item>
-        /// <item><c>CloudAdapter</c>, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.</item>
-        /// </list>
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
-        public static IHostApplicationBuilder AddAgentCore<TAdapter>(this IHostApplicationBuilder builder) where TAdapter : CloudAdapter
-        {
-            builder.Services.AddAgentCore<TAdapter>();
-            return builder;
-        }
-
-        /// <summary>
-        /// Adds a middleware that collects headers to be propagated.
-        /// </summary>
-        /// <param name="app">The <see cref="Microsoft.AspNetCore.Builder.IApplicationBuilder"/> to add the middleware to.</param>
-        /// <returns>A reference to the <paramref name="app"/> after the operation has completed.</returns>
-        public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app)
-        {
-            ArgumentNullException.ThrowIfNull(app);
-            return app.UseMiddleware<HeaderPropagationMiddleware>();
-        }
-        #endregion
-
         #region IServiceCollection Extensions
         /// <summary>
         /// Adds the required agent application options and, optionally, an auto sign-in selector to the service

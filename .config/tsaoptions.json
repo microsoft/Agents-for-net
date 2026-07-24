@@ -1,0 +1,12 @@
+{
+    "instanceUrl":  "https://dynamicscrm.visualstudio.com",
+    "TSADocumentation": "https://aka.ms/OBTSA",
+    "projectName":  "OneCRM",
+    "areaPath":  "OneCRM\\Copilot SDK",
+    "iterationPath" : "OneCRM\\M365 Agents SDK\\Backlog",
+    "notificationAliases": ["trboehre@microsoft.com;mbarbour@microsoft.com"],
+    "ppe":  "false",
+    "repositoryName": "Microsoft.Botframework.Builds",
+    "template":  "TFSMSAzure",
+    "codebaseName":  "TFSMSAzure_Microsoft.Botframework.Builds"
+}

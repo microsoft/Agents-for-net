@@ -234,6 +234,10 @@
     <value>RouteBuilder '{0}' missing required property '{1}'</value>
     <comment>Raised when calling RouteBuilder.Build() and a required value was not defined.</comment>
   </data>
+  <data name="RouteHandlerSignatureMismatch" xml:space="preserve">
+    <value>Method '{0}' does not match any handler delegate signature declared by route attribute '{1}'.</value>
+    <comment>Raised when registering a route attribute and the decorated method matches none of the attribute's declared handler delegate signatures.</comment>
+  </data>
   <data name="ProactiveNotAllHandlersSignedIn" xml:space="preserve">
     <value>Continuing the conversation with OAuth failed because the user is not signed into all handlers.</value>
     <comment>Raised during Proactive.ContinueConversation with token handlers specified and not all handler had been signed into.</comment>

@@ -30,8 +30,6 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// </summary>
     public partial class AdaptiveCard
     {
-        private static readonly string ACTION_EXECUTE_TYPE = "Action.Execute";
-        private static readonly string SEARCH_INVOKE_NAME = "application/search";
         private static readonly string DEFAULT_ACTION_SUBMIT_FILTER = "verb";
 
         private readonly AgentApplication _app;
@@ -50,13 +48,22 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </summary>
         /// <param name="verb">The named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(string verb, ActionExecuteHandler handler)
+        public AgentApplication OnActionExecute(string verb, ActionExecuteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = CreateActionExecuteSelector((string input) => string.Equals(verb, input));
-            return OnActionExecute(routeSelector, handler);
+            return _app.AddRoute(
+                ActionExecuteRouteBuilder.Create()
+                    .WithVerb(verb)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -64,13 +71,22 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </summary>
         /// <param name="verbPattern">Regular expression to match against the named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(Regex verbPattern, ActionExecuteHandler handler)
+        public AgentApplication OnActionExecute(Regex verbPattern, ActionExecuteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = CreateActionExecuteSelector((string input) => verbPattern.IsMatch(input));
-            return OnActionExecute(routeSelector, handler);
+            return _app.AddRoute(
+                ActionExecuteRouteBuilder.Create()
+                    .WithVerb(verbPattern)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -78,24 +94,22 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </summary>
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionExecute(RouteSelector routeSelector, ActionExecuteHandler handler)
+        public AgentApplication OnActionExecute(RouteSelector routeSelector, ActionExecuteHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            async Task routeHandler(ITurnContext turnContext, State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
-            {
-                if (AdaptiveCardInvokeResponseFactory.TryValidateActionInvokeValue(turnContext.Activity, ACTION_EXECUTE_TYPE, out AdaptiveCardInvokeValue invokeValue, out var response))
-                {
-                    response = await handler(turnContext, turnState, invokeValue.Action.Data, cancellationToken);
-                }
-
-                var activity = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
-                await turnContext.SendActivityAsync(activity, cancellationToken);
-            }
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return _app;
+            return _app.AddRoute(
+                ActionExecuteRouteBuilder.Create()
+                    .WithSelector(routeSelector)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -104,6 +118,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
+        [Obsolete("This will be removed in future versions.")]
         public AgentApplication OnActionExecute(MultipleRouteSelector routeSelectors, ActionExecuteHandler handler)
         {
             AssertionHelpers.ThrowIfNull(routeSelectors,nameof(routeSelectors));
@@ -154,14 +169,24 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </remarks>
         /// <param name="verb">The named action to be handled.</param>
         /// <param name="handler">Function to call when the action is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionSubmit(string verb, ActionSubmitHandler handler)
+        public AgentApplication OnActionSubmit(string verb, ActionSubmitHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
-            RouteSelector routeSelector = CreateActionSubmitSelector((string input) => string.Equals(verb, input), filter);
-            return OnActionSubmit(routeSelector, handler);
+            return _app.AddRoute(
+                ActionSubmitRouteBuilder.Create()
+                    .WithVerb(verb)
+                    .WithFilter(filter)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -186,14 +211,24 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </remarks>
         /// <param name="verbPattern">Regular expression to match against the named action to be handled.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionSubmit(Regex verbPattern, ActionSubmitHandler handler)
+        public AgentApplication OnActionSubmit(Regex verbPattern, ActionSubmitHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
             string filter = _app.Options.AdaptiveCards?.ActionSubmitFilter ?? DEFAULT_ACTION_SUBMIT_FILTER;
-            RouteSelector routeSelector = CreateActionSubmitSelector((string input) => verbPattern.IsMatch(input), filter);
-            return OnActionSubmit(routeSelector, handler);
+            return _app.AddRoute(
+                ActionSubmitRouteBuilder.Create()
+                    .WithVerb(verbPattern)
+                    .WithFilter(filter)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -218,24 +253,22 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </remarks>
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnActionSubmit(RouteSelector routeSelector, ActionSubmitHandler handler)
+        public AgentApplication OnActionSubmit(RouteSelector routeSelector, ActionSubmitHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteHandler routeHandler = async (turnContext, turnState, cancellationToken) =>
-            {
-                if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
-                    || !string.IsNullOrEmpty(turnContext.Activity.Text)
-                    || turnContext.Activity.Value == null)
-                {
-                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnActionSubmit() triggered for activity type: {turnContext.Activity.Type}");
-                }
-
-                await handler(turnContext, turnState, turnContext.Activity.Value, cancellationToken);
-            };
-            _app.AddRoute(routeSelector, routeHandler);
-            return _app;
+            return _app.AddRoute(
+                ActionSubmitRouteBuilder.Create()
+                    .WithSelector(routeSelector)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -261,6 +294,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
+        [Obsolete("This will be removed in future versions.")]
         public AgentApplication OnActionSubmit(MultipleRouteSelector routeSelectors, ActionSubmitHandler handler)
         {
             AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
@@ -294,13 +328,22 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </summary>
         /// <param name="dataset">The dataset to be searched.</param>
         /// <param name="handler">Function to call when the search is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(string dataset, SearchHandler handler)
+        public AgentApplication OnSearch(string dataset, SearchHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(dataset, nameof(dataset));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = CreateSearchSelector((string input) => string.Equals(dataset, input));
-            return OnSearch(routeSelector, handler);
+            return _app.AddRoute(
+                SearchRouteBuilder.Create()
+                    .WithDataset(dataset)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -308,13 +351,22 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </summary>
         /// <param name="datasetPattern">Regular expression to match against the dataset to be searched.</param>
         /// <param name="handler">Function to call when the search is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(Regex datasetPattern, SearchHandler handler)
+        public AgentApplication OnSearch(Regex datasetPattern, SearchHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(datasetPattern, nameof(datasetPattern));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-            RouteSelector routeSelector = CreateSearchSelector((string input) => datasetPattern.IsMatch(input));
-            return OnSearch(routeSelector, handler);
+            return _app.AddRoute(
+                SearchRouteBuilder.Create()
+                    .WithDataset(datasetPattern)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -322,41 +374,22 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// </summary>
         /// <param name="routeSelector">Function that's used to select a route. The function returning true triggers the route.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
+        /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>
+        /// <param name="autoSignInHandlers">Optional list of OAuth handlers to run before the route handler.</param>
+        /// <param name="isAgenticOnly">True if the route is for Agentic requests only.</param>
         /// <returns>The application instance for chaining purposes.</returns>
-        public AgentApplication OnSearch(RouteSelector routeSelector, SearchHandler handler)
+        public AgentApplication OnSearch(RouteSelector routeSelector, SearchHandler handler, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null, bool isAgenticOnly = false)
         {
             AssertionHelpers.ThrowIfNull(routeSelector, nameof(routeSelector));
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
-
-            async Task routeHandler(ITurnContext turnContext, State.ITurnState turnState, System.Threading.CancellationToken cancellationToken)
-            {
-                if (!string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME))
-                {
-                    throw new InvalidOperationException($"Unexpected AdaptiveCards.OnSearch() triggered for activity type: {turnContext.Activity.Type}");
-                }
-
-                if (AdaptiveCardInvokeResponseFactory.TryValidateSearchInvokeValue(turnContext.Activity, out var searchInvokeValue, out var response))
-                {
-                    AdaptiveCardsSearchParams adaptiveCardsSearchParams = new(searchInvokeValue.QueryText, searchInvokeValue.Dataset ?? string.Empty);
-                    Query<AdaptiveCardsSearchParams> query = new(searchInvokeValue.QueryOptions.Top, searchInvokeValue.QueryOptions.Skip, adaptiveCardsSearchParams);
-
-                    IList<AdaptiveCardsSearchResult> results = await handler(turnContext, turnState, query, cancellationToken);
-
-                    response = AdaptiveCardInvokeResponseFactory.SearchResponse(
-                        new AdaptiveCardsSearchInvokeResponseValue
-                        {
-                            Results = results
-                        }
-                    );
-                }
-
-                var invokeResponse = Activity.CreateInvokeResponseActivity(response, response.StatusCode ?? (int)HttpStatusCode.OK);
-                await turnContext.SendActivityAsync(invokeResponse, cancellationToken);
-            }
-
-            _app.AddRoute(routeSelector, routeHandler, isInvokeRoute: true);
-            return _app;
+            return _app.AddRoute(
+                SearchRouteBuilder.Create()
+                    .WithSelector(routeSelector)
+                    .WithHandler(handler)
+                    .WithOrderRank(rank)
+                    .WithOAuthHandlers(autoSignInHandlers)
+                    .AsAgentic(isAgenticOnly)
+                    .Build());
         }
 
         /// <summary>
@@ -365,6 +398,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="routeSelectors">Combination of String, Regex, and RouteSelectorAsync selectors.</param>
         /// <param name="handler">Function to call when the route is triggered.</param>
         /// <returns>The application instance for chaining purposes.</returns>
+        [Obsolete("This will be removed in future versions.")]
         public AgentApplication OnSearch(MultipleRouteSelector routeSelectors, SearchHandler handler)
         {
             AssertionHelpers.ThrowIfNull(routeSelectors, nameof(routeSelectors));
@@ -391,53 +425,6 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
                 }
             }
             return _app;
-        }
-
-        private static RouteSelector CreateActionExecuteSelector(Func<string, bool> isMatch)
-        {
-            Task<bool> routeSelector(ITurnContext turnContext, CancellationToken cancellationToken)
-            {
-                AdaptiveCardInvokeValue invokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardInvokeValue>(turnContext.Activity.Value);
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, AdaptiveCardsInvokeNames.ACTION_INVOKE_NAME)
-                    && isMatch(invokeValue?.Action?.Verb));
-            }
-            return routeSelector;
-        }
-
-        private static RouteSelector CreateActionSubmitSelector(Func<string, bool> isMatch, string filter)
-        {
-            RouteSelector routeSelector = (turnContext, cancellationToken) =>
-            {
-                JsonObject obj = ProtocolJsonSerializer.ToObject<JsonObject>(turnContext.Activity.Value);
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
-                    && string.IsNullOrEmpty(turnContext.Activity.Text)
-                    && turnContext.Activity.Value != null
-                    && obj[filter] != null
-                    && obj[filter]!.GetValueKind() == System.Text.Json.JsonValueKind.String
-                    && isMatch(obj[filter]!.ToString()!));
-            };
-            return routeSelector;
-        }
-
-        private static RouteSelector CreateSearchSelector(Func<string, bool> isMatch)
-        {
-            RouteSelector routeSelector = (turnContext, cancellationToken) =>
-            {
-                AdaptiveCardSearchInvokeValue searchInvokeValue = ProtocolJsonSerializer.ToObject<AdaptiveCardSearchInvokeValue>(turnContext.Activity.Value);
-                return Task.FromResult(
-                    string.Equals(turnContext.Activity.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(turnContext.Activity.Name, SEARCH_INVOKE_NAME)
-                    && isMatch(searchInvokeValue?.Dataset!));
-            };
-            return routeSelector;
-        }
-
-        private class AdaptiveCardsSearchInvokeResponseValue
-        {
-            public IList<AdaptiveCardsSearchResult>? Results { get; set; }
         }
     }
 }

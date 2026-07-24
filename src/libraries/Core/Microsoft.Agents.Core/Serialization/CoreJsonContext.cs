@@ -32,9 +32,12 @@ namespace Microsoft.Agents.Core.Serialization
     [JsonSerializable(typeof(AdaptiveCardInvokeValue))]
     [JsonSerializable(typeof(AadResourceUrls))]
     [JsonSerializable(typeof(AIEntity))]
+    [JsonSerializable(typeof(AnimationCard))]
     [JsonSerializable(typeof(Attachment))]
     [JsonSerializable(typeof(AudioCard))]
+#pragma warning disable CS0618 // BasicCard is obsolete but retained for serialization compatibility
     [JsonSerializable(typeof(BasicCard))]
+#pragma warning restore CS0618
     [JsonSerializable(typeof(CardImage))]
     [JsonSerializable(typeof(ChannelAccount))]
     [JsonSerializable(typeof(Citation))]
@@ -50,13 +53,14 @@ namespace Microsoft.Agents.Core.Serialization
     [JsonSerializable(typeof(HeroCard))]
     [JsonSerializable(typeof(InnerHttpError))]
     [JsonSerializable(typeof(InvokeResponse))]
+#pragma warning disable CS0618 // MediaCard is obsolete but retained for serialization compatibility
     [JsonSerializable(typeof(MediaCard))]
+#pragma warning restore CS0618
     [JsonSerializable(typeof(MediaEventValue))]
     [JsonSerializable(typeof(MediaUrl))]
     [JsonSerializable(typeof(Mention))]
     [JsonSerializable(typeof(MessageReaction))]
     [JsonSerializable(typeof(OAuthCard))]
-    [JsonSerializable(typeof(PagedMembersResult))]
     [JsonSerializable(typeof(Place))]
     [JsonSerializable(typeof(ProductInfo))]
     [JsonSerializable(typeof(ReceiptCard))]
@@ -72,6 +76,7 @@ namespace Microsoft.Agents.Core.Serialization
     [JsonSerializable(typeof(SuggestedActions))]
     [JsonSerializable(typeof(TextHighlight))]
     [JsonSerializable(typeof(Thing))]
+    [JsonSerializable(typeof(ThumbnailCard))]
     [JsonSerializable(typeof(TokenExchangeInvokeRequest))]
     [JsonSerializable(typeof(TokenExchangeInvokeResponse))]
     [JsonSerializable(typeof(TokenExchangeRequest))]

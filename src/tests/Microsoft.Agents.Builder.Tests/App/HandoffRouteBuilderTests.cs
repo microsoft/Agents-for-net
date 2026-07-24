@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act
             var result = builder
                 .WithHandler(handler)
-                .WithChannelId(Channels.Msteams);
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams);
 
             // Assert
             Assert.NotNull(result);
@@ -370,7 +370,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "handoff/action",
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             });
 
             // Arrange - Non-matching channel
@@ -379,12 +379,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "handoff/action",
-                ChannelId = Channels.Directline
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
             });
 
             var route = HandoffRouteBuilder.Create()
                 .WithHandler((context, state, continuation, token) => Task.CompletedTask)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .Build();
 
             // Act
@@ -522,7 +522,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             HandoffHandler handler = (context, state, continuation, token) => Task.CompletedTask;
             var builder = HandoffRouteBuilder.Create()
                 .WithHandler(handler)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(5)
                 .AsAgentic()
                 .WithOAuthHandlers("handler1,handler2");
@@ -534,7 +534,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(route);
             Assert.NotNull(route.Selector);
             Assert.NotNull(route.Handler);
-            Assert.Equal(Channels.Msteams, route.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, route.ChannelId);
             Assert.Equal((ushort)5, route.Rank);
             Assert.True(route.Flags.HasFlag(RouteFlags.Invoke));
             Assert.True(route.Flags.HasFlag(RouteFlags.Agentic));
@@ -550,7 +550,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Arrange & Act
             var route = HandoffRouteBuilder.Create()
                 .WithHandler((context, state, continuation, token) => Task.CompletedTask)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(10)
                 .AsAgentic()
                 .AsNonTerminal()
@@ -559,7 +559,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(route);
-            Assert.Equal(Channels.Msteams, route.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, route.ChannelId);
             Assert.Equal((ushort)10, route.Rank);
             Assert.True(route.Flags.HasFlag(RouteFlags.Invoke));
             Assert.True(route.Flags.HasFlag(RouteFlags.Agentic));
@@ -579,7 +579,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "handoff/action",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser },
                 Value = new { Continuation = expectedContinuation }
             };
@@ -594,7 +594,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     capturedContinuation = continuation;
                     return Task.CompletedTask;
                 })
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .AsAgentic()
                 .Build();
 

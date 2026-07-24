@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector.RestClients;
@@ -272,7 +272,7 @@ namespace Microsoft.Agents.Connector.Tests
             var activity = new Activity
             {
                 Id = "activity-id",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 From = new ChannelAccount { Role = RoleTypes.AgenticUser },
                 Conversation = new ConversationAccount { Id = "conversation/with\\bad#chars?x" }
             };
@@ -1104,6 +1104,124 @@ namespace Microsoft.Agents.Connector.Tests
                 Assert.Null(ex.Body);
                 Assert.Equal(exMessage, ex.Message);
             }
+        }
+
+        // Targeted activity query parameter tests
+
+        [Fact]
+        public async Task SendToConversationAsync_TeamsChannel_TargetedActivity_AppendsIsTargetedQueryParam()
+        {
+            var conversationsClient = UseConversation();
+            HttpRequestMessage capturedRequest = null;
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "id" }))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+                .ReturnsAsync(response);
+
+            var activity = new Activity
+            {
+                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
+            };
+            activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
+
+            await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.NotNull(capturedRequest);
+            Assert.Contains("isTargetedActivity=true", capturedRequest.RequestUri.Query);
+        }
+
+        [Fact]
+        public async Task SendToConversationAsync_NonTeamsChannel_TargetedActivity_DoesNotAppendQueryParam()
+        {
+            var conversationsClient = UseConversation();
+            HttpRequestMessage capturedRequest = null;
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "id" }))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+                .ReturnsAsync(response);
+
+            var activity = new Activity
+            {
+                Conversation = new ConversationAccount { Id = "conversation-id" },
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat
+            };
+            activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
+
+            await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.NotNull(capturedRequest);
+            Assert.DoesNotContain("isTargetedActivity", capturedRequest.RequestUri.Query);
+        }
+
+        [Fact]
+        public async Task ReplyToActivityAsync_TeamsChannel_TargetedActivity_AppendsIsTargetedQueryParam()
+        {
+            var conversationsClient = UseConversation();
+            HttpRequestMessage capturedRequest = null;
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "id" }))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+                .ReturnsAsync(response);
+
+            var activity = new Activity
+            {
+                Id = "test-id",
+                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
+                ReplyToId = "reply-id",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
+            };
+            activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
+
+            await conversationsClient.ReplyToActivityAsync(activity);
+
+            Assert.NotNull(capturedRequest);
+            Assert.Contains("isTargetedActivity=true", capturedRequest.RequestUri.Query);
+        }
+
+        [Fact]
+        public async Task ReplyToActivityAsync_NonTeamsChannel_TargetedActivity_DoesNotAppendQueryParam()
+        {
+            var conversationsClient = UseConversation();
+            HttpRequestMessage capturedRequest = null;
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "id" }))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+                .ReturnsAsync(response);
+
+            var activity = new Activity
+            {
+                Id = "test-id",
+                Conversation = new ConversationAccount { Id = "conversation-id" },
+                ReplyToId = "reply-id",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
+            };
+            activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
+
+            await conversationsClient.ReplyToActivityAsync(activity);
+
+            Assert.NotNull(capturedRequest);
+            Assert.DoesNotContain("isTargetedActivity", capturedRequest.RequestUri.Query);
         }
 
         private ConversationsRestClient UseConversation()

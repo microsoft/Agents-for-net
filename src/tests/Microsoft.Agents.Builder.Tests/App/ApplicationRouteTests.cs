@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             routes.AddRoute(RouteBuilder.Create()
                 .WithSelector((ctx, ct) => Task.FromResult(true))
                 .WithHandler(MyNamedHandler)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .Build());
 
             string result = routes.FormatRouteList().Formatted;
@@ -271,7 +271,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .WithHandler(MyNamedHandler)
                 .AsInvoke(true)
                 .AsAgentic(true)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(500)
                 .WithOAuthHandlers(new[] { "graph" })
                 .Build());
@@ -1325,7 +1325,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.ConversationUpdate,
                 Name = "1",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },

@@ -44,5 +44,53 @@ namespace Microsoft.Agents.Core.Models
         public IList<string> To { get; set; }
         /// <summary> Actions that can be shown to the user. </summary>
         public IList<CardAction> Actions { get; set; }
+
+        /// <summary>
+        /// Adds a single action to <see cref="Microsoft.Agents.Core.Models.SuggestedActions.Actions"/> and returns this instance.
+        /// </summary>
+        public SuggestedActions AddAction(CardAction action)
+        {
+            Actions ??= [];
+            Actions.Add(action);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds one or more actions to <see cref="Microsoft.Agents.Core.Models.SuggestedActions.Actions"/> and returns this instance.
+        /// </summary>
+        public SuggestedActions AddActions(params CardAction[] actions)
+        {
+            if (actions == null)
+            {
+                return this;
+            }
+
+            Actions ??= [];
+            foreach (var action in actions)
+            {
+                Actions.Add(action);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Adds one or more recipient ids to <see cref="Microsoft.Agents.Core.Models.SuggestedActions.To"/> and returns this instance.
+        /// </summary>
+        public SuggestedActions AddRecipients(params string[] recipients)
+        {
+            if (recipients == null)
+            {
+                return this;
+            }
+
+            To ??= [];
+            foreach (var recipient in recipients)
+            {
+                To.Add(recipient);
+            }
+
+            return this;
+        }
     }
 }

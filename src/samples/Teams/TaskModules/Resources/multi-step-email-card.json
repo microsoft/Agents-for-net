@@ -1,0 +1,29 @@
+{
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Email, {{name}}!",
+      "size": "Large",
+      "weight": "Bolder"
+    },
+    {
+      "type": "Input.Text",
+      "id": "email",
+      "label": "Email",
+      "isRequired": true,
+      "placeholder": "Enter your email"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Submit",
+      "data": {
+        "task": "multi_step_form_submit_email",
+        "name": "{{name}}"
+      }
+    }
+  ]
+}

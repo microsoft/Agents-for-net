@@ -205,6 +205,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Method &apos;{0}&apos; does not match any handler delegate signature declared by route attribute &apos;{1}&apos;..
+        /// </summary>
+        internal static string RouteHandlerSignatureMismatch {
+            get {
+                return ResourceManager.GetString("RouteHandlerSignatureMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A selector has already been defined for this route. Multiple selectors are not supported. Builder method &apos;{0}&apos;..
         /// </summary>
         internal static string RouteSelectorAlreadyDefined

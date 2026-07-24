@@ -409,6 +409,24 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
+        /// Returns a thread-safe snapshot of the current contents of the <see cref="ActiveQueue"/>.
+        /// </summary>
+        /// <returns>An array copy of the activities currently queued.</returns>
+        /// <remarks>
+        /// Enqueues happen under an internal lock, but the <see cref="ActiveQueue"/> property itself
+        /// is not safe to enumerate directly while another thread (e.g. a background worker) is sending
+        /// activities. Use this method to inspect the queue from tests that run concurrently with a
+        /// producer to avoid "Collection was modified" enumeration errors.
+        /// </remarks>
+        public IActivity[] GetActivitySnapshot()
+        {
+            lock (_activeQueueLock)
+            {
+                return ActiveQueue.ToArray();
+            }
+        }
+
+        /// <summary>
         /// Dequeues and returns the next bot response from the <see cref="ActiveQueue"/>.
         /// </summary>
         /// <returns>The next activity in the queue; or null, if the queue is empty.</returns>

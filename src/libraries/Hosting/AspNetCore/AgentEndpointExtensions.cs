@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly using the AgentInterfaceAttribute.  Each AgentApplication must have 
-        /// been added using <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/>.
+        /// been added using <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/>.
         /// </summary>
         /// <param name="endpoints"></param>
         /// <param name="requireAuth"></param>
@@ -237,12 +237,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <remarks>The root endpoint provides a simple informational response containing the name and
         /// version of the calling assembly. This can be useful for diagnostics or verifying deployment
         /// details.</remarks>
-        /// <param name="app">The web application instance to which the root endpoint will be mapped.</param>
-        public static IEndpointConventionBuilder MapAgentRootEndpoint(this WebApplication app)
+        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="WebApplication"/>) to which the root endpoint will be mapped.</param>
+        public static IEndpointConventionBuilder MapAgentRootEndpoint(this IEndpointRouteBuilder endpoints)
         {
             var assemblyName = System.Reflection.Assembly.GetCallingAssembly().GetName().Name;
             var assemblyVersion = System.Reflection.Assembly.GetCallingAssembly().GetName().Version?.ToString() ?? "unknown";
-            return app.MapGet("/", () => $"Microsoft Agents SDK: {assemblyName}, version {assemblyVersion}");
+            return endpoints.MapGet("/", () => $"Microsoft Agents SDK: {assemblyName}, version {assemblyVersion}");
         }
 
         /// <summary>
