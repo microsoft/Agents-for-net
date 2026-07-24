@@ -971,6 +971,17 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                     Assert.NotNull(body.FailureDetail);
                 });
             }
+            else if (oauthPromptActivity.Name == SignInConstants.VerifyStateOperationName)
+            {
+                flow = flow.AssertReply(a =>
+                {
+                    Assert.Equal("invokeResponse", a.Type);
+                    var response = ((Activity)a).Value as InvokeResponse;
+                    Assert.NotNull(response);
+                    Assert.Equal(200, response.Status);
+                    Assert.Null(response.Body);
+                });
+            }
             
             await flow.AssertReply("ended")
                 .StartTestAsync();

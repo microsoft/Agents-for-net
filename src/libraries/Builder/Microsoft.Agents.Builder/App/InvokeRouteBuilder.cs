@@ -24,6 +24,15 @@ namespace Microsoft.Agents.Builder.App
         private string _invokeName;
         private Regex _invokeRegex;
 
+        /// <summary>
+        /// Creates a new instance of the InvokeRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A InvokeRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static InvokeRouteBuilder Create()
+        {
+            return new InvokeRouteBuilder();
+        }
+
         public InvokeRouteBuilder() : base()
         {
             _route.Flags |= RouteFlags.Invoke;

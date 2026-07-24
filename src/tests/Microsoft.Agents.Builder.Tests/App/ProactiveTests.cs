@@ -8,6 +8,8 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Moq;
+using ProactiveApp = Microsoft.Agents.Builder.App.Proactive.Proactive;
+using AdaptiveCardApp = Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCard;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -458,6 +460,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) =>
             {
                 handlerCalled = true;
+                Assert.Same(ts, tc.Services.Get<ITurnState>());
+                Assert.Same(_app.AdaptiveCards, tc.Services.Get<AdaptiveCardApp>());
+                Assert.Same(_app.Proactive, tc.Services.Get<ProactiveApp>());
                 return Task.CompletedTask;
             };
 
@@ -628,6 +633,9 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Assert.Equal("test-channel", tc.Activity.ChannelId);
                 Assert.Equal("new-conversation-id", tc.Activity.Conversation.Id);
                 Assert.Equal("user1", tc.Activity.From.Id);
+                Assert.Same(ts, tc.Services.Get<ITurnState>());
+                Assert.Same(_app.AdaptiveCards, tc.Services.Get<AdaptiveCardApp>());
+                Assert.Same(_app.Proactive, tc.Services.Get<ProactiveApp>());
                 return Task.CompletedTask;
             };
 

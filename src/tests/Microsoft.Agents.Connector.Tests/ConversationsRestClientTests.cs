@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector.RestClients;
@@ -231,6 +231,70 @@ namespace Microsoft.Agents.Connector.Tests
             var result = await conversationsClient.SendToConversationAsync(TestActivity);
 
             Assert.Equal(resourceResponse.Id, result.Id);
+        }
+
+        [Fact]
+        public async Task SendToConversationAsync_ShouldSanitizePathCharactersInConversationId_ForAgentsChannel()
+        {
+            var conversationsClient = UseConversation();
+            var activity = new Activity
+            {
+                Id = "activity-id",
+                ChannelId = "agents:email",
+                From = new ChannelAccount { Role = RoleTypes.AgenticUser },
+                Conversation = new ConversationAccount { Id = "conversation/with\\bad#chars?x" }
+            };
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    Assert.Contains("conversation_with_bad_chars_x", request.RequestUri.OriginalString, StringComparison.Ordinal);
+                    Assert.DoesNotContain("%2f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("%5c", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("%23", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("%3f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "resource-id" }))
+                });
+
+            var result = await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.Equal("resource-id", result.Id);
+        }
+
+        [Fact]
+        public async Task SendToConversationAsync_ShouldNotSanitizePathCharactersInConversationId_ForTeamsChannel()
+        {
+            var conversationsClient = UseConversation();
+            var activity = new Activity
+            {
+                Id = "activity-id",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
+                From = new ChannelAccount { Role = RoleTypes.AgenticUser },
+                Conversation = new ConversationAccount { Id = "conversation/with\\bad#chars?x" }
+            };
+
+            MockHttpClient
+                .Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    Assert.Contains("%2f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.Contains("%5c", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.Contains("%23", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.Contains("%3f", request.RequestUri.OriginalString, StringComparison.OrdinalIgnoreCase);
+                    Assert.DoesNotContain("conversation_with_bad_chars_x", request.RequestUri.OriginalString, StringComparison.Ordinal);
+                })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "resource-id" }))
+                });
+
+            var result = await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.Equal("resource-id", result.Id);
         }
 
         [Fact]
@@ -1040,6 +1104,124 @@ namespace Microsoft.Agents.Connector.Tests
                 Assert.Null(ex.Body);
                 Assert.Equal(exMessage, ex.Message);
             }
+        }
+
+        // Targeted activity query parameter tests
+
+        [Fact]
+        public async Task SendToConversationAsync_TeamsChannel_TargetedActivity_AppendsIsTargetedQueryParam()
+        {
+            var conversationsClient = UseConversation();
+            HttpRequestMessage capturedRequest = null;
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "id" }))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+                .ReturnsAsync(response);
+
+            var activity = new Activity
+            {
+                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
+            };
+            activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
+
+            await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.NotNull(capturedRequest);
+            Assert.Contains("isTargetedActivity=true", capturedRequest.RequestUri.Query);
+        }
+
+        [Fact]
+        public async Task SendToConversationAsync_NonTeamsChannel_TargetedActivity_DoesNotAppendQueryParam()
+        {
+            var conversationsClient = UseConversation();
+            HttpRequestMessage capturedRequest = null;
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "id" }))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+                .ReturnsAsync(response);
+
+            var activity = new Activity
+            {
+                Conversation = new ConversationAccount { Id = "conversation-id" },
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat
+            };
+            activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
+
+            await conversationsClient.SendToConversationAsync(activity);
+
+            Assert.NotNull(capturedRequest);
+            Assert.DoesNotContain("isTargetedActivity", capturedRequest.RequestUri.Query);
+        }
+
+        [Fact]
+        public async Task ReplyToActivityAsync_TeamsChannel_TargetedActivity_AppendsIsTargetedQueryParam()
+        {
+            var conversationsClient = UseConversation();
+            HttpRequestMessage capturedRequest = null;
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "id" }))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+                .ReturnsAsync(response);
+
+            var activity = new Activity
+            {
+                Id = "test-id",
+                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
+                ReplyToId = "reply-id",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
+            };
+            activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
+
+            await conversationsClient.ReplyToActivityAsync(activity);
+
+            Assert.NotNull(capturedRequest);
+            Assert.Contains("isTargetedActivity=true", capturedRequest.RequestUri.Query);
+        }
+
+        [Fact]
+        public async Task ReplyToActivityAsync_NonTeamsChannel_TargetedActivity_DoesNotAppendQueryParam()
+        {
+            var conversationsClient = UseConversation();
+            HttpRequestMessage capturedRequest = null;
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(new ResourceResponse { Id = "id" }))
+            };
+
+            MockHttpClient.Setup(x => x.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
+                .ReturnsAsync(response);
+
+            var activity = new Activity
+            {
+                Id = "test-id",
+                Conversation = new ConversationAccount { Id = "conversation-id" },
+                ReplyToId = "reply-id",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
+            };
+            activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
+
+            await conversationsClient.ReplyToActivityAsync(activity);
+
+            Assert.NotNull(capturedRequest);
+            Assert.DoesNotContain("isTargetedActivity", capturedRequest.RequestUri.Query);
         }
 
         private ConversationsRestClient UseConversation()

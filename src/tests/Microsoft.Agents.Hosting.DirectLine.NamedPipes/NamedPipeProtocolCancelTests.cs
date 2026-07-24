@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
@@ -75,10 +74,10 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             {
                 Verb = "POST",
                 Path = "/api/messages",
-                Streams = new List<PayloadDescription>
-                {
+                Streams =
+                [
                     new() { Id = primaryStreamId.ToString("D"), ContentType = "application/json", Length = 1024 },
-                },
+                ],
             });
 
             await harness.WriteInboundFrameAsync(PayloadTypes.Request, requestId, requestJson, end: true);
@@ -264,7 +263,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 var header = HeaderSerializer.Deserialize(headerBuf);
                 var payload = header.PayloadLength > 0
                     ? await ReadExactAsync(_outboundClient, header.PayloadLength)
-                    : Array.Empty<byte>();
+                    : [];
                 return (header, payload);
             }
 

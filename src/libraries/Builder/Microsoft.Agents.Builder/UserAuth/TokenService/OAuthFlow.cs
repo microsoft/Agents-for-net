@@ -69,13 +69,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="expires">The DateTime the exchange expires.  Typically this would be stored after the BeginFlowAsync and used here.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="TokenResponse"/>The token response.</returns>
+        /// <returns>An <see cref="OAuthFlowResult"/> describing the outcome of this turn.</returns>
         /// <remarks>If successful, the result indicates whether the exchange is still
         /// active after the turn has been processed.
         /// <para>The prompt generally continues to receive the user's replies until it accepts the
         /// user's reply as valid input for the prompt.</para></remarks>
-        /// <exception cref="System.TimeoutException"/>
-        public virtual async Task<TokenResponse> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken)
+        public virtual async Task<OAuthFlowResult> ContinueFlowAsync(ITurnContext turnContext, DateTime expires, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
@@ -97,8 +96,17 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                             FailureDetail = "The Agent received a 'signin/tokenExchange' but had timed out.",
                         }, cancellationToken).ConfigureAwait(false);
                 }
+                else if (turnContext.Activity.Type == ActivityTypes.Invoke)
+                {
+                    // Non-tokenExchange invokes also require an explicit InvokeResponse.
+                    await SendInvokeResponseAsync(
+                        turnContext,
+                        HttpStatusCode.OK,
+                        null,
+                        cancellationToken).ConfigureAwait(false);
+                }
 
-                throw new TimeoutException("OAuthFlow timeout");
+                return OAuthFlowResult.TimedOut;
             }
 
             // Recognize token
@@ -240,12 +248,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         //    In the event of a critical exception (500 or unknown from Token Service), an InvokeResponse.Status 400 should be returned which
         //    will cause Teams to stop.
         //
-        // Return null if the flow is still pending.
+        // Returns OAuthFlowResult.Pending if the flow is still in progress.
         // Throws:
-        //    ErrorResponseException
-        //    UserCancelledException
-        //    ConsentRequiredException - caller should noop if no specific action required.
-        private async Task<TokenResponse> RecognizeTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken)
+        //    ErrorResponseException - genuine service or sign-in failure
+        private async Task<OAuthFlowResult> RecognizeTokenAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             TokenResponse result = null;
             if (IsTokenResponseEvent(turnContext))
@@ -256,7 +262,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
             {
                 await SendInvokeResponseAsync(turnContext, HttpStatusCode.OK, null, cancellationToken).ConfigureAwait(false);
                 var errorResponse = new ErrorResponse() { Error = ProtocolJsonSerializer.ToObject<Error>(turnContext.Activity.Value) };
-                throw new ErrorResponseException($"SignInFailure: ({errorResponse.Error.Code}) {errorResponse.Error.Message}") { Body = errorResponse };
+                return OAuthFlowResult.SignInFailed(errorResponse);
             }
             else if (IsVerificationInvoke(turnContext))
             {
@@ -265,10 +271,10 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
                 if (!string.IsNullOrEmpty(magicCode) && magicCode.Equals(SignInConstants.CancelledByUser, StringComparison.OrdinalIgnoreCase))
                 {
-                    // This happens either by the user closing the SignIn window, including if there was a error on the sign in process (say
-                    // misconfigured OAuthConnection.  We don't get enough information to know the difference.
+                    // This happens either by the user closing the SignIn window, including if there was an error on the sign in process (say
+                    // misconfigured OAuthConnection).  We don't get enough information to know the difference.
                     await SendInvokeResponseAsync(turnContext, HttpStatusCode.OK, null, cancellationToken).ConfigureAwait(false);
-                    throw new UserCancelledException();
+                    return OAuthFlowResult.UserCancelled;
                 }
 
                 // Getting the token follows a different flow in Teams. At the signin completion, Teams
@@ -403,7 +409,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 }
             }
 
-            return result;
+            return result != null ? OAuthFlowResult.Complete(result) : OAuthFlowResult.Pending;
         }
 
         public static bool IsTokenResponseEvent(ITurnContext turnContext)

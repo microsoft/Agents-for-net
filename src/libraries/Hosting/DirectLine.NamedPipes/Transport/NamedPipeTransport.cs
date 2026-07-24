@@ -57,6 +57,17 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         }
 
         /// <summary>
+        /// Performs a single read operation, returning up to <paramref name="buffer"/> length bytes.
+        /// Unlike <see cref="ReadExactAsync"/>, this does not loop — it returns after one
+        /// underlying read. May block until data arrives or the pipe disconnects.
+        /// </summary>
+        /// <returns>Number of bytes read (0 means pipe disconnected).</returns>
+        public async Task<int> ReadSingleAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            return await _stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Write the buffer to the pipe.
         /// </summary>
         /// <param name="buffer">The data to write.</param>

@@ -26,12 +26,16 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
     internal sealed class NamedPipeProtocol(NamedPipeTransport reader, NamedPipeTransport writer, ILogger logger) : IAsyncDisposable
     {
         /// <summary>
-        /// Maximum allowed payload size per frame. Mirrors
-        /// <c>Microsoft.Bot.Streaming.Transport.TransportConstants.MaxLength</c>:
-        /// the on-wire <c>Header.PayloadLength</c> field is encoded as 6 ASCII digits,
-        /// so 999,999 is the hard ceiling enforced by the protocol itself.
+        /// Maximum payload size per frame. The wire header encodes length as 6 ASCII digits,
+        /// so 999,999 is the protocol ceiling.
         /// </summary>
         private const int MaxPayloadSize = 999_999;
+
+        /// <summary>
+        /// Maximum time (seconds) a pending dispatch waits for streams before force-dispatching.
+        /// Prevents a misbehaving peer from permanently blocking the pipe.
+        /// </summary>
+        internal const int PendingDispatchTimeoutSeconds = 15;
 
         /// <summary>
         /// Maximum number of concurrent stream buffers. Limits memory usage from
@@ -40,12 +44,21 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         private const int MaxStreamBuffers = 100;
 
         /// <summary>
-        /// Maximum cumulative size (in bytes) buffered for a single stream id. Prevents a
-        /// misbehaving or hostile peer from driving unbounded memory growth by sending an
-        /// arbitrary number of <see cref="PayloadTypes.Stream"/> frames against the same id
-        /// without ever setting the End flag. 100 MiB comfortably covers expected activity
-        /// payloads including embedded attachments while bounding worst-case usage at
-        /// MaxStreamBuffers × MaxStreamSize ≈ 10 GiB total before a disconnect is forced.
+        /// Outbound stream chunk size (64 KB). Matches the JS SDK and reduces DLFlex
+        /// write-lock contention vs the legacy 4 KB value.
+        /// </summary>
+        internal const int MaxSendStreamChunkSize = 65_536;
+
+        /// <summary>
+        /// Maximum time (seconds) for draining trailing unframed bytes. If exceeded, the
+        /// connection is torn down (partial drain corrupts framing).
+        /// </summary>
+        private const int TrailingByteDrainTimeoutSeconds = 10;
+
+        /// <summary>
+        /// Maximum cumulative bytes buffered per stream id. Bounds memory from a misbehaving
+        /// peer that never sets End. 100 MiB covers expected payloads; worst-case total is
+        /// MaxStreamBuffers × MaxStreamSize ≈ 10 GiB before disconnect.
         /// </summary>
         private const int MaxStreamSize = 100 * 1024 * 1024;
 
@@ -57,13 +70,13 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         private readonly object _dispatchedTasksLock = new();
         private readonly List<Task> _dispatchedTasks = [];
 
-        // In-flight inbound dispatches keyed by request id, so a peer CancelStream/CancelAll
-        // can cancel the handler. Uses ConcurrentDictionary because the dispatch-completion
-        // continuation removes entries from the thread pool while the read loop reads/cancels.
+        // ConcurrentDictionary: dispatch-completion continuations remove entries from the
+        // thread pool while the read loop may read/cancel from the main loop.
         private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _inflightDispatches = new();
 
         private CancellationTokenSource _cts;
         private volatile Task _readLoop;
+        private int _disposed;
         private int _started;
 
         /// <summary>
@@ -107,10 +120,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             => SendRequestAsync(verb, path, body, attachments: null, contentType: null, cancellationToken);
 
         /// <summary>
-        /// Send a request — optionally with multi-stream attachments — to the remote end and
-        /// wait for its response. Each attachment is advertised as an entry in the request's
-        /// Streams[] and delivered as its own <see cref="PayloadTypes.Stream"/> frame sequence,
-        /// matching the Bot Framework streaming spec used by DirectLineFlex.
+        /// Send a request with optional multi-stream attachments and wait for a response.
         /// </summary>
         /// <param name="verb">The HTTP verb (e.g., POST, GET). Required.</param>
         /// <param name="path">The request path (e.g., /api/messages). Required.</param>
@@ -155,9 +165,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
                 var payloadJson = JsonSerializer.SerializeToUtf8Bytes(requestPayload);
 
-                // End is per-payload-id (Bot.Streaming framing). The Request payload-id
-                // carries only the JSON envelope — its body bytes travel under their own
-                // stream id. The JSON is complete in this single frame, so End=true.
+                // The Request frame carries only the JSON envelope; body bytes travel
+                // under their own stream id.
                 await SendSingleFrameAsync(PayloadTypes.Request, requestId, payloadJson, end: true, cancellationToken).ConfigureAwait(false);
 
                 if (body != null)
@@ -181,8 +190,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 }
                 catch (OperationCanceledException) when (!timeoutCts.IsCancellationRequested)
                 {
-                    // OCE originated from the TCS itself (e.g., inbound CancelAll faulted the
-                    // pending request); propagate without rewriting to TimeoutException.
+                    // OCE from the TCS itself (e.g., inbound CancelAll); propagate as-is.
                     throw;
                 }
                 catch (OperationCanceledException)
@@ -205,15 +213,39 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             var streamBuffers = new Dictionary<Guid, MemoryStream>();
             var completedStreams = new HashSet<Guid>();
             var expectedStreamLengths = new Dictionary<Guid, int>();
-            var pendingDispatches = new Dictionary<Guid, (Header header, RequestPayload payload)>();
+            var pendingDispatches = new Dictionary<Guid, (Header header, RequestPayload payload, long createdTicks)>();
             var pendingResponses = new Dictionary<Guid, ResponsePayload>();
+
 
             try
             {
                 var connected = true;
                 while (!cancellationToken.IsCancellationRequested && _reader.IsConnected && connected)
                 {
-                    if (!await _reader.ReadExactAsync(headerBuffer, HeaderSerializer.HeaderSize, cancellationToken).ConfigureAwait(false))
+                    // Periodic read timeout sweeps stale pending dispatches.
+                    bool gotFrame;
+                    if (pendingDispatches.Count > 0)
+                    {
+                        using var readTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        readTimeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
+                        try
+                        {
+                            gotFrame = await _reader.ReadExactAsync(headerBuffer, HeaderSerializer.HeaderSize, readTimeoutCts.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                        {
+                            // Read timeout — no frame arrived in 5s. Sweep stale pending dispatches.
+                            await TryDispatchPendingRequestsAsync(streamBuffers, completedStreams, expectedStreamLengths, pendingDispatches, cancellationToken).ConfigureAwait(false);
+                            TryCompletePendingResponses(streamBuffers, completedStreams, expectedStreamLengths, pendingResponses);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        gotFrame = await _reader.ReadExactAsync(headerBuffer, HeaderSerializer.HeaderSize, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if (!gotFrame)
                     {
                         _logger.LogInformation("NamedPipeProtocol: Pipe disconnected (read returned 0).");
                         break;
@@ -254,16 +286,6 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                         }
                     }
 
-                    if (header.Type == PayloadTypes.Stream)
-                    {
-                        payload = await ReadTrailingSingleFrameStreamBytesIfNeededAsync(
-                            header,
-                            payload,
-                            streamBuffers,
-                            expectedStreamLengths,
-                            cancellationToken).ConfigureAwait(false);
-                    }
-
                     switch (header.Type)
                     {
                         case PayloadTypes.Request:
@@ -276,6 +298,113 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
                         case PayloadTypes.Stream:
                             connected = HandleStreamFrame(header, payload, streamBuffers, completedStreams, _logger);
+
+                            // Trailing-byte drain (DirectLineFlex compat).
+                            // DLFlex may mark End=true prematurely and write remaining bytes
+                            // unframed. Probe with a short read: if bytes arrive immediately,
+                            // drain them; if not, the descriptor was wrong.
+                            if (connected && header.End
+                                && expectedStreamLengths.TryGetValue(header.Id, out var expectedLen)
+                                && streamBuffers.TryGetValue(header.Id, out var streamMs)
+                                && streamMs.Length < expectedLen)
+                            {
+                                var missing = (int)(expectedLen - streamMs.Length);
+                                if (expectedLen <= MaxStreamSize)
+                                {
+                                    // Probe: read 1 byte with 20ms timeout. DLFlex trailing bytes
+                                    // are synchronously available if they exist.
+                                    var probeBuf = new byte[1];
+                                    int probeRead;
+                                    using (var probeCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                                    {
+                                        probeCts.CancelAfter(TimeSpan.FromMilliseconds(20));
+                                        try
+                                        {
+                                            probeRead = await _reader.ReadSingleAsync(probeBuf, probeCts.Token).ConfigureAwait(false);
+                                        }
+                                        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                                        {
+                                            probeRead = -1; // Timeout — no trailing bytes
+                                        }
+                                    }
+
+                                    if (probeRead > 0)
+                                    {
+                                        // Trailing bytes confirmed — drain the remainder.
+                                        _logger.LogInformation(
+                                            "NamedPipeProtocol: Stream {Id} ended with {Received} bytes but descriptor expects {Expected}; probe detected trailing bytes — draining {Missing} bytes (DirectLineFlex compat).",
+                                            header.Id, streamMs.Length, expectedLen, missing);
+
+                                        // Write probe byte into the stream buffer
+                                        streamMs.Write(probeBuf, 0, 1);
+                                        var remaining = missing - 1;
+
+                                        if (remaining > 0)
+                                        {
+                                            // Drain in fixed-size chunks to avoid LOH pressure for large streams.
+                                            var drainChunk = new byte[Math.Min(remaining, MaxSendStreamChunkSize)];
+                                            bool drainFailed = false;
+                                            using (var drainCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+                                            {
+                                                drainCts.CancelAfter(TimeSpan.FromSeconds(TrailingByteDrainTimeoutSeconds));
+                                                try
+                                                {
+                                                    int left = remaining;
+                                                    while (left > 0)
+                                                    {
+                                                        int toRead = Math.Min(left, drainChunk.Length);
+                                                        if (!await _reader.ReadExactAsync(drainChunk, toRead, drainCts.Token).ConfigureAwait(false))
+                                                        {
+                                                            _logger.LogWarning("NamedPipeProtocol: Pipe disconnected during trailing-byte drain for stream {Id}.", header.Id);
+                                                            drainFailed = true;
+                                                            break;
+                                                        }
+                                                        streamMs.Write(drainChunk, 0, toRead);
+                                                        left -= toRead;
+                                                    }
+                                                }
+                                                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                                                {
+                                                    _logger.LogError(
+                                                        "NamedPipeProtocol: Trailing-byte drain for stream {Id} timed out after {Timeout}s (remaining={Remaining}). Disconnecting.",
+                                                        header.Id, TrailingByteDrainTimeoutSeconds, remaining);
+                                                    drainFailed = true;
+                                                }
+                                            }
+
+                                            if (drainFailed)
+                                            {
+                                                connected = false;
+                                                break;
+                                            }
+                                        }
+
+                                        _logger.LogInformation(
+                                            "NamedPipeProtocol: Stream {Id} drained {Missing} trailing bytes — now {Total} bytes total.",
+                                            header.Id, missing, streamMs.Length);
+                                    }
+                                    else if (probeRead == 0)
+                                    {
+                                        _logger.LogWarning("NamedPipeProtocol: Pipe disconnected during probe read for stream {Id}.", header.Id);
+                                        connected = false;
+                                    }
+                                    else
+                                    {
+                                        // Probe timed out — no trailing bytes; descriptor was wrong
+                                        // or DLFlex's semaphore timeout dropped remaining frames.
+                                        _logger.LogDebug(
+                                            "NamedPipeProtocol: Stream {Id} ended with {Received}/{Expected} bytes; no trailing bytes detected (descriptor mismatch, frames may have been dropped).",
+                                            header.Id, streamMs.Length, expectedLen);
+                                    }
+                                }
+                                else
+                                {
+                                    _logger.LogWarning(
+                                        "NamedPipeProtocol: Stream {Id} expected length {Expected} exceeds MaxStreamSize; skipping drain.",
+                                        header.Id, expectedLen);
+                                }
+                            }
+
                             break;
 
                         case PayloadTypes.CancelAll:
@@ -310,10 +439,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             }
             finally
             {
-                // Fail any pending outbound requests so callers don't wait the full timeout.
                 FailPendingRequests(new IOException("Named pipe disconnected."));
 
-                // Dispose any orphaned stream buffers to prevent memory leaks
                 foreach (var ms in streamBuffers.Values)
                 {
                     ms.Dispose();
@@ -351,7 +478,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             Dictionary<Guid, MemoryStream> streamBuffers,
             HashSet<Guid> completedStreams,
             Dictionary<Guid, int> expectedStreamLengths,
-            Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches,
+            Dictionary<Guid, (Header header, RequestPayload payload, long createdTicks)> pendingDispatches,
             CancellationToken cancellationToken)
         {
             if (payload == null)
@@ -376,74 +503,19 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             {
                 if (!AllStreamsComplete(requestPayload.Streams, header.Id, completedStreams))
                 {
-                    pendingDispatches[header.Id] = (header, requestPayload);
+                    pendingDispatches[header.Id] = (header, requestPayload, Environment.TickCount64);
                     return;
                 }
             }
 
-            // Extract the body and any attachments synchronously on the read-loop thread so
-            // the dispatch task never touches streamBuffers concurrently with the read loop.
+            // Extract body and attachments on the read-loop thread (no concurrent access to streamBuffers).
             var (body, contentType, attachments) = ExtractRequestPayload(header, requestPayload, streamBuffers, completedStreams, expectedStreamLengths);
             StartDispatch(header, requestPayload, body, contentType, attachments, cancellationToken);
         }
 
-        private async Task<byte[]> ReadTrailingSingleFrameStreamBytesIfNeededAsync(
-            Header header,
-            byte[] payload,
-            Dictionary<Guid, MemoryStream> streamBuffers,
-            Dictionary<Guid, int> expectedStreamLengths,
-            CancellationToken cancellationToken)
-        {
-            payload ??= [];
-
-            // Bot.Streaming / Bot.Connector.Streaming can forward a stream with
-            // Header.End=true but write MORE bytes than Header.PayloadLength when
-            // the sender's ContentLength is wrong (common with attachments relayed
-            // through DirectLineFlex). Use the advertised stream descriptor length
-            // to drain the trailing unframed bytes so they don't desync the reader.
-            if (!header.End
-                || !expectedStreamLengths.TryGetValue(header.Id, out var expectedLength))
-            {
-                return payload;
-            }
-
-            var bufferedLength = streamBuffers.TryGetValue(header.Id, out var existing)
-                ? existing.Length
-                : 0;
-            var receivedLength = bufferedLength + payload.Length;
-            if (receivedLength >= expectedLength)
-            {
-                return payload;
-            }
-
-            var missing = (int)(expectedLength - receivedLength);
-            _logger.LogWarning(
-                "NamedPipeProtocol: Stream {Id} ended after {Received} bytes but descriptor length is {Expected}; reading {Missing} trailing bytes for Bot.Streaming boundary compatibility.",
-                header.Id,
-                receivedLength,
-                expectedLength,
-                missing);
-
-            var repairedPayload = new byte[payload.Length + missing];
-            if (payload.Length > 0)
-            {
-                Buffer.BlockCopy(payload, 0, repairedPayload, 0, payload.Length);
-            }
-
-            if (!await _reader.ReadExactAsync(repairedPayload.AsMemory(payload.Length), missing, cancellationToken).ConfigureAwait(false))
-            {
-                throw new IOException("Pipe disconnected while reading trailing stream bytes.");
-            }
-
-            return repairedPayload;
-        }
-
         /// <summary>
-        /// Returns true when every stream id referenced by the given Streams[] descriptors
-        /// (primary + attachments) has been observed with End=true. Required so that
-        /// multi-stream requests are not dispatched before all attachment bytes have arrived.
-        /// Malformed/unparseable ids are treated as "complete" (extraction will surface the
-        /// resulting empty payload to the agent rather than blocking dispatch forever).
+        /// Returns true when every stream referenced by the Streams[] descriptors has End=true.
+        /// Malformed ids are treated as complete to avoid blocking dispatch forever.
         /// </summary>
         private bool AllStreamsComplete(List<PayloadDescription> streams, Guid ownerId, HashSet<Guid> completedStreams)
         {
@@ -469,16 +541,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Extracts the assembled primary body and any attachment streams for a request.
-        /// Removes the corresponding entries from <paramref name="streamBuffers"/> and
-        /// <paramref name="completedStreams"/>. Must only be called on the read-loop thread.
+        /// Extracts the primary body and attachment streams for a request. Streams[0] is the
+        /// body; Streams[1..N] are attachments. Must only be called on the read-loop thread.
         /// </summary>
-        /// <remarks>
-        /// Streams[0] is the request body (Activity JSON for /api/messages traffic).
-        /// Streams[1..N] are attachment payloads — DirectLineFlex sends one such stream per
-        /// file uploaded by a user (see
-        /// <c>Intercom/Microsoft.DirectLineFlex/Services/BotConnection.SendActivityAsync</c>).
-        /// </remarks>
         private (byte[] Body, string ContentType, List<NamedPipeAttachment> Attachments) ExtractRequestPayload(
             Header header,
             RequestPayload requestPayload,
@@ -499,8 +564,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Removes and returns the assembled bytes for a stream descriptor, or <c>null</c> when
-        /// the descriptor is missing/malformed or its frames never arrived.
+        /// Removes and returns the assembled bytes for a stream descriptor, or null if not found.
         /// </summary>
         private byte[] TakeStreamBody(
             PayloadDescription descriptor,
@@ -524,10 +588,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Removes and returns assembled <see cref="NamedPipeAttachment"/> instances for all
-        /// <c>Streams[1..N]</c> descriptors. Always returns a list (possibly empty) so callers
-        /// can pass it straight to <see cref="NamedPipeRequest.Attachments"/> /
-        /// <see cref="ReceiveResponse.Attachments"/>.
+        /// Removes and returns <see cref="NamedPipeAttachment"/> instances for Streams[1..N].
         /// </summary>
         private List<NamedPipeAttachment> TakeAttachmentStreams(
             List<PayloadDescription> streams,
@@ -562,6 +623,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                     ms.Dispose();
                     streamBuffers.Remove(attachmentId);
                 }
+                else
+                {
+                    _logger.LogWarning(
+                        "NamedPipeProtocol: TakeAttachmentStreams — no buffer found for stream {Id} (descriptor[{Index}], type={ContentType}, declaredLen={Len}). completedStreams.Contains={InCompleted}, activeBufferCount={Count}.",
+                        attachmentId, i, descriptor.ContentType, descriptor.Length,
+                        completedStreams.Contains(attachmentId),
+                        streamBuffers.Count);
+                }
 
                 completedStreams.Remove(attachmentId);
                 expectedStreamLengths.Remove(attachmentId);
@@ -572,12 +641,19 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                     ContentType = descriptor.ContentType ?? string.Empty,
                     Body = body,
                 });
+
+                _logger.LogDebug(
+                    "NamedPipeProtocol: TakeAttachmentStreams — extracted stream {Id} with {Len} bytes (descriptor declared {DeclaredLen}).",
+                    attachmentId, body.Length, descriptor.Length);
             }
 
             return attachments;
         }
 
-        private void TrackExpectedStreamLengths(List<PayloadDescription> streams, Guid ownerId, Dictionary<Guid, int> expectedStreamLengths)
+        private void TrackExpectedStreamLengths(
+            List<PayloadDescription> streams,
+            Guid ownerId,
+            Dictionary<Guid, int> expectedStreamLengths)
         {
             if (streams == null)
             {
@@ -636,16 +712,46 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             Dictionary<Guid, MemoryStream> streamBuffers,
             HashSet<Guid> completedStreams,
             Dictionary<Guid, int> expectedStreamLengths,
-            Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches,
+            Dictionary<Guid, (Header header, RequestPayload payload, long createdTicks)> pendingDispatches,
             CancellationToken cancellationToken)
         {
             var dispatched = new List<Guid>();
+            var now = Environment.TickCount64;
+
             foreach (var (requestId, pending) in pendingDispatches)
             {
                 if (pending.payload.Streams is { Count: > 0 }
                     && AllStreamsComplete(pending.payload.Streams, requestId, completedStreams))
                 {
                     dispatched.Add(requestId);
+                    var (body, contentType, attachments) = ExtractRequestPayload(pending.header, pending.payload, streamBuffers, completedStreams, expectedStreamLengths);
+                    StartDispatch(pending.header, pending.payload, body, contentType, attachments, cancellationToken);
+                }
+                else if (now - pending.createdTicks > PendingDispatchTimeoutSeconds * 1000L)
+                {
+                    // Streams never arrived; force-dispatch with partial data.
+                    _logger.LogWarning(
+                        "NamedPipeProtocol: Pending dispatch {Id} timed out after {Seconds}s waiting for streams. Force-dispatching with partial data.",
+                        requestId, PendingDispatchTimeoutSeconds);
+                    dispatched.Add(requestId);
+
+                    // Mark all streams as complete so extraction succeeds
+                    if (pending.payload.Streams != null)
+                    {
+                        foreach (var stream in pending.payload.Streams)
+                        {
+                            if (TryGetStreamId(stream?.Id, requestId, out var sid))
+                            {
+                                completedStreams.Add(sid);
+                                // Ensure a buffer exists so TakeStreamBody can extract
+                                if (!streamBuffers.ContainsKey(sid))
+                                {
+                                    streamBuffers[sid] = new MemoryStream();
+                                }
+                            }
+                        }
+                    }
+
                     var (body, contentType, attachments) = ExtractRequestPayload(pending.header, pending.payload, streamBuffers, completedStreams, expectedStreamLengths);
                     StartDispatch(pending.header, pending.payload, body, contentType, attachments, cancellationToken);
                 }
@@ -692,7 +798,6 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             _logger.LogDebug("NamedPipeProtocol: Dispatching {Verb} {Path} (BodyLen={Len}, ContentType={ContentType}, Attachments={AttachmentCount}).",
                 request.Verb, request.Path, body?.Length ?? 0, request.ContentType, request.Attachments.Count);
 
-            // Capture the delegate once to avoid a torn read between the null check and invocation.
             var handler = OnRequestReceived;
             var response = handler != null
                 ? await handler(request, cancellationToken).ConfigureAwait(false)
@@ -702,9 +807,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Registers a per-request <see cref="CancellationTokenSource"/> linked to the read-loop's
-        /// token so that an inbound <c>CancelStream</c>/<c>CancelAll</c> can cancel the running
-        /// handler, then starts the dispatch task. Called only from the read-loop thread.
+        /// Creates a per-request CTS linked to the read-loop token and starts the dispatch task.
         /// </summary>
         private void StartDispatch(
             Header header,
@@ -719,14 +822,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
             var dispatchTask = DispatchRequestSafeAsync(header, requestPayload, body, contentType, attachments, requestCts.Token);
 
-            // Remove the in-flight tracking entry once the handler returns. We intentionally do
-            // NOT call requestCts.Dispose() here: HandleCancelAllFrame may be iterating
-            // _inflightDispatches.Values on the read-loop thread and calling Cancel() on
-            // snapshotted references. Disposing here would race with that and surface as
-            // ObjectDisposedException. The CTS is request-scoped and short-lived; GC will
-            // reclaim it. This matches the rationale documented for _writeLock at DisposeAsync.
-            // We also drop TaskContinuationOptions.ExecuteSynchronously so a synchronously
-            // completing handler can't reenter the read-loop thread to mutate _inflightDispatches.
+            // Remove tracking after handler completes. We don't dispose requestCts here
+            // because HandleCancelAllFrame may call Cancel() on it concurrently.
             _ = dispatchTask.ContinueWith(
                 static (completedTask, state) =>
                 {
@@ -742,37 +839,32 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Handles an inbound <see cref="PayloadTypes.CancelStream"/> frame for a single payload id.
-        /// Drops the buffered stream bytes (if any), marks the stream complete so a pending dispatch
-        /// can move forward with empty data, and cancels the in-flight dispatch if the id is also
-        /// a request id. Mutates read-loop state — called only from the read loop.
+        /// Handles a CancelStream frame: drops buffered data, marks stream complete, and
+        /// cancels the in-flight dispatch if the id matches a request.
         /// </summary>
         private void HandleCancelStreamFrame(
             Guid streamId,
             Dictionary<Guid, MemoryStream> streamBuffers,
             HashSet<Guid> completedStreams,
             Dictionary<Guid, int> expectedStreamLengths,
-            Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches)
+            Dictionary<Guid, (Header header, RequestPayload payload, long createdTicks)> pendingDispatches)
         {
             if (streamBuffers.Remove(streamId, out var buf))
             {
                 try { buf.Dispose(); } catch { /* benign */ }
             }
 
-            // Treat cancellation as "no more bytes coming" so any pending dispatch
-            // whose primary/attachment streams are otherwise satisfied can complete.
+            // Mark as complete so pending dispatches can proceed with empty data.
             completedStreams.Add(streamId);
             expectedStreamLengths.Remove(streamId);
 
-            // If the cancelled id is the request id of an in-flight dispatch, cancel it.
+            // Cancel in-flight dispatch for this id.
             if (_inflightDispatches.TryGetValue(streamId, out var requestCts))
             {
                 try { requestCts.Cancel(); } catch { /* already disposed */ }
             }
 
-            // If the cancelled id matches an as-yet-undispatched pending request's primary
-            // stream id (header.Id == streamId for the request), drop it — the peer told us
-            // they're giving up.
+            // If the id is an undispatched request, drop it.
             if (pendingDispatches.Remove(streamId))
             {
                 _logger.LogInformation("NamedPipeProtocol: Dropped pending request {Id} due to CancelStream.", streamId);
@@ -780,16 +872,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Handles an inbound <see cref="PayloadTypes.CancelAll"/> frame: clears all buffered
-        /// state, cancels every in-flight dispatch, and fails every outbound pending request
-        /// with <see cref="OperationCanceledException"/>. Mutates read-loop state — called only
-        /// from the read loop.
+        /// Handles a CancelAll frame: clears all state, cancels in-flight dispatches, and
+        /// fails all pending outbound requests.
         /// </summary>
         private void HandleCancelAllFrame(
             Dictionary<Guid, MemoryStream> streamBuffers,
             HashSet<Guid> completedStreams,
             Dictionary<Guid, int> expectedStreamLengths,
-            Dictionary<Guid, (Header header, RequestPayload payload)> pendingDispatches,
+            Dictionary<Guid, (Header header, RequestPayload payload, long createdTicks)> pendingDispatches,
             Dictionary<Guid, ResponsePayload> pendingResponses)
         {
             foreach (var buf in streamBuffers.Values)
@@ -809,8 +899,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 try { cts.Cancel(); } catch { /* already disposed */ }
             }
 
-            // Fail every outbound pending request — the peer just told us nothing will be
-            // responded to.
+            // Fail all outbound pending requests.
             KeyValuePair<Guid, TaskCompletionSource<ReceiveResponse>>[] outbound;
             lock (_pendingRequests)
             {
@@ -973,9 +1062,6 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
             if (payload != null && payload.Length > 0)
             {
-                // Bound cumulative per-stream memory; a hostile/misbehaving peer could otherwise
-                // send Stream frames against the same id forever (each frame within MaxPayloadSize)
-                // and grow this MemoryStream without limit.
                 if (ms.Length + payload.Length > MaxStreamSize)
                 {
                     logger.LogError(
@@ -988,11 +1074,12 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 ms.Write(payload);
             }
 
-            // The End flag signals that all chunks for this stream have been received.
-            // Until then the body is incomplete and must not be dispatched.
             if (header.End)
             {
                 completedStreams.Add(header.Id);
+                logger.LogDebug(
+                    "NamedPipeProtocol: Stream {Id} complete. TotalBytes={TotalBytes}, PayloadThisFrame={FrameLen}, End=true.",
+                    header.Id, ms.Length, payload?.Length ?? 0);
             }
 
             return true;
@@ -1011,9 +1098,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
             var payloadJson = JsonSerializer.SerializeToUtf8Bytes(responsePayload);
 
-            // End is per-payload-id (Bot.Streaming framing). The Response payload-id
-            // carries only the JSON envelope — its body bytes travel under their own
-            // stream id. The JSON is complete in this single frame, so End=true.
+            // Response frame carries only the JSON envelope; body travels under its own stream id.
             await SendSingleFrameAsync(PayloadTypes.Response, requestId, payloadJson, end: true, cancellationToken).ConfigureAwait(false);
 
             if (response.Body != null)
@@ -1025,9 +1110,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Generates a wire identifier (or reuses an attachment-supplied one) for each
-        /// attachment so the same id can be embedded in the <see cref="PayloadDescription"/>
-        /// envelope and reused for the corresponding <see cref="PayloadTypes.Stream"/> frame.
+        /// Generates (or reuses) a wire id for each attachment.
         /// </summary>
         private static Guid[] MaterializeAttachmentIds(IList<NamedPipeAttachment> attachments)
         {
@@ -1049,9 +1132,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Builds the Streams[] descriptor list that advertises the primary body and any
-        /// attachments to the peer. Returns null when there are no streams to advertise so
-        /// the JSON property is omitted on the wire (matches Bot.Streaming behavior).
+        /// Builds the Streams[] descriptor list for the wire envelope. Returns null when empty
+        /// so the JSON property is omitted (matches Bot.Streaming behavior).
         /// </summary>
         private static List<PayloadDescription> BuildStreamDescriptors(
             Guid? bodyStreamId,
@@ -1112,14 +1194,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             }
         }
 
-        // Matches Bot.Streaming TransportConstants.MaxPayloadLength. Frame payloads larger
-        // than this are split into chunks for PayloadTypes.Stream only; request/response JSON
-        // envelopes are single frames in Bot.Connector.Streaming.
+        // Legacy 4 KB chunk size (retained for test interop validation).
         internal const int MaxPayloadLength = 4096;
 
         private async Task SendSingleFrameAsync(char type, Guid id, byte[] payload, bool end, CancellationToken cancellationToken)
         {
-            payload ??= [];
             if (payload.Length > MaxPayloadSize)
             {
                 throw new InvalidOperationException($"Payload length {payload.Length} exceeds the maximum frame size {MaxPayloadSize}.");
@@ -1132,9 +1211,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // A write failure means the outgoing pipe is broken. Cancel the read loop so
-                // the hosted service observes Completion and reconnects (the old polling code
-                // relied on connection.IsConnected to detect this for the outgoing pipe).
+                // Write failure → pipe broken; cancel read loop to trigger reconnect.
                 _logger.LogWarning(ex, "NamedPipeProtocol: Write failed; tearing down protocol to trigger reconnect.");
                 try { _cts?.Cancel(); } catch { /* already disposed */ }
                 throw;
@@ -1147,16 +1224,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
         private async Task SendStreamFramesAsync(Guid id, byte[] payload, bool end, CancellationToken cancellationToken)
         {
-            payload ??= [];
             await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                // Split into MaxPayloadLength-sized frames. Empty payloads still emit one
-                // frame (a zero-length header with End=end) so peers see payload completion.
+                // 64 KB chunks; empty payloads emit one zero-length frame.
                 int offset = 0;
                 do
                 {
-                    int chunkLen = Math.Min(MaxPayloadLength, payload.Length - offset);
+                    int chunkLen = Math.Min(MaxSendStreamChunkSize, payload.Length - offset);
                     bool isLast = offset + chunkLen >= payload.Length;
                     await SendFrameCoreAsync(PayloadTypes.Stream, id, payload, chunkLen, offset, isLast && end, cancellationToken).ConfigureAwait(false);
                     offset += chunkLen;
@@ -1165,9 +1240,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // A write failure means the outgoing pipe is broken. Cancel the read loop so
-                // the hosted service observes Completion and reconnects (the old polling code
-                // relied on connection.IsConnected to detect this for the outgoing pipe).
+                // Write failure → pipe broken; cancel read loop to trigger reconnect.
                 _logger.LogWarning(ex, "NamedPipeProtocol: Write failed; tearing down protocol to trigger reconnect.");
                 try { _cts?.Cancel(); } catch { /* already disposed */ }
                 throw;
@@ -1216,20 +1289,20 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         /// <inheritdoc/>
         public async ValueTask DisposeAsync()
         {
-            // Best-effort: tell the peer we're shutting down so it can release any in-flight
-            // dispatches on its side immediately rather than waiting for the pipe to break.
-            // Cap the wait so a wedged peer (e.g., not reading the pipe) can't hold dispose
-            // open indefinitely.
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            {
+                return;
+            }
+
+            // Best-effort shutdown notification with a real token so a wedged pipe releases _writeLock.
             try
             {
-                await SendCancelAllAsync(CancellationToken.None)
-                    .WaitAsync(TimeSpan.FromMilliseconds(500))
-                    .ConfigureAwait(false);
+                using var cancelAllCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+                await SendCancelAllAsync(cancelAllCts.Token).ConfigureAwait(false);
             }
             catch
             {
-                // The pipe may already be gone, or the write may have timed out — that's fine;
-                // the read-loop break will be observed once _cts is cancelled below.
+                // Pipe may already be gone or write timed out.
             }
 
             _cts?.Cancel();
@@ -1246,12 +1319,10 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
                 }
             }
 
-            // Defensive: if Start() was never called, the read loop's finally never ran,
-            // so make sure any pending caller is released.
+            // If Start() was never called, release any pending callers.
             FailPendingRequests(new ObjectDisposedException(nameof(NamedPipeProtocol)));
 
-            // Wait for any in-flight dispatched request handlers to finish before
-            // tearing down the write lock they depend on.
+            // Wait for in-flight dispatched handlers before tearing down.
             Task[] pendingDispatches;
             lock (_dispatchedTasksLock)
             {
@@ -1272,13 +1343,9 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
 
             _cts?.Dispose();
 
-            // Note: _writeLock (SemaphoreSlim) is intentionally not disposed. An outbound
-            // SendRequestAsync captured before SetProtocol(null) may still be inside a
-            // send helper at WaitAsync/Release time when DisposeAsync runs. Disposing
-            // the semaphore would race with that caller and surface as ObjectDisposedException
-            // on every reconnect. SemaphoreSlim only requires explicit disposal when its
-            // AvailableWaitHandle has been materialized (it lazily allocates a kernel
-            // handle), which this class never does — so leaving it to GC is safe.
+            // _writeLock is intentionally not disposed: in-flight SendRequestAsync callers
+            // captured before SetProtocol(null) may still be inside WaitAsync/Release.
+            // SemaphoreSlim only needs explicit disposal when AvailableWaitHandle is used.
         }
     }
 }

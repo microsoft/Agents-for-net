@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using A2AAgent;
@@ -7,20 +7,12 @@ using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddHttpClient();
-builder.Logging.AddConsole();
-
-// Add AgentApplicationOptions from appsettings section "AgentApplication".
-builder.AddAgentApplicationOptions();
-
-// Add the Agent
-builder.AddAgent<MyAgent>();
+builder.AddAgentDefaults()
+    .AddAgent<MyAgent>()
+    .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so
@@ -31,25 +23,16 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 // Add the A2A adapter to handle A2A requests
 builder.Services.AddA2AAdapter();
 
-// Configure the HTTP request pipeline.
-
-// Add AspNet token validation for Azure Bot Service and Entra.  Authentication is
-// configured in the appsettings.json "TokenValidation" section.
-builder.Services.AddControllers();
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
-
 WebApplication app = builder.Build();
 
-// Enable AspNet authentication and authorization
-app.UseAuthentication();
-app.UseAuthorization();
+// Add the authentication and authorization middleware to the request pipeline.
+app.UseAgents();
 
-app.MapAgentRootEndpoint();
+// Map the default agent endpoints: GET "/" and the agent message endpoints.
+app.MapDefaultAgentEndpoints();
 
-// Map Agent ActivityProtocol endpoints to /api/messages.
-app.MapAgentApplicationEndpoints(!app.Environment.IsDevelopment());
-
-// Map A2A endpoints to /a2a.
-app.MapA2AApplicationEndpoints(!app.Environment.IsDevelopment());
+// Add A2A endpoints.  By default A2A will respond on '/a2a'.
+app.MapA2AApplicationEndpoints();
+app.MapWellKnownAgentCard();
 
 app.Run();

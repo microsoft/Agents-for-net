@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> A card representing a request to perform a sign in via OAuth. </summary>
-    public class OAuthCard
+    public class OAuthCard : Card
     {
         /// <summary> Initializes a new instance of OAuthCard. </summary>
         public OAuthCard()
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.OAuthCard"/>.</param>
         /// <returns> The generated attachment.</returns>
-        public Attachment ToAttachment()
+        public override Attachment ToAttachment()
         {
             return new Attachment
             {

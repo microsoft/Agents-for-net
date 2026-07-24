@@ -5,4 +5,15 @@
         <IsPackable>false</IsPackable>
         <SamplesRoot>$(MSBuildThisFileDirectory)</SamplesRoot>
     </PropertyGroup>
+
+    <!--
+      Samples reference the SDK via ProjectReference, which does not propagate analyzers (NuGet consumers
+      get them from the package's analyzers/dotnet/cs folder instead). Attach the SDK analyzers/suppressors
+      here so every sample gets MAA00x diagnostics and the route-handler IDE0051 suppression in the IDE.
+    -->
+    <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)..\libraries\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
 </Project>

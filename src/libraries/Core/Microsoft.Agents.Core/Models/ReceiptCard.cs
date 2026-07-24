@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> A receipt card. </summary>
-    public class ReceiptCard
+    public class ReceiptCard : Card
     {
         /// <summary> Initializes a new instance of ReceiptCard. </summary>
         public ReceiptCard()
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.ReceiptCard"/>.</param>
         /// <returns> The generated attachment.</returns>
-        public Attachment ToAttachment()
+        public override Attachment ToAttachment()
         {
             return new Attachment
             {
@@ -57,6 +57,7 @@ namespace Microsoft.Agents.Core.Models
                 ContentType = ContentType
             };
         }
+
 
         /// <summary> Title of the card. </summary>
         public string Title { get; set; }
@@ -74,5 +75,12 @@ namespace Microsoft.Agents.Core.Models
         public string Vat { get; set; }
         /// <summary> Set of actions applicable to the current card. </summary>
         public IList<CardAction> Buttons { get; set; }
+
+        /// <summary> Adds a fact and returns this card. </summary>
+        public ReceiptCard AddFact(Fact fact) { Facts ??= []; Facts.Add(fact); return this; }
+        /// <summary> Adds a receipt item and returns this card. </summary>
+        public ReceiptCard AddItem(ReceiptItem item) { Items ??= []; Items.Add(item); return this; }
+        /// <summary> Adds a button and returns this card. </summary>
+        public ReceiptCard AddButton(CardAction button) { Buttons ??= []; Buttons.Add(button); return this; }
     }
 }

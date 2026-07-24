@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
@@ -131,7 +130,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 primaryId,
                 primaryBody.Length,
                 primaryContentType: "application/json",
-                attachmentStreams: new[] { (attachmentId, attachmentBody.Length, "image/png") });
+                attachmentStreams: [(attachmentId, attachmentBody.Length, "image/png")]);
 
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryId, primaryBody, end: true);
             await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId, attachmentBody, end: true);
@@ -143,14 +142,21 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
         }
 
         [Fact]
-        public async Task InboundSingleFrameStream_WithShortHeaderAtBoundary_DrainsDescriptorLength()
+        public async Task InboundSingleFrameStream_WithMismatchedDescriptorLength_StillDispatchesCorrectly()
         {
+            // Tests that when the descriptor's Length field is larger than the actual framed
+            // attachment data, the protocol trusts framing (End=true) and dispatches without blocking.
             using var harness = await InboundHarness.CreateAsync();
             var received = new List<NamedPipeRequest>();
+            var firstReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var allReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             harness.Protocol.OnRequestReceived = (req, _) =>
             {
                 received.Add(req);
+                if (received.Count == 1)
+                {
+                    firstReceived.TrySetResult(true);
+                }
                 if (received.Count == 2)
                 {
                     allReceived.TrySetResult(true);
@@ -164,34 +170,34 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             var primaryId = Guid.NewGuid();
             var attachmentId = Guid.NewGuid();
             var primaryBody = Encoding.UTF8.GetBytes("{}");
-            var attachmentBody = new byte[NamedPipeProtocol.MaxPayloadLength];
+            var attachmentBody = new byte[100];
             for (int i = 0; i < attachmentBody.Length; i++)
             {
                 attachmentBody[i] = (byte)(i % 251);
             }
 
+            // Descriptor declares 262144 bytes, but actual content is only 100 bytes
             await harness.WriteRequestAsync(
                 requestId,
                 primaryId,
                 primaryBody.Length,
                 primaryContentType: "application/json",
-                attachmentStreams: new[] { (attachmentId, attachmentBody.Length, "application/octet-stream") });
+                attachmentStreams: [(attachmentId, 262144, "application/octet-stream")]);
 
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryId, primaryBody, end: true);
 
-            // Bot.Streaming 4.18.x can advertise a too-short payload length while
-            // CopyToAsync writes the full 4096-byte stream. The receiver must drain
-            // the descriptor length so trailing bytes are not parsed as a header.
-            await harness.WriteFrameAsync(
-                PayloadTypes.Stream,
-                attachmentId,
-                attachmentBody,
-                end: true,
-                declaredPayloadLength: 123);
+            // Attachment is properly framed: header PayloadLength = actual bytes = 100, End=true
+            await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId, attachmentBody, end: true);
 
+            // Wait for the first request to be fully dispatched (probe timeout completed)
+            // before sending the second request. This avoids a race where the second request's
+            // bytes are consumed by the probe read of the first request.
+            await firstReceived.Task.WaitAsync(TimeSpan.FromSeconds(3));
+
+            // Second request arrives after probe timeout (no drain needed)
             await harness.WriteRequestWithoutStreamsAsync(Guid.NewGuid());
 
-            await allReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await allReceived.Task.WaitAsync(TimeSpan.FromSeconds(3));
             Assert.Equal(2, received.Count);
             Assert.Single(received[0].Attachments);
             Assert.Equal(attachmentBody, received[0].Attachments[0].Body);
@@ -268,11 +274,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             {
                 StatusCode = 200,
                 Body = Encoding.UTF8.GetBytes("{}"),
-                Attachments = new List<NamedPipeAttachment>
-                {
-                    new() { ContentType = "image/png", Body = new byte[] { 1, 2, 3 } },
-                    new() { ContentType = "audio/wav", Body = new byte[] { 4, 5, 6, 7 } },
-                },
+                Attachments =
+                [
+                    new() { ContentType = "image/png", Body = [1, 2, 3] },
+                    new() { ContentType = "audio/wav", Body = [4, 5, 6, 7] },
+                ],
             });
 
             var requestId = Guid.NewGuid();
@@ -480,7 +486,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 var header = HeaderSerializer.Deserialize(headerBuf);
                 var payload = header.PayloadLength > 0
                     ? await ReadExactAsync(_outboundClient, header.PayloadLength)
-                    : Array.Empty<byte>();
+                    : [];
                 return (header, payload);
             }
 

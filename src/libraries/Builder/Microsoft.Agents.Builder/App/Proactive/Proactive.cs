@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Telemetry.Proactive.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -405,12 +406,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
             var turnState = _app.Options.TurnStateFactory!();
             await turnState.LoadStateAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
 
+            _app.SetTurnContextServices(turnContext, turnState);
+
             try
             {
                 if (tokenHandlers?.Length > 0 && _app.UserAuthorization != null)
                 {
-                    turnContext.Services.Set<UserAuthorization>(_app.UserAuthorization);
-
                     var allAcquired = await _app.UserAuthorization.GetSignedInTokensAsync(turnContext, tokenHandlers, cancellationToken).ConfigureAwait(false);
                     if (!allAcquired && _options.FailOnUnsignedInConnections)
                     {

@@ -54,8 +54,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                         OnRequestReceived = _activityHandler.HandleAsync
                     };
 
-                    // Start the read loop before publishing the protocol to outbound callers, so
-                    // any SendRequestAsync that races in observes a fully-initialized protocol.
+                    // Start read loop before publishing to outbound callers.
                     protocol.Start();
                     _messageHandler.SetProtocol(protocol);
 
@@ -63,8 +62,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 
                     try
                     {
-                        // Wait for the protocol's read loop to complete (pipe disconnect or error)
-                        // or for the host to request shutdown. This avoids polling IsConnected.
+                        // Wait for read loop to exit (pipe disconnect or error).
                         await protocol.Completion.WaitAsync(stoppingToken).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

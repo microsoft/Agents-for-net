@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -41,16 +42,17 @@ public static class A2AServiceExtensions
     /// <exception cref="InvalidOperationException"/>
     public static IEndpointConventionBuilder MapA2AApplicationEndpoints(
         this IEndpointRouteBuilder endpoints,
-        bool requireAuth = true,
+        bool? requireAuth = null,
         [StringSyntax("Route")] string defaultPath = "/a2a")
     {
+        requireAuth ??= endpoints.IsAgentAuthorizationConfigured();
         if (string.IsNullOrEmpty(defaultPath))
         {
             defaultPath = "/a2a";
         }
 
         var a2aGroup = endpoints.MapGroup("");
-        if (requireAuth)
+        if (requireAuth.Value)
         {
             a2aGroup.RequireAuthorization();
         }

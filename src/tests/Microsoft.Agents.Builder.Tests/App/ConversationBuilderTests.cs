@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App.Proactive;
@@ -486,7 +486,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         public void Build_WithTeamsChannel_SetsTeamsServiceUrl()
         {
             // Act
-            var builder = ConversationBuilder.Create(TestAgentClientId, Channels.Msteams);
+            var builder = ConversationBuilder.Create(TestAgentClientId, Microsoft.Agents.Core.Models.Channels.Msteams);
             var conversation = builder.Build();
 
             // Assert
@@ -608,10 +608,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Test different channels
             var testCases = new[]
             {
-                (Channels.Msteams, "https://smba.trafficmanager.net/teams/"),
-                (Channels.Emulator, "https://emulator.botframework.com/"),
-                (Channels.Directline, "https://directline.botframework.com/"),
-                (Channels.Webchat, "https://webchat.botframework.com/")
+                (Microsoft.Agents.Core.Models.Channels.Msteams, "https://smba.trafficmanager.net/teams/"),
+                (Microsoft.Agents.Core.Models.Channels.Emulator, "https://emulator.botframework.com/"),
+                (Microsoft.Agents.Core.Models.Channels.Directline, "https://directline.botframework.com/"),
+                (Microsoft.Agents.Core.Models.Channels.Webchat, "https://webchat.botframework.com/")
             };
 
             foreach (var (channelId, expectedUrl) in testCases)

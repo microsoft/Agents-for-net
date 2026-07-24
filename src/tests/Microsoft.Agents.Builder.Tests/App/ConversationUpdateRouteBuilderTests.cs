@@ -355,7 +355,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } },
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             });
 
             var nonMatchingContext = new Mock<ITurnContext>();
@@ -363,12 +363,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.ConversationUpdate,
                 MembersAdded = new List<ChannelAccount> { new ChannelAccount { Id = "user1" } },
-                ChannelId = Channels.Directline
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
             });
 
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithHandler((ctx, state, ct) => Task.CompletedTask)
                 .Build();
 
@@ -402,7 +402,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = ConversationUpdateRouteBuilder.Create()
                 .WithUpdateEvent(ConversationUpdateEvents.MembersAdded)
                 .WithHandler((ctx, state, ct) => Task.CompletedTask)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(10)
                 .AsAgentic()
                 .AsNonTerminal()
@@ -411,7 +411,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Build();
 
             Assert.NotNull(route);
-            Assert.Equal(Channels.Msteams, route.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, route.ChannelId);
             Assert.Equal((ushort)10, route.Rank);
             Assert.True(route.Flags.HasFlag(RouteFlags.Agentic));
             Assert.True(route.Flags.HasFlag(RouteFlags.NonTerminal));

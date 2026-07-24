@@ -27,6 +27,16 @@ namespace Microsoft.Agents.Builder.App
     /// </remarks>
     public class MessageReactionsAddedRouteBuilder : RouteBuilderBase<MessageReactionsAddedRouteBuilder>
     {
+
+        /// <summary>
+        /// Creates a new instance of the MessageReactionsAddedRouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A MessageReactionsAddedRouteBuilder instance that can be used to configure and build routes.</returns>
+        public static MessageReactionsAddedRouteBuilder Create()
+        {
+            return new MessageReactionsAddedRouteBuilder();
+        }
+
         public MessageReactionsAddedRouteBuilder WithHandler(RouteHandler handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
