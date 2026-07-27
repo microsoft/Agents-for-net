@@ -7,7 +7,6 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.A2A;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,18 +20,12 @@ namespace A2AAgent;
 [A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
 [A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn")]
 [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response")]
-public partial class MyAgent : AgentApplication
+public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    public MyAgent(AgentApplicationOptions options) : base(options)
-    {
-        OnMessage("-stream", OnStreamAsync);
-        OnMessage("-multi", OnMultiTurnAsync);
-        OnActivity(ActivityTypes.EndOfConversation, OnEndOfConversationAsync);
-        OnMessage("-a2a", OnA2AAdvancedAsync);
-        OnActivity(ActivityTypes.Message, OnMessageAsync, rank: RouteRank.Last);
-    }
+    private const string MultiTurnCountKey = "MultiTurnCount";
 
-    private async Task OnStreamAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [A2AMessageRoute("-stream")]
+    private async Task OnStreamAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         turnContext.StreamingResponse.EnableGeneratedByAILabel = true;
         await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Please wait while I process your request.", cancellationToken);
@@ -55,11 +48,12 @@ public partial class MyAgent : AgentApplication
     }
 
     // Received an A2A Message
-    private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [A2AMessageRoute]
+    private async Task OnMessageAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // ConversationState is associated with the A2A Task.
-        var multi = turnState.Conversation.GetValue<MultiResult>(nameof(MultiResult));
-        if (multi != null)
+        var turnCount = turnState.Conversation.GetValue<int>(MultiTurnCountKey);
+        if (turnCount > 0)
         {
             await OnMultiTurnAsync(turnContext, turnState, cancellationToken);
             return;
@@ -76,25 +70,22 @@ public partial class MyAgent : AgentApplication
         await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
     }
 
-    private async Task OnA2AAdvancedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [A2AMessageRoute("-a2a")]
+    private async Task OnA2ADirectAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await A2AExtension.A2ADirect(turnContext, async (eventQueue, requestContext, taskStore) =>
+        var message = new A2A.Message()
         {
-            var message = new A2A.Message()
-            {
-                Role = Role.Agent,
-                TaskId = requestContext.TaskId,
-                ContextId = requestContext.ContextId,
-                Parts = [new Part() { Text = "This is an A2A message" }]
-            };
-            await eventQueue.EnqueueMessageAsync(message, cancellationToken);
-        });
+            Role = Role.Agent,
+            TaskId = turnContext.Client.RequestContext.TaskId,
+            ContextId = turnContext.Client.RequestContext.ContextId,
+            Parts = [new Part() { Text = "This is an A2A message" }]
+        };
 
-        // Send another via TurnContext
-        await turnContext.SendActivityAsync("This is another message sent by TurnContext", cancellationToken: cancellationToken);
+        await turnContext.Client.EventQueue.EnqueueMessageAsync(message, cancellationToken);
     }
 
     // Received for A2A "tasks/cancel"
+    [EndOfConversationRoute]
     private Task OnEndOfConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // No need for conversation state anymore
@@ -102,10 +93,11 @@ public partial class MyAgent : AgentApplication
         return Task.CompletedTask;
     }
 
-    private async Task OnMultiTurnAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [A2AMessageRoute("-multi")]
+    private async Task OnMultiTurnAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var multi = turnState.Conversation.GetValue(nameof(MultiResult), () => new MultiResult());
-        multi.ActivityHistory.Add(new ActivityMessage() { Role = "user", Message = turnContext.Activity.Text });
+        var turnCount = turnState.Conversation.GetValue<int>(MultiTurnCountKey) + 1;
+        turnState.Conversation.SetValue(MultiTurnCountKey, turnCount);
 
         if (turnContext.Activity.Text.Equals("end", System.StringComparison.OrdinalIgnoreCase))
         {
@@ -113,12 +105,10 @@ public partial class MyAgent : AgentApplication
             var eoc = new Activity()
             {
                 Type = ActivityTypes.EndOfConversation,
-                Text = "All done. Activity list result in Artifacts", // optional, added as a message in TaskStatus
+                Text = $"All done after {turnCount} turns.",
                 Code = EndOfConversationCodes.CompletedSuccessfully,  // recommended, A2AAdapter will default to "completed"
+                Value = new { turnCount }
             };
-
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Message = eoc.Text });
-            eoc.Value = multi; 
 
             await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
 
@@ -128,21 +118,8 @@ public partial class MyAgent : AgentApplication
         else
         {
             // Hosting.A2A requires ExpectingInput for multi-turn. 
-            var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text}", inputHint: InputHints.ExpectingInput);
-            multi.ActivityHistory.Add(new ActivityMessage() { Role = "agent", Message = activity.Text });
+            var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text} (turn {turnCount})", inputHint: InputHints.ExpectingInput);
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }
     }
-}
-
-
-class ActivityMessage
-{
-    public required string Role { get; set; }
-    public required string Message { get; set; }
-}
-
-class MultiResult
-{
-    public List<ActivityMessage> ActivityHistory { get; set; } = [];
 }

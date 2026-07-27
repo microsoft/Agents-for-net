@@ -19,7 +19,7 @@ public partial class MyAgent : AgentApplication
         A2AExtension.OnMessage(OnA2AMessageAsync);
     }
 
-    private Task OnA2AMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    private Task OnA2AMessageAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         return turnContext.SendActivityAsync($"You sent an A2A message with text: '{turnContext.Activity.Text}'", cancellationToken: cancellationToken);
     }

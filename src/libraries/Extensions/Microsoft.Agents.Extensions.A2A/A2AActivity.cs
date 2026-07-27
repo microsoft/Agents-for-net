@@ -22,7 +22,7 @@ internal static class A2AActivity
     private const string EntityTypeTemplate = "application/vnd.microsoft.entity.{0}";
     private static readonly ConcurrentDictionary<Type, Dictionary<string, JsonElement>> _schemas = [];
 
-    public static IActivity ActivityFromMessage(string requestId, string taskId, Message message)
+    public static IA2AActivity ActivityFromMessage(string requestId, string taskId, Message message)
     {
         AssertionHelpers.ThrowIfNull(message, nameof(message));
         taskId ??= message.TaskId ?? throw new ArgumentException("TaskId must be provided either in the parameter or in the message");
@@ -161,7 +161,7 @@ internal static class A2AActivity
         };
     }
 
-    private static Activity CreateActivity(
+    private static A2AMessageActivity CreateActivity(
         string conversationId,
         List<Part> parts,
         bool isIngress,
@@ -179,7 +179,7 @@ internal static class A2AActivity
             Role = RoleTypes.User,
         };
 
-        var activity = new Activity()
+        var activity = new A2AMessageActivity()
         {
             Type = ActivityTypes.Message,
             Id = Guid.NewGuid().ToString("N"),

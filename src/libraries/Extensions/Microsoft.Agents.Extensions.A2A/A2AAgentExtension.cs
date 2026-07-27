@@ -1,54 +1,20 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using A2A;
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
-using System;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.A2A;
 
 public class A2AAgentExtension : Builder.AgentExtension
 {
-#if !NETSTANDARD
-    protected AgentApplication AgentApplication { get; init; }
+    private readonly AgentApplication _agentApplication;
 
     public A2AAgentExtension(AgentApplication agentApplication)
     {
-        AgentApplication = agentApplication;
+        _agentApplication = agentApplication;
         ChannelId = Channels.A2A;
-    }
-
-#else
-    protected AgentApplication AgentApplication { get; set; } = agentApplication;
-}
-#endif
-
-    /// <summary>
-    /// Gets or sets the agent application instance associated with the current context.
-    /// </summary>
-    /// <remarks>This property is typically used to access or assign the agent application that manages
-    /// agent-related operations within the current execution context. The value may be set during initialization or by
-    /// derived classes as needed.</remarks>
-    /// <param name="turnContext"></param>
-    /// <param name="action">The action to perform with the agent event queue and request context.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-#pragma warning disable CA1822 // Mark members as static
-    public Task A2ADirect(ITurnContext turnContext, Func<AgentEventQueue, RequestContext, ITaskStore, Task> action)
-#pragma warning restore CA1822 // Mark members as static
-    {
-        AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
-        AssertionHelpers.ThrowIfNull(action, nameof(action));
-
-        var eventQueue = turnContext.Services.Get<AgentEventQueue>();
-        var requestContext = turnContext.Services.Get<RequestContext>();
-        var taskStore = turnContext.Services.Get<ITaskStore>(); 
-
-        return action(eventQueue, requestContext, taskStore);
     }
 
     /// <summary>
@@ -60,12 +26,12 @@ public class A2AAgentExtension : Builder.AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of A2AAgentExtension to allow method chaining.</returns>
-    public A2AAgentExtension OnMessage(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public A2AAgentExtension OnMessage(A2ARouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(TypeRouteBuilder.Create()
+        _agentApplication.AddRoute(TypeRouteBuilder.Create()
             .WithType(ActivityTypes.Message)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
@@ -84,12 +50,12 @@ public class A2AAgentExtension : Builder.AgentExtension
     /// <param name="rank">The rank that determines the order in which this route is evaluated. Use RouteRank.Unspecified for default
     /// ordering.</param>
     /// <returns>The current instance of A2AAgentExtension to allow method chaining.</returns>
-    public A2AAgentExtension OnMessage(string text, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public A2AAgentExtension OnMessage(string text, A2ARouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(MessageRouteBuilder.Create()
+        _agentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(text)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
@@ -109,12 +75,12 @@ public class A2AAgentExtension : Builder.AgentExtension
     /// <param name="rank">The rank that determines the order in which this route is evaluated relative to other routes. Lower values
     /// indicate higher priority. The default is RouteRank.Unspecified.</param>
     /// <returns>The current instance of A2AAgentExtension to allow method chaining.</returns>
-    public A2AAgentExtension OnMessage(Regex textPattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public A2AAgentExtension OnMessage(Regex textPattern, A2ARouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(MessageRouteBuilder.Create()
+        _agentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(textPattern)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
