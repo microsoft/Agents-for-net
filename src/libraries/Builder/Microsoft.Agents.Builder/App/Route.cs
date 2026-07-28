@@ -28,6 +28,17 @@ namespace Microsoft.Agents.Builder.App
     /// <returns></returns>
     public delegate Task RouteHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Represents a route that can be used to handle incoming requests.
+    /// </summary>
+    /// <typeparam name="T">The type of activity that this route handler can process.</typeparam>
+    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects
+    /// or threads to receive notice of cancellation.</param>
+    /// <returns></returns>
+    public delegate Task TypedRouteHandler<T>(ITurnContext<T> turnContext, ITurnState turnState, CancellationToken cancellationToken) where T : IActivity;
+
     public enum RouteFlags
     {
         None = 0,

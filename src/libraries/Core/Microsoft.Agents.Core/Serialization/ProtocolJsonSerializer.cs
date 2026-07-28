@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using System.Reflection;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization.Converters;
 
@@ -37,12 +38,31 @@ namespace Microsoft.Agents.Core.Serialization
         /// </summary>
         public static ConcurrentDictionary<string, Type> EntityTypes { get; private set; } = CoreEntities();
 
+        /// <summary>
+        /// Maps activity <c>type</c> strings to custom <see cref="Activity"/> subclasses for the
+        /// simple type-only case. Retained for direct inspection; declarative discriminators
+        /// (including channelId/name) are held in the internal registration list. Populated by
+        /// <see cref="RegisterActivityTypes"/>.
+        /// </summary>
+        internal static readonly object _activityResolutionLock = new object();
+        private static ActivityTypeRegistration[] _activityRegistrations = Array.Empty<ActivityTypeRegistration>();
+        private static ActivityTypeResolver[] _activityResolvers = Array.Empty<ActivityTypeResolver>();
+
+        /// <summary>
+        /// True when any custom Activity resolution (declarative registrations or imperative
+        /// resolvers) has been registered. Lets the <c>ActivityConverter</c> keep a zero-overhead
+        /// fast path when no custom Activity types are in play.
+        /// </summary>
+        internal static bool HasActivityTypeRegistrations
+            => _activityRegistrations.Length != 0 || _activityResolvers.Length != 0;
+
         private static readonly object _optionsLock = new object();
 
         static ProtocolJsonSerializer()
         {
             SerializationInitAssemblyAttribute.InitSerialization();
             EntityInitAssemblyAttribute.InitSerialization();
+            ActivityTypeInitAssemblyAttribute.InitSerialization();
         }
 
         private static JsonSerializerOptions InitSerializerOptions()
@@ -152,6 +172,184 @@ namespace Microsoft.Agents.Core.Serialization
         public static void AddEntityType(string entityTypeName, Type entityType)
         {
             EntityTypes[entityTypeName] = entityType;
+        }
+
+        /// <summary>
+        /// Registers custom <see cref="Activity"/> subclasses for polymorphic deserialization.
+        /// Each type must derive from <see cref="Activity"/> and be annotated with one or more
+        /// <see cref="ActivityTypeAttribute"/>. Each attribute declares the discriminators
+        /// (<c>type</c>, and optionally <c>channelId</c> and/or <c>name</c>) that an inbound Activity
+        /// must match for the subclass to be used.
+        /// </summary>
+        /// <remarks>
+        /// Annotated subclasses are normally auto-registered at assembly load time (the
+        /// <c>ActivityTypeInitSourceGenerator</c> emits an <see cref="ActivityTypeInitAssemblyAttribute"/>
+        /// per <c>[ActivityType]</c> class), so calling this directly is rarely needed. It remains public
+        /// for explicit/dynamic registration. Registration is idempotent — registering the same type and
+        /// discriminators more than once is a no-op.
+        /// </remarks>
+        /// <param name="types">The annotated <see cref="Activity"/> subclasses to register.</param>
+        /// <exception cref="ArgumentException">
+        /// A supplied type does not derive from <see cref="Activity"/>, or one of its
+        /// <see cref="ActivityTypeAttribute"/> declarations sets none of Type/ChannelId/Name.
+        /// </exception>
+        public static void RegisterActivityTypes(IEnumerable<Type> types)
+        {
+            if (types == null)
+            {
+                return;
+            }
+
+            var additions = new List<ActivityTypeRegistration>();
+
+            foreach (var type in types)
+            {
+                if (!typeof(Activity).IsAssignableFrom(type))
+                {
+                    throw new ArgumentException($"{type.Name} must derive from {nameof(Activity)}.", nameof(types));
+                }
+
+                foreach (var attr in type.GetCustomAttributes<ActivityTypeAttribute>(false))
+                {
+                    if (string.IsNullOrWhiteSpace(attr.Type)
+                        && string.IsNullOrWhiteSpace(attr.ChannelId)
+                        && string.IsNullOrWhiteSpace(attr.Name))
+                    {
+                        throw new ArgumentException(
+                            $"[{nameof(ActivityTypeAttribute)}] on {type.Name} must set at least one of Type, ChannelId, or Name.",
+                            nameof(types));
+                    }
+
+                    additions.Add(new ActivityTypeRegistration(type, attr.Type, attr.ChannelId, attr.Name));
+                }
+            }
+
+            if (additions.Count == 0)
+            {
+                return;
+            }
+
+            lock (_activityResolutionLock)
+            {
+                var existing = _activityRegistrations;
+
+                // Deduplicate so re-processing (e.g. auto-registration running for an assembly that
+                // is also registered manually, or an assembly seen by both the initial scan and the
+                // AssemblyLoad handler) does not append identical registrations.
+                var toAdd = new List<ActivityTypeRegistration>();
+                foreach (var addition in additions)
+                {
+                    if (!ContainsRegistration(existing, addition) && !ContainsRegistration(toAdd, addition))
+                    {
+                        toAdd.Add(addition);
+                    }
+                }
+
+                if (toAdd.Count == 0)
+                {
+                    return;
+                }
+
+                var updated = new ActivityTypeRegistration[existing.Length + toAdd.Count];
+                Array.Copy(existing, updated, existing.Length);
+                for (var i = 0; i < toAdd.Count; i++)
+                {
+                    updated[existing.Length + i] = toAdd[i];
+                }
+
+                _activityRegistrations = updated;
+            }
+        }
+
+        private static bool ContainsRegistration(IReadOnlyList<ActivityTypeRegistration> list, ActivityTypeRegistration candidate)
+        {
+            for (var i = 0; i < list.Count; i++)
+            {
+                var r = list[i];
+                if (r.ClrType == candidate.ClrType
+                    && string.Equals(r.Type, candidate.Type, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(r.ChannelId, candidate.ChannelId, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(r.Name, candidate.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Registers an imperative <see cref="ActivityTypeResolver"/> for custom Activity resolution
+        /// scenarios that the declarative <see cref="ActivityTypeAttribute"/> discriminators cannot
+        /// express. The resolver receives a private <see cref="Utf8JsonReader"/> copy positioned at
+        /// the Activity's <c>StartObject</c> (so it can discriminate on any property, including nested
+        /// ones) plus the well-known peeked discriminators for convenience. Resolvers are consulted
+        /// (in registration order) before declarative registrations; the first resolver to return a
+        /// non-<see langword="null"/> type wins.
+        /// </summary>
+        /// <param name="resolver">The resolver to add.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="resolver"/> is <see langword="null"/>.</exception>
+        public static void RegisterActivityTypeResolver(ActivityTypeResolver resolver)
+        {
+            AssertionHelpers.ThrowIfNull(resolver, nameof(resolver));
+
+            lock (_activityResolutionLock)
+            {
+                var updated = new ActivityTypeResolver[_activityResolvers.Length + 1];
+                Array.Copy(_activityResolvers, updated, _activityResolvers.Length);
+                updated[_activityResolvers.Length] = resolver;
+                _activityResolvers = updated;
+            }
+        }
+
+        /// <summary>
+        /// Resolves the custom <see cref="Activity"/> subclass to deserialize into for the given
+        /// peeked discriminators, or <see langword="null"/> to use the base <see cref="Activity"/>.
+        /// Imperative resolvers are consulted first (in registration order); then the most-specific
+        /// matching declarative registration (greatest number of set discriminators; ties resolved
+        /// by registration order).
+        /// </summary>
+        internal static Type ResolveActivityType(ref Utf8JsonReader reader, in ActivityResolutionContext context)
+        {
+            // Snapshot the copy-on-write arrays for a consistent, lock-free read.
+            var resolvers = _activityResolvers;
+            for (var i = 0; i < resolvers.Length; i++)
+            {
+                // Hand each resolver its own copy of the reader (positioned at StartObject) so its
+                // scanning can't disturb deserialization or the next resolver.
+                var resolverReader = reader;
+                var resolved = resolvers[i](ref resolverReader, in context);
+                if (resolved != null)
+                {
+                    return resolved;
+                }
+            }
+
+            var registrations = _activityRegistrations;
+            ActivityTypeRegistration best = null;
+            for (var i = 0; i < registrations.Length; i++)
+            {
+                var registration = registrations[i];
+                if (registration.Matches(in context)
+                    && (best == null || registration.Specificity > best.Specificity))
+                {
+                    best = registration;
+                }
+            }
+
+            return best?.ClrType;
+        }
+
+        /// <summary>
+        /// Removes all custom Activity type registrations and resolvers. Intended for test isolation.
+        /// </summary>
+        internal static void ClearActivityTypeRegistrations()
+        {
+            lock (_activityResolutionLock)
+            {
+                _activityRegistrations = Array.Empty<ActivityTypeRegistration>();
+                _activityResolvers = Array.Empty<ActivityTypeResolver>();
+            }
         }
 
         private static JsonSerializerOptions ApplyCoreOptions(this JsonSerializerOptions options)

@@ -11,7 +11,42 @@ namespace Microsoft.Agents.Core.Serialization.Converters
 {
     internal class ActivityConverter : ConnectorConverter<Activity>
     {
+        // Claim Activity subclasses too (e.g. custom types resolved via ActivityTypeResolver). The
+        // base JsonConverter<Activity> only matches typeof(Activity), which is enough for reading
+        // (Read is invoked explicitly with the resolved subclass) but not for top-level writing of a
+        // subclass instance — without this, System.Text.Json falls back to default reflection and
+        // mis-serializes members like ChannelId. value.GetType() drives the actual property set.
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return typeof(Activity).IsAssignableFrom(typeToConvert);
+        }
+
         public override Activity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            // Fast path: no custom activity resolution registered — existing behavior, zero overhead.
+            if (!ProtocolJsonSerializer.HasActivityTypeRegistrations)
+            {
+                return ReadDefault(ref reader, typeToConvert, options);
+            }
+
+            // Peek the discriminator fields (on a struct copy, leaving the real reader untouched)
+            // to resolve the CLR type to deserialize into.
+            var readerCopy = reader;
+            var context = PeekDiscriminators(ref readerCopy);
+
+            // Resolvers may scan arbitrary properties, so hand resolution a fresh copy positioned at
+            // StartObject (PeekDiscriminators consumed readerCopy). The real reader stays untouched.
+            var resolverReader = reader;
+            var resolvedType = ProtocolJsonSerializer.ResolveActivityType(ref resolverReader, in context);
+            if (resolvedType != null)
+            {
+                return ReadDefault(ref reader, resolvedType, options);
+            }
+
+            return ReadDefault(ref reader, typeToConvert, options);
+        }
+
+        private Activity ReadDefault(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var activity = base.Read(ref reader, typeToConvert, options);
 
@@ -25,6 +60,86 @@ namespace Microsoft.Agents.Core.Serialization.Converters
             }
 
             return activity;
+        }
+
+        private static ActivityResolutionContext PeekDiscriminators(ref Utf8JsonReader reader)
+        {
+            if (reader.TokenType != JsonTokenType.StartObject)
+            {
+                return default;
+            }
+
+            string type = null;
+            string channelId = null;
+            string name = null;
+
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.EndObject)
+                {
+                    break;
+                }
+
+                if (reader.TokenType != JsonTokenType.PropertyName || reader.CurrentDepth != 1)
+                {
+                    // Skip stray values / nested content encountered at the top level.
+                    reader.Skip();
+                    continue;
+                }
+
+                var isType = reader.ValueTextEquals("type"u8);
+                var isChannelId = !isType && reader.ValueTextEquals("channelId"u8);
+                var isName = !isType && !isChannelId && reader.ValueTextEquals("name"u8);
+
+                if (!reader.Read())
+                {
+                    break;
+                }
+
+                if (isType || isChannelId || isName)
+                {
+                    var value = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
+
+                    if (isType)
+                    {
+                        type = value;
+                    }
+                    else if (isChannelId)
+                    {
+                        channelId = ChannelSegment(value);
+                    }
+                    else
+                    {
+                        name = value;
+                    }
+
+                    if (type != null && channelId != null && name != null)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    // Skip the value of an uninteresting property (no-op for scalars,
+                    // skips the whole subtree for objects/arrays).
+                    reader.Skip();
+                }
+            }
+
+            return new ActivityResolutionContext(type, channelId, name);
+        }
+
+        // The channelId can carry a "{channel}:{product}" sub-channel suffix; discriminators match
+        // on the bare channel segment.
+        private static string ChannelSegment(string channelId)
+        {
+            if (channelId == null)
+            {
+                return null;
+            }
+
+            var separator = channelId.IndexOf(':');
+            return separator < 0 ? channelId : channelId.Substring(0, separator);
         }
 
         public override void Write(Utf8JsonWriter writer, Activity value, JsonSerializerOptions options)
