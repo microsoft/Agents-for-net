@@ -31,6 +31,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly IActivityTaskQueue _activityQueue;
         private readonly int _shutdownTimeoutSeconds;
         private readonly IServiceProvider _serviceProvider;
+        private int _stopping;
 
         /// <summary>
         /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedActivityService"/> instance for processing Activities
@@ -64,6 +65,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <returns>The Task to be executed asynchronously.</returns>
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
+            // Some hosts (notably WebApplicationFactory/TestServer teardown, see
+            // https://github.com/dotnet/aspnetcore/issues/40271) can call StopAsync more than once.
+            // Guard against re-entering the write lock on the same thread, which throws
+            // LockRecursionException since ReaderWriterLockSlim defaults to NoRecursion.
+            if (Interlocked.Exchange(ref _stopping, 1) == 1)
+            {
+                await base.StopAsync(stoppingToken).ConfigureAwait(false);
+                return;
+            }
+
             _logger.LogInformation("Queued Hosted Service is stopping.");
 
             _activityQueue.Stop();

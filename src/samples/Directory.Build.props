@@ -4,7 +4,27 @@
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <IsPackable>false</IsPackable>
         <SamplesRoot>$(MSBuildThisFileDirectory)</SamplesRoot>
+        <!--
+          Controls whether the shared Shared\AspNetExtensions.cs helper is linked into the sample.
+          Defaults to true; console/worker samples that don't host an ASP.NET pipeline set this to
+          false. The actual <Compile> item is added in Directory.Build.targets so this property is
+          resolved after the project body has had a chance to override it.
+        -->
+        <IncludeAspNetSampleHelpers Condition="'$(IncludeAspNetSampleHelpers)' == ''">true</IncludeAspNetSampleHelpers>
+        <!--
+          Controls whether the shared Shared\AgentOtelExtension.cs OpenTelemetry helper is linked into
+          the sample. Defaults to false because the helper pulls in the OpenTelemetry.* packages and the
+          Microsoft.Agents.Core.Telemetry APIs; a sample opts in by setting this to true AND adding the
+          required OpenTelemetry package/project references (see TelemetryAgent for the reference set).
+        -->
+        <IncludeOtelSampleHelpers Condition="'$(IncludeOtelSampleHelpers)' == ''">false</IncludeOtelSampleHelpers>
     </PropertyGroup>
+
+    <!--
+      Shared ASP.NET JWT authentication helper. Previously this file was duplicated verbatim in every
+      sample; it now lives once under Shared\AspNetExtensions.cs and is linked into each sample from
+      Directory.Build.targets (gated on IncludeAspNetSampleHelpers).
+    -->
 
     <!--
       Samples reference the SDK via ProjectReference, which does not propagate analyzers (NuGet consumers
