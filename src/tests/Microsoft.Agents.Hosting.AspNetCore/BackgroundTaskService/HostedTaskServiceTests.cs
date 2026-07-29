@@ -110,6 +110,18 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundTaskService
             record.VerifyMocks();
         }
 
+        [Fact]
+        public async Task StopAsync_ShouldBeIdempotent()
+        {
+            var record = UseRecord();
+            var token = CancellationToken.None;
+
+            // Calling StopAsync more than once (as WebApplicationFactory/TestServer teardown can do)
+            // must not throw LockRecursionException. See https://github.com/dotnet/aspnetcore/issues/40271.
+            await record.Service.StopAsync(token);
+            await record.Service.StopAsync(token);
+        }
+
         private static Record UseRecord()
         {
             var config = new ConfigurationBuilder().Build();

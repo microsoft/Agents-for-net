@@ -124,7 +124,20 @@ public static class AspNetExtensions
         // If ValidIssuers is empty, default for ABS Public Cloud
         if (validationOptions.ValidIssuers == null || validationOptions.ValidIssuers.Count == 0)
         {
-            if (validationOptions.IsGov)
+            if (validationOptions.AzureBotServiceOnly)
+            {
+                // Accept only Azure Bot Service (BotFramework) tokens.  Entra ID / agent-to-agent
+                // callers are rejected at issuer validation (ValidateIssuer) before reaching the
+                // AllowedCallers check.  Requires AzureBotServiceTokenHandling to remain true so
+                // these tokens are validated against the ABS OpenID metadata.
+                validationOptions.ValidIssuers =
+                [
+                    validationOptions.IsGov
+                        ? AuthenticationConstants.GovBotFrameworkTokenIssuer
+                        : AuthenticationConstants.BotFrameworkTokenIssuer
+                ];
+            }
+            else if (validationOptions.IsGov)
             {
                 validationOptions.ValidIssuers =
                 [
@@ -311,6 +324,7 @@ public static class AspNetExtensions
         /// tenant-specific issuer URLs built from <see cref="AuthenticationConstants.ValidTokenIssuerUrlTemplateV1"/>
         /// and <see cref="AuthenticationConstants.ValidGovernmentTokenIssuerUrlTemplateV2"/>.
         /// For China or other clouds all issuers must be set explicitly since there is no corresponding <c>IsChina</c> flag.
+        /// See also <see cref="AzureBotServiceOnly"/> to default this to just the BotFramework issuer.
         /// </summary>
         public IList<string>? ValidIssuers { get; set; }
 
@@ -337,6 +351,25 @@ public static class AspNetExtensions
         /// For China or other sovereign clouds, leave this <c>false</c> and set all URLs and issuers explicitly.
         /// </summary>
         public bool IsGov { get; set; } = false;
+
+        /// <summary>
+        /// Restrict the agent to accept only Azure Bot Service (BotFramework) traffic.  Defaults to <c>false</c>.
+        /// When <c>true</c> and <see cref="ValidIssuers"/> is not set explicitly, <see cref="ValidIssuers"/> is
+        /// defaulted to just the BotFramework token issuer
+        /// (<see cref="AuthenticationConstants.BotFrameworkTokenIssuer"/>, or
+        /// <see cref="AuthenticationConstants.GovBotFrameworkTokenIssuer"/> when <see cref="IsGov"/> is <c>true</c>).
+        /// Entra ID and agent-to-agent callers are then rejected at issuer validation, so the
+        /// <see cref="AllowedCallers"/> check does not apply.
+        /// <para>
+        /// Note: this targets the legacy BotFramework issuer (<c>https://api.botframework.com</c>).  As Azure Bot
+        /// Service migrates channels to send Entra ID tokens (see <see cref="AzureBotServiceTokenHandling"/>), those
+        /// tokens are issued by the Bot Service Entra tenants rather than the BotFramework issuer; if you rely on
+        /// that path, set <see cref="ValidIssuers"/> explicitly instead.  Keep <see cref="AzureBotServiceTokenHandling"/>
+        /// <c>true</c> when using this option.  For China or other sovereign clouds, set <see cref="ValidIssuers"/>
+        /// explicitly since there is no corresponding flag.
+        /// </para>
+        /// </summary>
+        public bool AzureBotServiceOnly { get; set; } = false;
 
         /// <summary>
         /// OpenID Connect metadata URL used to validate tokens issued by Azure Bot Service.  Optional.
@@ -374,6 +407,7 @@ public static class AspNetExtensions
         /// When empty or containing <c>"*"</c>, any caller is accepted.
         /// When populated with specific App IDs, the <c>azp</c> or <c>appid</c> claim in the inbound token
         /// must match one of the listed values.  This check applies only to non-BotFramework tokens.
+        /// To accept only Azure Bot Service (BotFramework) traffic, use <see cref="AzureBotServiceOnly"/>.
         /// </summary>
         public IList<string>? AllowedCallers { get; set; }
     }
