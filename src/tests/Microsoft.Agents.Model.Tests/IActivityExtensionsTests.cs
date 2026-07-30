@@ -118,10 +118,10 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
-        public void MakeTargetedActivity_NullActivity_ThrowsArgumentNullException()
+        public void MakeTargetedActivity_NullActivity_Throws()
         {
             IActivity activity = null;
-            Assert.Throws<ArgumentNullException>(() => activity.MakeTargetedActivity());
+            Assert.Throws<NullReferenceException>(() => activity.MakeTargetedActivity());
         }
     }
 }

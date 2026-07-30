@@ -10,6 +10,8 @@
      The 'library-packs' source is added by the SDK.
     -->
     <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
+    <!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
   <PropertyGroup>
     <Microsoft_Extentions_PkgVer>10.0.7</Microsoft_Extentions_PkgVer>
@@ -63,6 +65,7 @@
     <!-- Test nuget packages -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.8.0" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="System.IO.Compression" Version="4.3.0" />
     <PackageVersion Include="xunit" Version="$(Xunit_PackageVersion)" />
@@ -81,6 +84,7 @@
     <!-- SDK Core -->
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="$(Microsoft_Bcl_PkgVer)" />
     <PackageVersion Include="Microsoft.Bcl.Memory" Version="$(Microsoft_Bcl_PkgVer)" />
+    <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="$(Microsoft_Bcl_PkgVer)" />
     <PackageVersion Include="Azure.Identity" Version="1.17.1" />
     <PackageVersion Include="Azure.Core" Version="1.50.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0" />

@@ -25,7 +25,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
-	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.MSTeams\Microsoft.Agents.Extensions.MSTeams.csproj" />
 	  <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
 	  <ProjectReference Include="..\Microsoft.Agents.Builder.Tests\Microsoft.Agents.Builder.Tests.csproj" />
 	</ItemGroup>

@@ -23,6 +23,9 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <summary>The unique identifier of the activity.</summary>
         public static readonly string ActivityId = "activity.id";
 
+        /// <summary>The name of the activity.</summary>
+        public static readonly string ActivityName = "activity.name";
+
         /// <summary>The number of activities in a batch operation.</summary>
         public static readonly string ActivityCount = "activities.count";
 
