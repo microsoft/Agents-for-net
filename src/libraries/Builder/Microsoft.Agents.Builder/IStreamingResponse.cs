@@ -95,6 +95,11 @@ namespace Microsoft.Agents.Builder
         List<ClientCitation>? Citations { get; }
 
         /// <summary>
+        /// This is the displayed message that is sent to the user when a stream trips one of the timeouts for the channel.
+        /// </summary>
+        string StreamingTakingTooLongMessage { get; set; }
+
+        /// <summary>
         /// Adds an attachment to the collection of attachments for the final message.
         /// </summary>
         /// <param name="attachment">The attachment to add. Must not be <see langword="null"/>.</param>
@@ -152,7 +157,6 @@ namespace Microsoft.Agents.Builder
         /// Queues a chunk of partial message text to be sent to the client.
         /// </summary>
         /// <param name="text">Partial text of the message to send.</param>
-        /// <param name="citations">Citations to include in the message.</param>
         /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
         void QueueTextChunk(string text);
 
@@ -168,5 +172,13 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <returns>Number of updates sent so far.</returns>
         int UpdatesSent();
+
+        /// <summary>
+        /// Cancels the stream and sends a final message to the client indicating that the stream was cancelled, but does not stop the underlying operation.  This is useful for long-running operations that may be cancelled by the user or timeout, but should continue to run in the background.
+        /// </summary>
+        /// <param name="Message">Message that will be sent to the client indicating the stream was cancelled.</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns>True if the stream was successfully cancelled, false otherwise.</returns>
+        Task<bool> SendStreamTimedOutNotification(string Message, CancellationToken cancellationToken = default);
     }
 }
