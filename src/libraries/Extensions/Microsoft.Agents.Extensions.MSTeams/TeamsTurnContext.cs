@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,10 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
     public TeamsTurnContext(ITurnContext turnContext) : base(turnContext)
     {
     }
+
+    /// <inheritdoc/>
+    public new ITeamsActivity Activity =>
+        _turnContext.Activity as ITeamsActivity ?? ProtocolJsonSerializer.ToObject<TeamsActivity>(_turnContext.Activity);
 
     /// <inheritdoc/>
     public Microsoft.Teams.Api.Clients.ApiClient Client => _turnContext.Services.Get<Microsoft.Teams.Api.Clients.ApiClient>();

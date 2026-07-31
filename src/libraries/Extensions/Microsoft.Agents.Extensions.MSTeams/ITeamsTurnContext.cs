@@ -15,6 +15,12 @@ namespace Microsoft.Agents.Extensions.MSTeams;
 public interface ITeamsTurnContext : ITurnContext
 {
     /// <summary>
+    /// Gets the current <see cref="ITeamsActivity"/>, exposing the Activity as a strongly-typed
+    /// <see cref="ITeamsActivity"/> instead of <see cref="IActivity"/>.
+    /// </summary>
+    new ITeamsActivity Activity { get; }
+
+    /// <summary>
     /// Returns the ApiClient instance registered for Microsoft Teams API access in the current turn context.
     /// </summary>
     Microsoft.Teams.Api.Clients.ApiClient Client { get; }
