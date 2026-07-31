@@ -52,6 +52,31 @@ public class SlackHelpersTests
     }
 
     [Fact]
+    public void CreateAccountId_ReturnsSlackAndTeamIds()
+    {
+        Assert.Equal("U123:T123", SlackHelpers.CreateAccountId("U123", "T123"));
+    }
+
+    [Fact]
+    public void AccountIdHelpers_ExtractParts()
+    {
+        const string accountId = "U123:T123";
+
+        Assert.Equal("U123", SlackHelpers.SlackIdFromAccountId(accountId));
+        Assert.Equal("T123", SlackHelpers.SlackTeamIdFromAccountId(accountId));
+    }
+
+    [Theory]
+    [InlineData("U123")]
+    [InlineData("U123:T123:extra")]
+    public void SlackIdFromAccountId_InvalidFormat_ThrowsArgumentException(string accountId)
+    {
+        var exception = Assert.Throws<ArgumentException>(() => SlackHelpers.SlackIdFromAccountId(accountId));
+
+        Assert.Equal("accountId", exception.ParamName);
+    }
+
+    [Fact]
     public void CreateConversationId_WithThreadTs_ReturnsFourPartConversationId()
     {
         var conversationId = SlackHelpers.CreateConversationId("B123", "T123", "C123", "12345.6789");

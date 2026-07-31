@@ -44,6 +44,34 @@ public static class SlackHelpers
     }
     #endregion
 
+    public static string CreateAccountId(string slackId, string slackTeamId)
+    {
+        return $"{slackId}:{slackTeamId}";
+    }
+
+    public static string SlackIdFromAccountId(string accountId)
+    {
+        return FromAccountId(accountId, 0);
+    }
+
+    public static string SlackTeamIdFromAccountId(string accountId)
+    {
+        return FromAccountId(accountId, 1);
+    }
+
+    private static string FromAccountId(string accountId, int pos)
+    {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(accountId, nameof(accountId));
+
+        var split = accountId.Split(':');
+        if (split.Length != 2)
+        {
+            throw new ArgumentException($"Invalid accountId: {accountId}", nameof(accountId));
+        }
+
+        return split[pos];
+    }
+
     public static string CreateConversationId(string slackBotId, string slackTeamId, string slackChannelId, string slackThreadTs)
     {
         if (slackThreadTs == null)
