@@ -38,22 +38,6 @@ public class SlackAdapterTests
     private const string BotUserId = "U123";
 
     [Fact]
-    public void SlackAdapterOptions_BotName_RetainsConfiguredValue()
-    {
-        var options = new SlackAdapterOptions { BotName = "SlackAgent" };
-
-        Assert.Equal("SlackAgent", options.BotName);
-    }
-
-    [Fact]
-    public void SlackAdapterOptions_BotName_DefaultsToEmptyString()
-    {
-        var options = new SlackAdapterOptions();
-
-        Assert.Equal(string.Empty, options.BotName);
-    }
-
-    [Fact]
     public void Constructors_PreserveOriginalAndLoggerAwareSignatures()
     {
         var originalConstructor = typeof(SlackAdapter).GetConstructor(
@@ -948,9 +932,9 @@ public class SlackAdapterTests
     }
 
     [Fact]
-    public async Task ProcessAsync_BlockActionSelect_CreatesMessageWithConfiguredBotMention()
+    public async Task ProcessAsync_BlockActionSelect_CreatesMessageWithAgentAttributeMention()
     {
-        var adapter = CreateAdapter(out _, botName: "SlackAgent");
+        var adapter = CreateAdapter(out _);
         var payload = """
             {
               "type":"block_actions",
@@ -971,7 +955,7 @@ public class SlackAdapterTests
         await adapter.ProcessAsync(
             context.Request,
             context.Response,
-            DelegateAgent((turnContext, _) =>
+            new NamedAgent((turnContext, _) =>
             {
                 captured = turnContext.Activity;
                 return Task.CompletedTask;
@@ -985,11 +969,11 @@ public class SlackAdapterTests
         Assert.Equal("B123:T1:C200", slack.Conversation.Id);
         var mention = Assert.IsType<Mention>(Assert.Single(slack.Entities));
         Assert.Equal("B123:T1", mention.Mentioned.Id);
-        Assert.Equal("@SlackAgent", mention.Text);
+        Assert.Equal("@Configured Slack Agent", mention.Text);
     }
 
     [Fact]
-    public async Task ProcessAsync_InteractiveMessageButton_CreatesMessageWithBotIdMentionFallback()
+    public async Task ProcessAsync_InteractiveMessageButton_CreatesMessageWithAgentClassNameFallback()
     {
         var adapter = CreateAdapter(out _);
         var payload = """
@@ -1012,7 +996,7 @@ public class SlackAdapterTests
         await adapter.ProcessAsync(
             context.Request,
             context.Response,
-            DelegateAgent((turnContext, _) =>
+            new FallbackAgent((turnContext, _) =>
             {
                 captured = turnContext.Activity;
                 return Task.CompletedTask;
@@ -1026,7 +1010,7 @@ public class SlackAdapterTests
         Assert.Equal("B123:T1:C200", slack.Conversation.Id);
         var mention = Assert.IsType<Mention>(Assert.Single(slack.Entities));
         Assert.Equal("B123:T1", mention.Mentioned.Id);
-        Assert.Equal("@B123", mention.Text);
+        Assert.Equal("@FallbackAgent", mention.Text);
     }
 
     [Fact]
@@ -1186,8 +1170,7 @@ public class SlackAdapterTests
         out Mock<IHttpClientFactory> factory,
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? sendFunc = null,
         ILogger<SlackAdapter>? logger = null,
-        ILogger<SlackApi>? slackApiLogger = null,
-        string? botName = null)
+        ILogger<SlackApi>? slackApiLogger = null)
     {
         sendFunc ??= (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -1196,7 +1179,7 @@ public class SlackAdapterTests
 
         factory = CreateFactory(sendFunc);
         return new SlackAdapter(
-            new SlackAdapterOptions { BotToken = BotToken, SigningSecret = SigningSecret, BotId = BotId, BotName = botName ?? string.Empty, BotUserId = BotUserId },
+            new SlackAdapterOptions { BotToken = BotToken, SigningSecret = SigningSecret, BotId = BotId, BotUserId = BotUserId },
             factory.Object,
             logger!,
             slackApiLogger!);
@@ -1272,6 +1255,21 @@ public class SlackAdapterTests
     {
         private readonly Func<ITurnContext, CancellationToken, Task> _onTurn;
         public TestAgent(Func<ITurnContext, CancellationToken, Task> onTurn) => _onTurn = onTurn;
+        public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default) => _onTurn(turnContext, cancellationToken);
+    }
+
+    [Agent("Configured Slack Agent")]
+    private sealed class NamedAgent : IAgent
+    {
+        private readonly Func<ITurnContext, CancellationToken, Task> _onTurn;
+        public NamedAgent(Func<ITurnContext, CancellationToken, Task> onTurn) => _onTurn = onTurn;
+        public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default) => _onTurn(turnContext, cancellationToken);
+    }
+
+    private sealed class FallbackAgent : IAgent
+    {
+        private readonly Func<ITurnContext, CancellationToken, Task> _onTurn;
+        public FallbackAgent(Func<ITurnContext, CancellationToken, Task> onTurn) => _onTurn = onTurn;
         public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default) => _onTurn(turnContext, cancellationToken);
     }
 

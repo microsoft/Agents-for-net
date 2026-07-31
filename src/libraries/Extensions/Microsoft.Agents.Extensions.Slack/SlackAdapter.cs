@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Slack.Api;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
@@ -16,7 +15,6 @@ using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -49,6 +47,7 @@ namespace Microsoft.Agents.Extensions.Slack
         private readonly SlackAdapterOptions _options;
         private readonly SlackRequestValidator _requestValidator;
         private readonly SlackRequestParser _requestParser;
+        private readonly SlackActivityConverter _activityConverter;
         private readonly SlackEventDeduplicator _eventDeduplicator;
         private readonly SlackApi _slackApi;
         private readonly IActivityTaskQueue _activityTaskQueue;
@@ -102,6 +101,7 @@ namespace Microsoft.Agents.Extensions.Slack
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _requestValidator = new SlackRequestValidator(_options);
             _requestParser = new SlackRequestParser();
+            _activityConverter = new SlackActivityConverter(_options);
             _eventDeduplicator = new SlackEventDeduplicator();
             _activityTaskQueue = activityTaskQueue;
             _slackApi = new SlackApi(
@@ -191,12 +191,9 @@ namespace Microsoft.Agents.Extensions.Slack
                         return;
                     }
 
-                    activity = CreateActivityFromEvent(parsed.EventEnvelope);
                 }
-                else
-                {
-                    activity = CreateActivityFromInteractivePayload(parsed.ActionPayload);
-                }
+
+                activity = _activityConverter.Convert(parsed, agent.GetType());
             }
             catch (JsonException ex)
             {
@@ -362,191 +359,6 @@ namespace Microsoft.Agents.Extensions.Slack
                         SlackLogSanitizer.SanitizeObject(reference));
                 }
             });
-        }
-
-        /// <summary>
-        /// Converts a Slack Events API <c>event_callback</c> envelope to a <see cref="SlackActivity"/>.
-        /// Returns <see langword="null"/> when the event should be ignored (e.g. the bot's own message).
-        /// </summary>
-        private SlackActivity CreateActivityFromEvent(EventEnvelope envelope)
-        {
-            var content = envelope.event_content;
-            if (content == null)
-            {
-                return null;
-            }
-
-            // Ignore messages authored by the bot itself (or any bot subtype) to avoid reply loops.
-            var botId = content.Get<string>("bot_id");
-            var nestedBotId = content.Get<string>("message.bot_id");
-            var nestedUserId = content.Get<string>("message.user");
-            if (!string.IsNullOrEmpty(botId)
-                || !string.IsNullOrEmpty(nestedBotId)
-                || (!string.IsNullOrEmpty(_options.BotUserId)
-                    && (string.Equals(content.user, _options.BotUserId, StringComparison.Ordinal)
-                        || string.Equals(nestedUserId, _options.BotUserId, StringComparison.Ordinal))))
-            {
-                return null;
-            }
-
-            var teamId = ResolveEventTeamId(envelope);
-            var channel = content.channel;
-            var threadTs = content.Get<string>("thread_ts");
-
-            var channelData = new SlackChannelData
-            {
-                Envelope = envelope,
-                ApiToken = _options.BotToken,
-            };
-
-            var activity = new SlackActivity
-            {
-                ChannelId = Channels.Slack,
-                ServiceUrl = SlackServiceUrl,
-                Id = envelope.event_id ?? content.ts,
-                Timestamp = DateTimeOffset.UtcNow,
-                From = new ChannelAccount(id: SlackHelpers.CreateAccountId(content.user, teamId)),
-                Recipient = new ChannelAccount(id: SlackHelpers.CreateAccountId(_options.BotId, teamId)),
-                Conversation = new ConversationAccount(
-                    id: SlackHelpers.CreateConversationId(_options.BotId, teamId, channel, threadTs))
-                {
-                    IsGroup = !string.Equals(content.channel_type, "im", StringComparison.Ordinal),
-                },
-            };
-
-            activity.ChannelData = channelData;
-
-            if (string.Equals(content.type, "message", StringComparison.Ordinal) && string.IsNullOrEmpty(content.subtype))
-            {
-                activity.Type = ActivityTypes.Message;
-                activity.Text = content.text.SlackDecode();
-            }
-            else
-            {
-                activity.Type = ActivityTypes.Event;
-                activity.Name = content.type;
-            }
-
-            return activity;
-        }
-
-        private static string ResolveEventTeamId(EventEnvelope envelope)
-        {
-            var teamId = !string.IsNullOrWhiteSpace(envelope.team_id)
-                ? envelope.team_id
-                : !string.IsNullOrWhiteSpace(envelope.context_team_id)
-                    ? envelope.context_team_id
-                    : envelope.event_content?.team;
-
-            if (string.IsNullOrWhiteSpace(teamId))
-            {
-                throw new JsonException("Slack event payload does not contain a team ID.");
-            }
-
-            return teamId;
-        }
-
-        /// <summary>
-        /// Converts a Slack interactivity payload (block_actions, view_submission, ...) to a
-        /// <see cref="SlackActivity"/>, including the feedback invoke contract used by AgentApplication.
-        /// </summary>
-        private SlackActivity CreateActivityFromInteractivePayload(ActionPayload payload)
-        {
-            var teamId = ResolveInteractiveTeamId(payload);
-            var channel = payload.channel;
-            var user = payload.Get<string>("user.id");
-            var threadTs = payload.Get<string>("message.thread_ts") ?? payload.Get<string>("message.ts");
-
-            var channelData = new SlackChannelData
-            {
-                Payload = payload,
-                ApiToken = _options.BotToken,
-            };
-
-            var activity = new SlackActivity
-            {
-                Type = ActivityTypes.Event,
-                Name = payload.type,
-                ChannelId = Channels.Slack,
-                ServiceUrl = SlackServiceUrl,
-                Id = Guid.NewGuid().ToString(),
-                Timestamp = DateTimeOffset.UtcNow,
-                From = new ChannelAccount(id: SlackHelpers.CreateAccountId(user, teamId)),
-                Recipient = new ChannelAccount(id: SlackHelpers.CreateAccountId(_options.BotId, teamId)),
-                Conversation = new ConversationAccount(
-                    id: SlackHelpers.CreateConversationId(_options.BotId, teamId, channel, threadTs)),
-            };
-
-            activity.ChannelData = channelData;
-
-            var actionType = payload.Get<string>("actions[0].type");
-            if ((string.Equals(payload.type, "interactive_message", StringComparison.Ordinal)
-                    || string.Equals(payload.type, "block_actions", StringComparison.Ordinal))
-                && string.Equals(actionType, "feedback_buttons", StringComparison.Ordinal))
-            {
-                activity.Type = ActivityTypes.Invoke;
-                activity.Name = "message/submitAction";
-                activity.ReplyToId = threadTs;
-                activity.Value = new
-                {
-                    actionName = payload.Get<string>("actions[0].action_id"),
-                    actionValue = new
-                    {
-                        reaction = payload.Get<string>("actions[0].value").SlackDecode(),
-                    },
-                    replyToId = threadTs,
-                };
-            }
-            else if ((string.Equals(payload.type, "interactive_message", StringComparison.Ordinal)
-                    || string.Equals(payload.type, "block_actions", StringComparison.Ordinal))
-                && (string.Equals(actionType, "select", StringComparison.Ordinal)
-                    || string.Equals(actionType, "button", StringComparison.Ordinal)))
-            {
-                activity.Type = ActivityTypes.Message;
-                activity.Name = null;
-                activity.Text = (string.Equals(actionType, "select", StringComparison.Ordinal)
-                    ? payload.Get<string>("actions[0].selected_options[0].value")
-                    : payload.Get<string>("actions[0].value")).SlackDecode();
-                activity.Entities =
-                [
-                    new Mention
-                    {
-                        Mentioned = activity.Recipient,
-                        Text = $"@{(string.IsNullOrEmpty(_options.BotName) ? _options.BotId : _options.BotName)}",
-                    },
-                ];
-            }
-            else if (string.Equals(payload.type, "message_action", StringComparison.Ordinal)
-                && !string.IsNullOrEmpty(payload.Get<string>("callback_id")))
-            {
-                activity.Type = ActivityTypes.Event;
-                activity.Name = "SlackActivity";
-                activity.Value = payload.Get<string>("callback_id");
-            }
-            else
-            {
-                activity.Type = ActivityTypes.Event;
-                activity.Name = $"vnd.slack.action.{payload.type}";
-                activity.Value = JsonSerializer.SerializeToNode(
-                    payload,
-                    ProtocolJsonSerializer.SerializationOptions);
-            }
-
-            return activity;
-        }
-
-        private static string ResolveInteractiveTeamId(ActionPayload payload)
-        {
-            var teamId = payload.Get<string>("team.id")
-                ?? payload.Get<string>("user.team_id")
-                ?? payload.Get<string>("view.app_installed_team_id");
-
-            if (string.IsNullOrWhiteSpace(teamId))
-            {
-                throw new JsonException("Slack interactivity payload does not contain a team ID.");
-            }
-
-            return teamId;
         }
 
         private static string SafeChannelFromConversationId(string conversationId)
