@@ -193,7 +193,9 @@ namespace Microsoft.Agents.Extensions.Slack
                 }
 
                 var channel = channelData?.Channel ?? SafeChannelFromConversationId(conversationId);
-                var threadTs = channelData?.ThreadTs ?? SafeThreadTsFromConversationId(conversationId);
+                var threadTs = string.IsNullOrEmpty(conversationId)
+                    ? channelData?.ThreadTs
+                    : SafeThreadTsFromConversationId(conversationId);
 
                 if (string.IsNullOrEmpty(channel))
                 {
@@ -354,8 +356,9 @@ namespace Microsoft.Agents.Extensions.Slack
                 return null;
             }
 
+            var teamId = envelope.team_id;
             var channel = content.channel;
-            var threadTs = content.Get<string>("thread_ts") ?? content.ts;
+            var threadTs = content.Get<string>("thread_ts");
 
             var channelData = new SlackChannelData
             {
@@ -369,10 +372,10 @@ namespace Microsoft.Agents.Extensions.Slack
                 ServiceUrl = SlackServiceUrl,
                 Id = envelope.event_id ?? content.ts,
                 Timestamp = DateTimeOffset.UtcNow,
-                From = new ChannelAccount(id: content.user),
-                Recipient = new ChannelAccount(id: _options.BotUserId),
+                From = new ChannelAccount(id: SlackHelpers.CreateAccountId(content.user, teamId)),
+                Recipient = new ChannelAccount(id: SlackHelpers.CreateAccountId(_options.BotId, teamId)),
                 Conversation = new ConversationAccount(
-                    id: SlackHelpers.CreateConversationId(_options.BotUserId, envelope.team_id, channel, threadTs))
+                    id: SlackHelpers.CreateConversationId(_options.BotId, teamId, channel, threadTs))
                 {
                     IsGroup = !string.Equals(content.channel_type, "im", StringComparison.Ordinal),
                 },

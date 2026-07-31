@@ -71,8 +71,9 @@ public class SlackAdapterTests
         Assert.Equal(Channels.Slack, slack.ChannelId.Channel);
         Assert.Equal("C100", slack.ChannelData.Channel);
         Assert.Equal(BotToken, slack.ChannelData.ApiToken);
+        Assert.Equal("U999:T1", slack.From.Id);
         Assert.Equal("B123:T1", slack.Recipient.Id);
-        Assert.Equal("U999", slack.From.Id);
+        Assert.Equal("B123:T1:C100", slack.Conversation.Id);
     }
 
     [Fact]
@@ -116,6 +117,31 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAsync_BotUserOwnMessage_Ignored()
+    {
+        var adapter = CreateAdapter(out _);
+        var body = """
+            {
+              "type":"event_callback",
+              "team_id":"T1",
+              "event_id":"EvBOTUSER",
+              "event":{"type":"message","channel":"C100","text":"loop","ts":"1700000000.000100","user":"U123"}
+            }
+            """;
+        var context = CreateContext(body, signed: true);
+
+        var agentCalled = false;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((_, _) =>
+        {
+            agentCalled = true;
+            return Task.CompletedTask;
+        }), CancellationToken.None);
+
+        Assert.False(agentCalled);
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task ProcessAsync_SendActivity_PostsToSlack()
     {
         var captured = new List<(string Uri, string Body)>();
@@ -140,7 +166,7 @@ public class SlackAdapterTests
         Assert.Equal("https://slack.com/api/chat.postMessage", post.Uri);
         Assert.Contains("\"channel\":\"C100\"", post.Body, StringComparison.Ordinal);
         Assert.Contains("\"text\":\"pong\"", post.Body, StringComparison.Ordinal);
-        Assert.Contains("\"thread_ts\":\"1700000000.000100\"", post.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"thread_ts\"", post.Body, StringComparison.Ordinal);
     }
 
     [Fact]
