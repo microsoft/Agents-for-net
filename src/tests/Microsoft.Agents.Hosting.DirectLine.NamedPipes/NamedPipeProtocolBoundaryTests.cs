@@ -410,7 +410,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
         // ========== Test Harness ==========
 
-        private sealed class TestHarness : IDisposable
+        private sealed class TestHarness : IAsyncDisposable, IDisposable
         {
             private readonly AnonymousPipeServerStream _inboundServer;
             private AnonymousPipeClientStream _inboundClient;
@@ -511,9 +511,17 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 return buf;
             }
 
+            public async ValueTask DisposeAsync()
+            {
+                try { await Protocol.DisposeAsync().ConfigureAwait(false); } catch { }
+                Dispose();
+            }
+
+            // Synchronous dispose intentionally does NOT block on Protocol.DisposeAsync
+            // (sync-over-async starves the thread pool under parallel test load, causing
+            // flaky timeouts). Disposing the pipes tears down the read loop instead.
             public void Dispose()
             {
-                try { Protocol.DisposeAsync().AsTask().GetAwaiter().GetResult(); } catch { }
                 try { _inboundClient?.Dispose(); } catch { }
                 try { _inboundServer.Dispose(); } catch { }
                 try { _outboundClient.Dispose(); } catch { }
