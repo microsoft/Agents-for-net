@@ -175,7 +175,7 @@ namespace Microsoft.Agents.Extensions.Slack
 
             if (Logger.IsEnabled(LogLevel.Debug))
             {
-                var sanitizedActivity = SlackLogSanitizer.SanitizeJson(ProtocolJsonSerializer.ToJson(activity));
+                var sanitizedActivity = SlackLogSanitizer.SanitizeObject(activity);
                 SlackAdapterLog.LogActivityCreated(Logger, requestId, activity.Conversation?.Id ?? string.Empty, sanitizedActivity);
             }
 
@@ -230,7 +230,7 @@ namespace Microsoft.Agents.Extensions.Slack
                         Logger,
                         conversationId ?? string.Empty,
                         response.ts ?? string.Empty,
-                        SlackLogSanitizer.SanitizeJson(ProtocolJsonSerializer.ToJson(activity)));
+                        SlackLogSanitizer.SanitizeObject(activity));
                 }
 
                 responses[index] = new ResourceResponse(response.ts ?? string.Empty);
@@ -261,7 +261,7 @@ namespace Microsoft.Agents.Extensions.Slack
                     Logger,
                     turnContext.Activity?.Conversation?.Id ?? string.Empty,
                     response.ts ?? string.Empty,
-                    SlackLogSanitizer.SanitizeJson(ProtocolJsonSerializer.ToJson(activity)));
+                    SlackLogSanitizer.SanitizeObject(activity));
             }
 
             return new ResourceResponse(response.ts ?? string.Empty);
@@ -288,7 +288,7 @@ namespace Microsoft.Agents.Extensions.Slack
                     Logger,
                     reference.Conversation?.Id ?? string.Empty,
                     response.ts ?? reference.ActivityId ?? string.Empty,
-                    SlackLogSanitizer.SanitizeJson(ProtocolJsonSerializer.ToJson(reference)));
+                    SlackLogSanitizer.SanitizeObject(reference));
             }
         }
 

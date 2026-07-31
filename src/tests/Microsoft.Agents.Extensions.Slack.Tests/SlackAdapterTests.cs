@@ -341,6 +341,40 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task SendActivitiesAsync_NonSerializableActivity_LogsUnavailableAndReturnsSuccess()
+    {
+        var slackCalls = 0;
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, (_, _) =>
+        {
+            slackCalls++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"ok":true,"ts":"1700000000.000250"}""", Encoding.UTF8, "application/json")
+            });
+        }, logger);
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100"),
+            ChannelData = new SlackChannelData { ApiToken = BotToken },
+        });
+        var activity = MessageFactory.Text("sent");
+        activity.Value = typeof(string);
+
+        var responses = await adapter.SendActivitiesAsync(
+            turnContext.Object,
+            [activity],
+            CancellationToken.None);
+
+        var response = Assert.Single(responses);
+        Assert.Equal("1700000000.000250", response.Id);
+        Assert.Equal(1, slackCalls);
+        var sentLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 3);
+        Assert.Contains("[UNAVAILABLE]", sentLog.Message);
+    }
+
+    [Fact]
     public async Task SendActivitiesAsync_FailedSlackCall_DoesNotLogSentResponse()
     {
         var logger = new RecordingLogger<SlackAdapter>();

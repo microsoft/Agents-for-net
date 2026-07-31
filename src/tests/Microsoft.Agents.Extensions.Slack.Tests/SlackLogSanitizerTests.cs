@@ -13,6 +13,12 @@ public class SlackLogSanitizerTests
         const string json = """
             {
               "token":"legacy-token",
+              "client_secret":"client-secret",
+              "clientSecret":"camel-client-secret",
+              "refresh_token":"refresh-secret",
+              "refreshToken":"camel-refresh-secret",
+              "password":"password-secret",
+              "databasePasswordHash":"password-hash-secret",
               "nested":{
                 "ApiToken":"xoxb-secret",
                 "response_url":"https://hooks.slack.com/actions/secret"
@@ -38,6 +44,12 @@ public class SlackLogSanitizerTests
         Assert.DoesNotContain("******", sanitized);
         Assert.DoesNotContain("bot-secret", sanitized);
         Assert.DoesNotContain("signing-secret", sanitized);
+        Assert.DoesNotContain("client-secret", sanitized);
+        Assert.DoesNotContain("camel-client-secret", sanitized);
+        Assert.DoesNotContain("refresh-secret", sanitized);
+        Assert.DoesNotContain("camel-refresh-secret", sanitized);
+        Assert.DoesNotContain("password-secret", sanitized);
+        Assert.DoesNotContain("password-hash-secret", sanitized);
     }
 
     [Theory]
@@ -59,5 +71,13 @@ public class SlackLogSanitizerTests
         Assert.Equal("[UNAVAILABLE]", sanitized);
         Assert.DoesNotContain("first", sanitized);
         Assert.DoesNotContain("second", sanitized);
+    }
+
+    [Fact]
+    public void SanitizeObject_NonSerializableValue_ReturnsUnavailable()
+    {
+        var sanitized = SlackLogSanitizer.SanitizeObject(new { Value = typeof(string) });
+
+        Assert.Equal("[UNAVAILABLE]", sanitized);
     }
 }
