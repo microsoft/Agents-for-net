@@ -192,6 +192,67 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAsync_OrgInstalledBlockAction_UsesUserTeamId()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {"type":"block_actions","user":{"id":"U777","team_id":"T2"},"team":null,"channel":{"id":"C200"},"message":{"ts":"1700000000.000300"},"actions":[{"action_id":"button_yes","value":"yes"}]}
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((tc, _) => { captured = tc.Activity; return Task.CompletedTask; }), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal("U777:T2", slack.From.Id);
+        Assert.Equal("B123:T2", slack.Recipient.Id);
+        Assert.Equal("B123:T2:C200:1700000000.000300", slack.Conversation.Id);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_OrgInstalledViewSubmission_UsesInstalledTeamId()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {"type":"view_submission","user":{"id":"U777"},"team":null,"channel":{"id":"C200"},"view":{"app_installed_team_id":"T3"}}
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((tc, _) => { captured = tc.Activity; return Task.CompletedTask; }), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal("U777:T3", slack.From.Id);
+        Assert.Equal("B123:T3", slack.Recipient.Id);
+        Assert.Equal("B123:T3:C200", slack.Conversation.Id);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_InteractivePayloadWithoutTeamId_Returns400()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {"type":"block_actions","user":{"id":"U777"},"team":null,"channel":{"id":"C200"},"actions":[{"action_id":"button_yes","value":"yes"}]}
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        var agentCalled = false;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((_, _) =>
+        {
+            agentCalled = true;
+            return Task.CompletedTask;
+        }), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        Assert.False(agentCalled);
+    }
+
+    [Fact]
     public async Task ProcessAsync_NoSigningSecret_SkipsVerification()
     {
         var adapter = new SlackAdapter(

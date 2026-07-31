@@ -405,7 +405,7 @@ namespace Microsoft.Agents.Extensions.Slack
         {
             var payload = ProtocolJsonSerializer.ToObject<ActionPayload>(payloadJson);
 
-            var teamId = payload.Get<string>("team.id");
+            var teamId = ResolveInteractiveTeamId(payload);
             var channel = payload.channel;
             var user = payload.Get<string>("user.id");
             var threadTs = payload.Get<string>("message.thread_ts") ?? payload.Get<string>("message.ts");
@@ -433,6 +433,20 @@ namespace Microsoft.Agents.Extensions.Slack
             activity.ChannelData = channelData;
 
             return activity;
+        }
+
+        private static string ResolveInteractiveTeamId(ActionPayload payload)
+        {
+            var teamId = payload.Get<string>("team.id")
+                ?? payload.Get<string>("user.team_id")
+                ?? payload.Get<string>("view.app_installed_team_id");
+
+            if (string.IsNullOrWhiteSpace(teamId))
+            {
+                throw new JsonException("Slack interactivity payload does not contain a team ID.");
+            }
+
+            return teamId;
         }
 
         private static string SafeChannelFromConversationId(string conversationId)
