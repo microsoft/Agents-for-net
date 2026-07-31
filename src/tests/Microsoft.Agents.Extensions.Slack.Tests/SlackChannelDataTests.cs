@@ -983,6 +983,53 @@ public class SlackChannelDataTests
     }
 
     [Fact]
+    public void ActionPayload_GetObject_ReturnsDetachedScalar()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "block_actions",
+              "custom": {
+                "value": "original"
+              }
+            }
+            """);
+
+        var value = Assert.IsAssignableFrom<JsonValue>(payload.Get<object>("custom.value"));
+        var detachedContainer = new JsonObject { ["value"] = value };
+        value.ReplaceWith("mutated");
+
+        Assert.Equal("mutated", detachedContainer["value"].GetValue<string>());
+        Assert.Equal("original", payload.Get<string>("custom.value"));
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+        Assert.Equal("original", restored["custom"]["value"].GetValue<string>());
+    }
+
+    [Fact]
+    public void ActionPayload_TryGetObject_ReturnsDetachedScalar()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "block_actions",
+              "custom": {
+                "count": 42
+              }
+            }
+            """);
+
+        Assert.True(payload.TryGet<object>("custom.count", out var result));
+        var value = Assert.IsAssignableFrom<JsonValue>(result);
+        var detachedContainer = new JsonObject { ["count"] = value };
+        value.ReplaceWith(100);
+
+        Assert.Equal(100, detachedContainer["count"].GetValue<int>());
+        Assert.Equal(42, payload.Get<int>("custom.count"));
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+        Assert.Equal(42, restored["custom"]["count"].GetValue<int>());
+    }
+
+    [Fact]
     public void ActionPayload_GetJsonNode_EmptyPathReturnsDetachedPayload()
     {
         var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""

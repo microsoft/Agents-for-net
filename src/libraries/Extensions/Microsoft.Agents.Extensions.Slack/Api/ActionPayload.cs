@@ -57,14 +57,9 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
         private static T DetachMutableJson<T>(T value)
         {
-            if (value is JsonObject jsonObject)
+            if (value is JsonNode jsonNode)
             {
-                return (T)(object)jsonObject.DeepClone();
-            }
-
-            if (value is JsonArray jsonArray)
-            {
-                return (T)(object)jsonArray.DeepClone();
+                return (T)(object)jsonNode.DeepClone();
             }
 
             return value;
