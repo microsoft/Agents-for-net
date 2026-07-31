@@ -6,11 +6,14 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Slack.Api;
 using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,14 +23,18 @@ namespace Microsoft.Agents.Extensions.Slack.Tests;
 
 public class SlackAgentExtensionTests
 {
-    private static (AgentApplication app, Mock<IHttpClientFactory> httpFactory) CreateApplication()
+    private static (AgentApplication app, Mock<IHttpClientFactory> httpFactory) CreateApplication(
+        ILoggerFactory loggerFactory = null,
+        HttpMessageHandler httpHandler = null)
     {
         var mockHttpFactory = new Mock<IHttpClientFactory>();
         mockHttpFactory
             .Setup(f => f.CreateClient(It.IsAny<string>()))
-            .Returns(new HttpClient());
+            .Returns(() => httpHandler == null
+                ? new HttpClient()
+                : new HttpClient(httpHandler, disposeHandler: false));
 
-        var options = new AgentApplicationOptions(new MemoryStorage())
+        var options = new AgentApplicationOptions(new MemoryStorage(), loggerFactory)
         {
             StartTypingTimer = false,
             RemoveRecipientMention = false,
@@ -258,6 +265,38 @@ public class SlackAgentExtensionTests
     }
 
     [Fact]
+    public async Task CallAsync_AndCreateStreamAsync_LogThroughApplicationLoggerFactory()
+    {
+        var loggerProvider = new RecordingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Debug);
+            builder.AddProvider(loggerProvider);
+        });
+        var handler = new TestDelegatingHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"ok\":true,\"ts\":\"1700000000.000200\"}", Encoding.UTF8, "application/json")
+        });
+        var (app, _) = CreateApplication(loggerFactory, handler);
+        var ext = new SlackAgentExtension(app);
+        var activity = CreateSlackMessageActivity();
+        activity.ChannelData = JsonSerializer.Deserialize<SlackChannelData>(
+            """{"SlackMessage":{"event":{"channel":"C123","ts":"1700000000.000100"}},"ApiToken":"xoxb-token"}""");
+        var turnContext = new TurnContext(new NotImplementedAdapter(), activity);
+
+        await app.OnTurnAsync(turnContext, CancellationToken.None);
+        await ext.CallAsync(turnContext, "chat.postMessage", new { channel = "C123", text = "hi" }, "xoxb-token");
+        await ext.CreateStreamAsync(turnContext);
+
+        var apiEntries = loggerProvider.Entries.FindAll(entry =>
+            entry.Category == typeof(SlackApi).FullName);
+        Assert.Equal(2, apiEntries.FindAll(entry => entry.EventId.Id == 1).Count);
+        Assert.Equal(2, apiEntries.FindAll(entry => entry.EventId.Id == 2).Count);
+        Assert.Contains(apiEntries, entry => entry.Message.Contains("chat.postMessage", StringComparison.Ordinal));
+        Assert.Contains(apiEntries, entry => entry.Message.Contains("chat.startStream", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task OnMessage_Handler_InvokedForSlackMessage()
     {
         var handlerInvoked = false;
@@ -469,6 +508,45 @@ public class SlackAgentExtensionTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             return Task.FromResult(_response);
+        }
+    }
+
+    private sealed record LogEntry(string Category, EventId EventId, string Message);
+
+    private sealed class RecordingLoggerProvider : ILoggerProvider
+    {
+        public List<LogEntry> Entries { get; } = new();
+
+        public ILogger CreateLogger(string categoryName) => new RecordingLogger(categoryName, Entries);
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class RecordingLogger : ILogger
+    {
+        private readonly string _category;
+        private readonly List<LogEntry> _entries;
+
+        public RecordingLogger(string category, List<LogEntry> entries)
+        {
+            _category = category;
+            _entries = entries;
+        }
+
+        public IDisposable BeginScope<TState>(TState state) => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception exception,
+            Func<TState, Exception, string> formatter)
+        {
+            _entries.Add(new LogEntry(_category, eventId, formatter(state, exception)));
         }
     }
 }

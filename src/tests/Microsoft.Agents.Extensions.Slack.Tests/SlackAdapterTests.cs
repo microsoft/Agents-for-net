@@ -287,7 +287,8 @@ public class SlackAdapterTests
     public async Task ProcessAsync_SendActivity_PostsToSlack()
     {
         var captured = new List<(string Uri, string Body)>();
-        var logger = new RecordingLogger<SlackAdapter>();
+        var adapterLogger = new RecordingLogger<SlackAdapter>();
+        var apiLogger = new RecordingLogger<SlackApi>();
         var adapter = CreateAdapter(out _, (request, cancellationToken) =>
         {
             var body = request.Content!.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult();
@@ -296,7 +297,7 @@ public class SlackAdapterTests
             {
                 Content = new StringContent("""{"ok":true,"ts":"1700000000.000200"}""", Encoding.UTF8, "application/json")
             });
-        }, logger);
+        }, adapterLogger, apiLogger);
 
         var context = CreateContext(MessageEventBody(text: "ping", channel: "C100", ts: "1700000000.000100"), signed: true);
 
@@ -313,7 +314,15 @@ public class SlackAdapterTests
         Assert.Contains("\"text\":\"pong\"", post.Body, StringComparison.Ordinal);
         Assert.DoesNotContain("\"thread_ts\"", post.Body, StringComparison.Ordinal);
 
-        var sentLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 3);
+        var requestLog = Assert.Single(apiLogger.Entries, entry => entry.EventId.Id == 1);
+        Assert.Equal(LogLevel.Debug, requestLog.Level);
+        Assert.Contains("chat.postMessage", requestLog.Message);
+
+        var responseLog = Assert.Single(apiLogger.Entries, entry => entry.EventId.Id == 2);
+        Assert.Equal(LogLevel.Debug, responseLog.Level);
+        Assert.Contains("chat.postMessage", responseLog.Message);
+
+        var sentLog = Assert.Single(adapterLogger.Entries, entry => entry.EventId.Id == 3);
         Assert.Equal(LogLevel.Debug, sentLog.Level);
         Assert.Contains("B123:T1:C100", sentLog.Message);
         Assert.Contains("pong", sentLog.Message);
@@ -594,7 +603,8 @@ public class SlackAdapterTests
     private static SlackAdapter CreateAdapter(
         out Mock<IHttpClientFactory> factory,
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? sendFunc = null,
-        ILogger<SlackAdapter>? logger = null)
+        ILogger<SlackAdapter>? logger = null,
+        ILogger<SlackApi>? slackApiLogger = null)
     {
         sendFunc ??= (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -605,7 +615,8 @@ public class SlackAdapterTests
         return new SlackAdapter(
             new SlackAdapterOptions { BotToken = BotToken, SigningSecret = SigningSecret, BotId = BotId, BotUserId = BotUserId },
             factory.Object,
-            logger!);
+            logger!,
+            slackApiLogger!);
     }
 
     private static Mock<IHttpClientFactory> CreateFactory(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc)

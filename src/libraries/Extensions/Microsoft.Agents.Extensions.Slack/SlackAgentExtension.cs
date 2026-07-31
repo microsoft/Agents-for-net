@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Slack.Api;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,7 +46,9 @@ public class SlackAgentExtension : AgentExtension
         ChannelId = Channels.Slack;
         AgentApplication = application;
 
-        var slackApi = new SlackApi(application.Options.HttpClientFactory);
+        var slackApi = new SlackApi(
+            application.Options.HttpClientFactory,
+            application.Options.LoggerFactory.CreateLogger<SlackApi>());
         application.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
             if (turnContext.Activity.ChannelId == ChannelId)

@@ -58,11 +58,18 @@ namespace Microsoft.Agents.Extensions.Slack
         /// <param name="options">The Slack configuration (bot token, signing secret, bot user id).</param>
         /// <param name="httpClientFactory">Factory used to create the HTTP client for Slack Web API calls.</param>
         /// <param name="logger">Optional logger.</param>
-        public SlackAdapter(SlackAdapterOptions options, IHttpClientFactory httpClientFactory, ILogger<SlackAdapter> logger = null)
+        /// <param name="slackApiLogger">Optional logger for Slack Web API requests and responses.</param>
+        public SlackAdapter(
+            SlackAdapterOptions options,
+            IHttpClientFactory httpClientFactory,
+            ILogger<SlackAdapter> logger = null,
+            ILogger<SlackApi> slackApiLogger = null)
             : base(logger)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
-            _slackApi = new SlackApi(httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory)));
+            _slackApi = new SlackApi(
+                httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory)),
+                slackApiLogger);
 
             OnTurnError = async (turnContext, exception) =>
             {
