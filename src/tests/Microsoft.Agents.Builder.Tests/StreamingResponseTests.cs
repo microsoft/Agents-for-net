@@ -347,6 +347,86 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public async Task M365Copilot_IdleStream_SendsConfiguredWorkingNotice()
+        {
+            const string startingNotice = "Starting...";
+            const string customWorkingNotice = "Still working on your response...";
+
+            var responses = new List<IActivity>();
+            var responseLock = new object();
+            var workingNoticeSeen = new TaskCompletionSource<IActivity>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(a => a.SendActivitiesAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Callback<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    foreach (var activity in activities)
+                    {
+                        lock (responseLock)
+                        {
+                            responses.Add(activity);
+                        }
+
+                        if (activity.GetStreamingEntity()?.StreamType == StreamTypes.Informative
+                            && activity.Text == customWorkingNotice)
+                        {
+                            workingNoticeSeen.TrySetResult(activity);
+                        }
+                    }
+                });
+
+            var context = new TurnContext(adapter.Object, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            context.StreamingResponse.Interval = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
+            context.StreamingResponse.StreamingTakingTooLongMessage = customWorkingNotice;
+
+            await context.StreamingResponse.QueueInformativeUpdateAsync(startingNotice);
+            Assert.True(context.StreamingResponse.IsStreamStarted());
+
+            SetPrivateField(context.StreamingResponse, "_lastInformationalMessageSent", string.Empty);
+            SetPrivateField<DateTime?>(context.StreamingResponse, "_lastPassTime", DateTime.UtcNow - TimeSpan.FromSeconds(40));
+            InvokePrivateMethod(context.StreamingResponse, "SendIntermediateMessage", new object[] { null });
+
+            var workingNotice = await WaitForTaskAsync(
+                workingNoticeSeen.Task,
+                "Expected the BizChat keep-alive callback to send the configured working notice.");
+
+            Assert.Equal(ActivityTypes.Typing, workingNotice.Type);
+            Assert.Equal(StreamTypes.Informative, workingNotice.GetStreamingEntity()?.StreamType);
+            Assert.Equal(customWorkingNotice, workingNotice.Text);
+
+            IActivity[] responseSnapshot;
+            lock (responseLock)
+            {
+                responseSnapshot = [.. responses];
+            }
+
+            Assert.Collection(
+                responseSnapshot.Take(2),
+                firstActivity => Assert.Equal(startingNotice, firstActivity.Text),
+                secondActivity => Assert.Equal(customWorkingNotice, secondActivity.Text));
+
+            await WaitForConditionAsync(
+                () => !GetPrivateField<bool>(context.StreamingResponse, "_processingTimer"),
+                "Expected the keep-alive timer callback to finish before ending the stream.");
+
+            var endStreamTask = Task.Run(() => context.StreamingResponse.EndStreamAsync());
+            InvokePrivateMethod(context.StreamingResponse, "SendIntermediateMessage", new object[] { null });
+
+            var result = await WaitForTaskAsync(
+                endStreamTask,
+                "Expected EndStreamAsync to finish after draining the idle BizChat stream.");
+
+            Assert.Equal(StreamingResponseResult.Success, result);
+            Assert.False(context.StreamingResponse.IsStreamStarted());
+        }
+
+        [Fact]
         public async Task QueueInformativeUpdate_OnStreamingChannel_SendsMultipleInformativeActivity()
         {
             var responses = new List<IActivity>();
@@ -1087,11 +1167,31 @@ namespace Microsoft.Agents.Builder.Tests
             return await task;
         }
 
+        private static async Task WaitForConditionAsync(Func<bool> condition, string failureMessage, int timeoutMs = 5000)
+        {
+            await WaitForAsync(condition, timeoutMs);
+            Assert.True(condition(), failureMessage);
+        }
+
         private static void SetPrivateField<T>(IStreamingResponse response, string fieldName, T value)
         {
             var field = response.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.NotNull(field);
             field.SetValue(response, value);
+        }
+
+        private static T GetPrivateField<T>(IStreamingResponse response, string fieldName)
+        {
+            var field = response.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(field);
+            return (T)field.GetValue(response);
+        }
+
+        private static void InvokePrivateMethod(IStreamingResponse response, string methodName, params object[] arguments)
+        {
+            var method = response.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(method);
+            method.Invoke(response, arguments);
         }
 
         private static Mock<IChannelAdapter> CreateMockAdapter(List<IActivity> responses)
