@@ -354,7 +354,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
             MessagePreviewEditHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
             {
-                Assert.Equivalent(activity, activityPreview);
+                Assert.Equal(ProtocolJsonSerializer.ToJson(activity), ProtocolJsonSerializer.ToJson(activityPreview));
                 return Task.FromResult(actionResponseMock.Object);
             };
 
@@ -585,7 +585,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             var extension = new TeamsAgentExtension(app);
             MessagePreviewSendHandler handler = (turnContext, turnState, activityPreview, cancellationToken) =>
             {
-                Assert.Equivalent(activity, activityPreview);
+                Assert.Equal(ProtocolJsonSerializer.ToJson(activity), ProtocolJsonSerializer.ToJson(activityPreview));
                 return Task.CompletedTask;
             };
 

@@ -21,6 +21,7 @@ namespace Microsoft.Agents.Extensions.Teams.App
     /// <summary>
     /// AgentExtension for Microsoft Teams.
     /// </summary>
+    [Obsolete("This class is deprecated. Please use the new Microsoft.Agents.Extensions.MSTeams package.")]
     public class TeamsAgentExtension : AgentExtension
     {
         private static readonly string CONFIG_FETCH_INVOKE_NAME = "config/fetch";

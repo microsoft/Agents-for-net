@@ -286,6 +286,50 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 turnContext.SendTargetedActivitiesAsync(activities));
         }
 
+        // ── Activity shadow ───────────────────────────────────────────────────
+
+        [Fact]
+        public void Activity_ReturnsTeamsActivity_WithTypedChannelData()
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var innerContext = new TurnContext(adapter, new TeamsActivity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "channelCreated" }
+            });
+            var turnContext = new TeamsTurnContext(innerContext);
+
+            ITeamsActivity activity = turnContext.Activity;
+
+            Assert.NotNull(activity);
+            Assert.Equal("channelCreated", activity.ChannelData.EventType);
+        }
+
+        [Fact]
+        public void Activity_ConvertsPlainActivity_ToTeamsActivity()
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var innerContext = new TurnContext(adapter, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "teamRenamed" }
+            });
+            var turnContext = new TeamsTurnContext(innerContext);
+
+            ITeamsActivity activity = turnContext.Activity;
+
+            Assert.NotNull(activity);
+            Assert.Equal("teamRenamed", activity.ChannelData.EventType);
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────
 
         /// <summary>The user being targeted in outgoing activities.</summary>

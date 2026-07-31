@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         [Fact]
         public async Task WrapHandler_RouteHandler_UsesTeamsTurnContext()
         {
-            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams });
+            var turnContext = CreateTurnContext(new Microsoft.Agents.Extensions.MSTeams.TeamsActivity { Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams });
             ITurnState capturedState = null;
             ITeamsTurnContext capturedContext = null;
 
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         [Fact]
         public async Task WrapHandler_HandoffHandler_UsesTeamsTurnContext_AndPassesContinuation()
         {
-            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Invoke, Name = "handoff/action", ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams });
+            var turnContext = CreateTurnContext(new Microsoft.Agents.Extensions.MSTeams.TeamsActivity { Type = ActivityTypes.Invoke, Name = "handoff/action", ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams });
             ITurnState capturedState = null;
             ITeamsTurnContext capturedContext = null;
             string capturedContinuation = null;
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         [Fact]
         public async Task WrapHandler_FeedbackLoopHandler_UsesTeamsTurnContext_AndPassesFeedbackData()
         {
-            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Invoke, Name = "message/submitAction", ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams });
+            var turnContext = CreateTurnContext(new Microsoft.Agents.Extensions.MSTeams.TeamsActivity { Type = ActivityTypes.Invoke, Name = "message/submitAction", ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams });
             ITurnState capturedState = null;
             ITeamsTurnContext capturedContext = null;
             FeedbackData capturedFeedback = null;
