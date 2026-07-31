@@ -63,23 +63,36 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 ### Extensions
 
 **Microsoft.Agents.Extensions.MSTeams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/`)
-- Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/read receipts, config pages
+- Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/undelete/read receipts, config pages
+- Depends on teams.net's `Microsoft.Teams.Api` NuGet package for Teams schema, API clients, and types (e.g. `Microsoft.Teams.Api.ChannelData`, `Microsoft.Teams.Api.Clients.ApiClient`, `Microsoft.Teams.Api.MessageExtensions.*`); it reimplements only routing on `AgentApplication`
 - Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
-- Two routing styles: **fluent builders** (`TeamsExtension.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[TeamsQueryRoute("cmdId")]`)
-- Feature areas exposed as properties on `TeamsAgentExtension`:
-  - `TeamsExtension.MessageExtensions` — search queries, link unfurling, anonymous link unfurling, action commands, compose previews, card button clicks, settings
-  - `TeamsExtension.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
-  - `TeamsExtension.Meetings` — start/end, participants join/leave
-  - `TeamsExtension.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
-  - `TeamsExtension.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
-  - `TeamsExtension.FileConsent` — file upload consent accept/decline
-  - `TeamsExtension.Messages` — message edit/delete/undelete, read receipts, O365 connector card actions
-  - `TeamsExtension.Config` — config fetch/submit (bot configuration UI)
-- `TeamsInfo` static helper — `GetMeetingInfoAsync()`, `GetMeetingParticipantAsync()`, `GetTeamDetailsAsync()`, `GetTeamChannelsAsync()`, `GetPagedMembersAsync()`, `GetPagedTeamMembersAsync()`, `GetTeamMemberAsync()`, `GetMemberAsync()`
-- `TeamsTurnContextExtensions` — `SendTargetedActivityAsync()` for sending to specific recipients
-- `TeamsActivityExtensions` — `TeamsGetChannelId()`, `TeamsNotifyUser()`, `TeamsEnableFeedbackLoop()`, etc.
+- Two routing styles: **fluent builders** (`Teams.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[TeamsQueryRoute("cmdId")]`)
+- Feature areas exposed as properties on `TeamsAgentExtension` (accessed via the generated `Teams` property):
+  - `Teams.MessageExtensions` — search queries, link unfurling, anonymous link unfurling, action commands, compose previews, card button clicks, settings
+  - `Teams.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
+  - `Teams.Meetings` — start/end, participants join/leave
+  - `Teams.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
+  - `Teams.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
+  - `Teams.FileConsent` — file upload consent accept/decline
+  - `Teams.Messages` — message edit/delete/undelete, read receipts, O365 connector card actions
+  - `Teams.Config` — config fetch/submit (bot configuration UI)
+- `TeamsAgentExtension` also provides Graph helpers: `GetTeamsClient()` (teams.net `Microsoft.Teams.Api.Clients.ApiClient`), `GetGraphClient()` (user token), `GetAppGraphClient()` / `GetAppGraphClientForConnection()` (app-only)
+- App-level Teams route extension methods on `AgentApplication` (in `TeamsAppExtensions`): `OnTeamsHandoff()` (Copilot handoff), `OnTeamsFeedbackLoop()`, `OnTeamsMessageReactionsAdded()` / `OnTeamsMessageReactionsRemoved()`, plus generic `OnTeamsActivity()` / `OnTeamsMessage()` / `OnTeamsConversationUpdate()` / `OnTeamsEvent()`
+- `ITeamsTurnContext` / `TeamsTurnContext` — `SendTargetedActivityAsync()` for sending to specific recipients
+- `TeamsActivityExtensions` — activity helpers: `TeamsGetChannelId()`, `TeamsGetMeetingInfo()`, `TeamsGetTeamInfo()`, `TeamsNotifyUser()`, `TeamsEnableFeedbackLoop()`, etc. 
 - Route builders accept `autoSignInHandlers` and route attributes accept `signInHandlers` parameter for per-route OAuth/SSO flows; Teams SSO and OBO via Azure Bot Token Service are supported
-- Legacy `TeamsActivityHandler` in `Compat/` namespace for migration from Bot Framework SDK
+- FeedbackLoop is handled by AgentApplication.OnFeedbackLoop
+- Adaptive Cards support is handled by AgentApplication.AdaptiveCards
+
+**Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
+- This is the older Teams Extension and should not be used.
+
+**Microsoft.Agents.A365.Notifications**
+- Separate `AgentExtension` (on the `"agents"` channel) for inbound Agent 365 notifications — **not** part of the MSTeams extension. Lives in the Agent365-dotnet repo.
+- `OnLifecycleNotification(lifecycleEvent, handler)` — agentic-user governance lifecycle events (`AgenticUserIdentityCreated`/`IdentityUpdated`/`ManagerUpdated`/`Enabled`/`Disabled`/`Deleted`/`Undeleted`/`WorkloadOnboardingUpdated`).
+- `OnAgentNotification(subChannelId, handler)` — email, Office (Word/PowerPoint/Excel = WPX) comment, and Federated Knowledge Service notifications.
+- Distinct from Agent 365 agentic *authentication* in this repo (`AgenticAuthorization`, `IAgenticTokenProvider`, `AgenticUserAuthorization`, samples `AgenticAI` / `A365LoopTest`).
+- https://github.com/microsoft/Agent365-dotnet/tree/main/src/Notification/Microsoft.Agents.A365.Notifications
 
 ```csharp
 // Minimal Teams agent setup

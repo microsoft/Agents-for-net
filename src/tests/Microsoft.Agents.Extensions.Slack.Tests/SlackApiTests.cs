@@ -161,6 +161,32 @@ public class SlackApiTests
         Assert.Contains("not-json", exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task CallAsync_InvokesOnCallAsyncCallback()
+    {
+        var invoked = 0;
+        var factory = CreateFactory((_, _) => Task.FromResult(CreateJsonResponse("""{"ok":true}""")));
+        var slackApi = new SlackApi(factory.Object, () => invoked++);
+
+        await slackApi.CallAsync("chat.postMessage");
+
+        Assert.Equal(1, invoked);
+    }
+
+    [Fact]
+    public async Task CallAsync_InvokesOnCallAsyncCallback_EvenWhenApiReturnsError()
+    {
+        // The callback resets the typing timer for an out-of-band send and must fire regardless of the
+        // Slack API result, since the send was still attempted. See issue #846.
+        var invoked = 0;
+        var factory = CreateFactory((_, _) => Task.FromResult(CreateJsonResponse("""{"ok":false,"error":"channel_not_found"}""")));
+        var slackApi = new SlackApi(factory.Object, () => invoked++);
+
+        await Assert.ThrowsAsync<SlackResponseException>(() => slackApi.CallAsync("chat.postMessage"));
+
+        Assert.Equal(1, invoked);
+    }
+
     private static SlackApi CreateSlackApi(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc)
         => new(CreateFactory(sendFunc).Object);
 

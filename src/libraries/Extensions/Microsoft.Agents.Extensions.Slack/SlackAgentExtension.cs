@@ -33,24 +33,24 @@ namespace Microsoft.Agents.Extensions.Slack;
 public class SlackAgentExtension : AgentExtension
 {
     private static readonly Task<bool> _completedTrue = Task.FromResult(true);
-
-#if !NETSTANDARD
-    protected AgentApplication AgentApplication { get; init; }
-#else
-    protected AgentApplication AgentApplication { get; set;}
-#endif
+    private readonly AgentApplication _agentApplication;
 
     public SlackAgentExtension(AgentApplication application)
     {
         ChannelId = Channels.Slack;
-        AgentApplication = application;
+        _agentApplication = application;
 
-        var slackApi = new SlackApi(application.Options.HttpClientFactory);
         application.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
             if (turnContext.Activity.ChannelId == ChannelId)
             {
-                turnContext.Services.Set(slackApi);
+                // Create a per-turn SlackApi bound to the current turn so that any CallAsync (a message
+                // delivered out-of-band, bypassing the send pipeline) resets the typing timer interval,
+                // keeping the typing indicator timing consistent. See
+                // https://github.com/microsoft/Agents-for-net/issues/846.
+                turnContext.Services.Set(new SlackApi(
+                    application.Options.HttpClientFactory,
+                    () => application.ResetTypingTimer(turnContext)));
             }
             return _completedTrue;
         });
@@ -94,12 +94,12 @@ public class SlackAgentExtension : AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnMessage(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnMessage(SlackRouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(TypeRouteBuilder.Create()
+        _agentApplication.AddRoute(TypeRouteBuilder.Create()
             .WithType(ActivityTypes.Message)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
@@ -118,12 +118,12 @@ public class SlackAgentExtension : AgentExtension
     /// <param name="rank">The rank that determines the order in which this route is evaluated. Use RouteRank.Unspecified for default
     /// ordering.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnMessage(string text, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnMessage(string text, SlackRouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(MessageRouteBuilder.Create()
+        _agentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(text)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
@@ -143,12 +143,12 @@ public class SlackAgentExtension : AgentExtension
     /// <param name="rank">The rank that determines the order in which this route is evaluated relative to other routes. Lower values
     /// indicate higher priority. The default is RouteRank.Unspecified.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnMessage(Regex textPattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnMessage(Regex textPattern, SlackRouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(MessageRouteBuilder.Create()
+        _agentApplication.AddRoute(MessageRouteBuilder.Create()
             .WithText(textPattern)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
@@ -164,12 +164,12 @@ public class SlackAgentExtension : AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnEvent(RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnEvent(SlackRouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(TypeRouteBuilder.Create()
+        _agentApplication.AddRoute(TypeRouteBuilder.Create()
             .WithType(ActivityTypes.Event)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank == RouteRank.Unspecified ? RouteRank.Last : rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
@@ -188,12 +188,12 @@ public class SlackAgentExtension : AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnEvent(string eventName, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnEvent(string eventName, SlackRouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(EventRouteBuilder.Create()
+        _agentApplication.AddRoute(EventRouteBuilder.Create()
             .WithName(eventName)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
@@ -212,12 +212,12 @@ public class SlackAgentExtension : AgentExtension
     /// facilitate OAuth flows for the route.</param>
     /// <param name="rank">The order rank that determines the priority of the route. Use RouteRank.Unspecified to assign the default rank.</param>
     /// <returns>The current instance of SlackAgentExtension to allow method chaining.</returns>
-    public SlackAgentExtension OnEvent(Regex eventNamePattern, RouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
+    public SlackAgentExtension OnEvent(Regex eventNamePattern, SlackRouteHandler routeHandler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified)
     {
-        AgentApplication.AddRoute(EventRouteBuilder.Create()
+        _agentApplication.AddRoute(EventRouteBuilder.Create()
             .WithName(eventNamePattern)
             .WithChannelId(ChannelId)
-            .WithHandler(routeHandler)
+            .WithHandler(HandlerUtils.WrapHandler(routeHandler))
             .WithOrderRank(rank)
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());

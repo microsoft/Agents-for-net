@@ -114,6 +114,25 @@ extends:
           - checkout: tools
             path: s/tools
 
+          - task: PowerShell@2
+            displayName: Replace nuget.config files
+            inputs:
+              targetType: inline
+              script: |
+                $repoRoot = "$(Build.SourcesDirectory)"
+                $sourceConfig = Join-Path $repoRoot ".azdo\nuget.config"
+
+                if (-not (Test-Path $sourceConfig)) {
+                  throw "Source nuget.config not found at $sourceConfig"
+                }
+
+                Get-ChildItem -Path $repoRoot -Filter nuget.config -File -Recurse |
+                  Where-Object { $_.FullName -ne $sourceConfig } |
+                  ForEach-Object {
+                    Copy-Item -Path $sourceConfig -Destination $_.FullName -Force
+                    Write-Host "Replaced $($_.FullName)"
+                  }
+
           - task: NuGetAuthenticate@1
 
           - script: dotnet tool restore --configfile $(Build.SourcesDirectory)/.azdo/nuget.config

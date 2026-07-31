@@ -403,6 +403,64 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
+        public async Task ResetTypingTimer_RestartsInterval_LikePipelineSend()
+        {
+            // Issue #846: an out-of-band channel send (e.g. Slack chat.postMessage) bypasses the turn
+            // send pipeline, so the worker never sees it. AgentApplication.ResetTypingTimer lets that
+            // path reset the countdown exactly as a normal pipeline send would.
+            var time = new SignalingTimeProvider();
+            var adapter = new SignalingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 400, intervalMs: 400), time)!;
+            context.Services.Set<TypingWorker>(worker);
+            worker.Start();
+
+            // First typing fires after the initial delay.
+            await AwaitSignal(time.TimerArmed, "initial-delay timer armed");
+            time.Advance(TimeSpan.FromMilliseconds(400));
+            await AwaitSignal(adapter.TypingSent, "first typing");
+            var countBeforeReset = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
+            Assert.Equal(1, countBeforeReset);
+
+            // Worker now arms the interval timer (would fire after another 400ms).
+            await AwaitSignal(time.TimerArmed, "interval timer armed");
+
+            // Advance partway (200ms of the 400ms interval), then reset via the public API.
+            time.Advance(TimeSpan.FromMilliseconds(200));
+            var app = new AgentApplication(new AgentApplicationOptions(new MemoryStorage()));
+            app.ResetTypingTimer(context);
+
+            // The reset makes the worker restart a fresh 400ms countdown.
+            await AwaitSignal(time.TimerArmed, "restarted interval timer armed");
+
+            // Advance the remaining 200ms of the ORIGINAL interval; the reset means no typing yet.
+            time.Advance(TimeSpan.FromMilliseconds(200));
+            var countMid = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
+            Assert.Equal(countBeforeReset, countMid);
+
+            // Advance the remaining 200ms of the RESTARTED interval; now the second typing fires.
+            time.Advance(TimeSpan.FromMilliseconds(200));
+            await AwaitSignal(adapter.TypingSent, "second typing after reset");
+
+            await worker.DisposeAsync();
+
+            var countAfter = adapter.GetActivitySnapshot().Count(a => a.Type == ActivityTypes.Typing);
+            Assert.Equal(2, countAfter);
+        }
+
+        [Fact]
+        public void ResetTypingTimer_IsNoOp_WhenNoWorkerRunning()
+        {
+            var adapter = new SignalingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var app = new AgentApplication(new AgentApplicationOptions(new MemoryStorage()));
+
+            // No TypingWorker registered for the turn — must not throw.
+            app.ResetTypingTimer(context);
+        }
+
+        [Fact]
         public async Task Start_ResetsInterval_WhenResetFiresDuringSend()
         {
             // Exercises the race where ResetInterval fires while SendTypingActivityAsync is

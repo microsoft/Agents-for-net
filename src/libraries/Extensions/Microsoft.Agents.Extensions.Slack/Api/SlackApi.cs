@@ -24,16 +24,31 @@ public class SlackApi
 {
     private const string SlackApiBase = "https://slack.com/api";
     private IHttpClientFactory _httpClientFactory;
+    private readonly Action? _onCallAsync;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public SlackApi(IHttpClientFactory httpClientFactory)
+    public SlackApi(IHttpClientFactory httpClientFactory) : this(httpClientFactory, null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SlackApi"/> class.
+    /// </summary>
+    /// <param name="httpClientFactory">The factory used to create named HTTP clients for Slack requests.</param>
+    /// <param name="onCallAsync">
+    /// An optional callback invoked on every <see cref="CallAsync"/> before the request is sent. This is used to
+    /// notify the turn that a message is being delivered out-of-band (bypassing the send pipeline), for example to
+    /// reset the per-turn typing timer interval so the typing indicator timing stays consistent.
+    /// </param>
+    public SlackApi(IHttpClientFactory httpClientFactory, Action? onCallAsync)
     {
         AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
         _httpClientFactory = httpClientFactory;
+        _onCallAsync = onCallAsync;
     }
 
     /// <summary>
@@ -66,7 +81,14 @@ public class SlackApi
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
-            
+
+        // Notify the turn that a message is being delivered out-of-band (bypassing ITurnContext send
+        // pipeline). This resets the per-turn typing timer interval so the typing indicator timing stays
+        // consistent with normal pipeline sends. The callback fires only after the request has been
+        // successfully constructed, so a serialization/setup failure does not reset the timer for a send
+        // that never happened. See https://github.com/microsoft/Agents-for-net/issues/846.
+        _onCallAsync?.Invoke();
+
         using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
         var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
