@@ -723,6 +723,16 @@ public class SlackChannelDataTests
     }
 
     [Fact]
+    public void SlackModel_GetAndTryGet_AreVirtual()
+    {
+        var get = typeof(SlackModel).GetMethod(nameof(SlackModel.Get));
+        var tryGet = typeof(SlackModel).GetMethod(nameof(SlackModel.TryGet));
+
+        Assert.True(get.IsVirtual);
+        Assert.True(tryGet.IsVirtual);
+    }
+
+    [Fact]
     public void ActionPayload_Deserialize_TypeAndChannel()
     {
         var json = """
@@ -970,6 +980,64 @@ public class SlackChannelDataTests
         var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
         Assert.Equal("first", restored["custom"]["items"][0]["value"].GetValue<string>());
         Assert.Equal(2, restored["custom"]["items"].AsArray().Count);
+    }
+
+    [Fact]
+    public void ActionPayload_GetJsonNode_EmptyPathReturnsDetachedPayload()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "block_actions",
+              "custom": {
+                "value": "original"
+              }
+            }
+            """);
+
+        var detached = Assert.IsType<JsonObject>(payload.Get<JsonNode>(string.Empty));
+        detached["custom"]["value"] = "mutated";
+        detached["added"] = true;
+
+        Assert.Equal("original", payload.Get<string>("custom.value"));
+        Assert.Null(payload.Get<object>("added"));
+    }
+
+    [Fact]
+    public void ActionPayload_ScalarReads_AvoidCloningCompletePayload()
+    {
+        var largeArray = string.Join(",", Enumerable.Repeat("""{"value":"x"}""", 2048));
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>(
+            $$"""
+              {
+                "type": "block_actions",
+                "channel": "C200",
+                "custom": {
+                  "count": 42,
+                  "enabled": true,
+                  "large": [{{largeArray}}]
+                }
+              }
+              """);
+
+        Assert.Equal(42, payload.Get<int>("custom.count"));
+        Assert.True(payload.TryGet<bool>("custom.enabled", out var enabled));
+        Assert.True(enabled);
+        Assert.Equal("block_actions", payload.type);
+        Assert.Equal("C200", payload.channel);
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        for (var i = 0; i < 10; i++)
+        {
+            payload.Get<int>("custom.count");
+            payload.TryGet<bool>("custom.enabled", out _);
+            _ = payload.type;
+            _ = payload.channel;
+        }
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.True(
+            allocated < 128 * 1024,
+            $"Scalar reads allocated {allocated:N0} bytes while navigating a large payload.");
     }
 
     [Fact]

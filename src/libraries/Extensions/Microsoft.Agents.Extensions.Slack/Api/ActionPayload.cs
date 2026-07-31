@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Microsoft.Agents.Builder.State;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -33,8 +34,41 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
         protected override JsonObject GetData() => _data.DeepClone().AsObject();
 
+        public override T Get<T>(string path)
+        {
+            TryGet(path, out T value);
+            return value;
+        }
+
+        public override bool TryGet<T>(string path, out T value)
+        {
+            var normalizedPath = string.IsNullOrEmpty(path) ? string.Empty : NormalizePath(path);
+            if (!ObjectPath.TryGetPathValue(_data, normalizedPath, out value))
+            {
+                return false;
+            }
+
+            value = DetachMutableJson(value);
+            return true;
+        }
+
         internal void WriteNormalizedRaw(Utf8JsonWriter writer, JsonSerializerOptions options)
             => _data.WriteTo(writer, options);
+
+        private static T DetachMutableJson<T>(T value)
+        {
+            if (value is JsonObject jsonObject)
+            {
+                return (T)(object)jsonObject.DeepClone();
+            }
+
+            if (value is JsonArray jsonArray)
+            {
+                return (T)(object)jsonArray.DeepClone();
+            }
+
+            return value;
+        }
 
         public string type { get; }
 

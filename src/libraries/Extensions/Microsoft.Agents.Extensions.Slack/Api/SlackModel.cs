@@ -57,7 +57,7 @@ public abstract class SlackModel
     /// Returns <see langword="default"/> when the path does not exist or the value
     /// cannot be converted to <typeparamref name="T"/>.
     /// </summary>
-    public T Get<T>(string path)
+    public virtual T Get<T>(string path)
     {
         if (string.IsNullOrEmpty(path))
         {
@@ -73,7 +73,7 @@ public abstract class SlackModel
     /// Returns <see langword="false"/> when the path does not exist or the value
     /// cannot be converted to <typeparamref name="T"/>.
     /// </summary>
-    public bool TryGet<T>(string path, out T value)
+    public virtual bool TryGet<T>(string path, out T value)
     {
         if (string.IsNullOrEmpty(path))
         {
