@@ -2,9 +2,9 @@
 
 ## Goal
 
-Add CloudAdapter-style diagnostic logging to `SlackAdapter` for verified inbound
-Slack payloads, converted Activities, and outbound adapter responses without
-exposing Slack credentials or callback URLs.
+Add CloudAdapter-style diagnostic logging for verified inbound Slack payloads,
+converted Activities, and every outbound Slack Web API call without exposing
+Slack credentials or callback URLs.
 
 ## Logging Architecture
 
@@ -12,9 +12,9 @@ Add an internal `SlackAdapterLog` partial class that uses source-generated
 `LoggerMessage` methods and a stable event ID registry. Payload logging is
 enabled at `Debug` level, matching `CloudAdapterLog`.
 
-`SlackAdapter` remains the logging boundary. Calls made directly through
-`SlackAgentExtension`, `SlackApi`, or Slack streaming helpers are outside this
-change.
+`SlackAdapter` remains the inbound and Activity logging boundary.
+`SlackApi.CallAsync` becomes the outbound HTTP logging boundary because it is
+shared by `SlackAdapter`, `SlackAgentExtension`, and Slack streaming helpers.
 
 ## Inbound Flow
 
@@ -33,7 +33,7 @@ acknowledged without an Activity do not emit an Activity log.
 
 ## Outbound Flow
 
-Log adapter responses only when `SlackAdapter` performs a Slack Web API call:
+Keep the higher-level adapter response logs:
 
 - `SendActivitiesAsync`: log each message Activity sent through
   `chat.postMessage`.
@@ -43,8 +43,17 @@ Log adapter responses only when `SlackAdapter` performs a Slack Web API call:
 
 The successful Slack response timestamp is included as structured metadata.
 Typing, trace, empty-text, and other no-op Activities are not logged as sent.
-Failed Web API calls continue to throw and therefore do not emit a successful
-response log.
+
+Additionally, log every `SlackApi.CallAsync` invocation:
+
+- Before HTTP send, log the Slack API method and sanitized request options.
+- After receiving HTTP content, log the method, HTTP status, and sanitized Slack
+  response body.
+
+The response body is logged before deserialization and Slack `ok` validation, so
+Slack API error responses remain observable before the existing exception is
+thrown. Transport failures emit the request log but have no response to log.
+The OAuth bearer token and HTTP authorization header are never included.
 
 ## Redaction
 
@@ -78,6 +87,11 @@ Use a dedicated event ID range within `SlackAdapterLog`:
 - 4: Slack message updated
 - 5: Slack message deleted
 
+Use a separate `SlackApiLog` registry:
+
+- 1: Slack API request
+- 2: Slack API response
+
 Messages include structured request, event, conversation, channel, and Slack
 timestamp values where available. Full sanitized bodies remain one structured
 string field, following `CloudAdapterLog` Activity logging.
@@ -94,6 +108,25 @@ Tests will use a recording or mocked `ILogger<SlackAdapter>` and verify:
 - Tokens, authorization values, signing secrets, and response URLs are absent
   from all logged messages and replaced by `[REDACTED]`.
 - Malformed non-JSON input is represented as `[UNAVAILABLE]`.
+
+`SlackApi` tests will verify:
+
+- Adapter, direct extension, and streaming calls share the same logged API
+  boundary.
+- Request logs include the method and sanitized options before HTTP send.
+- Response logs include the HTTP status and sanitized response body.
+- Slack error responses are logged before `SlackResponseException` is thrown.
+- Authorization headers and token values never appear in logs.
+
+Both manual `SlackApi` construction paths receive `ILogger<SlackApi>`:
+
+- `SlackAdapter` receives the logger through dependency injection.
+- `SlackAgentExtension` creates it from
+  `AgentApplicationOptions.LoggerFactory`.
+
+The Slack sample enables Debug logging for the
+`Microsoft.Agents.Extensions.Slack` namespace so these diagnostics are visible
+without lowering unrelated framework categories.
 
 Existing Slack conversion, signature verification, routing, and response
 behavior remain unchanged.
