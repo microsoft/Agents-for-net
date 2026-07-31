@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Extensions.Slack.Api;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -775,5 +777,57 @@ public class SlackChannelDataTests
         Assert.True(cd.Payload.AdditionalProperties.ContainsKey("trigger_id"));
         Assert.Equal("123456.789", cd.Payload.AdditionalProperties["trigger_id"].GetString());
         Assert.Equal("https://hooks.slack.com/actions/xxx", cd.Payload.Get<string>("response_url"));
+    }
+
+    [Fact]
+    public void ActionPayload_ChannelObject_RoundTripPreservesMetadata()
+    {
+        var json = """
+            {
+              "type": "event",
+              "channelData": {
+                "Payload": {
+                  "type": "block_actions",
+                  "channel": { "id": "C200", "name": "general" },
+                  "message": { "ts": "999.000" },
+                  "actions": []
+                }
+              }
+            }
+            """;
+
+        var activity = ProtocolJsonSerializer.ToObject<Activity>(json);
+        var channelData = activity.GetChannelData<SlackChannelData>();
+
+        Assert.Equal("C200", channelData.Payload.channel);
+        Assert.Equal("general", channelData.Payload.Get<string>("channel.name"));
+
+        var serialized = ProtocolJsonSerializer.ToJson(activity);
+        var restored = JsonNode.Parse(serialized).AsObject();
+        Assert.Equal("C200", restored["channelData"]["Payload"]["channel"]["id"].GetValue<string>());
+        Assert.Equal("general", restored["channelData"]["Payload"]["channel"]["name"].GetValue<string>());
+    }
+
+    [Fact]
+    public void ActionPayload_ProgrammaticSerialization_PreservesPublicProperties()
+    {
+        var payload = new ActionPayload
+        {
+            type = "interactive_message",
+            channel = "C300",
+            AdditionalProperties = new Dictionary<string, JsonElement>
+            {
+                ["trigger_id"] = JsonSerializer.SerializeToElement("123.456"),
+            },
+        };
+
+        var serialized = ProtocolJsonSerializer.ToJson(payload);
+        var restored = JsonNode.Parse(serialized).AsObject();
+
+        Assert.Equal("interactive_message", restored["type"].GetValue<string>());
+        Assert.Equal("C300", restored["channel"].GetValue<string>());
+        Assert.Equal("123.456", restored["trigger_id"].GetValue<string>());
+        Assert.False(restored.ContainsKey("message"));
+        Assert.False(restored.ContainsKey("actions"));
     }
 }
