@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Extensions.Slack
         /// Slack bot display name used in mention entities for interactive message actions.
         /// When empty, <see cref="BotId"/> will be the fallback.
         /// </summary>
-        public string BotName { get; set; }
+        public string BotName { get; set; } = string.Empty;
 
         /// <summary>
         /// The Slack user id of the bot (starts with <c>U</c>). Used to ignore the

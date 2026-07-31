@@ -46,6 +46,14 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public void SlackAdapterOptions_BotName_DefaultsToEmptyString()
+    {
+        var options = new SlackAdapterOptions();
+
+        Assert.Equal(string.Empty, options.BotName);
+    }
+
+    [Fact]
     public void Constructors_PreserveOriginalAndLoggerAwareSignatures()
     {
         var originalConstructor = typeof(SlackAdapter).GetConstructor(
