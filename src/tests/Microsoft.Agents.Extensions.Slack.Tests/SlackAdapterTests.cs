@@ -185,7 +185,9 @@ public class SlackAdapterTests
         var slack = Assert.IsType<SlackActivity>(captured);
         Assert.Equal(ActivityTypes.Event, slack.Type);
         Assert.Equal("block_actions", slack.Name);
-        Assert.Equal("U777", slack.From.Id);
+        Assert.Equal("U777:T1", slack.From.Id);
+        Assert.Equal("B123:T1", slack.Recipient.Id);
+        Assert.Equal("B123:T1:C200:1700000000.000300", slack.Conversation.Id);
         Assert.Equal("C200", SlackHelpers.SlackChannelIdFromConversationId(slack.Conversation.Id));
     }
 

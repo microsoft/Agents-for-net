@@ -405,6 +405,7 @@ namespace Microsoft.Agents.Extensions.Slack
         {
             var payload = ProtocolJsonSerializer.ToObject<ActionPayload>(payloadJson);
 
+            var teamId = payload.Get<string>("team.id");
             var channel = payload.channel;
             var user = payload.Get<string>("user.id");
             var threadTs = payload.Get<string>("message.thread_ts") ?? payload.Get<string>("message.ts");
@@ -423,10 +424,10 @@ namespace Microsoft.Agents.Extensions.Slack
                 ServiceUrl = SlackServiceUrl,
                 Id = Guid.NewGuid().ToString(),
                 Timestamp = DateTimeOffset.UtcNow,
-                From = new ChannelAccount(id: user),
-                Recipient = new ChannelAccount(id: _options.BotUserId),
+                From = new ChannelAccount(id: SlackHelpers.CreateAccountId(user, teamId)),
+                Recipient = new ChannelAccount(id: SlackHelpers.CreateAccountId(_options.BotId, teamId)),
                 Conversation = new ConversationAccount(
-                    id: SlackHelpers.CreateConversationId(_options.BotUserId, payload.Get<string>("team.id"), channel, threadTs)),
+                    id: SlackHelpers.CreateConversationId(_options.BotId, teamId, channel, threadTs)),
             };
 
             activity.ChannelData = channelData;
