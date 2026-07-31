@@ -27,4 +27,8 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.Slack\Microsoft.Agents.Extensions.Slack.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 </Project>

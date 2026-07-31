@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 namespace SlackAgent;
 
 [Agent(name: "MyAgent", description: "Demonstrates slack functionality", version: "1.0")]
+[AgentInterface(SlackAdapterExtensions.SlackProtocol, "/api/slack")]
 [SlackExtension]
 public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
