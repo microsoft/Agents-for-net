@@ -5,6 +5,7 @@ using Microsoft.Agents.Extensions.Slack.Api;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Xunit;
@@ -806,6 +807,57 @@ public class SlackChannelDataTests
         var restored = JsonNode.Parse(serialized).AsObject();
         Assert.Equal("C200", restored["channelData"]["Payload"]["channel"]["id"].GetValue<string>());
         Assert.Equal("general", restored["channelData"]["Payload"]["channel"]["name"].GetValue<string>());
+    }
+
+    [Fact]
+    public void ActionPayload_Serialization_OverlaysMutablePropertiesAndPreservesChannelMetadata()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "block_actions",
+              "channel": { "id": "C200", "name": "general" },
+              "message": { "text": "original" },
+              "actions": [{ "action_id": "original" }]
+            }
+            """);
+
+        payload.type = "interactive_message";
+        payload.channel = "C201";
+        payload.message = new { text = "updated" };
+        payload.actions = new[] { new { action_id = "updated" } };
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+
+        Assert.Equal("interactive_message", restored["type"].GetValue<string>());
+        Assert.Equal("C201", restored["channel"]["id"].GetValue<string>());
+        Assert.Equal("general", restored["channel"]["name"].GetValue<string>());
+        Assert.Equal("updated", restored["message"]["text"].GetValue<string>());
+        Assert.Equal("updated", restored["actions"][0]["action_id"].GetValue<string>());
+        Assert.Equal("C200", payload.Get<string>("channel.id"));
+    }
+
+    [Fact]
+    public void ActionPayload_Serialization_UsesCurrentAdditionalProperties()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "block_actions",
+              "channel": "C200",
+              "removed": "original",
+              "updated": "original"
+            }
+            """);
+
+        payload.AdditionalProperties.Remove("removed");
+        payload.AdditionalProperties["updated"] = JsonSerializer.SerializeToElement("changed");
+        payload.AdditionalProperties["added"] = JsonSerializer.SerializeToElement("new");
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+
+        Assert.False(restored.ContainsKey("removed"));
+        Assert.Equal("changed", restored["updated"].GetValue<string>());
+        Assert.Equal("new", restored["added"].GetValue<string>());
+        Assert.Equal(1, restored.Count(property => property.Key == "updated"));
     }
 
     [Fact]

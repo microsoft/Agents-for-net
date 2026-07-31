@@ -72,23 +72,18 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
         public override void Write(Utf8JsonWriter writer, ActionPayload value, JsonSerializerOptions options)
         {
-            if (value?._data != null)
-            {
-                value._data.WriteTo(writer, options);
-            }
-            else
-            {
-                CreateJsonObject(value, options).WriteTo(writer, options);
-            }
+            CreateJsonObject(value, options).WriteTo(writer, options);
         }
 
         internal static JsonObject CreateJsonObject(ActionPayload value, JsonSerializerOptions options)
         {
-            var data = new JsonObject();
-            AddProperty(data, "type", value?.type, options);
-            AddProperty(data, "channel", value?.channel, options);
-            AddProperty(data, "message", value?.message, options);
-            AddProperty(data, "actions", value?.actions, options);
+            var data = value?._data?.DeepClone().AsObject() ?? new JsonObject();
+
+            RemoveUnknownProperties(data, options);
+            SetProperty(data, "type", value?.type, options);
+            SetChannel(data, value?.channel, options);
+            SetProperty(data, "message", value?.message, options);
+            SetProperty(data, "actions", value?.actions, options);
 
             if (value?.AdditionalProperties != null)
             {
@@ -96,6 +91,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
                 {
                     if (!IsKnownProperty(property.Key, options))
                     {
+                        RemoveProperty(data, property.Key, options);
                         data[property.Key] = JsonNode.Parse(property.Value.GetRawText());
                     }
                 }
@@ -104,11 +100,59 @@ namespace Microsoft.Agents.Extensions.Slack.Api
             return data;
         }
 
-        private static void AddProperty(JsonObject data, string name, object value, JsonSerializerOptions options)
+        private static void SetChannel(JsonObject data, string channel, JsonSerializerOptions options)
         {
+            if (GetProperty(data, "channel", options) is JsonObject channelObject)
+            {
+                SetProperty(channelObject, "id", channel, options);
+            }
+            else
+            {
+                SetProperty(data, "channel", channel, options);
+            }
+        }
+
+        private static void SetProperty(JsonObject data, string name, object value, JsonSerializerOptions options)
+        {
+            RemoveProperty(data, name, options);
+
             if (value != null || options.DefaultIgnoreCondition == JsonIgnoreCondition.Never)
             {
                 data[name] = JsonSerializer.SerializeToNode(value, options);
+            }
+        }
+
+        private static void RemoveUnknownProperties(JsonObject data, JsonSerializerOptions options)
+        {
+            var propertyNames = new List<string>();
+            foreach (var property in data)
+            {
+                if (!IsKnownProperty(property.Key, options))
+                {
+                    propertyNames.Add(property.Key);
+                }
+            }
+
+            foreach (var propertyName in propertyNames)
+            {
+                data.Remove(propertyName);
+            }
+        }
+
+        private static void RemoveProperty(JsonObject data, string name, JsonSerializerOptions options)
+        {
+            var propertyNames = new List<string>();
+            foreach (var property in data)
+            {
+                if (IsProperty(property.Key, name, options))
+                {
+                    propertyNames.Add(property.Key);
+                }
+            }
+
+            foreach (var propertyName in propertyNames)
+            {
+                data.Remove(propertyName);
             }
         }
 
