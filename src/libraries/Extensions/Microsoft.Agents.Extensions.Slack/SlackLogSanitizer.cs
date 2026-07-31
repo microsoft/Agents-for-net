@@ -50,6 +50,10 @@ internal static class SlackLogSanitizer
         {
             return Unavailable;
         }
+        catch (ArgumentException)
+        {
+            return Unavailable;
+        }
     }
 
     private static void Redact(JsonNode node)

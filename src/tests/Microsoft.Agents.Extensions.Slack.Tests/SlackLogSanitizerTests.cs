@@ -48,4 +48,16 @@ public class SlackLogSanitizerTests
     {
         Assert.Equal("[UNAVAILABLE]", SlackLogSanitizer.SanitizeJson(json));
     }
+
+    [Fact]
+    public void SanitizeJson_DuplicateProperties_ReturnsUnavailable()
+    {
+        const string json = """{"token":"first","token":"second"}""";
+
+        var sanitized = SlackLogSanitizer.SanitizeJson(json);
+
+        Assert.Equal("[UNAVAILABLE]", sanitized);
+        Assert.DoesNotContain("first", sanitized);
+        Assert.DoesNotContain("second", sanitized);
+    }
 }
