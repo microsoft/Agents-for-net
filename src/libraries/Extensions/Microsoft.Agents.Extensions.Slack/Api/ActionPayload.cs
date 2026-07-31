@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
                 new Dictionary<string, JsonElement>(additionalProperties));
         }
 
-        protected override JsonObject GetData() => _data;
+        protected override JsonObject GetData() => _data.DeepClone().AsObject();
 
         internal void WriteNormalizedRaw(Utf8JsonWriter writer, JsonSerializerOptions options)
             => _data.WriteTo(writer, options);

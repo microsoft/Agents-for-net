@@ -919,6 +919,60 @@ public class SlackChannelDataTests
     }
 
     [Fact]
+    public void ActionPayload_GetObject_ReturnsDetachedNestedObject()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "block_actions",
+              "custom": {
+                "nested": {
+                  "value": "original"
+                }
+              }
+            }
+            """);
+
+        var nested = Assert.IsType<JsonObject>(payload.Get<object>("custom.nested"));
+        nested["value"] = "mutated";
+        nested["added"] = true;
+
+        Assert.Equal("original", payload.Get<string>("custom.nested.value"));
+        Assert.Null(payload.Get<object>("custom.nested.added"));
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+        Assert.Equal("original", restored["custom"]["nested"]["value"].GetValue<string>());
+        Assert.False(restored["custom"]["nested"].AsObject().ContainsKey("added"));
+    }
+
+    [Fact]
+    public void ActionPayload_TryGetObject_ReturnsDetachedNestedArray()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "block_actions",
+              "custom": {
+                "items": [
+                  { "value": "first" },
+                  { "value": "second" }
+                ]
+              }
+            }
+            """);
+
+        Assert.True(payload.TryGet<object>("custom.items", out var value));
+        var items = Assert.IsType<JsonArray>(value);
+        items[0]["value"] = "mutated";
+        items.Add(new JsonObject { ["value"] = "added" });
+
+        Assert.Equal("first", payload.Get<string>("custom.items[0].value"));
+        Assert.Null(payload.Get<object>("custom.items[2]"));
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+        Assert.Equal("first", restored["custom"]["items"][0]["value"].GetValue<string>());
+        Assert.Equal(2, restored["custom"]["items"].AsArray().Count);
+    }
+
+    [Fact]
     public void ActionPayload_Serialization_PreservesCompleteNormalizedRawPayload()
     {
         var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
