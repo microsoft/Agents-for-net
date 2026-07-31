@@ -631,7 +631,25 @@ public class SlackChannelDataTests
     // ── SlackChannelData.Channel / ThreadTs (from Payload) ────────────────────
 
     [Fact]
-    public void Channel_FromPayload_WhenNoEnvelope()
+    public void Channel_FromObjectPayload_ReturnsChannelId()
+    {
+        var json = """
+            {
+              "Payload": {
+                "type": "block_actions",
+                "channel": { "id": "C123ABC", "name": "general" },
+                "actions": []
+              },
+              "ApiToken": "tok"
+            }
+            """;
+        var cd = Deserialize(json);
+        Assert.Null(cd.Envelope);
+        Assert.Equal("C123ABC", cd.Channel);
+    }
+
+    [Fact]
+    public void Channel_FromLegacyStringPayload_ReturnsChannelId()
     {
         var json = """
             {
