@@ -7,6 +7,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -957,6 +958,13 @@ namespace Microsoft.Agents.Builder.Tests
         private static Task WaitForResponses(List<IActivity> responses, int minCount, int timeoutMs = 5000)
             => WaitForAsync(() => responses.Count >= minCount, timeoutMs);
 
+        private static void SetPrivateField<T>(IStreamingResponse response, string fieldName, T value)
+        {
+            var field = response.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(field);
+            field.SetValue(response, value);
+        }
+
         private static Mock<IChannelAdapter> CreateMockAdapter(List<IActivity> responses)
         {
             var adapter = new Mock<IChannelAdapter>();
@@ -969,6 +977,18 @@ namespace Microsoft.Agents.Builder.Tests
                         responses.Add(activity);
                     }
                 });
+            return adapter;
+        }
+
+        private static Mock<IChannelAdapter> CreateMockAdapter(
+            List<IActivity> sentActivities,
+            List<IActivity> updatedActivities)
+        {
+            var adapter = CreateMockAdapter(sentActivities);
+            adapter
+                .Setup(a => a.UpdateActivityAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .Callback<ITurnContext, IActivity, CancellationToken>((_, activity, _) => updatedActivities.Add(activity))
+                .ReturnsAsync((ITurnContext _, IActivity activity, CancellationToken _) => new ResourceResponse(activity.Id));
             return adapter;
         }
 
