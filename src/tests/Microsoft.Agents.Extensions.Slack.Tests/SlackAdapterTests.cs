@@ -341,7 +341,7 @@ public class SlackAdapterTests
     }
 
     [Fact]
-    public async Task SendActivitiesAsync_NonSerializableActivity_LogsUnavailableAndReturnsSuccess()
+    public async Task SendActivitiesAsync_ActivityWithCollidingJsonProperties_LogsUnavailableAndReturnsSuccess()
     {
         var slackCalls = 0;
         var logger = new RecordingLogger<SlackAdapter>();
@@ -360,7 +360,7 @@ public class SlackAdapterTests
             ChannelData = new SlackChannelData { ApiToken = BotToken },
         });
         var activity = MessageFactory.Text("sent");
-        activity.Value = typeof(string);
+        activity.Value = new CollidingJsonProperties();
 
         var responses = await adapter.SendActivitiesAsync(
             turnContext.Object,

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Slack.Tests;
@@ -80,4 +81,21 @@ public class SlackLogSanitizerTests
 
         Assert.Equal("[UNAVAILABLE]", sanitized);
     }
+
+    [Fact]
+    public void SanitizeObject_CollidingJsonPropertyNames_ReturnsUnavailable()
+    {
+        var sanitized = SlackLogSanitizer.SanitizeObject(new CollidingJsonProperties());
+
+        Assert.Equal("[UNAVAILABLE]", sanitized);
+    }
+}
+
+internal sealed class CollidingJsonProperties
+{
+    [JsonPropertyName("value")]
+    public string First { get; } = "first";
+
+    [JsonPropertyName("value")]
+    public string Second { get; } = "second";
 }

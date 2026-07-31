@@ -31,6 +31,10 @@ internal static class SlackLogSanitizer
         {
             return Unavailable;
         }
+        catch (InvalidOperationException)
+        {
+            return Unavailable;
+        }
     }
 
     internal static string SanitizeJson(string json)
