@@ -27,8 +27,14 @@ namespace Microsoft.Agents.Extensions.Slack
         public string SigningSecret { get; set; }
 
         /// <summary>
-        /// The Slack user id of the bot (starts with <c>U</c> or <c>B</c>). Used as the Activity
-        /// recipient and to ignore the bot's own messages so it does not reply to itself.
+        /// The Slack bot id (starts with <c>B</c>). Used as the Activity recipient and
+        /// as the bot component of the conversation id.
+        /// </summary>
+        public string BotId { get; set; }
+
+        /// <summary>
+        /// The Slack user id of the bot (starts with <c>U</c>). Used to ignore the
+        /// bot user's own messages so the agent does not reply to itself.
         /// </summary>
         public string BotUserId { get; set; }
 

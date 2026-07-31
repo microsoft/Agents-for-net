@@ -25,7 +25,8 @@ public class SlackAdapterTests
 {
     private const string SigningSecret = "8f742231b10e8888abcd99yyyzzz85a5";
     private const string BotToken = "xoxb-test-token";
-    private const string BotUserId = "UBOT123";
+    private const string BotId = "B123";
+    private const string BotUserId = "U123";
 
     [Fact]
     public async Task ProcessAsync_UrlVerification_ReturnsChallenge()
@@ -70,7 +71,7 @@ public class SlackAdapterTests
         Assert.Equal(Channels.Slack, slack.ChannelId.Channel);
         Assert.Equal("C100", slack.ChannelData.Channel);
         Assert.Equal(BotToken, slack.ChannelData.ApiToken);
-        Assert.Equal(BotUserId, slack.Recipient.Id);
+        Assert.Equal("B123:T1", slack.Recipient.Id);
         Assert.Equal("U999", slack.From.Id);
     }
 
@@ -166,7 +167,7 @@ public class SlackAdapterTests
     public async Task ProcessAsync_NoSigningSecret_SkipsVerification()
     {
         var adapter = new SlackAdapter(
-            new SlackAdapterOptions { BotToken = BotToken, BotUserId = BotUserId },
+            new SlackAdapterOptions { BotToken = BotToken, BotId = BotId, BotUserId = BotUserId },
             CreateFactory((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))).Object);
 
         const string body = """{"type":"url_verification","challenge":"nosig"}""";
@@ -190,7 +191,7 @@ public class SlackAdapterTests
 
         factory = CreateFactory(sendFunc);
         return new SlackAdapter(
-            new SlackAdapterOptions { BotToken = BotToken, SigningSecret = SigningSecret, BotUserId = BotUserId },
+            new SlackAdapterOptions { BotToken = BotToken, SigningSecret = SigningSecret, BotId = BotId, BotUserId = BotUserId },
             factory.Object);
     }
 
