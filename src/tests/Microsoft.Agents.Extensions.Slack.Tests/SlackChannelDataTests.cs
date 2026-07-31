@@ -781,6 +781,76 @@ public class SlackChannelDataTests
     }
 
     [Fact]
+    public void ActionPayload_ExactDuplicateProperty_LastValueWins()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "interactive_message",
+              "type": "block_actions"
+            }
+            """);
+
+        Assert.Equal("block_actions", payload.type);
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+        Assert.Equal("block_actions", restored["type"].GetValue<string>());
+        Assert.Equal(1, restored.Count(property => property.Key == "type"));
+    }
+
+    [Fact]
+    public void ActionPayload_CaseVariantDuplicateProperty_LastValueWins()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "interactive_message",
+              "Type": "block_actions"
+            }
+            """);
+
+        Assert.Equal("block_actions", payload.type);
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+        Assert.Equal("block_actions", restored["type"].GetValue<string>());
+        Assert.Equal(
+            1,
+            restored.Count(property => string.Equals(property.Key, "type", System.StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public void ActionPayload_NestedDuplicateProperties_LastValueWins()
+    {
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
+            {
+              "type": "block_actions",
+              "metadata": {
+                "items": [
+                  {
+                    "value": "first",
+                    "Value": "last"
+                  }
+                ]
+              }
+            }
+            """);
+
+        Assert.Equal("last", payload.Get<string>("metadata.items[0].value"));
+
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
+        var item = restored["metadata"]["items"][0].AsObject();
+        Assert.Equal("last", item["Value"].GetValue<string>());
+        Assert.Equal(
+            1,
+            item.Count(property => string.Equals(property.Key, "value", System.StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public void ActionPayload_MalformedJson_ThrowsJsonException()
+    {
+        Assert.Throws<JsonException>(
+            () => ProtocolJsonSerializer.ToObject<ActionPayload>("""{ "type": """));
+    }
+
+    [Fact]
     public void ActionPayload_ChannelObject_RoundTripPreservesMetadata()
     {
         var json = """

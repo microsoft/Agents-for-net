@@ -49,7 +49,14 @@ namespace Microsoft.Agents.Extensions.Slack.Api
     {
         public override ActionPayload Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options)
         {
-            var data = JsonSerializer.Deserialize<JsonObject>(ref reader, options) ?? new JsonObject();
+            using var document = JsonDocument.ParseValue(ref reader);
+            var data = document.RootElement.ValueKind switch
+            {
+                JsonValueKind.Object => CreateNormalizedObject(document.RootElement, options),
+                JsonValueKind.Null => new JsonObject(CreateNodeOptions(options)),
+                _ => throw new JsonException("The Slack action payload must be a JSON object."),
+            };
+
             var payload = new ActionPayload(data)
             {
                 type = GetString(GetProperty(data, "type", options)),
@@ -69,6 +76,43 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
             return payload;
         }
+
+        private static JsonObject CreateNormalizedObject(JsonElement element, JsonSerializerOptions options)
+        {
+            var result = new JsonObject(CreateNodeOptions(options));
+
+            foreach (var property in element.EnumerateObject())
+            {
+                result.Remove(property.Name);
+                result.Add(property.Name, CreateNormalizedNode(property.Value, options));
+            }
+
+            return result;
+        }
+
+        private static JsonArray CreateNormalizedArray(JsonElement element, JsonSerializerOptions options)
+        {
+            var result = new JsonArray(CreateNodeOptions(options));
+
+            foreach (var item in element.EnumerateArray())
+            {
+                result.Add(CreateNormalizedNode(item, options));
+            }
+
+            return result;
+        }
+
+        private static JsonNode CreateNormalizedNode(JsonElement element, JsonSerializerOptions options)
+            => element.ValueKind switch
+            {
+                JsonValueKind.Object => CreateNormalizedObject(element, options),
+                JsonValueKind.Array => CreateNormalizedArray(element, options),
+                JsonValueKind.Null => null,
+                _ => JsonValue.Create(element.Clone(), CreateNodeOptions(options)),
+            };
+
+        private static JsonNodeOptions CreateNodeOptions(JsonSerializerOptions options)
+            => new() { PropertyNameCaseInsensitive = options.PropertyNameCaseInsensitive };
 
         public override void Write(Utf8JsonWriter writer, ActionPayload value, JsonSerializerOptions options)
         {
