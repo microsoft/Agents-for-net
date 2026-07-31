@@ -16,7 +16,7 @@ The adapter examines the first entry in `actions`, matching Intercom behavior.
 | `message_action` with a non-empty `callback_id` | Event Activity named `SlackActivity` whose value is `callback_id`. |
 | Any other interactive payload | Event Activity named `vnd.slack.action.{payload.type}` whose value is the full parsed payload. |
 
-Select and button Message Activities include a bot mention entity matching Intercom. The mentioned account uses the configured Slack bot identity. `Mention.Text` uses a new optional `SlackAdapterOptions.BotName` value, prefixed with `@`. If `BotName` is not configured, the adapter uses `BotId` so the mention remains populated without breaking existing configurations.
+Select and button Message Activities include a bot mention entity matching Intercom. The mentioned account uses the configured Slack bot identity. `Mention.Text` uses the runtime agent display name: the inherited `AgentAttribute.Name` when present, otherwise the short agent class name. The resolved name is stored in `Activity.Recipient.Name` so it remains request-specific and does not require mutable adapter state.
 
 ## Common Activity Fields
 
@@ -35,7 +35,7 @@ The change does not modify `AgentApplication`, `SlackAgentExtension`, route attr
 
 ## Model and Configuration Changes
 
-`SlackAdapterOptions` gains optional `BotName` configuration for Intercom-compatible mention text.
+`SlackAdapterOptions` does not contain display-name configuration. Agent metadata supplies Intercom-compatible mention text.
 
 `ActionPayload` is an immutable, read-only, normalized raw-JSON-backed `SlackModel`. It has no public constructor or setters. The public getters `type`, `channel`, `message`, and `actions` remain available for consuming reads; `channel` resolves both an object `channel.id` and a legacy string channel. `AdditionalProperties` is exposed as a read-only dictionary containing normalized unknown top-level properties. Conversion reads action-specific fields through `SlackModel.Get`, and the converter writes the normalized raw payload directly so modern Slack composition objects, complete metadata, and unknown payload shapes round-trip without mutable overlays or programmatic construction.
 
