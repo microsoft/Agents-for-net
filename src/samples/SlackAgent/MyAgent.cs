@@ -56,7 +56,8 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
         var message = $$"""
         {
             "channel": "{{channelData.Channel}}",
-            "text": "Agent got: {{turnContext.Activity.Name}}"
+            "text": "Agent got: {{turnContext.Activity.Name}}",
+            "thread_ts": "{{channelData.ThreadTs}}"
         }
         """;
 
