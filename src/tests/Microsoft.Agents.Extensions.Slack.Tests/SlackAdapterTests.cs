@@ -38,6 +38,14 @@ public class SlackAdapterTests
     private const string BotUserId = "U123";
 
     [Fact]
+    public void SlackAdapterOptions_BotName_RetainsConfiguredValue()
+    {
+        var options = new SlackAdapterOptions { BotName = "SlackAgent" };
+
+        Assert.Equal("SlackAgent", options.BotName);
+    }
+
+    [Fact]
     public void Constructors_PreserveOriginalAndLoggerAwareSignatures()
     {
         var originalConstructor = typeof(SlackAdapter).GetConstructor(
