@@ -224,6 +224,15 @@ namespace Microsoft.Agents.Extensions.Slack
                     thread_ts = threadTs,
                 }, channelData?.ApiToken ?? _options.BotToken, cancellationToken).ConfigureAwait(false);
 
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    SlackAdapterLog.LogMessageSent(
+                        Logger,
+                        conversationId ?? string.Empty,
+                        response.ts ?? string.Empty,
+                        SlackLogSanitizer.SanitizeJson(ProtocolJsonSerializer.ToJson(activity)));
+                }
+
                 responses[index] = new ResourceResponse(response.ts ?? string.Empty);
             }
 
@@ -246,11 +255,20 @@ namespace Microsoft.Agents.Extensions.Slack
                 text = activity.Text.SlackEncode(),
             }, channelData?.ApiToken ?? _options.BotToken, cancellationToken).ConfigureAwait(false);
 
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                SlackAdapterLog.LogMessageUpdated(
+                    Logger,
+                    turnContext.Activity?.Conversation?.Id ?? string.Empty,
+                    response.ts ?? string.Empty,
+                    SlackLogSanitizer.SanitizeJson(ProtocolJsonSerializer.ToJson(activity)));
+            }
+
             return new ResourceResponse(response.ts ?? string.Empty);
         }
 
         /// <inheritdoc/>
-        public override Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
+        public override async Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(turnContext);
             ArgumentNullException.ThrowIfNull(reference);
@@ -258,11 +276,20 @@ namespace Microsoft.Agents.Extensions.Slack
             var channelData = turnContext.Activity?.GetChannelData<SlackChannelData>();
             var channel = channelData?.Channel ?? SafeChannelFromConversationId(reference.Conversation?.Id);
 
-            return _slackApi.CallAsync("chat.delete", new
+            var response = await _slackApi.CallAsync("chat.delete", new
             {
                 channel,
                 ts = reference.ActivityId,
-            }, channelData?.ApiToken ?? _options.BotToken, cancellationToken);
+            }, channelData?.ApiToken ?? _options.BotToken, cancellationToken).ConfigureAwait(false);
+
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                SlackAdapterLog.LogMessageDeleted(
+                    Logger,
+                    reference.Conversation?.Id ?? string.Empty,
+                    response.ts ?? reference.ActivityId ?? string.Empty,
+                    SlackLogSanitizer.SanitizeJson(ProtocolJsonSerializer.ToJson(reference)));
+            }
         }
 
         /// <summary>

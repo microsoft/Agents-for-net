@@ -287,6 +287,7 @@ public class SlackAdapterTests
     public async Task ProcessAsync_SendActivity_PostsToSlack()
     {
         var captured = new List<(string Uri, string Body)>();
+        var logger = new RecordingLogger<SlackAdapter>();
         var adapter = CreateAdapter(out _, (request, cancellationToken) =>
         {
             var body = request.Content!.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult();
@@ -295,13 +296,15 @@ public class SlackAdapterTests
             {
                 Content = new StringContent("""{"ok":true,"ts":"1700000000.000200"}""", Encoding.UTF8, "application/json")
             });
-        });
+        }, logger);
 
         var context = CreateContext(MessageEventBody(text: "ping", channel: "C100", ts: "1700000000.000100"), signed: true);
 
         await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent(async (tc, ct) =>
         {
-            await tc.SendActivityAsync(MessageFactory.Text("pong"), ct);
+            var activity = MessageFactory.Text("pong");
+            activity.ChannelData = new SlackChannelData { ApiToken = BotToken };
+            await tc.SendActivityAsync(activity, ct);
         }), CancellationToken.None);
 
         var post = Assert.Single(captured);
@@ -309,6 +312,114 @@ public class SlackAdapterTests
         Assert.Contains("\"channel\":\"C100\"", post.Body, StringComparison.Ordinal);
         Assert.Contains("\"text\":\"pong\"", post.Body, StringComparison.Ordinal);
         Assert.DoesNotContain("\"thread_ts\"", post.Body, StringComparison.Ordinal);
+
+        var sentLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 3);
+        Assert.Equal(LogLevel.Debug, sentLog.Level);
+        Assert.Contains("B123:T1:C100", sentLog.Message);
+        Assert.Contains("pong", sentLog.Message);
+        Assert.Contains("1700000000.000200", sentLog.Message);
+        Assert.DoesNotContain(BotToken, sentLog.Message);
+    }
+
+    [Fact]
+    public async Task SendActivitiesAsync_NonMessage_DoesNotLogSentResponse()
+    {
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, logger: logger);
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100"),
+        });
+
+        await adapter.SendActivitiesAsync(
+            turnContext.Object,
+            [new Activity { Type = ActivityTypes.Typing }],
+            CancellationToken.None);
+
+        Assert.DoesNotContain(logger.Entries, entry => entry.EventId.Id == 3);
+    }
+
+    [Fact]
+    public async Task SendActivitiesAsync_FailedSlackCall_DoesNotLogSentResponse()
+    {
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"ok":false,"error":"channel_not_found"}""", Encoding.UTF8, "application/json")
+        }), logger);
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100"),
+            ChannelData = new SlackChannelData { ApiToken = BotToken },
+        });
+
+        await Assert.ThrowsAsync<SlackResponseException>(() => adapter.SendActivitiesAsync(
+            turnContext.Object,
+            [MessageFactory.Text("not sent")],
+            CancellationToken.None));
+
+        Assert.DoesNotContain(logger.Entries, entry => entry.EventId.Id == 3);
+    }
+
+    [Fact]
+    public async Task UpdateActivityAsync_LogsSuccessfulResponse()
+    {
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"ok":true,"ts":"1700000000.000300"}""", Encoding.UTF8, "application/json")
+        }), logger);
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100"),
+            ChannelData = new SlackChannelData { ApiToken = BotToken },
+        });
+        var activity = MessageFactory.Text("updated");
+        activity.Id = "1700000000.000100";
+        activity.ChannelData = new SlackChannelData { ApiToken = BotToken };
+
+        var response = await adapter.UpdateActivityAsync(turnContext.Object, activity, CancellationToken.None);
+
+        Assert.Equal("1700000000.000300", response.Id);
+        var updateLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 4);
+        Assert.Equal(LogLevel.Debug, updateLog.Level);
+        Assert.Contains("B123:T1:C100", updateLog.Message);
+        Assert.Contains("updated", updateLog.Message);
+        Assert.Contains("1700000000.000300", updateLog.Message);
+        Assert.DoesNotContain(BotToken, updateLog.Message);
+    }
+
+    [Fact]
+    public async Task DeleteActivityAsync_LogsSuccessfulResponse()
+    {
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"ok":true}""", Encoding.UTF8, "application/json")
+        }), logger);
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100"),
+            ChannelData = new SlackChannelData { ApiToken = BotToken },
+        });
+        var reference = new ConversationReference
+        {
+            ActivityId = "1700000000.000100",
+            Conversation = new ConversationAccount(id: "B123:T1:C100"),
+        };
+
+        await adapter.DeleteActivityAsync(turnContext.Object, reference, CancellationToken.None);
+
+        var deleteLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 5);
+        Assert.Equal(LogLevel.Debug, deleteLog.Level);
+        Assert.Contains("B123:T1:C100", deleteLog.Message);
+        Assert.Contains("SlackTimestamp=1700000000.000100", deleteLog.Message);
+        Assert.Contains("1700000000.000100", deleteLog.Message);
+        Assert.DoesNotContain(BotToken, deleteLog.Message);
     }
 
     [Fact]
