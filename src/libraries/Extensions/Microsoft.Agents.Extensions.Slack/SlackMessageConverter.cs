@@ -35,7 +35,7 @@ internal sealed class SlackMessageConverter
         }
 
         List<SlackMessagePayload> payloads = [];
-        var slackChannelData = activity.GetChannelData<SlackChannelData>();
+        activity.TryGetChannelData<SlackChannelData>(out var slackChannelData);
         var convertedAttachments = await _attachmentConverter.ConvertAsync(
             activity.Attachments,
             activity.From?.Id ?? string.Empty,

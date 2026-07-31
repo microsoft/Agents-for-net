@@ -166,6 +166,39 @@ public class SlackMessageConverterTests
         Assert.Empty(payloads);
     }
 
+    [Fact]
+    public async Task ConvertAsync_ArbitraryChannelData_UsesDefaultButtonRendering()
+    {
+        var activity = new Activity
+        {
+            Type = ActivityTypes.Message,
+            Text = "Choose an option",
+            Attachments =
+            [
+                new HeroCard(
+                    title: "Options",
+                    buttons: [new CardAction(ActionTypes.ImBack, "Choose", value: "choice")])
+                    .ToAttachment(),
+            ],
+            ChannelData = new { CustomValue = "custom" },
+        };
+
+        var payload = Assert.Single(await _converter.ConvertAsync(
+            activity,
+            "C123",
+            null,
+            "xoxb-token",
+            CancellationToken.None));
+
+        Assert.Equal("Choose an option", payload.Text);
+        Assert.Contains(payload.Attachments!, attachment =>
+            attachment.Actions?.Count == 1
+            && attachment.Actions[0].Type == "button");
+        Assert.DoesNotContain(payload.Attachments!, attachment =>
+            attachment.Actions?.Count == 1
+            && attachment.Actions[0].Type == "select");
+    }
+
     private sealed class TestSlackFileUploader : ISlackFileUploader
     {
         public Task<string?> UploadAsync(
