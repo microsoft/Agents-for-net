@@ -10,7 +10,6 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -47,14 +46,12 @@ namespace Microsoft.Agents.Extensions.Slack
     {
         internal const string SlackServiceUrl = "https://slack.com";
 
-        private static readonly TimeSpan DedupeRetention = TimeSpan.FromMinutes(10);
-        private const int DedupeMaxEntries = 5000;
-
         private readonly SlackAdapterOptions _options;
         private readonly SlackRequestValidator _requestValidator;
+        private readonly SlackRequestParser _requestParser;
+        private readonly SlackEventDeduplicator _eventDeduplicator;
         private readonly SlackApi _slackApi;
         private readonly IActivityTaskQueue _activityTaskQueue;
-        private readonly ConcurrentDictionary<string, DateTimeOffset> _processedEvents = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SlackAdapter"/> class.
@@ -104,6 +101,8 @@ namespace Microsoft.Agents.Extensions.Slack
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _requestValidator = new SlackRequestValidator(_options);
+            _requestParser = new SlackRequestParser();
+            _eventDeduplicator = new SlackEventDeduplicator();
             _activityTaskQueue = activityTaskQueue;
             _slackApi = new SlackApi(
                 httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory)),
@@ -150,63 +149,53 @@ namespace Microsoft.Agents.Extensions.Slack
             }
 
             var requestId = httpRequest.HttpContext.TraceIdentifier;
-            var isFormUrlEncoded = IsFormUrlEncoded(httpRequest.ContentType);
-            var payloadJson = isFormUrlEncoded ? ExtractFormValue(body, "payload") : body;
+            ParsedSlackRequest parsed;
             string eventId = null;
-
-            SlackLogSanitizer.ExecuteSafely(() =>
-            {
-                if (Logger.IsEnabled(LogLevel.Debug))
-                {
-                    SlackAdapterLog.LogPayloadReceived(Logger, requestId, SlackLogSanitizer.SanitizeJson(payloadJson));
-                }
-            });
 
             SlackActivity activity;
             try
             {
-                if (isFormUrlEncoded)
+                parsed = _requestParser.Parse(body, httpRequest.ContentType);
+
+                SlackLogSanitizer.ExecuteSafely(() =>
                 {
-                    // Interactivity (block_actions, view_submission, ...) arrives form-encoded as payload=<json>.
-                    if (string.IsNullOrEmpty(payloadJson))
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        SlackAdapterLog.LogPayloadReceived(
+                            Logger,
+                            requestId,
+                            SlackLogSanitizer.SanitizeJson(parsed.PayloadJson));
+                    }
+                });
+
+                if (parsed.Kind == SlackRequestKind.UrlVerification)
+                {
+                    httpResponse.StatusCode = (int)HttpStatusCode.OK;
+                    httpResponse.ContentType = "text/plain";
+                    await httpResponse.WriteAsync(parsed.Challenge ?? string.Empty, cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+
+                if (parsed.Kind == SlackRequestKind.Ignore)
+                {
+                    httpResponse.StatusCode = (int)HttpStatusCode.OK;
+                    return;
+                }
+
+                if (parsed.Kind == SlackRequestKind.Event)
+                {
+                    eventId = parsed.EventEnvelope?.event_id;
+                    if (!_eventDeduplicator.TryAccept(eventId))
                     {
                         httpResponse.StatusCode = (int)HttpStatusCode.OK;
                         return;
                     }
 
-                    activity = CreateActivityFromInteractivePayload(payloadJson);
+                    activity = CreateActivityFromEvent(parsed.EventEnvelope);
                 }
                 else
                 {
-                    // Events API arrives as application/json.
-                    using var doc = JsonDocument.Parse(body);
-                    var type = doc.RootElement.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : null;
-
-                    if (string.Equals(type, "url_verification", StringComparison.Ordinal))
-                    {
-                        var challenge = doc.RootElement.TryGetProperty("challenge", out var challengeElement) ? challengeElement.GetString() : string.Empty;
-                        httpResponse.StatusCode = (int)HttpStatusCode.OK;
-                        httpResponse.ContentType = "text/plain";
-                        await httpResponse.WriteAsync(challenge ?? string.Empty, cancellationToken).ConfigureAwait(false);
-                        return;
-                    }
-
-                    if (!string.Equals(type, "event_callback", StringComparison.Ordinal))
-                    {
-                        // app_rate_limited and any other envelope types are acknowledged without processing.
-                        httpResponse.StatusCode = (int)HttpStatusCode.OK;
-                        return;
-                    }
-
-                    var envelope = ProtocolJsonSerializer.ToObject<EventEnvelope>(body);
-                    eventId = envelope?.event_id;
-                    if (!ShouldProcess(envelope))
-                    {
-                        httpResponse.StatusCode = (int)HttpStatusCode.OK;
-                        return;
-                    }
-
-                    activity = CreateActivityFromEvent(envelope);
+                    activity = CreateActivityFromInteractivePayload(parsed.ActionPayload);
                 }
             }
             catch (JsonException ex)
@@ -244,10 +233,7 @@ namespace Microsoft.Agents.Extensions.Slack
                     agentType: agent.GetType(),
                     headers: httpRequest.Headers))
                 {
-                    if (!string.IsNullOrEmpty(eventId))
-                    {
-                        _processedEvents.TryRemove(eventId, out _);
-                    }
+                    _eventDeduplicator.Remove(eventId);
 
                     Logger.LogWarning("[SlackAdapter] unable to queue activity because the host is shutting down.");
                     httpResponse.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
@@ -379,48 +365,6 @@ namespace Microsoft.Agents.Extensions.Slack
         }
 
         /// <summary>
-        /// Returns <see langword="true"/> if the event has not been seen before and should be processed.
-        /// Slack retries deliveries, so events are de-duplicated by <c>event_id</c>.
-        /// </summary>
-        private bool ShouldProcess(EventEnvelope envelope)
-        {
-            var eventId = envelope?.event_id;
-            if (string.IsNullOrEmpty(eventId))
-            {
-                return true;
-            }
-
-            PruneDedupe();
-
-            return _processedEvents.TryAdd(eventId, DateTimeOffset.UtcNow);
-        }
-
-        private void PruneDedupe()
-        {
-            var cutoff = DateTimeOffset.UtcNow - DedupeRetention;
-            foreach (var entry in _processedEvents)
-            {
-                if (entry.Value < cutoff)
-                {
-                    _processedEvents.TryRemove(entry.Key, out _);
-                }
-            }
-
-            // Hard cap as a safety valve against unbounded growth under a burst.
-            if (_processedEvents.Count > DedupeMaxEntries)
-            {
-                foreach (var entry in _processedEvents)
-                {
-                    _processedEvents.TryRemove(entry.Key, out _);
-                    if (_processedEvents.Count <= DedupeMaxEntries)
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Converts a Slack Events API <c>event_callback</c> envelope to a <see cref="SlackActivity"/>.
         /// Returns <see langword="null"/> when the event should be ignored (e.g. the bot's own message).
         /// </summary>
@@ -506,10 +450,8 @@ namespace Microsoft.Agents.Extensions.Slack
         /// Converts a Slack interactivity payload (block_actions, view_submission, ...) to a
         /// <see cref="SlackActivity"/>, including the feedback invoke contract used by AgentApplication.
         /// </summary>
-        private SlackActivity CreateActivityFromInteractivePayload(string payloadJson)
+        private SlackActivity CreateActivityFromInteractivePayload(ActionPayload payload)
         {
-            var payload = ProtocolJsonSerializer.ToObject<ActionPayload>(payloadJson);
-
             var teamId = ResolveInteractiveTeamId(payload);
             var channel = payload.channel;
             var user = payload.Get<string>("user.id");
@@ -617,35 +559,5 @@ namespace Microsoft.Agents.Extensions.Slack
             return string.IsNullOrEmpty(conversationId) ? null : SlackHelpers.SlackThreadTsFromConversationId(conversationId);
         }
 
-        private static bool IsFormUrlEncoded(string contentType)
-        {
-            return !string.IsNullOrEmpty(contentType)
-                && contentType.Contains("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string ExtractFormValue(string body, string key)
-        {
-            if (string.IsNullOrEmpty(body))
-            {
-                return null;
-            }
-
-            foreach (var pair in body.Split('&'))
-            {
-                var separator = pair.IndexOf('=');
-                if (separator <= 0)
-                {
-                    continue;
-                }
-
-                var name = pair.Substring(0, separator);
-                if (string.Equals(name, key, StringComparison.Ordinal))
-                {
-                    return WebUtility.UrlDecode(pair.Substring(separator + 1));
-                }
-            }
-
-            return null;
-        }
     }
 }
