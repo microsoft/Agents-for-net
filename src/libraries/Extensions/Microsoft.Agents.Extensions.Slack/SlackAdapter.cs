@@ -58,12 +58,26 @@ namespace Microsoft.Agents.Extensions.Slack
         /// <param name="options">The Slack configuration (bot token, signing secret, bot user id).</param>
         /// <param name="httpClientFactory">Factory used to create the HTTP client for Slack Web API calls.</param>
         /// <param name="logger">Optional logger.</param>
+        public SlackAdapter(
+            SlackAdapterOptions options,
+            IHttpClientFactory httpClientFactory,
+            ILogger<SlackAdapter> logger = null)
+            : this(options, httpClientFactory, logger, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SlackAdapter"/> class.
+        /// </summary>
+        /// <param name="options">The Slack configuration (bot token, signing secret, bot user id).</param>
+        /// <param name="httpClientFactory">Factory used to create the HTTP client for Slack Web API calls.</param>
+        /// <param name="logger">Optional logger.</param>
         /// <param name="slackApiLogger">Optional logger for Slack Web API requests and responses.</param>
         public SlackAdapter(
             SlackAdapterOptions options,
             IHttpClientFactory httpClientFactory,
-            ILogger<SlackAdapter> logger = null,
-            ILogger<SlackApi> slackApiLogger = null)
+            ILogger<SlackAdapter> logger,
+            ILogger<SlackApi> slackApiLogger)
             : base(logger)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));

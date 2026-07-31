@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Slack.Api;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
@@ -28,6 +29,57 @@ public class SlackAdapterTests
     private const string BotToken = "xoxb-test-token";
     private const string BotId = "B123";
     private const string BotUserId = "U123";
+
+    [Fact]
+    public void Constructors_PreserveOriginalAndLoggerAwareSignatures()
+    {
+        var originalConstructor = typeof(SlackAdapter).GetConstructor(
+            [typeof(SlackAdapterOptions), typeof(IHttpClientFactory), typeof(ILogger<SlackAdapter>)]);
+        var loggerAwareConstructor = typeof(SlackAdapter).GetConstructor(
+            [typeof(SlackAdapterOptions), typeof(IHttpClientFactory), typeof(ILogger<SlackAdapter>), typeof(ILogger<SlackApi>)]);
+
+        Assert.NotNull(originalConstructor);
+        Assert.True(originalConstructor.GetParameters()[2].IsOptional);
+        Assert.Null(originalConstructor.GetParameters()[2].DefaultValue);
+        Assert.NotNull(loggerAwareConstructor);
+    }
+
+    [Fact]
+    public async Task DependencyInjection_UsesSlackApiLogger()
+    {
+        var apiLogger = new RecordingLogger<SlackApi>();
+        var factory = CreateFactory((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""{"ok":true,"ts":"1"}""", Encoding.UTF8, "application/json")
+        }));
+        var services = new ServiceCollection();
+        services.AddSlack(new SlackAdapterOptions
+        {
+            BotToken = BotToken,
+            SigningSecret = SigningSecret,
+            BotId = BotId,
+            BotUserId = BotUserId
+        });
+        services.AddSingleton(factory.Object);
+        services.AddSingleton<ILogger<SlackAdapter>>(new RecordingLogger<SlackAdapter>());
+        services.AddSingleton<ILogger<SlackApi>>(apiLogger);
+
+        await using var provider = services.BuildServiceProvider();
+        var adapter = provider.GetRequiredService<SlackAdapter>();
+        var context = CreateContext(MessageEventBody("ping", "C100", "1700000000.000100"), signed: true);
+
+        await adapter.ProcessAsync(
+            context.Request,
+            context.Response,
+            DelegateAgent(async (turnContext, cancellationToken) =>
+            {
+                await turnContext.SendActivityAsync("pong", cancellationToken: cancellationToken);
+            }),
+            CancellationToken.None);
+
+        Assert.Contains(apiLogger.Entries, entry => entry.EventId.Id == 1);
+        Assert.Contains(apiLogger.Entries, entry => entry.EventId.Id == 2);
+    }
 
     [Fact]
     public async Task ProcessAsync_UrlVerification_ReturnsChallenge()
