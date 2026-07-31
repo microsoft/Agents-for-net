@@ -183,6 +183,128 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public async Task SendStreamTimedOutNotification_DisablesStreaming_AndFinalResponseIsStillSent()
+        {
+            const string informativeMessage = "Thinking...";
+            const string timeoutNotification = "Streaming timed out. Sending the completed response instead.";
+            const string completedText = "Completed response text.";
+
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat });
+            context.StreamingResponse.Interval = 10_000;
+            context.StreamingResponse.InitialDelay = 10;
+
+            await context.StreamingResponse.QueueInformativeUpdateAsync(informativeMessage);
+
+            var timedOut = await context.StreamingResponse.SendStreamTimedOutNotification(timeoutNotification);
+
+            Assert.True(timedOut);
+            Assert.False(context.StreamingResponse.IsStreamingChannel);
+            Assert.Collection(
+                responses,
+                informativeActivity =>
+                {
+                    Assert.Equal(informativeMessage, informativeActivity.Text);
+                    Assert.Equal(StreamTypes.Informative, informativeActivity.GetStreamingEntity()?.StreamType);
+                },
+                timeoutActivity =>
+                {
+                    Assert.Equal(ActivityTypes.Message, timeoutActivity.Type);
+                    Assert.Equal(timeoutNotification, timeoutActivity.Text);
+                    var timeoutStreamInfo = timeoutActivity.GetStreamingEntity();
+                    Assert.NotNull(timeoutStreamInfo);
+                    Assert.Equal(StreamTypes.Final, timeoutStreamInfo.StreamType);
+                });
+
+            context.StreamingResponse.QueueTextChunk(completedText);
+            var result = await context.StreamingResponse.EndStreamAsync();
+
+            Assert.Equal(StreamingResponseResult.Success, result);
+            Assert.Collection(
+                responses,
+                _ => { },
+                _ => { },
+                finalActivity =>
+                {
+                    Assert.Equal(ActivityTypes.Message, finalActivity.Type);
+                    Assert.Equal(completedText, finalActivity.Text);
+                    Assert.Null(finalActivity.GetStreamingEntity());
+                });
+        }
+
+        [Fact]
+        public async Task ChannelStreamingTimeout_UpdatesCheckpointAndFinalMessage()
+        {
+            const string completedText = "Completed response text.";
+
+            var sendAttempts = 0;
+            var updates = new List<IActivity>();
+            var timeoutCheckpointSeen = new TaskCompletionSource<IActivity>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(a => a.SendActivitiesAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, _, _) =>
+                {
+                    Interlocked.Increment(ref sendAttempts);
+                    return Task.FromException<ResourceResponse[]>(new ErrorResponseException("stream timeout")
+                    {
+                        Body = new ErrorResponse(new Error()
+                        {
+                            Code = "ContentStreamNotAllowed",
+                            Message = "Content stream finished due to exceeded streaming time."
+                        })
+                    });
+                });
+
+            adapter
+                .Setup(a => a.UpdateActivityAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity, CancellationToken>((_, activity, _) =>
+                {
+                    lock (updates)
+                    {
+                        updates.Add(activity);
+                        if (updates.Count == 1)
+                        {
+                            timeoutCheckpointSeen.TrySetResult(activity);
+                        }
+                    }
+
+                    return Task.FromResult(new ResourceResponse(activity.Id));
+                });
+
+            var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat });
+            context.StreamingResponse.Interval = 10;
+            context.StreamingResponse.InitialDelay = 10;
+
+            context.StreamingResponse.QueueTextChunk(completedText);
+
+            var checkpointActivity = await WaitForTaskAsync(
+                timeoutCheckpointSeen.Task,
+                "Expected the timeout checkpoint update to be sent after the streaming send failed.");
+
+            Assert.False(context.StreamingResponse.IsStreamingChannel);
+            Assert.Contains(context.StreamingResponse.StreamingTakingTooLongMessage, checkpointActivity.Text);
+
+            var result = await context.StreamingResponse.EndStreamAsync();
+
+            Assert.Equal(StreamingResponseResult.Success, result);
+            Assert.Equal(1, sendAttempts);
+
+            IActivity[] updateSnapshot;
+            lock (updates)
+            {
+                updateSnapshot = [.. updates];
+            }
+
+            Assert.Collection(
+                updateSnapshot,
+                timeoutUpdate => Assert.Contains(context.StreamingResponse.StreamingTakingTooLongMessage, timeoutUpdate.Text),
+                finalUpdate => Assert.Equal(completedText, finalUpdate.Text));
+        }
+
+        [Fact]
         public async Task TestStreamingResponseEndStreamTwice()
         {
             // streaming
@@ -957,6 +1079,13 @@ namespace Microsoft.Agents.Builder.Tests
 
         private static Task WaitForResponses(List<IActivity> responses, int minCount, int timeoutMs = 5000)
             => WaitForAsync(() => responses.Count >= minCount, timeoutMs);
+
+        private static async Task<T> WaitForTaskAsync<T>(Task<T> task, string failureMessage, int timeoutMs = 5000)
+        {
+            await WaitForAsync(() => task.IsCompleted, timeoutMs);
+            Assert.True(task.IsCompleted, failureMessage);
+            return await task;
+        }
 
         private static void SetPrivateField<T>(IStreamingResponse response, string fieldName, T value)
         {
