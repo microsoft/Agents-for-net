@@ -73,6 +73,8 @@ public class SlackLogSanitizerTests
                 {"key_url":"https://files.example.com/report.csv?api_key=key-secret"},
                 {"authorization_url":"https://files.example.com/report.csv?authorization=authorization-secret"},
                 {"password_url":"https://files.example.com/report.csv?database_password_hash=password-secret"},
+                {"authenticated_url":"https://user:password@files.example.com/report.csv"},
+                {"username_url":"https://user@files.example.com/report.csv"},
                 {
                   "documentation_url":"https://api.slack.com/messaging/webhooks"
                 }
@@ -90,8 +92,12 @@ public class SlackLogSanitizerTests
         Assert.DoesNotContain("key-secret", sanitized);
         Assert.DoesNotContain("authorization-secret", sanitized);
         Assert.DoesNotContain("password-secret", sanitized);
+        Assert.DoesNotContain("user:password", sanitized);
+        Assert.DoesNotContain("https://user@files.example.com", sanitized);
         Assert.Contains("\"url\":\"[REDACTED]\"", sanitized);
         Assert.Contains("\"download_url\":\"[REDACTED]\"", sanitized);
+        Assert.Contains("\"authenticated_url\":\"[REDACTED]\"", sanitized);
+        Assert.Contains("\"username_url\":\"[REDACTED]\"", sanitized);
         Assert.Contains("\"documentation_url\":\"https://api.slack.com/messaging/webhooks\"", sanitized);
     }
 

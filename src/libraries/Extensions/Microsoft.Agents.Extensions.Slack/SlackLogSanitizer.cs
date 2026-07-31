@@ -129,6 +129,11 @@ internal static class SlackLogSanitizer
             return false;
         }
 
+        if (!string.IsNullOrEmpty(uri.UserInfo))
+        {
+            return true;
+        }
+
         if (uri.Host.Equals("hooks.slack.com", StringComparison.OrdinalIgnoreCase)
             && uri.AbsolutePath.StartsWith("/services/", StringComparison.OrdinalIgnoreCase))
         {
