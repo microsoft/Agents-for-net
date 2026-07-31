@@ -550,7 +550,6 @@ namespace Microsoft.Agents.Extensions.Slack
         /// </summary>
         private SlackActivity CreateActivityFromInteractivePayload(string payloadJson)
         {
-            var rawPayload = JsonNode.Parse(payloadJson);
             var payload = ProtocolJsonSerializer.ToObject<ActionPayload>(payloadJson);
 
             var teamId = ResolveInteractiveTeamId(payload);
@@ -628,7 +627,9 @@ namespace Microsoft.Agents.Extensions.Slack
             {
                 activity.Type = ActivityTypes.Event;
                 activity.Name = $"vnd.slack.action.{payload.type}";
-                activity.Value = rawPayload;
+                activity.Value = JsonSerializer.SerializeToNode(
+                    payload,
+                    ProtocolJsonSerializer.SerializationOptions);
             }
 
             return activity;

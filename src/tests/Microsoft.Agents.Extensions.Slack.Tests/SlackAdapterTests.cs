@@ -814,6 +814,79 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAsync_UnknownInteractivePayloadWithExactDuplicate_NormalizesFallbackValue()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {
+              "type":"future_action",
+              "user":{"id":"U777"},
+              "team":{"id":"T1"},
+              "channel":{"id":"C200","name":"general","enterprise_id":"E1"},
+              "view":{"id":"V123","private_metadata":"preserve-me"},
+              "future_field":{"version":1},
+              "future_field":{"version":2}
+            }
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((tc, _) => { captured = tc.Activity; return Task.CompletedTask; }), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+        var slack = Assert.IsType<SlackActivity>(captured);
+        var value = Assert.IsType<JsonObject>(slack.Value);
+        var futureField = Assert.Single(value, property => string.Equals(property.Key, "future_field", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Equal(2, futureField!["version"]!.GetValue<int>());
+        Assert.Equal("general", value["channel"]!["name"]!.GetValue<string>());
+        Assert.Equal("E1", value["channel"]!["enterprise_id"]!.GetValue<string>());
+        Assert.Equal("preserve-me", value["view"]!["private_metadata"]!.GetValue<string>());
+
+        var serializedValue = JsonNode.Parse(ProtocolJsonSerializer.ToJson(value))!.AsObject();
+        Assert.Equal(2, serializedValue["future_field"]!["version"]!.GetValue<int>());
+        Assert.Equal(2, slack.ChannelData.Payload.Get<int>("future_field.version"));
+    }
+
+    [Fact]
+    public async Task ProcessAsync_UnknownInteractivePayloadWithCaseVariantDuplicate_NormalizesFallbackValue()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {
+              "type":"future_action",
+              "user":{"id":"U777"},
+              "team":{"id":"T1"},
+              "channel":{"id":"C200","name":"general","enterprise_id":"E1"},
+              "view":{"id":"V123","private_metadata":"preserve-me"},
+              "future_field":{"version":1},
+              "Future_Field":{"version":2}
+            }
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((tc, _) => { captured = tc.Activity; return Task.CompletedTask; }), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+        var slack = Assert.IsType<SlackActivity>(captured);
+        var value = Assert.IsType<JsonObject>(slack.Value);
+        var futureField = Assert.Single(value, property => string.Equals(property.Key, "future_field", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Equal(2, futureField!["version"]!.GetValue<int>());
+        Assert.Equal("general", value["channel"]!["name"]!.GetValue<string>());
+        Assert.Equal("E1", value["channel"]!["enterprise_id"]!.GetValue<string>());
+        Assert.Equal("preserve-me", value["view"]!["private_metadata"]!.GetValue<string>());
+
+        var serializedValue = JsonNode.Parse(ProtocolJsonSerializer.ToJson(value))!.AsObject();
+        var serializedFutureField = Assert.Single(
+            serializedValue,
+            property => string.Equals(property.Key, "future_field", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Equal(2, serializedFutureField!["version"]!.GetValue<int>());
+        Assert.Equal(2, slack.ChannelData.Payload.Get<int>("future_field.version"));
+    }
+
+    [Fact]
     public async Task ProcessAsync_MessageActionWithCallbackId_CreatesSlackActivityEvent()
     {
         var adapter = CreateAdapter(out _);
