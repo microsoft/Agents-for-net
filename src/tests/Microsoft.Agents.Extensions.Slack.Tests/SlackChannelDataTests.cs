@@ -4,6 +4,7 @@
 using Microsoft.Agents.Extensions.Slack.Api;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -703,6 +704,25 @@ public class SlackChannelDataTests
     // ── ActionPayload deserialization ─────────────────────────────────────────
 
     [Fact]
+    public void ActionPayload_PublicApi_IsImmutable()
+    {
+        var payloadType = typeof(ActionPayload);
+
+        Assert.Empty(payloadType.GetConstructors());
+
+        foreach (var propertyName in new[] { "type", "channel", "message", "actions", "AdditionalProperties" })
+        {
+            var property = payloadType.GetProperty(propertyName);
+            Assert.NotNull(property);
+            Assert.Null(property.SetMethod);
+        }
+
+        Assert.Equal(
+            typeof(IReadOnlyDictionary<string, JsonElement>),
+            payloadType.GetProperty(nameof(ActionPayload.AdditionalProperties)).PropertyType);
+    }
+
+    [Fact]
     public void ActionPayload_Deserialize_TypeAndChannel()
     {
         var json = """
@@ -720,6 +740,8 @@ public class SlackChannelDataTests
         Assert.NotNull(cd.Payload);
         Assert.Equal("interactive_message", cd.Payload.type);
         Assert.Equal("C789XYZ", cd.Payload.channel);
+        Assert.Equal("Pick one", Assert.IsType<JsonElement>(cd.Payload.message).GetProperty("text").GetString());
+        Assert.Equal("clicked", Assert.IsType<JsonElement>(cd.Payload.actions)[0].GetProperty("value").GetString());
     }
 
     [Fact]
@@ -880,76 +902,54 @@ public class SlackChannelDataTests
     }
 
     [Fact]
-    public void ActionPayload_Serialization_OverlaysMutablePropertiesAndPreservesChannelMetadata()
-    {
-        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
-            {
-              "type": "block_actions",
-              "channel": { "id": "C200", "name": "general" },
-              "message": { "text": "original" },
-              "actions": [{ "action_id": "original" }]
-            }
-            """);
-
-        payload.type = "interactive_message";
-        payload.channel = "C201";
-        payload.message = new { text = "updated" };
-        payload.actions = new[] { new { action_id = "updated" } };
-
-        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
-
-        Assert.Equal("interactive_message", restored["type"].GetValue<string>());
-        Assert.Equal("C201", restored["channel"]["id"].GetValue<string>());
-        Assert.Equal("general", restored["channel"]["name"].GetValue<string>());
-        Assert.Equal("updated", restored["message"]["text"].GetValue<string>());
-        Assert.Equal("updated", restored["actions"][0]["action_id"].GetValue<string>());
-        Assert.Equal("C200", payload.Get<string>("channel.id"));
-    }
-
-    [Fact]
-    public void ActionPayload_Serialization_UsesCurrentAdditionalProperties()
+    public void ActionPayload_AdditionalProperties_IsReadOnly()
     {
         var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
             {
               "type": "block_actions",
               "channel": "C200",
-              "removed": "original",
-              "updated": "original"
+              "custom": "original"
             }
             """);
 
-        payload.AdditionalProperties.Remove("removed");
-        payload.AdditionalProperties["updated"] = JsonSerializer.SerializeToElement("changed");
-        payload.AdditionalProperties["added"] = JsonSerializer.SerializeToElement("new");
-
-        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
-
-        Assert.False(restored.ContainsKey("removed"));
-        Assert.Equal("changed", restored["updated"].GetValue<string>());
-        Assert.Equal("new", restored["added"].GetValue<string>());
-        Assert.Equal(1, restored.Count(property => property.Key == "updated"));
+        var dictionary = Assert.IsAssignableFrom<IDictionary<string, JsonElement>>(payload.AdditionalProperties);
+        Assert.Throws<NotSupportedException>(
+            () => dictionary.Add("added", JsonSerializer.SerializeToElement("new")));
+        Assert.Equal("original", payload.AdditionalProperties["custom"].GetString());
     }
 
     [Fact]
-    public void ActionPayload_ProgrammaticSerialization_PreservesPublicProperties()
+    public void ActionPayload_Serialization_PreservesCompleteNormalizedRawPayload()
     {
-        var payload = new ActionPayload
-        {
-            type = "interactive_message",
-            channel = "C300",
-            AdditionalProperties = new Dictionary<string, JsonElement>
+        var payload = ProtocolJsonSerializer.ToObject<ActionPayload>("""
             {
-                ["trigger_id"] = JsonSerializer.SerializeToElement("123.456"),
-            },
-        };
+              "type": "block_actions",
+              "channel": { "id": "C200", "name": "general" },
+              "message": {
+                "ts": "999.000",
+                "metadata": { "attempt": 2, "enabled": true }
+              },
+              "actions": [{ "action_id": "first", "value": null }],
+              "custom": {
+                "items": ["one", 2, false],
+                "duplicate": "first",
+                "Duplicate": "last"
+              }
+            }
+            """);
 
-        var serialized = ProtocolJsonSerializer.ToJson(payload);
-        var restored = JsonNode.Parse(serialized).AsObject();
+        var restored = JsonNode.Parse(ProtocolJsonSerializer.ToJson(payload)).AsObject();
 
-        Assert.Equal("interactive_message", restored["type"].GetValue<string>());
-        Assert.Equal("C300", restored["channel"].GetValue<string>());
-        Assert.Equal("123.456", restored["trigger_id"].GetValue<string>());
-        Assert.False(restored.ContainsKey("message"));
-        Assert.False(restored.ContainsKey("actions"));
+        Assert.Equal("C200", restored["channel"]["id"].GetValue<string>());
+        Assert.Equal("general", restored["channel"]["name"].GetValue<string>());
+        Assert.Equal(2, restored["message"]["metadata"]["attempt"].GetValue<int>());
+        Assert.True(restored["message"]["metadata"]["enabled"].GetValue<bool>());
+        Assert.Null(restored["actions"][0]["value"]);
+        Assert.Equal("one", restored["custom"]["items"][0].GetValue<string>());
+        Assert.Equal("last", restored["custom"]["Duplicate"].GetValue<string>());
+        Assert.Equal(
+            1,
+            restored["custom"].AsObject().Count(
+                property => string.Equals(property.Key, "duplicate", System.StringComparison.OrdinalIgnoreCase)));
     }
 }

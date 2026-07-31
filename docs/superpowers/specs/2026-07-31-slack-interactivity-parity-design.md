@@ -37,7 +37,7 @@ The change does not modify `AgentApplication`, `SlackAgentExtension`, route attr
 
 `SlackAdapterOptions` gains optional `BotName` configuration for Intercom-compatible mention text.
 
-`ActionPayload` remains a lossless `SlackModel`. Conversion reads action-specific fields through `SlackModel.Get` so modern Slack composition objects and payload shapes do not require brittle strongly typed action models.
+`ActionPayload` is an immutable, read-only, normalized raw-JSON-backed `SlackModel`. It has no public constructor or setters. The public getters `type`, `channel`, `message`, and `actions` remain available for consuming reads; `channel` resolves both an object `channel.id` and a legacy string channel. `AdditionalProperties` is exposed as a read-only dictionary containing normalized unknown top-level properties. Conversion reads action-specific fields through `SlackModel.Get`, and the converter writes the normalized raw payload directly so modern Slack composition objects, complete metadata, and unknown payload shapes round-trip without mutable overlays or programmatic construction.
 
 ## Error Handling
 
@@ -53,4 +53,3 @@ Regression tests cover:
 - Legacy `message_action` producing `Event/SlackActivity`.
 - Unknown and actionless payloads producing vendor-prefixed Event Activities with the complete payload.
 - Existing feedback, identity, conversation, logging, signature, and background-processing tests remaining green.
-

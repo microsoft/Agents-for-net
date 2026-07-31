@@ -14,8 +14,12 @@
 
 - Modify `src\libraries\Extensions\Microsoft.Agents.Extensions.Slack\SlackAdapterOptions.cs` to expose the optional Slack bot display name.
 - Modify `src\libraries\Extensions\Microsoft.Agents.Extensions.Slack\SlackAdapter.cs` to map every `ToV3Activity` conditional.
+- Modify `src\libraries\Extensions\Microsoft.Agents.Extensions.Slack\Api\ActionPayload.cs` to keep the complete normalized raw payload behind an immutable read-only API.
 - Modify `src\tests\Microsoft.Agents.Extensions.Slack.Tests\SlackAdapterTests.cs` to cover select, button, legacy message action, and fallback mappings.
+- Modify `src\tests\Microsoft.Agents.Extensions.Slack.Tests\SlackChannelDataTests.cs` to cover the immutable API, normalization, and serialization fidelity without programmatic construction or mutation.
 - Modify `src\samples\SlackAgent\appsettings.json` to document `BotName`.
+
+`SlackChannelData` remains mutable. `ActionPayload` has no public constructor or setters; its existing getter names remain available, `AdditionalProperties` is read-only, and its converter serializes the normalized raw JSON rather than merging later mutations.
 
 ### Task 1: Add Bot Display Name Configuration
 
@@ -311,19 +315,12 @@ dotnet test src\tests\Microsoft.Agents.Extensions.Slack.Tests\Microsoft.Agents.E
 
 Expected: the legacy name/value assertions fail, and the unknown payload is named only `view_submission` with no Activity value.
 
-- [ ] **Step 3: Parse the raw payload once**
+- [ ] **Step 3: Deserialize the immutable raw-backed payload once**
 
-At the start of `CreateActivityFromInteractivePayload`, preserve a lossless JSON node alongside the typed model:
+At the start of `CreateActivityFromInteractivePayload`, deserialize the lossless immutable model:
 
 ```csharp
-var rawPayload = JsonNode.Parse(payloadJson);
 var payload = ProtocolJsonSerializer.ToObject<ActionPayload>(payloadJson);
-```
-
-Add:
-
-```csharp
-using System.Text.Json.Nodes;
 ```
 
 - [ ] **Step 4: Implement legacy and fallback mapping**
@@ -342,7 +339,9 @@ else
 {
     activity.Type = ActivityTypes.Event;
     activity.Name = $"vnd.slack.action.{payload.type}";
-    activity.Value = rawPayload;
+    activity.Value = JsonSerializer.SerializeToNode(
+        payload,
+        ProtocolJsonSerializer.SerializationOptions);
 }
 ```
 
