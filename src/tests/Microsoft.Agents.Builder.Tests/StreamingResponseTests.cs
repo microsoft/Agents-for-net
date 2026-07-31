@@ -427,6 +427,179 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public async Task M365Copilot_TimeoutWithoutText_SendsFinalTimeoutMessage()
+        {
+            const string startingNotice = "Starting...";
+            const string customTimeoutMessage = "Custom timeout message.";
+
+            var responses = new List<IActivity>();
+            var responseLock = new object();
+
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(a => a.SendActivitiesAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Callback<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    lock (responseLock)
+                    {
+                        foreach (var activity in activities)
+                        {
+                            responses.Add(activity);
+                        }
+                    }
+                });
+
+            var context = new TurnContext(adapter.Object, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            context.StreamingResponse.Interval = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
+            context.StreamingResponse.InitialDelay = context.StreamingResponse.Interval;
+            context.StreamingResponse.StreamingTakingTooLongMessage = customTimeoutMessage;
+
+            await context.StreamingResponse.QueueInformativeUpdateAsync(startingNotice);
+            Assert.True(context.StreamingResponse.IsStreamStarted());
+
+            SetPrivateField(context.StreamingResponse, "M365StreamingTimeout", TimeSpan.Zero);
+            InvokePrivateMethod(context.StreamingResponse, "SendIntermediateMessage", new object[] { null });
+
+            await WaitForConditionAsync(
+                () => !context.StreamingResponse.IsStreamingChannel,
+                "Expected the BizChat timeout callback to disable streaming when no text was buffered.");
+            await WaitForConditionAsync(
+                () => !GetPrivateField<bool>(context.StreamingResponse, "_processingTimer"),
+                "Expected the BizChat timeout callback to finish before ending the stream.");
+
+            var endResult = await WaitForTaskAsync(
+                context.StreamingResponse.EndStreamAsync(),
+                "Expected EndStreamAsync to finish after BizChat timed out without buffered text.");
+
+            Assert.Equal(StreamingResponseResult.Success, endResult);
+
+            IActivity[] responseSnapshot;
+            lock (responseLock)
+            {
+                responseSnapshot = [.. responses];
+            }
+
+            Assert.True(responseSnapshot.Length >= 2, "Expected the BizChat timeout test to capture at least the starting notice and timeout activity.");
+            Assert.Equal(startingNotice, responseSnapshot[0].Text);
+            Assert.Equal(StreamTypes.Informative, responseSnapshot[0].GetStreamingEntity()?.StreamType);
+
+            var timeoutActivities = responseSnapshot
+                .Where(activity => activity.Text == customTimeoutMessage)
+                .ToArray();
+
+            Assert.Single(timeoutActivities);
+            Assert.Equal(ActivityTypes.Message, timeoutActivities[0].Type);
+
+            var streamInfo = timeoutActivities[0].GetStreamingEntity();
+            Assert.NotNull(streamInfo);
+            Assert.Equal(StreamTypes.Final, streamInfo.StreamType);
+            Assert.Equal(StreamResults.Error, streamInfo.StreamResult);
+        }
+
+        [Fact]
+        public async Task M365Copilot_TimeoutWithBufferedText_SendsTerminatingActivitiesAndFinalResponse()
+        {
+            const string startingNotice = "Starting...";
+            const string bufferedResult = "Buffered result";
+            const string customTimeoutMessage = "Custom timeout message.";
+
+            var responses = new List<IActivity>();
+            var responseLock = new object();
+
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(a => a.SendActivitiesAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Callback<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    lock (responseLock)
+                    {
+                        foreach (var activity in activities)
+                        {
+                            responses.Add(activity);
+                        }
+                    }
+                });
+
+            var context = new TurnContext(adapter.Object, new Activity()
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            context.StreamingResponse.Interval = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
+            context.StreamingResponse.InitialDelay = context.StreamingResponse.Interval;
+            context.StreamingResponse.StreamingTakingTooLongMessage = customTimeoutMessage;
+
+            await context.StreamingResponse.QueueInformativeUpdateAsync(startingNotice);
+            context.StreamingResponse.QueueTextChunk(bufferedResult);
+            Assert.True(context.StreamingResponse.IsStreamStarted());
+
+            SetPrivateField(context.StreamingResponse, "M365StreamingTimeout", TimeSpan.Zero);
+            InvokePrivateMethod(context.StreamingResponse, "SendIntermediateMessage", new object[] { null });
+
+            await WaitForConditionAsync(
+                () => !context.StreamingResponse.IsStreamingChannel,
+                "Expected the BizChat timeout callback to disable streaming when text was buffered.");
+            await WaitForConditionAsync(
+                () => !GetPrivateField<bool>(context.StreamingResponse, "_processingTimer"),
+                "Expected the BizChat timeout callback to finish before ending the stream.");
+
+            IActivity[] timeoutSnapshot;
+            lock (responseLock)
+            {
+                timeoutSnapshot = [.. responses];
+            }
+
+            Assert.Collection(
+                timeoutSnapshot,
+                startActivity =>
+                {
+                    Assert.Equal(startingNotice, startActivity.Text);
+                    Assert.Equal(StreamTypes.Informative, startActivity.GetStreamingEntity()?.StreamType);
+                },
+                timeoutTypingActivity =>
+                {
+                    Assert.Equal(ActivityTypes.Typing, timeoutTypingActivity.Type);
+                    Assert.Contains(customTimeoutMessage, timeoutTypingActivity.Text);
+                    var streamInfo = timeoutTypingActivity.GetStreamingEntity();
+                    Assert.NotNull(streamInfo);
+                    Assert.Equal(StreamTypes.Streaming, streamInfo.StreamType);
+                    Assert.Null(streamInfo.StreamResult);
+                },
+                timeoutFinalActivity =>
+                {
+                    Assert.Equal(ActivityTypes.Message, timeoutFinalActivity.Type);
+                    Assert.Contains(customTimeoutMessage, timeoutFinalActivity.Text);
+                    var streamInfo = timeoutFinalActivity.GetStreamingEntity();
+                    Assert.NotNull(streamInfo);
+                    Assert.Equal(StreamTypes.Final, streamInfo.StreamType);
+                    Assert.Equal(StreamResults.Success, streamInfo.StreamResult);
+                });
+
+            var result = await WaitForTaskAsync(
+                context.StreamingResponse.EndStreamAsync(),
+                "Expected EndStreamAsync to finish after BizChat switched to non-streaming delivery.");
+
+            Assert.Equal(StreamingResponseResult.Success, result);
+
+            IActivity[] responseSnapshot;
+            lock (responseLock)
+            {
+                responseSnapshot = [.. responses];
+            }
+
+            var finalActivity = responseSnapshot.Last();
+            Assert.Equal(ActivityTypes.Message, finalActivity.Type);
+            Assert.Equal(bufferedResult, finalActivity.Text);
+            Assert.Null(finalActivity.GetStreamingEntity());
+        }
+
+        [Fact]
         public async Task QueueInformativeUpdate_OnStreamingChannel_SendsMultipleInformativeActivity()
         {
             var responses = new List<IActivity>();
