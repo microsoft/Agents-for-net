@@ -596,6 +596,25 @@ namespace Microsoft.Agents.Extensions.Slack
                     replyToId = threadTs,
                 };
             }
+            else if ((string.Equals(payload.type, "interactive_message", StringComparison.Ordinal)
+                    || string.Equals(payload.type, "block_actions", StringComparison.Ordinal))
+                && (string.Equals(actionType, "select", StringComparison.Ordinal)
+                    || string.Equals(actionType, "button", StringComparison.Ordinal)))
+            {
+                activity.Type = ActivityTypes.Message;
+                activity.Name = null;
+                activity.Text = (string.Equals(actionType, "select", StringComparison.Ordinal)
+                    ? payload.Get<string>("actions[0].selected_options[0].value")
+                    : payload.Get<string>("actions[0].value")).SlackDecode();
+                activity.Entities =
+                [
+                    new Mention
+                    {
+                        Mentioned = activity.Recipient,
+                        Text = $"@{(string.IsNullOrEmpty(_options.BotName) ? _options.BotId : _options.BotName)}",
+                    },
+                ];
+            }
 
             return activity;
         }

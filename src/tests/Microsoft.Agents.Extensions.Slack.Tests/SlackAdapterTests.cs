@@ -810,6 +810,88 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAsync_BlockActionSelect_CreatesMessageWithConfiguredBotMention()
+    {
+        var adapter = CreateAdapter(out _, botName: "SlackAgent");
+        var payload = """
+            {
+              "type":"block_actions",
+              "user":{"id":"U777"},
+              "team":{"id":"T1"},
+              "channel":{"id":"C200","name":"general"},
+              "actions":[{
+                "action_id":"select_one",
+                "type":"select",
+                "selected_options":[{"value":"choice &amp; more"}]
+              }]
+            }
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(
+            context.Request,
+            context.Response,
+            DelegateAgent((turnContext, _) =>
+            {
+                captured = turnContext.Activity;
+                return Task.CompletedTask;
+            }),
+            CancellationToken.None);
+
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal(ActivityTypes.Message, slack.Type);
+        Assert.Null(slack.Name);
+        Assert.Equal("choice & more", slack.Text);
+        Assert.Equal("B123:T1:C200", slack.Conversation.Id);
+        var mention = Assert.IsType<Mention>(Assert.Single(slack.Entities));
+        Assert.Equal("B123:T1", mention.Mentioned.Id);
+        Assert.Equal("@SlackAgent", mention.Text);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_InteractiveMessageButton_CreatesMessageWithBotIdMentionFallback()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {
+              "type":"interactive_message",
+              "user":{"id":"U777"},
+              "team":{"id":"T1"},
+              "channel":"C200",
+              "actions":[{
+                "name":"button_one",
+                "type":"button",
+                "value":"go &lt;now&gt;"
+              }]
+            }
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(
+            context.Request,
+            context.Response,
+            DelegateAgent((turnContext, _) =>
+            {
+                captured = turnContext.Activity;
+                return Task.CompletedTask;
+            }),
+            CancellationToken.None);
+
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal(ActivityTypes.Message, slack.Type);
+        Assert.Null(slack.Name);
+        Assert.Equal("go <now>", slack.Text);
+        Assert.Equal("B123:T1:C200", slack.Conversation.Id);
+        var mention = Assert.IsType<Mention>(Assert.Single(slack.Entities));
+        Assert.Equal("B123:T1", mention.Mentioned.Id);
+        Assert.Equal("@B123", mention.Text);
+    }
+
+    [Fact]
     public async Task ProcessAsync_FeedbackButtons_CreatesFeedbackInvokeActivity()
     {
         var adapter = CreateAdapter(out _);
@@ -966,7 +1048,8 @@ public class SlackAdapterTests
         out Mock<IHttpClientFactory> factory,
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? sendFunc = null,
         ILogger<SlackAdapter>? logger = null,
-        ILogger<SlackApi>? slackApiLogger = null)
+        ILogger<SlackApi>? slackApiLogger = null,
+        string? botName = null)
     {
         sendFunc ??= (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -975,7 +1058,7 @@ public class SlackAdapterTests
 
         factory = CreateFactory(sendFunc);
         return new SlackAdapter(
-            new SlackAdapterOptions { BotToken = BotToken, SigningSecret = SigningSecret, BotId = BotId, BotUserId = BotUserId },
+            new SlackAdapterOptions { BotToken = BotToken, SigningSecret = SigningSecret, BotId = BotId, BotName = botName ?? string.Empty, BotUserId = BotUserId },
             factory.Object,
             logger!,
             slackApiLogger!);
