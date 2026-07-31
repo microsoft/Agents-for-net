@@ -55,6 +55,46 @@ public class SlackLogSanitizerTests
         Assert.DoesNotContain("password-hash-secret", sanitized);
     }
 
+    [Fact]
+    public void SanitizeJson_RedactsCredentialBearingUrlsAndPreservesOrdinaryUrlsRecursively()
+    {
+        const string json = """
+            {
+              "incoming_webhook":{
+                "url":"https://hooks.slack.com/services/T000/B000/webhook-secret"
+              },
+              "items":[
+                {
+                  "download_url":"https://files.example.com/report.csv?X-Amz-Signature=signed-secret&expires=123"
+                },
+                {"token_url":"https://files.example.com/report.csv?access_token=token-secret"},
+                {"secret_url":"https://files.example.com/report.csv?client-secret=client-secret-value"},
+                {"sig_url":"https://files.example.com/report.csv?request-sig=sig-secret"},
+                {"key_url":"https://files.example.com/report.csv?api_key=key-secret"},
+                {"authorization_url":"https://files.example.com/report.csv?authorization=authorization-secret"},
+                {"password_url":"https://files.example.com/report.csv?database_password_hash=password-secret"},
+                {
+                  "documentation_url":"https://api.slack.com/messaging/webhooks"
+                }
+              ]
+            }
+            """;
+
+        var sanitized = SlackLogSanitizer.SanitizeJson(json);
+
+        Assert.DoesNotContain("webhook-secret", sanitized);
+        Assert.DoesNotContain("signed-secret", sanitized);
+        Assert.DoesNotContain("token-secret", sanitized);
+        Assert.DoesNotContain("client-secret-value", sanitized);
+        Assert.DoesNotContain("sig-secret", sanitized);
+        Assert.DoesNotContain("key-secret", sanitized);
+        Assert.DoesNotContain("authorization-secret", sanitized);
+        Assert.DoesNotContain("password-secret", sanitized);
+        Assert.Contains("\"url\":\"[REDACTED]\"", sanitized);
+        Assert.Contains("\"download_url\":\"[REDACTED]\"", sanitized);
+        Assert.Contains("\"documentation_url\":\"https://api.slack.com/messaging/webhooks\"", sanitized);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

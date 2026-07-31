@@ -122,6 +122,31 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAsync_AdapterLoggerFailure_DoesNotChangeInboundProcessing()
+    {
+        var logger = new ThrowingLogger<SlackAdapter>(
+            isEnabledException: new InvalidOperationException("Adapter logger failed"));
+        var adapter = CreateAdapter(out _, logger: logger);
+        var context = CreateContext(
+            MessageEventBody(text: "hello", channel: "C100", ts: "1700000000.000100"),
+            signed: true);
+        var agentCalled = false;
+
+        await adapter.ProcessAsync(
+            context.Request,
+            context.Response,
+            DelegateAgent((_, _) =>
+            {
+                agentCalled = true;
+                return Task.CompletedTask;
+            }),
+            CancellationToken.None);
+
+        Assert.True(agentCalled);
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task ProcessAsync_MessageEvent_InvokesAgentWithSlackActivity()
     {
         var adapter = CreateAdapter(out _);
@@ -441,6 +466,38 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task SendActivitiesAsync_AdapterLoggerFailure_DoesNotFailSuccessfulSend()
+    {
+        var slackCalls = 0;
+        var logger = new ThrowingLogger<SlackAdapter>(
+            logException: eventId => eventId.Id == 3
+                ? new InvalidOperationException("Adapter logger failed")
+                : null);
+        var adapter = CreateAdapter(out _, (_, _) =>
+        {
+            slackCalls++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"ok":true,"ts":"1700000000.000252"}""", Encoding.UTF8, "application/json")
+            });
+        }, logger);
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100"),
+            ChannelData = new SlackChannelData { ApiToken = BotToken },
+        });
+
+        var responses = await adapter.SendActivitiesAsync(
+            turnContext.Object,
+            [MessageFactory.Text("sent")],
+            CancellationToken.None);
+
+        Assert.Equal(1, slackCalls);
+        Assert.Equal("1700000000.000252", Assert.Single(responses).Id);
+    }
+
+    [Fact]
     public async Task UpdateActivityAsync_LogsSuccessfulResponse()
     {
         var logger = new RecordingLogger<SlackAdapter>();
@@ -717,6 +774,46 @@ public class SlackAdapterTests
             Func<TState, Exception?, string> formatter)
         {
             Entries.Add(new LogEntry(logLevel, eventId, formatter(state, exception)));
+        }
+    }
+
+    private sealed class ThrowingLogger<T> : ILogger<T>
+    {
+        private readonly Exception? _isEnabledException;
+        private readonly Func<EventId, Exception?>? _logException;
+
+        public ThrowingLogger(
+            Exception? isEnabledException = null,
+            Func<EventId, Exception?>? logException = null)
+        {
+            _isEnabledException = isEnabledException;
+            _logException = logException;
+        }
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            if (_isEnabledException != null)
+            {
+                throw _isEnabledException;
+            }
+
+            return true;
+        }
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            var logException = _logException?.Invoke(eventId);
+            if (logException != null)
+            {
+                throw logException;
+            }
         }
     }
 }

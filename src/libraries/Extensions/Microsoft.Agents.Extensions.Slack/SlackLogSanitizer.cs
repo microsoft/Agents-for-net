@@ -89,20 +89,77 @@ internal static class SlackLogSanitizer
                 }
                 else if (obj[propertyName] is JsonNode child)
                 {
-                    Redact(child);
+                    if (IsCredentialBearingUrl(child))
+                    {
+                        obj[propertyName] = Redacted;
+                    }
+                    else
+                    {
+                        Redact(child);
+                    }
                 }
             }
         }
         else if (node is JsonArray array)
         {
-            foreach (var child in array)
+            for (var index = 0; index < array.Count; index++)
             {
+                var child = array[index];
                 if (child != null)
                 {
-                    Redact(child);
+                    if (IsCredentialBearingUrl(child))
+                    {
+                        array[index] = Redacted;
+                    }
+                    else
+                    {
+                        Redact(child);
+                    }
                 }
             }
         }
+    }
+
+    private static bool IsCredentialBearingUrl(JsonNode node)
+    {
+        if (node is not JsonValue value
+            || !value.TryGetValue<string>(out var text)
+            || !Uri.TryCreate(text, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        if (uri.Host.Equals("hooks.slack.com", StringComparison.OrdinalIgnoreCase)
+            && uri.AbsolutePath.StartsWith("/services/", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        foreach (var parameter in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separatorIndex = parameter.IndexOf('=');
+            var encodedName = separatorIndex >= 0 ? parameter[..separatorIndex] : parameter;
+            var name = Uri.UnescapeDataString(encodedName.Replace("+", " ", StringComparison.Ordinal));
+            var normalizedName = new string(name.Where(char.IsLetterOrDigit).ToArray());
+
+            if (IsSensitiveQueryParameter(normalizedName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsSensitiveQueryParameter(string normalizedName)
+    {
+        return normalizedName.EndsWith("sig", StringComparison.OrdinalIgnoreCase)
+            || normalizedName.EndsWith("token", StringComparison.OrdinalIgnoreCase)
+            || normalizedName.EndsWith("secret", StringComparison.OrdinalIgnoreCase)
+            || normalizedName.EndsWith("signature", StringComparison.OrdinalIgnoreCase)
+            || normalizedName.EndsWith("key", StringComparison.OrdinalIgnoreCase)
+            || normalizedName.EndsWith("authorization", StringComparison.OrdinalIgnoreCase)
+            || normalizedName.Contains("password", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsSensitiveProperty(string normalizedPropertyName)

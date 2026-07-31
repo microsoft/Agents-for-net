@@ -84,6 +84,32 @@ public class SlackApiLoggingTests
     }
 
     [Fact]
+    public async Task CallAsync_ResponseLog_RedactsCredentialBearingUrls()
+    {
+        var logger = new RecordingLogger<SlackApi>();
+        var slackApi = CreateSlackApi(
+            (_, _) => Task.FromResult(CreateJsonResponse(
+                """
+                {
+                  "ok":true,
+                  "incoming_webhook":{"url":"https://hooks.slack.com/services/T000/B000/webhook-secret"},
+                  "links":[
+                    "https://files.example.com/report.csv?sig=signed-secret",
+                    "https://api.slack.com/messaging/webhooks"
+                  ]
+                }
+                """)),
+            logger);
+
+        await slackApi.CallAsync("apps.manifest.create");
+
+        var responseLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2);
+        Assert.DoesNotContain("webhook-secret", responseLog.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("signed-secret", responseLog.Message, StringComparison.Ordinal);
+        Assert.Contains("https://api.slack.com/messaging/webhooks", responseLog.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task CallAsync_TransportFailure_LogsRequestOnly()
     {
         var logger = new RecordingLogger<SlackApi>();

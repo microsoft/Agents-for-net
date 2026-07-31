@@ -115,10 +115,13 @@ namespace Microsoft.Agents.Extensions.Slack
             var isFormUrlEncoded = IsFormUrlEncoded(httpRequest.ContentType);
             var payloadJson = isFormUrlEncoded ? ExtractFormValue(body, "payload") : body;
 
-            if (Logger.IsEnabled(LogLevel.Debug))
+            SlackLogSanitizer.ExecuteSafely(() =>
             {
-                SlackAdapterLog.LogPayloadReceived(Logger, requestId, SlackLogSanitizer.SanitizeJson(payloadJson));
-            }
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    SlackAdapterLog.LogPayloadReceived(Logger, requestId, SlackLogSanitizer.SanitizeJson(payloadJson));
+                }
+            });
 
             SlackActivity activity;
             try
@@ -180,11 +183,14 @@ namespace Microsoft.Agents.Extensions.Slack
                 return;
             }
 
-            if (Logger.IsEnabled(LogLevel.Debug))
+            SlackLogSanitizer.ExecuteSafely(() =>
             {
-                var sanitizedActivity = SlackLogSanitizer.SanitizeObject(activity);
-                SlackAdapterLog.LogActivityCreated(Logger, requestId, activity.Conversation?.Id ?? string.Empty, sanitizedActivity);
-            }
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    var sanitizedActivity = SlackLogSanitizer.SanitizeObject(activity);
+                    SlackAdapterLog.LogActivityCreated(Logger, requestId, activity.Conversation?.Id ?? string.Empty, sanitizedActivity);
+                }
+            });
 
             var claimsIdentity = new ClaimsIdentity();
             await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
@@ -231,14 +237,17 @@ namespace Microsoft.Agents.Extensions.Slack
                     thread_ts = threadTs,
                 }, channelData?.ApiToken ?? _options.BotToken, cancellationToken).ConfigureAwait(false);
 
-                if (Logger.IsEnabled(LogLevel.Debug))
+                SlackLogSanitizer.ExecuteSafely(() =>
                 {
-                    SlackAdapterLog.LogMessageSent(
-                        Logger,
-                        conversationId ?? string.Empty,
-                        response.ts ?? string.Empty,
-                        SlackLogSanitizer.SanitizeObject(activity));
-                }
+                    if (Logger.IsEnabled(LogLevel.Debug))
+                    {
+                        SlackAdapterLog.LogMessageSent(
+                            Logger,
+                            conversationId ?? string.Empty,
+                            response.ts ?? string.Empty,
+                            SlackLogSanitizer.SanitizeObject(activity));
+                    }
+                });
 
                 responses[index] = new ResourceResponse(response.ts ?? string.Empty);
             }
@@ -262,14 +271,17 @@ namespace Microsoft.Agents.Extensions.Slack
                 text = activity.Text.SlackEncode(),
             }, channelData?.ApiToken ?? _options.BotToken, cancellationToken).ConfigureAwait(false);
 
-            if (Logger.IsEnabled(LogLevel.Debug))
+            SlackLogSanitizer.ExecuteSafely(() =>
             {
-                SlackAdapterLog.LogMessageUpdated(
-                    Logger,
-                    turnContext.Activity?.Conversation?.Id ?? string.Empty,
-                    response.ts ?? string.Empty,
-                    SlackLogSanitizer.SanitizeObject(activity));
-            }
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    SlackAdapterLog.LogMessageUpdated(
+                        Logger,
+                        turnContext.Activity?.Conversation?.Id ?? string.Empty,
+                        response.ts ?? string.Empty,
+                        SlackLogSanitizer.SanitizeObject(activity));
+                }
+            });
 
             return new ResourceResponse(response.ts ?? string.Empty);
         }
@@ -289,14 +301,17 @@ namespace Microsoft.Agents.Extensions.Slack
                 ts = reference.ActivityId,
             }, channelData?.ApiToken ?? _options.BotToken, cancellationToken).ConfigureAwait(false);
 
-            if (Logger.IsEnabled(LogLevel.Debug))
+            SlackLogSanitizer.ExecuteSafely(() =>
             {
-                SlackAdapterLog.LogMessageDeleted(
-                    Logger,
-                    reference.Conversation?.Id ?? string.Empty,
-                    response.ts ?? reference.ActivityId ?? string.Empty,
-                    SlackLogSanitizer.SanitizeObject(reference));
-            }
+                if (Logger.IsEnabled(LogLevel.Debug))
+                {
+                    SlackAdapterLog.LogMessageDeleted(
+                        Logger,
+                        reference.Conversation?.Id ?? string.Empty,
+                        response.ts ?? reference.ActivityId ?? string.Empty,
+                        SlackLogSanitizer.SanitizeObject(reference));
+                }
+            });
         }
 
         /// <summary>
