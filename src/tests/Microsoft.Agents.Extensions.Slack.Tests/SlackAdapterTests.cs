@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.Slack.Api;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -53,6 +54,71 @@ public class SlackAdapterTests
 
         Assert.Equal((int)HttpStatusCode.Unauthorized, context.Response.StatusCode);
         Assert.False(agentCalled);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_VerifiedEvent_LogsSanitizedPayloadAndActivity()
+    {
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, logger: logger);
+        var body = """
+            {
+              "type":"event_callback",
+              "token":"legacy-secret",
+              "team_id":"T1",
+              "event_id":"EvLOG",
+              "event":{"type":"message","channel":"C100","text":"hello","ts":"1700000000.000100","user":"U999","channel_type":"channel"}
+            }
+            """;
+        var context = CreateContext(body, signed: true);
+
+        await adapter.ProcessAsync(context.Request, context.Response, NoopAgent(), CancellationToken.None);
+
+        var payloadLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 1);
+        Assert.Equal(LogLevel.Debug, payloadLog.Level);
+        Assert.Contains("hello", payloadLog.Message);
+        Assert.Contains("[REDACTED]", payloadLog.Message);
+        Assert.DoesNotContain("legacy-secret", payloadLog.Message);
+
+        var activityLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2);
+        Assert.Equal(LogLevel.Debug, activityLog.Level);
+        Assert.Contains("\"type\":\"message\"", activityLog.Message);
+        Assert.Contains("[REDACTED]", activityLog.Message);
+        Assert.DoesNotContain(BotToken, activityLog.Message);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_VerifiedInteractivePayload_LogsDecodedSanitizedPayload()
+    {
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, logger: logger);
+        var payload = """
+            {"type":"block_actions","response_url":"https://hooks.slack.com/actions/secret","user":{"id":"U777"},"team":{"id":"T1"},"channel":{"id":"C200"},"actions":[{"action_id":"button_yes","value":"yes"}]}
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        await adapter.ProcessAsync(context.Request, context.Response, NoopAgent(), CancellationToken.None);
+
+        var payloadLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 1);
+        Assert.Contains("\"type\":\"block_actions\"", payloadLog.Message);
+        Assert.Contains("[REDACTED]", payloadLog.Message);
+        Assert.DoesNotContain("hooks.slack.com", payloadLog.Message);
+        Assert.DoesNotContain("payload=", payloadLog.Message);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_InvalidSignature_DoesNotLogPayload()
+    {
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, logger: logger);
+        const string body = """{"type":"event_callback","body_marker":"do-not-log"}""";
+        var context = CreateContext(body, signed: true, tamperSignature: true);
+
+        await adapter.ProcessAsync(context.Request, context.Response, NoopAgent(), CancellationToken.None);
+
+        Assert.DoesNotContain(logger.Entries, entry => entry.EventId.Id == 1);
+        Assert.DoesNotContain(logger.Entries, entry => entry.Message.Contains("do-not-log", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -346,8 +412,10 @@ public class SlackAdapterTests
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private static SlackAdapter CreateAdapter(out Mock<IHttpClientFactory> factory,
-        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? sendFunc = null)
+    private static SlackAdapter CreateAdapter(
+        out Mock<IHttpClientFactory> factory,
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? sendFunc = null,
+        ILogger<SlackAdapter>? logger = null)
     {
         sendFunc ??= (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -357,7 +425,8 @@ public class SlackAdapterTests
         factory = CreateFactory(sendFunc);
         return new SlackAdapter(
             new SlackAdapterOptions { BotToken = BotToken, SigningSecret = SigningSecret, BotId = BotId, BotUserId = BotUserId },
-            factory.Object);
+            factory.Object,
+            logger!);
     }
 
     private static Mock<IHttpClientFactory> CreateFactory(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc)
@@ -438,5 +507,26 @@ public class SlackAdapterTests
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _sendFunc;
         public TestHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc) => _sendFunc = sendFunc;
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => _sendFunc(request, cancellationToken);
+    }
+
+    private sealed record LogEntry(LogLevel Level, EventId EventId, string Message);
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<LogEntry> Entries { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Entries.Add(new LogEntry(logLevel, eventId, formatter(state, exception)));
+        }
     }
 }

@@ -104,13 +104,21 @@ namespace Microsoft.Agents.Extensions.Slack
                 return;
             }
 
+            var requestId = httpRequest.HttpContext.TraceIdentifier;
+            var isFormUrlEncoded = IsFormUrlEncoded(httpRequest.ContentType);
+            var payloadJson = isFormUrlEncoded ? ExtractFormValue(body, "payload") : body;
+
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                SlackAdapterLog.LogPayloadReceived(Logger, requestId, SlackLogSanitizer.SanitizeJson(payloadJson));
+            }
+
             SlackActivity activity;
             try
             {
-                if (IsFormUrlEncoded(httpRequest.ContentType))
+                if (isFormUrlEncoded)
                 {
                     // Interactivity (block_actions, view_submission, ...) arrives form-encoded as payload=<json>.
-                    var payloadJson = ExtractFormValue(body, "payload");
                     if (string.IsNullOrEmpty(payloadJson))
                     {
                         httpResponse.StatusCode = (int)HttpStatusCode.OK;
@@ -163,6 +171,12 @@ namespace Microsoft.Agents.Extensions.Slack
                 // Nothing actionable (e.g. the bot's own message); acknowledge so Slack does not retry.
                 httpResponse.StatusCode = (int)HttpStatusCode.OK;
                 return;
+            }
+
+            if (Logger.IsEnabled(LogLevel.Debug))
+            {
+                var sanitizedActivity = SlackLogSanitizer.SanitizeJson(ProtocolJsonSerializer.ToJson(activity));
+                SlackAdapterLog.LogActivityCreated(Logger, requestId, activity.Conversation?.Id ?? string.Empty, sanitizedActivity);
             }
 
             var claimsIdentity = new ClaimsIdentity();
