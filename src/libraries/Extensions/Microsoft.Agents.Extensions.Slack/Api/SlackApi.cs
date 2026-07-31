@@ -27,6 +27,7 @@ public class SlackApi
     private const string SlackApiBase = "https://slack.com/api";
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SlackApi> _logger;
+    private readonly Action? _onCallAsync;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -34,15 +35,29 @@ public class SlackApi
     };
 
     public SlackApi(IHttpClientFactory httpClientFactory)
-        : this(httpClientFactory, null)
+        : this(httpClientFactory, null, null)
     {
     }
 
     public SlackApi(IHttpClientFactory httpClientFactory, ILogger<SlackApi>? logger)
+        : this(httpClientFactory, logger, null)
+    {
+    }
+
+    public SlackApi(IHttpClientFactory httpClientFactory, Action? onCallAsync)
+        : this(httpClientFactory, null, onCallAsync)
+    {
+    }
+
+    internal SlackApi(
+        IHttpClientFactory httpClientFactory,
+        ILogger<SlackApi>? logger,
+        Action? onCallAsync)
     {
         AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
         _httpClientFactory = httpClientFactory;
         _logger = logger ?? NullLogger<SlackApi>.Instance;
+        _onCallAsync = onCallAsync;
     }
 
     /// <summary>
@@ -83,7 +98,9 @@ public class SlackApi
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
-            
+
+        _onCallAsync?.Invoke();
+
         using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
         var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);

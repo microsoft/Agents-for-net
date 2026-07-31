@@ -432,3 +432,43 @@ class FeedbackLoopRouteApp(AgentApplicationOptions options) : AgentApplication(o
         return Task.CompletedTask;
     }
 }
+
+class ActivityRouteNativeApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    public List<string> calls = [];
+
+    [SlackActivityRoute(ActivityTypes.Event)]
+    public Task OnEventNative(ITurnContext ctx, ITurnState state, CancellationToken ct)
+    {
+        calls.Add("OnEventNative");
+        return Task.CompletedTask;
+    }
+}
+
+class ActivityRouteTypedApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    public List<string> calls = [];
+
+    [SlackActivityRoute(ActivityTypes.Event)]
+    public Task OnEventTyped(ITurnContext<ISlackActivity> ctx, ITurnState state, CancellationToken ct)
+    {
+        calls.Add("OnEventTyped");
+        return Task.CompletedTask;
+    }
+}
+
+class FeedbackLoopRouteNativeApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    public List<string> calls = [];
+
+    [SlackFeedbackLoopRoute]
+    public Task OnFeedbackNative(
+        ITurnContext ctx,
+        ITurnState state,
+        FeedbackData data,
+        CancellationToken ct)
+    {
+        calls.Add("OnFeedbackNative");
+        return Task.CompletedTask;
+    }
+}
