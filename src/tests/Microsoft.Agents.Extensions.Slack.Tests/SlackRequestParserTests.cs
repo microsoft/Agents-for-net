@@ -100,4 +100,22 @@ public class SlackRequestParserTests
     {
         Assert.ThrowsAny<JsonException>(() => _parser.Parse("""{"type":""", "application/json"));
     }
+
+    [Fact]
+    public void Parse_ArrayRoot_ThrowsJsonException()
+    {
+        Assert.Throws<JsonException>(() => _parser.Parse("[]", "application/json"));
+    }
+
+    [Fact]
+    public void Parse_NumericType_ThrowsJsonException()
+    {
+        Assert.Throws<JsonException>(() => _parser.Parse("""{"type":1}""", "application/json"));
+    }
+
+    [Fact]
+    public void Parse_NullInteractivePayload_ThrowsJsonException()
+    {
+        Assert.Throws<JsonException>(() => _parser.Parse("payload=null", "application/x-www-form-urlencoded"));
+    }
 }

@@ -38,7 +38,8 @@ namespace Microsoft.Agents.Extensions.Slack
                     return new ParsedSlackRequest(SlackRequestKind.Ignore, null);
                 }
 
-                var actionPayload = ProtocolJsonSerializer.ToObject<ActionPayload>(payloadJson);
+                var actionPayload = ProtocolJsonSerializer.ToObject<ActionPayload>(payloadJson)
+                    ?? throw new JsonException("Slack interactive payload must deserialize to an object.");
                 return new ParsedSlackRequest(
                     SlackRequestKind.Interactive,
                     payloadJson,
@@ -47,9 +48,21 @@ namespace Microsoft.Agents.Extensions.Slack
 
             using var document = JsonDocument.Parse(body);
             var root = document.RootElement;
-            var type = root.TryGetProperty("type", out var typeElement)
-                ? typeElement.GetString()
-                : null;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                throw new JsonException("Slack JSON payload root must be an object.");
+            }
+
+            string? type = null;
+            if (root.TryGetProperty("type", out var typeElement))
+            {
+                if (typeElement.ValueKind != JsonValueKind.String)
+                {
+                    throw new JsonException("Slack payload 'type' must be a string.");
+                }
+
+                type = typeElement.GetString();
+            }
 
             if (string.Equals(type, "url_verification", StringComparison.Ordinal))
             {
@@ -67,7 +80,8 @@ namespace Microsoft.Agents.Extensions.Slack
                 return new ParsedSlackRequest(SlackRequestKind.Ignore, body);
             }
 
-            var eventEnvelope = ProtocolJsonSerializer.ToObject<EventEnvelope>(body);
+            var eventEnvelope = ProtocolJsonSerializer.ToObject<EventEnvelope>(body)
+                ?? throw new JsonException("Slack event payload must deserialize to an object.");
             return new ParsedSlackRequest(
                 SlackRequestKind.Event,
                 body,
