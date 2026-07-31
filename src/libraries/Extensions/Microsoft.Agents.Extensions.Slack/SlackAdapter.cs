@@ -15,7 +15,6 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -52,6 +51,7 @@ namespace Microsoft.Agents.Extensions.Slack
         private const int DedupeMaxEntries = 5000;
 
         private readonly SlackAdapterOptions _options;
+        private readonly SlackRequestValidator _requestValidator;
         private readonly SlackApi _slackApi;
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly ConcurrentDictionary<string, DateTimeOffset> _processedEvents = new();
@@ -103,6 +103,7 @@ namespace Microsoft.Agents.Extensions.Slack
             : base(logger)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
+            _requestValidator = new SlackRequestValidator(_options);
             _activityTaskQueue = activityTaskQueue;
             _slackApi = new SlackApi(
                 httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory)),
@@ -141,7 +142,7 @@ namespace Microsoft.Agents.Extensions.Slack
                 body = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            if (!VerifySignature(httpRequest, body))
+            if (!_requestValidator.Verify(httpRequest, body))
             {
                 Logger.LogWarning("[SlackAdapter] request signature verification failed.");
                 httpResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
@@ -375,49 +376,6 @@ namespace Microsoft.Agents.Extensions.Slack
                         SlackLogSanitizer.SanitizeObject(reference));
                 }
             });
-        }
-
-        /// <summary>
-        /// Verifies the inbound request originates from Slack using the signing-secret HMAC scheme.
-        /// See https://docs.slack.dev/authentication/verifying-requests-from-slack.
-        /// </summary>
-        internal bool VerifySignature(HttpRequest httpRequest, string body)
-        {
-            if (string.IsNullOrEmpty(_options.SigningSecret))
-            {
-                // No signing secret configured: verification is disabled (local development only).
-                return true;
-            }
-
-            var signature = httpRequest.Headers["X-Slack-Signature"].ToString();
-            var timestamp = httpRequest.Headers["X-Slack-Request-Timestamp"].ToString();
-
-            if (string.IsNullOrEmpty(signature) || string.IsNullOrEmpty(timestamp) || !long.TryParse(timestamp, out var requestUnixTime))
-            {
-                return false;
-            }
-
-            // Reject stale requests to mitigate replay attacks.
-            var age = Math.Abs(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - requestUnixTime);
-            if (age > _options.RequestMaxAgeSeconds)
-            {
-                return false;
-            }
-
-            var baseString = $"v0:{timestamp}:{body}";
-            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_options.SigningSecret));
-            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(baseString));
-
-            var computed = new StringBuilder("v0=", 3 + (hash.Length * 2));
-            foreach (var b in hash)
-            {
-                computed.Append(b.ToString("x2"));
-            }
-
-            var expectedBytes = Encoding.UTF8.GetBytes(computed.ToString());
-            var actualBytes = Encoding.UTF8.GetBytes(signature);
-
-            return CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
         }
 
         /// <summary>
