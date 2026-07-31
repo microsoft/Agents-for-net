@@ -3,6 +3,7 @@
 
 using System;
 using System.Text.Json.Serialization;
+using System.Threading;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Slack.Tests;
@@ -105,6 +106,22 @@ public class SlackLogSanitizerTests
         Assert.Throws<OperationCanceledException>(
             () => SlackLogSanitizer.SanitizeObject(new CancelingJsonProperty()));
     }
+
+    [Fact]
+    public void SanitizeObject_PropertyGetterThrowsThreadInterruptedException_Propagates()
+    {
+        Assert.Throws<ThreadInterruptedException>(
+            () => SlackLogSanitizer.SanitizeObject(new ThreadInterruptedJsonProperty()));
+    }
+
+#pragma warning disable CS0618
+    [Fact]
+    public void SanitizeObject_PropertyGetterThrowsExecutionEngineException_Propagates()
+    {
+        Assert.Throws<ExecutionEngineException>(
+            () => SlackLogSanitizer.SanitizeObject(new ExecutionEngineJsonProperty()));
+    }
+#pragma warning restore CS0618
 }
 
 internal sealed class CollidingJsonProperties
@@ -125,3 +142,15 @@ internal sealed class CancelingJsonProperty
 {
     public string Value => throw new OperationCanceledException("Getter canceled");
 }
+
+internal sealed class ThreadInterruptedJsonProperty
+{
+    public string Value => throw new ThreadInterruptedException("Getter interrupted");
+}
+
+#pragma warning disable CS0618
+internal sealed class ExecutionEngineJsonProperty
+{
+    public string Value => throw new ExecutionEngineException("Getter failed fatally");
+}
+#pragma warning restore CS0618

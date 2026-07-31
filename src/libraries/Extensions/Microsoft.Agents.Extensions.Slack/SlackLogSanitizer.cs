@@ -104,6 +104,10 @@ internal static class SlackLogSanitizer
     {
         return exception is not (
             OperationCanceledException
+            or ThreadInterruptedException
+#pragma warning disable CS0618
+            or ExecutionEngineException
+#pragma warning restore CS0618
             or OutOfMemoryException
             or StackOverflowException
             or AccessViolationException
