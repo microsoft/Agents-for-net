@@ -14,7 +14,15 @@ namespace Microsoft.Agents.Extensions.Slack;
 
 internal sealed class SlackMessageConverter
 {
-    internal Task<IReadOnlyList<SlackMessagePayload>> ConvertAsync(
+    private readonly SlackAttachmentConverter _attachmentConverter;
+
+    internal SlackMessageConverter(SlackAttachmentConverter attachmentConverter)
+    {
+        _attachmentConverter = attachmentConverter
+            ?? throw new System.ArgumentNullException(nameof(attachmentConverter));
+    }
+
+    internal async Task<IReadOnlyList<SlackMessagePayload>> ConvertAsync(
         IActivity activity,
         string channel,
         string? threadTs,
@@ -23,18 +31,31 @@ internal sealed class SlackMessageConverter
     {
         if (!activity.IsType(ActivityTypes.Message))
         {
-            return Task.FromResult<IReadOnlyList<SlackMessagePayload>>([]);
+            return [];
         }
 
         List<SlackMessagePayload> payloads = [];
+        var slackChannelData = activity.GetChannelData<SlackChannelData>();
+        var convertedAttachments = await _attachmentConverter.ConvertAsync(
+            activity.Attachments,
+            activity.From?.Id ?? string.Empty,
+            channel,
+            token,
+            slackChannelData?.RenderButtonsAsMenu == true,
+            cancellationToken).ConfigureAwait(false);
 
-        if (!string.IsNullOrEmpty(activity.Text))
+        if (!string.IsNullOrEmpty(activity.Text) || convertedAttachments.Count > 0)
         {
             payloads.Add(new SlackMessagePayload
             {
                 Channel = channel,
-                Text = activity.Text.SlackEncode(),
+                Text = string.IsNullOrEmpty(activity.Text)
+                    ? null
+                    : activity.Text.SlackEncode(),
                 ThreadTs = threadTs,
+                Attachments = convertedAttachments.Count > 0
+                    ? convertedAttachments
+                    : null,
             });
         }
 
@@ -56,6 +77,6 @@ internal sealed class SlackMessageConverter
             });
         }
 
-        return Task.FromResult<IReadOnlyList<SlackMessagePayload>>(payloads);
+        return payloads;
     }
 }

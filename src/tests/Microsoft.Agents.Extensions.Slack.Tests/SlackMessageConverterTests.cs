@@ -12,7 +12,9 @@ namespace Microsoft.Agents.Extensions.Slack.Tests;
 
 public class SlackMessageConverterTests
 {
-    private readonly SlackMessageConverter _converter = new();
+    private readonly SlackMessageConverter _converter = new(
+        new SlackAttachmentConverter(
+            new TestSlackFileUploader()));
 
     [Fact]
     public async Task ConvertAsync_TextAndSuggestedActions_ReturnsOrderedThreadedPayloads()
@@ -162,5 +164,16 @@ public class SlackMessageConverterTests
             CancellationToken.None);
 
         Assert.Empty(payloads);
+    }
+
+    private sealed class TestSlackFileUploader : ISlackFileUploader
+    {
+        public Task<string?> UploadAsync(
+            byte[] content,
+            string fileName,
+            string channel,
+            string token,
+            CancellationToken cancellationToken)
+            => Task.FromResult<string?>(null);
     }
 }

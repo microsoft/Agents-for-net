@@ -39,6 +39,9 @@ public class SlackChannelData
     /// the ability to access protected resources.</remarks>
     public string ApiToken { get; set; }
 
+    [JsonPropertyName("render_buttons_as_menu")]
+    public bool? RenderButtonsAsMenu { get; set; }
+
     public string Channel => Envelope != null 
         ? Envelope.Get<string>("event.channel") 
         : Payload?.channel;
