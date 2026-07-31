@@ -77,6 +77,82 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAsync_OrgInstalledEvent_UsesContextTeamId()
+    {
+        var adapter = CreateAdapter(out _);
+        var body = """
+            {
+              "type":"event_callback",
+              "team_id":null,
+              "context_team_id":"T2",
+              "event_id":"EvCONTEXTTEAM",
+              "event":{"type":"message","team":"T3","channel":"C100","text":"hello","ts":"1700000000.000100","user":"U999","channel_type":"channel"}
+            }
+            """;
+        var context = CreateContext(body, signed: true);
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((tc, _) => { captured = tc.Activity; return Task.CompletedTask; }), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal("U999:T2", slack.From.Id);
+        Assert.Equal("B123:T2", slack.Recipient.Id);
+        Assert.Equal("B123:T2:C100", slack.Conversation.Id);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_OrgInstalledEvent_UsesEventTeamId()
+    {
+        var adapter = CreateAdapter(out _);
+        var body = """
+            {
+              "type":"event_callback",
+              "team_id":null,
+              "context_team_id":null,
+              "event_id":"EvEVENTTEAM",
+              "event":{"type":"message","team":"T3","channel":"C100","text":"hello","ts":"1700000000.000100","user":"U999","channel_type":"channel"}
+            }
+            """;
+        var context = CreateContext(body, signed: true);
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((tc, _) => { captured = tc.Activity; return Task.CompletedTask; }), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal("U999:T3", slack.From.Id);
+        Assert.Equal("B123:T3", slack.Recipient.Id);
+        Assert.Equal("B123:T3:C100", slack.Conversation.Id);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_EventWithoutTeamId_Returns400()
+    {
+        var adapter = CreateAdapter(out _);
+        var body = """
+            {
+              "type":"event_callback",
+              "team_id":null,
+              "context_team_id":null,
+              "event_id":"EvNOTEAM",
+              "event":{"type":"message","channel":"C100","text":"hello","ts":"1700000000.000100","user":"U999","channel_type":"channel"}
+            }
+            """;
+        var context = CreateContext(body, signed: true);
+
+        var agentCalled = false;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((_, _) =>
+        {
+            agentCalled = true;
+            return Task.CompletedTask;
+        }), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        Assert.False(agentCalled);
+    }
+
+    [Fact]
     public async Task ProcessAsync_DuplicateEventId_ProcessedOnce()
     {
         var adapter = CreateAdapter(out _);

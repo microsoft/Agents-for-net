@@ -356,7 +356,7 @@ namespace Microsoft.Agents.Extensions.Slack
                 return null;
             }
 
-            var teamId = envelope.team_id;
+            var teamId = ResolveEventTeamId(envelope);
             var channel = content.channel;
             var threadTs = content.Get<string>("thread_ts");
 
@@ -395,6 +395,22 @@ namespace Microsoft.Agents.Extensions.Slack
             }
 
             return activity;
+        }
+
+        private static string ResolveEventTeamId(EventEnvelope envelope)
+        {
+            var teamId = !string.IsNullOrWhiteSpace(envelope.team_id)
+                ? envelope.team_id
+                : !string.IsNullOrWhiteSpace(envelope.context_team_id)
+                    ? envelope.context_team_id
+                    : envelope.event_content?.team;
+
+            if (string.IsNullOrWhiteSpace(teamId))
+            {
+                throw new JsonException("Slack event payload does not contain a team ID.");
+            }
+
+            return teamId;
         }
 
         /// <summary>

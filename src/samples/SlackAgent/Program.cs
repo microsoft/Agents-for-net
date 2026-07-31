@@ -19,7 +19,7 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
 // Register the Slack adapter, which receives Slack traffic directly (Events API + Interactivity)
 // and sends replies directly to Slack, bypassing Azure Bot Service.  Configuration (bot token,
-// signing secret, bot user id) is bound from the "Slack" section of appsettings.json.
+// signing secret, bot id, bot user id) is bound from the "Slack" section of appsettings.json.
 builder.Services.AddSlack(builder.Configuration);
 
 // Register the agent and its options.
