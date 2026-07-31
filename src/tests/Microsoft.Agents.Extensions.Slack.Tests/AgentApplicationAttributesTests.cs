@@ -375,7 +375,13 @@ class MembersRemovedRouteApp(AgentApplicationOptions options) : AgentApplication
 class FeedbackLoopRouteApp(AgentApplicationOptions options) : AgentApplication(options)
 {
     public List<string> calls = [];
+    public FeedbackData feedbackData;
 
     [SlackFeedbackLoopRoute]
-    public Task OnFeedback(ITurnContext ctx, ITurnState state, FeedbackData data, CancellationToken ct) { calls.Add("OnFeedback"); return Task.CompletedTask; }
+    public Task OnFeedback(ITurnContext ctx, ITurnState state, FeedbackData data, CancellationToken ct)
+    {
+        calls.Add("OnFeedback");
+        feedbackData = data;
+        return Task.CompletedTask;
+    }
 }

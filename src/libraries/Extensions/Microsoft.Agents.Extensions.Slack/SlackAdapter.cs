@@ -6,6 +6,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Slack.Api;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
@@ -31,7 +32,8 @@ namespace Microsoft.Agents.Extensions.Slack
     /// Inbound: <see cref="ProcessAsync"/> verifies the Slack request signature, answers the
     /// <c>url_verification</c> handshake, de-duplicates retried events, converts the Slack payload to a
     /// <see cref="SlackActivity"/>, and runs it through the agent pipeline. Slack requires an
-    /// acknowledgement within 3 seconds, so the turn is processed and a <c>200</c> is returned.
+    /// acknowledgement within 3 seconds, so the turn is queued for background processing and a
+    /// <c>200</c> is returned immediately.
     /// </para>
     /// <para>
     /// Outbound: <see cref="SendActivitiesAsync"/> renders message activities back to Slack via
@@ -50,6 +52,7 @@ namespace Microsoft.Agents.Extensions.Slack
 
         private readonly SlackAdapterOptions _options;
         private readonly SlackApi _slackApi;
+        private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly ConcurrentDictionary<string, DateTimeOffset> _processedEvents = new();
 
         /// <summary>
@@ -62,7 +65,7 @@ namespace Microsoft.Agents.Extensions.Slack
             SlackAdapterOptions options,
             IHttpClientFactory httpClientFactory,
             ILogger<SlackAdapter> logger = null)
-            : this(options, httpClientFactory, logger, null)
+            : this(options, httpClientFactory, logger, null, null)
         {
         }
 
@@ -78,9 +81,28 @@ namespace Microsoft.Agents.Extensions.Slack
             IHttpClientFactory httpClientFactory,
             ILogger<SlackAdapter> logger,
             ILogger<SlackApi> slackApiLogger)
+            : this(options, httpClientFactory, logger, slackApiLogger, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SlackAdapter"/> class.
+        /// </summary>
+        /// <param name="options">The Slack configuration (bot token, signing secret, bot user id).</param>
+        /// <param name="httpClientFactory">Factory used to create the HTTP client for Slack Web API calls.</param>
+        /// <param name="logger">Optional logger.</param>
+        /// <param name="slackApiLogger">Optional logger for Slack Web API requests and responses.</param>
+        /// <param name="activityTaskQueue">Queue used to process the agent turn after acknowledging Slack.</param>
+        public SlackAdapter(
+            SlackAdapterOptions options,
+            IHttpClientFactory httpClientFactory,
+            ILogger<SlackAdapter> logger,
+            ILogger<SlackApi> slackApiLogger,
+            IActivityTaskQueue activityTaskQueue)
             : base(logger)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
+            _activityTaskQueue = activityTaskQueue;
             _slackApi = new SlackApi(
                 httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory)),
                 slackApiLogger);
@@ -128,6 +150,7 @@ namespace Microsoft.Agents.Extensions.Slack
             var requestId = httpRequest.HttpContext.TraceIdentifier;
             var isFormUrlEncoded = IsFormUrlEncoded(httpRequest.ContentType);
             var payloadJson = isFormUrlEncoded ? ExtractFormValue(body, "payload") : body;
+            string eventId = null;
 
             SlackLogSanitizer.ExecuteSafely(() =>
             {
@@ -174,6 +197,7 @@ namespace Microsoft.Agents.Extensions.Slack
                     }
 
                     var envelope = ProtocolJsonSerializer.ToObject<EventEnvelope>(body);
+                    eventId = envelope?.event_id;
                     if (!ShouldProcess(envelope))
                     {
                         httpResponse.StatusCode = (int)HttpStatusCode.OK;
@@ -207,7 +231,31 @@ namespace Microsoft.Agents.Extensions.Slack
             });
 
             var claimsIdentity = new ClaimsIdentity();
-            await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+            activity.RequestId ??= requestId;
+
+            if (_activityTaskQueue != null)
+            {
+                if (!_activityTaskQueue.QueueBackgroundActivity(
+                    claimsIdentity,
+                    this,
+                    activity,
+                    agentType: agent.GetType(),
+                    headers: httpRequest.Headers))
+                {
+                    if (!string.IsNullOrEmpty(eventId))
+                    {
+                        _processedEvents.TryRemove(eventId, out _);
+                    }
+
+                    Logger.LogWarning("[SlackAdapter] unable to queue activity because the host is shutting down.");
+                    httpResponse.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                    return;
+                }
+            }
+            else
+            {
+                await ProcessActivityAsync(claimsIdentity, activity, agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
+            }
 
             httpResponse.StatusCode = (int)HttpStatusCode.OK;
         }
@@ -427,8 +475,13 @@ namespace Microsoft.Agents.Extensions.Slack
 
             // Ignore messages authored by the bot itself (or any bot subtype) to avoid reply loops.
             var botId = content.Get<string>("bot_id");
+            var nestedBotId = content.Get<string>("message.bot_id");
+            var nestedUserId = content.Get<string>("message.user");
             if (!string.IsNullOrEmpty(botId)
-                || (!string.IsNullOrEmpty(_options.BotUserId) && string.Equals(content.user, _options.BotUserId, StringComparison.Ordinal)))
+                || !string.IsNullOrEmpty(nestedBotId)
+                || (!string.IsNullOrEmpty(_options.BotUserId)
+                    && (string.Equals(content.user, _options.BotUserId, StringComparison.Ordinal)
+                        || string.Equals(nestedUserId, _options.BotUserId, StringComparison.Ordinal))))
             {
                 return null;
             }
@@ -491,8 +544,8 @@ namespace Microsoft.Agents.Extensions.Slack
         }
 
         /// <summary>
-        /// Converts a Slack interactivity payload (block_actions, view_submission, ...) to an Event
-        /// <see cref="SlackActivity"/>.
+        /// Converts a Slack interactivity payload (block_actions, view_submission, ...) to a
+        /// <see cref="SlackActivity"/>, including the feedback invoke contract used by AgentApplication.
         /// </summary>
         private SlackActivity CreateActivityFromInteractivePayload(string payloadJson)
         {
@@ -524,6 +577,25 @@ namespace Microsoft.Agents.Extensions.Slack
             };
 
             activity.ChannelData = channelData;
+
+            var actionType = payload.Get<string>("actions[0].type");
+            if ((string.Equals(payload.type, "interactive_message", StringComparison.Ordinal)
+                    || string.Equals(payload.type, "block_actions", StringComparison.Ordinal))
+                && string.Equals(actionType, "feedback_buttons", StringComparison.Ordinal))
+            {
+                activity.Type = ActivityTypes.Invoke;
+                activity.Name = "message/submitAction";
+                activity.ReplyToId = threadTs;
+                activity.Value = new
+                {
+                    actionName = payload.Get<string>("actions[0].action_id"),
+                    actionValue = new
+                    {
+                        reaction = payload.Get<string>("actions[0].value").SlackDecode(),
+                    },
+                    replyToId = threadTs,
+                };
+            }
 
             return activity;
         }

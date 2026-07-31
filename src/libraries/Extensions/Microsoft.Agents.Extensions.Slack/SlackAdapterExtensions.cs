@@ -82,6 +82,7 @@ namespace Microsoft.Agents.Extensions.Slack
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(options);
 
+            services.AddAsyncAdapterSupport();
             services.AddHttpClient();
             services.AddSingleton(options);
             services.AddSingleton<SlackAdapter>();

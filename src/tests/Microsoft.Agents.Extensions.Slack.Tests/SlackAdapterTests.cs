@@ -4,10 +4,15 @@
 #nullable enable
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Slack.Api;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
@@ -16,7 +21,9 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -48,37 +55,114 @@ public class SlackAdapterTests
     public async Task DependencyInjection_UsesSlackApiLogger()
     {
         var apiLogger = new RecordingLogger<SlackApi>();
+        var turnCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var factory = CreateFactory((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent("""{"ok":true,"ts":"1"}""", Encoding.UTF8, "application/json")
         }));
-        var services = new ServiceCollection();
-        services.AddSlack(new SlackAdapterOptions
+        var agent = DelegateAgent(async (turnContext, cancellationToken) =>
         {
-            BotToken = BotToken,
-            SigningSecret = SigningSecret,
-            BotId = BotId,
-            BotUserId = BotUserId
+            await turnContext.SendActivityAsync("pong", cancellationToken: cancellationToken);
+            turnCompleted.TrySetResult();
         });
-        services.AddSingleton(factory.Object);
-        services.AddSingleton<ILogger<SlackAdapter>>(new RecordingLogger<SlackAdapter>());
-        services.AddSingleton<ILogger<SlackApi>>(apiLogger);
+        using var host = new HostBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSlack(new SlackAdapterOptions
+                {
+                    BotToken = BotToken,
+                    SigningSecret = SigningSecret,
+                    BotId = BotId,
+                    BotUserId = BotUserId
+                });
+                services.AddSingleton(factory.Object);
+                services.AddSingleton<ILogger<SlackAdapter>>(new RecordingLogger<SlackAdapter>());
+                services.AddSingleton<ILogger<SlackApi>>(apiLogger);
+                services.AddSingleton(agent.GetType(), agent);
+                services.AddSingleton(agent);
+            })
+            .Build();
+        await host.StartAsync();
 
-        await using var provider = services.BuildServiceProvider();
-        var adapter = provider.GetRequiredService<SlackAdapter>();
+        var adapter = host.Services.GetRequiredService<SlackAdapter>();
         var context = CreateContext(MessageEventBody("ping", "C100", "1700000000.000100"), signed: true);
 
-        await adapter.ProcessAsync(
-            context.Request,
-            context.Response,
-            DelegateAgent(async (turnContext, cancellationToken) =>
-            {
-                await turnContext.SendActivityAsync("pong", cancellationToken: cancellationToken);
-            }),
-            CancellationToken.None);
+        try
+        {
+            await adapter.ProcessAsync(
+                context.Request,
+                context.Response,
+                agent,
+                CancellationToken.None);
+            await turnCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        Assert.Contains(apiLogger.Entries, entry => entry.EventId.Id == 1);
-        Assert.Contains(apiLogger.Entries, entry => entry.EventId.Id == 2);
+            Assert.Contains(apiLogger.Entries, entry => entry.EventId.Id == 1);
+            Assert.Contains(apiLogger.Entries, entry => entry.EventId.Id == 2);
+        }
+        finally
+        {
+            await host.StopAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ProcessAsync_RequestCancellation_DoesNotCancelQueuedTurn()
+    {
+        var turnStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseTurn = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var turnCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken turnCancellationToken = default;
+        var agent = DelegateAgent(async (_, cancellationToken) =>
+        {
+            turnCancellationToken = cancellationToken;
+            turnStarted.TrySetResult();
+            await releaseTurn.Task;
+            turnCompleted.TrySetResult();
+        });
+
+        using var host = new HostBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSlack(new SlackAdapterOptions
+                {
+                    BotToken = BotToken,
+                    SigningSecret = SigningSecret,
+                    BotId = BotId,
+                    BotUserId = BotUserId
+                });
+                services.AddSingleton(agent.GetType(), agent);
+                services.AddSingleton(agent);
+            })
+            .Build();
+
+        await host.StartAsync();
+        using var requestCancellation = new CancellationTokenSource();
+        var adapter = host.Services.GetRequiredService<SlackAdapter>();
+        var context = CreateContext(MessageEventBody("stream", "C100", "1700000000.000100"), signed: true);
+
+        try
+        {
+            var processTask = adapter.ProcessAsync(
+                context.Request,
+                context.Response,
+                agent,
+                requestCancellation.Token);
+
+            await turnStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            Assert.True(processTask.IsCompletedSuccessfully);
+            Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+
+            requestCancellation.Cancel();
+
+            Assert.False(turnCancellationToken.IsCancellationRequested);
+        }
+        finally
+        {
+            releaseTurn.TrySetResult();
+            await turnCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await host.StopAsync();
+        }
     }
 
     [Fact]
@@ -315,6 +399,55 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAsync_QueueRejected_AllowsSlackRetry()
+    {
+        var queue = new Mock<IActivityTaskQueue>();
+        queue.SetupSequence(q => q.QueueBackgroundActivity(
+                It.IsAny<ClaimsIdentity>(),
+                It.IsAny<IChannelAdapter>(),
+                It.IsAny<IActivity>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>(),
+                It.IsAny<Type>(),
+                It.IsAny<Func<InvokeResponse, Task>>(),
+                It.IsAny<IHeaderDictionary>()))
+            .Returns(false)
+            .Returns(true);
+        var factory = CreateFactory((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        var adapter = new SlackAdapter(
+            new SlackAdapterOptions
+            {
+                BotToken = BotToken,
+                SigningSecret = SigningSecret,
+                BotId = BotId,
+                BotUserId = BotUserId
+            },
+            factory.Object,
+            null!,
+            null!,
+            queue.Object);
+        var body = MessageEventBody(text: "retry", channel: "C100", ts: "1700000000.000100", eventId: "EvQUEUE");
+
+        var first = CreateContext(body, signed: true);
+        await adapter.ProcessAsync(first.Request, first.Response, NoopAgent(), CancellationToken.None);
+
+        var second = CreateContext(body, signed: true);
+        await adapter.ProcessAsync(second.Request, second.Response, NoopAgent(), CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.ServiceUnavailable, first.Response.StatusCode);
+        Assert.Equal((int)HttpStatusCode.OK, second.Response.StatusCode);
+        queue.Verify(q => q.QueueBackgroundActivity(
+            It.IsAny<ClaimsIdentity>(),
+            It.IsAny<IChannelAdapter>(),
+            It.IsAny<IActivity>(),
+            It.IsAny<bool>(),
+            It.IsAny<string>(),
+            It.IsAny<Type>(),
+            It.IsAny<Func<InvokeResponse, Task>>(),
+            It.IsAny<IHeaderDictionary>()), Times.Exactly(2));
+    }
+
+    [Fact]
     public async Task ProcessAsync_BotOwnMessage_Ignored()
     {
         var adapter = CreateAdapter(out _);
@@ -345,6 +478,36 @@ public class SlackAdapterTests
               "team_id":"T1",
               "event_id":"EvBOTUSER",
               "event":{"type":"message","channel":"C100","text":"loop","ts":"1700000000.000100","user":"U123"}
+            }
+            """;
+        var context = CreateContext(body, signed: true);
+
+        var agentCalled = false;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((_, _) =>
+        {
+            agentCalled = true;
+            return Task.CompletedTask;
+        }), CancellationToken.None);
+
+        Assert.False(agentCalled);
+        Assert.Equal((int)HttpStatusCode.OK, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_BotOwnChangedMessage_Ignored()
+    {
+        var adapter = CreateAdapter(out _);
+        var body = """
+            {
+              "type":"event_callback",
+              "team_id":"T1",
+              "event_id":"EvBOTCHANGED",
+              "event":{
+                "type":"message",
+                "subtype":"message_changed",
+                "channel":"C100",
+                "message":{"user":"U123","bot_id":"B123","text":"stream result","ts":"1700000000.000200"}
+              }
             }
             """;
         var context = CreateContext(body, signed: true);
@@ -628,6 +791,80 @@ public class SlackAdapterTests
         Assert.Equal("B123:T1", slack.Recipient.Id);
         Assert.Equal("B123:T1:C200:1700000000.000300", slack.Conversation.Id);
         Assert.Equal("C200", SlackHelpers.SlackChannelIdFromConversationId(slack.Conversation.Id));
+    }
+
+    [Fact]
+    public async Task ProcessAsync_FeedbackButtons_CreatesFeedbackInvokeActivity()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {
+              "type":"block_actions",
+              "user":{"id":"U777","team_id":"T1"},
+              "team":{"id":"T1"},
+              "channel":{"id":"C200","name":"directmessage"},
+              "message":{"ts":"1700000000.000300","thread_ts":"1600000000.000200"},
+              "actions":[{
+                "action_id":"feedback",
+                "type":"feedback_buttons",
+                "value":"positive_feedback",
+                "action_ts":"1700000001.000400"
+              }]
+            }
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(
+            context.Request,
+            context.Response,
+            DelegateAgent((turnContext, _) =>
+            {
+                captured = turnContext.Activity;
+                return Task.CompletedTask;
+            }),
+            CancellationToken.None);
+
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal(ActivityTypes.Invoke, slack.Type);
+        Assert.Equal("message/submitAction", slack.Name);
+
+        var value = ProtocolJsonSerializer.ToObject<JsonObject>(slack.Value);
+        Assert.Equal("feedback", value!["actionName"]!.GetValue<string>());
+        Assert.Equal("positive_feedback", value["actionValue"]!["reaction"]!.GetValue<string>());
+        Assert.Equal("1600000000.000200", value["replyToId"]!.GetValue<string>());
+        Assert.Equal("B123:T1:C200:1600000000.000200", slack.Conversation.Id);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_FeedbackButtons_InvokesSlackFeedbackLoopRoute()
+    {
+        var adapter = CreateAdapter(out _);
+        var app = new FeedbackLoopRouteApp(new AgentApplicationOptions((IStorage)null!));
+        var payload = """
+            {
+              "type":"block_actions",
+              "user":{"id":"U777","team_id":"T1"},
+              "team":{"id":"T1"},
+              "channel":{"id":"C200"},
+              "message":{"ts":"1700000000.000300","thread_ts":"1600000000.000200"},
+              "actions":[{
+                "action_id":"feedback",
+                "type":"feedback_buttons",
+                "value":"positive_feedback"
+              }]
+            }
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        await adapter.ProcessAsync(context.Request, context.Response, app, CancellationToken.None);
+
+        Assert.Single(app.calls);
+        Assert.Equal("OnFeedback", app.calls[0]);
+        Assert.Equal("positive_feedback", app.feedbackData!.ActionValue!.Reaction);
+        Assert.Equal("1600000000.000200", app.feedbackData.ReplyToId);
     }
 
     [Fact]
