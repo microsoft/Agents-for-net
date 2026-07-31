@@ -20,14 +20,28 @@ internal static class SlackLogSanitizer
     private const string Unavailable = "[UNAVAILABLE]";
 
     internal static string SanitizeObject(object value)
+        => ExecuteSafely(() => SanitizeJson(ProtocolJsonSerializer.ToJson(value)), Unavailable);
+
+    internal static void ExecuteSafely(Action loggingAction)
+    {
+        ExecuteSafely(
+            () =>
+            {
+                loggingAction();
+                return true;
+            },
+            false);
+    }
+
+    private static T ExecuteSafely<T>(Func<T> loggingAction, T fallback)
     {
         try
         {
-            return SanitizeJson(ProtocolJsonSerializer.ToJson(value));
+            return loggingAction();
         }
         catch (Exception ex) when (IsSafeToSuppressForLogging(ex))
         {
-            return Unavailable;
+            return fallback;
         }
     }
 

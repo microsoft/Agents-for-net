@@ -126,6 +126,54 @@ public class SlackApiLoggingTests
         Assert.DoesNotContain("Bearer", allLogs, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task CallAsync_RequestLoggerFailure_DoesNotPreventSend()
+    {
+        var sendCount = 0;
+        var logger = new ThrowingLogger<SlackApi>(
+            isEnabledException: new InvalidOperationException("Request logger failed"));
+        var slackApi = CreateSlackApi(
+            (_, _) =>
+            {
+                sendCount++;
+                return Task.FromResult(CreateJsonResponse("""{"ok":true}"""));
+            },
+            logger);
+
+        var response = await slackApi.CallAsync("auth.test");
+
+        Assert.True(response.ok);
+        Assert.Equal(1, sendCount);
+    }
+
+    [Fact]
+    public async Task CallAsync_ResponseLoggerFailure_DoesNotFailSuccessfulCall()
+    {
+        var logger = new ThrowingLogger<SlackApi>(
+            logException: eventId => eventId.Id == 2
+                ? new InvalidOperationException("Response logger failed")
+                : null);
+        var slackApi = CreateSlackApi(
+            (_, _) => Task.FromResult(CreateJsonResponse("""{"ok":true}""")),
+            logger);
+
+        var response = await slackApi.CallAsync("auth.test");
+
+        Assert.True(response.ok);
+    }
+
+    [Fact]
+    public async Task CallAsync_LoggerOperationCanceledException_Propagates()
+    {
+        var logger = new ThrowingLogger<SlackApi>(
+            isEnabledException: new OperationCanceledException("Logger canceled"));
+        var slackApi = CreateSlackApi(
+            (_, _) => Task.FromResult(CreateJsonResponse("""{"ok":true}""")),
+            logger);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => slackApi.CallAsync("auth.test"));
+    }
+
     private static SlackApi CreateSlackApi(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc,
         ILogger<SlackApi> logger)
@@ -179,6 +227,46 @@ public class SlackApiLoggingTests
             Func<TState, Exception?, string> formatter)
         {
             Entries.Add(new LogEntry(logLevel, eventId, formatter(state, exception)));
+        }
+    }
+
+    private sealed class ThrowingLogger<T> : ILogger<T>
+    {
+        private readonly Exception? _isEnabledException;
+        private readonly Func<EventId, Exception?>? _logException;
+
+        public ThrowingLogger(
+            Exception? isEnabledException = null,
+            Func<EventId, Exception?>? logException = null)
+        {
+            _isEnabledException = isEnabledException;
+            _logException = logException;
+        }
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            if (_isEnabledException != null)
+            {
+                throw _isEnabledException;
+            }
+
+            return true;
+        }
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            var logException = _logException?.Invoke(eventId);
+            if (logException != null)
+            {
+                throw logException;
+            }
         }
     }
 }

@@ -4,6 +4,7 @@
 #nullable enable
 
 using Microsoft.Agents.Extensions.Slack.Api;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Net;
@@ -18,6 +19,19 @@ namespace Microsoft.Agents.Extensions.Slack.Tests;
 
 public class SlackApiTests
 {
+    [Fact]
+    public void Constructors_PreserveOriginalAndLoggerAwareSignatures()
+    {
+        var originalConstructor = typeof(SlackApi).GetConstructor([typeof(IHttpClientFactory)]);
+        var loggerAwareConstructor = typeof(SlackApi).GetConstructor(
+            [typeof(IHttpClientFactory), typeof(ILogger<SlackApi>)]);
+        var factory = CreateFactory((_, _) => Task.FromResult(CreateJsonResponse("""{"ok":true}""")));
+
+        Assert.NotNull(originalConstructor);
+        Assert.NotNull(loggerAwareConstructor);
+        Assert.IsType<SlackApi>(originalConstructor.Invoke([factory.Object]));
+    }
+
     [Fact]
     public void Constructor_ThrowsOnNull()
     {

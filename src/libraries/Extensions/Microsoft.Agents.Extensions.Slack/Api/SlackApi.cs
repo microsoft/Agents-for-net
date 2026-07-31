@@ -33,7 +33,12 @@ public class SlackApi
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public SlackApi(IHttpClientFactory httpClientFactory, ILogger<SlackApi>? logger = null)
+    public SlackApi(IHttpClientFactory httpClientFactory)
+        : this(httpClientFactory, null)
+    {
+    }
+
+    public SlackApi(IHttpClientFactory httpClientFactory, ILogger<SlackApi>? logger)
     {
         AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
         _httpClientFactory = httpClientFactory;
@@ -59,10 +64,13 @@ public class SlackApi
         AssertionHelpers.ThrowIfNullOrWhiteSpace(method, nameof(method));
 
         var json = options is string str ? str : JsonSerializer.Serialize(options ?? new { }, JsonOptions);
-        if (_logger.IsEnabled(LogLevel.Debug))
+        SlackLogSanitizer.ExecuteSafely(() =>
         {
-            SlackApiLog.LogRequest(_logger, method, SlackLogSanitizer.SanitizeJson(json));
-        }
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                SlackApiLog.LogRequest(_logger, method, SlackLogSanitizer.SanitizeJson(json));
+            }
+        });
 
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -79,14 +87,17 @@ public class SlackApi
         using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
         var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (_logger.IsEnabled(LogLevel.Debug))
+        SlackLogSanitizer.ExecuteSafely(() =>
         {
-            SlackApiLog.LogResponse(
-                _logger,
-                method,
-                (int)response.StatusCode,
-                SlackLogSanitizer.SanitizeJson(text));
-        }
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                SlackApiLog.LogResponse(
+                    _logger,
+                    method,
+                    (int)response.StatusCode,
+                    SlackLogSanitizer.SanitizeJson(text));
+            }
+        });
 
         SlackResponse data;
         try
