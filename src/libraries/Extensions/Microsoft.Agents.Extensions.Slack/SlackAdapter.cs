@@ -18,6 +18,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -549,6 +550,7 @@ namespace Microsoft.Agents.Extensions.Slack
         /// </summary>
         private SlackActivity CreateActivityFromInteractivePayload(string payloadJson)
         {
+            var rawPayload = JsonNode.Parse(payloadJson);
             var payload = ProtocolJsonSerializer.ToObject<ActionPayload>(payloadJson);
 
             var teamId = ResolveInteractiveTeamId(payload);
@@ -614,6 +616,19 @@ namespace Microsoft.Agents.Extensions.Slack
                         Text = $"@{(string.IsNullOrEmpty(_options.BotName) ? _options.BotId : _options.BotName)}",
                     },
                 ];
+            }
+            else if (string.Equals(payload.type, "message_action", StringComparison.Ordinal)
+                && !string.IsNullOrEmpty(payload.Get<string>("callback_id")))
+            {
+                activity.Type = ActivityTypes.Event;
+                activity.Name = "SlackActivity";
+                activity.Value = payload.Get<string>("callback_id");
+            }
+            else
+            {
+                activity.Type = ActivityTypes.Event;
+                activity.Name = $"vnd.slack.action.{payload.type}";
+                activity.Value = rawPayload;
             }
 
             return activity;

@@ -802,11 +802,76 @@ public class SlackAdapterTests
 
         var slack = Assert.IsType<SlackActivity>(captured);
         Assert.Equal(ActivityTypes.Event, slack.Type);
-        Assert.Equal("block_actions", slack.Name);
+        Assert.Equal("vnd.slack.action.block_actions", slack.Name);
+        var value = Assert.IsType<JsonObject>(slack.Value);
+        Assert.Equal("block_actions", value["type"]!.GetValue<string>());
+        Assert.Equal("C200", value["channel"]!["id"]!.GetValue<string>());
+        Assert.Equal("button_yes", value["actions"]![0]!["action_id"]!.GetValue<string>());
         Assert.Equal("U777:T1", slack.From.Id);
         Assert.Equal("B123:T1", slack.Recipient.Id);
         Assert.Equal("B123:T1:C200:1700000000.000300", slack.Conversation.Id);
         Assert.Equal("C200", SlackHelpers.SlackChannelIdFromConversationId(slack.Conversation.Id));
+    }
+
+    [Fact]
+    public async Task ProcessAsync_MessageActionWithCallbackId_CreatesSlackActivityEvent()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {
+              "type":"message_action",
+              "callback_id":"create_ticket",
+              "user":{"id":"U777"},
+              "team":{"id":"T1"},
+              "channel":{"id":"C200","name":"general"},
+              "message":{"ts":"1700000000.000300"}
+            }
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((tc, _) => { captured = tc.Activity; return Task.CompletedTask; }), CancellationToken.None);
+
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal(ActivityTypes.Event, slack.Type);
+        Assert.Equal("SlackActivity", slack.Name);
+        Assert.Equal("create_ticket", slack.Value);
+        Assert.Equal("U777:T1", slack.From.Id);
+        Assert.Equal("B123:T1", slack.Recipient.Id);
+        Assert.Equal("B123:T1:C200:1700000000.000300", slack.Conversation.Id);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ViewSubmission_CreatesVendorEventWithLosslessPayload()
+    {
+        var adapter = CreateAdapter(out _);
+        var payload = """
+            {
+              "type":"view_submission",
+              "user":{"id":"U777"},
+              "team":{"id":"T1"},
+              "channel":{"id":"C200","name":"general"},
+              "view":{"id":"V123","type":"modal"}
+            }
+            """;
+        var body = "payload=" + WebUtility.UrlEncode(payload);
+        var context = CreateContext(body, signed: true, contentType: "application/x-www-form-urlencoded");
+
+        IActivity? captured = null;
+        await adapter.ProcessAsync(context.Request, context.Response, DelegateAgent((tc, _) => { captured = tc.Activity; return Task.CompletedTask; }), CancellationToken.None);
+
+        var slack = Assert.IsType<SlackActivity>(captured);
+        Assert.Equal(ActivityTypes.Event, slack.Type);
+        Assert.Equal("vnd.slack.action.view_submission", slack.Name);
+        var value = Assert.IsType<JsonObject>(slack.Value);
+        Assert.Equal("view_submission", value["type"]!.GetValue<string>());
+        Assert.Equal("C200", value["channel"]!["id"]!.GetValue<string>());
+        Assert.Equal("general", value["channel"]!["name"]!.GetValue<string>());
+        Assert.Equal("V123", value["view"]!["id"]!.GetValue<string>());
+        Assert.Equal("U777:T1", slack.From.Id);
+        Assert.Equal("B123:T1", slack.Recipient.Id);
+        Assert.Equal("B123:T1:C200", slack.Conversation.Id);
     }
 
     [Fact]
