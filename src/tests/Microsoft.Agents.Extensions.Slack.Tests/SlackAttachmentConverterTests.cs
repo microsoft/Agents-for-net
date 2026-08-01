@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -453,21 +454,239 @@ public class SlackAttachmentConverterTests
     }
 
     [Fact]
-    public async Task ConvertAsync_UnknownAttachment_ReturnsEmptyWithoutUploading()
+    public async Task ConvertAsync_InlineByteArray_UploadsAndRendersGenericAttachment()
+    {
+        var uploader = new TestSlackFileUploader((_, _) =>
+            Task.FromResult<string?>("https://files.slack.test/private"));
+        var converter = new SlackAttachmentConverter(uploader);
+
+        var result = Assert.Single(await converter.ConvertAsync(
+            [
+                new Attachment(
+                    "application/pdf",
+                    content: new byte[] { 1, 2, 3 },
+                    name: "report.pdf",
+                    thumbnailUrl: "https://example.test/thumb.png"),
+            ],
+            CallbackId,
+            Channel,
+            Token,
+            renderButtonsAsMenu: false,
+            CancellationToken.None));
+
+        var upload = Assert.Single(uploader.Calls);
+        Assert.Equal(new byte[] { 1, 2, 3 }, upload.Content);
+        Assert.Equal("report.pdf", upload.FileName);
+        Assert.Equal(Channel, upload.Channel);
+        Assert.Equal(Token, upload.Token);
+        Assert.Equal("report.pdf", result.Title);
+        Assert.Equal("https://files.slack.test/private", result.ImageUrl);
+        Assert.Equal("https://files.slack.test/private", result.TitleLink);
+        Assert.Equal("https://files.slack.test/private", result.Fallback);
+        Assert.Equal("https://example.test/thumb.png", result.ThumbUrl);
+        Assert.Equal(CallbackId, result.CallbackId);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_Base64DataUrl_DecodesUploadsAndRendersAttachment()
+    {
+        var uploader = new TestSlackFileUploader((_, _) =>
+            Task.FromResult<string?>("https://files.slack.test/note"));
+        var converter = new SlackAttachmentConverter(uploader);
+
+        var result = Assert.Single(await converter.ConvertAsync(
+            [
+                new Attachment(
+                    "text/plain",
+                    contentUrl: "data:text/plain;base64,aGVsbG8=",
+                    name: "note.txt"),
+            ],
+            CallbackId,
+            Channel,
+            Token,
+            renderButtonsAsMenu: false,
+            CancellationToken.None));
+
+        var upload = Assert.Single(uploader.Calls);
+        Assert.Equal(Encoding.UTF8.GetBytes("hello"), upload.Content);
+        Assert.Equal("note.txt", upload.FileName);
+        Assert.Equal("https://files.slack.test/note", result.ImageUrl);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_HttpContentUrl_ReferencesUrlWithoutUploading()
     {
         var uploader = new TestSlackFileUploader();
         var converter = new SlackAttachmentConverter(uploader);
 
+        var result = Assert.Single(await converter.ConvertAsync(
+            [
+                new Attachment(
+                    "image/png",
+                    contentUrl: "https://example.test/content.png",
+                    name: "content.png",
+                    thumbnailUrl: "https://example.test/thumb.png"),
+            ],
+            CallbackId,
+            Channel,
+            Token,
+            renderButtonsAsMenu: false,
+            CancellationToken.None));
+
+        Assert.Empty(uploader.Calls);
+        Assert.Equal("content.png", result.Title);
+        Assert.Equal("https://example.test/content.png", result.ImageUrl);
+        Assert.Equal("https://example.test/content.png", result.TitleLink);
+        Assert.Equal("https://example.test/content.png", result.Fallback);
+        Assert.Equal("https://example.test/thumb.png", result.ThumbUrl);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_ThumbnailOnly_ReferencesThumbnailWithoutUploading()
+    {
+        var uploader = new TestSlackFileUploader();
+        var converter = new SlackAttachmentConverter(uploader);
+
+        var result = Assert.Single(await converter.ConvertAsync(
+            [
+                new Attachment(
+                    "image/jpeg",
+                    name: "preview.jpg",
+                    thumbnailUrl: "https://example.test/preview.jpg"),
+            ],
+            CallbackId,
+            Channel,
+            Token,
+            renderButtonsAsMenu: false,
+            CancellationToken.None));
+
+        Assert.Empty(uploader.Calls);
+        Assert.Equal("preview.jpg", result.Title);
+        Assert.Null(result.ImageUrl);
+        Assert.Equal("https://example.test/preview.jpg", result.TitleLink);
+        Assert.Equal("https://example.test/preview.jpg", result.Fallback);
+        Assert.Equal("https://example.test/preview.jpg", result.ThumbUrl);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_UnnamedAttachments_GenerateSequentialNamesWithKnownMimeExtensions()
+    {
+        var uploader = new TestSlackFileUploader((call, _) =>
+            Task.FromResult<string?>($"https://files.slack.test/{call.FileName}"));
+        var converter = new SlackAttachmentConverter(uploader);
+
         var result = await converter.ConvertAsync(
-            [new Attachment("application/octet-stream", content: new byte[] { 1, 2, 3 })],
+            [
+                new Attachment("text/plain", content: new byte[] { 1 }),
+                new Attachment("application/pdf", content: new byte[] { 2 }),
+                new Attachment("image/png", content: new byte[] { 3 }),
+                new Attachment("image/jpeg", content: new byte[] { 4 }),
+                new Attachment("image/gif", content: new byte[] { 5 }),
+                new Attachment("application/octet-stream", content: new byte[] { 6 }),
+            ],
             CallbackId,
             Channel,
             Token,
             renderButtonsAsMenu: false,
             CancellationToken.None);
 
-        Assert.Empty(result);
-        Assert.Equal(0, uploader.CallCount);
+        Assert.Equal(
+            [
+                "attachment.txt",
+                "attachment_2.pdf",
+                "attachment_3.png",
+                "attachment_4.jpg",
+                "attachment_5.gif",
+                "attachment_6",
+            ],
+            uploader.Calls.Select(call => call.FileName));
+        Assert.Equal(
+            uploader.Calls.Select(call => call.FileName),
+            result.Select(attachment => attachment.Title));
+    }
+
+    [Fact]
+    public async Task ConvertAsync_UploadFailure_LogsAndContinuesWithLaterAttachment()
+    {
+        var logger = new RecordingLogger<SlackAttachmentConverter>();
+        var uploader = new TestSlackFileUploader((call, _) =>
+            call.FileName == "first.txt"
+                ? throw new SlackResponseException("upload failed")
+                : Task.FromResult<string?>("https://files.slack.test/second"));
+        var converter = new SlackAttachmentConverter(uploader, logger);
+
+        var result = await converter.ConvertAsync(
+            [
+                new Attachment("text/plain", content: new byte[] { 1 }, name: "first.txt"),
+                new Attachment("text/plain", content: new byte[] { 2 }, name: "second.txt"),
+            ],
+            CallbackId,
+            Channel,
+            Token,
+            renderButtonsAsMenu: false,
+            CancellationToken.None);
+
+        var rendered = Assert.Single(result);
+        Assert.Equal("second.txt", rendered.Title);
+        Assert.Equal(2, uploader.Calls.Count);
+        Assert.Contains(logger.Entries, entry =>
+            entry.Level == LogLevel.Warning
+            && entry.Exception is SlackResponseException
+            && entry.Message.Contains("attachment 0", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ConvertAsync_InvalidDataUrl_LogsAndContinuesWithLaterAttachment()
+    {
+        var logger = new RecordingLogger<SlackAttachmentConverter>();
+        var uploader = new TestSlackFileUploader();
+        var converter = new SlackAttachmentConverter(uploader, logger);
+
+        var result = await converter.ConvertAsync(
+            [
+                new Attachment(
+                    "text/plain",
+                    contentUrl: "data:text/plain,not-base64",
+                    name: "invalid.txt"),
+                new Attachment(
+                    "text/plain",
+                    contentUrl: "https://example.test/valid.txt",
+                    name: "valid.txt"),
+            ],
+            CallbackId,
+            Channel,
+            Token,
+            renderButtonsAsMenu: false,
+            CancellationToken.None);
+
+        var rendered = Assert.Single(result);
+        Assert.Equal("valid.txt", rendered.Title);
+        Assert.Empty(uploader.Calls);
+        Assert.Contains(logger.Entries, entry =>
+            entry.Level == LogLevel.Warning
+            && entry.Exception is FormatException
+            && entry.Message.Contains("attachment 0", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ConvertAsync_CancellationFromUpload_Propagates()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var uploader = new TestSlackFileUploader((_, cancellationToken) =>
+        {
+            cancellation.Cancel();
+            return Task.FromCanceled<string?>(cancellationToken);
+        });
+        var converter = new SlackAttachmentConverter(uploader);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            converter.ConvertAsync(
+                [new Attachment("text/plain", content: new byte[] { 1 })],
+                CallbackId,
+                Channel,
+                Token,
+                renderButtonsAsMenu: false,
+                cancellation.Token));
     }
 
     [Fact]
@@ -530,7 +749,15 @@ public class SlackAttachmentConverterTests
 
     private sealed class TestSlackFileUploader : ISlackFileUploader
     {
-        internal int CallCount { get; private set; }
+        private readonly Func<UploadCall, CancellationToken, Task<string?>>? _upload;
+
+        internal TestSlackFileUploader(
+            Func<UploadCall, CancellationToken, Task<string?>>? upload = null)
+        {
+            _upload = upload;
+        }
+
+        internal List<UploadCall> Calls { get; } = [];
 
         public Task<string?> UploadAsync(
             byte[] content,
@@ -539,10 +766,18 @@ public class SlackAttachmentConverterTests
             string token,
             CancellationToken cancellationToken)
         {
-            CallCount++;
-            return Task.FromResult<string?>(null);
+            var call = new UploadCall(content, fileName, channel, token);
+            Calls.Add(call);
+            return _upload?.Invoke(call, cancellationToken)
+                ?? Task.FromResult<string?>(null);
         }
     }
+
+    private sealed record UploadCall(
+        byte[] Content,
+        string FileName,
+        string Channel,
+        string Token);
 
     private sealed class RecordingLogger<T> : ILogger<T>
     {

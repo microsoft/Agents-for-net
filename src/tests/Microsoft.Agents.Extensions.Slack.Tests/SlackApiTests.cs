@@ -201,6 +201,73 @@ public class SlackApiTests
         Assert.Equal(1, invoked);
     }
 
+    [Fact]
+    public async Task UploadContentAsync_PostsRawBytesWithoutAuthorization()
+    {
+        var content = new byte[] { 0, 1, 2, 255 };
+        byte[]? sentContent = null;
+        AuthenticationHeaderValue? authorization = null;
+        string? contentType = null;
+        var slackApi = CreateSlackApi(async (request, cancellationToken) =>
+        {
+            Assert.Equal(HttpMethod.Post, request.Method);
+            Assert.Equal("https://uploads.slack.test/file?signature=secret", request.RequestUri!.ToString());
+            authorization = request.Headers.Authorization;
+            contentType = request.Content!.Headers.ContentType?.MediaType;
+            sentContent = await request.Content.ReadAsByteArrayAsync(cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(string.Empty)
+            };
+        });
+
+        await slackApi.UploadContentAsync(
+            "https://uploads.slack.test/file?signature=secret",
+            content,
+            CancellationToken.None);
+
+        Assert.Equal(content, sentContent);
+        Assert.Null(authorization);
+        Assert.Null(contentType);
+    }
+
+    [Fact]
+    public async Task UploadContentAsync_NonSuccess_ThrowsSlackResponseExceptionWithStatusAndBody()
+    {
+        var slackApi = CreateSlackApi((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadGateway)
+            {
+                Content = new StringContent("upload failed")
+            }));
+
+        var exception = await Assert.ThrowsAsync<SlackResponseException>(() =>
+            slackApi.UploadContentAsync(
+                "https://uploads.slack.test/file",
+                [1, 2, 3],
+                CancellationToken.None));
+
+        Assert.Contains("files.externalUpload", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("HTTP 502", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("upload failed", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UploadContentAsync_PropagatesCancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var slackApi = CreateSlackApi((_, cancellationToken) =>
+        {
+            cancellation.Cancel();
+            return Task.FromCanceled<HttpResponseMessage>(cancellationToken);
+        });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            slackApi.UploadContentAsync(
+                "https://uploads.slack.test/file",
+                [1, 2, 3],
+                cancellation.Token));
+    }
+
     private static SlackApi CreateSlackApi(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc)
         => new(CreateFactory(sendFunc).Object);
 

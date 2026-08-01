@@ -134,4 +134,47 @@ public class SlackApi
 
         return data;
     }
+
+    internal async Task UploadContentAsync(
+        string uploadUrl,
+        byte[] content,
+        CancellationToken cancellationToken)
+    {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(uploadUrl, nameof(uploadUrl));
+        AssertionHelpers.ThrowIfNull(content, nameof(content));
+
+        const string method = "files.externalUpload";
+        SlackLogSanitizer.ExecuteSafely(() =>
+        {
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                SlackApiLog.LogRequest(
+                    _logger,
+                    method,
+                    JsonSerializer.Serialize(new { length = content.Length }, JsonOptions));
+            }
+        });
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl)
+        {
+            Content = new ByteArrayContent(content)
+        };
+        using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+        SlackLogSanitizer.ExecuteSafely(() =>
+        {
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                SlackApiLog.LogResponse(_logger, method, (int)response.StatusCode, string.Empty);
+            }
+        });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new SlackResponseException(
+                $"Slack API error on {method} (HTTP {(int)response.StatusCode}):\n{text}");
+        }
+    }
 }

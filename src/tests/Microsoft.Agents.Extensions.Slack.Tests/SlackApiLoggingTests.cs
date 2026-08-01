@@ -200,6 +200,57 @@ public class SlackApiLoggingTests
         await Assert.ThrowsAsync<OperationCanceledException>(() => slackApi.CallAsync("auth.test"));
     }
 
+    [Fact]
+    public async Task UploadContentAsync_LogsOnlyLengthAndStatus()
+    {
+        const string uploadUrl = "https://uploads.slack.test/file?signature=signed-secret";
+        var content = Encoding.UTF8.GetBytes("binary-secret");
+        var logger = new RecordingLogger<SlackApi>();
+        var slackApi = CreateSlackApi(
+            (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("response-secret")
+            }),
+            logger);
+
+        await slackApi.UploadContentAsync(uploadUrl, content, CancellationToken.None);
+
+        var requestLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 1);
+        var responseLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2);
+        Assert.Contains("files.externalUpload", requestLog.Message, StringComparison.Ordinal);
+        Assert.Contains(content.Length.ToString(), requestLog.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(uploadUrl, requestLog.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("signed-secret", requestLog.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("binary-secret", requestLog.Message, StringComparison.Ordinal);
+
+        Assert.Contains("files.externalUpload", responseLog.Message, StringComparison.Ordinal);
+        Assert.Contains("200", responseLog.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(uploadUrl, responseLog.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("response-secret", responseLog.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task UploadContentAsync_LoggerFailuresDoNotPreventUpload()
+    {
+        var sendCount = 0;
+        var logger = new ThrowingLogger<SlackApi>(
+            isEnabledException: new InvalidOperationException("Logger failed"));
+        var slackApi = CreateSlackApi(
+            (_, _) =>
+            {
+                sendCount++;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+            },
+            logger);
+
+        await slackApi.UploadContentAsync(
+            "https://uploads.slack.test/file",
+            [1, 2, 3],
+            CancellationToken.None);
+
+        Assert.Equal(1, sendCount);
+    }
+
     private static SlackApi CreateSlackApi(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc,
         ILogger<SlackApi> logger)

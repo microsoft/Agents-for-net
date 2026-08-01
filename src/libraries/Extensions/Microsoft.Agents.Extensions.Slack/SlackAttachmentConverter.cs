@@ -89,7 +89,7 @@ internal sealed class SlackAttachmentConverter
         return result;
     }
 
-    private Task<IReadOnlyList<SlackPostAttachment>> ConvertOneAsync(
+    private async Task<IReadOnlyList<SlackPostAttachment>> ConvertOneAsync(
         Attachment attachment,
         string channel,
         string token,
@@ -104,33 +104,180 @@ internal sealed class SlackAttachmentConverter
             _logger.LogWarning(
                 "Adaptive Card attachment {AttachmentIndex} is not supported by the direct Slack adapter.",
                 attachmentIndex);
-            return Task.FromResult<IReadOnlyList<SlackPostAttachment>>([]);
+            return [];
         }
 
-        IReadOnlyList<SlackPostAttachment> converted =
-            string.Equals(attachment.ContentType, AudioCard.ContentType, StringComparison.Ordinal)
-                ? ConvertMediaCard(ContentAs<AudioCard>(attachment), renderButtonsAsMenu)
-                : string.Equals(attachment.ContentType, AnimationCard.ContentType, StringComparison.Ordinal)
-                    ? ConvertMediaCard(ContentAs<AnimationCard>(attachment), renderButtonsAsMenu)
-                    : string.Equals(attachment.ContentType, HeroCard.ContentType, StringComparison.Ordinal)
-                        ? ConvertBasicCard(ContentAs<HeroCard>(attachment), isHero: true, renderButtonsAsMenu)
-                        : string.Equals(attachment.ContentType, ThumbnailCard.ContentType, StringComparison.Ordinal)
-                            ? ConvertBasicCard(ContentAs<ThumbnailCard>(attachment), isHero: false, renderButtonsAsMenu)
-                            : string.Equals(attachment.ContentType, ReceiptCard.ContentType, StringComparison.Ordinal)
-                                ? ConvertReceiptCard(ContentAs<ReceiptCard>(attachment), renderButtonsAsMenu)
-                                : string.Equals(attachment.ContentType, SigninCard.ContentType, StringComparison.Ordinal)
-                                    ? ConvertSigninCard(ContentAs<SigninCard>(attachment))
-                                    : string.Equals(attachment.ContentType, OAuthCard.ContentType, StringComparison.Ordinal)
-                                        ? ConvertOAuthCard(ContentAs<OAuthCard>(attachment))
-                                        : string.Equals(attachment.ContentType, VideoCard.ContentType, StringComparison.Ordinal)
-                                            ? ConvertMediaCard(ContentAs<VideoCard>(attachment), renderButtonsAsMenu)
-                                            : [];
+        if (string.Equals(attachment.ContentType, AudioCard.ContentType, StringComparison.Ordinal))
+        {
+            return ConvertMediaCard(ContentAs<AudioCard>(attachment), renderButtonsAsMenu);
+        }
 
-        _ = _fileUploader;
-        _ = channel;
-        _ = token;
-        return Task.FromResult(converted);
+        if (string.Equals(attachment.ContentType, AnimationCard.ContentType, StringComparison.Ordinal))
+        {
+            return ConvertMediaCard(ContentAs<AnimationCard>(attachment), renderButtonsAsMenu);
+        }
+
+        if (string.Equals(attachment.ContentType, HeroCard.ContentType, StringComparison.Ordinal))
+        {
+            return ConvertBasicCard(ContentAs<HeroCard>(attachment), isHero: true, renderButtonsAsMenu);
+        }
+
+        if (string.Equals(attachment.ContentType, ThumbnailCard.ContentType, StringComparison.Ordinal))
+        {
+            return ConvertBasicCard(ContentAs<ThumbnailCard>(attachment), isHero: false, renderButtonsAsMenu);
+        }
+
+        if (string.Equals(attachment.ContentType, ReceiptCard.ContentType, StringComparison.Ordinal))
+        {
+            return ConvertReceiptCard(ContentAs<ReceiptCard>(attachment), renderButtonsAsMenu);
+        }
+
+        if (string.Equals(attachment.ContentType, SigninCard.ContentType, StringComparison.Ordinal))
+        {
+            return ConvertSigninCard(ContentAs<SigninCard>(attachment));
+        }
+
+        if (string.Equals(attachment.ContentType, OAuthCard.ContentType, StringComparison.Ordinal))
+        {
+            return ConvertOAuthCard(ContentAs<OAuthCard>(attachment));
+        }
+
+        if (string.Equals(attachment.ContentType, VideoCard.ContentType, StringComparison.Ordinal))
+        {
+            return ConvertMediaCard(ContentAs<VideoCard>(attachment), renderButtonsAsMenu);
+        }
+
+        return await ConvertGenericAttachmentAsync(
+            attachment,
+            channel,
+            token,
+            attachmentIndex,
+            cancellationToken).ConfigureAwait(false);
     }
+
+    private async Task<IReadOnlyList<SlackPostAttachment>> ConvertGenericAttachmentAsync(
+        Attachment attachment,
+        string channel,
+        string token,
+        int attachmentIndex,
+        CancellationToken cancellationToken)
+    {
+        var fileName = GetFileName(attachment, attachmentIndex);
+        string? contentUrl = null;
+
+        if (attachment.Content is byte[] content)
+        {
+            contentUrl = await _fileUploader.UploadAsync(
+                content,
+                fileName,
+                channel,
+                token,
+                cancellationToken).ConfigureAwait(false);
+        }
+        else if (IsDataUrl(attachment.ContentUrl))
+        {
+            contentUrl = await _fileUploader.UploadAsync(
+                DecodeDataUrl(attachment.ContentUrl),
+                fileName,
+                channel,
+                token,
+                cancellationToken).ConfigureAwait(false);
+        }
+        else if (IsHttpUrl(attachment.ContentUrl))
+        {
+            contentUrl = attachment.ContentUrl;
+        }
+
+        var thumbnailUrl = IsHttpUrl(attachment.ThumbnailUrl)
+            ? attachment.ThumbnailUrl
+            : null;
+        var link = contentUrl ?? thumbnailUrl;
+        if (link == null)
+        {
+            return [];
+        }
+
+        return
+        [
+            new SlackPostAttachment
+            {
+                Title = fileName,
+                ImageUrl = contentUrl,
+                TitleLink = link,
+                Fallback = link,
+                ThumbUrl = thumbnailUrl,
+            },
+        ];
+    }
+
+    private static string GetFileName(Attachment attachment, int attachmentIndex)
+    {
+        if (!string.IsNullOrWhiteSpace(attachment.Name))
+        {
+            return attachment.Name;
+        }
+
+        var name = attachmentIndex == 0
+            ? "attachment"
+            : $"attachment_{attachmentIndex + 1}";
+        return name + GetMimeExtension(attachment.ContentType);
+    }
+
+    private static string GetMimeExtension(string? contentType)
+    {
+        if (string.Equals(contentType, "text/plain", StringComparison.OrdinalIgnoreCase))
+        {
+            return ".txt";
+        }
+
+        if (string.Equals(contentType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            return ".pdf";
+        }
+
+        if (string.Equals(contentType, "image/png", StringComparison.OrdinalIgnoreCase))
+        {
+            return ".png";
+        }
+
+        if (string.Equals(contentType, "image/jpeg", StringComparison.OrdinalIgnoreCase))
+        {
+            return ".jpg";
+        }
+
+        return string.Equals(contentType, "image/gif", StringComparison.OrdinalIgnoreCase)
+            ? ".gif"
+            : string.Empty;
+    }
+
+    private static bool IsDataUrl(string? url)
+        => url?.StartsWith("data:", StringComparison.OrdinalIgnoreCase) == true;
+
+    private static byte[] DecodeDataUrl(string dataUrl)
+    {
+        var commaIndex = dataUrl.IndexOf(',');
+        if (commaIndex < 0
+            || !dataUrl.Substring(5, commaIndex - 5)
+                .EndsWith(";base64", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new FormatException("The attachment data URL is not base64 encoded.");
+        }
+
+        try
+        {
+            return Convert.FromBase64String(
+                Uri.UnescapeDataString(dataUrl.Substring(commaIndex + 1)));
+        }
+        catch (FormatException exception)
+        {
+            throw new FormatException("The attachment data URL contains invalid base64 content.", exception);
+        }
+    }
+
+    private static bool IsHttpUrl(string? url)
+        => Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            && (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase));
 
     private static List<SlackPostAttachment> ConvertBasicCard(
         HeroCard? card,
