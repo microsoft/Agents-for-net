@@ -26,8 +26,11 @@ public class SlackApi
 {
     private const string SlackApiBase = "https://slack.com/api";
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly HttpClient _rawUploadHttpClient;
     private readonly ILogger<SlackApi> _logger;
     private readonly Action? _onCallAsync;
+
+    private static readonly HttpClient SharedRawUploadHttpClient = new();
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -53,9 +56,20 @@ public class SlackApi
         IHttpClientFactory httpClientFactory,
         ILogger<SlackApi>? logger,
         Action? onCallAsync)
+        : this(httpClientFactory, logger, onCallAsync, SharedRawUploadHttpClient)
+    {
+    }
+
+    internal SlackApi(
+        IHttpClientFactory httpClientFactory,
+        ILogger<SlackApi>? logger,
+        Action? onCallAsync,
+        HttpClient rawUploadHttpClient)
     {
         AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
+        AssertionHelpers.ThrowIfNull(rawUploadHttpClient, nameof(rawUploadHttpClient));
         _httpClientFactory = httpClientFactory;
+        _rawUploadHttpClient = rawUploadHttpClient;
         _logger = logger ?? NullLogger<SlackApi>.Instance;
         _onCallAsync = onCallAsync;
     }
@@ -148,26 +162,26 @@ public class SlackApi
         {
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                SlackApiLog.LogRequest(
-                    _logger,
-                    method,
-                    JsonSerializer.Serialize(new { length = content.Length }, JsonOptions));
+                SlackApiLog.LogExternalUploadRequest(_logger, content.Length);
             }
         });
 
+        var uploadContent = new ByteArrayContent(content);
+        uploadContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
         using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl)
         {
-            Content = new ByteArrayContent(content)
+            Content = uploadContent
         };
-        using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
-        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        using var response = await _rawUploadHttpClient
+            .SendAsync(request, cancellationToken)
+            .ConfigureAwait(false);
         var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
         SlackLogSanitizer.ExecuteSafely(() =>
         {
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                SlackApiLog.LogResponse(_logger, method, (int)response.StatusCode, string.Empty);
+                SlackApiLog.LogExternalUploadResponse(_logger, (int)response.StatusCode);
             }
         });
 

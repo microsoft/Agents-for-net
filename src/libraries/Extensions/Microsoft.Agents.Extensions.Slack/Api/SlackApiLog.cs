@@ -14,4 +14,12 @@ internal static partial class SlackApiLog
     [LoggerMessage(EventId = 2, Level = LogLevel.Debug,
         Message = "Slack API response: Method={Method}, StatusCode={StatusCode}, Body='{Body}'")]
     internal static partial void LogResponse(ILogger logger, string method, int statusCode, string body);
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug,
+        Message = "Slack external upload request: ContentLength={ContentLength}")]
+    internal static partial void LogExternalUploadRequest(ILogger logger, int contentLength);
+
+    [LoggerMessage(EventId = 4, Level = LogLevel.Debug,
+        Message = "Slack external upload response: StatusCode={StatusCode}")]
+    internal static partial void LogExternalUploadResponse(ILogger logger, int statusCode);
 }

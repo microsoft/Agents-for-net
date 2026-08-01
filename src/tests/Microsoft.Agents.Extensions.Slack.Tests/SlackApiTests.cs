@@ -202,13 +202,49 @@ public class SlackApiTests
     }
 
     [Fact]
-    public async Task UploadContentAsync_PostsRawBytesWithoutAuthorization()
+    public async Task UploadContentAsync_DoesNotUseFactoryClientWithAuthorizationHeader()
+    {
+        var factorySendCount = 0;
+        using var factoryClient = new HttpClient(new TestHandler((_, _) =>
+        {
+            factorySendCount++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        }));
+        factoryClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", "factory-token");
+        var factory = new Mock<IHttpClientFactory>();
+        factory
+            .Setup(f => f.CreateClient(nameof(SlackApi)))
+            .Returns(factoryClient);
+
+        AuthenticationHeaderValue? authorization = null;
+        using var rawUploadClient = new HttpClient(new TestHandler((request, _) =>
+        {
+            authorization = request.Headers.Authorization;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        }));
+        var slackApi = new SlackApi(factory.Object, null, null, rawUploadClient);
+
+        await slackApi.UploadContentAsync(
+            "https://uploads.slack.test/file?signature=secret",
+            [1, 2, 3],
+            CancellationToken.None);
+
+        Assert.Equal(0, factorySendCount);
+        Assert.Null(authorization);
+        factory.Verify(f => f.CreateClient(nameof(SlackApi)), Times.Never);
+    }
+
+    [Fact]
+    public async Task UploadContentAsync_PostsRawBytesAsOctetStreamWithoutAuthorization()
     {
         var content = new byte[] { 0, 1, 2, 255 };
         byte[]? sentContent = null;
         AuthenticationHeaderValue? authorization = null;
         string? contentType = null;
-        var slackApi = CreateSlackApi(async (request, cancellationToken) =>
+        var factory = CreateFactory((_, _) =>
+            Task.FromResult(CreateJsonResponse("""{"ok":true}""")));
+        using var rawUploadClient = new HttpClient(new TestHandler(async (request, cancellationToken) =>
         {
             Assert.Equal(HttpMethod.Post, request.Method);
             Assert.Equal("https://uploads.slack.test/file?signature=secret", request.RequestUri!.ToString());
@@ -219,7 +255,8 @@ public class SlackApiTests
             {
                 Content = new StringContent(string.Empty)
             };
-        });
+        }));
+        var slackApi = new SlackApi(factory.Object, null, null, rawUploadClient);
 
         await slackApi.UploadContentAsync(
             "https://uploads.slack.test/file?signature=secret",
@@ -228,17 +265,20 @@ public class SlackApiTests
 
         Assert.Equal(content, sentContent);
         Assert.Null(authorization);
-        Assert.Null(contentType);
+        Assert.Equal("application/octet-stream", contentType);
     }
 
     [Fact]
     public async Task UploadContentAsync_NonSuccess_ThrowsSlackResponseExceptionWithStatusAndBody()
     {
-        var slackApi = CreateSlackApi((_, _) =>
+        var factory = CreateFactory((_, _) =>
+            Task.FromResult(CreateJsonResponse("""{"ok":true}""")));
+        using var rawUploadClient = new HttpClient(new TestHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadGateway)
             {
                 Content = new StringContent("upload failed")
-            }));
+            })));
+        var slackApi = new SlackApi(factory.Object, null, null, rawUploadClient);
 
         var exception = await Assert.ThrowsAsync<SlackResponseException>(() =>
             slackApi.UploadContentAsync(
@@ -255,11 +295,14 @@ public class SlackApiTests
     public async Task UploadContentAsync_PropagatesCancellation()
     {
         using var cancellation = new CancellationTokenSource();
-        var slackApi = CreateSlackApi((_, cancellationToken) =>
+        var factory = CreateFactory((_, _) =>
+            Task.FromResult(CreateJsonResponse("""{"ok":true}""")));
+        using var rawUploadClient = new HttpClient(new TestHandler((_, cancellationToken) =>
         {
             cancellation.Cancel();
             return Task.FromCanceled<HttpResponseMessage>(cancellationToken);
-        });
+        }));
+        var slackApi = new SlackApi(factory.Object, null, null, rawUploadClient);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             slackApi.UploadContentAsync(

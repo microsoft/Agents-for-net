@@ -215,15 +215,13 @@ public class SlackApiLoggingTests
 
         await slackApi.UploadContentAsync(uploadUrl, content, CancellationToken.None);
 
-        var requestLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 1);
-        var responseLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2);
-        Assert.Contains("files.externalUpload", requestLog.Message, StringComparison.Ordinal);
+        var requestLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 3);
+        var responseLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 4);
         Assert.Contains(content.Length.ToString(), requestLog.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(uploadUrl, requestLog.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("signed-secret", requestLog.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("binary-secret", requestLog.Message, StringComparison.Ordinal);
 
-        Assert.Contains("files.externalUpload", responseLog.Message, StringComparison.Ordinal);
         Assert.Contains("200", responseLog.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(uploadUrl, responseLog.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("response-secret", responseLog.Message, StringComparison.Ordinal);
@@ -255,14 +253,14 @@ public class SlackApiLoggingTests
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc,
         ILogger<SlackApi> logger)
     {
-        var handler = new TestHandler(sendFunc);
-        var httpClient = new HttpClient(handler);
+        var httpClient = new HttpClient(new TestHandler(sendFunc));
         var factory = new Mock<IHttpClientFactory>();
         factory
             .Setup(f => f.CreateClient(nameof(SlackApi)))
             .Returns(httpClient);
+        var rawUploadClient = new HttpClient(new TestHandler(sendFunc));
 
-        return new SlackApi(factory.Object, logger);
+        return new SlackApi(factory.Object, logger, null, rawUploadClient);
     }
 
     private static HttpResponseMessage CreateJsonResponse(string json, HttpStatusCode statusCode = HttpStatusCode.OK)

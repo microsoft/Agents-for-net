@@ -53,7 +53,8 @@ internal sealed class SlackAttachmentConverter
             var attachment = attachments[index];
             if (attachment == null)
             {
-                _logger.LogWarning("Slack attachment {AttachmentIndex} is null.", index);
+                SlackLogSanitizer.ExecuteSafely(() =>
+                    _logger.LogWarning("Slack attachment {AttachmentIndex} is null.", index));
                 continue;
             }
 
@@ -78,11 +79,12 @@ internal sealed class SlackAttachmentConverter
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
-                    exception,
-                    "Unable to convert Slack attachment {AttachmentIndex} with content type {ContentType}.",
-                    index,
-                    attachment.ContentType);
+                SlackLogSanitizer.ExecuteSafely(() =>
+                    _logger.LogWarning(
+                        exception,
+                        "Unable to convert Slack attachment {AttachmentIndex} with content type {ContentType}.",
+                        index,
+                        attachment.ContentType));
             }
         }
 
@@ -101,9 +103,10 @@ internal sealed class SlackAttachmentConverter
 
         if (string.Equals(attachment.ContentType, ContentTypes.AdaptiveCard, StringComparison.Ordinal))
         {
-            _logger.LogWarning(
-                "Adaptive Card attachment {AttachmentIndex} is not supported by the direct Slack adapter.",
-                attachmentIndex);
+            SlackLogSanitizer.ExecuteSafely(() =>
+                _logger.LogWarning(
+                    "Adaptive Card attachment {AttachmentIndex} is not supported by the direct Slack adapter.",
+                    attachmentIndex));
             return [];
         }
 

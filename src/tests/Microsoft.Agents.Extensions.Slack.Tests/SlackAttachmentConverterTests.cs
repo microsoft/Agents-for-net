@@ -636,6 +636,52 @@ public class SlackAttachmentConverterTests
     }
 
     [Fact]
+    public async Task ConvertAsync_AttachmentFailureLoggerThrows_ContinuesWithLaterAttachment()
+    {
+        var logger = new ThrowingLogger<SlackAttachmentConverter>(
+            new InvalidOperationException("Logger failed"));
+        var uploader = new TestSlackFileUploader((call, _) =>
+            call.FileName == "first.txt"
+                ? throw new SlackResponseException("upload failed")
+                : Task.FromResult<string?>("https://files.slack.test/second"));
+        var converter = new SlackAttachmentConverter(uploader, logger);
+
+        var result = await converter.ConvertAsync(
+            [
+                new Attachment("text/plain", content: new byte[] { 1 }, name: "first.txt"),
+                new Attachment("text/plain", content: new byte[] { 2 }, name: "second.txt"),
+            ],
+            CallbackId,
+            Channel,
+            Token,
+            renderButtonsAsMenu: false,
+            CancellationToken.None);
+
+        var rendered = Assert.Single(result);
+        Assert.Equal("second.txt", rendered.Title);
+        Assert.Equal(2, uploader.Calls.Count);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_AttachmentFailureLoggerCancellation_Propagates()
+    {
+        var logger = new ThrowingLogger<SlackAttachmentConverter>(
+            new OperationCanceledException("Logger canceled"));
+        var uploader = new TestSlackFileUploader((_, _) =>
+            throw new SlackResponseException("upload failed"));
+        var converter = new SlackAttachmentConverter(uploader, logger);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            converter.ConvertAsync(
+                [new Attachment("text/plain", content: new byte[] { 1 })],
+                CallbackId,
+                Channel,
+                Token,
+                renderButtonsAsMenu: false,
+                CancellationToken.None));
+    }
+
+    [Fact]
     public async Task ConvertAsync_InvalidDataUrl_LogsAndContinuesWithLaterAttachment()
     {
         var logger = new RecordingLogger<SlackAttachmentConverter>();
@@ -798,6 +844,30 @@ public class SlackAttachmentConverterTests
         {
             Entries.Add(new LogEntry(logLevel, formatter(state, exception), exception));
         }
+    }
+
+    private sealed class ThrowingLogger<T> : ILogger<T>
+    {
+        private readonly Exception _exception;
+
+        internal ThrowingLogger(Exception exception)
+        {
+            _exception = exception;
+        }
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull
+            => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+            => throw _exception;
     }
 
     private sealed record LogEntry(

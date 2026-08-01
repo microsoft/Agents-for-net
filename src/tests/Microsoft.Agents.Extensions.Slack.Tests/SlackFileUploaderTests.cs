@@ -63,6 +63,7 @@ public class SlackFileUploaderTests
                 Assert.Equal("https://uploads.slack.test/file?signature=secret", request.Uri);
                 Assert.Equal(new byte[] { 0, 1, 2, 255 }, request.Body);
                 Assert.Null(request.Authorization);
+                Assert.Equal("application/octet-stream", request.ContentType);
             },
             request =>
             {
@@ -178,13 +179,20 @@ public class SlackFileUploaderTests
     private static SlackFileUploader CreateUploader(
         Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendFunc)
     {
-        var handler = new TestHandler(sendFunc);
         var factory = new Mock<IHttpClientFactory>();
         factory
             .Setup(f => f.CreateClient(nameof(SlackApi)))
-            .Returns(() => new HttpClient(handler, disposeHandler: false));
+            .Returns(() =>
+            {
+                var client = new HttpClient(new TestHandler(sendFunc));
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", "factory-default-token");
+                return client;
+            });
+        var rawUploadClient = new HttpClient(new TestHandler(sendFunc));
 
-        return new SlackFileUploader(new SlackApi(factory.Object));
+        return new SlackFileUploader(
+            new SlackApi(factory.Object, null, null, rawUploadClient));
     }
 
     private static HttpResponseMessage CreateJsonResponse(
@@ -206,6 +214,7 @@ public class SlackFileUploaderTests
         HttpMethod Method,
         string Uri,
         AuthenticationHeaderValue? Authorization,
+        string? ContentType,
         byte[] Body)
     {
         internal string TextBody => Encoding.UTF8.GetString(Body);
@@ -217,6 +226,7 @@ public class SlackFileUploaderTests
                 request.Method,
                 request.RequestUri!.ToString(),
                 request.Headers.Authorization,
+                request.Content?.Headers.ContentType?.MediaType,
                 request.Content == null
                     ? []
                     : await request.Content.ReadAsByteArrayAsync(cancellationToken));
