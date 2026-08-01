@@ -101,6 +101,25 @@ public class SlackLogSanitizerTests
         Assert.Contains("\"documentation_url\":\"https://api.slack.com/messaging/webhooks\"", sanitized);
     }
 
+    [Fact]
+    public void SanitizeJson_RedactsUploadUrlWithOpaquePath()
+    {
+        const string uploadUrl = "https://uploads.slack.com/files/v1/AQAA-secret-opaque-path";
+        const string json = """
+            {
+              "upload_url":"https://uploads.slack.com/files/v1/AQAA-secret-opaque-path",
+              "attachment_url":"https://files.example.com/report.pdf"
+            }
+            """;
+
+        var sanitized = SlackLogSanitizer.SanitizeJson(json);
+
+        Assert.Contains("\"upload_url\":\"[REDACTED]\"", sanitized);
+        Assert.DoesNotContain(uploadUrl, sanitized);
+        Assert.DoesNotContain("AQAA-secret-opaque-path", sanitized);
+        Assert.Contains("\"attachment_url\":\"https://files.example.com/report.pdf\"", sanitized);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

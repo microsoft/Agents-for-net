@@ -110,6 +110,26 @@ public class SlackApiLoggingTests
     }
 
     [Fact]
+    public async Task CallAsync_GetUploadUrlResponseLog_RedactsOpaqueUploadUrl()
+    {
+        const string uploadUrl = "https://uploads.slack.com/files/v1/AQAA-secret-opaque-path";
+        var logger = new RecordingLogger<SlackApi>();
+        var slackApi = CreateSlackApi(
+            (_, _) => Task.FromResult(CreateJsonResponse(
+                """{"ok":true,"upload_url":"https://uploads.slack.com/files/v1/AQAA-secret-opaque-path","file_id":"F123"}""")),
+            logger);
+
+        await slackApi.CallAsync("files.getUploadURLExternal");
+
+        var responseLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2);
+        Assert.Contains("files.getUploadURLExternal", responseLog.Message, StringComparison.Ordinal);
+        Assert.Contains("\"upload_url\":\"[REDACTED]\"", responseLog.Message, StringComparison.Ordinal);
+        Assert.Contains("F123", responseLog.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(uploadUrl, responseLog.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("AQAA-secret-opaque-path", responseLog.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task CallAsync_TransportFailure_LogsRequestOnly()
     {
         var logger = new RecordingLogger<SlackApi>();

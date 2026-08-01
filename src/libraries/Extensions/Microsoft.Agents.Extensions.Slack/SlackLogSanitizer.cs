@@ -171,6 +171,7 @@ internal static class SlackLogSanitizer
     {
         return normalizedPropertyName.Equals("authorization", StringComparison.OrdinalIgnoreCase)
             || normalizedPropertyName.Equals("responseurl", StringComparison.OrdinalIgnoreCase)
+            || normalizedPropertyName.Equals("uploadurl", StringComparison.OrdinalIgnoreCase)
             || normalizedPropertyName.EndsWith("token", StringComparison.OrdinalIgnoreCase)
             || normalizedPropertyName.EndsWith("secret", StringComparison.OrdinalIgnoreCase)
             || normalizedPropertyName.Contains("password", StringComparison.OrdinalIgnoreCase);
