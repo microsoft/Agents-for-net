@@ -571,6 +571,115 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task SendActivitiesAsync_TextAndSuggestedActions_PostsOrderedMessagesAndReturnsFinalTimestamp()
+    {
+        var captured = new List<(string Uri, string Body)>();
+        var logger = new RecordingLogger<SlackAdapter>();
+        var adapter = CreateAdapter(out _, (request, cancellationToken) =>
+        {
+            var body = request.Content!.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult();
+            captured.Add((request.RequestUri!.ToString(), body));
+            var timestamp = captured.Count == 1
+                ? "1700000000.000200"
+                : "1700000000.000201";
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    $$"""{"ok":true,"ts":"{{timestamp}}"}""",
+                    Encoding.UTF8,
+                    "application/json")
+            });
+        }, logger);
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100:1700000000.000100"),
+            ChannelData = new SlackChannelData { ApiToken = BotToken },
+        });
+        var activity = new Activity
+        {
+            Type = ActivityTypes.Message,
+            Text = "Choose an option",
+            SuggestedActions = new SuggestedActions(
+                actions:
+                [
+                    new CardAction(ActionTypes.ImBack, "First", value: "one"),
+                    new CardAction(ActionTypes.ImBack, "Second", value: "two"),
+                ]),
+        };
+
+        var responses = await adapter.SendActivitiesAsync(
+            turnContext.Object,
+            [activity],
+            CancellationToken.None);
+
+        Assert.Collection(
+            captured,
+            first =>
+            {
+                Assert.Equal("https://slack.com/api/chat.postMessage", first.Uri);
+                var payload = JsonNode.Parse(first.Body)!.AsObject();
+                Assert.Equal("C100", payload["channel"]!.GetValue<string>());
+                Assert.Equal("1700000000.000100", payload["thread_ts"]!.GetValue<string>());
+                Assert.Equal("Choose an option", payload["text"]!.GetValue<string>());
+            },
+            second =>
+            {
+                Assert.Equal("https://slack.com/api/chat.postMessage", second.Uri);
+                var payload = JsonNode.Parse(second.Body)!.AsObject();
+                Assert.Equal("C100", payload["channel"]!.GetValue<string>());
+                Assert.Equal("1700000000.000100", payload["thread_ts"]!.GetValue<string>());
+                Assert.Equal("* one\n\n* two", payload["text"]!.GetValue<string>());
+            });
+        Assert.Equal("1700000000.000201", Assert.Single(responses).Id);
+        Assert.Equal(2, logger.Entries.FindAll(entry => entry.EventId.Id == 3).Count);
+    }
+
+    [Fact]
+    public async Task SendActivitiesAsync_AttachmentOnly_PostsAttachmentsAndReturnsTimestamp()
+    {
+        string? capturedBody = null;
+        var adapter = CreateAdapter(out _, (request, cancellationToken) =>
+        {
+            capturedBody = request.Content!.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult();
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """{"ok":true,"ts":"1700000000.000250"}""",
+                    Encoding.UTF8,
+                    "application/json")
+            });
+        });
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100:1700000000.000100"),
+            ChannelData = new SlackChannelData { ApiToken = BotToken },
+        });
+        var activity = new Activity
+        {
+            Type = ActivityTypes.Message,
+            Attachments =
+            [
+                new HeroCard(title: "Attachment only").ToAttachment(),
+            ],
+        };
+
+        var responses = await adapter.SendActivitiesAsync(
+            turnContext.Object,
+            [activity],
+            CancellationToken.None);
+
+        var payload = JsonNode.Parse(Assert.IsType<string>(capturedBody))!.AsObject();
+        Assert.Equal("C100", payload["channel"]!.GetValue<string>());
+        Assert.Equal("1700000000.000100", payload["thread_ts"]!.GetValue<string>());
+        Assert.Null(payload["text"]);
+        var attachment = Assert.Single(payload["attachments"]!.AsArray());
+        Assert.Equal("Attachment only", attachment!["pretext"]!.GetValue<string>());
+        Assert.Equal("1700000000.000250", Assert.Single(responses).Id);
+    }
+
+    [Fact]
     public async Task SendActivitiesAsync_NonMessage_DoesNotLogSentResponse()
     {
         var logger = new RecordingLogger<SlackAdapter>();

@@ -50,6 +50,7 @@ namespace Microsoft.Agents.Extensions.Slack
         private readonly SlackActivityConverter _activityConverter;
         private readonly SlackEventDeduplicator _eventDeduplicator;
         private readonly SlackApi _slackApi;
+        private readonly SlackMessageConverter _messageConverter;
         private readonly IActivityTaskQueue _activityTaskQueue;
 
         /// <summary>
@@ -107,6 +108,9 @@ namespace Microsoft.Agents.Extensions.Slack
             _slackApi = new SlackApi(
                 httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory)),
                 slackApiLogger);
+            _messageConverter = new SlackMessageConverter(
+                new SlackAttachmentConverter(
+                    new SlackFileUploader(_slackApi)));
 
             OnTurnError = async (turnContext, exception) =>
             {
@@ -260,9 +264,9 @@ namespace Microsoft.Agents.Extensions.Slack
                 var activity = activities[index];
                 responses[index] = new ResourceResponse(activity.Id ?? string.Empty);
 
-                if (!activity.IsType(ActivityTypes.Message) || string.IsNullOrEmpty(activity.Text))
+                if (!activity.IsType(ActivityTypes.Message))
                 {
-                    // Only text messages are rendered to Slack here; typing/trace/etc. are no-ops.
+                    // Typing/trace/etc. are no-ops.
                     continue;
                 }
 
@@ -277,26 +281,36 @@ namespace Microsoft.Agents.Extensions.Slack
                     continue;
                 }
 
-                var response = await _slackApi.CallAsync("chat.postMessage", new
-                {
+                var token = channelData?.ApiToken ?? _options.BotToken;
+                var payloads = await _messageConverter.ConvertAsync(
+                    activity,
                     channel,
-                    text = activity.Text.SlackEncode(),
-                    thread_ts = threadTs,
-                }, channelData?.ApiToken ?? _options.BotToken, cancellationToken).ConfigureAwait(false);
+                    threadTs,
+                    token,
+                    cancellationToken).ConfigureAwait(false);
 
-                SlackLogSanitizer.ExecuteSafely(() =>
+                foreach (var payload in payloads)
                 {
-                    if (Logger.IsEnabled(LogLevel.Debug))
-                    {
-                        SlackAdapterLog.LogMessageSent(
-                            Logger,
-                            conversationId ?? string.Empty,
-                            response.ts ?? string.Empty,
-                            SlackLogSanitizer.SanitizeObject(activity));
-                    }
-                });
+                    var response = await _slackApi.CallAsync(
+                        "chat.postMessage",
+                        payload,
+                        token,
+                        cancellationToken).ConfigureAwait(false);
 
-                responses[index] = new ResourceResponse(response.ts ?? string.Empty);
+                    SlackLogSanitizer.ExecuteSafely(() =>
+                    {
+                        if (Logger.IsEnabled(LogLevel.Debug))
+                        {
+                            SlackAdapterLog.LogMessageSent(
+                                Logger,
+                                conversationId ?? string.Empty,
+                                response.ts ?? string.Empty,
+                                SlackLogSanitizer.SanitizeObject(activity));
+                        }
+                    });
+
+                    responses[index] = new ResourceResponse(response.ts ?? string.Empty);
+                }
             }
 
             return responses;
