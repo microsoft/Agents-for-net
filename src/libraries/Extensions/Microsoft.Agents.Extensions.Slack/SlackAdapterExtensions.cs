@@ -3,15 +3,19 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.Slack.Api;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,7 +89,32 @@ namespace Microsoft.Agents.Extensions.Slack
             services.AddAsyncAdapterSupport();
             services.AddHttpClient();
             services.AddSingleton(options);
-            services.AddSingleton<SlackAdapter>();
+            services.AddSingleton(provider => new SlackRequestValidator(
+                provider.GetRequiredService<SlackAdapterOptions>()));
+            services.AddSingleton(_ => new SlackRequestParser());
+            services.AddSingleton(_ => new SlackEventDeduplicator());
+            services.AddSingleton(provider => new SlackActivityConverter(
+                provider.GetRequiredService<SlackAdapterOptions>()));
+            services.AddSingleton(provider => new SlackApi(
+                provider.GetRequiredService<IHttpClientFactory>(),
+                provider.GetRequiredService<ILogger<SlackApi>>()));
+            services.AddSingleton<ISlackFileUploader>(provider => new SlackFileUploader(
+                provider.GetRequiredService<SlackApi>()));
+            services.AddSingleton(provider => new SlackAttachmentConverter(
+                provider.GetRequiredService<ISlackFileUploader>(),
+                provider.GetRequiredService<ILogger<SlackAttachmentConverter>>()));
+            services.AddSingleton(provider => new SlackMessageConverter(
+                provider.GetRequiredService<SlackAttachmentConverter>()));
+            services.AddSingleton(provider => new SlackAdapter(
+                provider.GetRequiredService<SlackAdapterOptions>(),
+                provider.GetRequiredService<SlackApi>(),
+                provider.GetRequiredService<ILogger<SlackAdapter>>(),
+                provider.GetRequiredService<IActivityTaskQueue>(),
+                provider.GetRequiredService<SlackRequestValidator>(),
+                provider.GetRequiredService<SlackRequestParser>(),
+                provider.GetRequiredService<SlackEventDeduplicator>(),
+                provider.GetRequiredService<SlackActivityConverter>(),
+                provider.GetRequiredService<SlackMessageConverter>()));
             services.AddSingleton<IChannelAdapter>(sp => sp.GetRequiredService<SlackAdapter>());
 
             return services;

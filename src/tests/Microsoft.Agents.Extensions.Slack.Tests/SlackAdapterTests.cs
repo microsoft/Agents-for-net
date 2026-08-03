@@ -44,11 +44,20 @@ public class SlackAdapterTests
             [typeof(SlackAdapterOptions), typeof(IHttpClientFactory), typeof(ILogger<SlackAdapter>)]);
         var loggerAwareConstructor = typeof(SlackAdapter).GetConstructor(
             [typeof(SlackAdapterOptions), typeof(IHttpClientFactory), typeof(ILogger<SlackAdapter>), typeof(ILogger<SlackApi>)]);
+        var queuedConstructor = typeof(SlackAdapter).GetConstructor(
+            [
+                typeof(SlackAdapterOptions),
+                typeof(IHttpClientFactory),
+                typeof(ILogger<SlackAdapter>),
+                typeof(ILogger<SlackApi>),
+                typeof(IActivityTaskQueue)
+            ]);
 
         Assert.NotNull(originalConstructor);
         Assert.True(originalConstructor.GetParameters()[2].IsOptional);
         Assert.Null(originalConstructor.GetParameters()[2].DefaultValue);
         Assert.NotNull(loggerAwareConstructor);
+        Assert.NotNull(queuedConstructor);
     }
 
     [Fact]
@@ -65,16 +74,17 @@ public class SlackAdapterTests
             await turnContext.SendActivityAsync("pong", cancellationToken: cancellationToken);
             turnCompleted.TrySetResult();
         });
+        var options = new SlackAdapterOptions
+        {
+            BotToken = BotToken,
+            SigningSecret = SigningSecret,
+            BotId = BotId,
+            BotUserId = BotUserId
+        };
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddSlack(new SlackAdapterOptions
-                {
-                    BotToken = BotToken,
-                    SigningSecret = SigningSecret,
-                    BotId = BotId,
-                    BotUserId = BotUserId
-                });
+                services.AddSlack(options);
                 services.AddSingleton(factory.Object);
                 services.AddSingleton<ILogger<SlackAdapter>>(new RecordingLogger<SlackAdapter>());
                 services.AddSingleton<ILogger<SlackApi>>(apiLogger);
@@ -85,6 +95,33 @@ public class SlackAdapterTests
         await host.StartAsync();
 
         var adapter = host.Services.GetRequiredService<SlackAdapter>();
+        Assert.Same(options, host.Services.GetRequiredService<SlackAdapterOptions>());
+        Assert.Same(
+            host.Services.GetRequiredService<SlackRequestValidator>(),
+            host.Services.GetRequiredService<SlackRequestValidator>());
+        Assert.Same(
+            host.Services.GetRequiredService<SlackRequestParser>(),
+            host.Services.GetRequiredService<SlackRequestParser>());
+        Assert.Same(
+            host.Services.GetRequiredService<SlackEventDeduplicator>(),
+            host.Services.GetRequiredService<SlackEventDeduplicator>());
+        Assert.Same(
+            host.Services.GetRequiredService<SlackActivityConverter>(),
+            host.Services.GetRequiredService<SlackActivityConverter>());
+        Assert.Same(
+            host.Services.GetRequiredService<SlackApi>(),
+            host.Services.GetRequiredService<SlackApi>());
+        var fileUploader = host.Services.GetRequiredService<ISlackFileUploader>();
+        Assert.IsType<SlackFileUploader>(fileUploader);
+        Assert.Same(fileUploader, host.Services.GetRequiredService<ISlackFileUploader>());
+        Assert.Same(
+            host.Services.GetRequiredService<SlackAttachmentConverter>(),
+            host.Services.GetRequiredService<SlackAttachmentConverter>());
+        Assert.Same(
+            host.Services.GetRequiredService<SlackMessageConverter>(),
+            host.Services.GetRequiredService<SlackMessageConverter>());
+        Assert.Same(adapter, host.Services.GetRequiredService<SlackAdapter>());
+        Assert.Same(adapter, host.Services.GetRequiredService<IChannelAdapter>());
         var context = CreateContext(MessageEventBody("ping", "C100", "1700000000.000100"), signed: true);
 
         try

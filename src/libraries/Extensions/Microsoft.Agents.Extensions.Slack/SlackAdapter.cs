@@ -113,6 +113,35 @@ namespace Microsoft.Agents.Extensions.Slack
                     new SlackFileUploader(_slackApi),
                     logger));
 
+            InitializeOnTurnError();
+        }
+
+        internal SlackAdapter(
+            SlackAdapterOptions options,
+            SlackApi slackApi,
+            ILogger<SlackAdapter> logger,
+            IActivityTaskQueue activityTaskQueue,
+            SlackRequestValidator requestValidator,
+            SlackRequestParser requestParser,
+            SlackEventDeduplicator eventDeduplicator,
+            SlackActivityConverter activityConverter,
+            SlackMessageConverter messageConverter)
+            : base(logger)
+        {
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _slackApi = slackApi ?? throw new ArgumentNullException(nameof(slackApi));
+            _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
+            _requestValidator = requestValidator ?? throw new ArgumentNullException(nameof(requestValidator));
+            _requestParser = requestParser ?? throw new ArgumentNullException(nameof(requestParser));
+            _eventDeduplicator = eventDeduplicator ?? throw new ArgumentNullException(nameof(eventDeduplicator));
+            _activityConverter = activityConverter ?? throw new ArgumentNullException(nameof(activityConverter));
+            _messageConverter = messageConverter ?? throw new ArgumentNullException(nameof(messageConverter));
+
+            InitializeOnTurnError();
+        }
+
+        private void InitializeOnTurnError()
+        {
             OnTurnError = async (turnContext, exception) =>
             {
                 Logger.LogError(exception, "[SlackAdapter] unhandled error during turn.");
