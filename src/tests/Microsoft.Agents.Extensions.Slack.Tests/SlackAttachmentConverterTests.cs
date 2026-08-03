@@ -632,7 +632,8 @@ public class SlackAttachmentConverterTests
         Assert.Contains(logger.Entries, entry =>
             entry.Level == LogLevel.Warning
             && entry.Exception is SlackResponseException
-            && entry.Message.Contains("attachment 0", StringComparison.Ordinal));
+            && entry.Message.Contains("attachment 0", StringComparison.Ordinal)
+            && entry.Message.Contains("text/plain", StringComparison.Ordinal));
     }
 
     [Fact]
