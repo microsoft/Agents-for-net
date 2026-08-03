@@ -91,7 +91,18 @@ If the answer is no, leave it exactly as-is — even if you would have written i
 
 ## Output
 
-After you finish, print a short plain-text summary to stdout under a line
-`=== DIAGRAM AUDIT SUMMARY ===` listing, per file, either `up to date` or a one-line
-description of what you corrected and why. The per-file line is included in that file's
-issue comment to explain the drift.
+After you finish, print exactly one verdict line for every `docs/*sequence-diagram.md` file
+between these exact marker lines:
+
+```text
+=== DIAGRAM AUDIT SUMMARY ===
+docs/<name>-sequence-diagram.md: up to date
+docs/<name>-sequence-diagram.md: corrected — <specific reason>
+=== END DIAGRAM AUDIT SUMMARY ===
+```
+
+Use `up to date` when the final file should be byte-for-byte unchanged. If you made a
+temporary, cosmetic, or otherwise inconsequential edit but found no factual discrepancy,
+restore the file and report `up to date`. Use `corrected` only when the working tree contains
+a real correction, and identify the specific implementation fact that required it. Do not add
+Markdown emphasis, bullets, source excerpts, or tool output inside the summary markers.

@@ -94,6 +94,8 @@ write_log() {
     for line in "$@"; do
       printf '%s\n' "$line"
     done
+    printf '=== END DIAGRAM AUDIT SUMMARY ===\n'
+    printf 'Copilot output after summary\n'
   } >"$repo/copilot-output.log"
 }
 
@@ -136,7 +138,12 @@ assert_path_dirty() {
 case_1() {
   local repo
   repo="$(create_repo "case-1")"
-  printf '\nincidental working-tree edit\n' >>"$repo/docs/oauth-sequence-diagram.md"
+  printf '\nNote over UA: InvokeResponse is ensured; handler may still run\n' \
+    >>"$repo/docs/oauth-sequence-diagram.md"
+  git -C "$repo" add docs/oauth-sequence-diagram.md
+  git -C "$repo" commit -q -m "issue 954 fixture"
+  sed -i 's/ensured; handler/ensured, handler/' \
+    "$repo/docs/oauth-sequence-diagram.md"
   seed_summary "$repo"
   write_log "$repo" \
     "docs/oauth-sequence-diagram.md: up to date" \
@@ -226,6 +233,18 @@ case_7() {
   assert_summary_line "$repo" "docs/streaming-sequence-diagram.md: up to date"
 }
 
+case_8() {
+  local repo
+  repo="$(create_repo "case-8")"
+  {
+    printf '=== DIAGRAM AUDIT SUMMARY ===\n'
+    printf 'docs/oauth-sequence-diagram.md: up to date\n'
+    printf 'docs/streaming-sequence-diagram.md: up to date\n'
+  } >"$repo/copilot-output.log"
+
+  expect_failure "$repo" "case 8"
+}
+
 case_1
 case_2
 case_3
@@ -233,5 +252,6 @@ case_4
 case_5
 case_6
 case_7
+case_8
 
-printf 'PASS: 7 reconciliation tests\n'
+printf 'PASS: 8 reconciliation tests\n'

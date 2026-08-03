@@ -13,6 +13,7 @@ fi
 log_path="$1"
 summary_path="$2"
 marker='=== DIAGRAM AUDIT SUMMARY ==='
+end_marker='=== END DIAGRAM AUDIT SUMMARY ==='
 
 if [[ ! -f "$log_path" ]]; then
   die "copilot log does not exist: $log_path"
@@ -33,23 +34,33 @@ for diagram in "${diagrams[@]}"; do
   known_diagrams["$diagram"]=1
 done
 
-mapfile -t summary_lines < <(
-  awk -v marker="$marker" '
+summary_block="$(
+  awk -v marker="$marker" -v end_marker="$end_marker" '
     $0 == marker {
       capture = 1
+      complete = 0
       count = 0
+      next
+    }
+    capture && $0 == end_marker {
+      capture = 0
+      complete = 1
       next
     }
     capture {
       block[count++] = $0
     }
     END {
+      if (!complete) {
+        exit 1
+      }
       for (i = 0; i < count; ++i) {
         print block[i]
       }
     }
   ' "$log_path"
-)
+)" || die "complete audit summary block not found in $log_path"
+mapfile -t summary_lines <<<"$summary_block"
 
 declare -A verdict_types=()
 declare -A verdict_reasons=()

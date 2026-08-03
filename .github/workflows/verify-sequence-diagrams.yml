@@ -2,9 +2,10 @@ name: Verify sequence diagrams
 
 # Weekly (and on-demand) audit of the Mermaid sequence diagrams under docs/ against the
 # actual implementation. When a diagram has drifted from the code, the GitHub Copilot CLI
-# corrects the affected docs/*sequence-diagram.md files locally and this workflow opens a
-# single GitHub issue with one comment per changed diagram, each containing the proposed
-# fix (as a diff). A maintainer can then assign the issue to @copilot to produce one PR
+# corrects the affected docs/*sequence-diagram.md files locally. The workflow reconciles
+# those edits with Copilot's explicit per-file verdicts, restoring any file reported as
+# up to date, then opens a single GitHub issue with one comment per confirmed change. A
+# maintainer can then assign the issue to @copilot to produce one PR
 # that applies every fix. Nothing is committed or pushed. Opening issues only
 # needs GITHUB_TOKEN with issues:write, which sidesteps the operations Microsoft enterprise
 # Actions policy blocks: PAT-authenticated git/PR operations from runners, and GITHUB_TOKEN
@@ -62,6 +63,12 @@ jobs:
             --log-level none \
             -p "$(cat .github/prompts/verify-sequence-diagrams.prompt.md)" \
             2>&1 | tee copilot-output.log
+
+      - name: Reconcile audit verdicts
+        run: |
+          .github/scripts/reconcile-sequence-diagram-audit.sh \
+            copilot-output.log \
+            audit-summary.txt
 
       # Lint the (possibly edited) diagrams. If the audit introduced invalid Mermaid,
       # feed the exact parser errors back to Copilot to auto-fix, then re-lint. This
@@ -138,14 +145,6 @@ jobs:
             exit 0
           fi
 
-          # Audit summary block (content after the LAST marker; Copilot may run more than
-          # once due to the self-correction loop).
-          if grep -q "=== DIAGRAM AUDIT SUMMARY ===" copilot-output.log; then
-            tac copilot-output.log | sed -n '/=== DIAGRAM AUDIT SUMMARY ===/q;p' | tac > audit-summary.txt
-          else
-            : > audit-summary.txt
-          fi
-
           # A single canonical issue collects all drift; each drifted diagram is added as
           # its own comment. Reuse an already-open issue with this title so weekly runs
           # don't spawn duplicates.
@@ -183,7 +182,7 @@ jobs:
             fi
 
             # Per-file line from the audit summary, if present.
-            note=$(grep -F "$f" audit-summary.txt || true)
+            note=$(grep -F -- "$f: corrected — " audit-summary.txt || true)
 
             {
               echo "### \`$f\`"
