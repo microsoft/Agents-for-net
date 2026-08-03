@@ -680,6 +680,65 @@ public class SlackAdapterTests
     }
 
     [Fact]
+    public async Task SendActivitiesAsync_InvalidAttachment_LogsWarningAndSendsRemainingContent()
+    {
+        string? capturedBody = null;
+        var logger = new RecordingLogger<SlackAdapter>();
+        var factory = CreateFactory((request, cancellationToken) =>
+        {
+            capturedBody = request.Content!.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult();
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """{"ok":true,"ts":"1700000000.000251"}""",
+                    Encoding.UTF8,
+                    "application/json")
+            });
+        });
+        var adapter = new SlackAdapter(
+            new SlackAdapterOptions
+            {
+                BotToken = BotToken,
+                SigningSecret = SigningSecret,
+                BotId = BotId,
+                BotUserId = BotUserId,
+            },
+            factory.Object,
+            logger);
+        var turnContext = new Mock<ITurnContext>();
+        turnContext.SetupGet(context => context.Activity).Returns(new SlackActivity
+        {
+            Conversation = new ConversationAccount(id: "B123:T1:C100"),
+            ChannelData = new SlackChannelData { ApiToken = BotToken },
+        });
+        var activity = new Activity
+        {
+            Type = ActivityTypes.Message,
+            Text = "Still sent",
+            Attachments =
+            [
+                new Attachment(
+                    "text/plain",
+                    contentUrl: "data:text/plain,not-base64",
+                    name: "invalid.txt"),
+            ],
+        };
+
+        var responses = await adapter.SendActivitiesAsync(
+            turnContext.Object,
+            [activity],
+            CancellationToken.None);
+
+        var payload = JsonNode.Parse(Assert.IsType<string>(capturedBody))!.AsObject();
+        Assert.Equal("Still sent", payload["text"]!.GetValue<string>());
+        Assert.Equal("1700000000.000251", Assert.Single(responses).Id);
+        Assert.Contains(logger.Entries, entry =>
+            entry.Level == LogLevel.Warning
+            && entry.Message.Contains("attachment 0", StringComparison.Ordinal)
+            && entry.Message.Contains("text/plain", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task SendActivitiesAsync_NonMessage_DoesNotLogSentResponse()
     {
         var logger = new RecordingLogger<SlackAdapter>();

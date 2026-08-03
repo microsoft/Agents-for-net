@@ -110,7 +110,8 @@ namespace Microsoft.Agents.Extensions.Slack
                 slackApiLogger);
             _messageConverter = new SlackMessageConverter(
                 new SlackAttachmentConverter(
-                    new SlackFileUploader(_slackApi)));
+                    new SlackFileUploader(_slackApi),
+                    logger));
 
             OnTurnError = async (turnContext, exception) =>
             {

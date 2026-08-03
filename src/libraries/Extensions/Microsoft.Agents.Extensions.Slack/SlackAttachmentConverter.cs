@@ -20,14 +20,14 @@ namespace Microsoft.Agents.Extensions.Slack;
 internal sealed class SlackAttachmentConverter
 {
     private readonly ISlackFileUploader _fileUploader;
-    private readonly ILogger<SlackAttachmentConverter> _logger;
+    private readonly ILogger _logger;
 
     internal SlackAttachmentConverter(
         ISlackFileUploader fileUploader,
-        ILogger<SlackAttachmentConverter>? logger = null)
+        ILogger? logger = null)
     {
         _fileUploader = fileUploader ?? throw new ArgumentNullException(nameof(fileUploader));
-        _logger = logger ?? NullLogger<SlackAttachmentConverter>.Instance;
+        _logger = logger ?? NullLogger.Instance;
     }
 
     internal async Task<IReadOnlyList<SlackPostAttachment>> ConvertAsync(
