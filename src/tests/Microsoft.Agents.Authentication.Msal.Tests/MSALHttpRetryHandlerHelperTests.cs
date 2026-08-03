@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net;
 using System.Threading;
@@ -72,12 +73,17 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
         [Fact]
         public async Task SendAsync_ShouldReturnSuccessfulResponseAfterRetries()
         {
+            var firstTimeoutContent = new TrackingHttpContent();
+            var secondTimeoutContent = new TrackingHttpContent();
+            var thirdTimeoutContent = new TrackingHttpContent();
+            var successfulContent = new TrackingHttpContent();
+
             _handler.Protected()
                 .SetupSequence<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout) { Content = firstTimeoutContent })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout) { Content = secondTimeoutContent })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout) { Content = thirdTimeoutContent })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK) { Content = successfulContent });
 
             var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
             {
@@ -86,18 +92,24 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
 
             var httpClient = new HttpClient(retryHandler);
 
-            var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
+            using var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(firstTimeoutContent.IsDisposed);
+            Assert.True(secondTimeoutContent.IsDisposed);
+            Assert.True(thirdTimeoutContent.IsDisposed);
+            Assert.False(successfulContent.IsDisposed);
             _handler.Protected().Verify("SendAsync", Times.Exactly(4), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         }
 
         [Fact]
         public async Task SendAsync_ShouldReturnResponseOnNonRetryableFailure()
         {
+            var badRequestContent = new TrackingHttpContent();
+
             _handler.Protected()
                 .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.BadRequest))
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = badRequestContent })
                 .Verifiable(Times.Once);
 
             var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
@@ -110,18 +122,27 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(badRequestContent.IsDisposed);
+
+            response.Dispose();
+            Assert.True(badRequestContent.IsDisposed);
             Mock.Verify(_handler);
         }
 
         [Fact]
         public async Task SendAsync_ShouldReturnResponseAfterExhaustsAllRetries()
         {
+            var firstTimeoutContent = new TrackingHttpContent();
+            var secondTimeoutContent = new TrackingHttpContent();
+            var thirdTimeoutContent = new TrackingHttpContent();
+            var finalTimeoutContent = new TrackingHttpContent();
+
             _handler.Protected()
                 .SetupSequence<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout))
-                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout));
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout) { Content = firstTimeoutContent })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout) { Content = secondTimeoutContent })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout) { Content = thirdTimeoutContent })
+                .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.RequestTimeout) { Content = finalTimeoutContent });
 
             var retryHandler = new MSALHttpRetryHandlerHelper(_service.Object)
             {
@@ -133,7 +154,36 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, RequestUri));
 
             Assert.Equal(HttpStatusCode.RequestTimeout, response.StatusCode);
+            Assert.True(firstTimeoutContent.IsDisposed);
+            Assert.True(secondTimeoutContent.IsDisposed);
+            Assert.True(thirdTimeoutContent.IsDisposed);
+            Assert.False(finalTimeoutContent.IsDisposed);
+
+            response.Dispose();
+            Assert.True(finalTimeoutContent.IsDisposed);
             _handler.Protected().Verify("SendAsync", Times.Exactly(4), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
+        }
+
+        private sealed class TrackingHttpContent : HttpContent
+        {
+            public bool IsDisposed { get; private set; }
+
+            protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
+            {
+                return Task.CompletedTask;
+            }
+
+            protected override bool TryComputeLength(out long length)
+            {
+                length = 0;
+                return true;
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                IsDisposed = true;
+                base.Dispose(disposing);
+            }
         }
     }
 }

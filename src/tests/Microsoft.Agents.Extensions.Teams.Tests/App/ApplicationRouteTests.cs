@@ -581,7 +581,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             var names = new List<string>();
 
             app.RegisterExtension(extension, (ext) =>
@@ -725,7 +727,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             var names = new List<string>();
 
             app.RegisterExtension(extension, (ext) =>
@@ -798,7 +802,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             var names = new List<string>();
             app.RegisterExtension(extension, (ext) =>
             {
@@ -865,7 +871,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             var names = new List<string>();
             app.RegisterExtension(extension, (ext) =>
             {
@@ -935,7 +943,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
             });
 
             var names = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1018,7 +1028,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             var names = new List<string>();
 
             app.RegisterExtension(extension, (ext) =>
@@ -1113,7 +1125,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
             var names = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             app.RegisterExtension(extension, (ext) =>
             {
                 ext.OnConfigSubmit((turnContext, _, configData, _) =>
@@ -1199,7 +1213,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             var ids = new List<string>();
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1284,7 +1300,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
             var ids = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             app.RegisterExtension(extension, (ext) =>
             {
                 ext.OnFileConsentDecline((turnContext, _, _, _) =>
@@ -1361,7 +1379,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
             var ids = new List<string>();
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             app.RegisterExtension(extension, (ext) =>
             {
                 ext.OnO365ConnectorCardAction((turnContext, _, _, _) =>
@@ -1410,7 +1430,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
             });
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             var names = new List<string>();
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1455,7 +1477,9 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.App
                 StartTypingTimer = false,
             });
 
+#pragma warning disable CS0618 // Type or member is obsolete
             var extension = new TeamsAgentExtension(app);
+#pragma warning restore CS0618 // Type or member is obsolete
             var names = new List<string>();
             app.RegisterExtension(extension, (ext) =>
             {
