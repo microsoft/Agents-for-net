@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/../../.." && pwd)"
 script_path="$repo_root/.github/scripts/reconcile-sequence-diagram-audit.sh"
-temp_root="$repo_root/.github/scripts/tests/.reconcile-sequence-diagram-audit.$$.$RANDOM"
+temp_root="$(mktemp -d)"
 
 cleanup() {
   rm -rf "$temp_root"
@@ -106,7 +106,11 @@ assert_summary_line() {
   local repo="$1"
   local expected="$2"
 
-  grep -Fx -- "$expected" "$repo/audit-summary.txt" >/dev/null
+  if grep -Fx -- "$expected" "$repo/audit-summary.txt" >/dev/null; then
+    return 0
+  fi
+
+  die "missing summary line: $expected"
 }
 
 assert_path_clean() {
@@ -221,8 +225,6 @@ case_7() {
   assert_summary_line "$repo" "docs/oauth-sequence-diagram.md: up to date"
   assert_summary_line "$repo" "docs/streaming-sequence-diagram.md: up to date"
 }
-
-mkdir -p "$temp_root"
 
 case_1
 case_2
