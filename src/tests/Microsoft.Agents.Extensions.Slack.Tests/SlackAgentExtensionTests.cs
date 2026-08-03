@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -297,6 +298,59 @@ public class SlackAgentExtensionTests
     }
 
     [Fact]
+    public async Task CallAsync_LogsAndResetsTypingTimerForEachSlackTurn()
+    {
+        var loggerProvider = new RecordingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Debug);
+            builder.AddProvider(loggerProvider);
+        });
+        var handler = new TestDelegatingHandler(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"ok\":true}", Encoding.UTF8, "application/json")
+        });
+        var (app, _) = CreateApplication(loggerFactory, handler);
+        app.Options.StartTypingTimer = true;
+        app.Options.TypingOptions.InitialDelayMs = 60_000;
+
+        var ext = new SlackAgentExtension(app);
+        var slackApis = new List<SlackApi>();
+        var resetSignals = new List<Task>();
+        ext.OnMessage(async (turnContext, turnState, cancellationToken) =>
+        {
+            slackApis.Add(turnContext.Services.Get<SlackApi>());
+            var resetSignal = GetTypingWorkerResetSignal(turnContext);
+            resetSignals.Add(resetSignal);
+
+            Assert.False(resetSignal.IsCompleted);
+            await ext.CallAsync(
+                turnContext,
+                "chat.postMessage",
+                new { channel = "C123", text = "hi" },
+                "xoxb-token",
+                cancellationToken);
+            Assert.True(resetSignal.IsCompleted);
+        });
+
+        await app.OnTurnAsync(
+            new TurnContext(new NotImplementedAdapter(), CreateSlackMessageActivity("first")),
+            CancellationToken.None);
+        await app.OnTurnAsync(
+            new TurnContext(new NotImplementedAdapter(), CreateSlackMessageActivity("second")),
+            CancellationToken.None);
+
+        Assert.Equal(2, slackApis.Count);
+        Assert.NotSame(slackApis[0], slackApis[1]);
+        Assert.All(resetSignals, signal => Assert.True(signal.IsCompleted));
+
+        var apiEntries = loggerProvider.Entries.FindAll(entry =>
+            entry.Category == typeof(SlackApi).FullName);
+        Assert.Equal(2, apiEntries.FindAll(entry => entry.EventId.Id == 1).Count);
+        Assert.Equal(2, apiEntries.FindAll(entry => entry.EventId.Id == 2).Count);
+    }
+
+    [Fact]
     public async Task OnMessage_Handler_InvokedForSlackMessage()
     {
         var handlerInvoked = false;
@@ -509,6 +563,18 @@ public class SlackAgentExtensionTests
         {
             return Task.FromResult(_response);
         }
+    }
+
+    private static Task GetTypingWorkerResetSignal(ITurnContext turnContext)
+    {
+        const string typingWorkerServiceName = "Microsoft.Agents.Builder.App.TypingWorker";
+        var typingWorker = turnContext.Services.Get<object>(typingWorkerServiceName);
+        Assert.NotNull(typingWorker);
+
+        var resetSignalField = Assert.Single(
+            typingWorker.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic),
+            field => field.FieldType == typeof(TaskCompletionSource<bool>));
+        return Assert.IsType<TaskCompletionSource<bool>>(resetSignalField.GetValue(typingWorker)).Task;
     }
 
     private sealed record LogEntry(string Category, EventId EventId, string Message);

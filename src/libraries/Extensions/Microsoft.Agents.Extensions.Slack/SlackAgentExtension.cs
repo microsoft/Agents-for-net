@@ -46,14 +46,15 @@ public class SlackAgentExtension : AgentExtension
         ChannelId = Channels.Slack;
         AgentApplication = application;
 
-        var slackApi = new SlackApi(
-            application.Options.HttpClientFactory,
-            application.Options.LoggerFactory.CreateLogger<SlackApi>());
+        var logger = application.Options.LoggerFactory.CreateLogger<SlackApi>();
         application.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
         {
             if (turnContext.Activity.ChannelId == ChannelId)
             {
-                turnContext.Services.Set(slackApi);
+                turnContext.Services.Set(new SlackApi(
+                    application.Options.HttpClientFactory,
+                    logger,
+                    () => application.ResetTypingTimer(turnContext)));
             }
             return _completedTrue;
         });
