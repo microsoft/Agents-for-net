@@ -6,7 +6,9 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Linq;
 
@@ -32,6 +34,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="autoSignIn">An optional delegate used to select the auto sign-in behavior. If provided, it is registered as a singleton
         /// service.</param>
         /// <param name="replaceExisting">If true, replaces existing registrations of the agent application options and auto sign-in selector.</param>
+        /// <remarks>
+        /// This also registers an <see cref="IStartupFilter"/> that validates the <c>AgentApplication</c> configuration
+        /// section during startup.  Since <see cref="AgentApplicationOptions"/> isn't created by DI until the first
+        /// inbound Activity, configuration errors would otherwise first appear as a failed conversation.
+        /// </remarks>
         public static IServiceCollection AddAgentApplicationOptions(this IServiceCollection services, AutoSignInSelector autoSignIn = null, bool replaceExisting = true)
         {
             if (autoSignIn != null)
@@ -46,6 +53,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 services.AddSingleton<AgentApplicationOptions>();
             }
+
+            // AgentApplicationOptions is created on the first Activity.  Report configuration errors during startup instead.
+            services.TryAddEnumerable(ServiceDescriptor.Transient<IStartupFilter, AgentApplicationConfigurationStartupFilter>());
+
             return services;
         }
 

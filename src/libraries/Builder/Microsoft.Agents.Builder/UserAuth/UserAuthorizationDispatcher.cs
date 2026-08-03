@@ -93,7 +93,11 @@ namespace Microsoft.Agents.Builder.UserAuth
             _connections = sp.GetService<IConnections>();
 
             var configDict = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthorizationDefinition>>();
-            _userAuthHandlers = new(configDict, StringComparer.OrdinalIgnoreCase);
+
+            // A missing Handlers section binds to null.  Handled below as "no handlers defined".
+            _userAuthHandlers = configDict == null
+                ? new(StringComparer.OrdinalIgnoreCase)
+                : new(configDict, StringComparer.OrdinalIgnoreCase);
 
             if (_userAuthHandlers.Count == 0)
             {
