@@ -178,7 +178,8 @@ case_4() {
   seed_summary "$repo"
   write_log "$repo" \
     "docs/oauth-sequence-diagram.md: corrected — restore streaming handoff" \
-    "docs/oauth-sequence-diagram.md: corrected — keep canonical order"
+    "docs/oauth-sequence-diagram.md: corrected — keep canonical order" \
+    "docs/streaming-sequence-diagram.md: up to date"
 
   expect_failure "$repo" "case 4"
 }
