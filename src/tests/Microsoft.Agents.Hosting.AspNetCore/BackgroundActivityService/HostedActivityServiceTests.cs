@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -191,7 +192,27 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.All(probes, probe => Assert.False(probe.IsDisposed));
         }
 
-        private static ScopedRecord UseScopedRecord(bool useScopePerTurn, int expectedTurns)
+        [Fact]
+        public async Task ExecuteAsync_WithScopePerTurnFromConfiguration_ShouldResolveScopedDependencyPerTurn()
+        {
+            // AdapterOptions is not registered in DI, so the CloudAdapterOptions configuration section
+            // is the path applications actually use to enable this.
+            var record = UseScopedRecord(useScopePerTurn: true, expectedTurns: 2, viaConfiguration: true);
+
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.AllTurnsProcessed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await record.Service.StopAsync(CancellationToken.None);
+
+            var probes = record.Collector.Resolved.ToArray();
+            Assert.Equal(2, probes.Length);
+            Assert.NotSame(probes[0], probes[1]);
+            Assert.All(probes, probe => Assert.True(probe.IsDisposed, "Turn scope was not disposed."));
+        }
+
+        private static ScopedRecord UseScopedRecord(bool useScopePerTurn, int expectedTurns, bool viaConfiguration = false)
         {
             var collector = new ProbeCollector();
             var services = new ServiceCollection();
@@ -201,13 +222,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             var serviceProvider = services.BuildServiceProvider();
             var queue = new ActivityTaskQueue();
-            var options = new AdapterOptions { UseScopePerTurn = useScopePerTurn };
+
+            // AdapterOptions is not registered in DI, so applications configure it through the
+            // "CloudAdapterOptions" section. Exercise both that path and the explicit options parameter.
+            var configBuilder = new ConfigurationBuilder();
+            if (viaConfiguration)
+            {
+                configBuilder.AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["CloudAdapterOptions:UseScopePerTurn"] = useScopePerTurn.ToString()
+                });
+            }
+
             var service = new HostedActivityService(
                 serviceProvider,
-                new ConfigurationBuilder().Build(),
+                configBuilder.Build(),
                 queue,
                 new Mock<ILogger<HostedActivityService>>().Object,
-                options);
+                viaConfiguration ? null : new AdapterOptions { UseScopePerTurn = useScopePerTurn });
 
             var allTurnsProcessed = new TaskCompletionSource();
             var processed = 0;

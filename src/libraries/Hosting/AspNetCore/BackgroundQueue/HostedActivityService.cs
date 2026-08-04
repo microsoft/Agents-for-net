@@ -54,8 +54,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
             ArgumentNullException.ThrowIfNull(provider);
 
-            _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
-            _useScopePerTurn = options != null && options.UseScopePerTurn;
+            // AdapterOptions is not registered in DI, so `options` is null unless the application registers it.
+            // Fall back to the same "CloudAdapterOptions" configuration section CloudAdapter binds, so the options
+            // are honored from appsettings as this constructor's `config` parameter documents.
+            var adapterOptions = options ?? config.GetSection("CloudAdapterOptions")?.Get<AdapterOptions>() ?? new AdapterOptions();
+
+            _shutdownTimeoutSeconds = adapterOptions.ShutdownTimeoutSeconds;
+            _useScopePerTurn = adapterOptions.UseScopePerTurn;
             _activityQueue = activityTaskQueue;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
             _serviceProvider = provider;
@@ -153,7 +158,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 // Resolving from the root IServiceProvider promotes any scoped registration in the Agent's dependency graph to
                 // the root scope, so a single instance is shared by every turn for the lifetime of the process. When
                 // AdapterOptions.UseScopePerTurn is set, the turn gets its own scope instead, which is disposed once the turn
-                // completes. Everything the SDK registers is a singleton and resolves identically either way.
+                // completes. The SDK registers no scoped services, so this only affects registrations made by the application.
+                // Note that disposable transients resolved for the turn - IAgent itself is registered transient - are then
+                // disposed with the turn scope instead of being retained by the root scope until the host shuts down.
                 using var turnScope = _useScopePerTurn ? _serviceProvider.CreateScope() : null;
                 var turnServices = turnScope?.ServiceProvider ?? _serviceProvider;
 
