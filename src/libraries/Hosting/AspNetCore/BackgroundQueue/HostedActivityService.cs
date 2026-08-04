@@ -7,6 +7,7 @@ using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -30,6 +31,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new();
         private readonly IActivityTaskQueue _activityQueue;
         private readonly int _shutdownTimeoutSeconds;
+        private readonly bool _useScopePerTurn;
         private readonly IServiceProvider _serviceProvider;
         private int _stopping;
 
@@ -53,6 +55,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             ArgumentNullException.ThrowIfNull(provider);
 
             _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
+            _useScopePerTurn = options != null && options.UseScopePerTurn;
             _activityQueue = activityTaskQueue;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
             _serviceProvider = provider;
@@ -146,8 +149,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
                 // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                 // and disposed before this gets called.
-                var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
-                agent ??= _serviceProvider.GetService(typeof(IAgent));
+                //
+                // Resolving from the root IServiceProvider promotes any scoped registration in the Agent's dependency graph to
+                // the root scope, so a single instance is shared by every turn for the lifetime of the process. When
+                // AdapterOptions.UseScopePerTurn is set, the turn gets its own scope instead, which is disposed once the turn
+                // completes. Everything the SDK registers is a singleton and resolves identically either way.
+                using var turnScope = _useScopePerTurn ? _serviceProvider.CreateScope() : null;
+                var turnServices = turnScope?.ServiceProvider ?? _serviceProvider;
+
+                var agent = turnServices.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
+                agent ??= turnServices.GetService(typeof(IAgent));
 
                 HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
                 activityWithClaims.TelemetryActivity?.Start();

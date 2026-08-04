@@ -25,5 +25,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Gets or sets a value indicating whether Activity.ServiceUrl should be validated using the 'serviceurl' claim in the incoming token. This is typically used to ensure that the request is coming from a trusted source.
         /// </summary>
         public bool ValidateServiceUrl { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether each queued Activity is processed in its own dependency injection scope.
+        /// </summary>
+        /// <remarks>
+        /// When <see langword="false"/> (the default), queued Activities resolve the <see cref="Microsoft.Agents.Builder.IAgent"/>
+        /// from the root <see cref="System.IServiceProvider"/>. Any scoped registration in the Agent's dependency graph is then
+        /// promoted to the root scope, giving a single instance shared by every turn for the lifetime of the process.
+        /// Set this to <see langword="true"/> for Agents that depend on scoped services, such as an Entity Framework Core
+        /// <c>DbContext</c>. Services registered by the SDK are singletons and resolve identically either way.
+        /// </remarks>
+        public bool UseScopePerTurn { get; set; } = false;
     }
 }
