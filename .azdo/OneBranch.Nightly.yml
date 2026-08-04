@@ -162,7 +162,9 @@ extends:
             displayName: "Copy Files for 'Publish packages (Release)' publish task"
             inputs:
                 SourceFolder: '$(Build.SourcesDirectory)\bin'
-                Contents: '**/*.nupkg'
+                Contents: |
+                  **/*.nupkg
+                  **/*.snupkg
                 FlattenFolders : true
                 TargetFolder: $(Build.ArtifactStagingDirectory)/ONEBRANCH_ARTIFACT/packages
             condition: always()
