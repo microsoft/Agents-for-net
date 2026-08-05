@@ -9,6 +9,13 @@
       ],
       "rollForward": false
     },
+    "microsoft.dotnet.apicompat.tool": {
+      "version": "8.0.423",
+      "commands": [
+        "apicompat"
+      ],
+      "rollForward": false
+    },
     "dotnet-reportgenerator-globaltool": {
       "version": "5.3.8",
       "commands": [
