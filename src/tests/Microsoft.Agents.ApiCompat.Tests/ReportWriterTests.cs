@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Agents.ApiCompat;
 using Xunit;
 
@@ -122,6 +123,167 @@ public sealed class ReportWriterTests
                 new OverrideResult(false, null, "Missing 'breaking-change-approved' label."),
                 new[] { package },
                 Array.Empty<string>());
+        }
+    }
+}
+
+public sealed class CliCommandTests
+{
+    private const long RunId = 987654321L;
+    private const int PullRequestNumber = 42;
+
+    private static readonly JsonSerializerOptions WriteOptions = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
+
+    [Theory]
+    [InlineData("analyze")]
+    [InlineData("analyze", "--repo-root", "root", "--packages", "pkgs", "--event", "event.json")]
+    [InlineData("render-comment")]
+    [InlineData("render-comment", "--report", "report.json", "--output", "comment.md", "--run-id", "1")]
+    public async Task RunAsync_MissingRequiredOptions_ReturnsExitCodeTwo(params string[] args)
+    {
+        var exitCode = await Cli.RunAsync(args, CancellationToken.None);
+
+        Assert.Equal(2, exitCode);
+    }
+
+    [Fact]
+    public async Task RunAsync_UnknownCommand_ReturnsExitCodeTwo()
+    {
+        var exitCode = await Cli.RunAsync(new[] { "bogus" }, CancellationToken.None);
+
+        Assert.Equal(2, exitCode);
+    }
+
+    [Fact]
+    public async Task RunAsync_Help_ReturnsZero()
+    {
+        var exitCode = await Cli.RunAsync(new[] { "--help" }, CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+    }
+
+    [Fact]
+    public async Task RenderComment_ValidReport_WritesCommentAndReturnsZero()
+    {
+        using var report = new TemporaryReport(BuildReport());
+        var output = TemporaryPath("comment.md");
+
+        try
+        {
+            var exitCode = await Cli.RunAsync(
+                new[] { "render-comment", "--report", report.Path, "--output", output, "--run-id", RunId.ToString(), "--pr-number", PullRequestNumber.ToString() },
+                CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+            Assert.True(File.Exists(output));
+            Assert.Contains("API compatibility", await File.ReadAllTextAsync(output), StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(output);
+        }
+    }
+
+    [Fact]
+    public async Task RenderComment_ReportLargerThanFiveMegabytes_Rejected()
+    {
+        var reportPath = TemporaryPath("report.json");
+        File.WriteAllText(reportPath, new string('a', (5 * 1024 * 1024) + 1));
+        var output = TemporaryPath("comment.md");
+
+        try
+        {
+            var exitCode = await Cli.RunAsync(
+                new[] { "render-comment", "--report", reportPath, "--output", output, "--run-id", RunId.ToString(), "--pr-number", PullRequestNumber.ToString() },
+                CancellationToken.None);
+
+            Assert.NotEqual(0, exitCode);
+            Assert.False(File.Exists(output));
+        }
+        finally
+        {
+            File.Delete(reportPath);
+        }
+    }
+
+    [Fact]
+    public async Task RenderComment_UnsupportedSchemaVersion_Rejected()
+    {
+        using var report = new TemporaryReport(BuildReport() with { SchemaVersion = 2 });
+        var output = TemporaryPath("comment.md");
+
+        var exitCode = await Cli.RunAsync(
+            new[] { "render-comment", "--report", report.Path, "--output", output, "--run-id", RunId.ToString(), "--pr-number", PullRequestNumber.ToString() },
+            CancellationToken.None);
+
+        Assert.NotEqual(0, exitCode);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public async Task RenderComment_RunIdMismatch_Rejected()
+    {
+        using var report = new TemporaryReport(BuildReport());
+        var output = TemporaryPath("comment.md");
+
+        var exitCode = await Cli.RunAsync(
+            new[] { "render-comment", "--report", report.Path, "--output", output, "--run-id", "111", "--pr-number", PullRequestNumber.ToString() },
+            CancellationToken.None);
+
+        Assert.NotEqual(0, exitCode);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public async Task RenderComment_PullRequestNumberMismatch_Rejected()
+    {
+        using var report = new TemporaryReport(BuildReport());
+        var output = TemporaryPath("comment.md");
+
+        var exitCode = await Cli.RunAsync(
+            new[] { "render-comment", "--report", report.Path, "--output", output, "--run-id", RunId.ToString(), "--pr-number", "99" },
+            CancellationToken.None);
+
+        Assert.NotEqual(0, exitCode);
+        Assert.False(File.Exists(output));
+    }
+
+    private static CompatibilityReport BuildReport()
+    {
+        return new CompatibilityReport(
+            SchemaVersion: 1,
+            RunId: RunId,
+            PullRequestNumber: PullRequestNumber,
+            BaseRef: "main",
+            Decision: AnalysisDecision.Pass,
+            Override: new OverrideResult(false, null, "No override."),
+            Packages: Array.Empty<PackageCompatibilityReport>(),
+            InfrastructureErrors: Array.Empty<string>());
+    }
+
+    private static string TemporaryPath(string suffix) =>
+        Path.Combine(AppContext.BaseDirectory, $"cli-{Guid.NewGuid():N}-{suffix}");
+
+    private sealed class TemporaryReport : IDisposable
+    {
+        public TemporaryReport(CompatibilityReport report)
+        {
+            Path = TemporaryPath("report.json");
+            File.WriteAllText(Path, JsonSerializer.Serialize(report, WriteOptions));
+        }
+
+        public string Path { get; }
+
+        public void Dispose()
+        {
+            if (File.Exists(Path))
+            {
+                File.Delete(Path);
+            }
         }
     }
 }

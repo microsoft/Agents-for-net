@@ -1,0 +1,72 @@
+name: Detect .NET API breaking changes
+description: Compare candidate SDK packages with stable NuGet baselines
+inputs:
+  trusted-root:
+    description: Checkout of the trusted base branch that owns the compatibility tool.
+    required: true
+  candidate-root:
+    description: Checkout of the pull request head to restore, pack, and analyze.
+    required: true
+  event-path:
+    description: Path to the pull_request event payload JSON.
+    required: true
+  output-directory:
+    description: Directory that receives packages and the compatibility report artifacts.
+    required: true
+outputs:
+  decision:
+    description: Pass, Block, Overridden, or InfrastructureFailure.
+    value: ${{ steps.analyze.outputs.decision }}
+  blocking-count:
+    description: Number of blocking findings.
+    value: ${{ steps.analyze.outputs.blocking-count }}
+  warning-count:
+    description: Number of warning findings.
+    value: ${{ steps.analyze.outputs.warning-count }}
+  report-directory:
+    description: Absolute path to the directory containing the report artifacts.
+    value: ${{ steps.analyze.outputs.report-directory }}
+runs:
+  using: composite
+  steps:
+    - name: Restore compatibility tool
+      shell: pwsh
+      working-directory: ${{ inputs.trusted-root }}
+      run: dotnet tool restore
+    - name: Build compatibility CLI
+      shell: pwsh
+      working-directory: ${{ inputs.trusted-root }}
+      run: dotnet build src\tools\Microsoft.Agents.ApiCompat\Microsoft.Agents.ApiCompat.csproj -c Release
+    - id: candidate
+      name: Restore and pack candidate
+      shell: pwsh
+      working-directory: ${{ inputs.candidate-root }}
+      run: |
+        $errorFile = "${{ inputs.output-directory }}\candidate-error.txt"
+        New-Item -ItemType Directory -Force -Path "${{ inputs.output-directory }}\packages" | Out-Null
+        dotnet restore AgentSdk.proj 2>&1 | Tee-Object -Variable restoreOutput
+        if ($LASTEXITCODE -ne 0) {
+          $restoreOutput | Set-Content $errorFile
+          "candidate-error-file=$errorFile" >> $env:GITHUB_OUTPUT
+          exit 0
+        }
+        dotnet pack src\Microsoft.Agents.SDK.sln -c Release --no-restore -p:PackageOutputPath=${{ inputs.output-directory }}\packages 2>&1 | Tee-Object -Variable packOutput
+        if ($LASTEXITCODE -ne 0) {
+          $packOutput | Set-Content $errorFile
+          "candidate-error-file=$errorFile" >> $env:GITHUB_OUTPUT
+          exit 0
+        }
+        "candidate-error-file=" >> $env:GITHUB_OUTPUT
+    - id: analyze
+      name: Analyze compatibility
+      shell: pwsh
+      working-directory: ${{ inputs.trusted-root }}
+      run: >
+        dotnet run --no-build -c Release
+        --project src\tools\Microsoft.Agents.ApiCompat\Microsoft.Agents.ApiCompat.csproj --
+        analyze
+        --repo-root "${{ inputs.candidate-root }}"
+        --packages "${{ inputs.output-directory }}\packages"
+        --event "${{ inputs.event-path }}"
+        --output "${{ inputs.output-directory }}"
+        --candidate-error-file "${{ steps.candidate.outputs.candidate-error-file }}"
