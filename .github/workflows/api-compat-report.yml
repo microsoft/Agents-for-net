@@ -11,12 +11,11 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: api-compat-report-${{ github.event.workflow_run.pull_requests[0].number }}
+  group: api-compat-report-${{ github.event.workflow_run.id }}
   cancel-in-progress: false
 
 jobs:
   comment:
-    if: ${{ github.event.workflow_run.pull_requests[0].number != null }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout trusted default branch
@@ -31,11 +30,30 @@ jobs:
       - name: Download report artifact
         uses: actions/download-artifact@v4
         with:
-          name: api-compat-report-${{ github.event.workflow_run.pull_requests[0].number }}-${{ github.event.workflow_run.id }}
+          name: api-compat-report-${{ github.event.workflow_run.id }}
           path: ${{ runner.temp }}/api-compat
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
+      - id: report
+        name: Read report metadata
+        shell: pwsh
+        run: |
+          $reportPath = "${{ runner.temp }}/api-compat/report.json"
+          if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
+            throw "Compatibility report '$reportPath' does not exist."
+          }
+
+          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+          $pullRequestNumber = 0
+          if (-not [int]::TryParse(
+              [string]$report.PullRequestNumber,
+              [ref]$pullRequestNumber) -or
+              $pullRequestNumber -le 0) {
+            throw "Compatibility report has an invalid PullRequestNumber."
+          }
+
+          "pr-number=$pullRequestNumber" >> $env:GITHUB_OUTPUT
       - name: Render sanitized comment
         run: >
           dotnet run -c Release
@@ -44,12 +62,12 @@ jobs:
           --report "${{ runner.temp }}/api-compat/report.json"
           --output "${{ runner.temp }}/api-compat/comment.md"
           --run-id "${{ github.event.workflow_run.id }}"
-          --pr-number "${{ github.event.workflow_run.pull_requests[0].number }}"
+          --pr-number "${{ steps.report.outputs.pr-number }}"
       - name: Update sticky comment
         uses: actions/github-script@v7
         env:
           COMMENT_PATH: ${{ runner.temp }}/api-compat/comment.md
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          PR_NUMBER: ${{ steps.report.outputs.pr-number }}
           RUN_ID: ${{ github.event.workflow_run.id }}
         with:
           script: |

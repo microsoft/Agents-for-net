@@ -70,7 +70,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-compat-report-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          name: api-compat-report-${{ github.run_id }}
           path: |
             ${{ runner.temp }}\api-compat\report.json
             ${{ runner.temp }}\api-compat\report.md
