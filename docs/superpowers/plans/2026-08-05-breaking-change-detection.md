@@ -1011,7 +1011,7 @@ git commit -m "feat: analyze and report package compatibility" -m "Co-authored-b
 
 **Interfaces:**
 - Produces command:
-  `analyze --repo-root <path> --packages <path> --event <path> --output <path>`.
+  `analyze --repo-root <path> --packages <path> --event <path> --output <path> [--candidate-error-file <path>]`.
 - Produces command:
   `render-comment --report <path> --output <path> --run-id <id> --pr-number <number>`.
 - Composite action outputs: `decision`, `blocking-count`, `warning-count`, `report-directory`.
@@ -1035,7 +1035,9 @@ return args.FirstOrDefault() switch
 };
 ```
 
-`analyze` always writes a report when analysis reaches the orchestrator. It returns zero for
+`analyze` always writes a report when analysis reaches the orchestrator. When
+`--candidate-error-file` names a non-empty file, it skips package analysis and writes an
+`InfrastructureFailure` report containing the sanitized restore/pack failure. It returns zero for
 `Pass`, `Block`, `Overridden`, and represented `InfrastructureFailure`; it returns nonzero
 only when no valid report can be written. Write these lines to `$GITHUB_OUTPUT` when set:
 
@@ -1082,14 +1084,26 @@ runs:
       shell: pwsh
       working-directory: ${{ inputs.trusted-root }}
       run: dotnet build src\tools\Microsoft.Agents.ApiCompat\Microsoft.Agents.ApiCompat.csproj -c Release
-    - name: Restore candidate
+    - id: candidate
+      name: Restore and pack candidate
       shell: pwsh
       working-directory: ${{ inputs.candidate-root }}
-      run: dotnet restore AgentSdk.proj
-    - name: Pack candidate
-      shell: pwsh
-      working-directory: ${{ inputs.candidate-root }}
-      run: dotnet pack src\Microsoft.Agents.SDK.sln -c Release --no-restore -p:PackageOutputPath=${{ inputs.output-directory }}\packages
+      run: |
+        $errorFile = "${{ inputs.output-directory }}\candidate-error.txt"
+        New-Item -ItemType Directory -Force -Path "${{ inputs.output-directory }}\packages" | Out-Null
+        dotnet restore AgentSdk.proj 2>&1 | Tee-Object -Variable restoreOutput
+        if ($LASTEXITCODE -ne 0) {
+          $restoreOutput | Set-Content $errorFile
+          "candidate-error-file=$errorFile" >> $env:GITHUB_OUTPUT
+          exit 0
+        }
+        dotnet pack src\Microsoft.Agents.SDK.sln -c Release --no-restore -p:PackageOutputPath=${{ inputs.output-directory }}\packages 2>&1 | Tee-Object -Variable packOutput
+        if ($LASTEXITCODE -ne 0) {
+          $packOutput | Set-Content $errorFile
+          "candidate-error-file=$errorFile" >> $env:GITHUB_OUTPUT
+          exit 0
+        }
+        "candidate-error-file=" >> $env:GITHUB_OUTPUT
     - id: analyze
       name: Analyze compatibility
       shell: pwsh
@@ -1102,6 +1116,7 @@ runs:
         --packages "${{ inputs.output-directory }}\packages"
         --event "${{ inputs.event-path }}"
         --output "${{ inputs.output-directory }}"
+        --candidate-error-file "${{ steps.candidate.outputs.candidate-error-file }}"
 ```
 
 - [ ] **Step 4: Run CLI tests and a local fixture invocation**
@@ -1114,6 +1129,8 @@ dotnet run --project src\tools\Microsoft.Agents.ApiCompat\Microsoft.Agents.ApiCo
 ```
 
 Expected: all tests PASS; help prints both commands and exits zero.
+Also run a fixture invocation with a populated `--candidate-error-file` and verify it writes
+`report.json`, `summary.md`, and decision `InfrastructureFailure`.
 
 - [ ] **Step 5: Commit CLI and action**
 
