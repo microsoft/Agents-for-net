@@ -27,7 +27,7 @@ public sealed class ProjectDiscoveryTests
     public void Discover_FallsBackToProjectNameWhenPackageIdIsMissing()
     {
         using var fixture = RepositoryFixture.Create(
-            ("src\\libraries\\Alpha\\Alpha.csproj", "<Project><PropertyGroup /></Project>"),
+            ("src\\libraries\\Alpha\\Alpha.csproj", "<Project><PropertyGroup><AssemblyName>Contoso.Alpha</AssemblyName></PropertyGroup></Project>"),
             ("src\\libraries\\Beta\\Beta.csproj", "<Project><PropertyGroup><PackageId>Contoso.Beta</PackageId></PropertyGroup></Project>"));
 
         var result = ProjectDiscovery.Discover(fixture.Root);

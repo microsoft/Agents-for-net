@@ -37,7 +37,7 @@ public static class ProjectDiscovery
             return null;
         }
 
-        var packageId = GetFirstValue(properties, "PackageId", "AssemblyName")
+        var packageId = GetFirstValue(properties, "PackageId")
             ?? Path.GetFileNameWithoutExtension(projectPath);
 
         return new(projectPath, packageId);
@@ -143,8 +143,7 @@ public static class ProjectDiscovery
 
     private static bool IsTrackedProperty(string propertyName)
     {
-        return PropertyComparer.Equals(propertyName, "AssemblyName") ||
-               PropertyComparer.Equals(propertyName, "IsPackable") ||
+        return PropertyComparer.Equals(propertyName, "IsPackable") ||
                PropertyComparer.Equals(propertyName, "PackageId");
     }
 }

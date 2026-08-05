@@ -25,6 +25,22 @@ public sealed class BaselineResolverTests
     }
 
     [Fact]
+    public void SelectBaseline_ReleaseBranchWithoutMinor_UsesLatestStable()
+    {
+        var versions = new[] { "1.7.9", "1.7.123", "2.0.0", "2.0.0-beta.1" };
+
+        Assert.Equal("2.0.0", NuGetBaselineResolver.SelectBaseline("rel/v1", versions));
+    }
+
+    [Fact]
+    public void SelectBaseline_ReleaseBranchWithSuffix_UsesLatestStable()
+    {
+        var versions = new[] { "1.7.9", "1.7.123", "2.0.0", "2.1.0-beta.1" };
+
+        Assert.Equal("2.0.0", NuGetBaselineResolver.SelectBaseline("rel/v1.7-preview", versions));
+    }
+
+    [Fact]
     public async Task GetBaselineVersionAsync_ReturnsNullWhenFeedIsMissing()
     {
         using var client = new HttpClient(new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound)));

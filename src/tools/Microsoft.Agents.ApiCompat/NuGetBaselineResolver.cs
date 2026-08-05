@@ -77,7 +77,7 @@ public sealed partial class NuGetBaselineResolver(HttpClient httpClient)
         var branchMajor = branchMatch.Success
             ? int.Parse(branchMatch.Groups["major"].Value, CultureInfo.InvariantCulture)
             : (int?)null;
-        var branchMinor = branchMatch.Groups["minor"].Success
+        var branchMinor = branchMatch.Success
             ? int.Parse(branchMatch.Groups["minor"].Value, CultureInfo.InvariantCulture)
             : (int?)null;
 
@@ -109,7 +109,7 @@ public sealed partial class NuGetBaselineResolver(HttpClient httpClient)
         return selected?.Text;
     }
 
-    [GeneratedRegex(@"^rel/v(?<major>\d+)(?:\.(?<minor>\d+))?$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^rel/v(?<major>\d+)\.(?<minor>\d+)$", RegexOptions.CultureInvariant)]
     private static partial Regex ReleaseBranchRegex();
 
     private sealed record StableVersionCandidate(string Text, StableNuGetVersion Version);
