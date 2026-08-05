@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,7 +10,7 @@ public static class ReportWriter
     private const int MaxFieldLength = 2_000;
     private const int MaxCommentLength = 60_000;
     private const string TruncationSuffix = "... (truncated)";
-    private const string StickyMarker = "<!-- apicompat-sticky-comment -->";
+    private const string StickyMarker = "<!-- agents-sdk-api-compat -->";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -59,7 +60,8 @@ public static class ReportWriter
 
         var builder = new StringBuilder();
         builder.AppendLine(StickyMarker);
-        builder.AppendLine("## API compatibility");
+        builder.AppendLine($"<!-- api-compat-run:{report.RunId.ToString(CultureInfo.InvariantCulture)} -->");
+        builder.AppendLine("# API compatibility");
         builder.AppendLine();
         builder.AppendLine($"**Decision:** {report.Decision}");
         builder.AppendLine($"**Base ref:** {Escape(report.BaseRef)}");

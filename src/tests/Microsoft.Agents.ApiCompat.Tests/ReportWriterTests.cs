@@ -8,6 +8,18 @@ namespace Microsoft.Agents.ApiCompat.Tests;
 public sealed class ReportWriterTests
 {
     [Fact]
+    public void RenderStickyComment_EmitsStickyAndRunMarkers()
+    {
+        var report = ReportFixture.WithDetail("removed member");
+
+        var comment = ReportWriter.RenderStickyComment(report);
+
+        Assert.StartsWith("<!-- agents-sdk-api-compat -->", comment, StringComparison.Ordinal);
+        Assert.Contains("<!-- api-compat-run:987654321 -->", comment, StringComparison.Ordinal);
+        Assert.Contains("# API compatibility", comment, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RenderStickyComment_EscapesMentionsAndHtml()
     {
         var report = ReportFixture.WithDetail("@team <script>|value");
@@ -16,7 +28,10 @@ public sealed class ReportWriterTests
 
         Assert.DoesNotContain("@team", comment, StringComparison.Ordinal);
         Assert.DoesNotContain("<script>", comment, StringComparison.Ordinal);
+        Assert.DoesNotContain("|value", comment, StringComparison.Ordinal);
         Assert.Contains("&#64;team", comment, StringComparison.Ordinal);
+        Assert.Contains("&lt;script&gt;", comment, StringComparison.Ordinal);
+        Assert.Contains("&#124;value", comment, StringComparison.Ordinal);
     }
 
     [Fact]

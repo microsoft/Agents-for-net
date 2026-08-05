@@ -1,0 +1,87 @@
+name: API compatibility report
+
+on:
+  workflow_run:
+    workflows: ["API compatibility"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: api-compat-report-${{ github.event.workflow_run.pull_requests[0].number }}
+  cancel-in-progress: false
+
+jobs:
+  comment:
+    if: ${{ github.event.workflow_run.pull_requests[0].number != null }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Download report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-compat-report-${{ github.event.workflow_run.pull_requests[0].number }}-${{ github.event.workflow_run.id }}
+          path: ${{ runner.temp }}/api-compat
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Render sanitized comment
+        run: >
+          dotnet run -c Release
+          --project src/tools/Microsoft.Agents.ApiCompat/Microsoft.Agents.ApiCompat.csproj --
+          render-comment
+          --report "${{ runner.temp }}/api-compat/report.json"
+          --output "${{ runner.temp }}/api-compat/comment.md"
+          --run-id "${{ github.event.workflow_run.id }}"
+          --pr-number "${{ github.event.workflow_run.pull_requests[0].number }}"
+      - name: Update sticky comment
+        uses: actions/github-script@v7
+        env:
+          COMMENT_PATH: ${{ runner.temp }}/api-compat/comment.md
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- agents-sdk-api-compat -->';
+            const body = fs.readFileSync(process.env.COMMENT_PATH, 'utf8');
+            const issue_number = Number(process.env.PR_NUMBER);
+            const runId = Number(process.env.RUN_ID);
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find(comment => comment.body?.includes(marker));
+            const prior = existing?.body?.match(/<!-- api-compat-run:(\d+) -->/);
+            if (prior && Number(prior[1]) > runId) {
+              core.info(`Skipping stale run ${runId}; comment already has run ${prior[1]}.`);
+              return;
+            }
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body
+              });
+            }
