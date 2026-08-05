@@ -51,4 +51,13 @@ public class DiagnosticClassifierTests
         Assert.Throws<InvalidDataException>(
             () => DiagnosticClassifier.Classify("CP9999", ApiDifferenceDirection.BaselineToCandidate));
     }
+
+    [Fact]
+    public void Classify_Cp0020_BaselineToCandidate_Throws()
+    {
+        var exception = Assert.Throws<InvalidDataException>(
+            () => DiagnosticClassifier.Classify("CP0020", ApiDifferenceDirection.BaselineToCandidate));
+
+        Assert.Contains("CP0020", exception.Message, StringComparison.Ordinal);
+    }
 }

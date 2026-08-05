@@ -70,6 +70,30 @@ public sealed class ApiCompatParserTests(ApiCompatParserTests.ApiCompatPackageFi
     }
 
     [Fact]
+    public async Task RunAsync_StrictRun_WithPublicVisibilityExpansion_MatchesPinnedOutputAndParsesCandidateAddition()
+    {
+        var execution = await ApiCompatRunner.RunAsync(
+            fixture.CandidateVisibilityExpansionPackage,
+            fixture.BaselineVisibilityExpansionPackage,
+            strict: true,
+            CancellationToken.None);
+
+        Assert.True(execution.ExitCode == 0, DescribeExecution(execution));
+        Assert.Equal(string.Empty, Normalize(execution.StandardOutput));
+        Assert.Equal(ExpectedStrictVisibilityExpansionOutput(), Normalize(execution.StandardError));
+        Assert.Collection(
+            ApiCompatParser.Parse(execution, strict: true),
+            diagnostic => Assert.Equal(
+                new ParsedDiagnostic(
+                    "CP0020",
+                    "Fixture.Api.Widened()",
+                    "Visibility of 'Fixture.Api.Widened()' expanded from 'Protected' to 'Public'.",
+                    null,
+                    ApiDifferenceDirection.CandidateAddition),
+                diagnostic));
+    }
+
+    [Fact]
     public async Task RunAsync_NoBreakingChanges_ParsesEmptyResult()
     {
         var execution = await ApiCompatRunner.RunAsync(fixture.CandidatePackage, fixture.CandidatePackage, strict: false, CancellationToken.None);
@@ -184,6 +208,32 @@ public sealed class ApiCompatParserTests(ApiCompatParserTests.ApiCompatPackageFi
     }
 
     [Fact]
+    public void Parse_ThrowsForPublicVisibilityExpansionWhenNotStrict()
+    {
+        var execution = new ApiCompatExecution(
+            0,
+            "CP0020: Visibility of 'Fixture.Api.Widened()' expanded from 'Protected' to 'Public'.",
+            string.Empty);
+
+        var exception = Assert.Throws<InvalidDataException>(() => ApiCompatParser.Parse(execution, strict: false));
+
+        Assert.Contains("candidate-only", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_ThrowsForAmbiguousVisibilityExpansionShape()
+    {
+        var execution = new ApiCompatExecution(
+            0,
+            "CP0020: Visibility of 'Fixture.Api.Widened()' expanded from 'Protected' to 'Protected Internal'.",
+            string.Empty);
+
+        var exception = Assert.Throws<InvalidDataException>(() => ApiCompatParser.Parse(execution, strict: true));
+
+        Assert.Contains("unparseable", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Parse_ThrowsForUnparseableNonZeroOutput()
     {
         var execution = new ApiCompatExecution(7, string.Empty, "fatal failure");
@@ -212,6 +262,13 @@ public sealed class ApiCompatParserTests(ApiCompatParserTests.ApiCompatPackageFi
 
     private static string Normalize(string value) => value.Replace("\r\n", "\n", StringComparison.Ordinal).TrimEnd('\n', '\r');
 
+    private string ExpectedStrictVisibilityExpansionOutput() =>
+        Normalize($$"""
+        API compatibility errors between 'lib/net8.0/Fixture.dll' ({{fixture.BaselineVisibilityExpansionPackage}}) and 'lib/net8.0/Fixture.dll' ({{fixture.CandidateVisibilityExpansionPackage}}):
+        CP0020: Visibility of 'Fixture.Api.Widened()' expanded from 'Protected' to 'Public'.
+        API breaking changes found. If those are intentional, the APICompat suppression file can be updated by specifying the '--generate-suppression-file' parameter.
+        """);
+
     private static string DescribeExecution(ApiCompatExecution execution) =>
         $"""
         ExitCode: {execution.ExitCode}
@@ -229,16 +286,32 @@ public sealed class ApiCompatParserTests(ApiCompatParserTests.ApiCompatPackageFi
 
         public string CandidatePackage { get; private set; } = string.Empty;
 
+        public string BaselineVisibilityExpansionPackage { get; private set; } = string.Empty;
+
+        public string CandidateVisibilityExpansionPackage { get; private set; } = string.Empty;
+
         public async Task InitializeAsync()
         {
             const string baselineSource = "namespace Fixture; public class Api { public void Removed() { } public void Named(int value) { } }";
             const string candidateSource = "namespace Fixture; public class Api { public void Named(int renamed) { } public void Added(string value) { } }";
+            const string baselineVisibilityExpansionSource = "namespace Fixture; public class Api { protected void Widened() { } }";
+            const string candidateVisibilityExpansionSource = "namespace Fixture; public class Api { public void Widened() { } }";
 
             BaselinePackage = await TestPackageBuilder.BuildAsync("Fixture.Baseline", "1.0.0", baselineSource);
             CandidatePackage = await TestPackageBuilder.BuildAsync("Fixture.Candidate", "1.0.0", candidateSource);
+            BaselineVisibilityExpansionPackage = await TestPackageBuilder.BuildAsync(
+                "Fixture.Visibility.Baseline",
+                "1.0.0",
+                baselineVisibilityExpansionSource);
+            CandidateVisibilityExpansionPackage = await TestPackageBuilder.BuildAsync(
+                "Fixture.Visibility.Candidate",
+                "1.0.0",
+                candidateVisibilityExpansionSource);
 
             _roots.Add(Path.GetDirectoryName(BaselinePackage)!);
             _roots.Add(Path.GetDirectoryName(CandidatePackage)!);
+            _roots.Add(Path.GetDirectoryName(BaselineVisibilityExpansionPackage)!);
+            _roots.Add(Path.GetDirectoryName(CandidateVisibilityExpansionPackage)!);
         }
 
         public Task DisposeAsync()

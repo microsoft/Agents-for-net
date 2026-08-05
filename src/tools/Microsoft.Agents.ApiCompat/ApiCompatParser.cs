@@ -44,15 +44,15 @@ public static partial class ApiCompatParser
 
             var id = diagnosticMatch.Groups["id"].Value;
             var detail = diagnosticMatch.Groups["detail"].Value.Trim();
-            var isCandidateAddition = CandidateAdditionRegex().IsMatch(detail);
+            var isCandidateAddition = IsCandidateAddition(id, detail);
             if (isCandidateAddition && !strict)
             {
                 throw new InvalidDataException(
                     $"ApiCompat emitted candidate-only diagnostics during a non-strict parse: {line}");
             }
 
-            var direction = DetermineDirection(detail, strict);
-            if (!IsSupportedDiagnostic(id, direction) ||
+            if (!TryDetermineDirection(id, detail, strict, out var direction) ||
+                !IsSupportedDiagnostic(id, direction) ||
                 !MatchesExpectedDetail(id, detail) ||
                 !TryExtractTarget(id, detail, out var target))
             {
@@ -126,10 +126,28 @@ public static partial class ApiCompatParser
         return match.Success ? match.Groups["targetFramework"].Value : null;
     }
 
-    private static ApiDifferenceDirection DetermineDirection(string detail, bool strict) =>
-        strict && CandidateAdditionRegex().IsMatch(detail)
-            ? ApiDifferenceDirection.CandidateAddition
-            : ApiDifferenceDirection.BaselineToCandidate;
+    private static bool TryDetermineDirection(string id, string detail, bool strict, out ApiDifferenceDirection direction)
+    {
+        if (IsCandidateAddition(id, detail))
+        {
+            direction = ApiDifferenceDirection.CandidateAddition;
+            return strict;
+        }
+
+        if (string.Equals(id, "CP0020", StringComparison.Ordinal))
+        {
+            direction = default;
+            return false;
+        }
+
+        direction = ApiDifferenceDirection.BaselineToCandidate;
+        return true;
+    }
+
+    private static bool IsCandidateAddition(string id, string detail) =>
+        string.Equals(id, "CP0020", StringComparison.Ordinal)
+            ? PublicVisibilityExpansionDetailRegex().IsMatch(detail)
+            : CandidateAdditionRegex().IsMatch(detail);
 
     private static bool IsSupportedDiagnostic(string id, ApiDifferenceDirection direction)
     {
@@ -166,7 +184,7 @@ public static partial class ApiCompatParser
             "CP0017" => ParameterNameChangedDetailRegex().IsMatch(detail),
             "CP0018" => SealedInterfaceMemberDetailRegex().IsMatch(detail),
             "CP0019" => ReducedVisibilityDetailRegex().IsMatch(detail),
-            "CP0020" => ExpandedVisibilityDetailRegex().IsMatch(detail),
+            "CP0020" => PublicVisibilityExpansionDetailRegex().IsMatch(detail),
             "PKV001" => MissingCompileTimeAssetDetailRegex().IsMatch(detail),
             "PKV002" => MissingRuntimeAssetDetailRegex().IsMatch(detail),
             "PKV003" => MissingRuntimeAssetDetailRegex().IsMatch(detail),
@@ -286,8 +304,8 @@ public static partial class ApiCompatParser
     [GeneratedRegex(@"^Visibility of '[^']+' reduced from '[^']+' to '[^']+'\.$", RegexOptions.CultureInvariant)]
     private static partial Regex ReducedVisibilityDetailRegex();
 
-    [GeneratedRegex(@"^Visibility of '[^']+' expanded from '[^']+' to '[^']+'\.$", RegexOptions.CultureInvariant)]
-    private static partial Regex ExpandedVisibilityDetailRegex();
+    [GeneratedRegex(@"^Visibility of '[^']+' expanded from 'Protected' to 'Public'\.$", RegexOptions.CultureInvariant)]
+    private static partial Regex PublicVisibilityExpansionDetailRegex();
 
     [GeneratedRegex(@"^Target framework .+ does not have a compatible compile time asset in the package\.$", RegexOptions.CultureInvariant)]
     private static partial Regex MissingCompileTimeAssetDetailRegex();
