@@ -8,11 +8,12 @@ public class DiagnosticClassifierTests
     [Fact]
     public void ApiCompatNoWarn_HasPinnedLiteral()
     {
-        Assert.Equal("CP0011;CP0013", DiagnosticClassifier.ApiCompatNoWarn);
+        Assert.Equal("CP0013", DiagnosticClassifier.ApiCompatNoWarn);
     }
 
     [Theory]
     [InlineData("CP0017", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Source, FindingSeverity.Blocking)]
+    [InlineData("CP0011", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
     [InlineData("CP0003", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
     [InlineData("CP0010", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
     [InlineData("PKV002", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]

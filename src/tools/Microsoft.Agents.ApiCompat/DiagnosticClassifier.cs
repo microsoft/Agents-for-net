@@ -2,7 +2,7 @@ namespace Microsoft.Agents.ApiCompat;
 
 public static class DiagnosticClassifier
 {
-    public const string ApiCompatNoWarn = "CP0011;CP0013";
+    public const string ApiCompatNoWarn = "CP0013";
 
     private static readonly IReadOnlyDictionary<string, CompatibilityCategory> BaselineCategories =
         new Dictionary<string, CompatibilityCategory>(StringComparer.Ordinal)
@@ -17,6 +17,7 @@ public static class DiagnosticClassifier
             ["CP0008"] = CompatibilityCategory.SourceAndBinary,
             ["CP0009"] = CompatibilityCategory.SourceAndBinary,
             ["CP0010"] = CompatibilityCategory.Binary,
+            ["CP0011"] = CompatibilityCategory.Binary,
             ["CP0012"] = CompatibilityCategory.SourceAndBinary,
             ["CP0017"] = CompatibilityCategory.Source,
             ["CP0018"] = CompatibilityCategory.SourceAndBinary,
