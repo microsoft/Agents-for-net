@@ -5,12 +5,44 @@ namespace Microsoft.Agents.ApiCompat.Tests;
 
 public class DiagnosticClassifierTests
 {
-    [Fact]
-    public void Classify_ParameterRename_IsSourceOnly()
+    [Theory]
+    [InlineData("CP0017", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Source, FindingSeverity.Blocking)]
+    [InlineData("CP0003", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
+    [InlineData("CP0010", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
+    [InlineData("PKV002", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
+    [InlineData("PKV003", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
+    [InlineData("PKV004", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
+    [InlineData("PKV005", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
+    [InlineData("PKV007", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.Binary, FindingSeverity.Blocking)]
+    [InlineData("CP0001", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0002", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0004", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0005", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0006", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0007", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0008", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0009", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0012", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0018", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0019", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("PKV001", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("PKV006", ApiDifferenceDirection.BaselineToCandidate, CompatibilityCategory.SourceAndBinary, FindingSeverity.Blocking)]
+    [InlineData("CP0001", ApiDifferenceDirection.CandidateAddition, CompatibilityCategory.PotentialSourceRisk, FindingSeverity.Warning)]
+    [InlineData("CP0002", ApiDifferenceDirection.CandidateAddition, CompatibilityCategory.PotentialSourceRisk, FindingSeverity.Warning)]
+    [InlineData("CP0020", ApiDifferenceDirection.CandidateAddition, CompatibilityCategory.PotentialSourceRisk, FindingSeverity.Warning)]
+    public void Classify_KnownDiagnostic_ReturnsPolicy(
+        string id,
+        ApiDifferenceDirection direction,
+        CompatibilityCategory category,
+        FindingSeverity severity)
     {
-        var result = DiagnosticClassifier.Classify("CP0017", ApiDifferenceDirection.BaselineToCandidate);
+        Assert.Equal(new Classification(category, severity), DiagnosticClassifier.Classify(id, direction));
+    }
 
-        Assert.Equal(CompatibilityCategory.Source, result.Category);
-        Assert.Equal(FindingSeverity.Blocking, result.Severity);
+    [Fact]
+    public void Classify_UnknownDiagnostic_Throws()
+    {
+        Assert.Throws<InvalidDataException>(
+            () => DiagnosticClassifier.Classify("CP9999", ApiDifferenceDirection.BaselineToCandidate));
     }
 }
