@@ -1,0 +1,91 @@
+name: API compatibility
+
+on:
+  pull_request_target:
+    branches: [main, "rel/**"]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-compat-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: detect
+    runs-on: windows-latest
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - id: compatibility
+        name: Detect breaking changes
+        uses: ./trusted/.github/actions/detect-breaking-changes
+        with:
+          trusted-root: ${{ github.workspace }}\trusted
+          candidate-root: ${{ github.workspace }}\candidate
+          event-path: ${{ github.event_path }}
+          output-directory: ${{ runner.temp }}\api-compat
+
+      - name: Publish job summary
+        if: always()
+        shell: pwsh
+        run: |
+          $summary = "${{ runner.temp }}\api-compat\summary.md"
+          if (Test-Path $summary) {
+            Get-Content $summary | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+
+      - name: Publish annotations
+        if: always()
+        shell: pwsh
+        run: |
+          $annotations = "${{ runner.temp }}\api-compat\annotations.txt"
+          if (Test-Path $annotations) {
+            Get-Content $annotations
+          }
+
+      - name: Upload compatibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-compat-report-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}\api-compat\report.json
+            ${{ runner.temp }}\api-compat\report.md
+            ${{ runner.temp }}\api-compat\summary.md
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce compatibility result
+        if: always()
+        shell: pwsh
+        run: |
+          $decision = "${{ steps.compatibility.outputs.decision }}"
+          if ($decision -in @("Pass", "Overridden")) {
+            exit 0
+          }
+
+          Write-Error "API compatibility decision: $decision"
+          exit 1
