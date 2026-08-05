@@ -252,6 +252,54 @@ public sealed class CliCommandTests
         Assert.False(File.Exists(output));
     }
 
+    [Theory]
+    [MemberData(nameof(InvalidRenderReports))]
+    public async Task RenderComment_MalformedSchemaValidReport_ReturnsControlledError(
+        string reportJson,
+        string expectedError)
+    {
+        using var report = new TemporaryReport(reportJson);
+        var output = TemporaryPath("comment.md");
+
+        try
+        {
+            var (exitCode, error) = await RunCliCapturingErrorAsync(
+                new[] { "render-comment", "--report", report.Path, "--output", output, "--run-id", RunId.ToString(), "--pr-number", PullRequestNumber.ToString() });
+
+            Assert.Equal(1, exitCode);
+            Assert.False(File.Exists(output));
+            Assert.Contains(expectedError, error, StringComparison.Ordinal);
+            Assert.DoesNotContain("NullReferenceException", error, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(output);
+        }
+    }
+
+    public static TheoryData<string, string> InvalidRenderReports =>
+        new()
+        {
+            { BuildReportJson(baseRefJson: "\"\""), "Report BaseRef must be non-empty." },
+            { BuildReportJson(overrideJson: "null"), "Report Override is required." },
+            { BuildReportJson(packagesJson: "null"), "Report Packages is required." },
+            { BuildReportJson(infrastructureErrorsJson: "null"), "Report InfrastructureErrors is required." },
+            {
+                BuildReportJson(packagesJson: """[{"PackageId":"","CandidateVersion":"2.0.0","BaselineVersion":"1.0.0","Status":"Breaking","Findings":[]}]"""),
+                "Report Packages[0].PackageId must be non-empty."
+            },
+            {
+                BuildReportJson(packagesJson: """[{"PackageId":"Contoso.Package","CandidateVersion":"2.0.0","BaselineVersion":"1.0.0","Status":"Breaking","Findings":null}]"""),
+                "Report Packages[0].Findings is required."
+            },
+            {
+                BuildReportJson(
+                    packagesJson: """[{"PackageId":"Contoso.Package","CandidateVersion":"2.0.0","BaselineVersion":"1.0.0","Status":"Breaking","Findings":[{"PackageId":"Contoso.Package","BaselineVersion":"1.0.0","CandidateVersion":"2.0.0","TargetFramework":"net8.0","DiagnosticId":"CP0002","Target":"Api.Removed","Detail":"","Category":"SourceAndBinary","Severity":"Blocking"}]}]"""),
+                "Report Packages[0].Findings[0].Detail must be non-empty."
+            },
+            { BuildReportJson(infrastructureErrorsJson: """[""]"""), "Report InfrastructureErrors[0] must be non-empty." },
+        };
+
     private static CompatibilityReport BuildReport()
     {
         return new CompatibilityReport(
@@ -265,6 +313,41 @@ public sealed class CliCommandTests
             InfrastructureErrors: Array.Empty<string>());
     }
 
+    private static string BuildReportJson(
+        string baseRefJson = "\"main\"",
+        string overrideJson = """{"IsValid":false,"Justification":null,"Reason":"No override."}""",
+        string packagesJson = "[]",
+        string infrastructureErrorsJson = "[]") =>
+        $$"""
+        {
+          "SchemaVersion": 1,
+          "RunId": {{RunId}},
+          "PullRequestNumber": {{PullRequestNumber}},
+          "BaseRef": {{baseRefJson}},
+          "Decision": "Pass",
+          "Override": {{overrideJson}},
+          "Packages": {{packagesJson}},
+          "InfrastructureErrors": {{infrastructureErrorsJson}}
+        }
+        """;
+
+    private static async Task<(int ExitCode, string Error)> RunCliCapturingErrorAsync(string[] args)
+    {
+        var original = Console.Error;
+        using var writer = new StringWriter();
+        Console.SetError(writer);
+
+        try
+        {
+            var exitCode = await Cli.RunAsync(args, CancellationToken.None);
+            return (exitCode, writer.ToString());
+        }
+        finally
+        {
+            Console.SetError(original);
+        }
+    }
+
     private static string TemporaryPath(string suffix) =>
         Path.Combine(AppContext.BaseDirectory, $"cli-{Guid.NewGuid():N}-{suffix}");
 
@@ -274,6 +357,12 @@ public sealed class CliCommandTests
         {
             Path = TemporaryPath("report.json");
             File.WriteAllText(Path, JsonSerializer.Serialize(report, WriteOptions));
+        }
+
+        public TemporaryReport(string reportJson)
+        {
+            Path = TemporaryPath("report.json");
+            File.WriteAllText(Path, reportJson);
         }
 
         public string Path { get; }

@@ -48,6 +48,8 @@ namespace Microsoft.Agents.ApiCompat
                 return Fail(2, "Usage: analyze --repo-root <path> --packages <path> --event <path> --output <path> [--candidate-error-file <path>]");
             }
 
+            var outputDirectory = Path.GetFullPath(output);
+
             PullRequestEvent pullRequest;
             try
             {
@@ -60,11 +62,11 @@ namespace Microsoft.Agents.ApiCompat
 
             try
             {
-                var report = await BuildReportAsync(options, repoRoot, packages, output, pullRequest, cancellationToken)
+                var report = await BuildReportAsync(options, repoRoot, packages, outputDirectory, pullRequest, cancellationToken)
                     .ConfigureAwait(false);
 
-                await ReportWriter.WriteAsync(report, output, cancellationToken).ConfigureAwait(false);
-                WriteGitHubOutputs(report, output);
+                await ReportWriter.WriteAsync(report, outputDirectory, cancellationToken).ConfigureAwait(false);
+                WriteGitHubOutputs(report, outputDirectory);
                 return 0;
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -166,6 +168,12 @@ namespace Microsoft.Agents.ApiCompat
                 return Fail(1, $"Unsupported report schema version {report.SchemaVersion}.");
             }
 
+            var validationError = ValidateRenderReport(report);
+            if (validationError is not null)
+            {
+                return Fail(1, validationError);
+            }
+
             if (report.RunId != runId)
             {
                 return Fail(1, "Report run id does not match --run-id.");
@@ -186,6 +194,113 @@ namespace Microsoft.Agents.ApiCompat
             await File.WriteAllTextAsync(outputPath, comment, cancellationToken).ConfigureAwait(false);
             return 0;
         }
+
+        private static string? ValidateRenderReport(CompatibilityReport report)
+        {
+            if (string.IsNullOrWhiteSpace(report.BaseRef))
+            {
+                return "Report BaseRef must be non-empty.";
+            }
+
+            if (report.Override is null)
+            {
+                return "Report Override is required.";
+            }
+
+            if (string.IsNullOrWhiteSpace(report.Override.Reason))
+            {
+                return "Report Override.Reason must be non-empty.";
+            }
+
+            if (report.Override.Justification is not null &&
+                string.IsNullOrWhiteSpace(report.Override.Justification))
+            {
+                return "Report Override.Justification must be non-empty when provided.";
+            }
+
+            if (report.Packages is null)
+            {
+                return "Report Packages is required.";
+            }
+
+            for (var packageIndex = 0; packageIndex < report.Packages.Count; packageIndex++)
+            {
+                var package = report.Packages[packageIndex];
+                if (package is null)
+                {
+                    return $"Report Packages[{packageIndex}] is required.";
+                }
+
+                var packagePrefix = $"Report Packages[{packageIndex}]";
+                var packageIdError = ValidateRequiredString(package.PackageId, $"{packagePrefix}.PackageId");
+                if (packageIdError is not null)
+                {
+                    return packageIdError;
+                }
+
+                var candidateVersionError = ValidateRequiredString(package.CandidateVersion, $"{packagePrefix}.CandidateVersion");
+                if (candidateVersionError is not null)
+                {
+                    return candidateVersionError;
+                }
+
+                var statusError = ValidateRequiredString(package.Status, $"{packagePrefix}.Status");
+                if (statusError is not null)
+                {
+                    return statusError;
+                }
+
+                if (package.Findings is null)
+                {
+                    return $"{packagePrefix}.Findings is required.";
+                }
+
+                for (var findingIndex = 0; findingIndex < package.Findings.Count; findingIndex++)
+                {
+                    var finding = package.Findings[findingIndex];
+                    if (finding is null)
+                    {
+                        return $"{packagePrefix}.Findings[{findingIndex}] is required.";
+                    }
+
+                    var findingPrefix = $"{packagePrefix}.Findings[{findingIndex}]";
+                    foreach (var error in new[]
+                    {
+                        ValidateRequiredString(finding.PackageId, $"{findingPrefix}.PackageId"),
+                        ValidateRequiredString(finding.BaselineVersion, $"{findingPrefix}.BaselineVersion"),
+                        ValidateRequiredString(finding.CandidateVersion, $"{findingPrefix}.CandidateVersion"),
+                        ValidateRequiredString(finding.DiagnosticId, $"{findingPrefix}.DiagnosticId"),
+                        ValidateRequiredString(finding.Target, $"{findingPrefix}.Target"),
+                        ValidateRequiredString(finding.Detail, $"{findingPrefix}.Detail"),
+                    })
+                    {
+                        if (error is not null)
+                        {
+                            return error;
+                        }
+                    }
+                }
+            }
+
+            if (report.InfrastructureErrors is null)
+            {
+                return "Report InfrastructureErrors is required.";
+            }
+
+            for (var errorIndex = 0; errorIndex < report.InfrastructureErrors.Count; errorIndex++)
+            {
+                var infrastructureError = report.InfrastructureErrors[errorIndex];
+                if (string.IsNullOrWhiteSpace(infrastructureError))
+                {
+                    return $"Report InfrastructureErrors[{errorIndex}] must be non-empty.";
+                }
+            }
+
+            return null;
+        }
+
+        private static string? ValidateRequiredString(string? value, string path) =>
+            string.IsNullOrWhiteSpace(value) ? $"{path} must be non-empty." : null;
 
         private static void WriteGitHubOutputs(CompatibilityReport report, string outputDirectory)
         {

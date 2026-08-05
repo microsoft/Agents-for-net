@@ -11,7 +11,7 @@ inputs:
     description: Path to the pull_request event payload JSON.
     required: true
   output-directory:
-    description: Directory that receives packages and the compatibility report artifacts.
+    description: Absolute directory that receives packed packages and compatibility report artifacts. Relative paths are rejected.
     required: true
 outputs:
   decision:
@@ -29,6 +29,20 @@ outputs:
 runs:
   using: composite
   steps:
+    - id: output-path
+      name: Resolve output directory
+      shell: pwsh
+      env:
+        INPUT_OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
+      run: |
+        if (-not [System.IO.Path]::IsPathRooted($env:INPUT_OUTPUT_DIRECTORY)) {
+          Write-Error "output-directory must be an absolute path."
+          exit 1
+        }
+
+        $absoluteOutputDirectory = [System.IO.Path]::GetFullPath($env:INPUT_OUTPUT_DIRECTORY)
+        New-Item -ItemType Directory -Force -Path $absoluteOutputDirectory | Out-Null
+        Add-Content -Path $env:GITHUB_OUTPUT -Value "output-directory=$absoluteOutputDirectory"
     - name: Restore compatibility tool
       shell: pwsh
       working-directory: ${{ inputs.trusted-root }}
@@ -41,32 +55,41 @@ runs:
       name: Restore and pack candidate
       shell: pwsh
       working-directory: ${{ inputs.candidate-root }}
+      env:
+        OUTPUT_DIRECTORY: ${{ steps.output-path.outputs.output-directory }}
       run: |
-        $errorFile = "${{ inputs.output-directory }}\candidate-error.txt"
-        New-Item -ItemType Directory -Force -Path "${{ inputs.output-directory }}\packages" | Out-Null
+        $packagesDirectory = Join-Path $env:OUTPUT_DIRECTORY "packages"
+        $errorFile = Join-Path $env:OUTPUT_DIRECTORY "candidate-error.txt"
+        New-Item -ItemType Directory -Force -Path $packagesDirectory | Out-Null
         dotnet restore AgentSdk.proj 2>&1 | Tee-Object -Variable restoreOutput
         if ($LASTEXITCODE -ne 0) {
-          $restoreOutput | Set-Content $errorFile
-          "candidate-error-file=$errorFile" >> $env:GITHUB_OUTPUT
+          $restoreOutput | Set-Content -Path $errorFile
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "candidate-error-file=$errorFile"
           exit 0
         }
-        dotnet pack src\Microsoft.Agents.SDK.sln -c Release --no-restore -p:PackageOutputPath=${{ inputs.output-directory }}\packages 2>&1 | Tee-Object -Variable packOutput
+        dotnet pack src\Microsoft.Agents.SDK.sln -c Release --no-restore "-p:PackageOutputPath=$packagesDirectory" 2>&1 | Tee-Object -Variable packOutput
         if ($LASTEXITCODE -ne 0) {
-          $packOutput | Set-Content $errorFile
-          "candidate-error-file=$errorFile" >> $env:GITHUB_OUTPUT
+          $packOutput | Set-Content -Path $errorFile
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "candidate-error-file=$errorFile"
           exit 0
         }
-        "candidate-error-file=" >> $env:GITHUB_OUTPUT
+        Add-Content -Path $env:GITHUB_OUTPUT -Value "candidate-error-file="
     - id: analyze
       name: Analyze compatibility
       shell: pwsh
       working-directory: ${{ inputs.trusted-root }}
-      run: >
-        dotnet run --no-build -c Release
-        --project src\tools\Microsoft.Agents.ApiCompat\Microsoft.Agents.ApiCompat.csproj --
-        analyze
-        --repo-root "${{ inputs.candidate-root }}"
-        --packages "${{ inputs.output-directory }}\packages"
-        --event "${{ inputs.event-path }}"
-        --output "${{ inputs.output-directory }}"
-        --candidate-error-file "${{ steps.candidate.outputs.candidate-error-file }}"
+      env:
+        CANDIDATE_ROOT: ${{ inputs.candidate-root }}
+        EVENT_PATH: ${{ inputs.event-path }}
+        OUTPUT_DIRECTORY: ${{ steps.output-path.outputs.output-directory }}
+        CANDIDATE_ERROR_FILE: ${{ steps.candidate.outputs.candidate-error-file }}
+      run: |
+        $packagesDirectory = Join-Path $env:OUTPUT_DIRECTORY "packages"
+        dotnet run --no-build -c Release `
+          --project src\tools\Microsoft.Agents.ApiCompat\Microsoft.Agents.ApiCompat.csproj -- `
+          analyze `
+          --repo-root $env:CANDIDATE_ROOT `
+          --packages $packagesDirectory `
+          --event $env:EVENT_PATH `
+          --output $env:OUTPUT_DIRECTORY `
+          --candidate-error-file $env:CANDIDATE_ERROR_FILE
