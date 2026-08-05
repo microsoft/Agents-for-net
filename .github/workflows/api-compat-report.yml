@@ -18,6 +18,46 @@ jobs:
   comment:
     runs-on: ubuntu-latest
     steps:
+      - id: resolve-pr
+        name: Resolve pull request
+        uses: actions/github-script@v7
+        env:
+          HEAD_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        with:
+          script: |
+            const expectedRepository = 'microsoft/Agents-for-net';
+            const workflowRepository = `${context.repo.owner}/${context.repo.repo}`;
+            const headRepository = process.env.HEAD_REPOSITORY;
+            const headSha = process.env.HEAD_SHA;
+
+            if (workflowRepository.toLowerCase() !== expectedRepository.toLowerCase()) {
+              throw new Error(`Unexpected workflow repository '${workflowRepository}'.`);
+            }
+            if (!headRepository || !headSha) {
+              throw new Error('The triggering workflow run is missing head repository or SHA metadata.');
+            }
+
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            const matches = pulls.filter(pull =>
+              pull.base.repo?.full_name?.toLowerCase() === expectedRepository.toLowerCase() &&
+              pull.head.repo?.full_name?.toLowerCase() === headRepository.toLowerCase() &&
+              pull.head.sha === headSha
+            );
+
+            if (matches.length !== 1) {
+              throw new Error(
+                `Expected exactly one open pull request for ${headRepository}@${headSha} ` +
+                `targeting ${expectedRepository}, but found ${matches.length}.`
+              );
+            }
+
+            core.setOutput('pr-number', matches[0].number);
       - name: Checkout trusted default branch
         uses: actions/checkout@v4
         with:
@@ -35,25 +75,6 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
-      - id: report
-        name: Read report metadata
-        shell: pwsh
-        run: |
-          $reportPath = "${{ runner.temp }}/api-compat/report.json"
-          if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
-            throw "Compatibility report '$reportPath' does not exist."
-          }
-
-          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
-          $pullRequestNumber = 0
-          if (-not [int]::TryParse(
-              [string]$report.PullRequestNumber,
-              [ref]$pullRequestNumber) -or
-              $pullRequestNumber -le 0) {
-            throw "Compatibility report has an invalid PullRequestNumber."
-          }
-
-          "pr-number=$pullRequestNumber" >> $env:GITHUB_OUTPUT
       - name: Render sanitized comment
         run: >
           dotnet run -c Release
@@ -62,12 +83,12 @@ jobs:
           --report "${{ runner.temp }}/api-compat/report.json"
           --output "${{ runner.temp }}/api-compat/comment.md"
           --run-id "${{ github.event.workflow_run.id }}"
-          --pr-number "${{ steps.report.outputs.pr-number }}"
+          --pr-number "${{ steps.resolve-pr.outputs.pr-number }}"
       - name: Update sticky comment
         uses: actions/github-script@v7
         env:
           COMMENT_PATH: ${{ runner.temp }}/api-compat/comment.md
-          PR_NUMBER: ${{ steps.report.outputs.pr-number }}
+          PR_NUMBER: ${{ steps.resolve-pr.outputs.pr-number }}
           RUN_ID: ${{ github.event.workflow_run.id }}
         with:
           script: |

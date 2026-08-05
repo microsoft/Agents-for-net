@@ -4,16 +4,18 @@
 
 **Goal:** Block public enum value changes and reliably post API compatibility reports for fork pull requests.
 
-**Architecture:** Keep diagnostic policy in `DiagnosticClassifier` and make `report.json` the trusted source of the pull request number. The detection workflow uploads a run-ID-addressable artifact; the trusted report workflow downloads it, validates the embedded pull request number, and uses that value for rendering and commenting.
+**Architecture:** Keep diagnostic policy in `DiagnosticClassifier`. The detection workflow uploads a run-ID-addressable artifact; the trusted report workflow resolves the pull request through the GitHub API from `workflow_run.head_repository.full_name` and `workflow_run.head_sha`, then uses that value for rendering and commenting. The renderer cross-checks the API-resolved value against `report.json`.
 
-**Tech Stack:** C#/.NET 8, xUnit, GitHub Actions YAML, PowerShell.
+**Tech Stack:** C#/.NET 8, xUnit, GitHub Actions YAML, JavaScript.
 
 ## Global Constraints
 
 - Keep `CP0013` suppressed.
 - Treat `CP0011` as a blocking binary compatibility diagnostic.
 - Name the report artifact `api-compat-report-<run-id>`.
-- Fail the report workflow if `PullRequestNumber` is missing or is not a positive integer.
+- Resolve exactly one open pull request targeting `microsoft/Agents-for-net` whose head repository and SHA match the triggering workflow run.
+- Fail closed if trusted head metadata is missing or if zero or multiple pull requests match.
+- Do not use `report.json` to select the pull request; pass the API-resolved number to the renderer for artifact integrity validation.
 - Do not depend on `github.event.workflow_run.pull_requests`.
 
 ---
@@ -101,27 +103,27 @@ git commit -m "fix: enforce enum value compatibility"
 
 ---
 
-### Task 2: Resolve Fork Pull Request Numbers from the Report
+### Task 2: Resolve Fork Pull Request Numbers through the GitHub API
 
 **Files:**
 - Modify: `.github/workflows/api-compat.yml:65-73`
 - Modify: `.github/workflows/api-compat-report.yml:12-49`
 
 **Interfaces:**
-- Consumes: `report.json` containing integer property `PullRequestNumber`.
-- Produces: step output `steps.report.outputs.pr-number`, used by render and comment steps.
+- Consumes: trusted `workflow_run.head_repository.full_name` and `workflow_run.head_sha` metadata plus the GitHub pull requests API.
+- Produces: step output `steps.resolve-pr.outputs.pr-number`, used by render and comment steps.
 
-- [ ] **Step 1: Demonstrate the current workflow dependency**
+- [ ] **Step 1: Demonstrate the insecure artifact selector**
 
 Run:
 
 ```powershell
-$matches = rg -n "workflow_run\.pull_requests" .github\workflows\api-compat-report.yml
-if (-not $matches) { throw "Expected the current workflow to depend on workflow_run.pull_requests." }
+$matches = rg -n "Read report metadata|report\.PullRequestNumber|steps\.report\.outputs\.pr-number" .github\workflows\api-compat-report.yml
+if (-not $matches) { throw "Expected report.json to select the pull request." }
 $matches
 ```
 
-Expected: matches in the concurrency key, job condition, artifact name, renderer arguments, and comment environment.
+Expected: matches in the report metadata step and renderer/comment wiring.
 
 - [ ] **Step 2: Make the detection artifact addressable by run ID**
 
@@ -162,64 +164,61 @@ Update the artifact name:
 
 Keep the repository, run ID, token, and destination settings unchanged.
 
-- [ ] **Step 4: Validate and expose the embedded pull request number**
+- [ ] **Step 4: Resolve and verify the pull request through the GitHub API**
 
-Add this step immediately after artifact download:
+Add an `actions/github-script@v7` step with ID `resolve-pr`. Pass
+`github.event.workflow_run.head_repository.full_name` and
+`github.event.workflow_run.head_sha` through the environment. The script must:
 
-```yaml
-      - id: report
-        name: Read report metadata
-        shell: pwsh
-        run: |
-          $reportPath = "${{ runner.temp }}/api-compat/report.json"
-          if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
-            throw "Compatibility report '$reportPath' does not exist."
-          }
+- verify the workflow repository is `microsoft/Agents-for-net`;
+- reject missing trusted head repository or SHA metadata;
+- list open pull requests in `microsoft/Agents-for-net`;
+- retain only pull requests whose base repository is
+  `microsoft/Agents-for-net` and whose head repository and SHA exactly match
+  the triggering workflow run;
+- fail unless exactly one match remains; and
+- expose that match as output `pr-number`.
 
-          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
-          $pullRequestNumber = 0
-          if (-not [int]::TryParse(
-              [string]$report.PullRequestNumber,
-              [ref]$pullRequestNumber) -or
-              $pullRequestNumber -le 0) {
-            throw "Compatibility report has an invalid PullRequestNumber."
-          }
-
-          "pr-number=$pullRequestNumber" >> $env:GITHUB_OUTPUT
-```
-
-This fails closed for missing, malformed, zero, or negative values.
-
-- [ ] **Step 5: Use the validated output for rendering and commenting**
+- [ ] **Step 5: Use the API-resolved output for rendering and commenting**
 
 Update the renderer argument:
 
 ```yaml
-          --pr-number "${{ steps.report.outputs.pr-number }}"
+          --pr-number "${{ steps.resolve-pr.outputs.pr-number }}"
 ```
+
+This retains the renderer's cross-check against `report.PullRequestNumber`, so a
+tampered or mismatched artifact cannot be posted.
 
 Update the sticky-comment environment:
 
 ```yaml
         env:
           COMMENT_PATH: ${{ runner.temp }}/api-compat/comment.md
-          PR_NUMBER: ${{ steps.report.outputs.pr-number }}
+          PR_NUMBER: ${{ steps.resolve-pr.outputs.pr-number }}
           RUN_ID: ${{ github.event.workflow_run.id }}
 ```
 
-- [ ] **Step 6: Verify no workflow expression depends on `pull_requests`**
+- [ ] **Step 6: Verify the trust-boundary structure**
 
 Run:
 
 ```powershell
-$matches = rg -n "workflow_run\.pull_requests" .github\workflows\api-compat-report.yml
-if ($matches) {
-  $matches
-  throw "Report workflow still depends on workflow_run.pull_requests."
+$path = ".github\workflows\api-compat-report.yml"
+$text = Get-Content -LiteralPath $path -Raw
+if ($text -match "workflow_run\.pull_requests|Read report metadata|report\.PullRequestNumber") {
+  throw "An untrusted or unavailable selector remains."
+}
+if ($text -notmatch "github\.event\.workflow_run\.head_repository\.full_name" -or
+    $text -notmatch "github\.event\.workflow_run\.head_sha" -or
+    $text -notmatch "steps\.resolve-pr\.outputs\.pr-number") {
+  throw "The trusted API resolver is incomplete."
 }
 ```
 
-Expected: command completes without output.
+Expected: command completes without output. Inspect the resolver to confirm it
+filters open pull requests by the exact target repository, head repository, and
+head SHA and fails unless one match remains.
 
 - [ ] **Step 7: Verify the workflow diff**
 
@@ -230,13 +229,15 @@ git --no-pager diff --check
 git --no-pager diff -- .github\workflows\api-compat.yml .github\workflows\api-compat-report.yml
 ```
 
-Expected: no whitespace errors; the artifact name is run-ID-only, report metadata is validated, and all renderer/comment PR references use `steps.report.outputs.pr-number`.
+Expected: no whitespace errors; the artifact name is run-ID-only, the API
+resolver fails closed, and all renderer/comment PR references use
+`steps.resolve-pr.outputs.pr-number`.
 
 - [ ] **Step 8: Commit the workflow fix**
 
 ```powershell
-git add .github\workflows\api-compat.yml .github\workflows\api-compat-report.yml
-git commit -m "fix: report API compatibility for fork PRs"
+git add .github\workflows\api-compat.yml .github\workflows\api-compat-report.yml docs\superpowers\specs\2026-08-05-api-compat-review-fixes-design.md docs\superpowers\plans\2026-08-05-api-compat-review-fixes.md
+git commit -m "fix: resolve API compatibility pull requests safely"
 ```
 
 ---
