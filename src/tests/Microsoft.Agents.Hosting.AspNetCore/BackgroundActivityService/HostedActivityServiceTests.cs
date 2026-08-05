@@ -7,9 +7,12 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -149,6 +152,142 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             // must not throw LockRecursionException. See https://github.com/dotnet/aspnetcore/issues/40271.
             await record.Service.StopAsync(token);
             await record.Service.StopAsync(token);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_WithScopePerTurn_ShouldResolveScopedDependencyPerTurn()
+        {
+            var record = UseScopedRecord(useScopePerTurn: true, expectedTurns: 2);
+
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.AllTurnsProcessed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await record.Service.StopAsync(CancellationToken.None);
+
+            var probes = record.Collector.Resolved.ToArray();
+            Assert.Equal(2, probes.Length);
+            Assert.NotSame(probes[0], probes[1]);
+            Assert.All(probes, probe => Assert.True(probe.IsDisposed, "Turn scope was not disposed."));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_WithoutScopePerTurn_ShouldShareScopedDependencyAcrossTurns()
+        {
+            var record = UseScopedRecord(useScopePerTurn: false, expectedTurns: 2);
+
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.AllTurnsProcessed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await record.Service.StopAsync(CancellationToken.None);
+
+            // Default behavior: resolving from the root provider promotes the scoped registration to the
+            // root scope, so every turn shares one instance and it is not disposed between turns.
+            var probes = record.Collector.Resolved.ToArray();
+            Assert.Equal(2, probes.Length);
+            Assert.Same(probes[0], probes[1]);
+            Assert.All(probes, probe => Assert.False(probe.IsDisposed));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_WithScopePerTurnFromConfiguration_ShouldResolveScopedDependencyPerTurn()
+        {
+            // AdapterOptions is not registered in DI, so the CloudAdapterOptions configuration section
+            // is the path applications actually use to enable this.
+            var record = UseScopedRecord(useScopePerTurn: true, expectedTurns: 2, viaConfiguration: true);
+
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.AllTurnsProcessed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await record.Service.StopAsync(CancellationToken.None);
+
+            var probes = record.Collector.Resolved.ToArray();
+            Assert.Equal(2, probes.Length);
+            Assert.NotSame(probes[0], probes[1]);
+            Assert.All(probes, probe => Assert.True(probe.IsDisposed, "Turn scope was not disposed."));
+        }
+
+        private static ScopedRecord UseScopedRecord(bool useScopePerTurn, int expectedTurns, bool viaConfiguration = false)
+        {
+            var collector = new ProbeCollector();
+            var services = new ServiceCollection();
+            services.AddSingleton(collector);
+            services.AddScoped<ScopedProbe>();
+            services.AddTransient<IAgent, ProbeAgent>();
+
+            var serviceProvider = services.BuildServiceProvider();
+            var queue = new ActivityTaskQueue();
+
+            // AdapterOptions is not registered in DI, so applications configure it through the
+            // "CloudAdapterOptions" section. Exercise both that path and the explicit options parameter.
+            var configBuilder = new ConfigurationBuilder();
+            if (viaConfiguration)
+            {
+                configBuilder.AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["CloudAdapterOptions:UseScopePerTurn"] = useScopePerTurn.ToString()
+                });
+            }
+
+            var service = new HostedActivityService(
+                serviceProvider,
+                configBuilder.Build(),
+                queue,
+                new Mock<ILogger<HostedActivityService>>().Object,
+                viaConfiguration ? null : new AdapterOptions { UseScopePerTurn = useScopePerTurn });
+
+            var allTurnsProcessed = new TaskCompletionSource();
+            var processed = 0;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(a => a.ProcessActivityAsync(It.IsAny<ClaimsIdentity>(), It.IsAny<Activity>(), It.IsAny<AgentCallbackHandler>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new InvokeResponse())
+                .Callback(() =>
+                {
+                    if (Interlocked.Increment(ref processed) == expectedTurns)
+                    {
+                        allTurnsProcessed.TrySetResult();
+                    }
+                });
+
+            return new(service, queue, adapter, collector, allTurnsProcessed);
+        }
+
+        private record ScopedRecord(
+            HostedActivityService Service,
+            ActivityTaskQueue Queue,
+            Mock<IChannelAdapter> Adapter,
+            ProbeCollector Collector,
+            TaskCompletionSource AllTurnsProcessed);
+
+        private sealed class ScopedProbe : IDisposable
+        {
+            public bool IsDisposed { get; private set; }
+
+            public void Dispose() => IsDisposed = true;
+        }
+
+        private sealed class ProbeCollector
+        {
+            public ConcurrentQueue<ScopedProbe> Resolved { get; } = new();
+        }
+
+        private sealed class ProbeAgent : IAgent
+        {
+            public ProbeAgent(ScopedProbe probe, ProbeCollector collector)
+            {
+                collector.Resolved.Enqueue(probe);
+            }
+
+            public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
         }
 
         private static Record UseRecord(IAgent agent = null)
