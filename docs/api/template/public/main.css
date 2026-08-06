@@ -1,0 +1,44 @@
+:root {
+  --bs-font-sans-serif: "Segoe UI", "Segoe UI Variable Text", Arial, sans-serif;
+  --bs-link-color-rgb: 0, 103, 184;
+  --bs-link-hover-color-rgb: 0, 78, 140;
+}
+
+body {
+  color: #242424;
+}
+
+.navbar {
+  border-bottom: 1px solid #e1dfdd;
+  box-shadow: none;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+.sidebar {
+  background-color: #faf9f8;
+  border-right-color: #edebe9;
+}
+
+article h1 {
+  font-size: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+article h2 {
+  border-bottom: 1px solid #edebe9;
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding-bottom: 0.35rem;
+}
+
+article table {
+  font-size: 0.9375rem;
+}
+
+code {
+  color: #a4262c;
+}

@@ -32,6 +32,8 @@ bld/
 /bin/
 /binSigned/
 /obj/
+/docs/api/_site/
+/docs/api/obj/
 Drop/
 target/
 Symbols/
@@ -233,3 +235,6 @@ settings.local.json
 # a365
 a365.config.json
 a365.generated.*
+
+# ai
+**/superpowers/**

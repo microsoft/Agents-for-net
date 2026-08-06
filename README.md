@@ -20,6 +20,9 @@ Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profil
 
 Please read [this](GettingStarted.md) for directions on what is needed and how to setup to build this codebase locally
 
+To generate a searchable website from the libraries' C# XML documentation comments, see the
+[API documentation build instructions](docs/api/README.md).
+
 ## AI Coding Assistant Setup
 
 ### Agent Plugins (Skills)

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../../src/libraries",
+          "files": [
+            "**/*.csproj"
+          ],
+          "exclude": [
+            "**/*.Analyzers.csproj"
+          ]
+        }
+      ],
+      "properties": {
+        "Configuration": "Release",
+        "TargetFramework": "net8.0"
+      },
+      "namespaceLayout": "flattened",
+      "memberLayout": "samePage",
+      "enumSortOrder": "declaringOrder",
+      "output": "obj/api"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "index.md",
+          "toc.yml"
+        ]
+      },
+      {
+        "src": "obj/api",
+        "dest": "api",
+        "files": [
+          "**/*.yml"
+        ]
+      }
+    ],
+    "globalMetadata": {
+      "_appName": "Microsoft 365 Agents SDK",
+      "_appTitle": "Microsoft 365 Agents SDK for .NET",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/microsoft/Agents-for-net",
+        "branch": "main"
+      },
+      "author": "Microsoft",
+      "ms.topic": "generated-reference"
+    },
+    "output": "_site",
+    "template": [
+      "default",
+      "modern",
+      "template"
+    ]
+  },
+  "rules": {
+    "InvalidCref": "info",
+    "MissingXmlComment": "suggestion"
+  }
+}
