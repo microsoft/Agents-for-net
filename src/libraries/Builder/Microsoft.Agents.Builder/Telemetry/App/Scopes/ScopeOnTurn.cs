@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
     /// A <see cref="TelemetryScope"/> that traces the full execution of a single agent turn.
     /// </summary>
     /// <remarks>
-    /// Tags the <see cref="System.Diagnostics.Activity"/> with activity metadata (type, channel,
+    /// Tags the <see cref="System.Diagnostics.Activity"/> with activity metadata (type, name, channel,
     /// conversation, activity ID) and authorization outcome. On successful completion, increments
     /// <see cref="Metrics.TurnCount"/> and records <see cref="Metrics.TurnDuration"/>; on error,
     /// increments <see cref="Metrics.TurnErrorCount"/> instead. Call <see cref="Share"/> to supply
@@ -31,6 +31,7 @@ namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
             telemetryActivity.SetTag(TagNames.ActivityType, _turnContext.Activity.Type);
+            telemetryActivity.SetTag(TagNames.ActivityName, _turnContext.Activity.Name);
             telemetryActivity.SetTag(TagNames.ActivityChannelId, _turnContext.Activity.ChannelId?.ToString());
             telemetryActivity.SetTag(TagNames.ConversationId, _turnContext.Activity.Conversation?.Id);
             telemetryActivity.SetTag(TagNames.ActivityId, _turnContext.Activity.Id);

@@ -102,7 +102,7 @@ sequenceDiagram
 
 ## Developer Usage Examples
 
-### Adding Custom Converters (e.g., Teams extension)
+### Adding Custom Converters (e.g., SharePoint extension)
 
 ```csharp
 [SerializationInit]
@@ -112,8 +112,8 @@ internal class SerializationInit
     {
         var converters = new List<JsonConverter>
         {
-            new TeamsChannelDataConverter(),
-            new SurfaceConverter()
+            new AceDataConverter(),
+            new AceRequestConverter()
         };
         ProtocolJsonSerializer.ApplyExtensionConverters(converters);
     }

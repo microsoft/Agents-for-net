@@ -203,7 +203,7 @@ namespace Microsoft.Agents.Builder.App
             return next();
         }
 
-        private void ResetInterval()
+        internal void ResetInterval()
         {
             while (true)
             {

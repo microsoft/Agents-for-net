@@ -41,18 +41,27 @@ namespace Microsoft.Agents.Builder
         public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         private const string TeamsStreamCancelled = "ContentStreamNotAllowed";
+        private const string TeamsStreamTimedOut = "Content stream finished due to exceeded streaming time.";
         // Teams failed to accept streaming messages. 
         private const string BadArgument = "BadArgument";
         private const string TeamsStreamNotAllowed = "streaming api is not enabled";
-
+                
         private readonly TurnContext _context;
         private int _nextSequence = 1;
         private bool _ended = false;
         private Timer _timer;
+        private bool _processingTimer = false; 
         private bool _messageUpdated = false;
         private bool _isTeamsChannel;
         private bool _canceled;
         private bool _userCanceled;
+        private bool _streamTimedOut = false;
+        private string _lastInformationalMessageSent = string.Empty;
+        private DateTime? _streamStartTime;
+        private TimeSpan _streamElapsedTime;
+        private DateTime? _lastPassTime;
+        private ChannelId _channelId;
+
 
         // Queue for outgoing activities
         private readonly List<Func<IActivity>> _queue = [];
@@ -129,6 +138,7 @@ namespace Microsoft.Agents.Builder
 
         private int _interval;
 
+        /// <inheritdoc/>
         public int EndStreamTimeout { get; set; } = DefaultEndStreamTimeout;
 
         /// <summary>
@@ -164,6 +174,17 @@ namespace Microsoft.Agents.Builder
         /// <returns>Number of updates sent so far.</returns>
         public int UpdatesSent() => _nextSequence - 1;
 
+
+        // BizChat / teams Streaming timeout and pinging properties 
+
+        /// <inheritdoc/>
+        public string StreamingTakingTooLongMessage { get; set; } = "The response is taking longer than expected. Please wait while we continue to generate the response.";
+
+        // Bizchat default timeout mitigation support
+        private TimeSpan M365StreamingTimeout = new TimeSpan(0, 0, 1, 45); // 1 minute, 45 seconds default for M365 streaming timeout.  If the interval is greater than this, we will use this value instead.
+        private static readonly TimeSpan BizChatWorkingNoticeInterval = new TimeSpan(0, 0, 0, 35); // BizChat requires an update within ~45 seconds, otherwise it will timeout.
+
+
         /// <summary>
         /// Creates a new instance of the <see cref="StreamingResponse"/> class.
         /// </summary>
@@ -176,24 +197,14 @@ namespace Microsoft.Agents.Builder
             SetDefaults(turnContext);
         }
 
-        /// <summary>
-        /// Adds an attachment to the collection of attachments for the final message.
-        /// </summary>
-        /// <param name="attachment">The attachment to add. Must not be <see langword="null"/>.</param>
+        /// <inheritdoc/>
         public void AddAttachment(Attachment attachment)
         {
-            AssertionHelpers.ThrowIfNull(attachment, nameof(attachment));
-
-            Attachments ??= [];
+            AssertionHelpers.ThrowIfNull(attachment, nameof(attachment));            Attachments ??= [];
             Attachments.Add(attachment);
         }
 
-        /// <summary>
-        /// Adds a citation to the collection at the specified position.
-        /// </summary>
-        /// <remarks>The citation's appearance is automatically generated based on its title, content, and URL.</remarks>
-        /// <param name="citation">The citation to add. Must not be <see langword="null"/>.</param>
-        /// <param name="citationPosition">The position of the citation in the collection. Must be a non-negative integer.</param>
+        /// <inheritdoc/>
         public void AddCitation(Citation citation, int citationPosition)
         {
             Citations ??= [];
@@ -209,11 +220,7 @@ namespace Microsoft.Agents.Builder
             });
         }
 
-        /// <summary>
-        ///  Sets the citations for the full message.
-        /// </summary>
-        /// <remarks>The citation's appearance is automatically generated based on its title, content, and URL. Citations are numbered in the order they appear on the list.</remarks>
-        /// <param name="citations">Citations to be included in the message.</param>
+        /// <inheritdoc/>
         public void AddCitations(IList<Citation> citations)
         {
             if (citations.Count > 0)
@@ -239,20 +246,14 @@ namespace Microsoft.Agents.Builder
             }
         }
 
-        /// <summary>
-        /// Adds a ClientCitation to the Citations list.
-        /// </summary>
-        /// <param name="citation">ClientCitation to add to the stream</param>
+        /// <inheritdoc/>
         public void AddCitation(ClientCitation citation)
         {
             Citations ??= [];
             Citations.Add(citation);
         }
 
-        /// <summary>
-        /// Adds multiple ClientCitations to the Citations list.
-        /// </summary>
-        /// <param name="citations">The ClientCitations to add.</param>
+        /// <inheritdoc/>
         public void AddCitations(IList<ClientCitation> citations)
         {
             if (citations.Count > 0)
@@ -262,21 +263,22 @@ namespace Microsoft.Agents.Builder
             }
         }
 
-        /// <summary>
-        /// Queues an informative update to be sent to the client.
-        /// </summary>
-        /// <param name="text">Text of the update to send.</param>
-        /// <param name="cancellationToken"></param>
-        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
+        /// <inheritdoc/>
         public async Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
         {
+            if (_channelId == Channels.M365Copilot)
+            {
+                // BizChat has a behavior that will cause the stream to visually error if there have been no updates every 45 seconds, this is a compensation to deal with sending a notice every based on the bizChat inactivity alert timer. 
+                _lastInformationalMessageSent = text;
+                _lastPassTime = DateTime.UtcNow;
+            }
+
             if (!IsStreamingChannel)
             {
                 return;
             }
 
             Func<IActivity> queueFunc;
-
             lock (this)
             {
                 if (_ended)
@@ -310,12 +312,7 @@ namespace Microsoft.Agents.Builder
             StartStream();
         }
 
-        /// <summary>
-        /// Queues a chunk of partial message text to be sent to the client.
-        /// </summary>
-        /// <param name="text">Partial text of the message to send.</param>
-        /// <param name="citations">Citations to include in the message.</param>
-        /// <exception cref="System.InvalidOperationException">Throws if the stream has already ended.</exception>
+        /// <inheritdoc/>
         public void QueueTextChunk(string text)
         {
             if (string.IsNullOrEmpty(text) || _canceled)
@@ -325,6 +322,9 @@ namespace Microsoft.Agents.Builder
 
             lock (this)
             {
+                // Setup the stream start here if this is the first event. 
+                _streamStartTime ??= DateTime.UtcNow;
+
                 if (_ended)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
@@ -344,14 +344,7 @@ namespace Microsoft.Agents.Builder
             }
         }
 
-        /// <summary>
-        /// Ends the stream by sending the final message to the client.
-        /// </summary>
-        /// <remarks>
-        /// Since the messages are sent on an interval, this call will block until all have been sent
-        /// before sending the final Message.
-        /// </remarks>
-        /// <returns>StreamingResponseResult with the result of the streaming response.</returns>
+        /// <inheritdoc/>
         public async Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default)
         {
             if (!IsStreamingChannel)
@@ -369,7 +362,14 @@ namespace Microsoft.Agents.Builder
                 // Timer isn't running for non-streaming channels.  Just send the Message buffer as a message.
                 if (UpdatesSent() > 0 || FinalMessage != null || !string.IsNullOrWhiteSpace(Message))
                 {
-                    await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    if (_streamTimedOut)
+                    {
+                        await UpdateActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    }
                 }
 
                 return StreamingResponseResult.Success;
@@ -418,11 +418,31 @@ namespace Microsoft.Agents.Builder
 
                 if (UpdatesSent() > 0 || FinalMessage != null)
                 {
-                    await SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    if (_streamTimedOut)
+                    {
+                        await UpdateActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    }
                 }
 
                 return result;
             }
+        }
+
+        /// <inheritdoc/>
+        public async Task<bool> SendStreamTimedOutNotification(string message, CancellationToken cancellationToken = default)
+        {
+            if (_ended)
+            {
+                return false;
+            }
+            await SendActivityAsync(CreateStreamStoppedMessage(message), cancellationToken).ConfigureAwait(false);
+            IsStreamingChannel = false; // Disabled Streaming for this channel / Switch to Async Mode.
+            StopStream(); // stop the stream timers
+            return true;
         }
 
         private IActivity CreateFinalMessage()
@@ -452,6 +472,11 @@ namespace Microsoft.Agents.Builder
                 activity.Entities.Add(new StreamInfo() { StreamType = StreamTypes.Final, StreamResult = (string.IsNullOrEmpty(Message) ? StreamResults.Error : StreamResults.Success) });
             }
 
+            if (_streamTimedOut && !string.IsNullOrEmpty(StreamId))
+            {
+                activity.Id = StreamId;
+            }
+
             if (FeedbackLoopEnabled && _isTeamsChannel)
             {
                 activity.ChannelData = ObjectPath.Merge(activity.ChannelData, new
@@ -465,7 +490,7 @@ namespace Microsoft.Agents.Builder
 
             // Add in Generated by AI
             List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-            if((bool)EnableGeneratedByAILabel || currCitations != null)
+            if ((bool)EnableGeneratedByAILabel || currCitations != null)
             {
                 AIEntity entity = new()
                 {
@@ -477,7 +502,6 @@ namespace Microsoft.Agents.Builder
                 {
                     entity.AdditionalType.Add(AIEntity.AdditionalTypeAIGeneratedContent);
                 }
-
                 activity.Entities.Add(entity);
             }
 
@@ -485,37 +509,105 @@ namespace Microsoft.Agents.Builder
             if (Attachments != null && Attachments.Count > 0)
             {
                 if (activity.Attachments == null)
-
                 {
-
                     activity.Attachments = Attachments;
-
                 }
-
                 else if (!ReferenceEquals(activity.Attachments, Attachments))
-
                 {
-
                     foreach (var attachment in Attachments)
 
                     {
-
                         activity.Attachments.Add(attachment);
-
                     }
-
                 }
+            }
+            return activity;
+        }
 
+        /// <summary>
+        /// Used as part of stopping a stream due to timeout while streaming content continues in non-stream mode.
+        /// </summary>
+        /// <param name="messageText"></param>
+        /// <returns></returns>
+        private Activity CreateStreamStoppedMessage(string messageText)
+        {
+            var activity = new Activity();
+            activity.Type = ActivityTypes.Message;
+            activity.Entities ??= [];
+            activity.Text = !string.IsNullOrEmpty(messageText) ? messageText : "No text was streamed";   // Teams won't allow Activity.Text changes or empty text
+
+            if (IsStreamingChannel)
+            {
+                // Only append this if the channel supports streaming.
+                activity.Entities.Add(new StreamInfo() { StreamType = StreamTypes.Final, StreamResult = (string.IsNullOrEmpty(Message) ? StreamResults.Error : StreamResults.Success) });
             }
 
             return activity;
         }
 
         /// <summary>
-        /// Reset an already used stream.  If the stream is still running, this will wait for completion.
+        /// Used as part of stopping a stream due to timeout while streaming content continues in non-stream mode.
         /// </summary>
-        /// <param name="cancellationToken"></param>
+        /// <param name="messageText"></param>
+        /// <param name="addStreamFinal">if true, finalizes the stream properly.</param>
         /// <returns></returns>
+        private Activity CreateStreamTimedOutMessage(bool addStreamFinal = false)
+        {
+            var activity = new Activity();
+            activity.Type = ActivityTypes.Message;
+            activity.Entities ??= [];
+
+            bool _ShouldShowWorkingMessage = true;
+            if (_ShouldShowWorkingMessage)
+            {
+                activity.Text = !string.IsNullOrEmpty(Message) ? ($"{Message} {Environment.NewLine}{Environment.NewLine} {StreamingTakingTooLongMessage} {Environment.NewLine}") : StreamingTakingTooLongMessage;
+            }
+            else
+            {
+                activity.Text = !string.IsNullOrEmpty(Message) ? Message : StreamingTakingTooLongMessage;   // Teams won't allow Activity.Text changes or empty text
+            }
+
+
+            if (_streamTimedOut && !string.IsNullOrEmpty(StreamId))
+            {
+                activity.Id = StreamId;
+            }
+
+            if (IsStreamingChannel)
+            {
+                if (addStreamFinal)
+                {
+                    // Only append this if the channel supports streaming.
+                    activity.Entities.Add(new StreamInfo()
+                    {
+                        // StreamSequence = _nextSequence++,
+                        StreamType = StreamTypes.Final,
+                        StreamId = StreamId,
+                        StreamResult = (string.IsNullOrEmpty(Message) ? StreamResults.Error : StreamResults.Success)
+                    });
+                    activity.Id = StreamId;
+                }
+                else
+                {
+                    if (_channelId == Channels.M365Copilot)
+                    {
+                        // Only append this if the channel supports streaming.
+                        activity.Type = ActivityTypes.Typing;
+                        var sequence = _nextSequence++;
+                        activity.Entities.Add(new StreamInfo()
+                        {
+                            StreamType = StreamTypes.Streaming,
+                            StreamSequence = sequence,
+                        });
+                    }
+                }
+            }
+
+            return activity;
+        }
+
+
+        /// <Inheritdoc/>
         public async Task ResetAsync(CancellationToken cancellationToken = default)
         {
             if (IsStreamStarted())
@@ -538,8 +630,28 @@ namespace Microsoft.Agents.Builder
                 Attachments = [];
                 SensitivityLabel = null;
                 EnableGeneratedByAILabel = false;
+                _streamTimedOut = false;
+                _lastInformationalMessageSent = string.Empty;
+                _streamStartTime = null;
+                _streamElapsedTime = TimeSpan.Zero;
+                _lastPassTime = null;
             }
         }
+
+
+        /// <summary>
+        /// Send current data or a holding message while the stream is still running.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        private async Task SendStreamTimeOutCheckpoint(CancellationToken cancellationToken = default)
+        {
+            if (_streamTimedOut)
+            {
+                await UpdateActivityAsync(CreateStreamTimedOutMessage(), cancellationToken);
+            }
+        }
+
 
         /// <summary>
         /// Queue an activity to be sent to the client.
@@ -605,6 +717,7 @@ namespace Microsoft.Agents.Builder
 
         private void SetDefaults(TurnContext turnContext)
         {
+            _channelId = turnContext.Activity.ChannelId; // Need to capture the channel ID for use in the streaming logic, as the TurnContext may not be available when sending streaming activities.
             _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId?.Channel;
 
             if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
@@ -663,49 +776,175 @@ namespace Microsoft.Agents.Builder
             }
         }
 
+        /// <summary>
+        /// Timer callback that drives the streaming of buffered activities to the client.
+        /// </summary>
+        /// <remarks>
+        /// This method is invoked on each timer tick while a stream is active. On every pass it:
+        /// <list type="number">
+        /// <item><description>Guards against re-entrancy: if a previous callback is still running (<see cref="_processingTimer"/>), it returns immediately.</description></item>
+        /// <item><description>Updates <see cref="_streamElapsedTime"/> based on the time since the stream started.</description></item>
+        /// <item><description>For the M365 Copilot (BizChat) channel, evaluates two conditions:
+        ///     <list type="bullet">
+        ///     <item><description><b>Timeout:</b> if the total elapsed time is at or beyond <see cref="M365StreamingTimeout"/>, the stream is considered timed out. Depending on whether any text has been sent, either a timeout message or a space plus terminating block is sent, the timer is stopped, and streaming is disabled so the channel falls back to async (non-streaming) delivery.</description></item>
+        ///     <item><description><b>Working notice:</b> if more than <see cref="BizChatWorkingNoticeInterval"/> (~45 seconds) has elapsed since the last pass and the queue is empty, an informative "working" update is queued to keep the BizChat stream alive.</description></item>
+        ///     </list>
+        /// </description></item>
+        /// <item><description>Dequeues and sends the next buffered activity (if any). If the queue is empty and the stream has ended, it signals completion and stops the timer; otherwise it shortens the interval to pick up the next chunk sooner.</description></item>
+        /// </list>
+        /// Because the timer runs on a background thread, exceptions are handled within <see cref="SendActivityAsync"/> rather than propagated, and awaits are performed outside of any <c>lock</c>.
+        /// </remarks>
+        /// <param name="state">State object supplied by the <see cref="Timer"/> callback. Not used.</param>
         private async void SendIntermediateMessage(object state)
         {
-            // Send one buffered Activity per interval.
-            IActivity activity = null;
-
-            lock (this)
+            if (_processingTimer)
             {
-                QueueNextChunkActivity();
-
-                if (_queue.Count > 0)
+                // Skip if the previous timer callback is still running.  This can happen if the callback takes longer than the interval.
+                return;
+            }
+            try
+            {
+                lock (this)
                 {
-                    activity = _queue[0]();
-                    _queue.RemoveAt(0);
-
-                    // Limit to one interval at a time. They can overlap if the SendActivityAsync takes
-                    // longer than the Interval. MSAL can take longer than the interval in some cases,
-                    // which case out of sequence messages.
-                    _timer.Change(Timeout.Infinite, Timeout.Infinite);
+                    // Set working to prevent stepping on ourselves. 
+                    _processingTimer = true;
                 }
-                else if (_ended)
+
+                IActivity activity = null;
+
+                // update run elapsed time
+                _streamElapsedTime = DateTime.UtcNow - _streamStartTime.Value;
+
+                bool bizChatTimeout = false;
+                bool sendBizChatWorkingNotice = false;
+                // This check is here as if we landed here, the streaming has started, and active and we are trying to push events. 
+                if (_channelId == Channels.M365Copilot)
                 {
-                    _queueEmpty.Set();
-                    StopStream();
+                    // 1. If the overall elapsed time equals or exceeds the M365 streaming timeout, flag that BizChat has timed out.
+                    if (_streamElapsedTime >= M365StreamingTimeout)
+                    {
+                        bizChatTimeout = true;
+                        System.Diagnostics.Debug.WriteLine($"BizChat Stream Timeout triggered at {_streamElapsedTime.ToString()}");
+                    }
+
+                    // 2. If it has been more than 45 seconds since the last pass, and nothing has been queued and no
+                    //    informational message has been sent, flag that we need to send a 'working' notice to BizChat.
+                    //    this needs to be reset after each time we send a working notice, so we don't keep sending them.
+                    TimeSpan timeSinceLastPass = DateTime.UtcNow - (_lastPassTime ?? _streamStartTime.Value);
+                    if (timeSinceLastPass > BizChatWorkingNoticeInterval
+                        && _queue.Count == 0)
+                    {
+                        sendBizChatWorkingNotice = true;
+                        System.Diagnostics.Debug.WriteLine($"BizChat No Activity Alert triggered at {_streamElapsedTime.ToString()}");
+                    }
+                }
+
+                if (bizChatTimeout)
+                {
+                    // BizChat has exceeded the M365 streaming timeout.  In this case we must check to see if we have sent any text so far and if not send a timeout message. 
+                    // if we have sent text we will send a space + block to indicate that the stream is ending and then move on. 
+                    // We will exit from here as any queue buffer would be lost if we try to send it, we it will turn into final message. 
+
+                    _streamTimedOut = false; // We do not want to set this flag as this signals the system to use update Async to send the final message.  We want to send a new message to the user that the stream has timed out.
+                    List<IActivity> timedOutActivitiesForBizChat = new List<IActivity>();
+
+                    if (string.IsNullOrEmpty(Message))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"BizChat Stream Timeout triggered at {_streamElapsedTime.ToString()} and no text has been sent, sending timeout message.");
+                        timedOutActivitiesForBizChat.Add(CreateStreamTimedOutMessage(true));
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"BizChat Stream Timeout triggered at {_streamElapsedTime.ToString()} with text sent, sending space + block to indicate stream is ending.");
+
+                        timedOutActivitiesForBizChat.AddRange(
+                            [
+                                CreateStreamTimedOutMessage(),
+                                CreateStreamTimedOutMessage(true)
+                            ]
+                        );
+                    }
+
+                    foreach (var activityToSend in timedOutActivitiesForBizChat)
+                    {
+                        await SendActivityAsync(activityToSend, CancellationToken.None).ConfigureAwait(false);
+                    }
+                    
+                    lock (this)
+                    {
+                        StopStream();
+                        _canceled = false;
+                        _queueEmpty.Set();
+                    }
+
+                    IsStreamingChannel = false; // Disabled Streaming for this channel / Switch to Async Mode.
                     return;
                 }
-                else
+
+                if (sendBizChatWorkingNotice)
                 {
-                    // Nothing is in the queue, and not ending, so chances are
-                    // the chunking is slow.  We can speed up the interval to
-                    // pick up the next chunk faster.
-                    _timer.Change(200, Timeout.Infinite);
-                    return;
+                    // Send a 'working' informational notice to BizChat to keep the stream alive.
+                    string informationalToSend = string.IsNullOrWhiteSpace(_lastInformationalMessageSent) ? StreamingTakingTooLongMessage : _lastInformationalMessageSent;
+                    System.Diagnostics.Debug.WriteLine($"BizChat No Activity Alert triggered at {_streamElapsedTime.ToString()} sending informational message: {informationalToSend}");
+
+                    await QueueInformativeUpdateAsync(informationalToSend).ConfigureAwait(false);
+                    sendBizChatWorkingNotice = false;
+                }
+
+                lock (this)
+                {
+                    QueueNextChunkActivity();
+
+                    if (_queue.Count > 0)
+                    {
+                        activity = _queue[0]();
+                        _queue.RemoveAt(0);
+
+                        // Limit to one interval at a time. They can overlap if the SendActivityAsync takes
+                        // longer than the Interval. MSAL can take longer than the interval in some cases,
+                        // which case out of sequence messages.
+                        _timer.Change(Timeout.Infinite, Timeout.Infinite);
+                    }
+                    else if (_ended)
+                    {
+                        _queueEmpty.Set();
+                        StopStream();
+                        return;
+                    }
+                    else
+                    {
+                        // Nothing is in the queue, and not ending, so chances are
+                        // the chunking is slow.  We can speed up the interval to
+                        // pick up the next chunk faster.
+                        _timer.Change(200, Timeout.Infinite);
+                        return;
+                    }
+                }
+
+                // Looks a bit odd, but can't call await inside a lock.
+                await SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
+            }
+            finally
+            {
+                lock (this)
+                {
+                    _processingTimer = false;
                 }
             }
-
-            // Looks a bit odd, but can't call await inside a lock.
-            await SendActivityAsync(activity, CancellationToken.None).ConfigureAwait(false);
         }
 
         private async Task SendActivityAsync(IActivity activity, CancellationToken cancellationToken)
         {
             if (activity != null)
             {
+                if (_streamStartTime == null)
+                {
+                    // start timestamp for the first activity sent, which is used to determine if the stream has timed out -  This is needed as some clients have activity timeouts that need to be handled by the bot.
+                    // For example, Teams has a 2 minute timeout for activities sent to the client, once exceeded, the streaming system must switch to update the activity with the final message instead of sending intermediate messages.
+                    // BizChat requires and update ~45 seconds after the first activity is sent to the client, otherwise it will timeout and the user will see a "Something went wrong" message.
+                    _streamStartTime = DateTime.UtcNow;
+                }
+
                 if (!string.IsNullOrEmpty(StreamId))
                 {
                     activity.Id = StreamId;
@@ -729,16 +968,33 @@ namespace Microsoft.Agents.Builder
                     // from the Timer thread and will crash the app.  A more elegant 
                     // solution would be to get it back to the calling thread.
 
-                    bool CanceledStream = true;
+                    bool CanceledStream = true; // logging flag and general cancellation handler
                     if (ex is ErrorResponseException errorResponse)
                     {
                         // User canceled?
                         if (TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
                         {
-                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
-                            System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
+                            if (errorResponse?.Body?.Error?.Message != null &&
+                                errorResponse.Body.Error.Message.Equals(TeamsStreamTimedOut, StringComparison.OrdinalIgnoreCase))
+                            {
+                                // stream timeout 
+                                _context?.Adapter?.Logger?.LogWarning("Client canceled due to exceeded allowed streaming time. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}", errorResponse?.Body?.Error?.Code, errorResponse?.Body?.Error?.Message);
+                                System.Diagnostics.Trace.WriteLine($"Client canceled due to exceeded allowed streaming time. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}");
 
-                            _userCanceled = true;
+                                _streamTimedOut = true;
+                                IsStreamingChannel = false; // Disabled Streaming for this channel / Switch to Async Mode.
+                                CanceledStream = false;
+
+                                // Send a message to the user that the stream timed out.
+                                await SendStreamTimeOutCheckpoint(cancellationToken);
+                            }
+                            else
+                            {
+
+                                _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}", errorResponse?.Body?.Error?.Code, errorResponse?.Body?.Error?.Message);
+                                System.Diagnostics.Trace.WriteLine($"User canceled stream on the client side. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}");
+                                _userCanceled = true;
+                            }
                         }
                         // Stream not allowed?
 #pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
@@ -779,6 +1035,56 @@ namespace Microsoft.Agents.Builder
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Updates an existing activity on the client, typically used to replace an in-progress
+        /// streaming message with the final (or a timed-out) message.
+        /// </summary>
+        /// <remarks>
+        /// If <paramref name="activity"/> is <c>null</c>, no update is performed and <c>null</c> is returned.
+        /// Any exception thrown while updating is caught and logged (with additional detail extracted for
+        /// <see cref="ErrorResponseException"/>) rather than propagated, so a failed update does not crash the
+        /// caller — commonly invoked from the streaming/timer path. On failure, <c>null</c> is returned.
+        /// </remarks>
+        /// <param name="activity">The activity to send as an update. If <c>null</c>, the call is a no-op.</param>
+        /// <param name="cancellationToken">A token used to cancel the update operation.</param>
+        /// <returns>
+        /// The <see cref="ResourceResponse"/> returned by the underlying update, or <c>null</c> if
+        /// <paramref name="activity"/> was <c>null</c> or the update failed.
+        /// </returns>
+        private async Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
+        {
+            if (activity != null)
+            {
+                try
+                {
+                    var response = await _context.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    if ( ex is ErrorResponseException errorResponse)
+                    {
+                        var errorMessage = errorResponse?.Body?.Error?.Message ?? "None";
+                        _context?.Adapter?.Logger?.LogWarning(
+                            "Exception during StreamingResponse UpdateActivity: {ExceptionMessage} - {ErrorMessage}",
+                            ex.Message,
+                            errorMessage);
+                        System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse UpdateActivity: {ex.Message} - {errorMessage}");
+                    }
+                    else
+                    {
+                        _context?.Adapter?.Logger?.LogWarning(
+                            "Exception during StreamingResponse UpdateActivity: {ExceptionMessage}",
+                            ex.Message);
+                        System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse UpdateActivity: {ex.Message}");
+                    }
+
+                }
+            }
+            return null;
+
         }
     }
 }
