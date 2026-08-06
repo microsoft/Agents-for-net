@@ -1,18 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A.AspNetCore;
+using A2ATCKAgent;
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.Hosting.A2A;
-using Microsoft.Extensions.Hosting;
-using A2AAgent;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-builder.Logging.AddConsole();
 
 builder.AddAgentDefaults()
     .AddAgent<MyAgent>()
@@ -35,8 +33,8 @@ app.UseAgents();
 // Map the default agent endpoints: GET "/" and the agent message endpoints.
 app.MapDefaultAgentEndpoints();
 
-// Add A2A endpoints.  By default A2A will respond on '/a2a'.  Require auth to match the
-// agent endpoints (enabled when AddAgentAuthorization configured authorization).
-app.MapA2AEndpoints(requireAuth: app.IsAgentAuthorizationConfigured());
+// Add A2A endpoints.  By default A2A will respond on '/a2a'.
+app.MapA2AApplicationEndpoints();
+app.MapWellKnownAgentCard();
 
 app.Run();
