@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private readonly OAuthFlow _flow;
         private readonly ILogger _logger;
         private readonly OAuthSettings _settings;
-        private readonly IStorage _storage;
+        private readonly IStorageV2 _storage;
 
         /// <summary>
         /// Required constructor for UserAuthorizationDispatcher.
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _storage = StorageCompatibility.AsV2(storage ?? throw new ArgumentNullException(nameof(storage)));
             _flow = new OAuthFlow(settings);
             _logger = logger ?? NullLogger<ILogger>.Instance;
         }
@@ -303,14 +303,14 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private async Task<FlowState> GetFlowStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             var key = GetStorageKey(turnContext);
-            var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-            return items.TryGetValue(key, out object value) ? (FlowState)value : new FlowState();
+            var results = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+            return results[key].Status == StorageOperationStatus.Succeeded && results[key].Value is FlowState value ? value : new FlowState();
         }
 
         private async Task SaveFlowStateAsync(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)
         {
             var key = GetStorageKey(turnContext);
-            var items = new Dictionary<string, object>()
+            var items = new Dictionary<string, FlowState>()
                 {
                     { key, state }
                 };

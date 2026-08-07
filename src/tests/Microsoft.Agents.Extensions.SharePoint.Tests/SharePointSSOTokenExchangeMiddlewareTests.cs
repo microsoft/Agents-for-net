@@ -11,6 +11,7 @@ using Microsoft.Agents.Storage;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading;
@@ -179,6 +180,57 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
         }
 
         [Fact]
+        public async Task OnTurnAsync_ShouldUseNativeV2CreateOnlySuccess()
+        {
+            // Arrange
+            var adapter = new SharePointSSOAdapter(CaptureSend);
+            adapter.AddExchangeableToken(ConnectionName, Channels.M365, UserId, FakeExchangeableItem, Token);
+
+            var turnContext = adapter.CreateTurnContext(_activity);
+            var storage = new NativeStorageStub(StorageOperationStatus.Succeeded);
+
+            // Act
+            var bot = new TestActivityHandler(storage);
+            await bot.OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnSignInInvokeAsync", bot.Record[0]);
+            Assert.True(storage.V2WriteCalled);
+            Assert.False(storage.V1WriteCalled);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+        }
+
+        [Fact]
+        public async Task OnTurnAsync_ShouldUseNativeV2CreateOnlyConflict()
+        {
+            // Arrange
+            var adapter = new SharePointSSOAdapter(CaptureSend);
+            adapter.AddExchangeableToken(ConnectionName, Channels.M365, UserId, FakeExchangeableItem, Token);
+
+            var turnContext = adapter.CreateTurnContext(_activity);
+            var storage = new NativeStorageStub(StorageOperationStatus.Conflict);
+
+            // Act
+            var bot = new TestActivityHandler(storage);
+            await bot.OnTurnAsync(turnContext);
+
+            // Assert
+            Assert.Single(bot.Record);
+            Assert.Equal("OnSignInInvokeAsync", bot.Record[0]);
+            Assert.True(storage.V2WriteCalled);
+            Assert.False(storage.V1WriteCalled);
+            Assert.NotNull(_activitiesToSend);
+            Assert.Single(_activitiesToSend);
+            Assert.IsType<InvokeResponse>(_activitiesToSend[0].Value);
+            Assert.Equal(200, ((InvokeResponse)_activitiesToSend[0].Value).Status);
+            Assert.Null(((InvokeResponse)_activitiesToSend[0].Value).Body);
+        }
+
+        [Fact]
         public async Task OnTurnAsync_ShouldCatchExceptionDuringExchange()
         {
             // Arrange
@@ -245,6 +297,77 @@ namespace Microsoft.Agents.BotBuilder.Tests.SharePoint
                 }
 
                 return Task.FromResult(responses.ToArray());
+            }
+        }
+
+        private sealed class NativeStorageStub : IStorageV2
+        {
+            private readonly StorageOperationStatus _status;
+
+            public NativeStorageStub(StorageOperationStatus status)
+            {
+                _status = status;
+            }
+
+            public bool V1WriteCalled { get; private set; }
+
+            public bool V2WriteCalled { get; private set; }
+
+            public Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task<IDictionary<string, TStoreItem>> ReadAsync<TStoreItem>(string[] keys, CancellationToken cancellationToken = default) where TStoreItem : class
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
+            {
+                V1WriteCalled = true;
+                throw new NotSupportedException("V1 write path should not be used when native V2 is available.");
+            }
+
+            public Task WriteAsync<TStoreItem>(IDictionary<string, TStoreItem> changes, CancellationToken cancellationToken = default) where TStoreItem : class
+            {
+                V1WriteCalled = true;
+                throw new NotSupportedException("V1 write path should not be used when native V2 is available.");
+            }
+
+            public Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task<IReadOnlyDictionary<string, StorageReadResult>> ReadAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
+            {
+                V2WriteCalled = true;
+                var key = changes.Keys.Single();
+                return Task.FromResult<IReadOnlyDictionary<string, StorageWriteResult>>(new Dictionary<string, StorageWriteResult>
+                {
+                    [key] = new StorageWriteResult { Key = key, Status = _status }
+                });
+            }
+
+            public Task<IReadOnlyDictionary<string, StorageDeleteResult>> DeleteAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
+            }
+
+            public Task<IReadOnlyDictionary<string, StorageDeleteResult>> DeleteAsync(IReadOnlyList<string> keys, StorageDeleteOptions options, CancellationToken cancellationToken = default)
+            {
+                throw new NotSupportedException();
             }
         }
     }

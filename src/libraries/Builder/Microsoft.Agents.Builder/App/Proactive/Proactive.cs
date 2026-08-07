@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Telemetry.Proactive.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -30,6 +31,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
     {
         private readonly AgentApplication _app;
         private readonly ProactiveOptions _options;
+
+        private IStorageV2 Storage => StorageCompatibility.AsV2(_options.Storage);
 
         /// <summary>
         /// <c>IAcitivty.ValueType</c> that indicates additional key/values for the ContinueConversation Event.
@@ -327,8 +330,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
             using var telemetryScope = new ScopeStoreConversation(conversation.Reference.Conversation.Id);
 
             var key = GetRecordKey(conversation.Reference.Conversation.Id);
-            await _app.Options.Proactive.Storage.WriteAsync(
-                new Dictionary<string, object>
+            await Storage.WriteAsync(
+                new Dictionary<string, Conversation>
                 {
                     { key, conversation }
                 },
@@ -354,9 +357,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
             using var telemetryScope = new ScopeGetConversation(conversationId);
 
             var key = GetRecordKey(conversationId);
-            var items = await _options.Storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+            var results = await Storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
 
-            if (items != null && items.TryGetValue(key, out var item) && item is Conversation record)
+            if (results[key].Status == StorageOperationStatus.Succeeded && results[key].Value is Conversation record)
             {
                 telemetryScope.Share(true);
                 return record;
@@ -397,7 +400,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             var key = GetRecordKey(conversationId);
             return telemetryScope.WrapAsync(async () =>
             {
-                await _options.Storage.DeleteAsync([key], cancellationToken).ConfigureAwait(false);
+                await Storage.DeleteAsync([key], cancellationToken).ConfigureAwait(false);
             });
         }
 
