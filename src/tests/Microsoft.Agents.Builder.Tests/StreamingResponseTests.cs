@@ -14,20 +14,6 @@ using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests
 {
-    public sealed class OptionalStreamingTimeoutFactAttribute : FactAttribute
-    {
-        public OptionalStreamingTimeoutFactAttribute()
-        {
-            if (!string.Equals(
-                Environment.GetEnvironmentVariable("XUNITSTREAMINGTIMEOUTTESTENABLED"),
-                "1",
-                StringComparison.Ordinal))
-            {
-                Skip = "Set XUNITSTREAMINGTIMEOUTTESTENABLED=1 to run streaming timeout tests.";
-            }
-        }
-    }
-
     public class StreamingResponseTests
     {
         [Theory]
@@ -195,7 +181,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Null(responses[0].GetStreamingEntity());
         }
 
-        [OptionalStreamingTimeoutFact]
+        [Fact]
         public async Task SendStreamTimedOutNotification_DisablesStreaming_AndFinalResponseIsStillSent()
         {
             const string informativeMessage = "Thinking...";
@@ -246,7 +232,7 @@ namespace Microsoft.Agents.Builder.Tests
                 });
         }
 
-        [OptionalStreamingTimeoutFact]
+        [Fact]
         public async Task ChannelStreamingTimeout_UpdatesCheckpointAndFinalMessage()
         {
             const string completedText = "Completed response text.";
@@ -359,7 +345,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal(ActivityTypes.Typing, informativeActivity.Type);
         }
 
-        [OptionalStreamingTimeoutFact]
+        [Fact]
         public async Task M365Copilot_IdleStream_SendsConfiguredWorkingNotice()
         {
             const string startingNotice = "Starting...";
@@ -432,7 +418,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.False(context.StreamingResponse.IsStreamStarted());
         }
 
-        [OptionalStreamingTimeoutFact]
+        [Fact]
         public async Task M365Copilot_TimeoutWithoutText_SendsFinalTimeoutMessage()
         {
             const string startingNotice = "Starting...";
@@ -503,7 +489,7 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal(StreamResults.Error, streamInfo.StreamResult);
         }
 
-        [OptionalStreamingTimeoutFact]
+        [Fact]
         public async Task M365Copilot_TimeoutWithBufferedText_SendsTerminatingActivitiesAndFinalResponse()
         {
             const string startingNotice = "Starting...";
