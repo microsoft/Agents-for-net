@@ -233,3 +233,6 @@ settings.local.json
 # a365
 a365.config.json
 a365.generated.*
+
+# AI
+**/superpowers/**
