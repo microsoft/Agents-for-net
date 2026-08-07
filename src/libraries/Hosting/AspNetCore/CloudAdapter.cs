@@ -46,7 +46,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
         /// <param name="config"></param>
-        /// <param name="serviceProvider">Optional service provider used to instantiate per-channel <see cref="IStreamingResponseFactory"/> implementations discovered via <see cref="StreamingResponseFactoryAttribute"/>.</param>
         /// <param name="hostValidator">Optional shared allowed-hosts validator. When enabled, Activity.ServiceUrl is validated against it.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         public CloudAdapter(
@@ -56,8 +55,40 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
             IConfiguration config = null,
-            IOutboundHostValidator hostValidator = null,
-            IServiceProvider serviceProvider = null)
+            IOutboundHostValidator hostValidator = null)
+            : this(
+                null,
+                channelServiceClientFactory,
+                activityTaskQueue,
+                logger,
+                options,
+                middlewares,
+                config,
+                hostValidator)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudAdapter"/> class with a service provider for
+        /// channel-specific streaming response factories.
+        /// </summary>
+        /// <param name="serviceProvider">Service provider used to instantiate discovered streaming response factories.</param>
+        /// <param name="channelServiceClientFactory">Channel service client factory.</param>
+        /// <param name="activityTaskQueue">Background activity queue.</param>
+        /// <param name="logger">Adapter logger.</param>
+        /// <param name="options">Adapter options.</param>
+        /// <param name="middlewares">Adapter middleware.</param>
+        /// <param name="config">Application configuration.</param>
+        /// <param name="hostValidator">Allowed-hosts validator.</param>
+        public CloudAdapter(
+            IServiceProvider serviceProvider,
+            IChannelServiceClientFactory channelServiceClientFactory,
+            IActivityTaskQueue activityTaskQueue,
+            ILogger<CloudAdapter> logger = null,
+            AdapterOptions options = null,
+            Builder.IMiddleware[] middlewares = null,
+            IConfiguration config = null,
+            IOutboundHostValidator hostValidator = null)
             : base(channelServiceClientFactory, logger, serviceProvider)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));

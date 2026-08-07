@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -72,11 +73,18 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         protected override async Task FinalizeStreamAsync(bool streamedPath, CancellationToken cancellationToken)
         {
             // The base drains buffered chunks before calling this, so the stream already contains the full text.
-            if (_stream != null)
+            if (_stream == null)
+            {
+                StreamId = null;
+                return;
+            }
+
+            string feedbackButtons = null;
+            Exception completionException = null;
+
+            try
             {
                 await _stream.AppendAsync(new TaskUpdateChunk(id: StreamId, title: "Done", status: SlackTaskStatus.Complete));
-
-                string feedbackButtons = null;
 
                 if (FeedbackLoopEnabled)
                 {
@@ -111,18 +119,44 @@ namespace Microsoft.Agents.Extensions.Slack.Api
                     }
                     """;
                 }
-                
-                await _stream.StopAsync(blocks: feedbackButtons).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                completionException = ex;
             }
 
-            StreamId = null;
+            try
+            {
+                await StopRemoteStreamAsync(feedbackButtons).ConfigureAwait(false);
+            }
+            catch (Exception stopException) when (completionException != null)
+            {
+                System.Diagnostics.Trace.WriteLine(
+                    $"Exception stopping Slack StreamingResponse after completion failed: {stopException.Message}");
+            }
+
+            if (completionException != null)
+            {
+                ExceptionDispatchInfo.Capture(completionException).Throw();
+            }
         }
 
         /// <inheritdoc/>
-        protected override Task<StreamErrorAction> HandleSendErrorAsync(Exception exception, CancellationToken cancellationToken)
+        protected override async Task<StreamErrorAction> HandleSendErrorAsync(Exception exception, CancellationToken cancellationToken)
         {
             System.Diagnostics.Trace.WriteLine($"Exception during Slack StreamingResponse: {exception.Message}");
-            return Task.FromResult(StreamErrorAction.Cancel);
+
+            try
+            {
+                await StopRemoteStreamAsync().ConfigureAwait(false);
+            }
+            catch (Exception stopException)
+            {
+                System.Diagnostics.Trace.WriteLine(
+                    $"Exception stopping Slack StreamingResponse after send failed: {stopException.Message}");
+            }
+
+            return StreamErrorAction.Cancel;
         }
 
         /// <inheritdoc/>
@@ -130,6 +164,26 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         {
             _stream = null;
             _sentLength = 0;
+        }
+
+        private async Task StopRemoteStreamAsync(string blocks = null)
+        {
+            var stream = _stream;
+            if (stream == null)
+            {
+                StreamId = null;
+                return;
+            }
+
+            try
+            {
+                await stream.StopAsync(blocks: blocks).ConfigureAwait(false);
+            }
+            finally
+            {
+                _stream = null;
+                StreamId = null;
+            }
         }
 
         private async Task EnsureStreamAsync()

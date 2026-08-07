@@ -33,14 +33,13 @@ namespace Microsoft.Agents.Builder
     /// <param name="serviceProvider">Optional service provider used to instantiate per-channel <see cref="IStreamingResponseFactory"/> implementations discovered via <see cref="StreamingResponseFactoryAttribute"/>, to assign a channel-specific <see cref="IStreamingResponse"/> to each turn.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,
-        ILogger logger = null,
-        IServiceProvider serviceProvider = null) : ChannelAdapter(logger)
+        ILogger logger,
+        IServiceProvider serviceProvider) : ChannelAdapter(logger)
     {
         private readonly IServiceProvider _serviceProvider = serviceProvider;
 
-        // Per-channel cache of resolved factories, so each factory is instantiated at most once per adapter.
-        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, IStreamingResponseFactory> _streamingResponseFactories =
-            new(StringComparer.OrdinalIgnoreCase);
+        // A Lazy can cache a null result, preventing a broken factory type from being re-instantiated every turn.
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<Type, Lazy<IStreamingResponseFactory>> _streamingResponseFactories = [];
 
         static ChannelServiceAdapterBase()
         {
@@ -48,6 +47,18 @@ namespace Microsoft.Agents.Builder
             // extension assemblies loaded later - including during activity deserialization - are scanned for
             // their [StreamingResponseFactory] implementations before the pipeline runs.
             StreamingResponseFactoryCatalog.EnsureInitialized();
+        }
+
+        /// <summary>
+        /// Initializes an adapter without channel-specific streaming response factories.
+        /// </summary>
+        /// <param name="channelServiceClientFactory">The channel service client factory.</param>
+        /// <param name="logger">The logger used by the adapter.</param>
+        public ChannelServiceAdapterBase(
+            IChannelServiceClientFactory channelServiceClientFactory,
+            ILogger logger = null)
+            : this(channelServiceClientFactory, logger, null)
+        {
         }
 
         /// <summary>
@@ -327,14 +338,17 @@ namespace Microsoft.Agents.Builder
             }
 
             var factoryKey = channelId.ToString();
-            if (!_streamingResponseFactories.TryGetValue(factoryKey, out var factory))
+            if (!StreamingResponseFactoryCatalog.TryGetFactoryType(factoryKey, out var factoryType)
+                && !StreamingResponseFactoryCatalog.TryGetFactoryType(channel, out factoryType))
             {
-                factory = CreateStreamingResponseFactory(factoryKey, channel);
-                if (factory != null)
-                {
-                    _streamingResponseFactories.TryAdd(factoryKey, factory);
-                }
+                return;
             }
+
+            var factory = _streamingResponseFactories.GetOrAdd(
+                factoryType,
+                type => new Lazy<IStreamingResponseFactory>(
+                    () => CreateStreamingResponseFactory(type, factoryKey),
+                    LazyThreadSafetyMode.ExecutionAndPublication)).Value;
 
             if (factory == null)
             {
@@ -352,24 +366,16 @@ namespace Microsoft.Agents.Builder
             }
         }
 
-        private IStreamingResponseFactory CreateStreamingResponseFactory(string channelId, string parentChannel)
+        private IStreamingResponseFactory CreateStreamingResponseFactory(Type factoryType, string channelId)
         {
-            if (!StreamingResponseFactoryCatalog.TryGetFactoryType(channelId, out var factoryType)
-                && !StreamingResponseFactoryCatalog.TryGetFactoryType(parentChannel, out factoryType))
-            {
-                return null;
-            }
-
             try
             {
                 // Instantiate the factory from the service provider so its dependencies (e.g. IHttpClientFactory,
-                // IConfiguration) are injected.  Cached per channel by the caller.
+                // IConfiguration) are injected. The Lazy caller caches both success and failure.
                 return (IStreamingResponseFactory)ActivatorUtilities.CreateInstance(_serviceProvider, factoryType);
             }
             catch (Exception ex)
             {
-                // Optional, reflection/source-gen discovered factories may fail to instantiate (missing DI
-                // registrations, invalid type, etc.).  Cache the null result and fall back to the default.
                 ChannelServiceAdapterLog.LogStreamingResponseFactoryError(Logger, ex, channelId);
                 return null;
             }

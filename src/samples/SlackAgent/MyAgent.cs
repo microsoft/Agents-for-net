@@ -105,15 +105,20 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
         var stream = turnContext.StreamingResponse;
         stream.FeedbackLoopEnabled = true;
 
-        await stream.QueueInformativeUpdateAsync("Working it", cancellationToken);
-
-        foreach (var word in new[] { "This ", "is ", "a ", "test." })
+        try
         {
-            stream.QueueTextChunk(word);
-            await Task.Delay(1500, cancellationToken);
-        }
+            await stream.QueueInformativeUpdateAsync("Working it", cancellationToken);
 
-        await stream.EndStreamAsync(cancellationToken);
+            foreach (var word in new[] { "This ", "is ", "a ", "test." })
+            {
+                stream.QueueTextChunk(word);
+                await Task.Delay(1500, cancellationToken);
+            }
+        }
+        finally
+        {
+            await stream.EndStreamAsync(CancellationToken.None);
+        }
     }
 
     [SlackFeedbackLoopRoute]

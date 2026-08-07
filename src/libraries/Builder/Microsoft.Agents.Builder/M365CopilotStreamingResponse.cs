@@ -83,7 +83,11 @@ namespace Microsoft.Agents.Builder
                 var notice = string.IsNullOrWhiteSpace(_lastInformationalMessage)
                     ? StreamingTakingTooLongMessage
                     : _lastInformationalMessage;
-                await QueueInformativeUpdateAsync(notice, cancellationToken).ConfigureAwait(false);
+                await SendInformativeAsync(
+                    notice,
+                    GetNextSequenceNumber(),
+                    cancellationToken).ConfigureAwait(false);
+                OnSendCompleted(isInformative: true, notice);
             }
 
             return true;

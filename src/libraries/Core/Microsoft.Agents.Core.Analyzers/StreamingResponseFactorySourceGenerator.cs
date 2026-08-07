@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Core.Analyzers
                 context.SyntaxProvider
                     .ForAttributeWithMetadataName(
                         StreamingResponseFactoryAttributeFullName,
-                        (node, _) => node is ClassDeclarationSyntax,
+                        (node, _) => node is TypeDeclarationSyntax,
                         (context, ct) =>
                             (context.TargetSymbol as INamedTypeSymbol)?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                     )
