@@ -43,6 +43,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         private const string TestServiceUrl = "https://test.serviceurl.com/";
 
         [Fact]
+        public void PreservesExistingConstructorSignature()
+        {
+            var constructor = typeof(CloudAdapter).GetConstructor(
+                [
+                    typeof(IChannelServiceClientFactory),
+                    typeof(IActivityTaskQueue),
+                    typeof(ILogger<CloudAdapter>),
+                    typeof(AdapterOptions),
+                    typeof(Builder.IMiddleware[]),
+                    typeof(IConfiguration),
+                    typeof(IOutboundHostValidator)
+                ]);
+
+            Assert.NotNull(constructor);
+        }
+
+        [Fact]
         public void Constructor_ShouldThrowWithNullActivityTaskQueue()
         {
             var factory = new Mock<IChannelServiceClientFactory>();

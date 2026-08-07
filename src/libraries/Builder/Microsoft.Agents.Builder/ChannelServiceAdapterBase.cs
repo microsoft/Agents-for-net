@@ -9,6 +9,7 @@ using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Claims;
@@ -29,10 +30,37 @@ namespace Microsoft.Agents.Builder
     /// </remarks>
     /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
     /// <param name="logger">The ILogger implementation this adapter should use.</param>
+    /// <param name="serviceProvider">Optional service provider used to instantiate per-channel <see cref="IStreamingResponseFactory"/> implementations discovered via <see cref="StreamingResponseFactoryAttribute"/>, to assign a channel-specific <see cref="IStreamingResponse"/> to each turn.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,
-        ILogger logger = null) : ChannelAdapter(logger)
+        ILogger logger,
+        IServiceProvider serviceProvider) : ChannelAdapter(logger)
     {
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
+
+        // A Lazy can cache a null result, preventing a broken factory type from being re-instantiated every turn.
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<Type, Lazy<IStreamingResponseFactory>> _streamingResponseFactories = [];
+
+        static ChannelServiceAdapterBase()
+        {
+            // Register the AssemblyLoad handler early (at first adapter type use, i.e. host startup) so that
+            // extension assemblies loaded later - including during activity deserialization - are scanned for
+            // their [StreamingResponseFactory] implementations before the pipeline runs.
+            StreamingResponseFactoryCatalog.EnsureInitialized();
+        }
+
+        /// <summary>
+        /// Initializes an adapter without channel-specific streaming response factories.
+        /// </summary>
+        /// <param name="channelServiceClientFactory">The channel service client factory.</param>
+        /// <param name="logger">The logger used by the adapter.</param>
+        public ChannelServiceAdapterBase(
+            IChannelServiceClientFactory channelServiceClientFactory,
+            ILogger logger = null)
+            : this(channelServiceClientFactory, logger, null)
+        {
+        }
+
         /// <summary>
         /// Gets the <see cref="Microsoft.Agents.Builder.IChannelServiceClientFactory" /> instance for this adapter.
         /// </summary>
@@ -290,6 +318,67 @@ namespace Microsoft.Agents.Builder
             if (userTokenClient != null)
                 turnContext.Services.Set(userTokenClient);
             turnContext.Services.Set(ChannelServiceFactory);
+
+            ApplyStreamingResponseFactory(turnContext);
+        }
+
+        /// <summary>
+        /// Assigns a channel-specific <see cref="IStreamingResponse"/> to the turn when a factory is registered
+        /// for the incoming channel (via <see cref="StreamingResponseFactoryAttribute"/>).  When no factory is
+        /// registered, the default <see cref="StreamingResponse"/> is used (created lazily by
+        /// <see cref="TurnContext"/>).
+        /// </summary>
+        private void ApplyStreamingResponseFactory(TurnContext turnContext)
+        {
+            var channelId = turnContext.Activity?.ChannelId;
+            var channel = channelId?.Channel;
+            if (_serviceProvider == null || channel == null)
+            {
+                return;
+            }
+
+            var factoryKey = channelId.ToString();
+            if (!StreamingResponseFactoryCatalog.TryGetFactoryType(factoryKey, out var factoryType)
+                && !StreamingResponseFactoryCatalog.TryGetFactoryType(channel, out factoryType))
+            {
+                return;
+            }
+
+            var factory = _streamingResponseFactories.GetOrAdd(
+                factoryType,
+                type => new Lazy<IStreamingResponseFactory>(
+                    () => CreateStreamingResponseFactory(type, factoryKey),
+                    LazyThreadSafetyMode.ExecutionAndPublication)).Value;
+
+            if (factory == null)
+            {
+                return;
+            }
+
+            try
+            {
+                turnContext.SetStreamingResponse(factory.Create(turnContext));
+            }
+            catch (Exception ex)
+            {
+                // A misbehaving factory must not fail the turn; fall back to the default StreamingResponse.
+                ChannelServiceAdapterLog.LogStreamingResponseFactoryError(Logger, ex, channel);
+            }
+        }
+
+        private IStreamingResponseFactory CreateStreamingResponseFactory(Type factoryType, string channelId)
+        {
+            try
+            {
+                // Instantiate the factory from the service provider so its dependencies (e.g. IHttpClientFactory,
+                // IConfiguration) are injected. The Lazy caller caches both success and failure.
+                return (IStreamingResponseFactory)ActivatorUtilities.CreateInstance(_serviceProvider, factoryType);
+            }
+            catch (Exception ex)
+            {
+                ChannelServiceAdapterLog.LogStreamingResponseFactoryError(Logger, ex, channelId);
+                return null;
+            }
         }
 
         private static void ValidateContinuationActivity(IActivity continuationActivity)
