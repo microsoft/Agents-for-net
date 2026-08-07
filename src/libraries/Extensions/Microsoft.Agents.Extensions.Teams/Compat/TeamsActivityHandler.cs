@@ -9,6 +9,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.Teams.Connector;
 using Microsoft.Agents.Extensions.Teams.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -22,6 +23,7 @@ namespace Microsoft.Agents.Extensions.Teams.Compat
     /// The TeamsActivityHandler is derived from ActivityHandler. It adds support for 
     /// the Microsoft Teams specific events and interactions.
     /// </summary>
+    [Obsolete("This class is deprecated. Please use the new Microsoft.Agents.Extensions.MSTeams package.")]
     public class TeamsActivityHandler : ActivityHandler
     {
         /// <summary>

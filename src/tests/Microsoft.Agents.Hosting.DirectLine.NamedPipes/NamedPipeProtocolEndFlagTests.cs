@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // No body => no stream frame. Complete the request so the call returns.
             await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
 
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.Equal(body, streamFrame.Payload);
 
             await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 

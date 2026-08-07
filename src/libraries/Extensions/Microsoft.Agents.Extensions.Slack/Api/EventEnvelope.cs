@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
                 return "event";
 
             if (path.StartsWith("event_content.", StringComparison.OrdinalIgnoreCase))
-                return string.Concat("event", path.AsSpan("event_content".Length));
+                return string.Concat("event", path.Substring("event_content".Length));
 
             return path;
         }

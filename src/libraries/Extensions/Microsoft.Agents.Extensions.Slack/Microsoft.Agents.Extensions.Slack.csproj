@@ -5,7 +5,6 @@
 		<ComponentAreaName>CplSlack</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
 	<Import Project="..\..\..\Build.Common.core.props" />
 
@@ -38,7 +37,6 @@
 	  <ProjectReference Include="..\..\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
-	  <ProjectReference Include="..\..\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
 	</ItemGroup>
 
 </Project>

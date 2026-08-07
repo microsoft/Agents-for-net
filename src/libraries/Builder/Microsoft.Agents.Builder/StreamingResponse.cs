@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -14,40 +14,19 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// This class enables sending chunked text in a series of "intermediate" messages, on an interval.  This
-    /// gives the UX of a streamed message. When complete, a final message (ActivityType.Message) is sent with 
-    /// the full message and optional Attachments.
-    /// 
-    /// The expected sequence of calls is:
-    /// 
-    /// `QueueInformativeUpdateAsync()`, `QueueTextChunk()`, `QueueTextChunk()`, ..., `EndStreamAsync()`.
-    ///
-    ///  Once `EndStreamAsync()` is called, the stream is considered ended and no further updates can be sent.
+    /// Streams Activity Protocol responses for Teams, WebChat, DirectLine, and DeliveryMode.Stream.
     /// </summary>
-    /// <remarks>
-    /// Only Teams and WebChat support streaming messages.  However, channels that do not support
-    /// streaming messages will only receive the final message when <see cref="EndStreamAsync"/> is called.
-    /// </remarks>
-    /// <remarks>
-    /// This class support throttling via the <see cref="StreamingResponseBase.Interval"/> property.  Teams and Azure Channels require
-    /// some throttling since services like OpenAI produce streams that exceed allowed Channel message limits.
-    /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
-    /// in message delivery failures.
-    /// </remarks>
     internal class StreamingResponse : StreamingResponseBase
     {
         private const string TeamsStreamCancelled = "ContentStreamNotAllowed";
-        // Teams failed to accept streaming messages. 
+        private const string TeamsStreamTimedOut = "Content stream finished due to exceeded streaming time.";
         private const string BadArgument = "BadArgument";
         private const string TeamsStreamNotAllowed = "streaming api is not enabled";
 
         private readonly TurnContext _context;
         private bool _isTeamsChannel;
+        private bool _streamTimedOut;
 
-        /// <summary>
-        /// Creates a new instance of the <see cref="StreamingResponse"/> class.
-        /// </summary>
-        /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         public StreamingResponse(TurnContext turnContext)
         {
             Core.AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
@@ -56,15 +35,11 @@ namespace Microsoft.Agents.Builder
             SetDefaults(turnContext);
         }
 
-        /// <summary>
-        /// If there are citations, modify the content so that the sources are numbers instead of [doc1], [doc2], etc.
-        /// </summary>
         protected override string TransformBufferedText(string bufferedText)
         {
             return CitationUtils.FormatCitationsResponse(bufferedText);
         }
 
-        /// <inheritdoc/>
         protected override async Task SendChunkAsync(string bufferedText, int sequenceNumber, CancellationToken cancellationToken)
         {
             var activity = new Activity
@@ -73,7 +48,7 @@ namespace Microsoft.Agents.Builder
                 Text = bufferedText,
                 Entities =
                 [
-                    new StreamInfo()
+                    new StreamInfo
                     {
                         StreamType = StreamTypes.Streaming,
                         StreamSequence = sequenceNumber,
@@ -83,12 +58,11 @@ namespace Microsoft.Agents.Builder
 
             if (Citations != null && Citations.Count > 0)
             {
-                // If there are citations, filter out the citations unused in content.
-                List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(bufferedText, Citations);
+                List<ClientCitation>? currentCitations = CitationUtils.GetUsedCitations(bufferedText, Citations);
                 AIEntity entity = new();
-                if (currCitations != null && currCitations.Count > 0)
+                if (currentCitations != null && currentCitations.Count > 0)
                 {
-                    entity.Citation = currCitations;
+                    entity.Citation = currentCitations;
                 }
 
                 activity.Entities.Add(entity);
@@ -97,8 +71,7 @@ namespace Microsoft.Agents.Builder
             await SendStreamActivityAsync(activity, cancellationToken).ConfigureAwait(false);
         }
 
-        /// <inheritdoc/>
-        protected override async Task SendInformativeAsync(string text, int sequenceNumber, CancellationToken cancellationToken)
+        protected override Task SendInformativeAsync(string text, int sequenceNumber, CancellationToken cancellationToken)
         {
             var activity = new Activity
             {
@@ -106,7 +79,7 @@ namespace Microsoft.Agents.Builder
                 Text = text,
                 Entities =
                 [
-                    new StreamInfo()
+                    new StreamInfo
                     {
                         StreamType = StreamTypes.Informative,
                         StreamSequence = sequenceNumber,
@@ -114,80 +87,107 @@ namespace Microsoft.Agents.Builder
                 ]
             };
 
-            await SendStreamActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+            return SendStreamActivityAsync(activity, cancellationToken);
         }
 
-        /// <inheritdoc/>
         protected override async Task FinalizeStreamAsync(bool streamedPath, CancellationToken cancellationToken)
         {
-            if (!streamedPath)
+            if (!IsStreamingChannel)
             {
-                // Non-streaming channel: send the buffered Message as a normal message.
                 if (UpdatesSent() > 0 || FinalMessage != null || !string.IsNullOrWhiteSpace(Message))
                 {
-                    await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    if (_streamTimedOut)
+                    {
+                        await UpdateActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await _context.SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                    }
                 }
+
+                return;
             }
-            else
+
+            if (UpdatesSent() > 0 || FinalMessage != null)
             {
-                if (UpdatesSent() > 0 || FinalMessage != null)
+                try
                 {
-                    try
-                    {
-                        await SendStreamActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        // A failed final streaming send is not fatal to the turn; the result has already been computed.
-                        _context?.Adapter?.Logger?.LogWarning("Exception during final StreamingResponse message: {ExceptionMessage}", ex.Message);
-                        System.Diagnostics.Trace.WriteLine($"Exception during final StreamingResponse message: {ex.Message}");
-                    }
+                    await SendStreamActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _context.Adapter?.Logger?.LogWarning(
+                        "Exception during final StreamingResponse message: {ExceptionMessage}",
+                        ex.Message);
+                    System.Diagnostics.Trace.WriteLine($"Exception during final StreamingResponse message: {ex.Message}");
                 }
             }
         }
 
-        /// <inheritdoc/>
-        protected override Task<StreamErrorAction> HandleSendErrorAsync(Exception exception, CancellationToken cancellationToken)
+        protected override async Task<StreamErrorAction> HandleSendErrorAsync(Exception exception, CancellationToken cancellationToken)
         {
             if (exception is ErrorResponseException errorResponse)
             {
-                // User canceled?
-                if (TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
+                if (TeamsStreamCancelled.Equals(errorResponse.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
                 {
-                    _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
+                    if (TeamsStreamTimedOut.Equals(errorResponse.Body?.Error?.Message, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _context.Adapter?.Logger?.LogWarning(
+                            "Client canceled due to exceeded allowed streaming time. {ErrorCode} - {ErrorMessage}",
+                            errorResponse.Body?.Error?.Code,
+                            errorResponse.Body?.Error?.Message);
+
+                        _streamTimedOut = true;
+                        await UpdateActivityAsync(CreateStreamTimedOutMessage(), cancellationToken).ConfigureAwait(false);
+                        return StreamErrorAction.FallbackToNonStreaming;
+                    }
+
+                    _context.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
                     System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");
-
                     UserCancelledStream = true;
-                    return Task.FromResult(StreamErrorAction.Cancel);
+                    return StreamErrorAction.Cancel;
                 }
 
-                // Stream not allowed?
-#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
-                if (BadArgument.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase) &&
-                    errorResponse?.Body?.Error?.Message.ToLower().Contains(TeamsStreamNotAllowed) == true)
+#pragma warning disable CA1862 // Support target frameworks without the StringComparison overload.
+                if (BadArgument.Equals(errorResponse.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase)
+                    && errorResponse.Body?.Error?.Message?.ToLower().Contains(TeamsStreamNotAllowed) == true)
                 {
-                    _context?.Adapter?.Logger?.LogWarning("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
-                    System.Diagnostics.Trace.WriteLine("Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
-
-                    // Disable Streaming for this channel / interaction as Teams will not accept it at this time.
-                    return Task.FromResult(StreamErrorAction.FallbackToNonStreaming);
+                    _context.Adapter?.Logger?.LogWarning(
+                        "Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+                    System.Diagnostics.Trace.WriteLine(
+                        "Interaction Context does not support StreamingResponse, StreamingResponse has been disabled for this turn");
+                    return StreamErrorAction.FallbackToNonStreaming;
                 }
-#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+#pragma warning restore CA1862
 
-                var errorMessage = errorResponse?.Body?.Error?.Message ?? "None";
-
-                _context?.Adapter?.Logger?.LogWarning(
+                var errorMessage = errorResponse.Body?.Error?.Message ?? "None";
+                _context.Adapter?.Logger?.LogWarning(
                     "Exception during StreamingResponse: {ExceptionMessage} - {ErrorMessage}",
                     exception.Message,
                     errorMessage);
-
-                System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {exception.Message} - {errorMessage}");
+                System.Diagnostics.Trace.WriteLine(
+                    $"Exception during StreamingResponse: {exception.Message} - {errorMessage}");
             }
 
-            return Task.FromResult(StreamErrorAction.Cancel);
+            return StreamErrorAction.Cancel;
         }
 
-        private IActivity CreateFinalMessage()
+        public override async Task<bool> SendStreamTimedOutNotification(
+            string message,
+            CancellationToken cancellationToken = default)
+        {
+            if (!IsStreamingChannel)
+            {
+                return false;
+            }
+
+            await SendStreamActivityAsync(CreateStreamStoppedMessage(message), cancellationToken).ConfigureAwait(false);
+            FallbackToNonStreaming();
+            return true;
+        }
+
+        protected virtual IActivity CreateFinalMessage()
         {
             var activity = FinalMessage ?? new Activity();
 
@@ -195,23 +195,28 @@ namespace Microsoft.Agents.Builder
             activity.Entities ??= [];
             if (FinalMessage == null)
             {
-                activity.Text = !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";   // Teams won't allow Activity.Text changes or empty text
+                activity.Text = !string.IsNullOrEmpty(Message) ? Message : "No text was streamed";
             }
 
-            // make sure the supplied Activity doesn't have a streamInfo already.
-            var existingStreamInfos = activity.Entities.Where(e => string.Equals(EntityTypes.StreamInfo, e.Type, StringComparison.OrdinalIgnoreCase)).ToList();
-            if (existingStreamInfos.Count != 0)
+            foreach (var streamInfo in activity.Entities
+                .Where(entity => string.Equals(EntityTypes.StreamInfo, entity.Type, StringComparison.OrdinalIgnoreCase))
+                .ToList())
             {
-                foreach (var existing in existingStreamInfos)
-                {
-                    activity.Entities.Remove(existing);
-                }
+                activity.Entities.Remove(streamInfo);
             }
 
             if (IsStreamingChannel)
             {
-                // Only append this if the channel supports streaming.
-                activity.Entities.Add(new StreamInfo() { StreamType = StreamTypes.Final, StreamResult = (string.IsNullOrEmpty(Message) ? StreamResults.Error : StreamResults.Success) });
+                activity.Entities.Add(new StreamInfo
+                {
+                    StreamType = StreamTypes.Final,
+                    StreamResult = string.IsNullOrEmpty(Message) ? StreamResults.Error : StreamResults.Success
+                });
+            }
+
+            if (_streamTimedOut && !string.IsNullOrEmpty(StreamId))
+            {
+                activity.Id = StreamId;
             }
 
             if (FeedbackLoopEnabled && _isTeamsChannel)
@@ -225,13 +230,12 @@ namespace Microsoft.Agents.Builder
                 });
             }
 
-            // Add in Generated by AI
-            List<ClientCitation>? currCitations = CitationUtils.GetUsedCitations(Message, Citations);
-            if ((bool)EnableGeneratedByAILabel || currCitations != null)
+            List<ClientCitation>? currentCitations = CitationUtils.GetUsedCitations(Message, Citations);
+            if (EnableGeneratedByAILabel == true || currentCitations != null)
             {
                 AIEntity entity = new()
                 {
-                    Citation = currCitations,
+                    Citation = currentCitations,
                     UsageInfo = SensitivityLabel
                 };
 
@@ -243,7 +247,6 @@ namespace Microsoft.Agents.Builder
                 activity.Entities.Add(entity);
             }
 
-            // Add Attachments if there are any
             if (Attachments != null && Attachments.Count > 0)
             {
                 if (activity.Attachments == null)
@@ -262,34 +265,125 @@ namespace Microsoft.Agents.Builder
             return activity;
         }
 
+        protected Activity CreateStreamTimedOutMessage()
+        {
+            return new Activity
+            {
+                Type = ActivityTypes.Message,
+                Id = StreamId,
+                Text = !string.IsNullOrEmpty(Message)
+                    ? $"{Message} {Environment.NewLine}{Environment.NewLine} {StreamingTakingTooLongMessage} {Environment.NewLine}"
+                    : StreamingTakingTooLongMessage
+            };
+        }
+
+        protected async Task SendStreamActivityAsync(IActivity activity, CancellationToken cancellationToken)
+        {
+            if (activity == null)
+            {
+                return;
+            }
+
+            var streamInfo = activity.GetStreamingEntity();
+            if (!string.IsNullOrEmpty(StreamId))
+            {
+                activity.Id = StreamId;
+                if (streamInfo != null)
+                {
+                    streamInfo.StreamId = StreamId;
+                }
+            }
+
+            var response = await _context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+            if (string.IsNullOrEmpty(StreamId))
+            {
+                StreamId = response.Id;
+            }
+        }
+
+        protected async Task<ResourceResponse> UpdateActivityAsync(
+            IActivity activity,
+            CancellationToken cancellationToken = default)
+        {
+            if (activity == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return await _context.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (ex is ErrorResponseException errorResponse)
+                {
+                    _context.Adapter?.Logger?.LogWarning(
+                        "Exception during StreamingResponse UpdateActivity: {ExceptionMessage} - {ErrorMessage}",
+                        ex.Message,
+                        errorResponse.Body?.Error?.Message ?? "None");
+                }
+                else
+                {
+                    _context.Adapter?.Logger?.LogWarning(
+                        "Exception during StreamingResponse UpdateActivity: {ExceptionMessage}",
+                        ex.Message);
+                }
+
+                System.Diagnostics.Trace.WriteLine(
+                    $"Exception during StreamingResponse UpdateActivity: {ex.Message}");
+                return null;
+            }
+        }
+
+        protected override void OnReset()
+        {
+            _streamTimedOut = false;
+        }
+
+        private Activity CreateStreamStoppedMessage(string message)
+        {
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = !string.IsNullOrEmpty(message) ? message : "No text was streamed",
+                Entities = []
+            };
+
+            if (IsStreamingChannel)
+            {
+                activity.Entities.Add(new StreamInfo
+                {
+                    StreamType = StreamTypes.Final,
+                    StreamResult = string.IsNullOrEmpty(Message) ? StreamResults.Error : StreamResults.Success
+                });
+            }
+
+            return activity;
+        }
+
         private void SetDefaults(TurnContext turnContext)
         {
             _isTeamsChannel = Channels.Msteams == turnContext.Activity.ChannelId?.Channel;
 
             if (string.Equals(DeliveryModes.ExpectReplies, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
-                // No point in streaming for ExpectReplies.  Treat as non-streaming channel.
                 IsStreamingChannel = false;
             }
             else if (_isTeamsChannel)
             {
-                // Teams MUST use the Activity.Id returned from the first Informative message for
-                // subsequent intermediate messages.  Do not set StreamId here.
-
                 Interval = 1000;
                 IsStreamingChannel = true;
             }
-            else if (Channels.Webchat == turnContext.Activity.ChannelId?.Channel || Channels.Directline == turnContext.Activity.ChannelId?.Channel)
+            else if (Channels.Webchat == turnContext.Activity.ChannelId?.Channel
+                || Channels.Directline == turnContext.Activity.ChannelId?.Channel)
             {
                 Interval = 500;
                 IsStreamingChannel = true;
-
-                // WebChat will use whatever StreamId is created.
                 StreamId = Guid.NewGuid().ToString();
             }
             else if (string.Equals(DeliveryModes.Stream, turnContext.Activity.DeliveryMode, StringComparison.OrdinalIgnoreCase))
             {
-                // Support streaming for DeliveryMode.Stream
                 IsStreamingChannel = true;
                 Interval = 100;
                 StreamId = Guid.NewGuid().ToString();
@@ -297,30 +391,6 @@ namespace Microsoft.Agents.Builder
             else
             {
                 IsStreamingChannel = false;
-            }
-        }
-
-        /// <summary>
-        /// Send an intermediate/final streaming activity, applying (or capturing) the StreamId.
-        /// Exceptions are allowed to propagate so the base can dispatch them to <see cref="HandleSendErrorAsync"/>.
-        /// </summary>
-        private async Task SendStreamActivityAsync(IActivity activity, CancellationToken cancellationToken)
-        {
-            if (activity == null)
-            {
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(StreamId))
-            {
-                activity.Id = StreamId;
-                activity.GetStreamingEntity().StreamId = StreamId;
-            }
-
-            var response = await _context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
-            if (string.IsNullOrEmpty(StreamId))
-            {
-                StreamId = response.Id;
             }
         }
     }

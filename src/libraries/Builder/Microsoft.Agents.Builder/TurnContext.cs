@@ -83,7 +83,7 @@ namespace Microsoft.Agents.Builder
                 // Intentionally do NOT carry forward tc._streamingResponse: a StreamingResponse captures
                 // the originating TurnContext and addresses streamed activities using that context's
                 // Activity/ConversationReference.  Since this clone targets a different Activity, reusing the
-                // source instance would misaddress sends.  The clone lazily creates its own default
+                // source instance would misaddress sends.  The clone lazily creates its own channel-specific
                 // StreamingResponse bound to this context on first access.
             }
         }
@@ -112,7 +112,12 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public IStreamingResponse StreamingResponse
         {
-            get { return _streamingResponse ??= new StreamingResponse(this); }
+            get
+            {
+                return _streamingResponse ??= Activity.ChannelId == Channels.M365Copilot
+                    ? new M365CopilotStreamingResponse(this)
+                    : new StreamingResponse(this);
+            }
         }
 
         /// <summary>

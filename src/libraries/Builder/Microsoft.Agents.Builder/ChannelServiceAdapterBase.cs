@@ -319,13 +319,23 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         private void ApplyStreamingResponseFactory(TurnContext turnContext)
         {
-            var channel = turnContext.Activity?.ChannelId?.Channel;
+            var channelId = turnContext.Activity?.ChannelId;
+            var channel = channelId?.Channel;
             if (_serviceProvider == null || channel == null)
             {
                 return;
             }
 
-            var factory = _streamingResponseFactories.GetOrAdd(channel, CreateStreamingResponseFactory);
+            var factoryKey = channelId.ToString();
+            if (!_streamingResponseFactories.TryGetValue(factoryKey, out var factory))
+            {
+                factory = CreateStreamingResponseFactory(factoryKey, channel);
+                if (factory != null)
+                {
+                    _streamingResponseFactories.TryAdd(factoryKey, factory);
+                }
+            }
+
             if (factory == null)
             {
                 return;
@@ -342,9 +352,10 @@ namespace Microsoft.Agents.Builder
             }
         }
 
-        private IStreamingResponseFactory CreateStreamingResponseFactory(string channel)
+        private IStreamingResponseFactory CreateStreamingResponseFactory(string channelId, string parentChannel)
         {
-            if (!StreamingResponseFactoryCatalog.TryGetFactoryType(channel, out var factoryType))
+            if (!StreamingResponseFactoryCatalog.TryGetFactoryType(channelId, out var factoryType)
+                && !StreamingResponseFactoryCatalog.TryGetFactoryType(parentChannel, out factoryType))
             {
                 return null;
             }
@@ -359,7 +370,7 @@ namespace Microsoft.Agents.Builder
             {
                 // Optional, reflection/source-gen discovered factories may fail to instantiate (missing DI
                 // registrations, invalid type, etc.).  Cache the null result and fall back to the default.
-                ChannelServiceAdapterLog.LogStreamingResponseFactoryError(Logger, ex, channel);
+                ChannelServiceAdapterLog.LogStreamingResponseFactoryError(Logger, ex, channelId);
                 return null;
             }
         }

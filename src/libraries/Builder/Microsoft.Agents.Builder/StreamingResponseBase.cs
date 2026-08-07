@@ -141,6 +141,10 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public List<ClientCitation>? Citations { get; protected set; } = [];
 
+        /// <inheritdoc/>
+        public string StreamingTakingTooLongMessage { get; set; } =
+            "The response is taking longer than expected. Please wait while we continue to generate the response.";
+
         /// <summary>
         /// Attachments to be included in the final message.  Only used for the final message, not intermediate messages.
         /// </summary>
@@ -255,6 +259,7 @@ namespace Microsoft.Agents.Builder
             try
             {
                 await SendInformativeAsync(text, sequence, cancellationToken).ConfigureAwait(false);
+                OnSendCompleted(isInformative: true, text);
             }
             catch (Exception ex)
             {
@@ -392,6 +397,10 @@ namespace Microsoft.Agents.Builder
             }
         }
 
+        /// <inheritdoc/>
+        public virtual Task<bool> SendStreamTimedOutNotification(string message, CancellationToken cancellationToken = default)
+            => Task.FromResult(false);
+
         /// <summary>
         /// Sends a chunk of accumulated (buffered) text as a channel-specific intermediate message.
         /// Called on the streaming loop.
@@ -442,6 +451,45 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         protected virtual void OnReset()
         {
+        }
+
+        /// <summary>
+        /// Called before each streaming-loop pass. Return <c>false</c> to stop the loop.
+        /// </summary>
+        /// <param name="isQueueEmpty">Whether no informative or text update is currently pending.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        protected virtual Task<bool> OnBeforeSendIntervalAsync(bool isQueueEmpty, CancellationToken cancellationToken)
+            => Task.FromResult(true);
+
+        /// <summary>
+        /// Called after an informative or text update is sent successfully.
+        /// </summary>
+        protected virtual void OnSendCompleted(bool isInformative, string text)
+        {
+        }
+
+        /// <summary>
+        /// Switches the response to non-streaming delivery and stops the interval loop.
+        /// </summary>
+        protected void FallbackToNonStreaming()
+        {
+            lock (this)
+            {
+                IsStreamingChannel = false;
+                StopStream();
+                _queueEmpty.Set();
+            }
+        }
+
+        /// <summary>
+        /// Gets the next stream sequence number for a channel-specific activity.
+        /// </summary>
+        protected int GetNextSequenceNumber()
+        {
+            lock (this)
+            {
+                return _nextSequence++;
+            }
         }
 
         private string TransformBufferedTextSafe(string text) => TransformBufferedText(text) ?? text;
@@ -538,6 +586,39 @@ namespace Microsoft.Agents.Builder
         private async Task<int> SendNextIntervalAsync()
         {
             PendingSend pending;
+            bool isQueueEmpty;
+            bool isEnded;
+
+            lock (this)
+            {
+                isQueueEmpty = _queue.Count == 0 && !_messageUpdated;
+                isEnded = _ended;
+            }
+
+            if (!isEnded)
+            {
+                bool continueStreaming;
+                try
+                {
+                    continueStreaming = await OnBeforeSendIntervalAsync(
+                        isQueueEmpty,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    return await HandleErrorAsync(ex, CancellationToken.None).ConfigureAwait(false);
+                }
+
+                if (!continueStreaming)
+                {
+                    lock (this)
+                    {
+                        StopStream();
+                        _queueEmpty.Set();
+                    }
+                    return -1;
+                }
+            }
 
             lock (this)
             {
@@ -573,6 +654,7 @@ namespace Microsoft.Agents.Builder
                 {
                     await SendChunkAsync(pending.Text, sequence, CancellationToken.None).ConfigureAwait(false);
                 }
+                OnSendCompleted(pending.IsInformative, pending.Text);
 
                 // Continue on the normal interval.
                 return Interval;
