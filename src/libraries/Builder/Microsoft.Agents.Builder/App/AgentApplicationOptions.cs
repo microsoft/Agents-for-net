@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Builder.Adapters;
 using System.Net.Http;
 
 namespace Microsoft.Agents.Builder.App
@@ -145,6 +146,7 @@ namespace Microsoft.Agents.Builder.App
             Adapter = channelAdapter;
 #pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
+            ChannelAdapterRegistry = sp.GetService<IChannelAdapterRegistry>();
             TurnStateFactory = () => new TurnState(storage);  // Null storage will just create a TurnState with TempState.
             HttpClientFactory = sp.GetService<IHttpClientFactory>();
 
@@ -193,6 +195,20 @@ namespace Microsoft.Agents.Builder.App
         /// The IConnections for this AgentApplication
         /// </summary>
         public IConnections? Connections { get; set; }
+
+        /// <summary>
+        /// Registry of adapters keyed by channelId. Lets the agent resolve the correct
+        /// <see cref="IChannelAdapter"/> for a given channel — for example, to send proactive messages or
+        /// continue a conversation — without knowing adapter types.
+        /// </summary>
+        /// <remarks>
+        /// Populated from DI when available. Adapters participate by being annotated with the
+        /// <c>[ChannelAdapter("channelId")]</c> attribute; the default Activity Protocol adapter
+        /// (CloudAdapter) is exposed via <see cref="IChannelAdapterRegistry.GetDefault"/>. May be
+        /// <see langword="null"/> when no registry is registered (for example, in unit tests that build
+        /// options programmatically).
+        /// </remarks>
+        public IChannelAdapterRegistry? ChannelAdapterRegistry { get; set; }
 
         /// <summary>
         /// Optional. Options used to customize the processing of Adaptive Card requests.

@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
@@ -23,6 +24,7 @@ namespace Microsoft.Agents.Builder.Tests.App
     public class ProactiveTests
     {
         private readonly Mock<IChannelAdapter> _mockAdapter;
+        private readonly Mock<IChannelAdapterRegistry> _mockRegistry;
         private readonly MemoryStorage _storage;
         private readonly AgentApplication _app;
         private readonly Proactive _proactive;
@@ -33,10 +35,12 @@ namespace Microsoft.Agents.Builder.Tests.App
         public ProactiveTests()
         {
             _mockAdapter = new Mock<IChannelAdapter>();
+            _mockRegistry = new Mock<IChannelAdapterRegistry>();
             _storage = new MemoryStorage();
             var options = new AgentApplicationOptions(_storage)
             {
-                Proactive = new ProactiveOptions(_storage)
+                Proactive = new ProactiveOptions(_storage),
+                ChannelAdapterRegistry = _mockRegistry.Object
             };
             _app = new AgentApplication(options);
             _proactive = new Proactive(_app);
@@ -55,6 +59,10 @@ namespace Microsoft.Agents.Builder.Tests.App
                 ChannelId = _conversationRef.ChannelId
             }, AgentClaims.CreateIdentity("bot"));
             _claims = new Dictionary<string, string> { { "aud", _conversationRef.Agent.Id } };
+
+            _mockRegistry
+                .Setup(r => r.GetAdapter(_conversationRef.ChannelId))
+                .Returns(_mockAdapter.Object);
         }
 
         #region StoreConversationAsync Tests
@@ -386,6 +394,113 @@ namespace Microsoft.Agents.Builder.Tests.App
                 Proactive.SendActivityAsync(_mockAdapter.Object, conversation, null));
         }
 
+        [Fact]
+        public async Task SendActivityAsync_ByChannelId_ResolvesAdapterAndSends()
+        {
+            // Arrange
+            var conversation = new Conversation(_claims, _conversationRef);
+            await _proactive.StoreConversationAsync(conversation);
+
+            var activity = new Activity { Type = ActivityTypes.Message, Text = "Test message" };
+
+            _mockAdapter
+                .Setup(a => a.ContinueConversationAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<ConversationReference>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken>(
+                    async (identity, reference, callback, ct) =>
+                    {
+                        var turnContext = new TurnContext(_mockAdapter.Object, activity);
+                        await callback(turnContext, ct);
+                    });
+
+            // Act
+            var result = await _proactive.SendActivityAsync(
+                _conversationRef.ChannelId,
+                _conversationRef.Conversation.Id,
+                activity);
+
+            // Assert
+            Assert.NotNull(result);
+            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+            _mockAdapter.Verify(a => a.ContinueConversationAsync(
+                It.IsAny<ClaimsIdentity>(),
+                It.IsAny<ConversationReference>(),
+                It.IsAny<AgentCallbackHandler>(),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_ByChannelId_NullChannelId_ShouldThrow()
+        {
+            var activity = new Activity { Text = "Test" };
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _proactive.SendActivityAsync((string)null, "test-id", activity));
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_ByChannelId_UnknownChannel_ShouldThrow()
+        {
+            var activity = new Activity { Text = "Test" };
+            _mockRegistry
+                .Setup(r => r.GetAdapter("unknown"))
+                .Throws(new InvalidOperationException("No adapter registered for channel 'unknown'."));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _proactive.SendActivityAsync("unknown", "test-id", activity));
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_ByConversation_ResolvesAdapterFromReference()
+        {
+            // Arrange
+            var conversation = new Conversation(_claims, _conversationRef);
+            var activity = new Activity { Text = "Test" };
+
+            _mockAdapter
+                .Setup(a => a.ContinueConversationAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<ConversationReference>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken>(
+                    async (identity, reference, callback, ct) =>
+                    {
+                        var turnContext = new TurnContext(_mockAdapter.Object, activity, conversation.Identity);
+                        await callback(turnContext, ct);
+                    });
+
+            _mockAdapter
+                .Setup(a => a.SendActivitiesAsync(
+                    It.IsAny<ITurnContext>(),
+                    It.IsAny<IActivity[]>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new ResourceResponse[] { new ResourceResponse("sentId") }));
+
+            // Act
+            var result = await _proactive.SendActivityAsync(conversation, activity);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("sentId", result.Id);
+            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_ByConversation_NullConversation_ShouldThrow()
+        {
+            var activity = new Activity { Text = "Test" };
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _proactive.SendActivityAsync((Conversation)null, activity));
+        }
+
         #endregion
 
         #region ContinueConversationAsync Tests
@@ -552,6 +667,91 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal("CustomEvent", capturedActivity.Name);
         }
 
+        [Fact]
+        public async Task ContinueConversationAsync_ByChannelId_ResolvesAdapterAndContinues()
+        {
+            // Arrange
+            var conversation = new Conversation(_claims, _conversationRef);
+            await _proactive.StoreConversationAsync(conversation);
+
+            var handlerCalled = false;
+            RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) =>
+            {
+                handlerCalled = true;
+                return Task.CompletedTask;
+            };
+
+            _mockAdapter
+                .Setup(a => a.ProcessProactiveAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<IActivity>(),
+                    It.IsAny<string>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken>(
+                    async (identity, activity, audience, callback, ct) => await callback(new TurnContext(_mockAdapter.Object, activity, identity), ct));
+
+            // Act
+            await _proactive.ContinueConversationAsync(
+                _conversationRef.ChannelId,
+                _conversationRef.Conversation.Id,
+                handler);
+
+            // Assert
+            Assert.True(handlerCalled);
+            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+        }
+
+        [Fact]
+        public async Task ContinueConversationAsync_ByChannelId_NullChannelId_ShouldThrow()
+        {
+            RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) => Task.CompletedTask;
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _proactive.ContinueConversationAsync((string)null, "test-id", handler));
+        }
+
+        [Fact]
+        public async Task ContinueConversationAsync_ByConversation_ResolvesAdapterFromReference()
+        {
+            // Arrange
+            var conversation = new Conversation(_claims, _conversationRef);
+            var handlerCalled = false;
+            RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) =>
+            {
+                handlerCalled = true;
+                return Task.CompletedTask;
+            };
+
+            _mockAdapter
+                .Setup(a => a.ProcessProactiveAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<IActivity>(),
+                    It.IsAny<string>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken>(
+                    async (identity, activity, audience, callback, ct) => await callback(new TurnContext(_mockAdapter.Object, activity, identity), ct));
+
+            // Act
+            await _proactive.ContinueConversationAsync(conversation, handler);
+
+            // Assert
+            Assert.True(handlerCalled);
+            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+        }
+
+        [Fact]
+        public async Task ContinueConversationAsync_ByConversation_NullConversation_ShouldThrow()
+        {
+            RouteHandler handler = (ITurnContext tc, ITurnState ts, CancellationToken ct) => Task.CompletedTask;
+
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _proactive.ContinueConversationAsync((Conversation)null, handler));
+        }
+
         #endregion
 
         #region CreateConversationAsync Tests
@@ -607,6 +807,49 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 _proactive.CreateConversationAsync(_mockAdapter.Object, null));
+        }
+
+        [Fact]
+        public async Task CreateConversationAsync_ByChannelId_ResolvesAdapterFromOptions()
+        {
+            // Arrange
+            var createInfo = CreateConversationOptionsBuilder.Create("bot", _conversationRef.ChannelId, "serviceUrl")
+                .WithUser("user1", "User 1")
+                .Build();
+
+            var newReference = new ConversationReference
+            {
+                Conversation = new ConversationAccount { Id = "new-conversation-id" },
+                ServiceUrl = "https://test.com",
+                ChannelId = _conversationRef.ChannelId
+            };
+
+            _mockAdapter
+                .Setup(a => a.CreateConversationAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<ConversationParameters>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(newReference);
+
+            // Act
+            var newConversation = await _proactive.CreateConversationAsync(createInfo);
+
+            // Assert
+            Assert.NotNull(newConversation);
+            Assert.Equal("new-conversation-id", newConversation.Reference.Conversation.Id);
+            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+        }
+
+        [Fact]
+        public async Task CreateConversationAsync_ByChannelId_NullCreateInfo_ShouldThrow()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _proactive.CreateConversationAsync((CreateConversationOptions)null));
         }
 
         [Fact]

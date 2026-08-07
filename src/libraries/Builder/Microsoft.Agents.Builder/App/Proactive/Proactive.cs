@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
@@ -43,6 +44,42 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
+        /// Resolves the <see cref="IChannelAdapter"/> registered for the specified <paramref name="channelId"/> using
+        /// the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// </summary>
+        /// <param name="channelId">The channelId whose adapter should be resolved. Cannot be null or empty.</param>
+        /// <returns>The adapter registered for the channel.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if no registry is available, or no adapter is registered for the channel.</exception>
+        private IChannelAdapter ResolveAdapter(string channelId)
+        {
+            AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
+
+            var registry = _app.Options.ChannelAdapterRegistry
+                ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ProactiveAdapterRegistryNotAvailable, null, channelId);
+
+            return registry.GetAdapter(channelId);
+        }
+
+        /// <summary>
+        /// Sends an activity to an existing conversation, resolving the channel adapter from the specified
+        /// <paramref name="channelId"/> via the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// </summary>
+        /// <param name="channelId">The channelId whose registered adapter is used to send the activity. Cannot be null or empty.</param>
+        /// <param name="conversationId">The unique identifier of the conversation to which the activity will be sent. Cannot be 
+        /// null or empty. The conversation must have been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/></param>
+        /// <param name="activity">The activity to send to the conversation. Must not be null. If the activity's Type property is null or
+        /// empty, it defaults to a message activity.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a ResourceResponse with the ID
+        /// of the sent activity.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if no adapter is registered for the specified channelId.</exception>
+        public Task<ResourceResponse> SendActivityAsync(string channelId, string conversationId, IActivity activity, CancellationToken cancellationToken = default)
+        {
+            return SendActivityAsync(ResolveAdapter(channelId), conversationId, activity, cancellationToken);
+        }
+
+        /// <summary>
         /// Sends an activity to an existing conversation using the specified channel adapter.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send the activity. Cannot be null.</param>
@@ -72,6 +109,28 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 ?? throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
 
             return await SendActivityAsync(adapter, conversation, activity, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Sends an activity to a conversation, resolving the channel adapter from the conversation's
+        /// <see cref="Microsoft.Agents.Core.Models.ConversationReference.ChannelId"/> via the
+        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// </summary>
+        /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> constructors or <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/>.</param>
+        /// <param name="activity">The activity to send to the conversation. If the activity's Type property is null or empty, it defaults to a
+        /// message activity. Cannot be null.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a ResourceResponse with
+        /// information about the sent activity.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if no adapter is registered for the conversation's channelId.</exception>
+        public Task<ResourceResponse> SendActivityAsync(Conversation conversation, IActivity activity, CancellationToken cancellationToken = default)
+        {
+            if (conversation == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveConversationRequired, null);
+            }
+
+            return SendActivityAsync(ResolveAdapter(conversation.Reference?.ChannelId), conversation, activity, cancellationToken);
         }
 
         /// <summary>
@@ -130,6 +189,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
+        /// Continues an existing conversation by resuming activity, resolving the channel adapter from the specified
+        /// <paramref name="channelId"/> via the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>. The
+        /// conversation must have previously been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>.
+        /// </summary>
+        /// <param name="channelId">The channelId whose registered adapter is used to continue the conversation. Cannot be null or empty.</param>
+        /// <param name="conversationId">The unique identifier of the conversation to continue. Cannot be null or empty.</param>
+        /// <param name="continuationHandler">A delegate that handles the routing of activities within the continued conversation.</param>
+        /// <param name="autoSignInHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
+        /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if no conversation reference is found for the specified conversation ID.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if no adapter is registered for the specified channelId.</exception>
+        /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
+        public Task ContinueConversationAsync(string channelId, string conversationId, RouteHandler continuationHandler, string[] autoSignInHandlers = null, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
+        {
+            return ContinueConversationAsync(ResolveAdapter(channelId), conversationId, continuationHandler, autoSignInHandlers, continuationActivity, cancellationToken);
+        }
+
+        /// <summary>
         /// Continues an existing conversation by resuming activity using the specified channel adapter and conversation
         /// ID. The conversation must have previously been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>.<br/><br/>
         /// See  <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.ContinueConversationAsync(Microsoft.Agents.Builder.IChannelAdapter, Microsoft.Agents.Builder.App.Proactive.Conversation, Microsoft.Agents.Builder.App.RouteHandler, string[], Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
@@ -152,6 +231,29 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 ?? throw Core.Errors.ExceptionHelper.GenerateException<KeyNotFoundException>(ErrorHelper.ProactiveConversationNotFound, null, conversationId);
 
             await ContinueConversationAsync(adapter, conversation, continuationHandler, autoSignInHandlers, continuationActivity, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Continues an existing conversation by calling the specified route handler, resolving the channel adapter
+        /// from the conversation's <see cref="Microsoft.Agents.Core.Models.ConversationReference.ChannelId"/> via the
+        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// </summary>
+        /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> constructors or <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/>.</param>
+        /// <param name="continuationHandler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>
+        /// <param name="autoSignInHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
+        /// <param name="continuationActivity">Optional.  If null the default continuation activity of type Event and name "ContinueConversation" is used.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if no adapter is registered for the conversation's channelId.</exception>
+        /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
+        public Task ContinueConversationAsync(Conversation conversation, RouteHandler continuationHandler, string[] autoSignInHandlers = null, IActivity continuationActivity = null, CancellationToken cancellationToken = default)
+        {
+            if (conversation == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveConversationRequired, null, "null instance");
+            }
+
+            return ContinueConversationAsync(ResolveAdapter(conversation.Reference?.ChannelId), conversation, continuationHandler, autoSignInHandlers, continuationActivity, cancellationToken);
         }
 
         /// <summary>
@@ -230,6 +332,35 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }, cancellationToken).ConfigureAwait(false);
 
             exceptionInfo?.Throw();
+        }
+
+        /// <summary>
+        /// Creates a new conversation, resolving the channel adapter from
+        /// <see cref="CreateConversationOptions.ChannelId"/> via the
+        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// </summary>
+        /// <param name="createOptions">An object containing the details required to create the conversation, including conversation identity,
+        /// reference, parameters, and scope. Cannot be null. See <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/>.</param>
+        /// <param name="continuationHandler">If null a ContinueConversation is not performed after the conversation is created.</param>
+        /// <param name="autoSignInHandlers">Optional: The list of tokens to get.  If a handler requires sign-in, only those that have done that can be returned.</param>
+        /// <param name="continuationActivityFactory">Optional.  If not supplied, the default activity of type Event and name "CreateConversation" is used.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the newly created <c>Conversation</c>.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if no adapter is registered for the createOptions' channelId.</exception>
+        /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
+        public Task<Conversation> CreateConversationAsync(
+            CreateConversationOptions createOptions,
+            RouteHandler continuationHandler = null,
+            string[] autoSignInHandlers = null,
+            Func<ConversationReference, IActivity> continuationActivityFactory = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (createOptions == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, "null instance");
+            }
+
+            return CreateConversationAsync(ResolveAdapter(createOptions.ChannelId), createOptions, continuationHandler, autoSignInHandlers, continuationActivityFactory, cancellationToken);
         }
 
         /// <summary>

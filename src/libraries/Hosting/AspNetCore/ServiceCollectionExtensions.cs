@@ -3,11 +3,13 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Linq;
 
@@ -172,6 +174,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
                 services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
             }
+
+            // The registry resolves adapters by channelId for Tier 2 dispatch and SDK features
+            // (proactive messaging, diagnostics). CloudAdapter (IAgentHttpAdapter) is the default;
+            // channel-specific adapters are discovered from [ChannelAdapter] attributes.
+            services.TryAddSingleton<IChannelAdapterRegistry, ChannelAdapterRegistry>();
             return services;
         }
 
@@ -189,6 +196,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (!services.Any(x => x.ServiceType == typeof(IActivityTaskQueue)))
             {
+                services.AddSingleton<HostedActivityServiceOptions>();
+
                 // Activity specific BackgroundService for processing authenticated activities.
                 services.AddHostedService<HostedActivityService>();
                 // Generic BackgroundService for processing tasks.

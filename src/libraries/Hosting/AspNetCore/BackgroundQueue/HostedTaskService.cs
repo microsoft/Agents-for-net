@@ -38,7 +38,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         {
             ArgumentNullException.ThrowIfNull(taskQueue);
 
+#pragma warning disable CS0618
             _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
+#pragma warning restore CS0618
             _taskQueue = taskQueue;
             _logger = logger ?? NullLogger<HostedTaskService>.Instance;;
         }
