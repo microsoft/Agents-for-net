@@ -631,8 +631,8 @@ namespace Microsoft.Agents.Builder
                 }
                 else if (_ended)
                 {
-                    _queueEmpty.Set();
                     StopStream();
+                    _queueEmpty.Set();
                     return -1;
                 }
                 else
