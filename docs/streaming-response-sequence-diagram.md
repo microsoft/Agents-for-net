@@ -2,8 +2,8 @@
 
 `ITurnContext.StreamingResponse` provides one API for Activity Protocol streaming and channel-native
 streaming implementations. `StreamingResponseBase` owns buffering, sequencing, the asynchronous interval
-loop, end/reset behavior, and error actions. Implementations provide the channel-specific send, finalize,
-and error-handling hooks.
+loop, end/reset behavior, and error actions. `StreamingResponse` provides the shared Activity Protocol
+format, while channel specializations provide defaults, metadata, and error handling.
 
 ## Response Selection
 
@@ -12,6 +12,7 @@ parent channel ID. A discovered factory is instantiated through dependency injec
 type. If discovery or creation fails, `TurnContext` uses its built-in response:
 
 - `M365CopilotStreamingResponse` for `msteams:COPILOT`.
+- `TeamsStreamingResponse` for Teams and other Teams subchannels.
 - `StreamingResponse` for all other channels.
 
 ```mermaid
@@ -41,15 +42,15 @@ sequenceDiagram
         Note over Context: Lazy built-in response selection
     end
 
-    Context-->>Adapter: M365CopilotStreamingResponse or StreamingResponse
+    Context-->>Adapter: Channel-specific built-in response
 ```
 
 ## Channel Defaults
 
 | Channel | Implementation | Interval | Stream identity | Special behavior |
 |---|---|---:|---|---|
-| Teams | `StreamingResponse` | 1000 ms | First response `Activity.Id` | Full accumulated text per update |
-| M365 Copilot (`msteams:COPILOT`) | `M365CopilotStreamingResponse` | 1000 ms | First response `Activity.Id` | 35-second idle notice; 105-second streaming cutoff |
+| Teams | `TeamsStreamingResponse` | 1000 ms | First response `Activity.Id` | Teams-specific errors and feedback metadata |
+| M365 Copilot (`msteams:COPILOT`) | `M365CopilotStreamingResponse` | 1000 ms | First response `Activity.Id` | Teams behavior plus 35-second idle notice and 105-second streaming cutoff |
 | WebChat / DirectLine | `StreamingResponse` | 500 ms | Pre-generated GUID | Full accumulated text per update |
 | `DeliveryModes.Stream` | `StreamingResponse` | 100 ms | Pre-generated GUID | Activity Protocol streaming over the host transport |
 | Slack | `SlackStreamingResponse` | 200 ms | Slack stream plus local GUID | Appends text deltas through Slack `chat.*Stream` APIs |
@@ -105,7 +106,7 @@ activity uses that value as both `Activity.Id` and `StreamInfo.StreamId`.
 sequenceDiagram
     participant Agent
     participant Context as TurnContext
-    participant Response as StreamingResponse
+    participant Response as TeamsStreamingResponse
     participant Worker as Task.Delay loop
     participant Teams
 
@@ -137,7 +138,8 @@ sequenceDiagram
 
 ## M365 Copilot Flow
 
-M365 Copilot uses Teams stream identity rules but has separate lifecycle requirements:
+`M365CopilotStreamingResponse` derives from `TeamsStreamingResponse`, retaining Teams stream identity,
+error handling, and final-message metadata while adding separate lifecycle requirements:
 
 - The 105-second cutoff begins after the first successful send.
 - Successful informative and text sends reset the 35-second inactivity clock.
@@ -295,13 +297,16 @@ sequenceDiagram
 | `FallbackToNonStreaming` | Disable intermediate streaming, stop the loop, and allow a normal final message |
 | `Cancel` | Stop the loop; `EndStreamAsync` returns `Error` or `UserCancelled` |
 
-The built-in Activity Protocol implementation applies these policies:
+`TeamsStreamingResponse` applies these Teams service policies:
 
 - `ContentStreamNotAllowed` caused by user cancellation returns `UserCancelled`.
 - `ContentStreamNotAllowed` with the exceeded-time message updates the existing activity and falls back to
   non-streaming delivery.
 - `BadArgument` with `streaming api is not enabled` falls back to non-streaming delivery.
 - Other failures cancel the stream.
+
+`StreamingResponse`, used by WebChat, DirectLine, and `DeliveryModes.Stream`, treats send failures as
+transport failures and cancels the stream.
 
 Slack attempts `chat.stopStream` before returning `Cancel`, so a remote Slack message is not intentionally
 left in progress after an append failure.
@@ -313,7 +318,8 @@ left in progress after an append failure.
 - Informative updates and text snapshots are sent in FIFO order.
 - Activity Protocol intermediate messages contain the full accumulated text; Slack sends only the new delta.
 - `EndStreamTimeout` defaults to two minutes.
-- `ResetAsync` ends an active stream, clears shared state, and invokes the implementation-specific reset hook.
+- `ResetAsync` ends an active stream, clears buffered and synchronization state, restores shared defaults,
+  and invokes the implementation-specific reset hook to restore channel defaults and stream identity.
 - Factory lookup checks the full channel ID before the parent ID, enabling subchannel specializations.
 - Factory instantiation failures are cached without caching the absence of a registration, so later-loaded
   extension assemblies can still be discovered.
@@ -324,6 +330,7 @@ left in progress after an append failure.
 |---|---|
 | Shared streaming loop | `src/libraries/Builder/Microsoft.Agents.Builder/StreamingResponseBase.cs` |
 | Activity Protocol implementation | `src/libraries/Builder/Microsoft.Agents.Builder/StreamingResponse.cs` |
+| Teams specialization | `src/libraries/Builder/Microsoft.Agents.Builder/TeamsStreamingResponse.cs` |
 | M365 Copilot specialization | `src/libraries/Builder/Microsoft.Agents.Builder/M365CopilotStreamingResponse.cs` |
 | Streaming response contract | `src/libraries/Builder/Microsoft.Agents.Builder/IStreamingResponse.cs` |
 | Factory contract and discovery | `src/libraries/Builder/Microsoft.Agents.Builder/IStreamingResponseFactory.cs` |

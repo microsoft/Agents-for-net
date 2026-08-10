@@ -39,21 +39,24 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         public IStreamingResponse Create(ITurnContext turnContext)
         {
             var response = new SlackStreamingResponse(turnContext, _slackApi);
+            var interval = response.Interval;
+            var initialDelay = response.InitialDelay;
 
             var section = _configuration?.GetSection(StreamingSection);
             if (section != null && section.Exists())
             {
-                if (TryGetInt(section, "Interval", out var interval))
+                if (TryGetInt(section, "Interval", out var configuredInterval))
                 {
-                    response.Interval = interval;
+                    interval = configuredInterval;
                 }
 
-                if (TryGetInt(section, "InitialDelay", out var initialDelay))
+                if (TryGetInt(section, "InitialDelay", out var configuredInitialDelay))
                 {
-                    response.InitialDelay = initialDelay;
+                    initialDelay = configuredInitialDelay;
                 }
             }
 
+            response.ConfigureDefaults(interval, initialDelay);
             return response;
         }
 

@@ -45,7 +45,8 @@ namespace Microsoft.Agents.Builder
     /// <para>
     /// Channel extension authors extend this class to provide custom streaming behavior for a channel and
     /// register an <see cref="IStreamingResponseFactory"/> so the adapter can select it per channel.  The
-    /// default <see cref="StreamingResponse"/> (Teams / WebChat / DirectLine) also extends this class.
+    /// built-in <see cref="StreamingResponse"/> (WebChat / DirectLine) and
+    /// <see cref="TeamsStreamingResponse"/> implementations also extend this class.
     /// </para>
     /// <para>
     /// The four abstract hooks (<see cref="SendChunkAsync"/>, <see cref="SendInformativeAsync"/>,
@@ -55,6 +56,11 @@ namespace Microsoft.Agents.Builder
     /// </remarks>
     public abstract class StreamingResponseBase : IStreamingResponse
     {
+        private const int DefaultInitialDelay = 250;
+        private const string DefaultFeedbackLoopType = "default";
+        private const string DefaultStreamingTakingTooLongMessage =
+            "The response is taking longer than expected. Please wait while we continue to generate the response.";
+
         /// <summary>
         /// The default time, in milliseconds, that <see cref="EndStreamAsync"/> will wait for the buffer to drain.
         /// </summary>
@@ -80,7 +86,7 @@ namespace Microsoft.Agents.Builder
         private readonly AutoResetEvent _queueEmpty = new(false);
 
         private int _interval;
-        private int _initialDelay = 250;
+        private int _initialDelay = DefaultInitialDelay;
 
         /// <inheritdoc/>
         public int Interval
@@ -114,9 +120,9 @@ namespace Microsoft.Agents.Builder
 
         /// <inheritdoc/>
         /// <remarks>
-        /// StreamId assignment is the subclass's responsibility (via the protected setter).  The base only
-        /// resets it to <c>null</c> in <see cref="ResetAsync"/>.  Teams assigns it from the first send response;
-        /// other channels typically assign a GUID up front.
+        /// StreamId assignment is the subclass's responsibility (via the protected setter). The base clears it
+        /// during <see cref="ResetAsync"/>, after which the implementation-specific reset hook may regenerate it.
+        /// Teams assigns it from the first send response; other channels typically assign a GUID up front.
         /// </remarks>
         public string StreamId { get; protected set; }
 
@@ -130,7 +136,7 @@ namespace Microsoft.Agents.Builder
         public bool FeedbackLoopEnabled { get; set; }
 
         /// <inheritdoc/>
-        public string FeedbackLoopType { get; set; } = "default";
+        public string FeedbackLoopType { get; set; } = DefaultFeedbackLoopType;
 
         /// <inheritdoc/>
         public bool? EnableGeneratedByAILabel { get; set; } = false;
@@ -142,8 +148,7 @@ namespace Microsoft.Agents.Builder
         public List<ClientCitation>? Citations { get; protected set; } = [];
 
         /// <inheritdoc/>
-        public string StreamingTakingTooLongMessage { get; set; } =
-            "The response is taking longer than expected. Please wait while we continue to generate the response.";
+        public string StreamingTakingTooLongMessage { get; set; } = DefaultStreamingTakingTooLongMessage;
 
         /// <summary>
         /// Attachments to be included in the final message.  Only used for the final message, not intermediate messages.
@@ -380,6 +385,7 @@ namespace Microsoft.Agents.Builder
                 StopStream();
                 _ended = false;
                 _queue.Clear();
+                _queueEmpty.Reset();
                 _messageUpdated = false;
                 _nextSequence = 1;
                 StreamId = null;
@@ -392,6 +398,11 @@ namespace Microsoft.Agents.Builder
                 Attachments = [];
                 SensitivityLabel = null;
                 EnableGeneratedByAILabel = false;
+                FeedbackLoopEnabled = false;
+                FeedbackLoopType = DefaultFeedbackLoopType;
+                StreamingTakingTooLongMessage = DefaultStreamingTakingTooLongMessage;
+                InitialDelay = DefaultInitialDelay;
+                EndStreamTimeout = DefaultEndStreamTimeout;
 
                 OnReset();
             }

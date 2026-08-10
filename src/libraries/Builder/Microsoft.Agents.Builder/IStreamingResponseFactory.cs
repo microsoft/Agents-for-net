@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Builder
     /// adapter resolves the factory by <see cref="ITurnContext.Activity"/>'s channel id, instantiates it from the
     /// service provider (so its constructor dependencies are injected), and assigns the resulting
     /// <see cref="IStreamingResponse"/> to the turn before the pipeline runs.  When no factory is registered for a
-    /// channel, the default <see cref="StreamingResponse"/> is used.
+    /// channel, the built-in response for that channel is used.
     /// </remarks>
     public interface IStreamingResponseFactory
     {

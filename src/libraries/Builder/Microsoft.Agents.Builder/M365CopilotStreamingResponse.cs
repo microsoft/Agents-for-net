@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Builder
     /// maximum streaming window. When that window expires, this response closes the active stream
     /// and switches to normal message delivery so generation can continue without losing the result.
     /// </remarks>
-    internal sealed class M365CopilotStreamingResponse : StreamingResponse
+    internal sealed class M365CopilotStreamingResponse : TeamsStreamingResponse
     {
         // Leave margin below the client limits so network and service latency do not cause the
         // client to expire the stream before our keep-alive or termination activity arrives.
@@ -113,6 +113,8 @@ namespace Microsoft.Agents.Builder
             _streamStartTime = null;
             _lastActivityTime = null;
             _lastInformationalMessage = string.Empty;
+            StreamingTimeout = DefaultStreamingTimeout;
+            WorkingNoticeInterval = DefaultWorkingNoticeInterval;
         }
 
         private Activity CreateTimeoutActivity(bool addStreamFinal)

@@ -28,6 +28,8 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
         private SlackStream _stream;
         private int _sentLength;
+        private int _defaultInterval = 200;
+        private int _defaultInitialDelay = 250;
 
         public SlackStreamingResponse(ITurnContext turnContext, SlackApi slackApi)
         {
@@ -39,6 +41,14 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
             IsStreamingChannel = true;
             Interval = 200;
+        }
+
+        internal void ConfigureDefaults(int interval, int initialDelay)
+        {
+            Interval = interval;
+            InitialDelay = initialDelay;
+            _defaultInterval = interval;
+            _defaultInitialDelay = initialDelay;
         }
 
         /// <inheritdoc/>
@@ -164,6 +174,9 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         {
             _stream = null;
             _sentLength = 0;
+            Interval = _defaultInterval;
+            InitialDelay = _defaultInitialDelay;
+            IsStreamingChannel = true;
         }
 
         private async Task StopRemoteStreamAsync(string blocks = null)
