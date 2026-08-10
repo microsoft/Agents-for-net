@@ -21,9 +21,5 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         public bool EmitStackTrace { get; set; } = false;
 
-        /// <summary>
-        /// Gets or sets a value indicating whether Activity.ServiceUrl should be validated using the 'serviceurl' claim in the incoming token. This is typically used to ensure that the request is coming from a trusted source.
-        /// </summary>
-        public bool ValidateServiceUrl { get; set; } = false;
     }
 }

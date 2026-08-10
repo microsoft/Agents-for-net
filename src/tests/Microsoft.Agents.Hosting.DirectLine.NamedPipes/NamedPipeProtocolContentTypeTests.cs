@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRequestAsync(requestId, streamId, body.Length, primaryContentType: "text/plain");
             await harness.WriteFrameAsync(PayloadTypes.Stream, streamId, body, end: true);
 
-            var req = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var req = await received.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Equal("text/plain", req.ContentType);
             Assert.Equal(body, req.Body);
         }
@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRequestAsync(requestId, streamId, body.Length, primaryContentType: null);
             await harness.WriteFrameAsync(PayloadTypes.Stream, streamId, body, end: true);
 
-            var req = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var req = await received.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Equal("application/json", req.ContentType);
         }
 
@@ -99,10 +99,10 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             harness.Start();
 
             await harness.WriteRequestWithoutStreamsAsync(firstId);
-            await firstReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await firstReceived.Task.WaitAsync(TestTimeouts.Observe);
             await harness.WriteRequestWithoutStreamsAsync(secondId);
 
-            Assert.Equal(0, await secondAttachmentCount.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.Equal(0, await secondAttachmentCount.Task.WaitAsync(TestTimeouts.Observe));
         }
 
         // ---------- Inbound: attachment streams (regression coverage) ----------
@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryId, primaryBody, end: true);
             await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId, attachmentBody, end: true);
 
-            var req = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var req = await received.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Single(req.Attachments);
             Assert.Equal("image/png", req.Attachments[0].ContentType);
             Assert.Equal(attachmentBody, req.Attachments[0].Body);
@@ -192,12 +192,12 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // Wait for the first request to be fully dispatched (probe timeout completed)
             // before sending the second request. This avoids a race where the second request's
             // bytes are consumed by the probe read of the first request.
-            await firstReceived.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            await firstReceived.Task.WaitAsync(TestTimeouts.Observe);
 
             // Second request arrives after probe timeout (no drain needed)
             await harness.WriteRequestWithoutStreamsAsync(Guid.NewGuid());
 
-            await allReceived.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            await allReceived.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(2, received.Count);
             Assert.Single(received[0].Attachments);
             Assert.Equal(attachmentBody, received[0].Attachments[0].Body);
@@ -233,7 +233,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // Drain body stream + complete the call.
             await harness.ReadFrameAsync();
             await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 

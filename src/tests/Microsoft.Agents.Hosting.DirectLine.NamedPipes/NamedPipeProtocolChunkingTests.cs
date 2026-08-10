@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.Equal(body, reassembled.ToArray());
 
             await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             // No stream frame expected when body is null.
             await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 
@@ -112,7 +112,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.Equal(requestFrame.Header.PayloadLength, requestFrame.Payload.Length);
 
             await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 
@@ -146,7 +146,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             }
 
             await harness.WriteResponseAsync(requestFrame.Header.Id, statusCode: 200);
-            await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            await requestTask.WaitAsync(TestTimeouts.Observe);
         }
 
         private static byte[] MakePayload(int length)

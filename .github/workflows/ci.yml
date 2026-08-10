@@ -19,7 +19,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x        
+        dotnet-version: 10.0.x
 
     - uses: dotnet/nbgv@master
       with:
@@ -35,5 +35,8 @@ jobs:
     - name: Package
       run: dotnet pack --no-build --no-restore -c debug src/Microsoft.Agents.SDK.sln 
 
-    - name: Test
-      run: dotnet test --no-build --no-restore -c debug ./src/
+    - name: Test in net8
+      run: dotnet test --no-build --no-restore -c debug ./src/ -f net8.0
+
+    - name: Test in net10
+      run: dotnet test --no-build --no-restore -c debug ./src/ -f net10.0

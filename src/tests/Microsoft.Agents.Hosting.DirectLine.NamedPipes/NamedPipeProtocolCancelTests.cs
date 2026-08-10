@@ -24,14 +24,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
     /// </summary>
     public class NamedPipeProtocolCancelTests
     {
-        // Deadline for observing an event (handler start, cancellation propagation, frame emit).
-        // The protocol's read loop and handler continuations resume on the thread pool, so under
-        // heavy parallel CI load the actual propagation can lag well past a few hundred ms even
-        // though it is functionally near-instant. This ceiling stays generous enough to absorb
-        // thread-pool starvation while still failing fast on a genuine hang.
-        private static readonly TimeSpan ObserveTimeout = TimeSpan.FromSeconds(30);
-
-        // How long a dispatched handler blocks when it is NOT cancelled. Must exceed ObserveTimeout
+        // How long a dispatched handler blocks when it is NOT cancelled. Must exceed TestTimeouts.Observe
         // so an uncancelled handler can never spuriously complete before the observation deadline.
         private static readonly TimeSpan HandlerHangDuration = TimeSpan.FromSeconds(60);
 
@@ -96,7 +89,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             // Cancel marks the stream "complete", which unblocks the pending dispatch with no body
             // bytes (TakeStreamBody returns null when nothing was ever buffered for the stream).
-            var req = await received.Task.WaitAsync(ObserveTimeout);
+            var req = await received.Task.WaitAsync(TestTimeouts.Observe);
             Assert.True(req.Body == null || req.Body.Length == 0);
 
             // Drain the outbound 200 OK so dispose doesn't deadlock.
@@ -136,12 +129,12 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             });
             await harness.WriteInboundFrameAsync(PayloadTypes.Request, requestId, requestJson, end: true);
 
-            await handlerStarted.Task.WaitAsync(ObserveTimeout);
+            await handlerStarted.Task.WaitAsync(TestTimeouts.Observe);
 
             // CancelStream against the request id must cancel the in-flight handler.
             await harness.WriteInboundFrameAsync(PayloadTypes.CancelStream, requestId, payload: null, end: true);
 
-            var cancelled = await handlerCancelled.Task.WaitAsync(ObserveTimeout);
+            var cancelled = await handlerCancelled.Task.WaitAsync(TestTimeouts.Observe);
             Assert.True(cancelled);
         }
 
@@ -168,7 +161,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             // The pending outbound request task should now fault with OperationCanceledException.
             await Assert.ThrowsAsync<OperationCanceledException>(
-                async () => await requestTask.WaitAsync(ObserveTimeout));
+                async () => await requestTask.WaitAsync(TestTimeouts.Observe));
         }
 
         [Fact]
@@ -202,11 +195,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             });
             await harness.WriteInboundFrameAsync(PayloadTypes.Request, requestId, requestJson, end: true);
 
-            await handlerStarted.Task.WaitAsync(ObserveTimeout);
+            await handlerStarted.Task.WaitAsync(TestTimeouts.Observe);
 
             await harness.WriteInboundFrameAsync(PayloadTypes.CancelAll, Guid.Empty, payload: null, end: true);
 
-            var cancelled = await handlerCancelled.Task.WaitAsync(ObserveTimeout);
+            var cancelled = await handlerCancelled.Task.WaitAsync(TestTimeouts.Observe);
             Assert.True(cancelled);
         }
 
@@ -221,10 +214,10 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             var disposeTask = Task.Run(async () => await harness.Protocol.DisposeAsync());
 
             // First frame written by DisposeAsync should be CancelAll.
-            var frame = await harness.ReadFrameAsync().WaitAsync(ObserveTimeout);
+            var frame = await harness.ReadFrameAsync().WaitAsync(TestTimeouts.Observe);
             Assert.Equal(PayloadTypes.CancelAll, frame.Header.Type);
 
-            await disposeTask.WaitAsync(ObserveTimeout);
+            await disposeTask.WaitAsync(TestTimeouts.Observe);
             harness.DisposePipesOnly();
         }
 

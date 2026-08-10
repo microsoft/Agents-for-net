@@ -80,7 +80,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             harness.CloseInboundWriter();
 
             // Completion should finish without throwing.
-            await harness.Protocol.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+            await harness.Protocol.Completion.WaitAsync(TestTimeouts.Observe);
         }
 
         // ----- Malformed header in read loop -----
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRawInboundAsync(garbage);
 
             // Read loop should terminate on FormatException.
-            await harness.Protocol.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+            await harness.Protocol.Completion.WaitAsync(TestTimeouts.Observe);
         }
 
         // ----- Pipe closure completes gracefully -----
@@ -109,7 +109,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // Close the inbound writer — the read loop should detect end-of-pipe
             // and complete without throwing.
             harness.CloseInboundWriter();
-            await harness.Protocol.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+            await harness.Protocol.Completion.WaitAsync(TestTimeouts.Observe);
         }
 
         // ----- Unknown frame type is logged but not fatal -----
@@ -136,7 +136,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             Assert.Equal(PayloadTypes.Request, outFrame.Header.Type);
 
             await harness.WriteResponseAsync(outFrame.Header.Id, 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             var requestTask = harness.Protocol.SendRequestAsync("POST", "/v3/test", null, CancellationToken.None);
             var outFrame = await harness.ReadOutboundFrameAsync();
             await harness.WriteResponseAsync(outFrame.Header.Id, 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             var requestTask = harness.Protocol.SendRequestAsync("POST", "/v3/test", null, CancellationToken.None);
             var outFrame = await harness.ReadOutboundFrameAsync();
             await harness.WriteResponseAsync(outFrame.Header.Id, 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 
@@ -214,7 +214,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             var requestTask = harness.Protocol.SendRequestAsync("POST", "/v3/test", null, CancellationToken.None);
             var outFrame = await harness.ReadOutboundFrameAsync();
             await harness.WriteResponseAsync(outFrame.Header.Id, 200);
-            var response = await requestTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await requestTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(200, response.StatusCode);
         }
 
@@ -234,7 +234,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             // The pending request should fail with IOException.
             var ex = await Assert.ThrowsAsync<IOException>(async () =>
-                await requestTask.WaitAsync(TimeSpan.FromSeconds(5)));
+                await requestTask.WaitAsync(TestTimeouts.Observe));
             Assert.Contains("disconnected", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
 
@@ -329,7 +329,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteFrameAsync(header, badJson);
 
             // The read loop should exit due to the JsonException.
-            await harness.Protocol.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+            await harness.Protocol.Completion.WaitAsync(TestTimeouts.Observe);
         }
 
         // ----- DisposeAsync is idempotent -----
@@ -382,7 +382,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             // The pending request should fail with OperationCanceledException.
             await Assert.ThrowsAsync<OperationCanceledException>(async () =>
-                await requestTask.WaitAsync(TimeSpan.FromSeconds(5)));
+                await requestTask.WaitAsync(TestTimeouts.Observe));
         }
 
         // ----- Pipe disconnect mid-payload read -----
@@ -405,7 +405,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRawInboundAsync(new byte[10]); // only 10 of 1000
             harness.CloseInboundWriter();
 
-            await harness.Protocol.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+            await harness.Protocol.Completion.WaitAsync(TestTimeouts.Observe);
         }
 
         // ========== Test Harness ==========

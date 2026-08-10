@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRequestAsync(requestId, streamId, body.Length);
             await harness.WriteChunkedStreamAsync(streamId, body, FrameChunkSize);
 
-            var received = await bodyReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var received = await bodyReceived.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(body.Length, received.Length);
             Assert.Equal(body, received);
         }
@@ -81,7 +81,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // Send the final chunk with End=true — handler should fire and see the full body.
             await harness.WriteFrameAsync(PayloadTypes.Stream, streamId, body[^100..], end: true);
 
-            var received = await bodyReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var received = await bodyReceived.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(body, received);
         }
 
@@ -105,7 +105,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteChunkedStreamAsync(streamId, body, FrameChunkSize);
             await harness.WriteRequestAsync(requestId, streamId, body.Length);
 
-            var received = await bodyReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var received = await bodyReceived.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(body, received);
         }
 
@@ -149,7 +149,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
                 await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId, primaryBody, end: true);
 
-                var received = await bodyReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                var received = await bodyReceived.Task.WaitAsync(TestTimeouts.Observe);
                 Assert.Equal(primaryBody, received.Body);
                 Assert.Equal(attachmentIds.Length, received.Attachments.Count);
                 for (int i = 0; i < attachmentIds.Length; i++)
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteChunkedStreamAsync(attachmentIds[0], att0, FrameChunkSize);
             await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentIds[1], att1, end: true);
 
-            var req = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var req = await received.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(primaryBody, req.Body);
             Assert.Equal(2, req.Attachments.Count);
             Assert.Equal(att0, req.Attachments[0].Body);
@@ -219,7 +219,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId, primaryBody, end: true);
             await harness.WriteFrameAsync(PayloadTypes.Stream, attachmentId, [], end: true);
 
-            var req = await received.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var req = await received.Task.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(primaryBody, req.Body);
             Assert.Single(req.Attachments);
             Assert.Empty(req.Attachments[0].Body);
@@ -271,7 +271,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             // Dispatch occurs only after the probe completes (timeout or drain), so this
             // guarantees the protocol is back in its normal read loop and won't consume
             // the next frame's header byte during the probe.
-            var r1 = await tcs1.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var r1 = await tcs1.Task.WaitAsync(TestTimeouts.Observe);
 
             // --- Second request: must parse correctly immediately ---
             var req2Id = Guid.NewGuid();
@@ -281,7 +281,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteFrameAsync(PayloadTypes.Stream, primaryStreamId2, body2, end: true);
 
             // Second request should dispatch normally
-            var r2 = await tcs2.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var r2 = await tcs2.Task.WaitAsync(TestTimeouts.Observe);
 
             // First request: attachment has the ACTUAL data (not padded to declared length)
             Assert.Single(r1.Attachments);
@@ -389,7 +389,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRequestAsync(req2Id, bodyStreamId2, body2.Length);
             await harness.WriteFrameAsync(PayloadTypes.Stream, bodyStreamId2, body2, end: true);
 
-            var result = await secondRequest.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var result = await secondRequest.Task.WaitAsync(TestTimeouts.Observe);
             Assert.NotNull(result);
             Assert.Equal(body2, result.Body);
         }
@@ -425,7 +425,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteRawBytesAsync(trailingData);
 
             // The drain should consume the trailing bytes and deliver them to the handler
-            var result = await receivedRequests.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var result = await receivedRequests.Task.WaitAsync(TestTimeouts.Observe);
 
             Assert.NotNull(result);
             Assert.Equal(trailingData, result.Body);
@@ -460,7 +460,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             await harness.WriteFrameAsync(PayloadTypes.Stream, bodyStreamId, body[4000..], end: true);
 
             // Probe will timeout after 100ms, then dispatch with actual framed data
-            var result = await receivedRequests.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var result = await receivedRequests.Task.WaitAsync(TestTimeouts.Observe);
 
             Assert.NotNull(result);
             Assert.Equal(body, result.Body);

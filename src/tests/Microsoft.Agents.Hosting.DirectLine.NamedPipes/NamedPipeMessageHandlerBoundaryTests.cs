@@ -139,7 +139,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             await harness.WriteResponseAsync(frame.Header.Id, 202);
 
-            var response = await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await sendTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         }
 
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 End = true,
             }, "test"u8.ToArray());
 
-            var response = await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await sendTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal("application/json", response.Content.Headers.ContentType.MediaType);
         }

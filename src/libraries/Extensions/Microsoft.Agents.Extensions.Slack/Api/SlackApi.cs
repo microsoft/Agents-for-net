@@ -91,7 +91,11 @@ public class SlackApi
 
         using var httpClient = _httpClientFactory.CreateClient(nameof(SlackApi));
         var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+#if NETSTANDARD
+        var text = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#else
         var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#endif
 
         SlackResponse data;
         try

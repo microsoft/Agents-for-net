@@ -3,8 +3,6 @@
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.Slack</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
-		<!-- Slack extension targets net8.0 only; match that here -->
-		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 
