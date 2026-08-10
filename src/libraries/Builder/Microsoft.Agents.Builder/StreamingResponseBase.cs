@@ -80,6 +80,7 @@ namespace Microsoft.Agents.Builder
         private bool _messageUpdated;
         private bool _canceled;
         private bool _userCanceled;
+        private Task _streamTask = Task.CompletedTask;
 
         // Ordered FIFO of pending sends (informative updates interleaved with buffered text chunks).
         private readonly List<PendingSend> _queue = [];
@@ -352,6 +353,15 @@ namespace Microsoft.Agents.Builder
                     if (!_queueEmpty.WaitOne(EndStreamTimeout))
                     {
                         result = StreamingResponseResult.Timeout;
+                        Task streamTask;
+                        lock (this)
+                        {
+                            streamTask = StopStream();
+                        }
+
+                        // A send hook may already be in flight and may create channel-side resources.
+                        // Wait for it to finish before finalization closes those resources.
+                        await streamTask.ConfigureAwait(false);
                     }
 
                     if (_canceled)
@@ -361,7 +371,7 @@ namespace Microsoft.Agents.Builder
                 }
                 catch (AbandonedMutexException)
                 {
-                    StopStream();
+                    _ = StopStream();
                 }
 
                 // A fallback (see StreamErrorAction.FallbackToNonStreaming) may have flipped IsStreamingChannel
@@ -382,7 +392,7 @@ namespace Microsoft.Agents.Builder
 
             lock (this)
             {
-                StopStream();
+                _ = StopStream();
                 _ended = false;
                 _queue.Clear();
                 _queueEmpty.Reset();
@@ -487,7 +497,7 @@ namespace Microsoft.Agents.Builder
             lock (this)
             {
                 IsStreamingChannel = false;
-                StopStream();
+                _ = StopStream();
                 _queueEmpty.Set();
             }
         }
@@ -520,11 +530,11 @@ namespace Microsoft.Agents.Builder
                 int dueTime = interval == 0 ? Interval : interval;
 
                 // Fire-and-forget: the loop yields immediately at the first Task.Delay.
-                _ = RunStreamAsync(dueTime, cts);
+                _streamTask = RunStreamAsync(dueTime, cts);
             }
         }
 
-        private void StopStream()
+        private Task StopStream()
         {
             _streamStarted = false;
             var cts = _streamCts;
@@ -540,6 +550,8 @@ namespace Microsoft.Agents.Builder
                     // The owning loop already disposed the source while exiting.
                 }
             }
+
+            return _streamTask;
         }
 
         private void QueueNextChunk()
@@ -624,7 +636,7 @@ namespace Microsoft.Agents.Builder
                 {
                     lock (this)
                     {
-                        StopStream();
+                        _ = StopStream();
                         _queueEmpty.Set();
                     }
                     return -1;
@@ -642,7 +654,7 @@ namespace Microsoft.Agents.Builder
                 }
                 else if (_ended)
                 {
-                    StopStream();
+                    _ = StopStream();
                     _queueEmpty.Set();
                     return -1;
                 }
@@ -702,13 +714,13 @@ namespace Microsoft.Agents.Builder
                     case StreamErrorAction.FallbackToNonStreaming:
                         // Disable streaming for the rest of the turn; a plain final message will still be sent.
                         IsStreamingChannel = false;
-                        StopStream();
+                        _ = StopStream();
                         _queueEmpty.Set();
                         return -1;
 
                     case StreamErrorAction.Cancel:
                     default:
-                        StopStream();
+                        _ = StopStream();
                         _canceled = true;
                         _userCanceled = UserCancelledStream;
                         _queueEmpty.Set();
