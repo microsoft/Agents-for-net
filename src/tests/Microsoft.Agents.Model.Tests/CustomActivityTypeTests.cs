@@ -271,11 +271,17 @@ namespace Microsoft.Agents.Model.Tests
             ProtocolJsonSerializer.RegisterActivityTypeResolver(
                 (ref Utf8JsonReader reader, in ActivityResolutionContext ctx) =>
                 {
+                    if (!string.Equals(ctx.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return null;
+                    }
+
                     if (JsonDocument.TryParseValue(ref reader, out var doc))
                     {
                         using (doc)
                         {
                             if (doc.RootElement.TryGetProperty("value", out var value)
+                                && value.ValueKind == JsonValueKind.Object
                                 && value.TryGetProperty("action", out var action)
                                 && action.GetString() == "escalate")
                             {
@@ -293,9 +299,12 @@ namespace Microsoft.Agents.Model.Tests
                     """{"type":"invoke","value":{"action":"escalate","ticket":"T-9"}}""");
                 var noMatch = ProtocolJsonSerializer.ToObject<Activity>(
                     """{"type":"invoke","value":{"action":"acknowledge"}}""");
+                var unrelated = ProtocolJsonSerializer.ToObject<Activity>(
+                    """{"type":"message","value":true}""");
 
                 Assert.IsType<EscalatedActivity>(match);
                 Assert.Equal(typeof(Activity), noMatch.GetType());
+                Assert.IsType<bool>(unrelated.Value);
             }
             finally
             {

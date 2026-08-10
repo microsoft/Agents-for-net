@@ -56,7 +56,40 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             Builder.IMiddleware[] middlewares = null,
             IConfiguration config = null,
             IOutboundHostValidator hostValidator = null)
-            : base(channelServiceClientFactory, logger)
+            : this(
+                null,
+                channelServiceClientFactory,
+                activityTaskQueue,
+                logger,
+                options,
+                middlewares,
+                config,
+                hostValidator)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CloudAdapter"/> class with a service provider for
+        /// channel-specific streaming response factories.
+        /// </summary>
+        /// <param name="serviceProvider">Service provider used to instantiate discovered streaming response factories.</param>
+        /// <param name="channelServiceClientFactory">Channel service client factory.</param>
+        /// <param name="activityTaskQueue">Background activity queue.</param>
+        /// <param name="logger">Adapter logger.</param>
+        /// <param name="options">Adapter options.</param>
+        /// <param name="middlewares">Adapter middleware.</param>
+        /// <param name="config">Application configuration.</param>
+        /// <param name="hostValidator">Allowed-hosts validator.</param>
+        public CloudAdapter(
+            IServiceProvider serviceProvider,
+            IChannelServiceClientFactory channelServiceClientFactory,
+            IActivityTaskQueue activityTaskQueue,
+            ILogger<CloudAdapter> logger = null,
+            AdapterOptions options = null,
+            Builder.IMiddleware[] middlewares = null,
+            IConfiguration config = null,
+            IOutboundHostValidator hostValidator = null)
+            : base(channelServiceClientFactory, logger, serviceProvider)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? config?.GetSection("CloudAdapterOptions")?.Get<AdapterOptions>() ?? new AdapterOptions();
