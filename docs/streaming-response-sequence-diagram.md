@@ -67,28 +67,28 @@ Only one send can be active at a time. Informative updates and buffered text sna
 sequenceDiagram
     participant Agent
     participant Response as StreamingResponseBase
-    participant Loop as Task.Delay loop
+    participant Worker as Task.Delay loop
     participant Hook as Channel implementation
 
     Agent->>Response: QueueTextChunk(text)
     Response->>Response: Append to Message<br/>TransformBufferedText<br/>Mark message updated
-    Response->>Loop: Start with InitialDelay if not running
+    Response->>Worker: Start with InitialDelay if not running
 
     loop Until stopped
-        Loop->>Loop: Task.Delay(dueTime)
-        Loop->>Hook: OnBeforeSendIntervalAsync(queueEmpty)
-        Hook-->>Loop: Continue or stop
-        Loop->>Response: Snapshot accumulated Message if updated
+        Worker->>Worker: Task.Delay(dueTime)
+        Worker->>Hook: OnBeforeSendIntervalAsync(queueEmpty)
+        Hook-->>Worker: Continue or stop
+        Worker->>Response: Snapshot accumulated Message if updated
         alt Pending informative or text item
-            Loop->>Hook: SendInformativeAsync or SendChunkAsync
-            Hook-->>Loop: Send completed
-            Loop->>Hook: OnSendCompleted
-            Loop->>Loop: Next delay = Interval
+            Worker->>Hook: SendInformativeAsync or SendChunkAsync
+            Hook-->>Worker: Send completed
+            Worker->>Hook: OnSendCompleted
+            Worker->>Worker: Next delay = Interval
         else End requested and queue empty
-            Loop->>Response: StopStream
-            Loop->>Response: Signal queue drained
+            Worker->>Response: StopStream
+            Worker->>Response: Signal queue drained
         else No pending work
-            Loop->>Loop: Poll again in 200 ms
+            Worker->>Worker: Poll again in 200 ms
         end
     end
 ```
@@ -106,7 +106,7 @@ sequenceDiagram
     participant Agent
     participant Context as TurnContext
     participant Response as StreamingResponse
-    participant Loop as Task.Delay loop
+    participant Worker as Task.Delay loop
     participant Teams
 
     Agent->>Response: QueueInformativeUpdateAsync("Searching...")
@@ -115,12 +115,12 @@ sequenceDiagram
     Teams-->>Context: ResourceResponse(Activity.Id)
     Context-->>Response: ResourceResponse
     Response->>Response: StreamId = Activity.Id
-    Response->>Loop: Start at Interval
+    Response->>Worker: Start at Interval
 
     loop LLM produces text
         Agent->>Response: QueueTextChunk(text)
         Response->>Response: Accumulate full Message
-        Loop->>Response: Snapshot latest full Message
+        Worker->>Response: Snapshot latest full Message
         Response->>Context: Send Typing + Streaming<br/>Activity.Id = StreamId
         Context->>Teams: Full accumulated text
         Teams-->>Context: ResourceResponse
@@ -128,7 +128,7 @@ sequenceDiagram
 
     Agent->>Response: EndStreamAsync()
     Response->>Response: Mark ended and wait for drain
-    Loop->>Response: Drain pending item<br/>StopStream<br/>Signal drained
+    Worker->>Response: Drain pending item<br/>StopStream<br/>Signal drained
     Response->>Context: Send Message + Final<br/>full text, citations, AI metadata, feedback
     Context->>Teams: Final activity using StreamId
     Teams-->>Context: ResourceResponse
@@ -151,7 +151,7 @@ sequenceDiagram
     participant Agent
     participant Context as TurnContext
     participant Response as M365CopilotStreamingResponse
-    participant Loop as Task.Delay loop
+    participant Worker as Task.Delay loop
     participant Copilot as M365 Copilot
 
     Agent->>Response: QueueInformativeUpdateAsync or QueueTextChunk
@@ -162,7 +162,7 @@ sequenceDiagram
     Response->>Response: Set StreamId<br/>Set stream start and last activity time
 
     loop While streaming is enabled
-        Loop->>Response: OnBeforeSendIntervalAsync(queueEmpty)
+        Worker->>Response: OnBeforeSendIntervalAsync(queueEmpty)
 
         alt Elapsed time is at least 105 seconds
             alt No answer text buffered
@@ -234,7 +234,7 @@ Unlike Activity Protocol channels, Slack appends only the new text delta.
 sequenceDiagram
     participant Agent
     participant Response as SlackStreamingResponse
-    participant Loop as StreamingResponseBase loop
+    participant Worker as StreamingResponseBase loop
     participant Slack as Slack Web API
 
     Agent->>Response: QueueInformativeUpdateAsync("Working...")
@@ -244,13 +244,13 @@ sequenceDiagram
 
     loop LLM produces text
         Agent->>Response: QueueTextChunk(text)
-        Loop->>Response: SendChunkAsync(full buffered text)
+        Worker->>Response: SendChunkAsync(full buffered text)
         Response->>Response: Compute unsent delta from sent length
         Response->>Slack: chat.appendStream(MarkdownTextChunk delta)
     end
 
     Agent->>Response: EndStreamAsync()
-    Loop->>Response: Drain pending deltas
+    Worker->>Response: Drain pending deltas
     Response->>Slack: chat.appendStream(TaskUpdateChunk Complete)
     Response->>Slack: chat.stopStream(optional feedback blocks)
     Response->>Response: Clear local stream and StreamId
