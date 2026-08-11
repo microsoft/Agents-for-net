@@ -156,7 +156,7 @@ public class BlobTaskStore : ITaskStore
         // Use Azure Blob's native pagination with continuation tokens
         // AsPages() fetches only one page at a time
         var pages = _containerClient
-            .GetBlobsAsync(prefix: TaskPrefix, cancellationToken: cancellationToken)
+            .GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, prefix: TaskPrefix, cancellationToken: cancellationToken)
             .AsPages(continuationToken: request.PageToken, pageSizeHint: request.PageSize);
 
         // Get first page only (efficient!)
