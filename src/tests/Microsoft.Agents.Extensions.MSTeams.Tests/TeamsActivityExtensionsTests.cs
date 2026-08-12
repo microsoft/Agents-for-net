@@ -2,9 +2,11 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Teams.Api;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using Xunit;
 
@@ -12,6 +14,58 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
 {
     public class TeamsActivityExtensionsTests
     {
+        [Fact]
+        public void PrependQuote_AddsEntityAndEscapedPlaceholder()
+        {
+            var activity = new Activity { Type = ActivityTypes.Message, Text = "reply" };
+
+            var result = activity.PrependQuote("message<\"&>1");
+
+            Assert.Same(activity, result);
+            Assert.Equal("<quoted messageId=\"message&lt;&quot;&amp;&gt;1\"/> reply", activity.Text);
+            var quote = Assert.Single(activity.Entities.OfType<QuotedReplyEntity>());
+            Assert.Equal("message<\"&>1", quote.QuotedReply.MessageId);
+        }
+
+        [Fact]
+        public void PrependQuote_EmptyTextUsesOnlyPlaceholder()
+        {
+            var activity = new Activity { Type = ActivityTypes.Message };
+
+            activity.PrependQuote("messageId");
+
+            Assert.Equal("<quoted messageId=\"messageId\"/>", activity.Text);
+        }
+
+        [Fact]
+        public void PrependQuote_PreservesExistingEntities()
+        {
+            var existingEntity = new Entity("custom");
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Entities = [existingEntity]
+            };
+
+            activity.PrependQuote("messageId");
+
+            Assert.Equal(2, activity.Entities.Count);
+            Assert.Same(existingEntity, activity.Entities[0]);
+        }
+
+        [Fact]
+        public void QuotedReplyEntity_RoundTripsAsTypedEntity()
+        {
+            IActivity activity = new Activity { Type = ActivityTypes.Message, Text = "reply" };
+            ((Activity)activity).PrependQuote("messageId");
+
+            var roundTripped = ProtocolJsonSerializer.ToObject<IActivity>(
+                ProtocolJsonSerializer.ToJson(activity));
+
+            var quote = Assert.Single(roundTripped.Entities.OfType<QuotedReplyEntity>());
+            Assert.Equal("messageId", quote.QuotedReply.MessageId);
+        }
+
         [Fact]
         public void TeamsGetSelectedChannelId_ShouldReturnChannelId()
         {

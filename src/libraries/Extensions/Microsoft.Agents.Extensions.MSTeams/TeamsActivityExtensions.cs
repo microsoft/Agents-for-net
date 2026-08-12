@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
+using System.Security;
 
 namespace Microsoft.Agents.Extensions.MSTeams;
 
@@ -12,6 +14,31 @@ namespace Microsoft.Agents.Extensions.MSTeams;
 /// </summary>
 public static class TeamsActivityExtensions
 {
+    /// <summary>
+    /// Prepends a quoted-message reference to a Teams message activity.
+    /// </summary>
+    /// <param name="activity">The activity to update.</param>
+    /// <param name="messageId">The ID of the message to quote.</param>
+    /// <returns>The updated activity.</returns>
+    public static Activity PrependQuote(this Activity activity, string messageId)
+    {
+        AssertionHelpers.ThrowIfNull(activity, nameof(activity));
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(messageId, nameof(messageId));
+
+        activity.Entities ??= [];
+        activity.Entities.Add(new QuotedReplyEntity
+        {
+            QuotedReply = new QuotedReplyData { MessageId = messageId }
+        });
+
+        var placeholder = $"<quoted messageId=\"{SecurityElement.Escape(messageId)}\"/>";
+        activity.Text = string.IsNullOrWhiteSpace(activity.Text)
+            ? placeholder
+            : $"{placeholder} {activity.Text}";
+
+        return activity;
+    }
+
     /// <summary>
     /// Gets the Team's selected channel id from the current activity.
     /// </summary>

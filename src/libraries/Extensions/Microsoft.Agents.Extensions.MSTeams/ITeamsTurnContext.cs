@@ -26,6 +26,55 @@ public interface ITeamsTurnContext : ITurnContext
     Microsoft.Teams.Api.Clients.ApiClient Client { get; }
 
     /// <summary>
+    /// Adds a reaction to an activity in the current conversation.
+    /// </summary>
+    /// <param name="reactionType">The reaction type to add.</param>
+    /// <param name="activityId">The activity ID to react to. Defaults to the current activity ID.</param>
+    Task AddReactionAsync(string reactionType, string? activityId = null);
+
+    /// <summary>
+    /// Removes a reaction from an activity in the current conversation.
+    /// </summary>
+    /// <param name="reactionType">The reaction type to remove.</param>
+    /// <param name="activityId">The activity ID whose reaction should be removed. Defaults to the current activity ID.</param>
+    Task DeleteReactionAsync(string reactionType, string? activityId = null);
+
+    /// <summary>
+    /// Sends a text message that visually quotes the current activity.
+    /// </summary>
+    /// <param name="message">The reply text.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
+    /// <returns>The resource response for the sent activity.</returns>
+    Task<ResourceResponse> ReplyAsync(string message, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends an activity that visually quotes the current activity.
+    /// </summary>
+    /// <param name="activity">The reply activity.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
+    /// <returns>The resource response for the sent activity.</returns>
+    Task<ResourceResponse> ReplyAsync(Activity activity, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a proactive text message to a conversation.
+    /// </summary>
+    /// <param name="conversationId">The ID of the conversation to send to.</param>
+    /// <param name="text">The text to send.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
+    /// <returns>The resource response for the sent activity.</returns>
+    Task<ResourceResponse> SendAsync(string conversationId, string text, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a proactive text message to a specific thread in a conversation.
+    /// </summary>
+    /// <param name="conversationId">The ID of the conversation containing the target thread.</param>
+    /// <param name="activityId">The numeric ID of the thread root activity.</param>
+    /// <param name="text">The text to send.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
+    /// <returns>The resource response for the sent activity.</returns>
+    Task<ResourceResponse> SendAsync(string conversationId, string activityId, string text, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Sends an activity to the conversation with a targeted treatment, allowing the activity to be directed to a
     /// specific recipient or group within the conversation.
     /// </summary>

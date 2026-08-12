@@ -53,6 +53,30 @@
             {
               "title": "messageall",
               "description": "Send 1 to 1 message to all members of the current conversation"
+            },
+            {
+              "title": "/eyes",
+              "description": "Temporarily add an eyes reaction to the message"
+            },
+            {
+              "title": "/reply",
+              "description": "Respond with a quoted reply to the message"
+            },
+            {
+              "title": "/here",
+              "description": "Save this conversation for proactive messaging"
+            },
+            {
+              "title": "/here-thread",
+              "description": "Save this conversation and thread for proactive messaging"
+            },
+            {
+              "title": "/send",
+              "description": "Send a proactive message to the saved conversation"
+            },
+            {
+              "title": "/send-thread",
+              "description": "Send a proactive message to the saved thread"
             }
           ]
         }

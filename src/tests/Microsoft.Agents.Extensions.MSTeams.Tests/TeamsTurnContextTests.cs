@@ -4,8 +4,14 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Tests;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Teams.Api.Clients;
+using Microsoft.Teams.Common.Http;
+using Moq;
 using System;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -14,6 +20,123 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
 {
     public class TeamsTurnContextTests
     {
+        [Theory]
+        [InlineData(null, "currentActivityId")]
+        [InlineData("specifiedActivityId", "specifiedActivityId")]
+        public async Task AddReactionAsync_UsesResolvedActivityId(string activityId, string expectedActivityId)
+        {
+            var (turnContext, httpClient) = CreateTurnContextWithApiClient();
+
+            await turnContext.AddReactionAsync("like", activityId);
+
+            VerifyReactionRequest(httpClient, HttpMethod.Put, expectedActivityId, "like");
+        }
+
+        [Theory]
+        [InlineData(null, "currentActivityId")]
+        [InlineData("specifiedActivityId", "specifiedActivityId")]
+        public async Task DeleteReactionAsync_UsesResolvedActivityId(string activityId, string expectedActivityId)
+        {
+            var (turnContext, httpClient) = CreateTurnContextWithApiClient();
+
+            await turnContext.DeleteReactionAsync("heart", activityId);
+
+            VerifyReactionRequest(httpClient, HttpMethod.Delete, expectedActivityId, "heart");
+        }
+
+        [Fact]
+        public async Task ReplyAsync_String_QuotesCurrentActivity()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter, "incomingActivityId");
+
+            await turnContext.ReplyAsync("reply text");
+
+            var sent = Assert.IsType<Activity>(Assert.Single(captured));
+            Assert.Equal("<quoted messageId=\"incomingActivityId\"/> reply text", sent.Text);
+            var quote = Assert.Single(sent.Entities.OfType<QuotedReplyEntity>());
+            Assert.Equal("incomingActivityId", quote.QuotedReply.MessageId);
+        }
+
+        [Fact]
+        public async Task ReplyAsync_Activity_PreservesExistingContent()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter, "incomingActivityId");
+            var existingEntity = new Entity { Type = "custom" };
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "reply text",
+                Entities = [existingEntity]
+            };
+
+            await turnContext.ReplyAsync(activity);
+
+            var sent = Assert.IsType<Activity>(Assert.Single(captured));
+            Assert.Same(activity, sent);
+            Assert.Equal("<quoted messageId=\"incomingActivityId\"/> reply text", sent.Text);
+            Assert.Same(existingEntity, sent.Entities[0]);
+            Assert.IsType<QuotedReplyEntity>(sent.Entities[1]);
+        }
+
+        [Fact]
+        public async Task ReplyAsync_MissingCurrentActivityId_SendsWithoutQuote()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter);
+
+            await turnContext.ReplyAsync("reply text");
+
+            var sent = Assert.IsType<Activity>(Assert.Single(captured));
+            Assert.Equal("reply text", sent.Text);
+            Assert.DoesNotContain(sent.Entities, entity => entity is QuotedReplyEntity);
+        }
+
+        [Fact]
+        public async Task SendAsync_ConversationId_SendsProactively()
+        {
+            var (turnContext, adapter) = CreateProactiveTurnContext("currentConversationId");
+
+            var response = await turnContext.SendAsync("conversationId", "proactive text");
+
+            Assert.Equal("sentActivityId", response.Id);
+            Assert.Equal("conversationId", adapter.ConversationId);
+            Assert.Equal(ActivityTypes.Message, adapter.SentActivity.Type);
+            Assert.Equal("proactive text", adapter.SentActivity.Text);
+        }
+
+        [Fact]
+        public async Task SendAsync_ActivityId_SendsToThreadWithoutChangingCurrentConversation()
+        {
+            var (turnContext, adapter) = CreateProactiveTurnContext("currentConversationId");
+
+            await turnContext.SendAsync("conversationId;messageid=111", "222", "threaded text");
+
+            Assert.Equal("conversationId;messageid=222", adapter.ConversationId);
+            Assert.Equal("threaded text", adapter.SentActivity.Text);
+            Assert.Equal("currentConversationId", turnContext.Activity.Conversation.Id);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("0")]
+        [InlineData("-1")]
+        [InlineData("not-numeric")]
+        public async Task SendAsync_InvalidActivityId_ThrowsArgumentException(string activityId)
+        {
+            var (turnContext, adapter) = CreateProactiveTurnContext("currentConversationId");
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => turnContext.SendAsync("conversationId", activityId, "threaded text"));
+
+            Assert.Null(adapter.SentActivity);
+        }
+
         // ── SendTargetedActivityAsync ─────────────────────────────────────────
 
         [Fact]
@@ -335,17 +458,106 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
         /// <summary>The user being targeted in outgoing activities.</summary>
         private static readonly ChannelAccount TargetUser = new() { Id = "fromId", Name = "Target User", Role = RoleTypes.User };
 
-        private static ITeamsTurnContext CreateTurnContext(ChannelAdapter adapter)
+        private static ITeamsTurnContext CreateTurnContext(ChannelAdapter adapter, string activityId = null)
         {
             var innerContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.Message,
+                Id = activityId,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
             });
             return new TeamsTurnContext(innerContext);
+        }
+
+        private static (ITeamsTurnContext TurnContext, Mock<IHttpClient> HttpClient) CreateTurnContextWithApiClient()
+        {
+            var responseMessage = new HttpResponseMessage();
+            var httpClient = new Mock<IHttpClient>();
+            httpClient
+                .Setup(client => client.SendAsync(It.IsAny<IHttpRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new HttpResponse<string>
+                {
+                    Headers = responseMessage.Headers,
+                    StatusCode = HttpStatusCode.OK,
+                    Body = string.Empty
+                });
+
+            var innerContext = new TurnContext(new SimpleAdapter((Action<IActivity[]>)(_ => { })), new Activity
+            {
+                Type = ActivityTypes.Message,
+                Id = "currentActivityId",
+                ServiceUrl = "https://serviceurl.com/",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
+                Recipient = new() { Id = "recipientId" },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" },
+            });
+            innerContext.Services.Set(new ApiClient(innerContext.Activity.ServiceUrl, httpClient.Object));
+
+            return (new TeamsTurnContext(innerContext), httpClient);
+        }
+
+        private static void VerifyReactionRequest(
+            Mock<IHttpClient> httpClient,
+            HttpMethod method,
+            string activityId,
+            string reactionType)
+        {
+            string expectedUrl =
+                $"https://serviceurl.com/v3/conversations/conversationId/activities/{activityId}/reactions/{reactionType}";
+            httpClient.Verify(client => client.SendAsync(
+                It.Is<IHttpRequest>(request => request.Url == expectedUrl && request.Method == method),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        private static (ITeamsTurnContext TurnContext, ProactiveCaptureAdapter Adapter)
+            CreateProactiveTurnContext(string conversationId)
+        {
+            var adapter = new ProactiveCaptureAdapter();
+            var identity = new ClaimsIdentity([new Claim("aud", "agentId")]);
+            var innerContext = new TurnContext(adapter, new Activity
+            {
+                Type = ActivityTypes.Message,
+                Id = "currentActivityId",
+                ServiceUrl = "https://serviceurl.com/",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
+                Recipient = new() { Id = "agentId" },
+                Conversation = new() { Id = conversationId },
+                From = new() { Id = "userId" },
+            }, identity);
+
+            return (new TeamsTurnContext(innerContext), adapter);
+        }
+
+        private sealed class ProactiveCaptureAdapter : ChannelAdapter
+        {
+            public string ConversationId { get; private set; }
+
+            public IActivity SentActivity { get; private set; }
+
+            public override async Task ContinueConversationAsync(
+                ClaimsIdentity claimsIdentity,
+                ConversationReference reference,
+                AgentCallbackHandler callback,
+                CancellationToken cancellationToken = default)
+            {
+                ConversationId = reference.Conversation.Id;
+                using var context = new TurnContext(this, reference.GetContinuationActivity(), claimsIdentity);
+                await callback(context, cancellationToken);
+            }
+
+            public override Task<ResourceResponse[]> SendActivitiesAsync(
+                ITurnContext turnContext,
+                IActivity[] activities,
+                CancellationToken cancellationToken)
+            {
+                SentActivity = Assert.Single(activities);
+                return Task.FromResult(new[] { new ResourceResponse("sentActivityId") });
+            }
         }
     }
 }

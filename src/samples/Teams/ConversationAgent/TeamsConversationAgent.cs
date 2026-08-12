@@ -23,6 +23,10 @@ namespace ConversationAgent;
 [TeamsExtension]
 public partial class TeamsConversationAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
+    private SavedLocation? _savedLocation;
+
+    private sealed record SavedLocation(string ConversationId, string? ActivityId);
+
     [TeamsActivityRoute(ActivityTypes.InstallationUpdate)]
     public async Task OnInstallationUpdateActivityAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -207,6 +211,69 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     public static async Task DeleteCardActivityAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         await turnContext.DeleteActivityAsync(turnContext.Activity.ReplyToId, cancellationToken);
+    }
+
+    [TeamsMessageRoute("/eyes")]
+    public static async Task AddTemporaryEyesReactionAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await turnContext.AddReactionAsync("eyes");
+        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        await turnContext.DeleteReactionAsync("eyes");
+    }
+
+    [TeamsMessageRoute("/reply")]
+    public static async Task SendQuotedReplyAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await turnContext.ReplyAsync("This is a quoted reply.", cancellationToken);
+    }
+
+    [TeamsMessageRoute("/here")]
+    public async Task SaveConversationAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        Volatile.Write(ref _savedLocation, new SavedLocation(turnContext.Activity.Conversation.Id, null));
+        await turnContext.SendActivityAsync("Saved this conversation.", cancellationToken: cancellationToken);
+    }
+
+    [TeamsMessageRoute("/here-thread")]
+    public async Task SaveConversationThreadAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        Volatile.Write(
+            ref _savedLocation,
+            new SavedLocation(turnContext.Activity.Conversation.Id, turnContext.Activity.Id));
+        await turnContext.SendActivityAsync("Saved this conversation and thread.", cancellationToken: cancellationToken);
+    }
+
+    [TeamsMessageRoute("/send")]
+    public async Task SendToSavedConversationAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var location = Volatile.Read(ref _savedLocation);
+        if (location == null)
+        {
+            await turnContext.SendActivityAsync("Use /here or /here-thread before sending.", cancellationToken: cancellationToken);
+            return;
+        }
+
+        await turnContext.SendAsync(
+            location.ConversationId,
+            "Sent proactively to the saved conversation.",
+            cancellationToken);
+    }
+
+    [TeamsMessageRoute("/send-thread")]
+    public async Task SendToSavedConversationThreadAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var location = Volatile.Read(ref _savedLocation);
+        if (location?.ActivityId == null)
+        {
+            await turnContext.SendActivityAsync("Use /here-thread before sending to a thread.", cancellationToken: cancellationToken);
+            return;
+        }
+
+        await turnContext.SendAsync(
+            location.ConversationId,
+            location.ActivityId,
+            "Sent proactively to the saved thread.",
+            cancellationToken);
     }
 
     [TeamsMessageRoute("messageall")]

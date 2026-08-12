@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
@@ -27,6 +28,65 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
 
     /// <inheritdoc/>
     public Microsoft.Teams.Api.Clients.ApiClient Client => _turnContext.Services.Get<Microsoft.Teams.Api.Clients.ApiClient>();
+
+    /// <inheritdoc/>
+    public Task AddReactionAsync(string reactionType, string? activityId = null)
+    {
+        return Client.Conversations.Reactions.AddAsync(
+            Activity.Conversation.Id,
+            activityId ?? Activity.Id,
+            new Microsoft.Teams.Api.Messages.ReactionType(reactionType));
+    }
+
+    /// <inheritdoc/>
+    public Task DeleteReactionAsync(string reactionType, string? activityId = null)
+    {
+        return Client.Conversations.Reactions.DeleteAsync(
+            Activity.Conversation.Id,
+            activityId ?? Activity.Id,
+            new Microsoft.Teams.Api.Messages.ReactionType(reactionType));
+    }
+
+    /// <inheritdoc/>
+    public Task<ResourceResponse> ReplyAsync(string message, CancellationToken cancellationToken = default)
+    {
+        return ReplyAsync(new Activity { Type = ActivityTypes.Message, Text = message }, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<ResourceResponse> ReplyAsync(Activity activity, CancellationToken cancellationToken = default)
+    {
+        if (Activity.Id != null)
+        {
+            activity.PrependQuote(Activity.Id);
+        }
+
+        return SendActivityAsync(activity, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<ResourceResponse> SendAsync(string conversationId, string text, CancellationToken cancellationToken = default)
+    {
+        var conversation = CreateProactiveConversation(conversationId);
+        return Proactive.SendActivityAsync(
+            Adapter,
+            conversation,
+            MessageFactory.Text(text),
+            cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<ResourceResponse> SendAsync(string conversationId, string activityId, string text, CancellationToken cancellationToken = default)
+    {
+        string threadedConversationId = ToThreadedConversationId(conversationId, activityId);
+        var threadedConversation = CreateProactiveConversation(threadedConversationId);
+
+        return await Proactive.SendActivityAsync(
+            Adapter,
+            threadedConversation,
+            MessageFactory.Text(text),
+            cancellationToken).ConfigureAwait(false);
+    }
 
     /// <inheritdoc/>
     public Task<ResourceResponse> SendTargetedActivityAsync(IActivity activity, CancellationToken cancellationToken = default)
@@ -79,6 +139,17 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
         return userAuthorization;
     }
 
+    private Conversation CreateProactiveConversation(string conversationId)
+    {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
+
+        var reference = _turnContext.Activity.GetConversationReference();
+        reference.ActivityId = null;
+        reference.Conversation = ProtocolJsonSerializer.CloneTo<ConversationAccount>(_turnContext.Activity.Conversation);
+        reference.Conversation.Id = conversationId;
+        return new Conversation(Identity, reference);
+    }
+
     private IConnections GetConnections()
     {
         var connections = _turnContext.Services.Get<IConnections>();
@@ -90,4 +161,19 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
 
         return connections;
     }
+
+    private static string ToThreadedConversationId(string conversationId, string activityId)
+    {
+        AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
+        if (string.IsNullOrEmpty(activityId) || !ulong.TryParse(activityId, out ulong parsedActivityId) || parsedActivityId == 0)
+        {
+            throw new ArgumentException(
+                $"Invalid activityId \"{activityId}\": must be a non-zero numeric value.",
+                nameof(activityId));
+        }
+
+        string baseConversationId = conversationId.Split(';')[0];
+        return $"{baseConversationId};messageid={activityId}";
+    }
+
 }

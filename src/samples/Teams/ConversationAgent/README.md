@@ -79,6 +79,24 @@ You can interact with this bot in Teams by sending it a message, or selecting a 
 3. **MessageAllMembers**
    - **Result:** The bot will send a 1-on-1 message to each member in the current conversation (aka on the conversation's roster).
    - **Valid Scopes:** personal, group chat, team chat
+4. **/eyes**
+   - **Result:** The bot will add an eyes reaction to your message and remove it after five seconds.
+   - **Valid Scopes:** personal, group chat, team chat
+5. **/reply**
+   - **Result:** The bot will respond with a quoted reply to your message.
+   - **Valid Scopes:** personal, group chat, team chat
+6. **/here**
+   - **Result:** Saves the current conversation as the proactive message destination.
+   - **Valid Scopes:** personal, group chat, team chat
+7. **/here-thread**
+   - **Result:** Saves the current conversation and message as the proactive thread destination.
+   - **Valid Scopes:** personal, group chat, team chat
+8. **/send**
+   - **Result:** Sends a proactive message to the conversation saved by `/here` or `/here-thread`.
+   - **Valid Scopes:** personal, group chat, team chat
+9. **/send-thread**
+   - **Result:** Sends a proactive threaded message to the destination saved by `/here-thread`.
+   - **Valid Scopes:** personal, group chat, team chat
 
 You can select an option from the command list by typing ```@TeamsConversationBot``` into the compose message area and ```What can I do?``` text above the compose area.
 
