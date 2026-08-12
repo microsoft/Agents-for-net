@@ -19,7 +19,7 @@ runs:
   using: "composite"
   steps:
     - name: OIDC Login with AzPowershell
-      uses: azure/login@v2
+      uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
       with:
         client-id: ${{ inputs.client-id }}
         tenant-id: ${{ inputs.tenant-id }}
@@ -27,7 +27,7 @@ runs:
         enable-AzPSSession: true
     - id: ADOAuth
       name: Get ADO Access Token
-      uses: azure/powershell@v1
+      uses: azure/powershell@1300bbd2b3e1c21c029fe34887d16d2809a1397f # v1.4.0
       with:
         azPSVersion: "latest"
         inlineScript: |
