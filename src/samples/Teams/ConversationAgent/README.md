@@ -86,17 +86,27 @@ You can interact with this bot in Teams by sending it a message, or selecting a 
    - **Result:** The bot will respond with a quoted reply to your message.
    - **Valid Scopes:** personal, group chat, team chat
 6. **/here**
-   - **Result:** Saves the current conversation as the proactive message destination.
+   - **Result:** Saves the current conversation as the destination for `/send`.
    - **Valid Scopes:** personal, group chat, team chat
 7. **/here-thread**
-   - **Result:** Saves the current conversation and message as the proactive thread destination.
+   - **Result:** Saves the current thread as the destination for `/send-thread`. When used inside an existing thread, the thread root is preserved; otherwise, the current message becomes the thread root.
    - **Valid Scopes:** personal, group chat, team chat
 8. **/send**
-   - **Result:** Sends a proactive message to the conversation saved by `/here` or `/here-thread`.
+   - **Result:** Sends a proactive message to the conversation most recently saved by `/here` or `/here-thread`.
    - **Valid Scopes:** personal, group chat, team chat
 9. **/send-thread**
    - **Result:** Sends a proactive threaded message to the destination saved by `/here-thread`.
    - **Valid Scopes:** personal, group chat, team chat
+10. **/special-help**
+   - **Result:** Lists the reaction, reply, and proactive messaging commands.
+   - **Valid Scopes:** personal, group chat, team chat
+
+### Trying proactive messaging
+
+1. Send `/here` in the conversation that should receive the proactive message.
+2. Send `/send` from the same or another conversation. The message `Sent proactively to the saved conversation.` is delivered to the saved destination.
+
+For threaded messaging, use `/here-thread` followed by `/send-thread`. The sample keeps only one destination in process memory, so saving another destination replaces the previous one and restarting the app clears it.
 
 You can select an option from the command list by typing ```@TeamsConversationBot``` into the compose message area and ```What can I do?``` text above the compose area.
 

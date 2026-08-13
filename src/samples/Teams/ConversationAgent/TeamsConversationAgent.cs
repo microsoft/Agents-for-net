@@ -23,7 +23,8 @@ namespace ConversationAgent;
 [TeamsExtension]
 public partial class TeamsConversationAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
-    private SavedLocation? _savedLocation;
+    private const string EyesReactionType = "1f440_eyes";
+    private static SavedLocation? _savedLocation;
 
     private sealed record SavedLocation(string ConversationId, string? ActivityId);
 
@@ -131,6 +132,23 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
         await turnContext.SendActivityAsync(card.ToMessage(), cancellationToken);
     }
 
+    [TeamsMessageRoute("/special-help")]
+    public static async Task SendSpecialHelpAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        await turnContext.SendActivityAsync(
+            """
+            Special commands:
+
+            - **/eyes** - Add an eyes reaction for five seconds.
+            - **/reply** - Send a quoted reply.
+            - **/here** - Save this conversation for proactive messages.
+            - **/here-thread** - Save this message as a proactive thread.
+            - **/send** - Send to the saved conversation.
+            - **/send-thread** - Send to the saved thread.
+            """,
+            cancellationToken: cancellationToken);
+    }
+
     [TeamsMessageRoute("targeted")]
     public async Task SendTargetedMessagesAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -216,9 +234,9 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     [TeamsMessageRoute("/eyes")]
     public static async Task AddTemporaryEyesReactionAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        await turnContext.AddReactionAsync("eyes");
+        await turnContext.AddReactionAsync(EyesReactionType);
         await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
-        await turnContext.DeleteReactionAsync("eyes");
+        await turnContext.DeleteReactionAsync(EyesReactionType);
     }
 
     [TeamsMessageRoute("/reply")]
@@ -237,9 +255,13 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
     [TeamsMessageRoute("/here-thread")]
     public async Task SaveConversationThreadAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
+        string conversationId = turnContext.Activity.Conversation.Id;
+        string[] threadParts = conversationId.Split(";messageid=");
+        string? threadRootId = threadParts.Length > 1 ? threadParts[1] : turnContext.Activity.Id;
+
         Volatile.Write(
             ref _savedLocation,
-            new SavedLocation(turnContext.Activity.Conversation.Id, turnContext.Activity.Id));
+            new SavedLocation(conversationId, threadRootId));
         await turnContext.SendActivityAsync("Saved this conversation and thread.", cancellationToken: cancellationToken);
     }
 

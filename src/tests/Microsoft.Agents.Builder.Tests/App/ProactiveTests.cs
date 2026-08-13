@@ -327,15 +327,17 @@ namespace Microsoft.Agents.Builder.Tests.App
                 .Callback<ClaimsIdentity, ConversationReference, AgentCallbackHandler, CancellationToken>(
                     async (identity, reference, callback, ct) =>
                     {
-                        var turnContext = new TurnContext(_mockAdapter.Object, activity, conversation.Identity);
+                        var turnContext = new TurnContext(_mockAdapter.Object, reference.GetContinuationActivity(), conversation.Identity);
                         await callback(turnContext, ct);
                     });
 
+            IActivity sentActivity = null;
             _mockAdapter
                 .Setup(a => a.SendActivitiesAsync(
                     It.IsAny<ITurnContext>(),
                     It.IsAny<IActivity[]>(),
                     It.IsAny<CancellationToken>()))
+                .Callback<ITurnContext, IActivity[], CancellationToken>((_, activities, _) => sentActivity = Assert.Single(activities))
                 .Returns(Task.FromResult(new ResourceResponse[] { new ResourceResponse("sentId") }));
 
             // Act
@@ -344,6 +346,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.NotNull(result);
             Assert.Equal("sentId", result.Id);
+            Assert.Null(sentActivity.ReplyToId);
             _mockAdapter.Verify(a => a.ContinueConversationAsync(
                 It.IsAny<ClaimsIdentity>(),
                 It.IsAny<ConversationReference>(),

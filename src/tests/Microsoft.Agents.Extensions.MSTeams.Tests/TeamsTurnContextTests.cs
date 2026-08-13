@@ -107,6 +107,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             Assert.Equal("conversationId", adapter.ConversationId);
             Assert.Equal(ActivityTypes.Message, adapter.SentActivity.Type);
             Assert.Equal("proactive text", adapter.SentActivity.Text);
+            Assert.Null(adapter.SentActivity.ReplyToId);
+            Assert.Equal("agentId", adapter.Reference.Agent.Id);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, adapter.Reference.ChannelId);
+            Assert.Equal("https://serviceurl.com/", adapter.Reference.ServiceUrl);
+            Assert.Equal("userId", adapter.Reference.User.Id);
+            Assert.Null(adapter.Reference.ActivityId);
         }
 
         [Fact]
@@ -537,6 +543,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
         {
             public string ConversationId { get; private set; }
 
+            public ConversationReference Reference { get; private set; }
+
             public IActivity SentActivity { get; private set; }
 
             public override async Task ContinueConversationAsync(
@@ -545,6 +553,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 AgentCallbackHandler callback,
                 CancellationToken cancellationToken = default)
             {
+                Reference = reference;
                 ConversationId = reference.Conversation.Id;
                 using var context = new TurnContext(this, reference.GetContinuationActivity(), claimsIdentity);
                 await callback(context, cancellationToken);

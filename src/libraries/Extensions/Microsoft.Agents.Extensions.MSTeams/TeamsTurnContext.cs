@@ -143,10 +143,12 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
     {
         AssertionHelpers.ThrowIfNullOrWhiteSpace(conversationId, nameof(conversationId));
 
-        var reference = _turnContext.Activity.GetConversationReference();
-        reference.ActivityId = null;
-        reference.Conversation = ProtocolJsonSerializer.CloneTo<ConversationAccount>(_turnContext.Activity.Conversation);
-        reference.Conversation.Id = conversationId;
+        var reference = new ConversationReference(
+            user: Activity.From,
+            agent: Activity.Recipient,
+            channelId: Microsoft.Agents.Core.Models.Channels.Msteams,
+            serviceUrl: Activity.ServiceUrl,
+            conversation: new ConversationAccount(id: conversationId));
         return new Conversation(Identity, reference);
     }
 

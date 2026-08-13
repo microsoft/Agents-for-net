@@ -112,6 +112,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
             {
                 try
                 {
+                    // The continuation event has a synthetic ID that must not become the outgoing activity's ReplyToId.
+                    turnContext.Activity.Id = null;
                     response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
                 }
                 catch (Exception ex)
