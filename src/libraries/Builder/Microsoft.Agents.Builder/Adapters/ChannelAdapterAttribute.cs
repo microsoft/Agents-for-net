@@ -22,7 +22,8 @@ namespace Microsoft.Agents.Builder.Adapters
     /// </para>
     /// <para>
     /// The annotated type must implement <see cref="IChannelAdapter"/> (so it can be resolved through
-    /// <see cref="IChannelAdapterRegistry"/>); to also serve shared-endpoint HTTP dispatch it must
+    /// <see cref="IChannelAdapterRegistry"/>) and should be public so consuming applications can preload
+    /// its assembly; to also serve shared-endpoint HTTP dispatch it must
     /// implement the host's HTTP adapter contract (<c>IAgentHttpAdapter</c> in
     /// <c>Microsoft.Agents.Hosting.AspNetCore</c>). Both hold for adapters deriving from
     /// <c>CloudAdapter</c> or <c>ChannelAdapter</c>. It does <b>not</b> need to derive from

@@ -16,8 +16,7 @@ namespace Microsoft.Agents.Builder.Adapters
     /// The interface lives in the Builder layer so it can be surfaced through
     /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>. The default implementation also lives
     /// in the Builder layer and is populated from adapters annotated with the
-    /// <c>[ChannelAdapter("channelId")]</c> attribute (plus the default Activity Protocol adapter,
-    /// CloudAdapter).
+    /// <c>[ChannelAdapter("channelId")]</c> attribute and adapters registered explicitly through DI.
     /// </para>
     /// <para>
     /// Shared-endpoint (Tier 2) HTTP dispatch also consults the registry, casting resolved adapters to the
@@ -36,9 +35,9 @@ namespace Microsoft.Agents.Builder.Adapters
         IChannelAdapter GetAdapter(string channelId);
 
         /// <summary>
-        /// Gets the default Activity Protocol adapter (CloudAdapter). Used as fallback when no
-        /// channel-specific adapter is registered.
+        /// Gets the configured default adapter. Used as fallback when no channel-specific adapter is registered.
         /// </summary>
+        /// <exception cref="System.InvalidOperationException">No default adapter is configured.</exception>
         IChannelAdapter GetDefault();
 
         /// <summary>

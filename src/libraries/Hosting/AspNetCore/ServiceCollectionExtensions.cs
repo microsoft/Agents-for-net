@@ -147,6 +147,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             services.AddCloudAdapter<TAdapter>();
+            services.AddAgentExtensionServices();
+            return services;
+        }
+
+        /// <summary>
+        /// Applies service registrations declared by referenced Agents SDK extensions.
+        /// </summary>
+        /// <remarks>
+        /// Extension assemblies opt in with <see cref="AgentServiceRegistrationAttribute"/>.
+        /// Registrations are applied at most once per service collection.
+        /// </remarks>
+        public static IServiceCollection AddAgentExtensionServices(this IServiceCollection services)
+        {
+            AgentServiceRegistrationAttribute.ConfigureServices(services);
             return services;
         }
 
@@ -168,17 +182,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             AddAsyncAdapterSupport(services);
 
-            if (!services.Any(x => x.ServiceType == typeof(T)))
+            services.TryAddSingleton<T>();
+            if (typeof(T) != typeof(CloudAdapter))
             {
-                services.AddSingleton<CloudAdapter, T>();
-                services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
-                services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
+                services.TryAddSingleton<CloudAdapter>(sp => sp.GetRequiredService<T>());
             }
+            services.TryAddSingleton<IAgentHttpAdapter>(sp => sp.GetRequiredService<T>());
 
-            // The registry resolves adapters by channelId for Tier 2 dispatch and SDK features
-            // (proactive messaging, diagnostics). CloudAdapter (IAgentHttpAdapter) is the default;
-            // channel-specific adapters are discovered from [ChannelAdapter] attributes.
-            services.TryAddSingleton<IChannelAdapterRegistry, ChannelAdapterRegistry>();
+            // CloudAdapter is the conventional default, but an explicit developer selection wins.
+            services.TrySetDefaultChannelAdapter<T>();
             return services;
         }
 

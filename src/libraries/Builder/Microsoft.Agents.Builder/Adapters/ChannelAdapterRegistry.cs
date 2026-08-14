@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Agents.Core;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.Agents.Builder.Adapters
@@ -33,9 +35,20 @@ namespace Microsoft.Agents.Builder.Adapters
         private IChannelAdapter _default;
 
         public ChannelAdapterRegistry(IServiceProvider services, IEnumerable<ChannelAdapterRegistration> registrations)
+            : this(services, registrations, null)
+        {
+        }
+
+        internal ChannelAdapterRegistry(
+            IServiceProvider services,
+            IEnumerable<ChannelAdapterRegistration> registrations,
+            IChannelAdapter defaultAdapter)
         {
             _services = services;
+            _default = defaultAdapter;
             _channelAdapters = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+
+            AgentSdkInitializer.EnsureInitialized();
 
             // Attribute-discovered registrations first...
             foreach (var registration in ChannelAdapterInitAssemblyAttribute.GetRegistrations())
@@ -60,7 +73,12 @@ namespace Microsoft.Agents.Builder.Adapters
 
         public IChannelAdapter GetDefault()
         {
-            return _default ??= _services.GetRequiredService<IChannelAdapter>();
+            if (_default != null)
+            {
+                return _default;
+            }
+
+            return _default = _services.GetRequiredService<IChannelAdapter>();
         }
 
         public IChannelAdapter GetAdapter(string channelId)
@@ -87,10 +105,15 @@ namespace Microsoft.Agents.Builder.Adapters
 
         public IEnumerable<IChannelAdapter> GetAll()
         {
-            yield return GetDefault();
-            foreach (var type in _channelAdapters.Values)
+            var defaultAdapter = GetDefault();
+            yield return defaultAdapter;
+            foreach (var type in _channelAdapters.Values.Distinct())
             {
-                yield return Resolve(type);
+                var adapter = Resolve(type);
+                if (!ReferenceEquals(adapter, defaultAdapter))
+                {
+                    yield return adapter;
+                }
             }
         }
 

@@ -57,7 +57,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
             var registry = _app.Options.ChannelAdapterRegistry
                 ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ProactiveAdapterRegistryNotAvailable, null, channelId);
 
-            return registry.GetAdapter(channelId);
+            return registry.TryGetAdapter(channelId, out var adapter)
+                ? adapter
+                : registry.GetDefault();
         }
 
         /// <summary>
