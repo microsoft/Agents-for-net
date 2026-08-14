@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
@@ -787,6 +788,10 @@ namespace Microsoft.Agents.Builder.App
             if (Options.Connections != null)
             {
                 turnContext.Services.Set<IConnections>(Options.Connections);
+            }
+            if (Options.ChannelAdapterRegistry != null)
+            {
+                turnContext.Services.Set<IChannelAdapterRegistry>(Options.ChannelAdapterRegistry);
             }
             turnContext.Services.Set<Proactive.Proactive>(Proactive);
             turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
+using System.Reflection;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,8 +27,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var queue = new ActivityTaskQueue();
             var logger = new Mock<ILogger<HostedActivityService>>();
             var sp = new Mock<IServiceProvider>();
+            var options = new HostedActivityServiceOptions(new ConfigurationBuilder().Build());
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, null, queue, logger.Object));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, null, queue, logger.Object, options));
         }
 
         [Fact]
@@ -37,8 +39,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var adapter = new TestAdapter();
             var queue = new ActivityTaskQueue();
             var logger = new Mock<ILogger<HostedActivityService>>();
+            var options = new HostedActivityServiceOptions(config);
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(null, config, queue, logger.Object));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(null, config, queue, logger.Object, options));
         }
 
         [Fact]
@@ -49,8 +52,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var adapter = new TestAdapter();
             var logger = new Mock<ILogger<HostedActivityService>>();
             var sp = new Mock<IServiceProvider>();
+            var options = new HostedActivityServiceOptions(config);
 
-            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, config, null, logger.Object));
+            Assert.Throws<ArgumentNullException>(() => new HostedActivityService(sp.Object, config, null, logger.Object, options));
         }
 
         [Fact]
@@ -61,10 +65,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var adapter = new TestAdapter();
             var queue = new ActivityTaskQueue();
             var sp = new Mock<IServiceProvider>();
+            var options = new HostedActivityServiceOptions(config);
 
             try
             {
-                var service = new HostedActivityService(sp.Object, config, queue, null);
+                var service = new HostedActivityService(sp.Object, config, queue, null, options);
                 await service.StopAsync(CancellationToken.None);
             }
             catch (Exception)
@@ -151,6 +156,66 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             await record.Service.StopAsync(token);
         }
 
+        [Fact]
+        public void Constructor_WithHostedOptions_UsesHostedShutdownTimeout()
+        {
+            var config = new ConfigurationBuilder().Build();
+            var hostedOptions = new HostedActivityServiceOptions(config)
+            {
+                ShutdownTimeoutSeconds = 17
+            };
+
+            var service = new HostedActivityService(
+                new Mock<IServiceProvider>().Object,
+                config,
+                new ActivityTaskQueue(),
+                Mock.Of<ILogger<HostedActivityService>>(),
+                hostedOptions);
+
+            Assert.Equal(17, GetShutdownTimeoutSeconds(service));
+        }
+
+        [Fact]
+        public void Constructor_WithHostedOptions_DoesNotAcceptAdapterOptions()
+        {
+            var constructor = typeof(HostedActivityService).GetConstructor(
+                [
+                    typeof(IServiceProvider),
+                    typeof(IConfiguration),
+                    typeof(IActivityTaskQueue),
+                    typeof(ILogger<HostedActivityService>),
+                    typeof(HostedActivityServiceOptions)
+                ]);
+
+            Assert.NotNull(constructor);
+        }
+
+        [Fact]
+        public void LegacyConstructor_WithAdapterOptions_UsesLegacyShutdownTimeout()
+        {
+            var config = new ConfigurationBuilder().Build();
+#pragma warning disable CS0618
+            var service = new HostedActivityService(
+                new Mock<IServiceProvider>().Object,
+                config,
+                new ActivityTaskQueue(),
+                Mock.Of<ILogger<HostedActivityService>>(),
+                new AdapterOptions { ShutdownTimeoutSeconds = 29 });
+#pragma warning restore CS0618
+
+            Assert.Equal(29, GetShutdownTimeoutSeconds(service));
+        }
+
+        private static int GetShutdownTimeoutSeconds(HostedActivityService service)
+        {
+            var field = typeof(HostedActivityService).GetField(
+                "_serviceOptions",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            var options = (HostedActivityServiceOptions)field.GetValue(service);
+            return options.ShutdownTimeoutSeconds;
+        }
+
         private static Record UseRecord(IAgent agent = null)
         {
             var config = new ConfigurationBuilder().Build();
@@ -164,7 +229,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Setup(s => s.GetService(It.IsAny<Type>()))
                 .Returns(agent);
 
-            var service = new HostedActivityService(sp.Object, config, queue, logger.Object);
+            var service = new HostedActivityService(sp.Object, config, queue, logger.Object, new HostedActivityServiceOptions(config));
             return new(service, queue, bot, adapter, logger);
         }
 
