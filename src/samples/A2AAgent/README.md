@@ -56,11 +56,7 @@ This is a sample of a simple Agent that adds A2A support.
 
 1. Add a package dependency for `Microsoft.Agents.Extensions.A2A`
 
-1. Register the `A2AAdapter` in Program.cs
-   
-   ```csharp
-   builder.Services.AddA2AAdapter();
-   ```
+The A2A adapter is registered automatically when the application calls `AddAgent`.
 
 1. Add the A2A endpoints in Program.cs
 

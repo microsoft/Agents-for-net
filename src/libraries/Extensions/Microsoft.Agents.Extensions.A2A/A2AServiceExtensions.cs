@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -18,19 +19,33 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
+[assembly: Microsoft.Agents.Hosting.AspNetCore.AgentServiceRegistrationAttribute(
+    typeof(Microsoft.Agents.Extensions.A2A.A2AServiceRegistrar))]
+
 namespace Microsoft.Agents.Extensions.A2A;
+
+public sealed class A2AServiceRegistrar : IAgentServiceRegistrar
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddA2AAdapter();
+    }
+}
 
 public static class A2AServiceExtensions
 {
     /// <summary>
-    /// Registers the A2AAdapter
+    /// Registers the A2A adapter services explicitly.
     /// </summary>
-    /// <remarks>This is required for A2A request handling.</remarks>
+    /// <remarks>
+    /// <c>AddAgentCore</c> registers these services automatically. Custom hosts that do not call
+    /// <c>AddAgentCore</c> can call this method directly.
+    /// </remarks>
     /// <param name="services"></param>
     public static void AddA2AAdapter(this IServiceCollection services)
     {
-        services.AddSingleton<A2AAdapter>();
-        services.AddSingleton<IA2AHttpAdapter>(sp => sp.GetService<A2AAdapter>());
+        services.TryAddSingleton<A2AAdapter>();
+        services.TryAddSingleton<IA2AHttpAdapter>(sp => sp.GetRequiredService<A2AAdapter>());
     }
 
     /// <summary>

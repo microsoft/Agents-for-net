@@ -20,9 +20,6 @@ builder.AddAgentDefaults()
 // in a cluster of Agent instances.
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-// Add the A2A adapter to handle A2A requests
-builder.Services.AddA2AAdapter();
-
 WebApplication app = builder.Build();
 
 // Add the authentication and authorization middleware to the request pipeline.

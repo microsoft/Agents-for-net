@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -28,15 +29,12 @@ namespace Microsoft.Agents.Extensions.A2A;
 /// Adapter for handling A2A requests.
 /// </summary>
 /// <remarks>
-/// Register Adapter and map endpoints in startup using:
+/// The adapter is registered automatically by <c>AddAgentCore</c>. Map endpoints in startup using:
 /// <code>
-///    builder.Services.AddA2AAdapter();
-/// 
-///    app.MapA2A();
+///    app.MapA2AApplicationEndpoints();
 /// </code>
-/// <see cref="A2AServiceExtensions.AddA2AAdapter(Microsoft.Extensions.DependencyInjection.IServiceCollection)"/>
-/// <see cref="A2AServiceExtensions.MapA2AJsonRpc(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, bool, string)"/>
 /// </remarks>
+[ChannelAdapter(Channels.A2A)]
 public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 {
     private readonly ITaskStore _taskStore;
