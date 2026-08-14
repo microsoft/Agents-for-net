@@ -19,7 +19,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
-[assembly: Microsoft.Agents.Hosting.AspNetCore.AgentServiceRegistrationAttribute(
+[assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
     typeof(Microsoft.Agents.Extensions.A2A.A2AServiceRegistrar))]
 
 namespace Microsoft.Agents.Extensions.A2A;
