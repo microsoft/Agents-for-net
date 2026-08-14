@@ -81,6 +81,19 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public void SuppliedDefaultAdapter_IsReusedForMatchingChannelRegistration()
+        {
+            var sp = BuildProvider();
+            var adapter = new TeamsAdapter();
+            var registry = new ChannelAdapterRegistry(
+                sp,
+                new[] { new ChannelAdapterRegistration("msteams", typeof(TeamsAdapter)) },
+                adapter);
+
+            Assert.Same(adapter, registry.GetAdapter("msteams"));
+        }
+
+        [Fact]
         public void TryGetAdapter_UnknownChannel_ReturnsFalse()
         {
             var sp = BuildProvider();

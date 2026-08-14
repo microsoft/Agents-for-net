@@ -33,14 +33,7 @@ namespace Microsoft.Agents.Builder
 
             foreach (var registration in GetRegistrations())
             {
-                if (!typeof(IAgentServiceRegistrar).IsAssignableFrom(registration)
-                    || registration.IsAbstract
-                    || registration.IsInterface
-                    || !registration.IsPublic)
-                {
-                    throw new InvalidOperationException(
-                        $"{registration.FullName} must be a public, concrete {nameof(IAgentServiceRegistrar)}.");
-                }
+                ValidateRegistrarType(registration);
 
                 var appliedRegistrations = _appliedRegistrations.GetOrCreateValue(services);
                 lock (appliedRegistrations)
@@ -65,6 +58,24 @@ namespace Microsoft.Agents.Builder
 
                     throw;
                 }
+            }
+        }
+
+        internal static void ValidateRegistrarType(Type registration)
+        {
+            if (!typeof(IAgentServiceRegistrar).IsAssignableFrom(registration)
+                || registration.IsAbstract
+                || registration.IsInterface
+                || !registration.IsPublic)
+            {
+                throw new InvalidOperationException(
+                    $"{registration.FullName} must be a public, concrete {nameof(IAgentServiceRegistrar)}.");
+            }
+
+            if (registration.GetConstructor(Type.EmptyTypes) == null)
+            {
+                throw new InvalidOperationException(
+                    $"{registration.FullName} must have a public parameterless constructor.");
             }
         }
 

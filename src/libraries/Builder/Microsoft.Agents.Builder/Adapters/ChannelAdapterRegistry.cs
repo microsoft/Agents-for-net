@@ -47,6 +47,10 @@ namespace Microsoft.Agents.Builder.Adapters
             _services = services;
             _default = defaultAdapter;
             _channelAdapters = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+            if (defaultAdapter != null)
+            {
+                _instances.TryAdd(defaultAdapter.GetType(), defaultAdapter);
+            }
 
             AgentSdkInitializer.EnsureInitialized();
 

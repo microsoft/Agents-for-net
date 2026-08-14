@@ -28,6 +28,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
     }
 
+    public sealed class RegistrarWithoutParameterlessConstructor : IAgentServiceRegistrar
+    {
+        public RegistrarWithoutParameterlessConstructor(string value)
+        {
+        }
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+        }
+    }
+
     public class AgentServiceRegistrationTests
     {
         private sealed class AlternateAdapter : ChannelAdapter
@@ -48,6 +59,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             services.AddAgentCore<CloudAdapter>();
 
             Assert.Single(services, descriptor => descriptor.ServiceType == typeof(TestAgentExtensionService));
+        }
+
+        [Fact]
+        public void RegistrarWithoutParameterlessConstructor_ThrowsClearError()
+        {
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => AgentServiceRegistrationAttribute.ValidateRegistrarType(
+                    typeof(RegistrarWithoutParameterlessConstructor)));
+
+            Assert.Contains("public parameterless constructor", exception.Message);
         }
 
         [Fact]

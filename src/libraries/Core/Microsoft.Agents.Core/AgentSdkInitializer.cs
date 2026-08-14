@@ -44,14 +44,45 @@ namespace Microsoft.Agents.Core
                 .OfType<AgentSdkInitAssemblyAttribute>())
             {
                 var type = attribute.InitType;
-                if (type == null || !_initializedTypes.TryAdd(type, 0))
+                if (type == null)
+                {
+                    throw new InvalidOperationException(
+                        $"{nameof(AgentSdkInitAssemblyAttribute)} requires an initialization type.");
+                }
+
+                if (!_initializedTypes.TryAdd(type, 0))
                 {
                     continue;
                 }
 
-                var init = type.GetMethod("Init", BindingFlags.Static | BindingFlags.Public);
-                init?.Invoke(null, null);
+                try
+                {
+                    GetInitializationMethod(type).Invoke(null, null);
+                }
+                catch
+                {
+                    _initializedTypes.TryRemove(type, out _);
+                    throw;
+                }
             }
+        }
+
+        private static MethodInfo GetInitializationMethod(Type type)
+        {
+            var init = type
+                .GetMethods(BindingFlags.Static | BindingFlags.Public)
+                .FirstOrDefault(method =>
+                    method.Name == "Init"
+                    && method.ReturnType == typeof(void)
+                    && !method.IsGenericMethod
+                    && method.GetParameters().Length == 0);
+            if (init == null)
+            {
+                throw new InvalidOperationException(
+                    $"{type.FullName} must define a public static void Init() method.");
+            }
+
+            return init;
         }
     }
 }
