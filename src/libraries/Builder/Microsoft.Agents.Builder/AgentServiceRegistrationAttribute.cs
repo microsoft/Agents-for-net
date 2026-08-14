@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.Agents.Core;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Microsoft.Agents.Hosting.AspNetCore
+namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Declares an Agents SDK extension service registrar.

@@ -35,3 +35,17 @@ Applications that construct `AgentApplicationOptions` through dependency injecti
 `IChannelAdapter`. The constructor uses an injected `IChannelAdapterRegistry` when available; otherwise,
 it creates a registry around the supplied adapter. Applications constructing options programmatically
 must set `ChannelAdapterRegistry` or use proactive APIs that accept an adapter explicitly.
+
+## Extension service registration
+
+Extensions can register services without requiring an explicit application call by declaring an
+assembly registrar:
+
+```csharp
+[assembly: AgentServiceRegistration(typeof(MyExtensionServiceRegistrar))]
+```
+
+The registrar implements `IAgentServiceRegistrar`. Registrations are applied once per
+`IServiceCollection`; registrars should use `TryAdd` methods so application registrations remain
+authoritative. Hosts can invoke `AddAgentExtensionServices()` directly. The ASP.NET Core
+`AddAgentCore` convenience method invokes it automatically.

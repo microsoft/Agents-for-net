@@ -35,15 +35,6 @@ services.AddAgentApplicationOptions();
 services.AddTransient<IAgent, MyAgent>();
 ```
 
-## Extension service registration
-
-`AddAgentCore` automatically applies service registrars declared by referenced Agents SDK extension
-assemblies:
-
-```csharp
-[assembly: AgentServiceRegistration(typeof(MyExtensionServiceRegistrar))]
-```
-
-The registrar implements `IAgentServiceRegistrar`. Registrations are applied once per
-`IServiceCollection`. Extension registrars should use `TryAdd` methods so explicit application
-registrations remain authoritative. Custom hosts can invoke `AddAgentExtensionServices()` directly.
+`AddAgentCore` also invokes Builder's `AddAgentExtensionServices()` so referenced Agents SDK
+extensions can contribute their services. Custom hosts can invoke that Builder API directly without
+depending on ASP.NET Core.

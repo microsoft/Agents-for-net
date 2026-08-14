@@ -152,19 +152,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Applies service registrations declared by referenced Agents SDK extensions.
-        /// </summary>
-        /// <remarks>
-        /// Extension assemblies opt in with <see cref="AgentServiceRegistrationAttribute"/>.
-        /// Registrations are applied at most once per service collection.
-        /// </remarks>
-        public static IServiceCollection AddAgentExtensionServices(this IServiceCollection services)
-        {
-            AgentServiceRegistrationAttribute.ConfigureServices(services);
-            return services;
-        }
-
-        /// <summary>
         /// Add the default CloudAdapter.
         /// </summary>
         /// <param name="services"></param>

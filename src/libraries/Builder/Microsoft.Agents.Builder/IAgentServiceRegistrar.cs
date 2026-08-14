@@ -3,7 +3,7 @@
 
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Microsoft.Agents.Hosting.AspNetCore
+namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Registers services required by an Agents SDK extension.

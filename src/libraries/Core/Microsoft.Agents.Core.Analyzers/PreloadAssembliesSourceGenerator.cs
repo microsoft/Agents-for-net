@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Core.Analyzers
         internal const string ActivityTypeFullName = "Microsoft.Agents.Core.Models.Activity";
         internal const string CoreModelsNamespacePrefix = "global::Microsoft.Agents.Core.Models";
         internal const string ChannelAdapterInitAssemblyAttributeFullName = "Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute";
-        internal const string AgentServiceRegistrationAttributeFullName = "Microsoft.Agents.Hosting.AspNetCore.AgentServiceRegistrationAttribute";
+        internal const string AgentServiceRegistrationAttributeFullName = "Microsoft.Agents.Builder.AgentServiceRegistrationAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {

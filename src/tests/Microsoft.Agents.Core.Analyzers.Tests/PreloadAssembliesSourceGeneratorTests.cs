@@ -230,10 +230,10 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         public void AgentServiceRegistrationManifestInReferencedAssembly_IsPreloaded()
         {
             var reference = CreateReferencedAssembly("Ext.Services", """
-                [assembly: Microsoft.Agents.Hosting.AspNetCore.AgentServiceRegistrationAttribute(
+                [assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
                     typeof(Ext.Services.CustomRegistrar))]
 
-                namespace Microsoft.Agents.Hosting.AspNetCore
+                namespace Microsoft.Agents.Builder
                 {
                     [System.AttributeUsage(System.AttributeTargets.Assembly, AllowMultiple = true)]
                     public sealed class AgentServiceRegistrationAttribute : System.Attribute
@@ -257,10 +257,10 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         public void NonPublicManifestType_DoesNotGenerateInaccessibleConsumerReference()
         {
             var reference = CreateReferencedAssembly("Ext.InternalServices", """
-                [assembly: Microsoft.Agents.Hosting.AspNetCore.AgentServiceRegistrationAttribute(
+                [assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
                     typeof(Ext.InternalServices.InternalRegistrar))]
 
-                namespace Microsoft.Agents.Hosting.AspNetCore
+                namespace Microsoft.Agents.Builder
                 {
                     [System.AttributeUsage(System.AttributeTargets.Assembly, AllowMultiple = true)]
                     public sealed class AgentServiceRegistrationAttribute : System.Attribute

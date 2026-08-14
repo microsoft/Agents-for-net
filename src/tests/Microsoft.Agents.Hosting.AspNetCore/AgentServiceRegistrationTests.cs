@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 
-[assembly: Microsoft.Agents.Hosting.AspNetCore.AgentServiceRegistrationAttribute(
+[assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
     typeof(Microsoft.Agents.Hosting.AspNetCore.Tests.TestAgentServiceRegistrar))]
 
 namespace Microsoft.Agents.Hosting.AspNetCore.Tests
