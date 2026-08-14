@@ -146,6 +146,8 @@ namespace Microsoft.Agents.Builder.App
             Adapter = channelAdapter;
 #pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
+            // Manually composed hosts may provide an adapter without registering a registry. Create one so
+            // channel-specific lookup still works and the supplied adapter remains the default fallback.
             ChannelAdapterRegistry = sp.GetService<IChannelAdapterRegistry>()
                 ?? new ChannelAdapterRegistry(
                     sp,
