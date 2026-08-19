@@ -6,9 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.Compat;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Moq;
@@ -27,16 +29,40 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Select(e => e.ImplementationType ?? e.ServiceType)
                 .ToList();
             var expected = new List<Type>{
+                typeof(HostedActivityServiceOptions),
                 typeof(HostedActivityService),
                 typeof(HostedTaskService),
                 typeof(BackgroundTaskQueue),
                 typeof(ActivityTaskQueue),
                 typeof(CloudAdapter), // Default Type passed to AddCloudAdapter.
                 typeof(IAgentHttpAdapter),
+                typeof(ChannelAdapterRegistry), // IChannelAdapterRegistry.
                 typeof(IChannelAdapter),
             };
 
             Assert.Equal(expected, services);
+        }
+
+        [Fact]
+        public void AddAsyncAdapterSupport_ShouldRegisterHostedActivityServiceOptionsOnce()
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["HostedActivityServiceOptions:ShutdownTimeoutSeconds"] = "23"
+                })
+                .Build();
+            var services = new ServiceCollection();
+            services.AddSingleton<IConfiguration>(configuration);
+
+            services.AddAsyncAdapterSupport();
+            services.AddAsyncAdapterSupport();
+
+            using var provider = services.BuildServiceProvider();
+            var options = provider.GetRequiredService<HostedActivityServiceOptions>();
+
+            Assert.Equal(23, options.ShutdownTimeoutSeconds);
+            Assert.Single(services, service => service.ServiceType == typeof(HostedActivityServiceOptions));
         }
 
         [Fact]
@@ -54,13 +80,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(RestChannelServiceClientFactory),
                 typeof(IOutboundHostValidator),
                 // CloudAdapter services.
+                typeof(HostedActivityServiceOptions),
                 typeof(HostedActivityService),
                 typeof(HostedTaskService),
                 typeof(BackgroundTaskQueue),
                 typeof(ActivityTaskQueue),
                 typeof(CloudAdapter),
                 typeof(IAgentHttpAdapter),
+                typeof(ChannelAdapterRegistry), // IChannelAdapterRegistry.
                 typeof(IChannelAdapter),
+                typeof(TestAgentExtensionService),
                 typeof(ActivityHandler), // IAgent.
                 typeof(ActivityHandler), // TAgent.
             };

@@ -3,11 +3,13 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Linq;
 
@@ -145,6 +147,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             services.AddCloudAdapter<TAdapter>();
+            services.AddAgentExtensionServices();
             return services;
         }
 
@@ -166,12 +169,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             AddAsyncAdapterSupport(services);
 
-            if (!services.Any(x => x.ServiceType == typeof(T)))
+            services.TryAddSingleton<T>();
+            if (typeof(T) != typeof(CloudAdapter))
             {
-                services.AddSingleton<CloudAdapter, T>();
-                services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
-                services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
+                services.TryAddSingleton<CloudAdapter>(sp => sp.GetRequiredService<T>());
             }
+            services.TryAddSingleton<IAgentHttpAdapter>(sp => sp.GetRequiredService<T>());
+
+            // CloudAdapter is the conventional default, but an explicit developer selection wins.
+            services.TrySetDefaultChannelAdapter<T>();
             return services;
         }
 
@@ -189,6 +195,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (!services.Any(x => x.ServiceType == typeof(IActivityTaskQueue)))
             {
+                services.AddSingleton<HostedActivityServiceOptions>();
+
                 // Activity specific BackgroundService for processing authenticated activities.
                 services.AddHostedService<HostedActivityService>();
                 // Generic BackgroundService for processing tasks.

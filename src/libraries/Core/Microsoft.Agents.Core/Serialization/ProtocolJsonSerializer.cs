@@ -60,6 +60,7 @@ namespace Microsoft.Agents.Core.Serialization
 
         static ProtocolJsonSerializer()
         {
+            AgentSdkInitializer.EnsureInitialized();
             SerializationInitAssemblyAttribute.InitSerialization();
             EntityInitAssemblyAttribute.InitSerialization();
             ActivityTypeInitAssemblyAttribute.InitSerialization();
