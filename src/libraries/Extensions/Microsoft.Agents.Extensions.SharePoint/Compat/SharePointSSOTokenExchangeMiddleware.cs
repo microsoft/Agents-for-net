@@ -92,13 +92,37 @@ namespace Microsoft.Agents.Extensions.SharePoint
 
         private async Task<bool> DeduplicatedTokenExchangeIdAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
+            var storageKey = TokenStoreItem.GetStorageKey(turnContext);
+
+            if (_storage is IStorageV2 storageV2)
+            {
+                var results = await storageV2.WriteAsync(
+                    new Dictionary<string, TokenExchangeDeduplicationMarker> { { storageKey, new TokenExchangeDeduplicationMarker() } },
+                    new StorageWriteOptions { Mode = StorageWriteMode.CreateOnly },
+                    cancellationToken).ConfigureAwait(false);
+
+                var result = results[storageKey];
+                if (result.Status == StorageOperationStatus.Succeeded)
+                {
+                    return true;
+                }
+
+                if (result.Status == StorageOperationStatus.Conflict)
+                {
+                    await SendInvokeResponseAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    return false;
+                }
+
+                throw new InvalidOperationException($"Unexpected storage write status '{result.Status}' for token exchange deduplication.");
+            }
+
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
             {
                 ETag = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value)["id"].ToString(),
             };
 
-            var storeItems = new Dictionary<string, object> { { TokenStoreItem.GetStorageKey(turnContext), storeItem } };
+            var storeItems = new Dictionary<string, object> { { storageKey, storeItem } };
             try
             {
                 // Writing the IStoreItem with ETag of unique id will succeed only once
@@ -118,6 +142,10 @@ namespace Microsoft.Agents.Extensions.SharePoint
             }
 
             return true;
+        }
+
+        private sealed class TokenExchangeDeduplicationMarker
+        {
         }
 
         private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)
