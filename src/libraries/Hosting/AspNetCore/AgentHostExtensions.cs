@@ -662,7 +662,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var deferred = sp.GetService<DeferredAttachmentDownloader>();
                 if (deferred != null)
                 {
-                    list.Add(new AttachmentDownloader(sp.GetRequiredService<IHttpClientFactory>()));
+                    list.Add(new AttachmentDownloader(
+                        sp.GetRequiredService<IHttpClientFactory>(),
+                        sp.GetService<IOutboundHostValidator>()));
                 }
 
                 var deferredM365 = sp.GetService<DeferredM365AttachmentDownloader>();
@@ -672,7 +674,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     list.Add(new M365AttachmentDownloader(
                         sp.GetRequiredService<IConnections>(),
                         sp.GetRequiredService<IHttpClientFactory>(),
-                        options));
+                        options,
+                        sp.GetService<IOutboundHostValidator>()));
                 }
 
                 return list;

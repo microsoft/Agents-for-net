@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Agents.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Builder.Adapters;
 using System.Net.Http;
 
 namespace Microsoft.Agents.Builder.App
@@ -145,6 +146,13 @@ namespace Microsoft.Agents.Builder.App
             Adapter = channelAdapter;
 #pragma warning restore CS0618 // Type or member is obsolete
             Connections = sp.GetService<IConnections>();
+            // Manually composed hosts may provide an adapter without registering a registry. Create one so
+            // channel-specific lookup still works and the supplied adapter remains the default fallback.
+            ChannelAdapterRegistry = sp.GetService<IChannelAdapterRegistry>()
+                ?? new ChannelAdapterRegistry(
+                    sp,
+                    sp.GetService<IEnumerable<ChannelAdapterRegistration>>(),
+                    channelAdapter);
             TurnStateFactory = () => new TurnState(storage);  // Null storage will just create a TurnState with TempState.
             HttpClientFactory = sp.GetService<IHttpClientFactory>();
 
@@ -193,6 +201,19 @@ namespace Microsoft.Agents.Builder.App
         /// The IConnections for this AgentApplication
         /// </summary>
         public IConnections? Connections { get; set; }
+
+        /// <summary>
+        /// Registry of adapters keyed by channelId. Lets the agent resolve the correct
+        /// <see cref="IChannelAdapter"/> for a given channel — for example, to send proactive messages or
+        /// continue a conversation — without knowing adapter types.
+        /// </summary>
+        /// <remarks>
+        /// Populated from DI when available. If the DI-aware constructor receives an
+        /// <see cref="IChannelAdapter"/> but no registry, it creates a registry using that adapter as the
+        /// default. Programmatically constructed options must set this property or use APIs that accept an
+        /// adapter explicitly.
+        /// </remarks>
+        public IChannelAdapterRegistry? ChannelAdapterRegistry { get; set; }
 
         /// <summary>
         /// Optional. Options used to customize the processing of Adaptive Card requests.

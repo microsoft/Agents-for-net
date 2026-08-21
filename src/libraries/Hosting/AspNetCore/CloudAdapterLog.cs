@@ -48,5 +48,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         [LoggerMessage(EventId = 10, Level = LogLevel.Error,
             Message = "Missing or invalid body, Activity ='{Activity}'")]
         internal static partial void LogInvalidActivity(ILogger logger, string activity);
+
+        [LoggerMessage(EventId = 11, Level = LogLevel.Warning,
+            Message = "ServiceUrl host is not in the configured allowed hosts. ServiceUrl='{ServiceUrl}'")]
+        internal static partial void LogServiceUrlHostNotAllowed(ILogger logger, string serviceUrl);
     }
 }

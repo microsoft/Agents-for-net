@@ -139,7 +139,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             await harness.WriteResponseAsync(frame.Header.Id, 202);
 
-            var response = await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await sendTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         }
 
@@ -185,14 +185,14 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 End = true,
             }, "test"u8.ToArray());
 
-            var response = await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await sendTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal("application/json", response.Content.Headers.ContentType.MediaType);
         }
 
         // ========== Harness ==========
 
-        private sealed class ProtocolHarness : IDisposable
+        private sealed class ProtocolHarness : IAsyncDisposable, IDisposable
         {
             private readonly AnonymousPipeServerStream _inboundServer;
             private readonly AnonymousPipeClientStream _inboundClient;
@@ -270,9 +270,17 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 return buf;
             }
 
+            public async ValueTask DisposeAsync()
+            {
+                try { await Protocol.DisposeAsync().ConfigureAwait(false); } catch { }
+                Dispose();
+            }
+
+            // Synchronous dispose intentionally does NOT block on Protocol.DisposeAsync
+            // (sync-over-async starves the thread pool under parallel test load, causing
+            // flaky timeouts). Disposing the pipes tears down the read loop instead.
             public void Dispose()
             {
-                try { Protocol.DisposeAsync().AsTask().GetAwaiter().GetResult(); } catch { }
                 try { _inboundClient.Dispose(); } catch { }
                 try { _inboundServer.Dispose(); } catch { }
                 try { _outboundClient?.Dispose(); } catch { }

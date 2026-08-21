@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
@@ -732,6 +733,25 @@ namespace Microsoft.Agents.Builder.App
 #pragma warning restore CA1822
 
         /// <summary>
+        /// Reset the typing timer's interval countdown for the current turn, restarting the wait before the
+        /// next periodic "typing" activity is sent — equivalent to what happens automatically when the agent
+        /// sends an activity through the normal <see cref="ITurnContext.SendActivityAsync(IActivity, System.Threading.CancellationToken)"/>
+        /// pipeline.
+        /// </summary>
+        /// <remarks>
+        /// Call this when a message is delivered out-of-band, bypassing the turn's send pipeline (for example,
+        /// a channel-specific API call such as Slack's <c>chat.postMessage</c>), so the typing indicator timing
+        /// stays consistent with pipeline sends. If no typing timer is running for the turn, the call is ignored.
+        /// </remarks>
+        /// <param name="turnContext">The turn context.</param>
+#pragma warning disable CA1822 // Method is intentionally an instance member for API symmetry with StartTypingTimer.
+        public void ResetTypingTimer(ITurnContext turnContext)
+        {
+            turnContext.Services.Get<TypingWorker>()?.ResetInterval();
+        }
+#pragma warning restore CA1822
+
+        /// <summary>
         /// Manually stop the typing timer.
         /// </summary>
         /// <remarks>
@@ -768,6 +788,10 @@ namespace Microsoft.Agents.Builder.App
             if (Options.Connections != null)
             {
                 turnContext.Services.Set<IConnections>(Options.Connections);
+            }
+            if (Options.ChannelAdapterRegistry != null)
+            {
+                turnContext.Services.Set<IChannelAdapterRegistry>(Options.ChannelAdapterRegistry);
             }
             turnContext.Services.Set<Proactive.Proactive>(Proactive);
             turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);

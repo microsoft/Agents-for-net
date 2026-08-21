@@ -13,17 +13,14 @@ using System.Text;
 namespace Microsoft.Agents.Core.Analyzers
 {
     /// <summary>
-    /// Forces referenced assemblies that contain custom <c>Microsoft.Agents.Core.Models.Entity</c>
-    /// or <c>Microsoft.Agents.Core.Models.Activity</c> subclasses to load, so their
-    /// <c>[SerializationInit]</c>/<c>[EntityInit]</c> registration runs before any (de)serialization.
+    /// Forces referenced assemblies that contain SDK extension types to load before feature-specific
+    /// discovery runs.
     /// </summary>
     /// <remarks>
-    /// Extension assemblies register custom Entity subclasses (via <c>EntityInitAssemblyAttribute</c>)
-    /// and custom Activity subclasses (via <c>ActivityTypeInitAssemblyAttribute</c>). That registration
-    /// only happens once the assembly is loaded, and the CLR does not load a referenced assembly until
-    /// one of its types is first used. This generator scans the consuming compilation's referenced
-    /// assemblies for such subclasses and emits a registry that references <c>typeof(...)</c> for each,
-    /// forcing the owning assembly to load so its serialization initialization is triggered.
+    /// The CLR does not load a referenced assembly until one of its types is first used. This generator
+    /// scans the consuming compilation's referenced assemblies for custom Entity and Activity subclasses,
+    /// channel-adapter manifests, and extension service-registration manifests. It emits a registry that
+    /// references <c>typeof(...)</c> for each discovered type, forcing the owning assemblies to load.
     /// </remarks>
     [Generator]
     [ExcludeFromCodeCoverage]
@@ -32,33 +29,34 @@ namespace Microsoft.Agents.Core.Analyzers
         internal const string EntityTypeFullName = "Microsoft.Agents.Core.Models.Entity";
         internal const string ActivityTypeFullName = "Microsoft.Agents.Core.Models.Activity";
         internal const string CoreModelsNamespacePrefix = "global::Microsoft.Agents.Core.Models";
+        internal const string ChannelAdapterInitAssemblyAttributeFullName = "Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute";
+        internal const string AgentServiceRegistrationAttributeFullName = "Microsoft.Agents.Builder.AgentServiceRegistrationAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            // Scan the referenced assemblies (not the current syntax) for Entity/Activity subclasses.
-            var derivedTypesProvider =
+            var preloadTypesProvider =
                 context.CompilationProvider
-                    .Select(static (compilation, _) => FindDerivedTypes(compilation))
+                    .Select(static (compilation, _) => FindPreloadTypes(compilation))
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-                    // Custom comparer expects string?, but we guarantee non-null strings in FindDerivedTypes.
+                    // Custom comparer expects string?, but FindPreloadTypes only returns non-null strings.
                     .WithComparer(new ObjectImmutableArraySequenceEqualityComparer<string>());
 #pragma warning restore CS8620
 
             context.RegisterSourceOutput(
-                derivedTypesProvider,
-                static (spc, derivedTypes) =>
+                preloadTypesProvider,
+                static (spc, preloadTypes) =>
                 {
-                    if (derivedTypes.IsDefaultOrEmpty)
+                    if (preloadTypes.IsDefaultOrEmpty)
                     {
                         return;
                     }
 
-                    var source = GenerateSource(derivedTypes);
+                    var source = GenerateSource(preloadTypes);
                     spc.AddSource("PreloadedAssemblies.g.cs", SourceText.From(source, Encoding.UTF8));
                 });
         }
 
-        private static ImmutableArray<string> FindDerivedTypes(Compilation compilation)
+        private static ImmutableArray<string> FindPreloadTypes(Compilation compilation)
         {
             var baseTypes = new[]
             {
@@ -66,21 +64,54 @@ namespace Microsoft.Agents.Core.Analyzers
                 compilation.GetTypeByMetadataName(ActivityTypeFullName),
             }.Where(static t => t is not null).ToImmutableArray();
 
-            if (baseTypes.IsDefaultOrEmpty)
-            {
-                return ImmutableArray<string>.Empty;
-            }
-
             var builder = ImmutableArray.CreateBuilder<string>();
 
             foreach (var assembly in compilation.References
                          .Select(compilation.GetAssemblyOrModuleSymbol)
                          .OfType<IAssemblySymbol>())
             {
-                CollectDerivedTypes(assembly.GlobalNamespace, baseTypes, builder);
+                if (!baseTypes.IsDefaultOrEmpty)
+                {
+                    CollectDerivedTypes(assembly.GlobalNamespace, baseTypes, builder);
+                }
+
+                CollectManifestTypes(assembly, builder);
             }
 
             return builder.ToImmutable();
+        }
+
+        private static void CollectManifestTypes(IAssemblySymbol assembly, ImmutableArray<string>.Builder builder)
+        {
+            foreach (var attribute in assembly.GetAttributes())
+            {
+                var attributeName = attribute.AttributeClass?.ToDisplayString();
+                if (attributeName != ChannelAdapterInitAssemblyAttributeFullName
+                    && attributeName != AgentServiceRegistrationAttributeFullName)
+                {
+                    continue;
+                }
+
+                if (attribute.ConstructorArguments.Length > 0
+                    && attribute.ConstructorArguments[0].Value is INamedTypeSymbol type
+                    && IsExternallyAccessible(type))
+                {
+                    builder.Add(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                }
+            }
+        }
+
+        private static bool IsExternallyAccessible(INamedTypeSymbol type)
+        {
+            for (var current = type; current != null; current = current.ContainingType)
+            {
+                if (current.DeclaredAccessibility != Accessibility.Public)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static void CollectDerivedTypes(
@@ -119,9 +150,7 @@ namespace Microsoft.Agents.Core.Analyzers
             sb.AppendFormat(/* lang=c#-test */ """
             // <auto-generated />
             using System;
-            using Microsoft.Agents.Core.Serialization;
-
-            [assembly: Microsoft.Agents.Core.Serialization.SerializationInitAssemblyAttribute(typeof(global::PreloadTypesRegistry))]
+            [assembly: Microsoft.Agents.Core.AgentSdkInitAssemblyAttribute(typeof(global::PreloadTypesRegistry))]
 
             internal static class PreloadTypesRegistry
             {{
@@ -129,8 +158,7 @@ namespace Microsoft.Agents.Core.Analyzers
 
                 static PreloadTypesRegistry()
                 {{
-                    // Referencing typeof(...) forces each owning assembly to load, triggering its
-                    // serialization initialization (EntityInit / SerializationInit).
+                    // Referencing typeof(...) forces each owning SDK extension assembly to load.
                     s_preloadedTypes = new[]
                     {{
                         {0}

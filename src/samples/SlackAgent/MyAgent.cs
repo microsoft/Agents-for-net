@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
@@ -18,7 +17,7 @@ namespace SlackAgent;
 public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
     [SlackMembersAddedRoute]
-    public async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task WelcomeMessageAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         foreach (ChannelAccount member in turnContext.Activity.MembersAdded)
         {
@@ -32,7 +31,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     // Demonstrates using the Slack API to reply to a message with the text "You said: {message text}" instead of
     // the typical ITurnContext.SendActivityAsync response.
     [SlackMessageRoute]
-    public async Task OnSlackMessageAsync(ITurnContext<ISlackActivity> turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task OnSlackMessageAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var channelData = turnContext.Activity.ChannelData;
 
@@ -44,13 +43,13 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
         }
         """;
 
-        await SlackExtension.CallAsync(turnContext, "chat.postMessage", message, channelData.ApiToken, cancellationToken);
+        await turnContext.Client.CallAsync("chat.postMessage", message, channelData.ApiToken, cancellationToken);
     }
     
     [SlackEventRoute]
-    public async Task OnSlackEventAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task OnSlackEventAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
+        var channelData = turnContext.Activity.ChannelData;
 
         var message = $$"""
         {
@@ -59,13 +58,13 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
         }
         """;
 
-        await SlackExtension.CallAsync(turnContext, "chat.postMessage", message, channelData.ApiToken, cancellationToken);
+        await turnContext.Client.CallAsync("chat.postMessage", message, channelData.ApiToken, cancellationToken);
     }
     
     [SlackMessageRoute("-buttons")]
-    public async Task OnSlackButtonsAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task OnSlackButtonsAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
+        var channelData = turnContext.Activity.ChannelData;
         var buttons = $$"""
         {
             "channel": "{{channelData.Channel}}",
@@ -96,11 +95,11 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
         }
         """;
 
-        await SlackExtension.CallAsync(turnContext, "chat.postMessage", buttons, channelData.ApiToken, cancellationToken);
+        await turnContext.Client.CallAsync("chat.postMessage", buttons, channelData.ApiToken, cancellationToken);
     }
 
     [SlackMessageRoute("-stream")]
-    public async Task OnSlackStreamMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public async Task OnSlackStreamMessageAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var stream = await SlackExtension.CreateStreamAsync(turnContext);
 
@@ -169,9 +168,9 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     }
 
     [SlackFeedbackLoopRoute]
-    public async Task OnSlackFeedbackLoopAsync(ITurnContext turnContext, ITurnState turnState, FeedbackData feedbackData, CancellationToken cancellationToken)
+    public async Task OnSlackFeedbackLoopAsync(ISlackTurnContext turnContext, ITurnState turnState, FeedbackData feedbackData, CancellationToken cancellationToken)
     {
-        var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
+        var channelData = turnContext.Activity.ChannelData;
         var message = $$"""
         {
             "channel": "{{channelData.Channel}}",
@@ -179,6 +178,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
             "thread_ts": "{{channelData.ThreadTs}}"
         }
         """;
-        await SlackExtension.CallAsync(turnContext, "chat.postMessage", message, channelData.ApiToken, cancellationToken);
+
+        await turnContext.Client.CallAsync("chat.postMessage", message, channelData.ApiToken, cancellationToken);
     }
 }

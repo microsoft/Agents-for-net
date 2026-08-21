@@ -147,6 +147,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         [InlineData(typeof(InstallationUpdateRouteAttribute), typeof(RouteHandler))]
         [InlineData(typeof(MessageRouteAttribute), typeof(RouteHandler))]
         [InlineData(typeof(EventRouteAttribute), typeof(RouteHandler))]
+        [InlineData(typeof(InvokeRouteAttribute), typeof(RouteHandler))]
         [InlineData(typeof(ConversationUpdateRouteAttribute), typeof(RouteHandler))]
         [InlineData(typeof(MembersAddedRouteAttribute), typeof(RouteHandler))]
         [InlineData(typeof(MembersRemovedRouteAttribute), typeof(RouteHandler))]

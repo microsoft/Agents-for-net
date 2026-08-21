@@ -46,6 +46,13 @@ namespace Microsoft.Agents.Authentication.Msal
                     }
                     else
                     {
+                        // The caller owns the response returned by this handler. Dispose only
+                        // intermediate timeout responses that will be replaced by another attempt.
+                        if (i < _maxRetryCount - 1)
+                        {
+                            response.Dispose();
+                        }
+
 #if DEBUG
                         System.Diagnostics.Trace.WriteLine($">>> MSAL RETRY ON TIMEOUT >>> {Environment.CurrentManagedThreadId} - {i}");
 #endif

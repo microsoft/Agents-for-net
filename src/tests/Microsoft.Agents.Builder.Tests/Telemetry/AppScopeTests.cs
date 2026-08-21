@@ -19,6 +19,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             string channelId = "test-channel",
             string conversationId = "conv-1",
             string activityId = "act-1",
+            string activityName = null,
             int attachmentCount = 0)
         {
             var attachments = new List<Attachment>();
@@ -28,6 +29,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
             return new TurnContext(new NotImplementedAdapter(), new Activity
             {
                 Type = type,
+                Name = activityName,
                 ChannelId = channelId,
                 Id = activityId,
                 Conversation = new ConversationAccount { Id = conversationId },
@@ -52,15 +54,27 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeOnTurn_Callback_SetsActivityMetadataTags()
         {
-            var ctx = CreateTurnContext(type: "message", channelId: "msteams", conversationId: "conv-99", activityId: "act-42");
+            var ctx = CreateTurnContext(type: "event", channelId: "msteams", conversationId: "conv-99", activityId: "act-42", activityName: "application/vnd.contoso.order");
             var scope = new ScopeOnTurn(ctx);
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
-            Assert.Equal("message", stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Equal("event", stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Equal("application/vnd.contoso.order", stopped.GetTagItem(TagNames.ActivityName));
             Assert.Equal("msteams", stopped.GetTagItem(TagNames.ActivityChannelId));
             Assert.Equal("conv-99", stopped.GetTagItem(TagNames.ConversationId));
             Assert.Equal("act-42", stopped.GetTagItem(TagNames.ActivityId));
+        }
+
+        [Fact]
+        public void ScopeOnTurn_Callback_LeavesActivityNameTagNull_WhenActivityNameIsNull()
+        {
+            var ctx = CreateTurnContext(activityName: null);
+            var scope = new ScopeOnTurn(ctx);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Null(stopped.GetTagItem(TagNames.ActivityName));
         }
 
         [Fact]

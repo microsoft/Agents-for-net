@@ -121,7 +121,7 @@ sequenceDiagram
 ```
 
 ## SignIn, ConsentRequired
-This represents the signin flow where Teams SSO token exchange fails because the user hasn't consented. Teams prompts for consent, then sends a verifyState invoke with a magic code. If OBO is configured, the OBO is performed on the token returned by the Token Service (in `Turn 3`) prior to setting the Turn Token. Note that `Turn 4` is the same flow as `SignedIn` above.
+This represents the signin flow where Teams SSO token exchange fails because the user hasn't consented. Teams prompts for consent, then sends another tokenExchange invoke with a post-consent token. If OBO is configured, the OBO is performed on the token returned by the Token Service (in `Turn 3`) prior to setting the Turn Token. Note that `Turn 4` is the same flow as `SignedIn` above.
 
 ```mermaid
 sequenceDiagram
@@ -173,11 +173,11 @@ sequenceDiagram
     %% turn 3
     rect rgba(170, 128, 128, .1)
     Note over Teams, Agent: Turn 3 (invoke)
-    Teams->>AgentApplication: Invoke(signin/verifyState)
+    Teams->>AgentApplication: Invoke(signin/tokenExchange)
     activate AgentApplication
     AgentApplication->>UserAuthorization: SignIn (continuation)
     activate UserAuthorization
-    UserAuthorization->>TokenService: GetUserToken(code)
+    UserAuthorization->>TokenService: ExchangeToken()
     activate TokenService
     TokenService-->>UserAuthorization: TokenResponse (200)
     deactivate TokenService
@@ -258,11 +258,7 @@ sequenceDiagram
     TokenService-->>UserAuthorization: ErrorResponse (non-consent error)
     deactivate TokenService
     UserAuthorization->>UserAuthorization: Delete FlowState
-    UserAuthorization->>Agent: UserSignInFailureHandler
-    activate Agent
-    Agent->>Teams: Activity Error Response
-    deactivate Agent
-    UserAuthorization-->>AgentApplication: SignIn (complete)
+    UserAuthorization-->>AgentApplication: SignIn (error)
     deactivate UserAuthorization
     AgentApplication-->>Teams: InvokeResponse:400 (turn ends)
     deactivate AgentApplication
@@ -273,7 +269,7 @@ sequenceDiagram
 
 | Component | Path |
 |-----------|------|
-| UserAuthorization | `src/libraries/Builder/Microsoft.Agents.Builder/UserAuth/` |
+| UserAuthorization | `src/libraries/Builder/Microsoft.Agents.Builder/App/UserAuth/UserAuthorization.cs` |
 | Authentication.Msal | `src/libraries/Authentication/Authentication.Msal/` |
 | Token Service Client | `src/libraries/Client/Microsoft.Agents.Connector/` |
 | AgentApplication (SignIn orchestration) | `src/libraries/Builder/Microsoft.Agents.Builder/App/AgentApplication.cs` |

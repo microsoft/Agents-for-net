@@ -5,8 +5,8 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -29,8 +29,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly ConcurrentDictionary<ActivityWithClaims, Task> _activitiesProcessing = new();
         private readonly IActivityTaskQueue _activityQueue;
-        private readonly int _shutdownTimeoutSeconds;
+        private readonly HostedActivityServiceOptions _serviceOptions;
         private readonly IServiceProvider _serviceProvider;
+        private int _stopping;
 
         /// <summary>
         /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedActivityService"/> instance for processing Activities
@@ -44,17 +45,54 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <param name="activityTaskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/>Queue of activities to be processed.  This class
         /// contains a semaphore which the BackgroundService waits on to be notified of activities to be processed.</param>
         /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
-        /// <param name="options"></param>
-        public HostedActivityService(IServiceProvider provider, IConfiguration config, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options = null)
+        /// <param name="options">Legacy adapter options.</param>
+        [Obsolete("Use the constructor overload accepting HostedActivityServiceOptions instead.")]
+        public HostedActivityService(IServiceProvider provider, IConfiguration config, IActivityTaskQueue activityTaskQueue, ILogger<HostedActivityService> logger, AdapterOptions options)
+            : this(provider, config, activityTaskQueue, logger, CreateHostedActivityServiceOptions(config, options))
+        {
+        }
+
+        /// <summary>
+        /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedActivityService"/> instance for processing Activities
+        /// on background threads.
+        /// </summary>
+        /// <remarks>
+        /// It is important to note that exceptions on the background thread are only logged in the <see cref="Microsoft.Extensions.Logging.ILogger"/>.
+        /// </remarks>
+        /// <param name="provider"></param>
+        /// <param name="config">Application configuration.</param>
+        /// <param name="activityTaskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/>Queue of activities to be processed.</param>
+        /// <param name="logger">Logger to use for logging BackgroundService processing and exception information.</param>
+        /// <param name="hostedOptions">Options for the hosted activity service.</param>
+        public HostedActivityService(
+            IServiceProvider provider,
+            IConfiguration config,
+            IActivityTaskQueue activityTaskQueue,
+            ILogger<HostedActivityService> logger,
+            HostedActivityServiceOptions hostedOptions = null)
         {
             ArgumentNullException.ThrowIfNull(config);
             ArgumentNullException.ThrowIfNull(activityTaskQueue);
             ArgumentNullException.ThrowIfNull(provider);
 
-            _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
+            _serviceOptions = hostedOptions ?? new HostedActivityServiceOptions(config);
+            
             _activityQueue = activityTaskQueue;
             _logger = logger ?? NullLogger<HostedActivityService>.Instance;
             _serviceProvider = provider;
+        }
+
+        private static HostedActivityServiceOptions CreateHostedActivityServiceOptions(IConfiguration config, AdapterOptions options)
+        {
+            var hostedOptions = new HostedActivityServiceOptions(config);
+            if (options != null)
+            {
+#pragma warning disable CS0618
+                hostedOptions.ShutdownTimeoutSeconds = options.ShutdownTimeoutSeconds;
+#pragma warning restore CS0618
+            }
+
+            return hostedOptions;
         }
 
         /// <summary>
@@ -64,15 +102,25 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// <returns>The Task to be executed asynchronously.</returns>
         public override async Task StopAsync(CancellationToken stoppingToken)
         {
+            // Some hosts (notably WebApplicationFactory/TestServer teardown, see
+            // https://github.com/dotnet/aspnetcore/issues/40271) can call StopAsync more than once.
+            // Guard against re-entering the write lock on the same thread, which throws
+            // LockRecursionException since ReaderWriterLockSlim defaults to NoRecursion.
+            if (Interlocked.Exchange(ref _stopping, 1) == 1)
+            {
+                await base.StopAsync(stoppingToken).ConfigureAwait(false);
+                return;
+            }
+
             _logger.LogInformation("Queued Hosted Service is stopping.");
 
             _activityQueue.Stop();
 
             // Obtain a write lock and do not release it, preventing new tasks from starting
-            if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
+            if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_serviceOptions.ShutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
+                await Task.WhenAny(Task.WhenAll(_activitiesProcessing.Values), Task.Delay(TimeSpan.FromSeconds(_serviceOptions.ShutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
             }
 
             await base.StopAsync(stoppingToken).ConfigureAwait(false);
@@ -130,13 +178,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 ["ConversationId"] = activityWithClaims.Activity.Conversation?.Id
             });
 
+            AsyncServiceScope? turnScope = null;
             try
             {
                 // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
                 // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                 // and disposed before this gets called.
-                var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
-                agent ??= _serviceProvider.GetService(typeof(IAgent));
+                //
+                // Resolving from the root IServiceProvider promotes any scoped registration in the Agent's dependency graph to
+                // the root scope, so a single instance is shared by every turn for the lifetime of the process. When
+                // HostedActivityServiceOptions.UseScopedServices is set, the turn gets its own scope instead, which is disposed
+                // once the turn completes. The SDK registers no scoped services, so this only affects registrations made by
+                // the application.
+                // Note that disposable transients resolved for the turn - IAgent itself is registered transient - are then
+                // disposed with the turn scope instead of being retained by the root scope until the host shuts down.
+                turnScope = _serviceOptions.UseScopedServices ? _serviceProvider.CreateAsyncScope() : null;
+                var turnServices = turnScope?.ServiceProvider ?? _serviceProvider;
+                var agent = turnServices.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
+                agent ??= turnServices.GetService(typeof(IAgent));
 
                 HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
                 activityWithClaims.TelemetryActivity?.Start();
@@ -186,6 +245,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 if (activityWithClaims.OnComplete != null)
                 {
                     await activityWithClaims.OnComplete(invokeResponse).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                if (turnScope.HasValue)
+                {
+                    try
+                    {
+                        await turnScope.Value.DisposeAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error occurred disposing activity service scope.");
+                    }
                 }
             }
         }

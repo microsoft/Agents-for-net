@@ -26,7 +26,9 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         /// </summary>
         /// <param name="conversationId">The identifier of the conversation being continued.</param>
         /// <param name="activity">The continuation activity used to resume the conversation.</param>
-        public ScopeContinueConversation(string conversationId, IActivity activity) : base(Constants.ScopeContinueConversation)
+        /// <param name="link">The activity link for telemetry correlation.</param>
+        public ScopeContinueConversation(string conversationId, IActivity activity, System.Diagnostics.ActivityLink? link)
+            : base(Constants.ScopeContinueConversation, System.Diagnostics.ActivityKind.Internal, link)
         {
             _conversationId = conversationId;
             _activity = activity;

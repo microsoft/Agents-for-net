@@ -89,6 +89,43 @@ extends:
           - checkout: tools
             path: s/tools
 
+          - task: PowerShell@2
+            displayName: Replace nuget.config files
+            inputs:
+              targetType: inline
+              script: |
+                $repoRoot = "$(Build.SourcesDirectory)"
+                $sourceConfig = Join-Path $repoRoot ".azdo\nuget.config"
+
+                if (-not (Test-Path $sourceConfig)) {
+                  throw "Source nuget.config not found at $sourceConfig"
+                }
+
+                Get-ChildItem -Path $repoRoot -Filter nuget.config -File -Recurse |
+                  Where-Object { $_.FullName -ne $sourceConfig } |
+                  ForEach-Object {
+                    Copy-Item -Path $sourceConfig -Destination $_.FullName -Force
+                    Write-Host "Replaced $($_.FullName)"
+                  }
+
+          - task: UseDotNet@2
+            displayName: Install .NET 8 SDK
+            inputs:
+              packageType: sdk
+              version: 8.0.x
+              performMultiLevelLookup: true
+            env:
+              ob_restore_phase: true
+
+          - task: UseDotNet@2
+            displayName: Install .NET SDK from global.json
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              performMultiLevelLookup: true
+            env:
+              ob_restore_phase: true
+
           - task: NuGetAuthenticate@1
 
           - script: dotnet tool restore --configfile $(Build.SourcesDirectory)/.azdo/nuget.config

@@ -320,16 +320,32 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeSendActivity_CreatesActivity_WithCorrectName()
         {
-            using var scope = new ScopeSendActivity("conv-send", CreateTestActivity());
+            using var scope = new ScopeSendActivity("conv-send", CreateTestActivity(), null);
 
             var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.proactive.send_activity", started.OperationName);
+            Assert.Empty(started.Links);
+        }
+
+        [Fact]
+        public void ScopeSendActivity_WithLink_AddsLinkToActivity()
+        {
+            var linkContext = CreateActivityContext();
+
+            using var scope = new ScopeSendActivity(
+                "conv-send",
+                CreateTestActivity(),
+                new System.Diagnostics.ActivityLink(linkContext));
+
+            var started = Assert.Single(StartedActivities);
+            var link = Assert.Single(started.Links);
+            Assert.Equal(linkContext, link.Context);
         }
 
         [Fact]
         public void ScopeSendActivity_Callback_SetsTags()
         {
-            var scope = new ScopeSendActivity("conv-send", CreateTestActivity(type: "event", channelId: "msteams"));
+            var scope = new ScopeSendActivity("conv-send", CreateTestActivity(type: "event", channelId: "msteams"), null);
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -341,7 +357,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeSendActivity_Callback_SetsNullActivityTags_WhenActivityPropertiesAreNull()
         {
-            var scope = new ScopeSendActivity("conv-send", CreateTestActivity(type: null, channelId: null));
+            var scope = new ScopeSendActivity("conv-send", CreateTestActivity(type: null, channelId: null), null);
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -353,7 +369,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeSendActivity_Callback_SetsNullConversationIdTag_WhenConversationIdIsNull()
         {
-            var scope = new ScopeSendActivity(null, CreateTestActivity(type: "event", channelId: "msteams"));
+            var scope = new ScopeSendActivity(null, CreateTestActivity(type: "event", channelId: "msteams"), null);
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -365,7 +381,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeSendActivity_SetError_SetsErrorStatus()
         {
-            var scope = new ScopeSendActivity("conv-send", CreateTestActivity());
+            var scope = new ScopeSendActivity("conv-send", CreateTestActivity(), null);
             scope.SetError(new InvalidOperationException("send activity error"));
             scope.Dispose();
 
@@ -380,16 +396,32 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeContinueConversation_CreatesActivity_WithCorrectName()
         {
-            using var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity());
+            using var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity(), null);
 
             var started = Assert.Single(StartedActivities);
             Assert.Equal("agents.proactive.continue_conversation", started.OperationName);
+            Assert.Empty(started.Links);
+        }
+
+        [Fact]
+        public void ScopeContinueConversation_WithLink_AddsLinkToActivity()
+        {
+            var linkContext = CreateActivityContext();
+
+            using var scope = new ScopeContinueConversation(
+                "conv-continue",
+                CreateTestActivity(),
+                new System.Diagnostics.ActivityLink(linkContext));
+
+            var started = Assert.Single(StartedActivities);
+            var link = Assert.Single(started.Links);
+            Assert.Equal(linkContext, link.Context);
         }
 
         [Fact]
         public void ScopeContinueConversation_Callback_SetsTags()
         {
-            var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity(type: "event", channelId: "directline"));
+            var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity(type: "event", channelId: "directline"), null);
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -401,7 +433,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeContinueConversation_Callback_SetsNullActivityTags_WhenActivityPropertiesAreNull()
         {
-            var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity(type: null, channelId: null));
+            var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity(type: null, channelId: null), null);
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -413,7 +445,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeContinueConversation_Callback_SetsNullConversationIdTag_WhenConversationIdIsNull()
         {
-            var scope = new ScopeContinueConversation(null, CreateTestActivity(type: "event", channelId: "directline"));
+            var scope = new ScopeContinueConversation(null, CreateTestActivity(type: "event", channelId: "directline"), null);
             scope.Dispose();
 
             var stopped = Assert.Single(StoppedActivities);
@@ -425,7 +457,7 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         [Fact]
         public void ScopeContinueConversation_SetError_SetsErrorStatus()
         {
-            var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity());
+            var scope = new ScopeContinueConversation("conv-continue", CreateTestActivity(), null);
             scope.SetError(new InvalidOperationException("continue conversation error"));
             scope.Dispose();
 
@@ -434,5 +466,15 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
         }
 
         #endregion
+
+        private static System.Diagnostics.ActivityContext CreateActivityContext()
+        {
+            return new System.Diagnostics.ActivityContext(
+                System.Diagnostics.ActivityTraceId.CreateRandom(),
+                System.Diagnostics.ActivitySpanId.CreateRandom(),
+                System.Diagnostics.ActivityTraceFlags.Recorded,
+                traceState: "vendor=value",
+                isRemote: true);
+        }
     }
 }

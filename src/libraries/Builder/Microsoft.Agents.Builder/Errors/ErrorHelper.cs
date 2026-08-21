@@ -89,5 +89,6 @@ namespace Microsoft.Agents.Builder.Errors
         internal static readonly AgentErrorDefinition ProactiveInvalidConversationReferenceInstance = new AgentErrorDefinition(-50045, Properties.Resources.ProactiveInvalidConversationReferenceInstance, "https://aka.ms/M365AgentsErrorCodes/#-50045");
         internal static readonly AgentErrorDefinition ProactiveInvalidConversationParametersInstance = new AgentErrorDefinition(-50046, Properties.Resources.ProactiveInvalidConversationParametersInstance, "https://aka.ms/M365AgentsErrorCodes/#-50046");
         internal static readonly AgentErrorDefinition ProactiveNotAllHandlersSignedIn = new AgentErrorDefinition(-50047, Properties.Resources.ProactiveNotAllHandlersSignedIn, "https://aka.ms/M365AgentsErrorCodes/#-50047");
+        internal static readonly AgentErrorDefinition ProactiveAdapterRegistryNotAvailable = new AgentErrorDefinition(-50048, Properties.Resources.ProactiveAdapterRegistryNotAvailable, "https://aka.ms/M365AgentsErrorCodes/#-50048");
     }
 }
