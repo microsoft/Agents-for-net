@@ -10,7 +10,8 @@ namespace Microsoft.Agents.Builder
     //   2 = ProcessProactive called (LogProcessProactive)
     //   3 = ProcessActivity called (LogProcessActivity)
     //   4 = Anonymous access warning (LogAnonymousAccess)
-    //   Future messages: start from 5
+    //   5 = Anonymous access from trusted local transport (LogAnonymousAccessTrustedTransport)
+    //   Future messages: start from 6
     internal static partial class ChannelServiceAdapterLog
     {
 #if !NETSTANDARD
@@ -29,6 +30,10 @@ namespace Microsoft.Agents.Builder
         [LoggerMessage(EventId = 4, Level = LogLevel.Warning,
             Message = "Anonymous access is enabled for channel: {ChannelId}.")]
         internal static partial void LogAnonymousAccess(ILogger logger, string channelId);
+
+        [LoggerMessage(EventId = 5, Level = LogLevel.Information,
+            Message = "Anonymous access is enabled for channel: {ChannelId} via trusted local transport.")]
+        internal static partial void LogAnonymousAccessTrustedTransport(ILogger logger, string channelId);
 #else
         internal static void LogTurnResponse(ILogger logger, string requestId, string activity)
         {
@@ -48,6 +53,11 @@ namespace Microsoft.Agents.Builder
         internal static void LogAnonymousAccess(ILogger logger, string channelId)
         {
             logger.LogWarning("Anonymous access is enabled for channel: {ChannelId}.", channelId);
+        }
+
+        internal static void LogAnonymousAccessTrustedTransport(ILogger logger, string channelId)
+        {
+            logger.LogInformation("Anonymous access is enabled for channel: {ChannelId} via trusted local transport.", channelId);
         }
 #endif
     }

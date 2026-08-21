@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> Video card. </summary>
-    public class VideoCard
+    public class VideoCard : Card
     {
         public VideoCard() 
         {
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.VideoCard"/>.</param>
         /// <returns> The generated attachment.</returns>
-        public Attachment ToAttachment()
+        public override Attachment ToAttachment()
         {
             return new Attachment
             {
@@ -91,5 +91,12 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Supplementary parameter for this card. </summary>
         [JsonConverter(typeof(Serialization.Converters.ObjectTypeConverter))]
         public object Value { get; set; }
+
+        /// <summary> Adds a media URL and returns this card. </summary>
+        public VideoCard AddMedia(MediaUrl media) { Media ??= []; Media.Add(media); return this; }
+        /// <summary> Adds a media URL by string and returns this card. </summary>
+        public VideoCard AddMedia(string url, string profile = null) { Media ??= []; Media.Add(new MediaUrl(url, profile)); return this; }
+        /// <summary> Adds a button and returns this card. </summary>
+        public VideoCard AddButton(CardAction button) { Buttons ??= []; Buttons.Add(button); return this; }
     }
 }

@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// The instance's persisted state.
         /// </value>
         [JsonPropertyName("state")]
-        public IDictionary<string, object> State { get; set; }
+        public PersistedState State { get; set; }
 
         /// <summary>
         /// Gets or sets a stack index. Positive values are indexes within the current DC and negative values are 

@@ -2,8 +2,13 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector.RestClients;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using System;
+using System.IO;
 using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Agents.Connector.Tests
@@ -155,5 +160,46 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Contains("connectionName=c1", query);
             Assert.Contains("channelId=msteams", query);
         }
+
+#if NET8_0_OR_GREATER
+        [Fact]
+        public async Task Build_WithActivityBinaryAttachments_MovesStreamsToRequestOptions()
+        {
+            var stream = new MemoryStream(new byte[] { 1, 2, 3, 4 });
+            var bytes = new byte[] { 5, 6, 7 };
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "with stream",
+                Attachments =
+                [
+                    new Attachment { ContentType = "image/png", Content = stream },
+                    new Attachment { ContentType = "audio/wav", Content = bytes },
+                    new Attachment { ContentType = "application/json", Content = new { Name = "inline" } },
+                ],
+            };
+
+            using var msg = RestRequest.Post("v3/conversations/c/activities")
+                .WithBody(activity)
+                .Build(Base);
+
+            Assert.True(msg.Options.TryGetValue(RestRequest.StreamingAttachmentsOption, out var streamContents));
+            Assert.Equal(2, streamContents.Count);
+            Assert.Equal("image/png", streamContents[0].ContentType);
+            Assert.Equal(new byte[] { 1, 2, 3, 4 }, streamContents[0].Body);
+            Assert.Equal("audio/wav", streamContents[1].ContentType);
+            Assert.Equal(new byte[] { 5, 6, 7 }, streamContents[1].Body);
+            Assert.Equal(0, stream.Position);
+
+            var json = await msg.Content!.ReadAsStringAsync();
+            var serializedActivity = JsonSerializer.Deserialize<Activity>(json, ProtocolJsonSerializer.SerializationOptions);
+            var attachment = Assert.Single(serializedActivity!.Attachments);
+            Assert.Equal("application/json", attachment.ContentType);
+
+            Assert.Equal(3, activity.Attachments.Count);
+            Assert.Same(stream, activity.Attachments[0].Content);
+            Assert.Same(bytes, activity.Attachments[1].Content);
+        }
+#endif
     }
 }

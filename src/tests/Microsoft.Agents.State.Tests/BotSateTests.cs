@@ -196,6 +196,21 @@ namespace Microsoft.Agents.State.Tests
         }
 
         [Fact]
+        public async Task State_GetValueWithNullDefaultFactory_ReturnsNull()
+        {
+            // Arrange - verifies that a factory returning null doesn't throw
+            var userState = new UserState(new MemoryStorage());
+            var context = TestUtilities.CreateEmptyContext();
+            await userState.LoadAsync(context);
+
+            // Act
+            var value = userState.GetValue<string>("nullProp", () => null);
+
+            // Assert
+            Assert.Null(value);
+        }
+
+        [Fact]
         public async Task State_POCO_NoDefault()
         {
             // Arrange
@@ -867,6 +882,90 @@ namespace Microsoft.Agents.State.Tests
             }
 
             protected override string GetStorageKey(ITurnContext turnContext) => "CustomKey";
+        }
+
+        [Fact]
+        public async Task State_ConcurrentGetValueAndSaveChanges_DoesNotThrow()
+        {
+            // Arrange - simulates the streaming scenario where OnSendActivities
+            // reads state on a thread-pool thread while the turn thread writes/saves.
+            var storage = new MemoryStorage();
+            var userState = new UserState(storage);
+            var context = TestUtilities.CreateEmptyContext();
+            await userState.LoadAsync(context);
+
+            // Seed some initial values
+            for (int i = 0; i < 10; i++)
+            {
+                userState.SetValue($"key{i}", $"value{i}");
+            }
+
+            // Timeout is a safety net only; the test completes when the writer finishes.
+            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            Exception capturedException = null;
+
+            // Act - concurrent readers (simulating OnSendActivities on timer thread)
+            var readerTask = Task.Run(async () =>
+            {
+                try
+                {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        for (int i = 0; i < 10; i++)
+                        {
+                            _ = userState.GetValue($"key{i}", () => "default");
+                            _ = userState.GetValue($"dynamic{i}", () => $"created-{i}");
+                        }
+                        await Task.Yield();
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    capturedException = ex;
+                    cts.Cancel();
+                }
+            });
+
+            // Writer + saver (simulating the turn thread)
+            var writerTask = Task.Run(async () =>
+            {
+                try
+                {
+                    for (int iteration = 0; iteration < 100 && !cts.IsCancellationRequested; iteration++)
+                    {
+                        for (int i = 0; i < 10; i++)
+                        {
+                            userState.SetValue($"key{i}", $"value{iteration}-{i}");
+                        }
+                        await userState.SaveChangesAsync(context);
+                    }
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    capturedException = ex;
+                    cts.Cancel();
+                }
+                finally
+                {
+                    // Stop the reader as soon as the writer is done
+                    cts.Cancel();
+                }
+            });
+
+            await Task.WhenAll(readerTask, writerTask);
+
+            // Assert - no exceptions from concurrent access
+            Assert.Null(capturedException);
+
+            // Verify state can still be saved and loaded correctly
+            await userState.SaveChangesAsync(context);
+
+            var userState2 = new UserState(storage);
+            var context2 = TestUtilities.CreateEmptyContext();
+            await userState2.LoadAsync(context2);
+
+            // Values should be present (exact values depend on timing, but keys must exist)
+            Assert.NotNull(userState2.GetValue<string>("key0"));
         }
     }
 }

@@ -1,0 +1,29 @@
+{
+  "tool": "Credential Scanner",
+  "suppressions": [
+    {
+      "placeholder": "<USER>",
+      "_justification": "connection string placeholders"
+    },
+    {
+      "placeholder": "<PASSWORD>",
+      "_justification": "connection string placeholders"
+    },
+    {
+      "placeholder": "<DOMAIN>",
+      "_justification": "connection string placeholders"
+    },
+    {
+      "placeholder": "<SERVERHOSTNAME>",
+      "_justification": "connection string placeholders"
+    },
+    {
+      "placeholder": "<PORT>",
+      "_justification": "connection string placeholders"
+    },
+    {
+      "placeholder": "<CRMORG>",
+      "_justification": "connection string placeholders"
+    }
+  ]
+}

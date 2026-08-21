@@ -1,0 +1,25 @@
+<Project>
+    <!--
+      Import the repo-root Directory.Build.targets first. MSBuild only auto-imports the *nearest*
+      Directory.Build.targets, so this samples-level file must chain to the parent to preserve the
+      shared signing/versioning targets defined there.
+    -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)..\'))" />
+
+    <!--
+      Link the single shared Shared\AspNetExtensions.cs into each sample. This lives in
+      Directory.Build.targets (evaluated after the project body) so that samples which set
+      IncludeAspNetSampleHelpers=false in their own .csproj are honored.
+    -->
+    <ItemGroup Condition="'$(IncludeAspNetSampleHelpers)' == 'true'">
+        <Compile Include="$(SamplesRoot)Shared\AspNetExtensions.cs" Link="AspNetExtensions.cs" />
+    </ItemGroup>
+
+    <!--
+      Link the single shared Shared\AgentOtelExtension.cs into samples that opt in via
+      IncludeOtelSampleHelpers=true (and supply the OpenTelemetry package references).
+    -->
+    <ItemGroup Condition="'$(IncludeOtelSampleHelpers)' == 'true'">
+        <Compile Include="$(SamplesRoot)Shared\AgentOtelExtension.cs" Link="AgentOtelExtension.cs" />
+    </ItemGroup>
+</Project>

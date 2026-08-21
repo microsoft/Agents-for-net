@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Core.Models
 {
     /// <summary> A Hero card (card with a single, large image). </summary>
-    public class HeroCard
+    public class HeroCard : Card
     {
         /// <summary> Initializes a new instance of HeroCard. </summary>
         public HeroCard()
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Core.Models
         /// </summary>
         /// <param name="card"> The instance of <see cref="Microsoft.Agents.Core.Models.HeroCard"/>.</param>
         /// <returns> The generated attachment.</returns>
-        public Attachment ToAttachment()
+        public override Attachment ToAttachment()
         {
             return new Attachment
             {
@@ -65,5 +65,16 @@ namespace Microsoft.Agents.Core.Models
         public IList<CardAction> Buttons { get; set; }
         /// <summary> A clickable action. </summary>
         public CardAction Tap { get; set; }
+
+        /// <summary> Adds an image and returns this card. </summary>
+        public HeroCard AddImage(CardImage image) { Images ??= []; Images.Add(image); return this; }
+        /// <summary> Adds an image by URL and returns this card. </summary>
+        public HeroCard AddImage(string url, string alt = null) { Images ??= []; Images.Add(new CardImage(url, alt)); return this; }
+        /// <summary> Adds a button and returns this card. </summary>
+        public HeroCard AddButton(CardAction button) { Buttons ??= []; Buttons.Add(button); return this; }
+        /// <summary> Adds a button by title/type/value and returns this card. </summary>
+        public HeroCard AddButton(string title, string type = ActionTypes.ImBack, object value = null) { Buttons ??= []; Buttons.Add(new CardAction(type: type, title: title, value: value ?? title)); return this; }
+        /// <summary> Adds one or more buttons and returns this card. </summary>
+        public HeroCard AddButtons(params CardAction[] buttons) { if (buttons == null) { return this; } Buttons ??= []; foreach (var button in buttons) { Buttons.Add(button); } return this; }
     }
 }

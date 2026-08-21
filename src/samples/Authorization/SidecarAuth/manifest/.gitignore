@@ -1,0 +1,2 @@
+# Packaged manifest artifacts are generated locally for upload and should not be committed.
+*.zip

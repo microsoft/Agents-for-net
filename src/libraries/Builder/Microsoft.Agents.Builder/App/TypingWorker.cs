@@ -22,6 +22,7 @@ namespace Microsoft.Agents.Builder.App
     {
         private readonly ITurnContext _turnContext;
         private readonly ITypingChannelStrategy _strategy;
+        private readonly TimeProvider _timeProvider;
 
         private readonly CancellationTokenSource _stopCts = new();
         private TaskCompletionSource<bool> _resetTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -30,17 +31,24 @@ namespace Microsoft.Agents.Builder.App
         private int _started;   // 0 = not started, 1 = started (Interlocked)
         private int _disposed;  // 0 = not disposed, 1 = disposed (Interlocked)
 
-        private TypingWorker(ITurnContext turnContext, ITypingChannelStrategy strategy)
+        private TypingWorker(ITurnContext turnContext, ITypingChannelStrategy strategy, TimeProvider timeProvider)
         {
             _turnContext = turnContext;
             _strategy = strategy;
+            _timeProvider = timeProvider;
         }
 
         /// <summary>
         /// Creates a <see cref="TypingWorker"/> for the current turn, or returns <c>null</c> if
         /// the activity is not a message or typing is not applicable.
         /// </summary>
-        public static TypingWorker? Create(ITurnContext turnContext, TypingOptions options)
+        /// <param name="turnContext">The turn context.</param>
+        /// <param name="options">The typing options.</param>
+        /// <param name="timeProvider">
+        /// Time source used for the delay/interval waits. Defaults to <see cref="TimeProvider.System"/>.
+        /// Tests inject a fake time provider to drive the worker deterministically without real delays.
+        /// </param>
+        public static TypingWorker? Create(ITurnContext turnContext, TypingOptions options, TimeProvider? timeProvider = null)
         {
             if (turnContext.Activity.Type != ActivityTypes.Message)
             {
@@ -75,7 +83,7 @@ namespace Microsoft.Agents.Builder.App
                     $"{nameof(ITypingChannelStrategy.IntervalMs)} must be >= 0.");
             }
 
-            return new TypingWorker(turnContext, strategy);
+            return new TypingWorker(turnContext, strategy, timeProvider ?? TimeProvider.System);
         }
 
         /// <summary>
@@ -127,8 +135,21 @@ namespace Microsoft.Agents.Builder.App
         {
             while (true)
             {
-                var resetTask = _resetTcs.Task;
-                await Task.WhenAny(Task.Delay(ms, stopToken), resetTask).ConfigureAwait(false);
+                var currentTcs = Volatile.Read(ref _resetTcs);
+                var resetTask = currentTcs.Task;
+
+                // A reset may have fired while we were outside WaitAsync (e.g., during
+                // SendTypingActivityAsync). Consume the signal and restart the countdown.
+                if (resetTask.IsCompleted)
+                {
+                    Interlocked.CompareExchange(
+                        ref _resetTcs,
+                        new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously),
+                        currentTcs);
+                    continue;
+                }
+
+                await Task.WhenAny(DelayAsync(ms, stopToken), resetTask).ConfigureAwait(false);
 
                 stopToken.ThrowIfCancellationRequested();
 
@@ -137,8 +158,22 @@ namespace Microsoft.Agents.Builder.App
                     return; // Delay elapsed without reset — done.
                 }
 
-                // Reset fired — restart the countdown.
+                // Reset fired — replace TCS and restart the countdown.
+                Interlocked.CompareExchange(
+                    ref _resetTcs,
+                    new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously),
+                    currentTcs);
             }
+        }
+
+        private Task DelayAsync(int ms, CancellationToken cancellationToken)
+        {
+            var delay = TimeSpan.FromMilliseconds(ms);
+#if NET8_0_OR_GREATER
+            return Task.Delay(delay, _timeProvider, cancellationToken);
+#else
+            return _timeProvider.Delay(delay, cancellationToken);
+#endif
         }
 
         private Task<ResourceResponse[]> OnSendActivitiesAsync(
@@ -168,10 +203,25 @@ namespace Microsoft.Agents.Builder.App
             return next();
         }
 
-        private void ResetInterval()
+        internal void ResetInterval()
         {
-            var old = Interlocked.Exchange(ref _resetTcs, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
-            old.TrySetResult(true);
+            while (true)
+            {
+                var tcs = Volatile.Read(ref _resetTcs);
+                if (tcs.TrySetResult(true))
+                {
+                    return; // Successfully signaled the active TCS.
+                }
+
+                // TCS already completed — either WaitAsync is about to swap it, or a
+                // prior reset already signaled it.  If _resetTcs was replaced (WaitAsync
+                // consumed the signal and installed a new TCS), retry so the new TCS is
+                // signaled.  Otherwise the pending signal will be consumed on next entry.
+                if (Volatile.Read(ref _resetTcs) == tcs)
+                {
+                    return;
+                }
+            }
         }
 
         private async Task SendTypingActivityAsync(CancellationToken cancellationToken)

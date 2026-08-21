@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+#pragma warning disable CS0618 // This test intentionally exercises the obsolete Teams extension
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +15,7 @@ using System.Threading.Tasks;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Connector;
+using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;

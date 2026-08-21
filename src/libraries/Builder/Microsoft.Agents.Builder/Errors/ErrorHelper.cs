@@ -73,6 +73,7 @@ namespace Microsoft.Agents.Builder.Errors
         // RouteBuilders
         internal static readonly AgentErrorDefinition RouteSelectorAlreadyDefined = new AgentErrorDefinition(-50033, Properties.Resources.RouteSelectorAlreadyDefined, "https://aka.ms/M365AgentsErrorCodes/#-50033");
         internal static readonly AgentErrorDefinition RouteBuilderMissingProperty = new AgentErrorDefinition(-50034, Properties.Resources.RouteBuilderMissingProperty, "https://aka.ms/M365AgentsErrorCodes/#-50034");
+        internal static readonly AgentErrorDefinition RouteHandlerSignatureMismatch = new AgentErrorDefinition(-50048, Properties.Resources.RouteHandlerSignatureMismatch, "https://aka.ms/M365AgentsErrorCodes/#-50048");
         // Proactive
         internal static readonly AgentErrorDefinition ProactiveConversationNotFound = new AgentErrorDefinition(-50034, Properties.Resources.ProactiveConversationNotFound, "https://aka.ms/M365AgentsErrorCodes/#-50034");
         internal static readonly AgentErrorDefinition ProactiveConversationRequired = new AgentErrorDefinition(-50035, Properties.Resources.ProactiveConversationRequired, "https://aka.ms/M365AgentsErrorCodes/#-50035");
@@ -88,5 +89,6 @@ namespace Microsoft.Agents.Builder.Errors
         internal static readonly AgentErrorDefinition ProactiveInvalidConversationReferenceInstance = new AgentErrorDefinition(-50045, Properties.Resources.ProactiveInvalidConversationReferenceInstance, "https://aka.ms/M365AgentsErrorCodes/#-50045");
         internal static readonly AgentErrorDefinition ProactiveInvalidConversationParametersInstance = new AgentErrorDefinition(-50046, Properties.Resources.ProactiveInvalidConversationParametersInstance, "https://aka.ms/M365AgentsErrorCodes/#-50046");
         internal static readonly AgentErrorDefinition ProactiveNotAllHandlersSignedIn = new AgentErrorDefinition(-50047, Properties.Resources.ProactiveNotAllHandlersSignedIn, "https://aka.ms/M365AgentsErrorCodes/#-50047");
+        internal static readonly AgentErrorDefinition ProactiveAdapterRegistryNotAvailable = new AgentErrorDefinition(-50048, Properties.Resources.ProactiveAdapterRegistryNotAvailable, "https://aka.ms/M365AgentsErrorCodes/#-50048");
     }
 }

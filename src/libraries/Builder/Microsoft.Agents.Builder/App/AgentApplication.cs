@@ -1,12 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Telemetry.App.Scopes;
 using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
 using System;
@@ -27,6 +30,7 @@ namespace Microsoft.Agents.Builder.App
     public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
+        private readonly string _agentName;
 
         private readonly RouteList _routes;
         private readonly ConcurrentQueue<TurnEventHandler> _beforeTurn;
@@ -46,6 +50,8 @@ namespace Microsoft.Agents.Builder.App
             Options = options;
 
             Logger = options.LoggerFactory?.CreateLogger(typeof(AgentApplication)) ?? AgentApplicationOptions.DefaultLoggerFactory.CreateLogger<AgentApplication>();
+
+            _agentName = GetType().GetCustomAttribute<AgentAttribute>()?.Name ?? GetType().Name;
 
             if (Options.TurnStateFactory == null)
             {
@@ -727,6 +733,25 @@ namespace Microsoft.Agents.Builder.App
 #pragma warning restore CA1822
 
         /// <summary>
+        /// Reset the typing timer's interval countdown for the current turn, restarting the wait before the
+        /// next periodic "typing" activity is sent — equivalent to what happens automatically when the agent
+        /// sends an activity through the normal <see cref="ITurnContext.SendActivityAsync(IActivity, System.Threading.CancellationToken)"/>
+        /// pipeline.
+        /// </summary>
+        /// <remarks>
+        /// Call this when a message is delivered out-of-band, bypassing the turn's send pipeline (for example,
+        /// a channel-specific API call such as Slack's <c>chat.postMessage</c>), so the typing indicator timing
+        /// stays consistent with pipeline sends. If no typing timer is running for the turn, the call is ignored.
+        /// </remarks>
+        /// <param name="turnContext">The turn context.</param>
+#pragma warning disable CA1822 // Method is intentionally an instance member for API symmetry with StartTypingTimer.
+        public void ResetTypingTimer(ITurnContext turnContext)
+        {
+            turnContext.Services.Get<TypingWorker>()?.ResetInterval();
+        }
+#pragma warning restore CA1822
+
+        /// <summary>
         /// Manually stop the typing timer.
         /// </summary>
         /// <remarks>
@@ -744,6 +769,37 @@ namespace Microsoft.Agents.Builder.App
         #region Turn Handling
 
         /// <summary>
+        /// Registers the application-scoped services needed for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// This stores the current <see cref="ITurnState"/>, <see cref="AdaptiveCard"/>, and
+        /// <see cref="Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
+        /// When user authorization is configured, the current <see cref="UserAuthorization"/>
+        /// instance is also registered.
+        /// </remarks>
+        /// <param name="turnContext">The turn context to populate with services.</param>
+        /// <param name="turnState">The turn state for the current turn.</param>
+        internal void SetTurnContextServices(ITurnContext turnContext, ITurnState turnState)
+        {
+            if (_userAuth != null)
+            {
+                turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+            if (Options.Connections != null)
+            {
+                turnContext.Services.Set<IConnections>(Options.Connections);
+            }
+            if (Options.ChannelAdapterRegistry != null)
+            {
+                turnContext.Services.Set<IChannelAdapterRegistry>(Options.ChannelAdapterRegistry);
+            }
+            turnContext.Services.Set<Proactive.Proactive>(Proactive);
+            turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);
+            turnContext.Services.Set<ITurnState>(turnState);
+            turnContext.Services.Set<AgentApplication>(this);
+        }
+
+        /// <summary>
         /// Called by the adapter (for example, a <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/>)
         /// at runtime in order to process an inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
@@ -756,6 +812,13 @@ namespace Microsoft.Agents.Builder.App
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
             AssertionHelpers.ThrowIfNull(turnContext.Activity, nameof(turnContext.Activity));
 
+            // Register Activity-derived header provider for agentic requests.
+            if (turnContext.Activity.IsAgenticRequest())
+            {
+                HeaderPropagationContext.HeaderProviders.Add(
+                    new AgenticHeaderProvider(turnContext.Activity, _agentName));
+            }
+
             using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
             {
                 ["RequestId"] = turnContext.Activity.RequestId,
@@ -765,16 +828,17 @@ namespace Microsoft.Agents.Builder.App
 
             using var onTurnTelemetryScope = new ScopeOnTurn(turnContext);
 
-            if (_userAuth != null)
-            {
-                turnContext.Services.Set<UserAuthorization>(_userAuth);
-            }
-
             bool routeMatched = false;
             bool routeAuthorized = false;
 
             try
             {
+                // Load turn state
+                ITurnState turnState = Options.TurnStateFactory!();
+                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                SetTurnContextServices(turnContext, turnState);
+
                 // Start typing timer if configured
                 if (Options.StartTypingTimer)
                 {
@@ -793,10 +857,6 @@ namespace Microsoft.Agents.Builder.App
                         turnContext.Activity.Text = turnContext.Activity.RemoveRecipientMention();
                     }
                 }
-
-                // Load turn state
-                ITurnState turnState = Options.TurnStateFactory!();
-                await turnState!.LoadStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 try
                 {

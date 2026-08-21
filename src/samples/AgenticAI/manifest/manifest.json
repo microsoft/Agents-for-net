@@ -1,0 +1,62 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vdevPreview/MicrosoftTeams.schema.json",
+  "version": "1.0.0",
+  "id": "${{BLUEPRINT_ID}}",
+  "developer": {
+    "name": "Microsoft, Inc.",
+    "websiteUrl": "https://example.azurewebsites.net",
+    "privacyUrl": "https://example.azurewebsites.net/privacy",
+    "termsOfUseUrl": "https://example.azurewebsites.net/termsofuse"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "AgentSDK Agentic EmptyAgent",
+    "full": "AgentSDK Agentic EmptyAgent"
+  },
+  "description": {
+    "short": "Sample demonstrating a simple Agent that echos back user messages.",
+    "full": "Sample demonstrating AgentSDK + Teams to demonstrate a simple Agent that echos back user messages."
+  },
+  "accentColor": "#FFFFFF",
+  "agenticUserTemplates": [
+    {
+      "id": "${{AGENT_TEMPLATE_ID}}",
+      "file": "agenticUserTemplateManifest.json"
+    }
+  ],
+  "copilotAgents": {
+    "customEngineAgents": [
+      {
+        "id": "${{BLUEPRINT_ID}}",
+        "type": "bot",
+        "functionsAs": "agenticUserOnly",
+        "agenticUserTemplateId": "${{AGENT_TEMPLATE_ID}}"
+      }
+    ]
+  },
+  "bots": [
+    {
+      "botId": "${{BLUEPRINT_ID}}",
+      "scopes": [
+        "personal"
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "webApplicationInfo": {
+    "id": "${{BLUEPRINT_ID}}",
+    "resource": "api://${{BLUEPRINT_ID}}"
+  },
+  "validDomains": [
+    "token.botframework.com",
+    "<<BOT_DOMAIN>>"
+  ]
+}

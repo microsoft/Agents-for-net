@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -548,7 +548,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = "myType",
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             });
 
             // Arrange - Non-matching channel
@@ -556,12 +556,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = "myType",
-                ChannelId = Channels.Directline
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
             });
 
             var builder = TypeRouteBuilder.Create()
                 .WithType("myType")
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithHandler((context, state, token) => Task.CompletedTask);
 
             var route = builder.Build();
@@ -617,7 +617,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = "myType",
-                ChannelId = Channels.Msteams
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             });
 
             // Arrange - Non-matching channel
@@ -625,12 +625,12 @@ namespace Microsoft.Agents.Builder.Tests.App
             nonMatchingContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = "myType",
-                ChannelId = Channels.Directline
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Directline
             });
 
             var builder = TypeRouteBuilder.Create()
                 .WithSelector((ctx, ct) => Task.FromResult(true))
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithHandler((context, state, token) => Task.CompletedTask);
 
             var route = builder.Build();
@@ -655,7 +655,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             var route = TypeRouteBuilder.Create()
                 .WithType(ActivityTypes.Invoke)
                 .WithHandler((context, state, token) => Task.CompletedTask)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .WithOrderRank(10)
                 .AsAgentic()
                 .AsNonTerminal()
@@ -665,7 +665,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(route);
-            Assert.Equal(Channels.Msteams, route.ChannelId);
+            Assert.Equal(Microsoft.Agents.Core.Models.Channels.Msteams, route.ChannelId);
             Assert.Equal((ushort)10, route.Rank);
             Assert.True(route.Flags.HasFlag(RouteFlags.Agentic));
             Assert.True(route.Flags.HasFlag(RouteFlags.NonTerminal));
@@ -682,7 +682,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = ActivityTypes.Invoke,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
@@ -693,7 +693,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     handlerExecuted = true;
                     return Task.CompletedTask;
                 })
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .AsAgentic()
                 .AsInvoke()
                 .Build();
@@ -720,7 +720,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = "invoke/adaptiveCard",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
@@ -731,7 +731,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     handlerExecuted = true;
                     return Task.CompletedTask;
                 })
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .AsAgentic()
                 .AsInvoke()
                 .Build();
@@ -759,7 +759,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             {
                 Type = ActivityTypes.Invoke,
                 Name = "adaptiveCard/action",
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Value = new { action = "submit" }
             });
 
@@ -774,7 +774,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                     handlerExecuted = true;
                     return Task.CompletedTask;
                 })
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .AsInvoke()
                 .Build();
 
@@ -877,7 +877,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             matchingContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = ActivityTypes.Invoke,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
@@ -886,13 +886,13 @@ namespace Microsoft.Agents.Builder.Tests.App
             wrongTypeContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = ActivityTypes.Message,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Role = RoleTypes.AgenticUser }
             });
 
             var route = TypeRouteBuilder.Create()
                 .WithType(ActivityTypes.Invoke)
-                .WithChannelId(Channels.Msteams)
+                .WithChannelId(Microsoft.Agents.Core.Models.Channels.Msteams)
                 .AsAgentic()
                 .WithHandler((context, state, token) => Task.CompletedTask)
                 .Build();
@@ -937,7 +937,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             mockContext.Setup(c => c.Activity).Returns(new Activity
             {
                 Type = ActivityTypes.Invoke,
-                ChannelId = Channels.Msteams,
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
                 Recipient = new ChannelAccount { Id = "bot" } // No agentic role
             });
 

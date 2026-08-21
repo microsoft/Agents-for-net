@@ -326,7 +326,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         [Fact]
         public async Task ResumeDialogAsync_ShouldReturnEndOfTurn()
         {
-            _dialogContext.Object.Stack.Add(new DialogInstance { Id = "A1", State = new Dictionary<string, object> { { "dialogs", new DialogState() } } });
+            _dialogContext.Object.Stack.Add(new DialogInstance { Id = "A1", State = new PersistedState { { "dialogs", new DialogState() } } });
             var dialog = new ComponentDialog("dialogId");
             dialog.AddDialog(new WaterfallDialog("A2"));
             dialog.InitialDialogId = null;

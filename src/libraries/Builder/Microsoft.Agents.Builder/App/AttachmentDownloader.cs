@@ -14,10 +14,12 @@ namespace Microsoft.Agents.Builder.App
     public class AttachmentDownloader : IInputFileDownloader
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IOutboundHostValidator _hostValidator;
 
-        public AttachmentDownloader(IHttpClientFactory httpClientFactory)
+        public AttachmentDownloader(IHttpClientFactory httpClientFactory, IOutboundHostValidator hostValidator = null)
         {
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+            _hostValidator = hostValidator;
         }
 
         public async Task<IList<InputFile>> DownloadFilesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default)
@@ -56,6 +58,13 @@ namespace Microsoft.Agents.Builder.App
             {
                 // Determine where the file is hosted.
                 var remoteFileUrl = attachment.ContentUrl;
+
+                // Shared allowed-hosts control (opt-in, disabled by default). Restrict the outbound
+                // server-side request to allowed hosts to mitigate SSRF against internal resources.
+                if (_hostValidator != null && _hostValidator.Enabled && !_hostValidator.IsAllowed(remoteFileUrl))
+                {
+                    return null;
+                }
 
                 using HttpRequestMessage request = new(HttpMethod.Get, remoteFileUrl);
                 HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);

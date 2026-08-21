@@ -11,6 +11,15 @@ namespace Microsoft.Agents.Builder.App
     public class RouteBuilder : RouteBuilderBase<RouteBuilder>
     {
         /// <summary>
+        /// Creates a new instance of the RouteBuilder class for constructing route definitions.
+        /// </summary>
+        /// <returns>A RouteBuilder instance that can be used to configure and build routes.</returns>
+        public static RouteBuilder Create()
+        {
+            return new RouteBuilder();
+        }
+
+        /// <summary>
         /// Assigns the specified route handler to the current route and returns the updated builder instance.
         /// </summary>
         /// <param name="handler">The route handler to associate with the route. Cannot be null.</param>
@@ -27,21 +36,11 @@ namespace Microsoft.Agents.Builder.App
     /// Provides a fluent builder for configuring and constructing a Route instance with custom selection logic,
     /// handlers, and routing options.
     /// </summary>
-    public class RouteBuilderBase<TBuilder> where TBuilder : RouteBuilderBase<TBuilder>
+    public abstract class RouteBuilderBase<TBuilder> where TBuilder : RouteBuilderBase<TBuilder>
     {
         protected readonly Route _route = new();
 
-        public RouteBuilderBase() { }
-
-        /// <summary>
-        /// Creates a new instance of the RouteBuilder class for constructing route definitions.
-        /// </summary>
-        /// <returns>A RouteBuilder instance that can be used to configure and build routes.</returns>
-        public static TBuilder Create()
-        {
-            var builder = Activator.CreateInstance<TBuilder>();
-            return builder;
-        }
+        protected RouteBuilderBase() { }
 
         /// <summary>
         /// Sets the route selector used to determine how incoming requests are matched to this route builder.

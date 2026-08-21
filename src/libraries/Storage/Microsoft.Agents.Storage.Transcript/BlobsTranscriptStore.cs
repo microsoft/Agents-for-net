@@ -247,7 +247,7 @@ namespace Microsoft.Agents.Storage.Transcript
             do
             {
                 var resultSegment = _containerClient.Value
-                    .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/")
+                    .GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/", cancellationToken: default)
                     .AsPages(token).ConfigureAwait(false);
                 
                 token = null;
@@ -318,7 +318,7 @@ namespace Microsoft.Agents.Storage.Transcript
             List<TranscriptInfo> conversations = [];
             do
             {
-                var resultSegment = _containerClient.Value.GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/")
+                var resultSegment = _containerClient.Value.GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, prefix: $"{SanitizeKey(channelId)}/", cancellationToken: default)
                                     .AsPages(token).ConfigureAwait(false);
                 token = null;
 
@@ -383,7 +383,7 @@ namespace Microsoft.Agents.Storage.Transcript
             do
             {
                 var resultSegment = _containerClient.Value
-                    .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/")
+                    .GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, prefix: $"{SanitizeKey(channelId)}/{SanitizeKey(conversationId)}/", cancellationToken: default)
                     .AsPages(token).ConfigureAwait(false);
 
                 token = null;
@@ -414,7 +414,7 @@ namespace Microsoft.Agents.Storage.Transcript
                     do
                     {
                         var resultSegment = _containerClient.Value
-                            .GetBlobsAsync(BlobTraits.Metadata, prefix: $"{SanitizeKey(activity.ChannelId)}/{SanitizeKey(activity.Conversation.Id)}/")
+                            .GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, prefix: $"{SanitizeKey(activity.ChannelId)}/{SanitizeKey(activity.Conversation.Id)}/", cancellationToken: default)
                             .AsPages(token).ConfigureAwait(false);
 
                         token = null;

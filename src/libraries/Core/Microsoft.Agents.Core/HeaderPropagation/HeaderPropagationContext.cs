@@ -15,6 +15,7 @@ namespace Microsoft.Agents.Core.HeaderPropagation;
 public class HeaderPropagationContext()
 {
     private static readonly AsyncLocal<IDictionary<string, StringValues>> _headersFromRequest = new();
+    private static readonly AsyncLocal<IList<IHeaderValueProvider>> _headerProviders = new();
     private static HeaderPropagationEntryCollection _headersToPropagate = new();
 
     static HeaderPropagationContext()
@@ -56,6 +57,16 @@ public class HeaderPropagationContext()
         {
             _headersToPropagate = value ?? new();
         }
+    }
+
+    /// <summary>
+    /// Gets the per-request list of <see cref="IHeaderValueProvider"/> instances that supply
+    /// dynamically resolved headers for outgoing requests.
+    /// </summary>
+    public static IList<IHeaderValueProvider> HeaderProviders
+    {
+        get => _headerProviders.Value ??= new List<IHeaderValueProvider>();
+        set => _headerProviders.Value = value;
     }
 
     /// <summary>

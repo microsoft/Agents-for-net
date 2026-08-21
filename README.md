@@ -12,13 +12,112 @@ For more information please see the parent project information here [Microsoft 3
 The best way to consume this SDK is via our Nuget packages found here: [nuget.org](https://www.nuget.org/packages?q=microsoft.agents+AND+nugetbotbuilder&includeComputedFrameworks=true&prerel=false&sortby=relevance). They will all begin with **Microsoft.Agents**
 
 ### Nightly Nuget feed.
-**Updated March 11 2025** :  Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**  and have a version number that ends with **-beta.**
+Nightly Feed has been shifted to public [nuget.org](https://www.nuget.org/profiles/nugetbotbuilder). They will all begin with **Microsoft.Agents**  and have a version number that ends with **-beta.**
 - This feed is updated overnight (PT) whenever commits occur in our repo. 
-- This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessary stable.
+- This feed's packages will be much more up to date with the current repo, however, packages provided on this feed are not necessarily stable.
 
 ## Working with this codebase
 
 Please read [this](GettingStarted.md) for directions on what is needed and how to setup to build this codebase locally
+
+## AI Coding Assistant Setup
+
+### Agent Plugins (Skills)
+
+This SDK provides AI coding assistant plugins that give your assistant deep knowledge of the Agents SDK APIs, patterns, and common mistakes. Skills activate automatically based on what you're working on.
+
+The plugins are hosted in [microsoft/Agents — agent-plugins](https://github.com/microsoft/Agents/tree/main/agent-plugins).
+
+**Available plugins for .NET:**
+
+| Plugin | Skills Included |
+|--------|----------------|
+| `agents-sdk-common` | Azure provisioning, identity credentials, OAuth setup via `az` CLI |
+| `agents-for-net` | Building agents in C#/.NET, debugging (auth failures, startup crashes), Bot Framework migration, ActivityHandler→AgentApplication migration |
+
+**Installation (GitHub Copilot CLI or Claude Code):**
+
+```
+/plugin marketplace add microsoft/Agents
+/plugin install agents-sdk-common@microsoft-agents-sdk
+/plugin install agents-for-net@microsoft-agents-sdk
+```
+
+Skills activate automatically — no manual loading needed. Run `/plugin` to verify installation.
+
+### Custom Agents (Code Review)
+
+This repository includes custom agents in `.github/agents/` that reproduce the **GitHub Copilot PR review dynamic locally**, so you can run the reviewer-vs-challenger loop *before* opening a PR and skip the review round-trips:
+
+| Agent | Model | Description |
+|-------|-------|-------------|
+| `review` | Claude Opus 4.8 | User-invocable **challenger**. Invokes `reviewer-github`, then disputes or resolves each finding with a per-finding verdict: **Fix / Push back / Needs judgment** (with paste-ready rebuttals). |
+| `reviewer-github` | GPT-5.5 | **GitHub emulator** (different model, on purpose). Loads the exact instruction files GitHub Copilot code review reads and produces the findings GitHub would post. |
+
+Both agents read the same instruction files GitHub uses, so the emulated review is realistic. The review rules are a **single source of truth**: they live in `.github/copilot-instructions.md` (repository-wide) and the `.github/instructions/*.instructions.md` files — `code-review.instructions.md` (repo-wide rules) plus the path-specific ones. Editing any of these changes what **both** GitHub's PR review and this local loop enforce, keeping them in sync.
+
+#### How the loop works
+
+1. **You invoke `review`** on your uncommitted changes or current branch (diff against `main`).
+2. **`review` dispatches `reviewer-github`** (GPT-5.5) to emulate GitHub Copilot code review. It
+   loads the same instruction files GitHub reads and returns the findings GitHub would post.
+3. **`review` (Claude Opus 4.8) challenges each finding** — reading the actual code at HEAD and
+   applying the anti-false-positive checks — then renders a per-finding verdict:
+   - ✅ **Fix** — valid; address it before pushing (with a fix direction).
+   - ⛔ **Push back** — false positive; you get a **paste-ready rebuttal** for the PR.
+   - 🤔 **Needs judgment** — a subjective trade-off; you decide.
+
+The result is that you arrive at the PR with fixes made and rebuttals ready, so GitHub's review has
+little left to say — eliminating the review round-trips.
+
+#### How to run it
+
+Run this **before opening a PR**, on your current branch:
+
+```bash
+copilot --agent=review --prompt "Review my changes"
+```
+
+Or inside the GitHub Copilot CLI:
+
+```
+/agent                                      # Browse and select the `review` agent
+Use the review agent to review my changes   # …or invoke it directly in a prompt
+```
+
+You can also point it at specific files or a commit, e.g. `Review commit <sha>` or
+`Review src/libraries/.../Foo.cs`.
+
+#### How to customize the rules
+
+The review rules are a **single source of truth**, so local review and GitHub's PR review never
+diverge. To change what gets flagged, edit the instruction files — **not** the agents:
+
+- **Repository-wide rules:** `.github/instructions/code-review.instructions.md` (`applyTo: "**"`).
+  Add, remove, or tighten lenses and anti-false-positive checks here.
+- **Subsystem-specific rules:** the path-specific `*.instructions.md` files (they apply only when a
+  changed file matches their `applyTo` globs).
+
+Because GitHub Copilot code review reads these same files, any edit changes **both** GitHub's PR
+review and this local loop at once. (Note: organization-level instructions set in GitHub org
+settings are not stored in the repo, so the local emulator cannot see them.)
+
+The agents are tailored to this codebase — they understand System.Text.Json serialization,
+multi-targeting (net8.0/netstandard2.0), Central Package Management, the Activity Protocol, and the
+layered library architecture, all via the shared instruction files.
+
+### Contextual Instructions
+
+Path-scoped instruction files in `.github/instructions/` provide AI assistants with architectural context (including mermaid sequence diagrams) that activates automatically when working on relevant code:
+
+| Instruction File | Activates For |
+|-----------------|---------------|
+| `code-review.instructions.md` | All files — repository-wide code review rules (edit to customize what GitHub Copilot and the local `review` agent enforce) |
+| `oauth-flows.instructions.md` | UserAuth, Authentication, OAuth, SignIn code |
+| `cloudadapter-pipeline.instructions.md` | CloudAdapter, Hosting/AspNetCore, TurnContext, Middleware |
+| `streaming-response.instructions.md` | StreamingResponse, StreamInfo, LLMClient code |
+| `serialization-extension.instructions.md` | ProtocolJsonSerializer, Serialization/Converters, Entity/Serialization init |
+| `proactive-messaging.instructions.md` | Proactive, ContinueConversation, Conversation builders |
 
 ## Support
 
@@ -59,5 +158,3 @@ Any use of third-party trademarks or logos are subject to those third-party's po
 - [agents-for-python Repository]( https://github.com/Microsoft/Agents-for-python)
 - [Official Agents Documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
 - [.NET Documentation](https://learn.microsoft.com/en-us/dotnet/api/?view=m365-agents-sdk&preserve-view=true)
-- [JavaScript Documentation - Coming Soon](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
-- [Python Documentation- Coming Soon](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)

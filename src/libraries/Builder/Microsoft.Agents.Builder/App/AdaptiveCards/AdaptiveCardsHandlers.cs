@@ -63,6 +63,17 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteHandler(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Function for handling Adaptive Card Action.Execute events.
+    /// </summary>
+    /// <param name="turnContext">A strongly-typed context object for this turn.</param>
+    /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>
+    /// <param name="value">The value associated with the action.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used by other objects
+    /// or threads to receive notice of cancellation.</param>
+    /// <returns>An instance of AdaptiveCardInvokeResponse, which can be created using <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCardInvokeResponseFactory"/>.</returns>
+    public delegate Task<AdaptiveCardInvokeResponse> ActionExecuteValueHandler(ITurnContext turnContext, ITurnState turnState, AdaptiveCardInvokeValue value, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Function for handling Adaptive Card Action.Submit events.
     /// </summary>
     /// <param name="turnContext">A strongly-typed context object for this turn.</param>

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -34,6 +35,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
         private readonly ChannelResponseQueue _responseQueue;
+        private readonly IOutboundHostValidator _hostValidator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> class.
@@ -44,6 +46,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="options">Defaults to Async enabled and 60 second shutdown delay timeout</param>
         /// <param name="middlewares"></param>
         /// <param name="config"></param>
+        /// <param name="hostValidator">Optional shared allowed-hosts validator. When enabled, Activity.ServiceUrl is validated against it.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -51,12 +54,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             ILogger<CloudAdapter> logger = null,
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
-            IConfiguration config = null)
+            IConfiguration config = null,
+            IOutboundHostValidator hostValidator = null)
             : base(channelServiceClientFactory, logger)
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
-            _adapterOptions = options ?? new AdapterOptions();
+            _adapterOptions = options ?? config?.GetSection("CloudAdapterOptions")?.Get<AdapterOptions>() ?? new AdapterOptions();
             _responseQueue = new ChannelResponseQueue(Logger);
+            _hostValidator = hostValidator ?? new OutboundHostValidator(config?.GetSection("OutboundHostValidator")?.Get<OutboundHostValidatorOptions>());
 
             if (middlewares != null)
             {
@@ -71,16 +76,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 // Log any leaked exception from the application.
                 StringBuilder sbError = new StringBuilder(1024);
                 int iLevel = 0;
-                bool emitStackTrace = true;
-                if (config != null && config["EmitStackTrace"] != null)
-                {
-                    if (!bool.TryParse(config["EmitStackTrace"], out emitStackTrace))
-                    {
-                        emitStackTrace = true; // Default to true if parsing fails
-                    }
-                }
                 StringBuilder lastErrorMessage = new(1024);
-                exception.GetExceptionDetail(sbError, iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: emitStackTrace); // ExceptionParser
+                exception.GetExceptionDetail(sbError, iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: _adapterOptions.EmitStackTrace); // ExceptionParser
                 if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
                 {
                     sbError.Append(Environment.NewLine);
@@ -141,6 +138,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var activity = await HttpHelper.ReadRequestAsync<IActivity>(httpRequest).ConfigureAwait(false);
                 if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
                 {
+                    CloudAdapterLog.LogInvalidActivity(Logger, ProtocolJsonSerializer.ToJson(activity));
                     httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
                     return;
                 }
@@ -155,6 +153,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     ["RequestId"] = activity.RequestId,
                     ["ConversationId"] = activity.Conversation?.Id
                 });
+
+                if (!ValidateServiceUrl(claimsIdentity, activity))
+                {
+                    httpResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+                    return;
+                }
 
                 try
                 {
@@ -291,6 +295,44 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             await _responseQueue.SendActivitiesAsync(incomingActivity.RequestId, [outActivity], cancellationToken).ConfigureAwait(false);
+
+            return true;
+        }
+
+        private bool ValidateServiceUrl(ClaimsIdentity identity, IActivity activity)
+        {
+            // Shared allowed-hosts control (opt-in, disabled by default). Evaluated unconditionally so
+            // that the allowlist blocks disallowed hosts even when identity is null (no token claims).
+            if (_hostValidator != null
+                && _hostValidator.Enabled
+                && !string.IsNullOrWhiteSpace(activity.ServiceUrl)
+                && !_hostValidator.IsAllowed(activity.ServiceUrl))
+            {
+                CloudAdapterLog.LogServiceUrlHostNotAllowed(Logger, activity.ServiceUrl);
+                return false;
+            }
+
+            if (identity == null)
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(activity.ServiceUrl)
+                && identity.Claims.FirstOrDefault(c => c.Type == "serviceurl") is Claim serviceUrlClaim)
+            {
+                var validClaimUri = Uri.TryCreate(serviceUrlClaim.Value, UriKind.Absolute, out var claimUrl);
+                var validActivityUri = Uri.TryCreate(activity.ServiceUrl, UriKind.Absolute, out var activityUrl);
+                if (!validClaimUri || !validActivityUri || !string.Equals(claimUrl.Host, activityUrl.Host, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_hostValidator.Enabled)
+                    {
+                        CloudAdapterLog.LogInvalidServiceUrl(Logger, serviceUrlClaim.Value, activity.ServiceUrl);
+                        return false;
+                    }
+
+                    CloudAdapterLog.LogInvalidServiceUrlWarning(Logger, serviceUrlClaim.Value, activity.ServiceUrl);
+                }
+            }
 
             return true;
         }
