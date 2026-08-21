@@ -42,6 +42,93 @@ namespace Microsoft.Agents.Model.Tests
             Assert.True(activity.IsTargetedActivity());
         }
 
+        [Fact]
+        public void WithRecipient_Targeted_SetsRecipientAndAddsTargetedTreatment()
+        {
+            var recipient = new ChannelAccount { Id = "user-id", Name = "User" };
+            IActivity activity = new Activity { Type = ActivityTypes.Message };
+
+            var result = activity.WithRecipient(recipient, isTargeted: true);
+
+            Assert.Same(activity, result);
+            Assert.Same(recipient, result.Recipient);
+            var treatment = Assert.Single(result.Entities.OfType<ActivityTreatment>());
+            Assert.Equal(ActivityTreatmentTypes.Targeted, treatment.Treatment);
+        }
+
+        [Fact]
+        public void WithRecipient_IdTargeted_CreatesUserRecipientAndAddsTargetedTreatment()
+        {
+            IActivity activity = new Activity { Type = ActivityTypes.Message };
+
+            var result = activity.WithRecipient("user-id", isTargeted: true);
+
+            Assert.Same(activity, result);
+            Assert.Equal("user-id", result.Recipient.Id);
+            Assert.Equal(RoleTypes.User, result.Recipient.Role);
+            var treatment = Assert.Single(result.Entities.OfType<ActivityTreatment>());
+            Assert.Equal(ActivityTreatmentTypes.Targeted, treatment.Treatment);
+        }
+
+        [Fact]
+        public void WithRecipient_IdDefaultsToNotTargeted()
+        {
+            IActivity activity = new Activity { Type = ActivityTypes.Message };
+
+            activity.WithRecipient("user-id");
+
+            Assert.Equal("user-id", activity.Recipient.Id);
+            Assert.Equal(RoleTypes.User, activity.Recipient.Role);
+            Assert.False(activity.IsTargetedActivity());
+        }
+
+        [Fact]
+        public void WithRecipient_NotTargeted_RemovesTargetedTreatment()
+        {
+            var recipient = new ChannelAccount { Id = "user-id" };
+            IActivity activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Entities =
+                [
+                    new ActivityTreatment { Treatment = ActivityTreatmentTypes.Targeted },
+                    new ActivityTreatment { Treatment = "transient" },
+                    new Entity("custom")
+                ]
+            };
+
+            activity.WithRecipient(recipient, isTargeted: false);
+
+            Assert.Same(recipient, activity.Recipient);
+            Assert.DoesNotContain(
+                activity.Entities.OfType<ActivityTreatment>(),
+                treatment => treatment.Treatment == ActivityTreatmentTypes.Targeted);
+            Assert.Contains(
+                activity.Entities.OfType<ActivityTreatment>(),
+                treatment => treatment.Treatment == "transient");
+            Assert.Contains(activity.Entities, entity => entity.Type == "custom");
+        }
+
+        [Fact]
+        public void WithRecipient_Targeted_CollapsesDuplicateTargetedTreatments()
+        {
+            IActivity activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Entities =
+                [
+                    new ActivityTreatment { Treatment = ActivityTreatmentTypes.Targeted },
+                    new ActivityTreatment { Treatment = ActivityTreatmentTypes.Targeted }
+                ]
+            };
+
+            activity.WithRecipient(new ChannelAccount { Id = "user-id" }, isTargeted: true);
+
+            Assert.Single(
+                activity.Entities.OfType<ActivityTreatment>(),
+                treatment => treatment.Treatment == ActivityTreatmentTypes.Targeted);
+        }
+
         // MakeTargetedActivity — Recipient and Entity handling
 
         [Fact]
@@ -91,6 +178,22 @@ namespace Microsoft.Agents.Model.Tests
             var result = activity.MakeTargetedActivity(newUser);
 
             Assert.Equal("new-user-id", result.Recipient.Id);
+        }
+
+        [Fact]
+        public void MakeTargetedActivity_AlreadyTargeted_WithUserArgument_ReplacesRecipient()
+        {
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Recipient = new ChannelAccount { Id = "original-id" },
+                Entities = [new ActivityTreatment { Treatment = ActivityTreatmentTypes.Targeted }]
+            };
+
+            var result = activity.MakeTargetedActivity(new ChannelAccount { Id = "new-user-id" });
+
+            Assert.Equal("new-user-id", result.Recipient.Id);
+            Assert.Single(result.Entities.OfType<ActivityTreatment>());
         }
 
         [Fact]

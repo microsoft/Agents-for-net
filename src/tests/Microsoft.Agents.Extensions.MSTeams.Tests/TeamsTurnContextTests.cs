@@ -4,8 +4,10 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Tests;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.MSTeams.Models;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -116,6 +118,105 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             // Sent activity is a different object instance from the original
             Assert.NotNull(captured);
             Assert.NotSame(activity, captured[0]);
+        }
+
+        [Fact]
+        public async Task SendTargetedActivityAsync_TargetedInbound_ReplacesQuotedReplyWithPromptPreview()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+            ITeamsActivity outbound = new TeamsActivity
+            {
+                Type = ActivityTypes.Message,
+                Text = string.Empty,
+                Recipient = TargetUser
+            };
+            outbound.AddQuotedReply("quoted-message", "response");
+
+            await turnContext.SendTargetedActivityAsync(outbound);
+
+            var sent = Assert.Single(captured);
+            Assert.DoesNotContain(sent.Entities, entity => entity is QuotedReplyEntity);
+            var promptPreview = Assert.Single(sent.Entities.OfType<TargetedMessageInfoEntity>());
+            Assert.Equal("inbound-message", promptPreview.MessageId);
+            Assert.Equal("response", sent.Text);
+            Assert.Single(sent.Entities.OfType<ActivityTreatment>());
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_TargetedInbound_PreservesExistingPromptPreview()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+            var outbound = new TeamsActivity
+            {
+                Type = ActivityTypes.Message,
+                Text = "response",
+                Entities =
+                [
+                    new TargetedMessageInfoEntity { MessageId = "explicit-message" }
+                ]
+            };
+
+            await turnContext.SendActivityAsync(outbound);
+
+            var sent = Assert.Single(captured);
+            var promptPreview = Assert.Single(sent.Entities.OfType<TargetedMessageInfoEntity>());
+            Assert.Equal("explicit-message", promptPreview.MessageId);
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_NonTargetedInbound_DoesNotAddPromptPreview()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter);
+
+            await turnContext.SendActivityAsync(new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "response"
+            });
+
+            var sent = Assert.Single(captured);
+            Assert.DoesNotContain(sent.Entities ?? [], entity => entity is TargetedMessageInfoEntity);
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_String_TargetedInbound_AddsPromptPreview()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+
+            await turnContext.SendActivityAsync("response");
+
+            var sent = Assert.Single(captured);
+            var promptPreview = Assert.Single(sent.Entities.OfType<TargetedMessageInfoEntity>());
+            Assert.Equal("inbound-message", promptPreview.MessageId);
+        }
+
+        [Fact]
+        public async Task SendActivitiesAsync_TargetedInbound_AddsPromptPreviewToEachMessage()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+
+            await turnContext.SendActivitiesAsync(
+            [
+                new Activity { Type = ActivityTypes.Message, Text = "first" },
+                new Activity { Type = ActivityTypes.Message, Text = "second" }
+            ]);
+
+            Assert.Equal(2, captured.Length);
+            Assert.All(captured, sent =>
+            {
+                var promptPreview = Assert.Single(sent.Entities.OfType<TargetedMessageInfoEntity>());
+                Assert.Equal("inbound-message", promptPreview.MessageId);
+            });
         }
 
         // ── SendTargetedActivitiesAsync ───────────────────────────────────────
@@ -299,7 +400,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "channelCreated" }
+                ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType("channelCreated") }
             });
             var turnContext = new TeamsTurnContext(innerContext);
 
@@ -320,7 +421,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "teamRenamed" }
+                ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType("teamRenamed") }
             });
             var turnContext = new TeamsTurnContext(innerContext);
 
@@ -346,6 +447,27 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 From = new() { Id = "fromId" },
             });
             return new TeamsTurnContext(innerContext);
+        }
+
+        private static TeamsTurnContext CreatePromptPreviewTurnContext(ChannelAdapter adapter)
+        {
+            var inbound = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Id = "inbound-message",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
+                Recipient = new ChannelAccount
+                {
+                    Id = "recipientId",
+                    Properties =
+                    {
+                        ["isTargeted"] = JsonSerializer.SerializeToElement(true)
+                    }
+                },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" }
+            };
+            return new TeamsTurnContext(new TurnContext(adapter, inbound));
         }
     }
 }

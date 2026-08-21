@@ -42,6 +42,11 @@ namespace Microsoft.Agents.Connector
             var userAgentValue = string.Empty;
             foreach (var productInfo in userAgent)
             {
+                if (productInfo == null)
+                {
+                    continue;
+                }
+
                 if (string.IsNullOrEmpty(userAgentValue))
                 {
                     userAgentValue = productInfo.ToString();

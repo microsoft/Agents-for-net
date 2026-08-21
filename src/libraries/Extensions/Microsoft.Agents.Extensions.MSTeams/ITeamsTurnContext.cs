@@ -23,7 +23,7 @@ public interface ITeamsTurnContext : ITurnContext
     /// <summary>
     /// Returns the ApiClient instance registered for Microsoft Teams API access in the current turn context.
     /// </summary>
-    Microsoft.Teams.Api.Clients.ApiClient Client { get; }
+    Microsoft.Teams.Apps.Clients.ApiClient Client { get; }
 
     /// <summary>
     /// Sends an activity to the conversation with a targeted treatment, allowing the activity to be directed to a

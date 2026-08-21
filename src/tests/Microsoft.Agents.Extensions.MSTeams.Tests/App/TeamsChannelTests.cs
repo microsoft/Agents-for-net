@@ -8,14 +8,14 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.MSTeams.Tests.Model;
-using Microsoft.Teams.Api;
+using Microsoft.Teams.Apps.Schema;
 using Moq;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using static Microsoft.Teams.Api.Activities.ConversationUpdateActivity;
+using Microsoft.Teams.Apps;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 {
@@ -26,8 +26,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "channel-123" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelCreated, channel, adapter);
+            var channel = new TeamsChannel { Id = "channel-123" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelCreated, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             // Only team events — no channel events
-            var turnContexts = CreateTeamContexts(EventType.TeamArchived, new Team { Id = "t1" }, adapter);
+            var turnContexts = CreateTeamContexts(ConversationEventType.TeamArchived, new Team { Id = "t1" }, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var called = false;
@@ -83,8 +83,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "new-channel" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelCreated, channel, adapter);
+            var channel = new TeamsChannel { Id = "new-channel" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelCreated, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -112,9 +112,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "c1" };
+            var channel = new TeamsChannel { Id = "c1" };
             // channelDeleted should not trigger an OnCreated handler
-            var turnContext = new TurnContext(adapter, CreateChannelActivity(EventType.ChannelDeleted, channel));
+            var turnContext = new TurnContext(adapter, CreateChannelActivity(ConversationEventType.ChannelDeleted, channel));
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = CreateApp(turnState);
             var called = false;
@@ -140,8 +140,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "deleted-channel" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelDeleted, channel, adapter);
+            var channel = new TeamsChannel { Id = "deleted-channel" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelDeleted, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -169,8 +169,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "renamed-channel" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelRenamed, channel, adapter);
+            var channel = new TeamsChannel { Id = "renamed-channel" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelRenamed, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -198,8 +198,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "shared-channel" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelShared, channel, adapter);
+            var channel = new TeamsChannel { Id = "shared-channel" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelShared, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -227,8 +227,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "unshared-channel" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelUnShared, channel, adapter);
+            var channel = new TeamsChannel { Id = "unshared-channel" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelUnShared, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -256,8 +256,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "restored-channel" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelRestored, channel, adapter);
+            var channel = new TeamsChannel { Id = "restored-channel" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelRestored, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -285,8 +285,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "member-added-channel" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelMemberAdded, channel, adapter);
+            var channel = new TeamsChannel { Id = "member-added-channel" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelMemberAdded, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -314,8 +314,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "member-removed-channel" };
-            var turnContexts = CreateChannelContexts(EventType.ChannelMemberRemoved, channel, adapter);
+            var channel = new TeamsChannel { Id = "member-removed-channel" };
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelMemberRemoved, channel, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -343,12 +343,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "c1" };
+            var channel = new TeamsChannel { Id = "c1" };
             var turnContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat,
-                ChannelData = new ChannelData { EventType = EventType.ChannelCreated, Channel = channel },
+                ChannelData = new TeamsChannelData { EventType = ConversationEventType.ChannelCreated, Channel = channel },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -378,12 +378,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var channel = new Channel { Id = "c1" };
+            var channel = new TeamsChannel { Id = "c1" };
             var turnContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.Message,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = EventType.ChannelCreated, Channel = channel },
+                ChannelData = new TeamsChannelData { EventType = ConversationEventType.ChannelCreated, Channel = channel },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -413,12 +413,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            // ChannelData has the right event type but no Channel object
+            // TeamsChannelData has the right event type but no TeamsChannel object
             var turnContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = EventType.ChannelCreated },
+                ChannelData = new TeamsChannelData { EventType = ConversationEventType.ChannelCreated },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -448,7 +448,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var turnContext = new TurnContext(adapter, CreateChannelActivity(EventType.ChannelRenamed, new Channel { Id = "c1" }));
+            var turnContext = new TurnContext(adapter, CreateChannelActivity(ConversationEventType.ChannelRenamed, new TeamsChannel { Id = "c1" }));
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = CreateApp(turnState);
             var renamedCalled = false;
@@ -474,7 +474,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var turnContext = new TurnContext(adapter, CreateChannelActivity(EventType.ChannelCreated, new Channel { Id = "c1" }));
+            var turnContext = new TurnContext(adapter, CreateChannelActivity(ConversationEventType.ChannelCreated, new TeamsChannel { Id = "c1" }));
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = CreateApp(turnState);
             var createdCalled = false;
@@ -503,7 +503,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange - register OnChannelEventReceived and send two different channel events
             var adapter = new NotImplementedAdapter();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(
-                new TurnContext(adapter, CreateChannelActivity(EventType.ChannelCreated, new Channel { Id = "c1" })));
+                new TurnContext(adapter, CreateChannelActivity(ConversationEventType.ChannelCreated, new TeamsChannel { Id = "c1" })));
             var app = CreateApp(turnState);
             var capturedEvents = new List<string>();
             var extension = new TeamsAgentExtension(app);
@@ -518,9 +518,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
             var contexts = new[]
             {
-                new TurnContext(adapter, CreateChannelActivity(EventType.ChannelCreated, new Channel { Id = "created" })),
-                new TurnContext(adapter, CreateChannelActivity(EventType.ChannelDeleted, new Channel { Id = "deleted" })),
-                new TurnContext(adapter, CreateChannelActivity(EventType.ChannelRenamed, new Channel { Id = "renamed" })),
+                new TurnContext(adapter, CreateChannelActivity(ConversationEventType.ChannelCreated, new TeamsChannel { Id = "created" })),
+                new TurnContext(adapter, CreateChannelActivity(ConversationEventType.ChannelDeleted, new TeamsChannel { Id = "deleted" })),
+                new TurnContext(adapter, CreateChannelActivity(ConversationEventType.ChannelRenamed, new TeamsChannel { Id = "renamed" })),
             };
 
             // Act
@@ -543,17 +543,17 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
         }
 
-        private static Activity CreateChannelActivity(string eventType, Channel channel)
+        private static Activity CreateChannelActivity(string eventType, TeamsChannel channel)
         {
             return new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = eventType, Channel = channel },
+                ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Channel = channel },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -564,20 +564,20 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         /// Returns an array of TurnContexts where only the first (index 0) should match a channel
         /// handler for the given eventType. The remaining contexts are non-matching variations.
         /// </summary>
-        private static ITurnContext[] CreateChannelContexts(string eventType, Channel channel, ChannelAdapter adapter)
+        private static ITurnContext[] CreateChannelContexts(string eventType, TeamsChannel channel, ChannelAdapter adapter)
         {
             return
             [
                 // Matching: correct event type, correct ChannelId
                 new TurnContext(adapter, CreateChannelActivity(eventType, channel)),
-                // Non-matching: team event — no Channel in ChannelData, also won't match "channel.*" regex
+                // Non-matching: team event — no TeamsChannel in TeamsChannelData, also won't match "channel.*" regex
                 // (specific-event tests have a dedicated test for "different channel event doesn't match")
                 // Non-matching: team event (not a channel event)
                 new TurnContext(adapter, new Activity
                 {
                     Type = ActivityTypes.ConversationUpdate,
                     ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                    ChannelData = new ChannelData { EventType = EventType.TeamArchived, Team = new Team { Id = "t1" } },
+                    ChannelData = new TeamsChannelData { EventType = ConversationEventType.TeamArchived, Team = new Team { Id = "t1" } },
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From = new() { Id = "fromId" },
@@ -587,7 +587,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 {
                     Type = ActivityTypes.ConversationUpdate,
                     ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat,
-                    ChannelData = new ChannelData { EventType = eventType, Channel = channel },
+                    ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Channel = channel },
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From = new() { Id = "fromId" },
@@ -597,7 +597,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 {
                     Type = ActivityTypes.Message,
                     ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                    ChannelData = new ChannelData { EventType = eventType, Channel = channel },
+                    ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Channel = channel },
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From = new() { Id = "fromId" },
@@ -613,7 +613,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 {
                     Type = ActivityTypes.ConversationUpdate,
                     ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                    ChannelData = new ChannelData { EventType = eventType, Team = team },
+                    ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Team = team },
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From = new() { Id = "fromId" },

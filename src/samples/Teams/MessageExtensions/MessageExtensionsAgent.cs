@@ -7,7 +7,11 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.MSTeams;
 using Microsoft.Agents.Extensions.MSTeams.App;
 using Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
+using Microsoft.Teams.Apps.MessageExtensions;
+using Microsoft.Teams.Apps.Schema;
+using Microsoft.Teams.Apps.TaskModules;
 using Microsoft.Teams.Cards;
+using System.Text.Json;
 
 namespace MessageExtensions;
 
@@ -19,26 +23,19 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
         => turnContext.SendActivityAsync($"Echo: {turnContext.Activity.Text}\n\nThis is a message extension bot. Use the message extension commands in Teams to test functionality.", cancellationToken: cancellationToken);
 
     [TeamsQueryRoute("searchQuery")]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchQueryAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
+    public Task<MessageExtensionResponse> OnSearchQueryAsync(ITeamsTurnContext turnContext, ITurnState turnState, MessageExtensionQuery query, CancellationToken cancellationToken)
     {
         bool initialRun = query.Parameters?.FirstOrDefault(p => p.Name == "initialRun")?.Value?.ToString() == "true";
         if (initialRun)
         {
-            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-            {
-                ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-                {
-                    Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
-                    Text = "Enter search query"
-                }
-            });
+            return Task.FromResult(CreateMessageResponse("Enter search query"));
         }
 
         string? searchQuery = query.Parameters?.FirstOrDefault(p => p.Name == "searchQuery")?.Value?.ToString() ?? "";
 
         Logger.LogInformation("Search query received: {Query}", searchQuery);
 
-        var attachments = new List<Microsoft.Teams.Api.MessageExtensions.Attachment>();
+        var attachments = new List<TeamsAttachment>();
 
         // Create simple search results
         for (int i = 1; i <= 5; i++)
@@ -65,33 +62,14 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
                 Tap = new CardAction { Type = "invoke", Value = $"{{\"index\": \"{i}\", \"query\":\"{searchQuery}\" }}" }
             };
 
-            var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
-            {
-                ContentType = Microsoft.Teams.Api.ContentType.AdaptiveCard,
-                Content = card,
-                Preview = new Microsoft.Teams.Api.MessageExtensions.Attachment
-                {
-                    ContentType = Microsoft.Teams.Api.ContentType.ThumbnailCard,
-                    Content = previewCard
-                }
-            };
-
-            attachments.Add(attachment);
+            attachments.Add(CreateAdaptiveCardAttachment(card, previewCard));
         }
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-        {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [.. attachments]
-            }
-        });
+        return Task.FromResult(CreateResultResponse([.. attachments]));
     }
 
     [TeamsSelectItemRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSelectItemAsync(ITeamsTurnContext turnContext, ITurnState turnState, Dictionary<string,string> items, CancellationToken cancellationToken)
+    public Task<MessageExtensionResponse> OnSelectItemAsync(ITeamsTurnContext turnContext, ITurnState turnState, Dictionary<string,string> items, CancellationToken cancellationToken)
     {
         var index = items.TryGetValue("index", out string? value) ? value : "No Index";
         var query = items.TryGetValue("query", out string? value1) ? value1 : "No Query";
@@ -116,28 +94,15 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Schema = "http://adaptivecards.io/schemas/adaptive-card.json"
         };
 
-        var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
-        {
-            ContentType = new Microsoft.Teams.Api.ContentType("application/vnd.microsoft.card.adaptive"),
-            Content = card
-        };
-
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-        {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [attachment]
-            }
-        });
+        return Task.FromResult(CreateResultResponse(CreateAdaptiveCardAttachment(card)));
     }
 
     [TeamsSubmitActionRoute("createCard")]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnCreateCardAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
+    public Task<MessageExtensionResponse> OnCreateCardAsync(ITeamsTurnContext turnContext, ITurnState turnState, MessageExtensionAction action, CancellationToken cancellationToken)
     {
-        var title = action.GetDataString("title", "Default Title");
-        var description = action.GetDataString("description", "Default Description");
+        var data = action.GetDataAs<JsonElement>();
+        var title = data.GetDataString("title", "Default Title");
+        var description = data.GetDataString("description", "Default Description");
 
         Logger.LogInformation("Creating card with Title: {Title} and Description: {Description}", title, description);
 
@@ -163,38 +128,17 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Schema = "http://adaptivecards.io/schemas/adaptive-card.json"
         };
 
-        var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
-        {
-            ContentType = Microsoft.Teams.Api.ContentType.AdaptiveCard,
-            Content = card
-        };
-
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-        {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [attachment]
-            }
-        });
+        return Task.FromResult(CreateResultResponse(CreateAdaptiveCardAttachment(card)));
     }
 
     [TeamsQueryLinkRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.AppBasedQueryLink? query, CancellationToken cancellationToken)
+    public Task<MessageExtensionResponse> OnQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, MessageExtensionQueryLink? query, CancellationToken cancellationToken)
     {
         var url = query?.Url;
         Logger.LogInformation("Link query received: {Url}", url);
-        if (string.IsNullOrEmpty(url))
+        if (url is null)
         {
-            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-            {
-                ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-                {
-                    Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
-                    Text = "No URL provided"
-                }
-            });
+            return Task.FromResult(CreateMessageResponse("No URL provided"));
         }
 
         var card = new Microsoft.Teams.Cards.AdaptiveCard([
@@ -218,58 +162,39 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             Schema = "http://adaptivecards.io/schemas/adaptive-card.json"
         };
 
-        var attachment = new Microsoft.Teams.Api.MessageExtensions.Attachment
+        var previewCard = new ThumbnailCard
         {
-            ContentType = new Microsoft.Teams.Api.ContentType("application/vnd.microsoft.card.adaptive"),
-            Content = card,
-            Preview = new Microsoft.Teams.Api.MessageExtensions.Attachment
-            {
-                ContentType = Microsoft.Teams.Api.ContentType.ThumbnailCard,
-                Content = new ThumbnailCard
-                {
-                    Title = "Link Preview",
-                    Text = url
-                }
-            }
+            Title = "Link Preview",
+            Text = url.ToString()
         };
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-        {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Result,
-                AttachmentLayout = Microsoft.Teams.Api.Attachment.Layout.List,
-                Attachments = [attachment]
-            }
-        });
+        return Task.FromResult(CreateResultResponse(CreateAdaptiveCardAttachment(card, previewCard)));
     }
 
     [TeamsQuerySettingUrlRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuerySettingsUrlAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    public Task<MessageExtensionResponse> OnQuerySettingsUrlAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Query settings URL requested");
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response
-        {
-            ComposeExtension = new Microsoft.Teams.Api.MessageExtensions.Result
-            {
-                Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Config,
-                SuggestedActions = new Microsoft.Teams.Api.MessageExtensions.SuggestedActions
+        return Task.FromResult(
+            MessageExtensionResponse.CreateBuilder()
+                .WithType(MessageExtensionResponseTypes.Config)
+                .WithSuggestedActions(new Microsoft.Teams.Apps.Schema.SuggestedActions
                 {
                     Actions =
                     [
-                        new Microsoft.Teams.Api.Cards.Action(Microsoft.Teams.Api.Cards.ActionType.OpenUrl)
-                        {
-                            Value = "https://bot-devtunnel-url/settings",
-                            Title = "Configure"
-                        }
+                        new SuggestedAction(
+                            ActionType.OpenUrl,
+                            "Configure",
+                            "https://bot-devtunnel-url/settings")
                     ]
-                }
-            }
-        });
+                })
+                .Build()
+                .Body
+                ?? throw new InvalidOperationException("The message extension action response builder returned no body."));
     }
 
     [TeamsFetchActionRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchAction(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
+    public Task<MessageExtensionActionResponse> OnFetchAction(ITeamsTurnContext turnContext, ITurnState turnState, MessageExtensionAction action, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Fetch MessageExtensions.Action requested");
 
@@ -284,31 +209,75 @@ public partial class MessageExtensionsAgent(AgentApplicationOptions options) : A
             }
         ]);
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse
-        {
-            Task = new Microsoft.Teams.Api.TaskModules.ContinueTask(
-                new Microsoft.Teams.Api.TaskModules.TaskInfo
-                {
-                    Title = "Fetch Task Dialog",
-                    Height = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
-                    Width = new Microsoft.Teams.Common.Union<int, Microsoft.Teams.Api.TaskModules.Size>(Microsoft.Teams.Api.TaskModules.Size.Small),
-                    Card = new Microsoft.Teams.Api.Attachment(card)
-                })
-        });
+        return Task.FromResult(
+            MessageExtensionActionResponse.CreateBuilder()
+                .WithTask(TaskModuleResponse.CreateBuilder()
+                    .WithType(TaskModuleResponseTypes.Continue)
+                    .WithTitle("Fetch Task Dialog")
+                    .WithHeight(TaskModuleSizes.Small)
+                    .WithWidth(TaskModuleSizes.Small)
+                    .WithCard(CreateAdaptiveCardAttachment(card)))
+                .Build()
+                .Body
+                ?? throw new InvalidOperationException("The message extension action response builder returned no body."));
     }
 
     [TeamsSettingRoute]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnMessageExtensionSettingAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query settings, CancellationToken cancellationToken)
+    public Task<MessageExtensionResponse> OnMessageExtensionSettingAsync(ITeamsTurnContext turnContext, ITurnState turnState, MessageExtensionQuery settings, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Message extension settings submitted with state: {State}", settings.State);
 
         if (settings.State == "CancelledByUser")
         {
-            return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+            return Task.FromResult(new MessageExtensionResponse());
         }
 
         // Process settings data
 
-        return Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+        return Task.FromResult(new MessageExtensionResponse());
+    }
+
+    private static MessageExtensionResponse CreateMessageResponse(string text)
+    {
+        return MessageExtensionResponse.CreateBuilder()
+            .WithType(MessageExtensionResponseTypes.Message)
+            .WithText(text)
+            .Build()
+            .Body
+            ?? throw new InvalidOperationException("The message extension response builder returned no body.");
+    }
+
+    private static MessageExtensionResponse CreateResultResponse(params TeamsAttachment[] attachments)
+    {
+        return MessageExtensionResponse.CreateBuilder()
+            .WithType(MessageExtensionResponseTypes.Result)
+            .WithAttachmentLayout(AttachmentLayoutType.List)
+            .WithAttachments(attachments)
+            .Build()
+            .Body
+            ?? throw new InvalidOperationException("The message extension response builder returned no body.");
+    }
+
+    private static TeamsAttachment CreateAdaptiveCardAttachment(AdaptiveCard card, ThumbnailCard? preview = null)
+    {
+        var attachment = new TeamsAttachment
+        {
+            ContentType = AttachmentContentTypes.AdaptiveCard,
+            Content = JsonSerializer.SerializeToElement(card)
+        };
+
+        if (preview is not null)
+        {
+            attachment.Properties = new()
+            {
+                ["preview"] = new TeamsAttachment
+                {
+                    ContentType = AttachmentContentTypes.ThumbnailCard,
+                    Content = JsonSerializer.SerializeToElement(preview)
+                }
+            };
+        }
+
+        return attachment;
     }
 }

@@ -12,8 +12,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="MessagePreviewSendRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction"/>
-/// with <see cref="Microsoft.Teams.Api.MessageExtensions.Action.BotMessagePreviewAction"/> of <c>"send"</c>,
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionSubmitAction"/>
+/// with <see cref="Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction.BotMessagePreviewAction"/> of <c>"send"</c>,
 /// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
 /// </remarks>
 public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePreviewSendRouteBuilder>
@@ -30,8 +30,8 @@ public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePre
 
     public MessagePreviewSendRouteBuilder() : base()
     {
-        PreviewAction = Microsoft.Teams.Api.MessageExtensions.MessagePreviewAction.Send.ToString();
-        InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction;
+        PreviewAction = Microsoft.Teams.Apps.MessageExtensions.BotMessagePreviewActionTypes.Send.ToString();
+        InvokeName = Microsoft.Teams.Apps.InvokeNames.MessageExtensionSubmitAction;
     }
 
     /// <summary>
@@ -43,9 +43,9 @@ public class MessagePreviewSendRouteBuilder : CommandRouteBuilderBase<MessagePre
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
-            await handler(new TeamsTurnContext(ctx), ts, messagingExtensionAction.BotActivityPreview?[0]?.ToCoreActivity(), ct).ConfigureAwait(false);
-            await TeamsAgentExtension.SetResponse(ctx, new Microsoft.Teams.Api.MessageExtensions.Response()).ConfigureAwait(false);
+            var messagingExtensionAction = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction>(ctx.Activity.Value);
+            await handler(new TeamsTurnContext(ctx), ts, messagingExtensionAction.BotActivityPreview?[0], ct).ConfigureAwait(false);
+            await TeamsAgentExtension.SetResponse(ctx, new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse()).ConfigureAwait(false);
         };
         return this;
     }

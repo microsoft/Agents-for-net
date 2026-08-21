@@ -79,6 +79,13 @@ You can interact with this bot in Teams by sending it a message, or selecting a 
 3. **MessageAllMembers**
    - **Result:** The bot will send a 1-on-1 message to each member in the current conversation (aka on the conversation's roster).
    - **Valid Scopes:** personal, group chat, team chat
+4. **QuotedReply**
+   - **Result:** The bot replies with a `quotedReply` entity that references the incoming message.
+   - **Valid Scopes:** personal, group chat, team chat
+5. **PromptPreview**
+   - **Result:** The bot sends a targeted response containing Prompt Preview metadata for the incoming targeted slash command.
+   - **Valid Scopes:** group chat, team chat
+   - **Usage:** Select `promptpreview` from the Teams slash-command picker. This requires the dev-preview manifest included with the sample.
 
 You can select an option from the command list by typing ```@TeamsConversationBot``` into the compose message area and ```What can I do?``` text above the compose area.
 
