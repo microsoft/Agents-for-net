@@ -167,6 +167,7 @@ namespace Microsoft.Agents.Authentication.Msal
         #endregion
 
         #region IAgenticTokenProvider
+        /// <inheritdoc/>
         public async Task<string> GetAgenticApplicationTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
@@ -192,6 +193,14 @@ namespace Microsoft.Agents.Authentication.Msal
             throw new InvalidOperationException("Only IConfidentialClientApplication or AuthType.IdentityProxyManager is supported for Agentic.");
         }
 
+
+        /// <inheritdoc/>
+        public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
+        {
+            return await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
         public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, IList<string> scopes = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
@@ -219,6 +228,7 @@ namespace Microsoft.Agents.Authentication.Msal
             return agentInstanceToken.AccessToken;
         }
 
+        /// <inheritdoc/>
         public async Task<string> GetAgenticUserTokenAsync(string tenantId, string agentAppInstanceId, string agenticUserId, IList<string> scopes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));

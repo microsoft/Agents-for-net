@@ -743,9 +743,9 @@ namespace Microsoft.Agents.Authentication.Msal.Tests
             var requestBody = await request.Content.ReadAsStringAsync();
             var formValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var keyValuePair in requestBody.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            foreach (var keyValuePair in requestBody.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var valueParts = keyValuePair.Split('=', 2);
+                var valueParts = keyValuePair.Split(new[] { '=' }, 2);
                 var key = Uri.UnescapeDataString(valueParts[0].Replace("+", " "));
                 var value = valueParts.Length > 1 ? Uri.UnescapeDataString(valueParts[1].Replace("+", " ")) : string.Empty;
                 formValues[key] = value;
