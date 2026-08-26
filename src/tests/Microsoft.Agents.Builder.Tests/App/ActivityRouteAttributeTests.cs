@@ -160,6 +160,69 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         // ---------------------------------------------------------------------------
+        // InvokeRouteAttribute
+        // ---------------------------------------------------------------------------
+
+        [Fact]
+        public async Task InvokeRouteAttribute_ExactName()
+        {
+            var app = new InvokeRouteNameApp(new AgentApplicationOptions((IStorage)null));
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Invoke, Name = "myInvoke" });
+
+            await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+            Assert.Single(app.calls);
+            Assert.Equal("OnMyInvoke", app.calls[0]);
+        }
+
+        [Fact]
+        public async Task InvokeRouteAttribute_NameRegex()
+        {
+            var app = new InvokeRouteNameRegexApp(new AgentApplicationOptions((IStorage)null));
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Invoke, Name = "mySpecialInvoke" });
+
+            await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+            Assert.Single(app.calls);
+            Assert.Equal("OnMyRegexInvoke", app.calls[0]);
+        }
+
+        [Fact]
+        public async Task InvokeRouteAttribute_Any_FiresWhenNoNamedRouteMatches()
+        {
+            var app = new InvokeRouteAnyApp(new AgentApplicationOptions((IStorage)null));
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Invoke, Name = "unknownInvoke" });
+
+            await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+            Assert.Single(app.calls);
+            Assert.Equal("OnAnyInvoke", app.calls[0]);
+        }
+
+        [Fact]
+        public async Task InvokeRouteAttribute_NamedRouteTakesPriorityOverAnyRoute()
+        {
+            var app = new InvokeRouteAnyApp(new AgentApplicationOptions((IStorage)null));
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Invoke, Name = "knownInvoke" });
+
+            await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+            Assert.Single(app.calls);
+            Assert.Equal("OnKnownInvoke", app.calls[0]);
+        }
+
+        [Fact]
+        public async Task InvokeRouteAttribute_DoesNotFireForDifferentName()
+        {
+            var app = new InvokeRouteNameApp(new AgentApplicationOptions((IStorage)null));
+            var turnContext = CreateTurnContext(new Activity { Type = ActivityTypes.Invoke, Name = "otherInvoke" });
+
+            await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+            Assert.Empty(app.calls);
+        }
+
+        // ---------------------------------------------------------------------------
         // ConversationUpdateRouteAttribute
         // ---------------------------------------------------------------------------
 
@@ -346,6 +409,33 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         [EventRoute]  // matches any event — registered RouteRank.Last
         public Task OnAnyEvent(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyEvent"); return Task.CompletedTask; }
+    }
+
+    class InvokeRouteNameApp(AgentApplicationOptions options) : AgentApplication(options)
+    {
+        public List<string> calls = [];
+
+        [InvokeRoute(name: "myInvoke")]
+        public Task OnMyInvoke(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMyInvoke"); return Task.CompletedTask; }
+    }
+
+    class InvokeRouteNameRegexApp(AgentApplicationOptions options) : AgentApplication(options)
+    {
+        public List<string> calls = [];
+
+        [InvokeRoute(nameRegex: "my.*Invoke")]
+        public Task OnMyRegexInvoke(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnMyRegexInvoke"); return Task.CompletedTask; }
+    }
+
+    class InvokeRouteAnyApp(AgentApplicationOptions options) : AgentApplication(options)
+    {
+        public List<string> calls = [];
+
+        [InvokeRoute]
+        public Task OnAnyInvoke(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnAnyInvoke"); return Task.CompletedTask; }
+
+        [InvokeRoute(name: "knownInvoke")]
+        public Task OnKnownInvoke(ITurnContext ctx, ITurnState state, CancellationToken ct) { calls.Add("OnKnownInvoke"); return Task.CompletedTask; }
     }
 
     class ConversationUpdateRouteApp(AgentApplicationOptions options) : AgentApplication(options)

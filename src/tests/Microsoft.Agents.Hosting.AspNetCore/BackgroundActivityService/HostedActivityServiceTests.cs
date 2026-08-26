@@ -7,9 +7,12 @@ using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using System.Threading;
@@ -157,6 +160,91 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
+        public async Task ExecuteAsync_WithDefaultOptions_ShouldResolveAndDisposeDependencyPerActivity()
+        {
+            var record = UseScopedRecord(useScopedServices: null, expectedActivities: 2);
+
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.AllActivitiesProcessed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await record.Service.StopAsync(CancellationToken.None);
+
+            var probes = record.Collector.Resolved.ToArray();
+            Assert.Equal(2, probes.Length);
+            Assert.NotSame(probes[0], probes[1]);
+            Assert.All(probes, probe => Assert.True(probe.IsDisposed));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_WithoutScopedServices_ShouldResolveDependencyFromRootProvider()
+        {
+            var record = UseScopedRecord(useScopedServices: false, expectedActivities: 2);
+
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+            record.Queue.QueueBackgroundActivity(new ClaimsIdentity(), record.Adapter.Object, new Activity());
+
+            await record.Service.StartAsync(CancellationToken.None);
+            await record.AllActivitiesProcessed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await record.Service.StopAsync(CancellationToken.None);
+
+            var probes = record.Collector.Resolved.ToArray();
+            Assert.Equal(2, probes.Length);
+            Assert.Same(probes[0], probes[1]);
+            Assert.All(probes, probe => Assert.False(probe.IsDisposed));
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_WithScopedServices_ShouldDisposeAsyncDependencyAndCompleteOnce()
+        {
+            var collector = new AsyncProbeCollector();
+            var services = new ServiceCollection();
+            services.AddSingleton(collector);
+            services.AddScoped<AsyncScopedProbe>();
+            services.AddTransient<IAgent, AsyncProbeAgent>();
+
+            await using var provider = services.BuildServiceProvider();
+            var queue = new ActivityTaskQueue();
+            var adapter = new Mock<IChannelAdapter>();
+            var adapterCalled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            adapter
+                .Setup(a => a.ProcessActivityAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<Activity>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new InvokeResponse())
+                .Callback(() => adapterCalled.TrySetResult());
+
+            var configuration = new ConfigurationBuilder().Build();
+            var service = new HostedActivityService(
+                provider,
+                configuration,
+                queue,
+                Mock.Of<ILogger<HostedActivityService>>(),
+                new HostedActivityServiceOptions(configuration) { UseScopedServices = true });
+            var completionCount = 0;
+            queue.QueueBackgroundActivity(
+                new ClaimsIdentity(),
+                adapter.Object,
+                new Activity(),
+                onComplete: _ =>
+                {
+                    Interlocked.Increment(ref completionCount);
+                    return Task.CompletedTask;
+                });
+
+            await service.StartAsync(CancellationToken.None);
+            await adapterCalled.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await service.StopAsync(CancellationToken.None);
+
+            var probe = Assert.Single(collector.Resolved);
+            Assert.True(probe.IsDisposed);
+            Assert.Equal(1, completionCount);
+        }
+
+        [Fact]
         public void Constructor_WithHostedOptions_UsesHostedShutdownTimeout()
         {
             var config = new ConfigurationBuilder().Build();
@@ -216,6 +304,49 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             return options.ShutdownTimeoutSeconds;
         }
 
+        private static ScopedRecord UseScopedRecord(bool? useScopedServices, int expectedActivities)
+        {
+            var collector = new ProbeCollector();
+            var services = new ServiceCollection();
+            services.AddSingleton(collector);
+            services.AddScoped<ScopedProbe>();
+            services.AddTransient<IAgent, ProbeAgent>();
+
+            var provider = services.BuildServiceProvider();
+            var queue = new ActivityTaskQueue();
+            var adapter = new Mock<IChannelAdapter>();
+            var processed = 0;
+            var allActivitiesProcessed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            adapter
+                .Setup(a => a.ProcessActivityAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<Activity>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new InvokeResponse())
+                .Callback(() =>
+                {
+                    if (Interlocked.Increment(ref processed) == expectedActivities)
+                    {
+                        allActivitiesProcessed.TrySetResult();
+                    }
+                });
+
+            var options = new HostedActivityServiceOptions(new ConfigurationBuilder().Build());
+            if (useScopedServices.HasValue)
+            {
+                options.UseScopedServices = useScopedServices.Value;
+            }
+            var service = new HostedActivityService(
+                provider,
+                new ConfigurationBuilder().Build(),
+                queue,
+                Mock.Of<ILogger<HostedActivityService>>(),
+                options);
+
+            return new(service, queue, adapter, collector, allActivitiesProcessed);
+        }
+
         private static Record UseRecord(IAgent agent = null)
         {
             var config = new ConfigurationBuilder().Build();
@@ -229,7 +360,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .Setup(s => s.GetService(It.IsAny<Type>()))
                 .Returns(agent);
 
-            var service = new HostedActivityService(sp.Object, config, queue, logger.Object, new HostedActivityServiceOptions(config));
+            var options = new HostedActivityServiceOptions(config)
+            {
+                UseScopedServices = false
+            };
+            var service = new HostedActivityService(sp.Object, config, queue, logger.Object, options);
             return new(service, queue, bot, adapter, logger);
         }
 
@@ -243,6 +378,70 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             public void VerifyMocks()
             {
                 Mock.Verify(Bot, Adapter, Logger);
+            }
+        }
+
+        private record ScopedRecord(
+            HostedActivityService Service,
+            ActivityTaskQueue Queue,
+            Mock<IChannelAdapter> Adapter,
+            ProbeCollector Collector,
+            TaskCompletionSource AllActivitiesProcessed);
+
+        private sealed class ScopedProbe : IDisposable
+        {
+            public bool IsDisposed { get; private set; }
+
+            public void Dispose()
+            {
+                IsDisposed = true;
+            }
+        }
+
+        private sealed class ProbeCollector
+        {
+            public ConcurrentQueue<ScopedProbe> Resolved { get; } = new();
+        }
+
+        private sealed class ProbeAgent : IAgent
+        {
+            public ProbeAgent(ScopedProbe probe, ProbeCollector collector)
+            {
+                collector.Resolved.Enqueue(probe);
+            }
+
+            public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class AsyncScopedProbe : IAsyncDisposable
+        {
+            public bool IsDisposed { get; private set; }
+
+            public ValueTask DisposeAsync()
+            {
+                IsDisposed = true;
+                return ValueTask.CompletedTask;
+            }
+        }
+
+        private sealed class AsyncProbeCollector
+        {
+            public ConcurrentQueue<AsyncScopedProbe> Resolved { get; } = new();
+        }
+
+        private sealed class AsyncProbeAgent : IAgent
+        {
+            public AsyncProbeAgent(AsyncScopedProbe probe, AsyncProbeCollector collector)
+            {
+                collector.Resolved.Enqueue(probe);
+            }
+
+            public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
             }
         }
     }

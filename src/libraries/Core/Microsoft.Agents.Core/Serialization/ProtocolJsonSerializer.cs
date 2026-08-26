@@ -364,6 +364,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());
             options.Converters.Add(new EntityConverter());
+            options.Converters.Add(new ActivityContextConverter());
 
             return options;
         }

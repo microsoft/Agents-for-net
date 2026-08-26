@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="SelectItemRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SelectItem"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionSelectItem"/>.
 /// </remarks>
 public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
 {
@@ -57,13 +57,16 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
             }
             catch (Exception ex)
             {
-                var result = new Microsoft.Teams.Api.MessageExtensions.Result
+                var response = new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse
                 {
-                    Type = Microsoft.Teams.Api.MessageExtensions.ResultType.Message,
-                    Text = $"An error occurred while processing the select item action: {ex.Message}"
+                    ComposeExtension = new Microsoft.Teams.Apps.MessageExtensions.ComposeExtension
+                    {
+                        Type = Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponseTypes.Message,
+                        Text = $"An error occurred while processing the select item action: {ex.Message}"
+                    }
                 };
 
-                await TeamsAgentExtension.SetResponse(ctx, result, 500).ConfigureAwait(false);
+                await TeamsAgentExtension.SetResponse(ctx, response, 500).ConfigureAwait(false);
                 throw;
             }
         };
@@ -98,7 +101,7 @@ public class SelectItemRouteBuilder : RouteBuilderBase<SelectItemRouteBuilder>
                 return Task.FromResult(
                     IsContextMatch(ctx, _route)
                     && ctx.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SelectItem)
+                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Apps.InvokeNames.MessageExtensionSelectItem)
                 );
             };
     }

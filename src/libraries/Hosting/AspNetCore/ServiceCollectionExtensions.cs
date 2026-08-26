@@ -196,6 +196,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             if (!services.Any(x => x.ServiceType == typeof(IActivityTaskQueue)))
             {
                 services.AddSingleton<HostedActivityServiceOptions>();
+                services.AddSingleton<HostedTaskServiceOptions>();
 
                 // Activity specific BackgroundService for processing authenticated activities.
                 services.AddHostedService<HostedActivityService>();

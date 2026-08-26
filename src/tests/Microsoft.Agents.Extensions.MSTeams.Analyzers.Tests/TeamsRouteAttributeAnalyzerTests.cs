@@ -50,9 +50,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
             // Core models (IActivity)
             yield return MetadataReference.CreateFromFile(
                 typeof(Microsoft.Agents.Core.Models.IActivity).Assembly.Location);
-            // Teams.Api (Query, Response, ActionResponse, MeetingDetails…)
+            // Teams.Apps (message extension, task module, and meeting models)
             yield return MetadataReference.CreateFromFile(
-                typeof(Microsoft.Teams.Api.MessageExtensions.Query).Assembly.Location);
+                typeof(Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery).Assembly.Location);
         }
 
         private static async Task<IReadOnlyList<Diagnostic>> GetDiagnosticsAsync(string source)
@@ -78,10 +78,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
             public class Agent
             {
                 [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("test")]
-                public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                     ITurnContext ctx, ITurnState state,
-                    Microsoft.Teams.Api.MessageExtensions.Query q,
-                    CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                    Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                    CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
             }
             """;
 
@@ -102,11 +102,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("cmd", "cmd*")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
                         CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -129,11 +129,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsFetchActionRoute("cmd", "cmd*")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetchTask(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionActionResponse> OnFetchTask(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Action action,
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction action,
                         CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse());
+                        => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionActionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -163,11 +163,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute(null, "cmd*")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
                         CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -191,16 +191,16 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("search")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery1(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery1(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
 
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("search")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery2(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery2(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -225,16 +225,16 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("search")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery1(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery1(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
 
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("lookup")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery2(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery2(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -255,16 +255,16 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("cmd")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
 
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsFetchActionRoute("cmd")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.ActionResponse> OnFetch(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionActionResponse> OnFetch(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Action action,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.ActionResponse());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction action,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionActionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -288,10 +288,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute(null, "[(invalid")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -315,10 +315,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute(null, "search.*")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -338,9 +338,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsSubmitActionRoute(null, "[bad")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSubmit(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnSubmit(
                         ITurnContext ctx, ITurnState state, string data, CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -364,10 +364,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -390,10 +390,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                 public class Agent
                 {
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute(null, "search.*")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
-                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
+                        CancellationToken ct) => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -422,11 +422,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
                     [Microsoft.Agents.Extensions.MSTeams.TaskModules.TeamsTaskFetchRoute("myVerb")]
-                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
+                    public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnFetch(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.TaskModules.Request data,
+                        Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
                         CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                        => Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -454,11 +454,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
                     [Microsoft.Agents.Extensions.MSTeams.TaskModules.TeamsTaskSubmitRoute("myVerb")]
-                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
+                    public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnSubmit(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.TaskModules.Request data,
+                        Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
                         CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                        => Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -483,11 +483,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
                     [Microsoft.Agents.Extensions.MSTeams.TaskModules.TeamsTaskFetchRoute("myVerb")]
-                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetch(
+                    public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnFetch(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.TaskModules.Request data,
+                        Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
                         CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                        => Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -513,11 +513,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
                     [Microsoft.Agents.Extensions.MSTeams.TaskModules.TeamsTaskSubmitRoute("myVerb")]
-                    public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmit(
+                    public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnSubmit(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.TaskModules.Request data,
+                        Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
                         CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+                        => Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);
@@ -543,11 +543,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests
                     public MyAgent(AgentApplicationOptions options) : base(options) { }
 
                     [Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRoute("cmd")]
-                    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnQuery(
+                    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnQuery(
                         ITurnContext ctx, ITurnState state,
-                        Microsoft.Teams.Api.MessageExtensions.Query q,
+                        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery q,
                         CancellationToken ct)
-                        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response());
+                        => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse());
                 }
                 """;
             var diagnostics = await GetDiagnosticsAsync(source);

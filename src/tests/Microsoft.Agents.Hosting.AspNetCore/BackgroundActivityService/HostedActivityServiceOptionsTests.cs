@@ -18,6 +18,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var options = new HostedActivityServiceOptions(configuration);
 
             Assert.Equal(60, options.ShutdownTimeoutSeconds);
+            Assert.True(options.UseScopedServices);
         }
 
         [Fact]
@@ -26,13 +27,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string>
                 {
-                    ["HostedActivityServiceOptions:ShutdownTimeoutSeconds"] = "17"
+                    ["HostedActivityServiceOptions:ShutdownTimeoutSeconds"] = "17",
+                    ["HostedActivityServiceOptions:UseScopedServices"] = "false"
                 })
                 .Build();
 
             var options = new HostedActivityServiceOptions(configuration);
 
             Assert.Equal(17, options.ShutdownTimeoutSeconds);
+            Assert.False(options.UseScopedServices);
         }
 
         [Fact]

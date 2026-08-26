@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Teams.Api.Activities;
+using Microsoft.Teams.Apps.Schema;
+using Microsoft.Teams.Apps;
+using Microsoft.Agents.Core.Serialization;
 using System.Collections.Generic;
 using Xunit;
 
@@ -13,10 +15,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
         public void TeamsActivity_ToCoreActivity_ReturnsCoreActivity()
         {
             // Arrange
-            var teamsActivity = new Microsoft.Teams.Api.Activities.Activity(Microsoft.Teams.Api.Activities.ActivityType.Message)
-            {
-                Id = "12345",
-            };
+            var teamsActivity = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Schema.TeamsActivity>(
+                """{"type":"message","id":"12345"}""");
             // Act
             var coreActivity = teamsActivity.ToCoreActivity();
             // Assert
@@ -48,19 +48,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
         [Fact]
         public void TeamsMessageActivity_ToCoreActivity_ReturnsCoreActivity()
         {
-            var t = new Test();
-            t.Properties["key1"] = "value1";
-
             // Arrange
-            var teamsActivity = new Microsoft.Teams.Api.Activities.MessageActivity
-            {
-                Id = "12345",
-                Text = "Hello, Teams!",
-                Properties =
-                {
-                    ["customProperty"] = t
-                }
-            };
+            var teamsActivity = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageActivity>(
+                """{"type":"message","id":"12345","text":"Hello, Teams!","customProperty":{"key1":"value1"}}""");
             // Act
             var coreActivity = teamsActivity.ToCoreActivity();
             // Assert

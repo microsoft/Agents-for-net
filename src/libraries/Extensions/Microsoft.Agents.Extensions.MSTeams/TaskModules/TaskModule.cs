@@ -52,9 +52,9 @@ public class TaskModule
     /// handler is triggered when the user submits the form.</para>
     /// <code>
     /// [TeamsTaskFetchRoute("simple_form")]
-    /// public Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSimpleFormFetchAsync(
+    /// public Task&lt;Microsoft.Teams.Apps.TaskModules.TaskModuleResponse&gt; OnSimpleFormFetchAsync(
     ///     ITeamsTurnContext turnContext, ITurnState turnState,
-    ///     Microsoft.Teams.Api.TaskModules.Request data, CancellationToken cancellationToken)
+    ///     Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data, CancellationToken cancellationToken)
     /// {
     ///     // Simple Adaptive Card form.  The submit action data includes "task": "simple_form"
     ///     // so the OnSimpleFormSubmitAsync handler below is called when the user submits.
@@ -70,15 +70,20 @@ public class TaskModule
     ///           }]
     ///         }
     ///         """;
-    ///     return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response(
-    ///         new Microsoft.Teams.Api.TaskModules.ContinueTask(
-    ///             new Microsoft.Teams.Api.TaskModules.TaskInfo
+    ///     return Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse
+    ///     {
+    ///         Task = new Microsoft.Teams.Apps.TaskModules.Response
+    ///         {
+    ///             Type = Microsoft.Teams.Apps.TaskModules.TaskModuleResponseTypes.Continue,
+    ///             Value = new
     ///             {
-    ///                 Card = new Microsoft.Teams.Api.Attachment(ContentTypes.AdaptiveCard, cardJson),
-    ///                 Title = "Simple Form",
-    ///                 Height = new Microsoft.Teams.Common.Union&lt;int, Microsoft.Teams.Api.TaskModules.Size&gt;(Microsoft.Teams.Api.TaskModules.Size.Small),
-    ///                 Width = new Microsoft.Teams.Common.Union&lt;int, Microsoft.Teams.Api.TaskModules.Size&gt;(Microsoft.Teams.Api.TaskModules.Size.Small)
-    ///             })));
+    ///                 card = new Microsoft.Teams.Apps.Schema.TeamsAttachment(ContentTypes.AdaptiveCard, cardJson),
+    ///                 title = "Simple Form",
+    ///                 height = "small",
+    ///                 width = "small"
+    ///             }
+    ///         }
+    ///     });
     /// }
     /// </code>
     /// </remarks>
@@ -123,14 +128,20 @@ public class TaskModule
     /// <para>The following example reads a field from the submitted form data and returns a completion message.</para>
     /// <code>
     /// [TeamsTaskSubmitRoute("simple_form")]
-    /// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSimpleFormSubmitAsync(
+    /// public async Task&lt;Microsoft.Teams.Apps.TaskModules.TaskModuleResponse&gt; OnSimpleFormSubmitAsync(
     ///     ITeamsTurnContext turnContext, ITurnState turnState,
-    ///     Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+    ///     Microsoft.Teams.Apps.TaskModules.TaskModuleRequest request, CancellationToken cancellationToken)
     /// {
     ///     var name = request.GetDataString("name", "Unknown");
     ///     await turnContext.SendActivityAsync($"Hi {name}, thanks for submitting the form!", cancellationToken: cancellationToken);
-    ///     return new Microsoft.Teams.Api.TaskModules.Response(
-    ///         new Microsoft.Teams.Api.TaskModules.MessageTask("Form was submitted"));
+    ///     return new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse
+    ///     {
+    ///         Task = new Microsoft.Teams.Apps.TaskModules.Response
+    ///         {
+    ///             Type = Microsoft.Teams.Apps.TaskModules.TaskModuleResponseTypes.Message,
+    ///             Value = "Form was submitted"
+    ///         }
+    ///     };
     /// }
     /// </code>
     /// </remarks>

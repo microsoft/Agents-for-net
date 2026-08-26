@@ -26,7 +26,9 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         /// </summary>
         /// <param name="conversationId">The identifier of the conversation receiving the activity.</param>
         /// <param name="activity">The activity being sent proactively.</param>
-        public ScopeSendActivity(string conversationId, IActivity activity) : base(Constants.ScopeSendActivity)
+        /// <param name="link">The activity link for telemetry correlation.</param>
+        public ScopeSendActivity(string conversationId, IActivity activity, System.Diagnostics.ActivityLink? link)
+            : base(Constants.ScopeSendActivity, System.Diagnostics.ActivityKind.Internal, link)
         {
             _conversationId = conversationId;
             _activity = activity;

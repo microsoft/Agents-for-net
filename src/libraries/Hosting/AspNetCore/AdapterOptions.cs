@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <remarks>If the shutdown process does not complete within the specified timeout, the
         /// application may be terminated forcefully. Set this value according to the expected shutdown duration of your
         /// application components.</remarks>
-        [Obsolete("Use HostedActivityServiceOptions instead.")]
+        [Obsolete("Use HostedActivityServiceOptions or HostedTaskServiceOptions instead.")]
         public int ShutdownTimeoutSeconds { get; set; } = 60;
 
         /// <summary>

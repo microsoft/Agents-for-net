@@ -6,6 +6,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.HeaderPropagation;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -177,13 +178,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 ["ConversationId"] = activityWithClaims.Activity.Conversation?.Id
             });
 
+            AsyncServiceScope? turnScope = null;
             try
             {
                 // We must go back through DI to get the IAgent. This is because the IAgent is typically transient, and anything
                 // else that is transient as part of the Agent, that uses IServiceProvider will encounter error since that is scoped
                 // and disposed before this gets called.
-                var agent = _serviceProvider.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
-                agent ??= _serviceProvider.GetService(typeof(IAgent));
+                //
+                // Resolving from the root IServiceProvider promotes any scoped registration in the Agent's dependency graph to
+                // the root scope, so a single instance is shared by every turn for the lifetime of the process. When
+                // HostedActivityServiceOptions.UseScopedServices is set, the turn gets its own scope instead, which is disposed
+                // once the turn completes. The SDK registers no scoped services, so this only affects registrations made by
+                // the application.
+                // Note that disposable transients resolved for the turn - IAgent itself is registered transient - are then
+                // disposed with the turn scope instead of being retained by the root scope until the host shuts down.
+                turnScope = _serviceOptions.UseScopedServices ? _serviceProvider.CreateAsyncScope() : null;
+                var turnServices = turnScope?.ServiceProvider ?? _serviceProvider;
+                var agent = turnServices.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
+                agent ??= turnServices.GetService(typeof(IAgent));
 
                 HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
                 activityWithClaims.TelemetryActivity?.Start();
@@ -233,6 +245,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 if (activityWithClaims.OnComplete != null)
                 {
                     await activityWithClaims.OnComplete(invokeResponse).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                if (turnScope.HasValue)
+                {
+                    try
+                    {
+                        await turnScope.Value.DisposeAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error occurred disposing activity service scope.");
+                    }
                 }
             }
         }

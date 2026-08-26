@@ -30,6 +30,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 .ToList();
             var expected = new List<Type>{
                 typeof(HostedActivityServiceOptions),
+                typeof(HostedTaskServiceOptions),
                 typeof(HostedActivityService),
                 typeof(HostedTaskService),
                 typeof(BackgroundTaskQueue),
@@ -44,25 +45,35 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public void AddAsyncAdapterSupport_ShouldRegisterHostedActivityServiceOptionsOnce()
+        public void AddAsyncAdapterSupport_ShouldRegisterHostedServiceOptionsOnce()
         {
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string>
                 {
-                    ["HostedActivityServiceOptions:ShutdownTimeoutSeconds"] = "23"
+                    ["HostedActivityServiceOptions:ShutdownTimeoutSeconds"] = "23",
+                    ["HostedTaskServiceOptions:ShutdownTimeoutSeconds"] = "29"
                 })
                 .Build();
             var services = new ServiceCollection();
             services.AddSingleton<IConfiguration>(configuration);
+            services.AddLogging();
 
             services.AddAsyncAdapterSupport();
             services.AddAsyncAdapterSupport();
 
             using var provider = services.BuildServiceProvider();
-            var options = provider.GetRequiredService<HostedActivityServiceOptions>();
+            var activityOptions = provider.GetRequiredService<HostedActivityServiceOptions>();
+            var taskOptions = provider.GetRequiredService<HostedTaskServiceOptions>();
+            var hostedServices = provider.GetServices<IHostedService>().ToList();
 
-            Assert.Equal(23, options.ShutdownTimeoutSeconds);
+            Assert.Equal(23, activityOptions.ShutdownTimeoutSeconds);
+            Assert.Equal(29, taskOptions.ShutdownTimeoutSeconds);
+            Assert.Collection(
+                hostedServices,
+                service => Assert.IsType<HostedActivityService>(service),
+                service => Assert.IsType<HostedTaskService>(service));
             Assert.Single(services, service => service.ServiceType == typeof(HostedActivityServiceOptions));
+            Assert.Single(services, service => service.ServiceType == typeof(HostedTaskServiceOptions));
         }
 
         [Fact]
@@ -81,6 +92,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 typeof(IOutboundHostValidator),
                 // CloudAdapter services.
                 typeof(HostedActivityServiceOptions),
+                typeof(HostedTaskServiceOptions),
                 typeof(HostedActivityService),
                 typeof(HostedTaskService),
                 typeof(BackgroundTaskQueue),

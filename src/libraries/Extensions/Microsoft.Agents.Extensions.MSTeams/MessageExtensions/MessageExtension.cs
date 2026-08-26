@@ -334,7 +334,7 @@ public class MessageExtension
     /// Alternatively, the <see cref="TeamsSettingRouteAttribute"/> can be used to decorate a <see cref="SettingHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">A delegate that processes the settings event. The handler receives the turn context, turn state, deserialized
-    /// settings data of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token. Cannot be null.</param>
+    /// settings data of type <see cref="Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery"/>, and a cancellation token. Cannot be null.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
     /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
     /// <returns>The current MessageExtension instance for method chaining.</returns>

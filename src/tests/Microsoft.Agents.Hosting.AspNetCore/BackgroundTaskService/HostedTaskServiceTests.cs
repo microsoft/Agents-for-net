@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -120,6 +121,45 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests.BackgroundTaskService
             // must not throw LockRecursionException. See https://github.com/dotnet/aspnetcore/issues/40271.
             await record.Service.StopAsync(token);
             await record.Service.StopAsync(token);
+        }
+
+        [Fact]
+        public void Constructor_WithHostedOptions_UsesHostedShutdownTimeout()
+        {
+            var options = new HostedTaskServiceOptions(new ConfigurationBuilder().Build())
+            {
+                ShutdownTimeoutSeconds = 17
+            };
+
+            var service = new HostedTaskService(
+                new BackgroundTaskQueue(),
+                Mock.Of<ILogger<HostedTaskService>>(),
+                options);
+
+            Assert.Equal(17, GetShutdownTimeoutSeconds(service));
+        }
+
+        [Fact]
+        public void LegacyConstructor_WithAdapterOptions_UsesLegacyShutdownTimeout()
+        {
+#pragma warning disable CS0618
+            var service = new HostedTaskService(
+                new BackgroundTaskQueue(),
+                Mock.Of<ILogger<HostedTaskService>>(),
+                new AdapterOptions { ShutdownTimeoutSeconds = 29 });
+#pragma warning restore CS0618
+
+            Assert.Equal(29, GetShutdownTimeoutSeconds(service));
+        }
+
+        private static int GetShutdownTimeoutSeconds(HostedTaskService service)
+        {
+            var field = typeof(HostedTaskService).GetField(
+                "_serviceOptions",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            var options = (HostedTaskServiceOptions)field.GetValue(service);
+
+            return options.ShutdownTimeoutSeconds;
         }
 
         private static Record UseRecord()

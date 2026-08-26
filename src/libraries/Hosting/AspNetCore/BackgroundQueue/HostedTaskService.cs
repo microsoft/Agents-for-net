@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -22,7 +23,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
         private readonly ConcurrentDictionary<Func<CancellationToken,Task>, Task> _tasks = new();
         private readonly IBackgroundTaskQueue _taskQueue;
-        private readonly int _shutdownTimeoutSeconds;
+        private readonly HostedTaskServiceOptions _serviceOptions;
         private int _stopping;
 
         /// <summary>
@@ -33,16 +34,52 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// </remarks>
         /// <param name="taskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/> implementation where tasks are queued to be processed.</param>
         /// <param name="logger"><see cref="Microsoft.Extensions.Logging.ILogger"/> implementation, for logging including background thread exception information.</param>
-        /// <param name="options"></param>
-        public HostedTaskService(IBackgroundTaskQueue taskQueue, ILogger<HostedTaskService> logger, AdapterOptions options = null)
+        public HostedTaskService(IBackgroundTaskQueue taskQueue, ILogger<HostedTaskService> logger)
+            : this(taskQueue, logger, new HostedTaskServiceOptions(new ConfigurationBuilder().Build()))
+        {
+        }
+
+        /// <summary>
+        /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedTaskService"/> instance for processing work on a background thread.
+        /// </summary>
+        /// <param name="taskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/> implementation where tasks are queued to be processed.</param>
+        /// <param name="logger"><see cref="Microsoft.Extensions.Logging.ILogger"/> implementation, for logging including background thread exception information.</param>
+        /// <param name="options">Legacy adapter options.</param>
+        [Obsolete("Use the constructor overload accepting HostedTaskServiceOptions instead.")]
+        public HostedTaskService(IBackgroundTaskQueue taskQueue, ILogger<HostedTaskService> logger, AdapterOptions options)
+            : this(taskQueue, logger, CreateHostedTaskServiceOptions(options))
+        {
+        }
+
+        /// <summary>
+        /// Create a <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedTaskService"/> instance for processing work on a background thread.
+        /// </summary>
+        /// <param name="taskQueue"><see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.ActivityTaskQueue"/> implementation where tasks are queued to be processed.</param>
+        /// <param name="logger"><see cref="Microsoft.Extensions.Logging.ILogger"/> implementation, for logging including background thread exception information.</param>
+        /// <param name="hostedOptions">Options for the hosted task service.</param>
+        public HostedTaskService(
+            IBackgroundTaskQueue taskQueue,
+            ILogger<HostedTaskService> logger,
+            HostedTaskServiceOptions hostedOptions)
         {
             ArgumentNullException.ThrowIfNull(taskQueue);
 
-#pragma warning disable CS0618
-            _shutdownTimeoutSeconds = options != null ? options.ShutdownTimeoutSeconds : 60;
-#pragma warning restore CS0618
+            _serviceOptions = hostedOptions ?? new HostedTaskServiceOptions(new ConfigurationBuilder().Build());
             _taskQueue = taskQueue;
-            _logger = logger ?? NullLogger<HostedTaskService>.Instance;;
+            _logger = logger ?? NullLogger<HostedTaskService>.Instance;
+        }
+
+        private static HostedTaskServiceOptions CreateHostedTaskServiceOptions(AdapterOptions options)
+        {
+            var hostedOptions = new HostedTaskServiceOptions(new ConfigurationBuilder().Build());
+            if (options != null)
+            {
+#pragma warning disable CS0618
+                hostedOptions.ShutdownTimeoutSeconds = options.ShutdownTimeoutSeconds;
+#pragma warning restore CS0618
+            }
+
+            return hostedOptions;
         }
 
         /// <summary>
@@ -65,10 +102,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
             _logger.LogInformation("Queued Hosted Service is stopping.");
 
             // Obtain a write lock and do not release it, preventing new tasks from starting
-            if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_shutdownTimeoutSeconds)))
+            if (_lock.TryEnterWriteLock(TimeSpan.FromSeconds(_serviceOptions.ShutdownTimeoutSeconds)))
             {
                 // Wait for currently running tasks, but only n seconds.
-                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_shutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
+                await Task.WhenAny(Task.WhenAll(_tasks.Values), Task.Delay(TimeSpan.FromSeconds(_serviceOptions.ShutdownTimeoutSeconds), stoppingToken)).ConfigureAwait(false);
             }
 
             await base.StopAsync(stoppingToken).ConfigureAwait(false);

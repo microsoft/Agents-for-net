@@ -4,6 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Microsoft.Agents.Core.Telemetry
 {
@@ -42,6 +43,25 @@ namespace Microsoft.Agents.Core.Telemetry
         private Exception? _error = null;
         private bool _disposed = false;
 
+        public ActivityContext? Context => _telemetryActivity?.Context;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TelemetryScope"/> class and starts
+        /// a new <see cref="Activity"/> without an activity link.
+        /// </summary>
+        /// <param name="activityName">The operation name for the new <see cref="Activity"/>.</param>
+        /// <param name="activityKind">
+        /// The <see cref="ActivityKind"/> for the new activity.
+        /// Defaults to <see cref="ActivityKind.Internal"/>.
+        /// </param>
+        /// <remarks>
+        /// This overload preserves compatibility for callers compiled against earlier versions of the SDK.
+        /// </remarks>
+        public TelemetryScope(string activityName, ActivityKind activityKind = ActivityKind.Internal)
+        {
+            _telemetryActivity = AgentsTelemetry.ActivitySource.StartActivity(activityName, activityKind);
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TelemetryScope"/> class and starts
         /// a new <see cref="System.Diagnostics.Activity"/> from <see cref="Microsoft.Agents.Core.Telemetry.AgentsTelemetry.ActivitySource"/>.
@@ -49,13 +69,24 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <param name="activityName">The operation name for the new <see cref="System.Diagnostics.Activity"/>.</param>
         /// <param name="activityKind">
         /// The <see cref="System.Diagnostics.ActivityKind"/> for the new activity.
-        /// Defaults to <see cref="System.Diagnostics.ActivityKind.Internal"/>.
         /// </param>
-        public TelemetryScope(string activityName, ActivityKind activityKind = ActivityKind.Internal)
+        /// <param name="link">
+        /// The <see cref="ActivityLink"/> to associate with the new activity, or <see langword="null"/>
+        /// to create the activity without a link.
+        /// </param>
+        public TelemetryScope(string activityName, ActivityKind activityKind, ActivityLink? link)
         {
+            var parentContext = Activity.Current?.Context ?? default;
+            List<ActivityLink>? links = null;
+            if (link != null)
+            {
+                links = new List<ActivityLink> { (ActivityLink) link };
+            }
             _telemetryActivity = AgentsTelemetry.ActivitySource.StartActivity(
                 activityName,
-                activityKind
+                activityKind,
+                parentContext: parentContext,
+                links: links
             );
         }
 
