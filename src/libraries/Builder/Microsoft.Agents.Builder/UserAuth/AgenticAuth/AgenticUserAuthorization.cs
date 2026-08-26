@@ -98,6 +98,7 @@ namespace Microsoft.Agents.Builder.UserAuth.AgenticAuth
                 token = await agenticTokenProvider.GetAgenticInstanceTokenAsync(
                     turnContext.Activity.GetAgenticTenantId(),
                     turnContext.Activity.GetAgenticInstanceId(),
+                    null,
                     cancellationToken).ConfigureAwait(false);
             }
             else
