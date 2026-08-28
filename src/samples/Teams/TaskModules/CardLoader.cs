@@ -42,7 +42,7 @@ internal static class CardLoader
     /// <param name="fileName"></param>
     /// <param name="dataKey"></param>
     /// <returns></returns>
-    public static JsonElement LoadCardJson(Microsoft.Teams.Api.TaskModules.Request request, string fileName, string? dataKey = null )
+    public static JsonElement LoadCardJson(Microsoft.Teams.Apps.TaskModules.TaskModuleRequest request, string fileName, string? dataKey = null)
     {
         return LoadCardJson(fileName, request.GetDataAs<IReadOnlyDictionary<string, string>>(), [dataKey ?? "task"]);
     }

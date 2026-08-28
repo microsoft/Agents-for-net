@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// The method must match the <see cref="QueryHandler"/> delegate signature.
 /// <code>
 /// [TeamsQueryRoute("searchProducts")]
-/// public async Task&lt;Response&gt; OnSearchProductsAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnSearchProductsAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery query, CancellationToken cancellationToken)
 /// {
 ///     var keyword = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
 ///     var items = await _catalog.SearchAsync(keyword, cancellationToken);
@@ -169,7 +169,7 @@ public class TeamsQuerySettingUrlRouteAttribute(bool isAgenticOnly = false, usho
 /// The method must match the <see cref="FetchActionHandler"/> delegate signature.
 /// <code>
 /// [TeamsFetchActionRoute("myCommand")]
-/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
+/// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction action, CancellationToken cancellationToken)
 /// {
 ///     return Task.FromResult(new ActionResponse
 ///     {
@@ -309,7 +309,7 @@ public class TeamsMessagePreviewSendRouteAttribute(string commandId = null, stri
 /// The method must match the <see cref="SettingHandler"/> delegate signature.
 /// <code>
 /// [TeamsSettingRoute]
-/// public Task&lt;Response&gt; OnSettingAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken cancellationToken)
+/// public Task&lt;Response&gt; OnSettingAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery query, CancellationToken cancellationToken)
 /// {
 ///     // Persist user settings and return an updated result
 ///     var setting = query.Parameters.FirstOrDefault()?.Value ?? string.Empty;
@@ -341,10 +341,10 @@ public class TeamsSettingRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension submit action events in Teams.
 /// The method must match the <see cref="SubmitActionHandler"/> delegate signature —
-/// the third parameter must be <see cref="Microsoft.Teams.Api.MessageExtensions.Action"/>.
+/// the third parameter must be <see cref="Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction"/>.
 /// <code>
 /// [TeamsSubmitActionRoute("createTask")]
-/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.MessageExtensions.Action action, CancellationToken cancellationToken)
+/// public async Task&lt;Response&gt; OnCreateTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction action, CancellationToken cancellationToken)
 /// {
 ///     var task = await _taskService.CreateAsync(action.Data["title"]?.ToString(), action.Data["assignedTo"]?.ToString(), cancellationToken);
 ///     var card = task.ToAdaptiveCard().ToMessagingExtensionAttachment();

@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="SubmitActionRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction"/>,
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionSubmitAction"/>,
 /// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
 /// </remarks>
 public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRouteBuilder>
@@ -29,7 +29,7 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
 
     public SubmitActionRouteBuilder() : base()
     {
-        InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.SubmitAction;
+        InvokeName = Microsoft.Teams.Apps.InvokeNames.MessageExtensionSubmitAction;
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public class SubmitActionRouteBuilder : CommandRouteBuilderBase<SubmitActionRout
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
+            var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction>(ctx.Activity.Value);
             var result = await handler(new TeamsTurnContext(ctx), ts, action, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, result).ConfigureAwait(false);
         };

@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -118,12 +118,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -156,13 +156,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             RouteSelector routeSelector = (turnContext, cancellationToken) =>
@@ -216,7 +216,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var expectedInvokeResponse = new InvokeResponse()
             {
                 Status = 200,
@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -280,13 +280,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
 
@@ -320,13 +320,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             var extension = new TeamsAgentExtension(app);
@@ -374,14 +374,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = taskModuleResponseMock.Object };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -425,13 +425,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -472,14 +472,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = taskModuleResponseMock.Object };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskFetchHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -523,14 +523,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = taskModuleResponseMock.Object };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -574,13 +574,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -621,14 +621,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = taskModuleResponseMock.Object };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskSubmitHandler handler = (turnContext, turnState, data, cancellationToken) =>
@@ -667,14 +667,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = taskModuleResponseMock.Object };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(taskModuleResponseMock.Object);
@@ -713,10 +713,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
-            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -744,14 +744,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 From = new() { Id = "fromId" },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
             });
-            var taskModuleResponseMock = new Mock<Microsoft.Teams.Api.TaskModules.Response>();
+            var taskModuleResponseMock = new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>();
             var expectedInvokeResponse = new InvokeResponse() { Status = 200, Body = taskModuleResponseMock.Object };
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = new AgentApplication(new(() => turnState.Result)
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
             TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(taskModuleResponseMock.Object);
@@ -790,10 +790,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
-            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -828,10 +828,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
-            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -864,10 +864,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
-            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -902,10 +902,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
-            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -941,10 +941,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
-            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -977,10 +977,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
-            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskSubmitHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {
@@ -1015,10 +1015,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             var extension = new TeamsAgentExtension(app);
-            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Api.TaskModules.Response>().Object);
+            TaskFetchHandler handler = (ctx, ts, data, ct) => Task.FromResult(new Mock<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse>().Object);
 
             app.RegisterExtension(extension, (ext) =>
             {

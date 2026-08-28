@@ -23,27 +23,57 @@ public interface ITeamsTurnContext : ITurnContext
     /// <summary>
     /// Returns the ApiClient instance registered for Microsoft Teams API access in the current turn context.
     /// </summary>
-    Microsoft.Teams.Api.Clients.ApiClient Client { get; }
+    Microsoft.Teams.Apps.Clients.ApiClient Client { get; }
 
     /// <summary>
     /// Sends an activity to the conversation with a targeted treatment, allowing the activity to be directed to a
     /// specific recipient or group within the conversation.
     /// </summary>
     /// <param name="activity">The activity to send. Must represent the message or event to be delivered and cannot be null.</param>
+    /// <param name="recipient">The account that should receive the targeted activity.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
     /// <returns>A task that represents the asynchronous send operation. The task result contains a ResourceResponse with
     /// information about the sent activity.</returns>
-    Task<ResourceResponse> SendTargetedActivityAsync(IActivity activity, CancellationToken cancellationToken = default);
+    Task<ResourceResponse> SendTargetedActivityAsync(
+        IActivity activity,
+        ChannelAccount recipient,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sends a set of activities to targeted recipients within the current turn context asynchronously.
+    /// Sends an activity to a targeted user within the current conversation.
     /// </summary>
-    /// <param name="activities">An array of activities to send. Each activity will be treated as targeted. Cannot be null and must not
-    /// contain null elements.</param>
+    /// <param name="activity">The activity to send.</param>
+    /// <param name="recipientId">The ID of the user account that should receive the targeted activity.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
-    /// <returns>A task that represents the asynchronous send operation. The task result contains an array of
-    /// ResourceResponse objects for each sent activity.</returns>
-    Task<ResourceResponse[]> SendTargetedActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default);
+    /// <returns>A task whose result contains information about the sent activity.</returns>
+    Task<ResourceResponse> SendTargetedActivityAsync(
+        IActivity activity,
+        string recipientId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends text as a targeted message to a user within the current conversation.
+    /// </summary>
+    /// <param name="text">The text of the message to send.</param>
+    /// <param name="recipient">The account that should receive the targeted message.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
+    /// <returns>A task whose result contains information about the sent activity.</returns>
+    Task<ResourceResponse> SendTargetedActivityAsync(
+        string text,
+        ChannelAccount recipient,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends text as a targeted message to a user within the current conversation.
+    /// </summary>
+    /// <param name="text">The text of the message to send.</param>
+    /// <param name="recipientId">The ID of the user account that should receive the targeted message.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the send operation.</param>
+    /// <returns>A task whose result contains information about the sent activity.</returns>
+    Task<ResourceResponse> SendTargetedActivityAsync(
+        string text,
+        string recipientId,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a <see cref="GraphServiceClient"/> authenticated with a delegated (user) token for the signed-in user

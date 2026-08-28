@@ -24,6 +24,9 @@ namespace Microsoft.Agents.Builder.Telemetry.App
         /// <summary>Activity name for downloading file attachments during a turn.</summary>
         internal static readonly string ScopeDownloadFiles = "agents.app.download_files";
 
+        /// <summary>Activity name for sending an automatic typing indicator.</summary>
+        internal static readonly string ScopeTypingIndicator = "agents.app.typing_indicator";
+
         /// <summary>Metric name for the counter of turns processed by the agent.</summary>
         internal static readonly string MetricTurnCount = "agents.turn.count";
 

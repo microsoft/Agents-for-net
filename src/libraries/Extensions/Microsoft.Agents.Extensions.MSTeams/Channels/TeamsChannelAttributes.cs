@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelCreatedRoute]
-/// public async Task OnChannelCreatedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelCreatedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel created event
 /// }
@@ -47,7 +47,7 @@ public class TeamsChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushor
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelDeletedRoute]
-/// public async Task OnChannelDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel deleted event
 /// }
@@ -79,7 +79,7 @@ public class TeamsChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushor
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelMemberAddedRoute]
-/// public async Task OnChannelMemberAddedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelMemberAddedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel member added event
 /// }
@@ -111,7 +111,7 @@ public class TeamsChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, u
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelMemberRemovedRoute]
-/// public async Task OnChannelMemberRemovedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelMemberRemovedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel member removed event
 /// }
@@ -143,7 +143,7 @@ public class TeamsChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false,
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelRenamedRoute]
-/// public async Task OnChannelRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel renamed event
 /// }
@@ -175,7 +175,7 @@ public class TeamsChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushor
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelRestoredRoute]
-/// public async Task OnChannelRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel restored event
 /// }
@@ -207,7 +207,7 @@ public class TeamsChannelRestoredRouteAttribute(bool isAgenticOnly = false, usho
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelSharedRoute]
-/// public async Task OnChannelSharedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelSharedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel shared event
 /// }
@@ -239,7 +239,7 @@ public class TeamsChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelUnsharedRoute]
-/// public async Task OnChannelUnsharedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnChannelUnsharedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle channel unshared event
 /// }
@@ -273,7 +273,7 @@ public class TeamsChannelUnsharedRouteAttribute(bool isAgenticOnly = false, usho
 /// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelUpdateRoute]
-/// public async Task OnAnyChannelEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel channel, CancellationToken cancellationToken)
+/// public async Task OnAnyChannelEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
 /// {
 ///     // Handle any channel update event
 /// }

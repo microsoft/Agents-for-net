@@ -19,11 +19,11 @@ public static class TeamsModelExtensions
     /// <summary>
     /// Wraps a <c>ThumbnailCard</c> in a Teams <c>Attachment</c> with the appropriate content type.
     /// </summary>
-    public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.ThumbnailCard card)
+    public static Microsoft.Teams.Apps.Schema.TeamsAttachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.ThumbnailCard card)
     {
-        return new Microsoft.Teams.Api.Attachment()
+        return new Microsoft.Teams.Apps.Schema.TeamsAttachment()
         {
-            ContentType = Microsoft.Teams.Api.ContentType.ThumbnailCard,
+            ContentType = Microsoft.Teams.Apps.Schema.AttachmentContentType.ThumbnailCard,
             Content = card,
         };
     }
@@ -31,11 +31,11 @@ public static class TeamsModelExtensions
     /// <summary>
     /// Wraps a <c>HeroCard</c> in a Teams <c>Attachment</c> with the appropriate content type.
     /// </summary>
-    public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.HeroCard card)
+    public static Microsoft.Teams.Apps.Schema.TeamsAttachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.HeroCard card)
     {
-        return new Microsoft.Teams.Api.Attachment()
+        return new Microsoft.Teams.Apps.Schema.TeamsAttachment()
         {
-            ContentType = Microsoft.Teams.Api.ContentType.HeroCard,
+            ContentType = Microsoft.Teams.Apps.Schema.AttachmentContentType.HeroCard,
             Content = card,
         };
     }
@@ -43,11 +43,11 @@ public static class TeamsModelExtensions
     /// <summary>
     /// Wraps an <c>AudioCard</c> in a Teams <c>Attachment</c> with the appropriate content type.
     /// </summary>
-    public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.AudioCard card)
+    public static Microsoft.Teams.Apps.Schema.TeamsAttachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.AudioCard card)
     {
-        return new Microsoft.Teams.Api.Attachment()
+        return new Microsoft.Teams.Apps.Schema.TeamsAttachment()
         {
-            ContentType = Microsoft.Teams.Api.ContentType.AudioCard,
+            ContentType = new Microsoft.Teams.Apps.Schema.AttachmentContentType("application/vnd.microsoft.card.audio"),
             Content = card,
         };
     }
@@ -55,11 +55,11 @@ public static class TeamsModelExtensions
     /// <summary>
     /// Wraps an <c>AnimationCard</c> in a Teams <c>Attachment</c> with the appropriate content type.
     /// </summary>
-    public static Microsoft.Teams.Api.Attachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.AnimationCard card)
+    public static Microsoft.Teams.Apps.Schema.TeamsAttachment ToTeamsAttachment(this Microsoft.Agents.Core.Models.AnimationCard card)
     {
-        return new Microsoft.Teams.Api.Attachment()
+        return new Microsoft.Teams.Apps.Schema.TeamsAttachment()
         {
-            ContentType = Microsoft.Teams.Api.ContentType.AnimationCard,
+            ContentType = new Microsoft.Teams.Apps.Schema.AttachmentContentType("application/vnd.microsoft.card.animation"),
             Content = card,
         };
     }
@@ -69,13 +69,13 @@ public static class TeamsModelExtensions
     /// <summary>
     /// Converts a Teams <c>Activity</c> to its corresponding <c>Microsoft.Agents.Core.Models.IActivity</c>.
     /// </summary>
-    /// <typeparam name="T">The type of the Teams activity to convert. Must derive from Microsoft.Teams.Api.Activities.Activity.</typeparam>
+    /// <typeparam name="T">The type of the Teams activity-like object to convert.</typeparam>
     /// <param name="teamsActivity">The Teams activity instance to convert.</param>
     /// <returns>An instance of <c>Microsoft.Agents.Core.Models.IActivity</c> that represents the converted activity.</returns>
-    public static Core.Models.IActivity ToCoreActivity<T>(this T teamsActivity) where T : Microsoft.Teams.Api.Activities.Activity
+    public static Core.Models.IActivity ToCoreActivity<T>(this T teamsActivity)
     {
         var coreActivity = ProtocolJsonSerializer.ToObject<Core.Models.IActivity>(teamsActivity);
-        if (teamsActivity is Microsoft.Teams.Api.Activities.MessageActivity messageActivity)
+        if (teamsActivity is Microsoft.Teams.Apps.MessageActivity messageActivity)
         {
             coreActivity.Text = (messageActivity.Text == "" ? null : messageActivity.Text);
         }
@@ -88,14 +88,16 @@ public static class TeamsModelExtensions
     /// <remarks>The returned activity may be of a specific subtype, such as <c>MessageActivity</c>, depending on the input.</remarks>
     /// <param name="activity">The activity to convert.</param>
     /// <returns>A Microsoft Teams <c>Activity</c> that represents the specified <c>Microsoft.Agents.Core.Models.IActivity</c>.</returns>
-    public static Microsoft.Teams.Api.Activities.Activity ToTeamsActivity(this Core.Models.IActivity activity)
+    public static Microsoft.Teams.Apps.Schema.TeamsActivity ToTeamsActivity(this Core.Models.IActivity activity)
     {
-        var teamsActivity = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Activities.Activity>(activity);
-        if (teamsActivity is Microsoft.Teams.Api.Activities.MessageActivity messageActivity)
+        if (activity.IsType(Core.Models.ActivityTypes.Message))
         {
+            var messageActivity = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageActivity>(activity);
             messageActivity.Text = activity.Text;
+            return messageActivity;
         }
-        return teamsActivity;
+
+        return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Schema.TeamsActivity>(activity);
     }
 
     /// <summary>
@@ -103,7 +105,7 @@ public static class TeamsModelExtensions
     /// </summary>
     /// <param name="teamsAccount">The Microsoft Teams account to convert.</param>
     /// <returns>A <c>Microsoft.Agents.Core.Models.ChannelAccount</c> model representing the specified Teams <c>Account</c>.</returns>
-    public static Core.Models.ChannelAccount ToCoreChannelAccount(this Microsoft.Teams.Api.Account teamsAccount)
+    public static Core.Models.ChannelAccount ToCoreChannelAccount(this Microsoft.Teams.Apps.Schema.TeamsChannelAccount teamsAccount)
     {
         return ProtocolJsonSerializer.ToObject<Core.Models.ChannelAccount>(teamsAccount);
     }
@@ -113,9 +115,9 @@ public static class TeamsModelExtensions
     /// </summary>
     /// <param name="channelAccount">The ChannelAccount to convert.</param>
     /// <returns>A Teams <c>Account</c> object representing the specified <c>Microsoft.Agents.Core.Models.ChannelAccount</c>.</returns>
-    public static Microsoft.Teams.Api.Account ToTeamsAccount(this Core.Models.ChannelAccount channelAccount)
+    public static Microsoft.Teams.Apps.Schema.TeamsChannelAccount ToTeamsAccount(this Core.Models.ChannelAccount channelAccount)
     {
-        return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Account>(channelAccount);
+        return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Schema.TeamsChannelAccount>(channelAccount);
     }
 
     /// <summary>
@@ -124,7 +126,7 @@ public static class TeamsModelExtensions
     /// <param name="teamsReaction">The Teams message reaction to convert.</param>
     /// <returns>A <c>Microsoft.Agents.Core.Models.MessageReaction</c> model that represents the specified Teams <c>Reaction</c>.</returns>
 #pragma warning disable ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    public static Core.Models.MessageReaction ToCoreMessageReaction(this Microsoft.Teams.Api.Messages.Reaction teamsReaction)
+    public static Core.Models.MessageReaction ToCoreMessageReaction(this Microsoft.Teams.Apps.MessageReaction teamsReaction)
 #pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     {
         return ProtocolJsonSerializer.ToObject<Core.Models.MessageReaction>(teamsReaction);
@@ -136,9 +138,9 @@ public static class TeamsModelExtensions
     /// <param name="messageReaction">The message reaction to convert.</param>
     /// <returns>A Microsoft Teams <c>Reaction</c> object that represents the specified <c>Microsoft.Agents.Core.Models.MessageReaction</c>.</returns>
 #pragma warning disable ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-    public static Microsoft.Teams.Api.Messages.Reaction ToTeamsReaction(this Core.Models.MessageReaction messageReaction)
+    public static Microsoft.Teams.Apps.MessageReaction ToTeamsReaction(this Core.Models.MessageReaction messageReaction)
     {
-        return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Messages.Reaction>(messageReaction);
+        return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageReaction>(messageReaction);
     }
 #pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
     #endregion
@@ -147,7 +149,7 @@ public static class TeamsModelExtensions
     /// Deserializes the <c>Data</c> payload of a task module request to the specified type.
     /// Returns the default value of <typeparamref name="T"/> when <c>Data</c> is null.
     /// </summary>
-    public static T GetDataAs<T>(this Microsoft.Teams.Api.TaskModules.Request request)
+    public static T GetDataAs<T>(this Microsoft.Teams.Apps.TaskModules.TaskModuleRequest request)
     {
          return request?.Data is null ? default : ProtocolJsonSerializer.ToObject<T>(request.Data);
     }
@@ -156,7 +158,7 @@ public static class TeamsModelExtensions
     /// Deserializes the <c>Data</c> payload of a message extension action to the specified type.
     /// Returns the default value of <typeparamref name="T"/> when <c>Data</c> is null.
     /// </summary>
-    public static T GetDataAs<T>(this Microsoft.Teams.Api.MessageExtensions.Action action)
+    public static T GetDataAs<T>(this Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction action)
     {
         return action?.Data is null ? default : ProtocolJsonSerializer.ToObject<T>(action.Data);
     }
@@ -165,7 +167,7 @@ public static class TeamsModelExtensions
     /// Retrieves a string value from the <c>Data</c> JSON object of a task module request by key.
     /// Returns <paramref name="defaultValue"/> (or an empty string) when the key is not found or the data is not a JSON object.
     /// </summary>
-    public static string GetDataString(this Microsoft.Teams.Api.TaskModules.Request request, string key, string? defaultValue = null)
+    public static string GetDataString(this Microsoft.Teams.Apps.TaskModules.TaskModuleRequest request, string key, string? defaultValue = null)
     {
         if (request?.Data is System.Text.Json.JsonElement el
             && el.ValueKind == System.Text.Json.JsonValueKind.Object

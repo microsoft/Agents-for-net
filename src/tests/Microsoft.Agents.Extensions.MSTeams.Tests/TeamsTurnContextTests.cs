@@ -4,8 +4,10 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Tests;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.MSTeams.Models;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -22,12 +24,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
             var turnContext = CreateTurnContext(adapter);
-            var activity = new Activity { Type = ActivityTypes.Message, Text = "hello", Recipient = TargetUser };
+            var activity = new Activity { Type = ActivityTypes.Message, Text = "hello" };
 
-            await turnContext.SendTargetedActivityAsync(activity);
+            await turnContext.SendTargetedActivityAsync(activity, TargetUser);
 
             Assert.NotNull(captured);
             var sent = Assert.Single(captured);
+            Assert.Same(TargetUser, sent.Recipient);
             var treatment = Assert.Single(sent.Entities.OfType<ActivityTreatment>());
             Assert.Equal(ActivityTreatmentTypes.Targeted, treatment.Treatment);
         }
@@ -39,7 +42,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             var turnContext = CreateTurnContext(adapter);
             var activity = new Activity { Type = ActivityTypes.Message, Text = "original", Recipient = TargetUser };
 
-            await turnContext.SendTargetedActivityAsync(activity);
+            await turnContext.SendTargetedActivityAsync(activity, TargetUser);
 
             // The original's Entities should not contain any targeted treatment
             Assert.DoesNotContain(activity.Entities ?? [], e => e is ActivityTreatment);
@@ -58,7 +61,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Entities = [originalEntity]
             };
 
-            await turnContext.SendTargetedActivityAsync(activity);
+            await turnContext.SendTargetedActivityAsync(activity, TargetUser);
 
             // Original still has exactly one entity
             Assert.Single(activity.Entities);
@@ -78,7 +81,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Entities = [new Entity { Type = "custom" }]
             };
 
-            await turnContext.SendTargetedActivityAsync(activity);
+            await turnContext.SendTargetedActivityAsync(activity, TargetUser);
 
             // Sent activity has the original entity plus the targeted treatment
             Assert.NotNull(captured);
@@ -96,7 +99,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             var turnContext = CreateTurnContext(adapter);
             var activity = new Activity { Type = ActivityTypes.Message, Id = "msg-1", Recipient = TargetUser };
 
-            var response = await turnContext.SendTargetedActivityAsync(activity);
+            var response = await turnContext.SendTargetedActivityAsync(activity, TargetUser);
 
             // SimpleAdapter echoes the Id back
             Assert.NotNull(response);
@@ -111,179 +114,235 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             var turnContext = CreateTurnContext(adapter);
             var activity = new Activity { Type = ActivityTypes.Message, Text = "hello", Recipient = TargetUser };
 
-            await turnContext.SendTargetedActivityAsync(activity);
+            await turnContext.SendTargetedActivityAsync(activity, TargetUser);
 
             // Sent activity is a different object instance from the original
             Assert.NotNull(captured);
             Assert.NotSame(activity, captured[0]);
         }
 
-        // ── SendTargetedActivitiesAsync ───────────────────────────────────────
-
         [Fact]
-        public async Task SendTargetedActivitiesAsync_AllSentActivitiesHaveTargetedTreatment()
+        public async Task SendTargetedActivityAsync_TargetedInbound_ReplacesQuotedReplyWithPromptPreview()
         {
             IActivity[] captured = null;
             var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
-            var activities = new IActivity[]
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+            ITeamsActivity outbound = new TeamsActivity
             {
-                new Activity { Type = ActivityTypes.Message, Text = "msg1", Recipient = TargetUser },
-                new Activity { Type = ActivityTypes.Message, Text = "msg2", Recipient = TargetUser },
-                new Activity { Type = ActivityTypes.Message, Text = "msg3", Recipient = TargetUser },
+                Type = ActivityTypes.Message,
+                Text = string.Empty,
+                Recipient = TargetUser
             };
+            outbound.AddQuotedReply("quoted-message", "response");
 
-            await turnContext.SendTargetedActivitiesAsync(activities);
+            await turnContext.SendTargetedActivityAsync(outbound, TargetUser);
 
-            Assert.NotNull(captured);
-            Assert.Equal(3, captured.Length);
-            foreach (var sent in captured)
-            {
-                var treatment = Assert.Single(sent.Entities.OfType<ActivityTreatment>());
-                Assert.Equal(ActivityTreatmentTypes.Targeted, treatment.Treatment);
-            }
-        }
-
-        [Fact]
-        public async Task SendTargetedActivitiesAsync_OriginalActivitiesAreNotModified()
-        {
-            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
-            var activities = new IActivity[]
-            {
-                new Activity { Type = ActivityTypes.Message, Text = "a", Recipient = TargetUser },
-                new Activity { Type = ActivityTypes.Message, Text = "b", Recipient = TargetUser },
-            };
-
-            await turnContext.SendTargetedActivitiesAsync(activities);
-
-            // Originals should not contain any targeted treatment
-            Assert.All(activities, a => Assert.DoesNotContain(a.Entities ?? [], e => e is ActivityTreatment));
-        }
-
-        [Fact]
-        public async Task SendTargetedActivitiesAsync_SentActivitiesAreClones()
-        {
-            IActivity[] captured = null;
-            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
-            var activities = new IActivity[]
-            {
-                new Activity { Type = ActivityTypes.Message, Text = "a", Recipient = TargetUser },
-                new Activity { Type = ActivityTypes.Message, Text = "b", Recipient = TargetUser },
-            };
-
-            await turnContext.SendTargetedActivitiesAsync(activities);
-
-            // Sent activities are different object instances from the originals
-            Assert.NotNull(captured);
-            Assert.DoesNotContain(captured, sent => activities.Contains(sent));
-        }
-
-        [Fact]
-        public async Task SendTargetedActivitiesAsync_ReturnsResourceResponseForEach()
-        {
-            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
-            var activities = new IActivity[]
-            {
-                new Activity { Type = ActivityTypes.Message, Id = "id-1", Recipient = TargetUser },
-                new Activity { Type = ActivityTypes.Message, Id = "id-2", Recipient = TargetUser },
-            };
-
-            var responses = await turnContext.SendTargetedActivitiesAsync(activities);
-
-            // SimpleAdapter echoes each Id
-            Assert.Equal(2, responses.Length);
-            Assert.Contains(responses, r => r.Id == "id-1");
-            Assert.Contains(responses, r => r.Id == "id-2");
-        }
-
-        [Fact]
-        public async Task SendTargetedActivitiesAsync_PreservesExistingEntitiesOnClones()
-        {
-            IActivity[] captured = null;
-            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
-            var activities = new IActivity[]
-            {
-                new Activity
-                {
-                    Type = ActivityTypes.Message,
-                    Recipient = TargetUser,
-                    Entities = [new Entity { Type = "existing" }]
-                },
-            };
-
-            await turnContext.SendTargetedActivitiesAsync(activities);
-
-            // Sent activity has the pre-existing entity plus the targeted treatment
-            Assert.NotNull(captured);
             var sent = Assert.Single(captured);
-            Assert.Equal(2, sent.Entities.Count);
-            Assert.Contains(sent.Entities, e => e.Type == "existing");
-            Assert.Contains(sent.Entities.OfType<ActivityTreatment>(),
-                t => t.Treatment == ActivityTreatmentTypes.Targeted);
-        }
-
-        [Fact]
-        public async Task SendTargetedActivitiesAsync_SingleActivity_HasTargetedTreatment()
-        {
-            IActivity[] captured = null;
-            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
-            var turnContext = CreateTurnContext(adapter);
-            var activities = new IActivity[]
-            {
-                new Activity { Type = ActivityTypes.Message, Text = "solo", Recipient = TargetUser }
-            };
-
-            await turnContext.SendTargetedActivitiesAsync(activities);
-
-            Assert.NotNull(captured);
-            var sent = Assert.Single(captured);
+            Assert.DoesNotContain(sent.Entities, entity => entity is QuotedReplyEntity);
+            var promptPreview = Assert.Single(sent.Entities.OfType<TargetedMessageInfoEntity>());
+            Assert.Equal("inbound-message", promptPreview.MessageId);
+            Assert.Equal("response", sent.Text);
             Assert.Single(sent.Entities.OfType<ActivityTreatment>());
         }
 
         [Fact]
-        public async Task SendTargetedActivitiesAsync_SupportsCancellationToken()
+        public async Task SendActivityAsync_TargetedInbound_PreservesExistingPromptPreview()
         {
-            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
-            var cts = new CancellationTokenSource();
-            var activities = new IActivity[]
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+            var outbound = new TeamsActivity
             {
-                new Activity { Type = ActivityTypes.Message, Text = "msg", Recipient = TargetUser }
+                Type = ActivityTypes.Message,
+                Text = "response",
+                Entities =
+                [
+                    new TargetedMessageInfoEntity { MessageId = "explicit-message" }
+                ]
             };
 
-            // Should not throw
-            await turnContext.SendTargetedActivitiesAsync(activities, cts.Token);
-        }
+            await turnContext.SendActivityAsync(outbound);
 
-        // ── Guard: missing Recipient ──────────────────────────────────────────
-
-        [Fact]
-        public async Task SendTargetedActivityAsync_NoRecipientOnActivity_ThrowsInvalidOperationException()
-        {
-            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
-            var turnContext = CreateTurnContext(adapter);
-            var activity = new Activity { Type = ActivityTypes.Message, Text = "hello" }; // no Recipient
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                turnContext.SendTargetedActivityAsync(activity));
+            var sent = Assert.Single(captured);
+            var promptPreview = Assert.Single(sent.Entities.OfType<TargetedMessageInfoEntity>());
+            Assert.Equal("explicit-message", promptPreview.MessageId);
         }
 
         [Fact]
-        public async Task SendTargetedActivitiesAsync_NoRecipientOnActivity_ThrowsInvalidOperationException()
+        public async Task SendActivityAsync_NonTargetedInbound_DoesNotAddPromptPreview()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter);
+
+            await turnContext.SendActivityAsync(new Activity
+            {
+                Type = ActivityTypes.Message,
+                Text = "response"
+            });
+
+            var sent = Assert.Single(captured);
+            Assert.DoesNotContain(sent.Entities ?? [], entity => entity is TargetedMessageInfoEntity);
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_String_TargetedInbound_AddsPromptPreview()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+
+            await turnContext.SendActivityAsync("response");
+
+            var sent = Assert.Single(captured);
+            var promptPreview = Assert.Single(sent.Entities.OfType<TargetedMessageInfoEntity>());
+            Assert.Equal("inbound-message", promptPreview.MessageId);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public async Task SendActivityAsync_String_RejectsNullOrWhitespace(string text)
         {
             var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
             var turnContext = CreateTurnContext(adapter);
-            var activities = new IActivity[]
+
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => turnContext.SendActivityAsync(text));
+        }
+
+        [Fact]
+        public async Task SendActivityAsync_TargetedInboundWithoutQuotedPlaceholder_PreservesWhitespace()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+
+            await turnContext.SendActivityAsync("    indented code");
+
+            Assert.Equal("    indented code", Assert.Single(captured).Text);
+        }
+
+        [Fact]
+        public async Task SendActivitiesAsync_TargetedInbound_AddsPromptPreviewToEachMessage()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreatePromptPreviewTurnContext(adapter);
+
+            await turnContext.SendActivitiesAsync(
+            [
+                new Activity { Type = ActivityTypes.Message, Text = "first" },
+                new Activity { Type = ActivityTypes.Message, Text = "second" }
+            ]);
+
+            Assert.Equal(2, captured.Length);
+            Assert.All(captured, sent =>
             {
-                new Activity { Type = ActivityTypes.Message, Text = "hello" } // no Recipient
+                var promptPreview = Assert.Single(sent.Entities.OfType<TargetedMessageInfoEntity>());
+                Assert.Equal("inbound-message", promptPreview.MessageId);
+            });
+        }
+
+        [Fact]
+        public async Task SendActivitiesAsync_NullActivities_ThrowsArgumentNullException()
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var turnContext = CreateTurnContext(adapter);
+
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                () => turnContext.SendActivitiesAsync(null));
+        }
+
+        [Fact]
+        public async Task SendTargetedActivityAsync_RecipientArgumentOverridesActivityRecipient()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter);
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Recipient = new ChannelAccount { Id = "original-user" }
             };
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                turnContext.SendTargetedActivitiesAsync(activities));
+            await turnContext.SendTargetedActivityAsync(activity, TargetUser);
+
+            Assert.Same(TargetUser, Assert.Single(captured).Recipient);
+            Assert.Equal("original-user", activity.Recipient.Id);
+        }
+
+        [Fact]
+        public async Task SendTargetedActivityAsync_NullActivity_ThrowsArgumentNullException()
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var turnContext = CreateTurnContext(adapter);
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                turnContext.SendTargetedActivityAsync((IActivity)null, TargetUser));
+        }
+
+        [Fact]
+        public async Task SendTargetedActivityAsync_TextAndRecipient_CreatesTargetedMessage()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter);
+
+            await turnContext.SendTargetedActivityAsync("hello", TargetUser);
+
+            var sent = Assert.Single(captured);
+            Assert.Equal(ActivityTypes.Message, sent.Type);
+            Assert.Equal("hello", sent.Text);
+            Assert.Same(TargetUser, sent.Recipient);
+            Assert.True(sent.IsTargetedActivity());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public async Task SendTargetedActivityAsync_Text_RejectsNullOrWhitespace(string text)
+        {
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(_ => { }));
+            var turnContext = CreateTurnContext(adapter);
+
+            await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+                turnContext.SendTargetedActivityAsync(text, TargetUser));
+        }
+
+        [Fact]
+        public async Task SendTargetedActivityAsync_ActivityAndRecipientId_CreatesUserRecipient()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter);
+            var activity = new Activity { Type = ActivityTypes.Event };
+
+            await turnContext.SendTargetedActivityAsync(activity, "user-id");
+
+            var sent = Assert.Single(captured);
+            Assert.Equal(ActivityTypes.Event, sent.Type);
+            Assert.Equal("user-id", sent.Recipient.Id);
+            Assert.Equal(RoleTypes.User, sent.Recipient.Role);
+            Assert.True(sent.IsTargetedActivity());
+        }
+
+        [Fact]
+        public async Task SendTargetedActivityAsync_TextAndRecipientId_CreatesTargetedMessageForUser()
+        {
+            IActivity[] captured = null;
+            var adapter = new SimpleAdapter((Action<IActivity[]>)(activities => captured = activities));
+            var turnContext = CreateTurnContext(adapter);
+
+            await turnContext.SendTargetedActivityAsync("hello", "user-id");
+
+            var sent = Assert.Single(captured);
+            Assert.Equal(ActivityTypes.Message, sent.Type);
+            Assert.Equal("hello", sent.Text);
+            Assert.Equal("user-id", sent.Recipient.Id);
+            Assert.Equal(RoleTypes.User, sent.Recipient.Role);
+            Assert.True(sent.IsTargetedActivity());
         }
 
         // ── Activity shadow ───────────────────────────────────────────────────
@@ -299,7 +358,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "channelCreated" }
+                ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType("channelCreated") }
             });
             var turnContext = new TeamsTurnContext(innerContext);
 
@@ -320,7 +379,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
-                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "teamRenamed" }
+                ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType("teamRenamed") }
             });
             var turnContext = new TeamsTurnContext(innerContext);
 
@@ -346,6 +405,27 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
                 From = new() { Id = "fromId" },
             });
             return new TeamsTurnContext(innerContext);
+        }
+
+        private static TeamsTurnContext CreatePromptPreviewTurnContext(ChannelAdapter adapter)
+        {
+            var inbound = new Activity
+            {
+                Type = ActivityTypes.Message,
+                Id = "inbound-message",
+                ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
+                Recipient = new ChannelAccount
+                {
+                    Id = "recipientId",
+                    Properties =
+                    {
+                        ["isTargeted"] = JsonSerializer.SerializeToElement(true)
+                    }
+                },
+                Conversation = new() { Id = "conversationId" },
+                From = new() { Id = "fromId" }
+            };
+            return new TeamsTurnContext(new TurnContext(adapter, inbound));
         }
     }
 }

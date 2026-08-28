@@ -18,4 +18,4 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams;
 /// triggered the event.</param>
 /// <param name="cancellationToken">A cancellation token that can be used to request cancellation of the asynchronous operation.</param>
 /// <returns>A task that represents the asynchronous operation of handling the team update event.</returns>
-public delegate Task TeamUpdateHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team data, CancellationToken cancellationToken);
+public delegate Task TeamUpdateHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team data, CancellationToken cancellationToken);

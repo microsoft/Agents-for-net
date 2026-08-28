@@ -63,8 +63,10 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 ### Extensions
 
 **Microsoft.Agents.Extensions.MSTeams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/`)
-- Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, file consent, message edit/delete/undelete/read receipts, config pages
-- Depends on teams.net's `Microsoft.Teams.Api` NuGet package for Teams schema, API clients, and types (e.g. `Microsoft.Teams.Api.ChannelData`, `Microsoft.Teams.Api.Clients.ApiClient`, `Microsoft.Teams.Api.MessageExtensions.*`); it reimplements only routing on `AgentApplication`
+- Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, and file consent
+- Aligns its models and public feature surface with the Teams SDK. When the Teams SDK removes a feature, MSTeams removes the corresponding feature rather than maintaining a compatibility implementation. These removals are breaking changes for MSTeams users and may occur in minor or patch releases.
+- Depends on teams.net's `Microsoft.Teams.Apps` NuGet package for Teams schema, API clients, and feature types (e.g. `Microsoft.Teams.Apps.Schema.TeamsChannelData`, `Microsoft.Teams.Apps.Clients.ApiClient`, `Microsoft.Teams.Apps.MessageExtensions.*`); it reimplements only routing on `AgentApplication`
+- Agent 365 lifecycle events are not handled by the Agents SDK or the MSTeams extension. Use the A365 Agent Extension (`Microsoft.Agents.A365.Notifications`) for these events.
 - Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
 - Two routing styles: **fluent builders** (`Teams.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[TeamsQueryRoute("cmdId")]`)
 - Feature areas exposed as properties on `TeamsAgentExtension` (accessed via the generated `Teams` property):
@@ -72,16 +74,14 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
   - `Teams.TaskModules` — modal dialogs (fetch + submit), supports string or Regex key matching
   - `Teams.Meetings` — start/end, participants join/leave
   - `Teams.Channels` — created/deleted/renamed/restored/shared/unshared; member add/remove
-  - `Teams.Teams` — archived/unarchived/renamed/deleted/hard-deleted/restored
+  - `Teams.Teams` — archived/unarchived/renamed/deleted/restored
   - `Teams.FileConsent` — file upload consent accept/decline
-  - `Teams.Messages` — message edit/delete/undelete, read receipts, O365 connector card actions
-  - `Teams.Config` — config fetch/submit (bot configuration UI)
-- `TeamsAgentExtension` also provides Graph helpers: `GetTeamsClient()` (teams.net `Microsoft.Teams.Api.Clients.ApiClient`), `GetGraphClient()` (user token), `GetAppGraphClient()` / `GetAppGraphClientForConnection()` (app-only)
+- `TeamsAgentExtension` also provides Graph helpers: `GetTeamsClient()` (teams.net `Microsoft.Teams.Apps.Clients.ApiClient`), `GetGraphClient()` (user token), `GetAppGraphClient()` / `GetAppGraphClientForConnection()` (app-only)
 - App-level Teams route extension methods on `AgentApplication` (in `TeamsAppExtensions`): `OnTeamsHandoff()` (Copilot handoff), `OnTeamsFeedbackLoop()`, `OnTeamsMessageReactionsAdded()` / `OnTeamsMessageReactionsRemoved()`, plus generic `OnTeamsActivity()` / `OnTeamsMessage()` / `OnTeamsConversationUpdate()` / `OnTeamsEvent()`
 - `ITeamsTurnContext` / `TeamsTurnContext` — `SendTargetedActivityAsync()` for sending to specific recipients
-- `TeamsActivityExtensions` — activity helpers: `TeamsGetChannelId()`, `TeamsGetMeetingInfo()`, `TeamsGetTeamInfo()`, `TeamsNotifyUser()`, `TeamsEnableFeedbackLoop()`, etc. 
+- `TeamsActivityExtensions` — activity helpers: `TeamsGetChannelId()`, `TeamsGetMeetingInfo()`, `TeamsGetTeamInfo()`, `TeamsEnableFeedbackLoop()`, etc.
 - Route builders accept `autoSignInHandlers` and route attributes accept `signInHandlers` parameter for per-route OAuth/SSO flows; Teams SSO and OBO via Azure Bot Token Service are supported
-- FeedbackLoop is handled by AgentApplication.OnFeedbackLoop
+- Feedback is the FeedbackLoop feature in `AgentApplication`; use `AgentApplication.OnFeedbackLoop()` or `[FeedbackLoopRoute]` rather than treating it as an MSTeams-specific feature.
 - Adaptive Cards support is handled by AgentApplication.AdaptiveCards
 
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
@@ -100,10 +100,10 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
 {
     [TeamsQueryRoute("searchCmd")]
-    public Task<Microsoft.Teams.Api.MessageExtensions.Response> OnSearchAsync(
+    public Task<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse> OnSearchAsync(
         ITurnContext ctx, ITurnState state,
-        Microsoft.Teams.Api.MessageExtensions.Query query, CancellationToken ct)
-        => Task.FromResult(new Microsoft.Teams.Api.MessageExtensions.Response { ComposeExtension = BuildResults(query) });
+        Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery query, CancellationToken ct)
+        => Task.FromResult(new Microsoft.Teams.Apps.MessageExtensions.MessageExtensionResponse { ComposeExtension = BuildResults(query) });
 }
 ```
 
