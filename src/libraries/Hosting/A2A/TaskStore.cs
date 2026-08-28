@@ -15,9 +15,11 @@ namespace Microsoft.Agents.Hosting.A2A;
 
 internal class TaskStore(IStorage storage) : ITaskStore
 {
+    private readonly IStorageV2 _storage = StorageCompatibility.AsV2(storage);
+
     public async Task<CreateOrContinueResult> CreateOrContinueTaskAsync(string contextId, string taskId, TaskState state = TaskState.Working, Message message = null, CancellationToken cancellationToken = default)
     {
-        AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
+        AssertionHelpers.ThrowIfNullOrEmpty(taskId, nameof(taskId));
 
         CreateOrContinueResult result = new()
         {
@@ -47,21 +49,21 @@ internal class TaskStore(IStorage storage) : ITaskStore
 
     public async Task<AgentTask> UpdateTaskAsync(AgentTask task, CancellationToken cancellationToken = default)
     {
-        AssertionHelpers.ThrowIfNull(nameof(task), "Task cannot be null.");
+        AssertionHelpers.ThrowIfNull(task, nameof(task));
 
         if (task.Id == null)
         {
             throw new ArgumentException("Task must have a Id to update the task.", nameof(task));
         }
 
-        await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+        await _storage.WriteAsync(new Dictionary<string, AgentTask> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
 
         return task;
     }
 
     public async Task<AgentTask> UpdateArtifactAsync(TaskArtifactUpdateEvent artifactUpdate, CancellationToken cancellationToken = default)
     {
-        AssertionHelpers.ThrowIfNull(nameof(artifactUpdate), "TaskArtifactUpdateEvent cannot be null.");
+        AssertionHelpers.ThrowIfNull(artifactUpdate, nameof(artifactUpdate));
 
         var task = await GetTaskAsync(artifactUpdate.TaskId, cancellationToken).ConfigureAwait(false);
         if (!task.IsTerminal())
@@ -75,7 +77,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
                 task.Artifacts = AddArtifact(task, artifactUpdate.Artifact);
             }
 
-            await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+            await _storage.WriteAsync(new Dictionary<string, AgentTask> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
         }
 
         return task;
@@ -83,7 +85,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
 
     public async Task<AgentTask> UpdateStatusAsync(TaskStatusUpdateEvent statusUpdate, CancellationToken cancellationToken = default)
     {
-        AssertionHelpers.ThrowIfNull(nameof(statusUpdate), "TaskStatusUpdateEvent cannot be null.");
+        AssertionHelpers.ThrowIfNull(statusUpdate, nameof(statusUpdate));
 
         var task = await GetTaskAsync(statusUpdate.TaskId, cancellationToken).ConfigureAwait(false);
         if (!task.IsTerminal())
@@ -96,7 +98,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
 
             task.Status = statusUpdate.Status;
 
-            await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+            await _storage.WriteAsync(new Dictionary<string, AgentTask> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
         }
 
         return task;
@@ -104,23 +106,23 @@ internal class TaskStore(IStorage storage) : ITaskStore
 
     public async Task<AgentTask> UpdateMessageAsync(Message message, CancellationToken cancellationToken = default)
     {
-        AssertionHelpers.ThrowIfNull(nameof(message), "Message cannot be null.");
+        AssertionHelpers.ThrowIfNull(message, nameof(message));
 
         // TODO:  review for elimination.  Since we always use an AgentTask, this isn't appropirate.
         var task = await GetTaskAsync(message.TaskId, cancellationToken).ConfigureAwait(false);
         task.History = AppendMessage(task.History, message);
 
-        await storage.WriteAsync(new Dictionary<string, object> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
+        await _storage.WriteAsync(new Dictionary<string, AgentTask> { { GetKey(task.Id), task } }, cancellationToken).ConfigureAwait(false);
         return task;
     }
 
     public async Task<AgentTask> GetTaskAsync(string taskId, CancellationToken cancellationToken = default)
     {
-        AssertionHelpers.ThrowIfNullOrEmpty(nameof(taskId), "Task ID cannot be null or empty.");
+        AssertionHelpers.ThrowIfNullOrEmpty(taskId, nameof(taskId));
 
         var key = GetKey(taskId);
-        var items = await storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-        if (items.TryGetValue(key, out var existingItem) && existingItem is AgentTask existingTask)
+        var results = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+        if (results[key].Status == StorageOperationStatus.Succeeded && results[key].Value is AgentTask existingTask)
         {
             return existingTask;
         }
@@ -158,7 +160,7 @@ internal class TaskStore(IStorage storage) : ITaskStore
 
         if (artifacts.HasValue)
         {
-            var artifact = artifacts.Value.Where(t => t.ArtifactId == a.ArtifactId).First();
+            var artifact = artifacts.Value.FirstOrDefault(existing => existing.ArtifactId == a.ArtifactId);
 
             artifacts = artifact != null
                 ? artifacts.Value.Replace(artifact, a)
