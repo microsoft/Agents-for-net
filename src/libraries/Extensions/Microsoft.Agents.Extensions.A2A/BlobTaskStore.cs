@@ -214,7 +214,7 @@ public class BlobTaskStore : ITaskStore
             throw new ArgumentNullException(nameof(taskId));
         }
 
-        return HttpUtility.UrlEncode($"{TaskPrefix}{taskId}");
+        return $"{TaskPrefix}{HttpUtility.UrlEncode(taskId)}";
     }
 
     private async Task<AgentTask> DownloadTaskAsync(BlobClient blobClient, CancellationToken cancellationToken)

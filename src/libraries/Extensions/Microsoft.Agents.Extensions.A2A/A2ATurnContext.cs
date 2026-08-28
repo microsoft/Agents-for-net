@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.A2A;
 
@@ -16,7 +17,8 @@ public class A2ATurnContext : TurnContextWrapper, IA2ATurnContext
     }
 
     /// <inheritdoc/>
-    public new IA2AActivity Activity => _turnContext.Activity as IA2AActivity;
+    public new IA2AActivity Activity =>
+        _turnContext.Activity as IA2AActivity ?? ProtocolJsonSerializer.ToObject<A2AMessageActivity>(_turnContext.Activity);
 
     /// <inheritdoc/>
     public A2AClient Client => new(_turnContext);

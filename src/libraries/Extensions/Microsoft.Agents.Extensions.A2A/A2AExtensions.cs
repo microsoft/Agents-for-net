@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.AI;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -29,6 +28,11 @@ internal static class A2AExtensions
             _schemas[data.GetType().FullName] = schema;
         }
 
-        return JsonSerializer.Deserialize<Dictionary<string, JsonElement>>($"{{\"mimeType\": \"{contentType}\", \"type\": \"object\", \"schema\": {ProtocolJsonSerializer.ToJson(schema)}}}");
+        return new Dictionary<string, JsonElement>
+        {
+            ["mimeType"] = JsonSerializer.SerializeToElement(contentType),
+            ["type"] = JsonSerializer.SerializeToElement("object"),
+            ["schema"] = JsonSerializer.SerializeToElement(schema, _reflectionOptions)
+        };
     }
 }

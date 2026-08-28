@@ -55,6 +55,20 @@ public class A2ATurnContextTests
     }
 
     [Fact]
+    public void A2ATurnContext_ConvertsGenericActivityToTypedActivity()
+    {
+        var message = new Message { MessageId = "m1", Role = Role.User };
+        var activity = new Activity { Type = ActivityTypes.Message, ChannelId = Channels.A2A, ChannelData = message };
+
+        var inner = new Mock<ITurnContext>();
+        inner.Setup(c => c.Activity).Returns(activity);
+
+        var context = new A2ATurnContext(inner.Object);
+
+        Assert.Equal(message.MessageId, context.Activity.ChannelData.MessageId);
+    }
+
+    [Fact]
     public void A2ATurnContext_Client_IsNotNull()
     {
         var activity = new A2AMessageActivity { Type = ActivityTypes.Message, ChannelId = Channels.A2A };

@@ -118,6 +118,16 @@ namespace Microsoft.Agents.Extensions.A2A.Tests
             }
         }
 
+        [Fact]
+        public void BlobName_PreservesTaskPrefixAndEncodesTaskId()
+        {
+            var method = typeof(BlobTaskStore).GetMethod("GetBlobName", BindingFlags.NonPublic | BindingFlags.Static);
+
+            var blobName = method.Invoke(null, ["task/with space"]);
+
+            Assert.Equal("a2atask/task%2fwith+space", blobName);
+        }
+
         #endregion
 
         #region GetTaskAsync Tests

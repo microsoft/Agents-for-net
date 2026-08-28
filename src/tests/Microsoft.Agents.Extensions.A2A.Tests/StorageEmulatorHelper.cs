@@ -53,13 +53,13 @@ namespace Microsoft.Agents.Extensions.A2A.Tests
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var (code, output) = StorageEmulatorHelper.Status();
-                if (output.IndexOf("IsRunning: True") > 0)
+                if (output.IndexOf("IsRunning: True", StringComparison.Ordinal) >= 0)
                 {
                     return true;
                 }
 
                 (code, output) = StorageEmulatorHelper.StartStorageEmulator();
-                return output.IndexOf("started") > 0;
+                return output.IndexOf("started", StringComparison.Ordinal) >= 0;
             }
 
             return false;
@@ -68,13 +68,13 @@ namespace Microsoft.Agents.Extensions.A2A.Tests
         public static bool EnsureStarted()
         {
             var (code, output) = StorageEmulatorHelper.Status();
-            if (output.IndexOf("IsRunning: True") > 0)
+            if (output.IndexOf("IsRunning: True", StringComparison.Ordinal) >= 0)
             {
                 return true;
             }
 
             (code, output) = StorageEmulatorHelper.StartStorageEmulator();
-            return output.IndexOf("started") > 0;
+            return output.IndexOf("started", StringComparison.Ordinal) >= 0;
         }
 
         public static (int, string) StartStorageEmulator()

@@ -55,6 +55,21 @@ public class A2AExtensionsTests
     }
 
     [Fact]
+    public void ToA2AMetadata_ContentTypeWithJsonControlCharacters_PreservesContentType()
+    {
+        var testData = new TestDataClass
+        {
+            Name = "TestName",
+            Value = 42
+        };
+        var contentType = "application/vnd.test+json; profile=\"quoted\"\nvalue";
+
+        var result = testData.ToA2AMetadata(contentType);
+
+        Assert.Equal(contentType, result["mimeType"].GetString());
+    }
+
+    [Fact]
     public void ToA2AMetadata_SameObjectTwice_UsesCachedSchema()
     {
         // Arrange

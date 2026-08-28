@@ -9,7 +9,6 @@ using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -25,7 +24,6 @@ namespace Microsoft.Agents.Extensions.A2A
     public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     {
         private readonly OBOSettings _settings;
-        private readonly ILogger _logger;
 
         /// <summary>
         /// Required constructor for the UserAuthorizationModuleLoader (when using IConfiguration)
@@ -52,7 +50,6 @@ namespace Microsoft.Agents.Extensions.A2A
         public A2AUserAuthorization(string name, IConnections connections, OBOSettings settings, ILogger logger = null) : base(connections)
         {
             _settings = settings;
-            _logger = logger ?? NullLogger<ILogger>.Instance;
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
