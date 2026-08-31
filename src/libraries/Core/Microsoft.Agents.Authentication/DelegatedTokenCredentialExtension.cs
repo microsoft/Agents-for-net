@@ -29,7 +29,7 @@ namespace Microsoft.Agents.Authentication
             async ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, CancellationToken cancellationToken)
             {
                 TokenResponse response = await provider(requestContext.Scopes, cancellationToken).ConfigureAwait(false);
-                if (response?.Token == null)
+                if (string.IsNullOrEmpty(response?.Token))
                 {
                     throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NullTokenResponse, null);
                 }
