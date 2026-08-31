@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A;
+using Microsoft.Agents.Builder;
 using Microsoft.Extensions.AI;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,7 +13,7 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace Microsoft.Agents.Extensions.A2A;
 
-internal static class A2AExtensions
+public static class A2AExtensions
 {
     private static readonly ConcurrentDictionary<string, JsonNode> _schemas = new();
     private static readonly JsonSchemaExporterOptions _exporterOptions = new() { TreatNullObliviousAsNonNullable = true };
@@ -33,6 +35,28 @@ internal static class A2AExtensions
             ["mimeType"] = JsonSerializer.SerializeToElement(contentType),
             ["type"] = JsonSerializer.SerializeToElement("object"),
             ["schema"] = JsonSerializer.SerializeToElement(schema, _reflectionOptions)
+        };
+    }
+
+    public static Message NewAgentMessage(this TaskUpdater updater, string text)
+    {
+        return new Message()
+        {
+            Role = Role.Agent,
+            TaskId = updater.TaskId,
+            ContextId = updater.ContextId,
+            Parts = [new Part() { Text = text }]
+        };
+    }
+
+    public static Message NewAgentMessage(this TaskUpdater updater, List<Part> parts)
+    {
+        return new Message()
+        {
+            Role = Role.Agent,
+            TaskId = updater.TaskId,
+            ContextId = updater.ContextId,
+            Parts = parts
         };
     }
 }
