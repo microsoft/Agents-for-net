@@ -176,43 +176,6 @@ public static class A2AServiceExtensions
     }
 
     /// <summary>
-    /// Enables the well-known agent card endpoint for agent discovery.
-    /// </summary>
-    /// <param name="endpoints">The endpoint route builder to configure.</param>
-    /// <param name="requireAuth"></param>
-    /// <param name="adapter"></param>
-    /// <param name="agent"></param>
-    /// <param name="path">The base path where the A2A agent is hosted.</param>
-    /// <returns>An endpoint convention builder for further configuration.</returns>
-    public static IEndpointConventionBuilder MapWellKnownAgentCard(this IEndpointRouteBuilder endpoints, bool requireAuth = false, [StringSyntax("Route")] string path = "/a2a")
-    {
-        ArgumentNullException.ThrowIfNull(endpoints);
-
-        var routeGroup = endpoints.MapGroup(path ?? string.Empty);
-        if (requireAuth)
-        {
-            routeGroup.RequireAuthorization();
-        }
-        else
-        {
-            routeGroup.AllowAnonymous();
-        }
-
-        routeGroup.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-        {
-            return adapter.ProcessAgentCardAsync(request, response, agent, path, cancellationToken);
-        });
-
-        // This is for the TCK which hits root
-        endpoints.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-        {
-            return adapter.ProcessAgentCardAsync(request, response, agent, path, cancellationToken);
-        });
-
-        return routeGroup;
-    }
-
-    /// <summary>
     /// Enables HTTP A2A endpoints for the specified path.
     /// </summary>
     /// <param name="endpoints">The endpoint route builder to configure.</param>

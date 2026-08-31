@@ -28,8 +28,7 @@ app.UseAgents();
 // Map the default agent endpoints: GET "/" and the agent message endpoints.
 app.MapDefaultAgentEndpoints();
 
-// Add A2A endpoints.  By default A2A will respond on '/a2a'.
+// Map A2A endpoints.  By default A2A will respond on '/a2a'.
 app.MapA2AApplicationEndpoints();
-app.MapWellKnownAgentCard();
 
 app.Run();
