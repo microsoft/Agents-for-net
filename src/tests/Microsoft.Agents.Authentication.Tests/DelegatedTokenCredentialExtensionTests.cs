@@ -12,12 +12,12 @@ using Xunit;
 
 namespace Microsoft.Agents.Auth.Tests
 {
-    public class TokenResponseTokenCredentialTests
+    public class DelegatedTokenCredentialExtensionTests
     {
         [Fact]
         public void Create_ProviderIsNull_ThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => TokenResponseTokenCredential.Create(null));
+            Assert.Throws<ArgumentNullException>(() => DelegatedTokenCredentialExtension.Create(null));
         }
 
         [Fact]
@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Auth.Tests
             CancellationToken actualCancellationToken = default;
             var expiration = DateTimeOffset.UtcNow.AddMinutes(30);
             using var cancellationSource = new CancellationTokenSource();
-            TokenCredential credential = TokenResponseTokenCredential.Create((scopes, cancellationToken) =>
+            TokenCredential credential = DelegatedTokenCredentialExtension.Create((scopes, cancellationToken) =>
             {
                 actualScopes = scopes;
                 actualCancellationToken = cancellationToken;
@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Auth.Tests
             CancellationToken actualCancellationToken = default;
             var expiration = DateTimeOffset.UtcNow.AddMinutes(30);
             using var cancellationSource = new CancellationTokenSource();
-            TokenCredential credential = TokenResponseTokenCredential.Create((scopes, cancellationToken) =>
+            TokenCredential credential = DelegatedTokenCredentialExtension.Create((scopes, cancellationToken) =>
             {
                 actualScopes = scopes;
                 actualCancellationToken = cancellationToken;
@@ -79,7 +79,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public async Task Create_MissingExpiration_UsesMinimumExpiration()
         {
-            TokenCredential credential = TokenResponseTokenCredential.Create(
+            TokenCredential credential = DelegatedTokenCredentialExtension.Create(
                 (_, _) => Task.FromResult(new TokenResponse { Token = "token" }));
 
             AccessToken token = await credential.GetTokenAsync(new TokenRequestContext([]), CancellationToken.None);
@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public async Task GetTokenAsync_ProviderReturnsNull_ThrowsFormalError()
         {
-            TokenCredential credential = TokenResponseTokenCredential.Create(
+            TokenCredential credential = DelegatedTokenCredentialExtension.Create(
                 (_, _) => Task.FromResult<TokenResponse>(null));
 
             InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -102,7 +102,7 @@ namespace Microsoft.Agents.Auth.Tests
         [Fact]
         public async Task GetTokenAsync_ResponseHasNoToken_ThrowsFormalError()
         {
-            TokenCredential credential = TokenResponseTokenCredential.Create(
+            TokenCredential credential = DelegatedTokenCredentialExtension.Create(
                 (_, _) => Task.FromResult(new TokenResponse()));
 
             InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(

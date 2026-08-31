@@ -16,7 +16,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using AgentsTokenResponseTokenCredential = Microsoft.Agents.Authentication.TokenResponseTokenCredential;
+using AgentsDelegatedTokenCredentialExtension = Microsoft.Agents.Authentication.DelegatedTokenCredentialExtension;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             string[] configuredScopes = exchangeScopes?.ToArray();
 
-            return AgentsTokenResponseTokenCredential.Create(async (scopes, ct) =>
+            return AgentsDelegatedTokenCredentialExtension.Create(async (scopes, ct) =>
             {
                 ThrowIfTurnEnded(turnContext);
 

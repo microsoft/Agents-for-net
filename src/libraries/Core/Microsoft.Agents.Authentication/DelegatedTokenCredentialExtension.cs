@@ -7,14 +7,13 @@ using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 
 namespace Microsoft.Agents.Authentication
 {
-    internal static class TokenResponseTokenCredential
+    internal static class DelegatedTokenCredentialExtension
     {
         internal static TokenCredential Create(Func<string[], CancellationToken, Task<TokenResponse>> provider)
         {
