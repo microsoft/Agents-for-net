@@ -174,6 +174,59 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
+        public async Task Test_GetTurnTokenAsTokenCredential_ReturnsCachedTokenWithoutRefresh()
+        {
+            var expiration = DateTimeOffset.UtcNow.AddMinutes(30);
+            MockGraph
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenResponse
+                {
+                    Token = GraphToken,
+                    Expiration = expiration
+                });
+
+            var options = new TestApplicationOptions(new MemoryStorage())
+            {
+                UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, new MemoryStorage(), MockConnections.Object, MockGraph.Object)
+            };
+            var app = new TestApplication(options);
+            using var turnContext = MockTurnContext();
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+            Assert.True(await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState));
+
+            TokenCredential credential = app.UserAuthorization.GetTurnTokenAsTokenCredential(turnContext);
+            AccessToken token = await credential.GetTokenAsync(
+                new TokenRequestContext(["requested"]),
+                CancellationToken.None);
+
+            Assert.Equal(GraphToken, token.Token);
+            Assert.Equal(expiration, token.ExpiresOn);
+            MockGraph.Verify(
+                e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task Test_GetTurnTokenAsTokenCredential_AfterTurnDisposed_ThrowsFormalError()
+        {
+            var options = new TestApplicationOptions(new MemoryStorage())
+            {
+                UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, new MemoryStorage(), MockConnections.Object, MockGraph.Object)
+            };
+            var app = new TestApplication(options);
+            var turnContext = MockTurnContext();
+            TokenCredential credential = app.UserAuthorization.GetTurnTokenAsTokenCredential(turnContext);
+            turnContext.Dispose();
+
+            InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await credential.GetTokenAsync(new TokenRequestContext(["requested"]), CancellationToken.None));
+
+            Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.code, exception.HResult);
+            Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.description, exception.Message);
+            Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.helplink, exception.HelpLink);
+        }
+
+        [Fact]
         public async Task Test_AutoSignIn_Default()
         {
             // arrange

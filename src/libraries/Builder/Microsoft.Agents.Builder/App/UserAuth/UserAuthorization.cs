@@ -118,6 +118,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             var res = await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
             return !string.IsNullOrEmpty(res?.Token) ? res.Token : null;
+        }
 
         /// <summary>
         /// Creates a token credential that exchanges the user token for scopes requested during the current turn.
