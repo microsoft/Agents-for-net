@@ -32,6 +32,5 @@ app.MapDefaultAgentEndpoints();
 
 // Add A2A endpoints.  By default A2A will respond on '/a2a'.
 app.MapA2AApplicationEndpoints();
-app.MapWellKnownAgentCard();
 
 app.Run();
