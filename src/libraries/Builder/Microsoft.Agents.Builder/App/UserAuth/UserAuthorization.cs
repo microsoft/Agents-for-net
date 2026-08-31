@@ -16,6 +16,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using AgentsTokenResponseTokenCredential = Microsoft.Agents.Authentication.TokenResponseTokenCredential;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -97,6 +98,17 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return await ExchangeTurnTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Creates a token credential backed by the user token for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// The returned credential is scoped to <paramref name="turnContext"/> and must only be used
+        /// during that turn. Do not cache it or provide it to a client that outlives the turn.
+        /// Create a new credential in each turn instead.
+        /// </remarks>
+        /// <param name="turnContext">The current turn context.</param>
+        /// <param name="handlerName">The user authorization handler name.</param>
+        /// <returns>A token credential valid for the current turn.</returns>
         public TokenCredential GetTurnTokenAsTokenCredential(ITurnContext turnContext, string handlerName = default)
         {
             return ExchangeTurnTokenAsTokenCredential(turnContext, handlerName);
@@ -112,18 +124,49 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return null;
         }
 
+        /// <summary>
+        /// Creates a token credential that exchanges the user token for scopes requested during the current turn.
+        /// </summary>
+        /// <remarks>
+        /// The returned credential is scoped to <paramref name="turnContext"/> and must only be used
+        /// during that turn. Do not cache it or provide it to a client that outlives the turn.
+        /// Create a new credential in each turn instead.
+        /// </remarks>
+        /// <param name="turnContext">The current turn context.</param>
+        /// <param name="handlerName">The user authorization handler name.</param>
+        /// <param name="exchangeConnection">The connection used for token exchange.</param>
+        /// <param name="exchangeScopes">Scopes to combine with scopes requested from the credential.</param>
+        /// <returns>A token credential valid for the current turn.</returns>
         public TokenCredential ExchangeTurnTokenAsTokenCredential(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default)
         {
             string[] configuredScopes = exchangeScopes?.ToArray();
 
-            return DelegateTokenCredential.FromTokenResponseProvider(async (scopes, ct) =>
+            return AgentsTokenResponseTokenCredential.Create(async (scopes, ct) =>
             {
-                IList<string> allScopes = configuredScopes == null
-                    ? scopes
-                    : configuredScopes.Concat(scopes).Distinct(StringComparer.Ordinal).ToList();
+                ThrowIfTurnEnded(turnContext);
 
-                return await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, allScopes, ct).ConfigureAwait(false);
+                IList<string> allScopes = (configuredScopes ?? [])
+                    .Concat(scopes)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
+
+                try
+                {
+                    return await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, allScopes, ct).ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException ex) when (turnContext.Services.HasBeenDisposed)
+                {
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, ex);
+                }
             });
+        }
+
+        private static void ThrowIfTurnEnded(ITurnContext turnContext)
+        {
+            if (turnContext.Services.HasBeenDisposed)
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, null);
+            }
         }
 
         internal async Task<TokenResponse> InternalExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
