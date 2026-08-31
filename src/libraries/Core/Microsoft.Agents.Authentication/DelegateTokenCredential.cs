@@ -19,8 +19,7 @@ namespace Microsoft.Agents.Authentication
     public class DelegateTokenCredential(GetCredential provider) : TokenCredential
     {
 
-        private readonly GetCredential _provider = provider;
-
+        private readonly GetCredential _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         public static DelegateTokenCredential FromTokenResponseProvider(Func<string[], CancellationToken, Task<TokenResponse>> func)
         {
             return new DelegateTokenCredential(async (scopes, cancellationToken) =>
