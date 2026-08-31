@@ -145,4 +145,8 @@
     <value>No connections found in for this Agent in the Connections Configuration</value>
     <comment>Raised when authentication is requested but no authentication configurations are found in the Connections object.</comment>
   </data>
+  <data name="Error_NullTokenResponse" xml:space="preserve">
+    <value>The token response provider returned a null response or a response without a token.</value>
+    <comment>Raised when a delegate token response provider returns null or a response without a token.</comment>
+  </data>
 </root>

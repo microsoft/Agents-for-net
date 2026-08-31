@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Core;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
@@ -95,7 +97,36 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return await ExchangeTurnTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
+        public TokenCredential GetTurnTokenAsTokenCredential(ITurnContext turnContext, string handlerName = default)
+        {
+            return ExchangeTurnTokenAsTokenCredential(turnContext, handlerName);
+        }
+
         public async Task<string> ExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
+        {
+            var res = await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+            if (res?.Token != null)
+            {
+                return res.Token;
+            }
+            return null;
+        }
+
+        public TokenCredential ExchangeTurnTokenAsTokenCredential(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default)
+        {
+            string[] configuredScopes = exchangeScopes?.ToArray();
+
+            return DelegateTokenCredential.FromTokenResponseProvider(async (scopes, ct) =>
+            {
+                IList<string> allScopes = configuredScopes == null
+                    ? scopes
+                    : configuredScopes.Concat(scopes).Distinct(StringComparer.Ordinal).ToList();
+
+                return await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, allScopes, ct).ConfigureAwait(false);
+            });
+        }
+
+        internal async Task<TokenResponse> InternalExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
             if (_authTokens == null || _authTokens.Count == 0)
             {
@@ -123,7 +154,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     var diff = token.Expiration - DateTimeOffset.UtcNow;
                     if (diff.HasValue && diff?.TotalMinutes >= 5)
                     {
-                        return token.Token;
+                        return token;
                     }
                 }
 
@@ -137,7 +168,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                         // Refresh cahce with the latest non-exchangeable token.
                         CacheToken(handlerName, response);
                     }
-                    return response.Token;
+                    return response;
                 }
 
                 // This is a critical error since the only way we are here is we had a token (user signed in) yet

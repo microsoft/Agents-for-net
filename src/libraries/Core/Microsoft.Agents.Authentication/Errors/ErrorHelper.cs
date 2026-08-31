@@ -34,6 +34,7 @@ internal static class ErrorHelper
         internal static readonly AgentErrorDefinition AuthProviderTypeInvalidConstructor = new(-40004, Properties.Resources.Error_InvalidAuthProviderConstructor, "https://aka.ms/M365AgentsErrorCodes/#-40004");
         internal static readonly AgentErrorDefinition ConfigurationSectionNotFound = new(-40005, Properties.Resources.Error_ConfigurationSectionNotFound, "https://aka.ms/M365AgentsErrorCodes/#-40005");
         internal static readonly AgentErrorDefinition ConfigurationSectionNotProvided = new(-40006, Properties.Resources.Error_ConfigurationSectionNotProvided, "https://aka.ms/M365AgentsErrorCodes/#-40006");
+        internal static readonly AgentErrorDefinition NullTokenResponse = new(-40007, Properties.Resources.Error_NullTokenResponse, "https://aka.ms/M365AgentsErrorCodes/#-40007");
 
     }
 }
