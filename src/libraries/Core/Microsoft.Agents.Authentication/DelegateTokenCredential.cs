@@ -51,7 +51,6 @@ namespace Microsoft.Agents.Authentication
 
         public override async ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, CancellationToken cancellationToken)
         {
-            List<string> scopes = [.. requestContext.Scopes];
             return await _provider.Invoke(requestContext.Scopes, cancellationToken).ConfigureAwait(false);
         }
     }
