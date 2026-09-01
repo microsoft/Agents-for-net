@@ -16,7 +16,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using AgentsDelegatedTokenCredentialExtension = Microsoft.Agents.Authentication.DelegatedTokenCredentialExtension;
 
 namespace Microsoft.Agents.Builder.App.UserAuth
 {
@@ -117,7 +116,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public async Task<string> ExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
             var res = await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
-            return !string.IsNullOrEmpty(res?.Token) ? res.Token : null;
+            return res?.Token;
         }
 
         /// <summary>
@@ -137,9 +136,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             string[] configuredScopes = exchangeScopes?.ToArray();
 
-            return AgentsDelegatedTokenCredentialExtension.Create(async (scopes, ct) =>
+            return DelegatedTokenCredentialExtension.Create(async (scopes, ct) =>
             {
-                ThrowIfTurnEnded(turnContext);
+                if (turnContext.Services.HasBeenDisposed)
+                {
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, null);
+                }
 
                 IList<string> allScopes = (configuredScopes ?? [])
                     .Concat(scopes)
@@ -150,20 +152,13 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 {
                     return await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, allScopes, ct).ConfigureAwait(false);
                 }
-                catch (ObjectDisposedException ex) when (turnContext.Services.HasBeenDisposed)
+                catch (ObjectDisposedException ex)
                 {
                     throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, ex);
                 }
             });
         }
 
-        private static void ThrowIfTurnEnded(ITurnContext turnContext)
-        {
-            if (turnContext.Services.HasBeenDisposed)
-            {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, null);
-            }
-        }
 
         internal async Task<TokenResponse> InternalExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
