@@ -106,8 +106,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// Create a new credential in each turn instead.
         /// </remarks>
         /// <param name="turnContext">The current turn context.</param>
-        /// <param name="handlerName">The user authorization handler name.</param>
-        /// <returns>A token credential valid for the current turn.</returns>
+        /// <param name="handlerName">The user authorization handler name, or <see langword="null"/> to use the default handler.</param>
+        /// <returns>A token credential that returns the current turn's user token.</returns>
         public TokenCredential GetTurnTokenAsTokenCredential(ITurnContext turnContext, string handlerName = default)
         {
             return ExchangeTurnTokenAsTokenCredential(turnContext, handlerName);
@@ -126,12 +126,14 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// The returned credential is scoped to <paramref name="turnContext"/> and must only be used
         /// during that turn. Do not cache it or provide it to a client that outlives the turn.
         /// Create a new credential in each turn instead.
+        /// Scopes requested from the credential are combined with <paramref name="exchangeScopes"/>
+        /// and duplicate scopes are removed.
         /// </remarks>
         /// <param name="turnContext">The current turn context.</param>
-        /// <param name="handlerName">The user authorization handler name.</param>
-        /// <param name="exchangeConnection">The connection used for token exchange.</param>
-        /// <param name="exchangeScopes">Scopes to combine with scopes requested from the credential.</param>
-        /// <returns>A token credential valid for the current turn.</returns>
+        /// <param name="handlerName">The user authorization handler name, or <see langword="null"/> to use the default handler.</param>
+        /// <param name="exchangeConnection">The connection used for token exchange, or <see langword="null"/> to use the handler's configured connection.</param>
+        /// <param name="exchangeScopes">Additional scopes to include in every token exchange.</param>
+        /// <returns>A token credential that exchanges the current turn's user token for requested scopes.</returns>
         public TokenCredential ExchangeTurnTokenAsTokenCredential(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default)
         {
             string[] configuredScopes = exchangeScopes?.ToArray();

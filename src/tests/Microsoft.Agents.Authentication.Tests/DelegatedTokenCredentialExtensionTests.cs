@@ -77,6 +77,32 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
+        public void GetToken_DoesNotInvokeProviderOnCallingSynchronizationContext()
+        {
+            SynchronizationContext originalContext = SynchronizationContext.Current;
+            var synchronizationContext = new TrackingSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(synchronizationContext);
+
+            try
+            {
+                TokenCredential credential = DelegatedTokenCredentialExtension.Create(async (_, _) =>
+                {
+                    await Task.Yield();
+                    return new TokenResponse { Token = "token" };
+                });
+
+                AccessToken token = credential.GetToken(new TokenRequestContext([]), CancellationToken.None);
+
+                Assert.Equal("token", token.Token);
+                Assert.Equal(0, synchronizationContext.PostCount);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(originalContext);
+            }
+        }
+
+        [Fact]
         public async Task Create_MissingExpiration_UsesMinimumExpiration()
         {
             TokenCredential credential = DelegatedTokenCredentialExtension.Create(
@@ -116,6 +142,19 @@ namespace Microsoft.Agents.Auth.Tests
             Assert.Equal(ErrorHelper.NullTokenResponse.code, exception.HResult);
             Assert.Equal(ErrorHelper.NullTokenResponse.description, exception.Message);
             Assert.Equal(ErrorHelper.NullTokenResponse.helplink, exception.HelpLink);
+        }
+
+        private sealed class TrackingSynchronizationContext : SynchronizationContext
+        {
+            private int _postCount;
+
+            public int PostCount => Volatile.Read(ref _postCount);
+
+            public override void Post(SendOrPostCallback callback, object state)
+            {
+                Interlocked.Increment(ref _postCount);
+                ThreadPool.QueueUserWorkItem(_ => callback(state));
+            }
         }
     }
 }
