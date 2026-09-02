@@ -95,7 +95,7 @@ public static class FindingClassifier
             RecommendedAction(classification, category, change));
     }
 
-    private static KeyValuePair<string?, Capability?> MatchCapability(string symbol, CapabilityDocument document)
+    internal static KeyValuePair<string?, Capability?> MatchCapability(string symbol, CapabilityDocument document)
     {
         return document.Capabilities
             .Select(item => new

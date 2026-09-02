@@ -57,6 +57,7 @@ public sealed class UsageManifest
     public string DeclaredVersion { get; set; } = string.Empty;
     public string SourceRoot { get; set; } = PackageConstants.SourceRoot;
     public List<UsageEntry> Usages { get; set; } = [];
+    public SourceReview? SourceReview { get; set; }
 }
 
 public sealed class UsageEntry
@@ -73,6 +74,13 @@ public sealed class CapabilityDocument
     public int SchemaVersion { get; set; } = 1;
     public string Package { get; set; } = PackageConstants.PackageId;
     public Dictionary<string, Capability> Capabilities { get; set; } = [];
+    public SourceReview? SourceReview { get; set; }
+}
+
+public sealed class SourceReview
+{
+    public string Outcome { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
 }
 
 public sealed class Capability
@@ -103,6 +111,18 @@ public sealed record UsageValidation(
     IReadOnlyList<string> Warnings,
     IReadOnlyList<string> MissingSymbols,
     IReadOnlyList<string> MissingMembers);
+
+public sealed record MetadataValidation(
+    int SchemaVersion,
+    bool Valid,
+    IReadOnlyList<MetadataFinding> Findings);
+
+public sealed record MetadataFinding(
+    string RuleId,
+    string Path,
+    string Message,
+    string Fix,
+    string? Subject = null);
 
 public sealed record FindingsResult(
     int SchemaVersion,
