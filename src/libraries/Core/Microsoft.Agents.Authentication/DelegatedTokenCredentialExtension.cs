@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Authentication
 
                 return new AccessToken(
                     response.Token,
-                    response.Expiration ?? DateTimeOffset.MinValue
+                    response.Expiration ?? DateTimeOffset.UtcNow.Add(TimeSpan.FromMinutes(5))
                 );
             }
         }

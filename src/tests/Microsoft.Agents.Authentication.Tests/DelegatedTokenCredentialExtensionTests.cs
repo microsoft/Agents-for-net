@@ -103,14 +103,19 @@ namespace Microsoft.Agents.Auth.Tests
         }
 
         [Fact]
-        public async Task Create_MissingExpiration_UsesMinimumExpiration()
+        public async Task Create_MissingExpiration_UsesDefaultExpiration()
         {
             TokenCredential credential = DelegatedTokenCredentialExtension.Create(
                 (_, _) => Task.FromResult(new TokenResponse { Token = "token" }));
 
+            DateTimeOffset beforeRequest = DateTimeOffset.UtcNow;
             AccessToken token = await credential.GetTokenAsync(new TokenRequestContext([]), CancellationToken.None);
+            DateTimeOffset afterRequest = DateTimeOffset.UtcNow;
 
-            Assert.Equal(DateTimeOffset.MinValue, token.ExpiresOn);
+            Assert.InRange(
+                token.ExpiresOn,
+                beforeRequest.AddMinutes(5),
+                afterRequest.AddMinutes(5));
         }
 
         [Fact]

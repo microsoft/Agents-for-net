@@ -154,6 +154,63 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
+        public async Task Test_ExchangeTurnTokenAsTokenCredential_NullRequestedScopes_UsesConfiguredScopes()
+        {
+            IList<string> exchangedScopes = null;
+
+            MockGraph
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new TokenResponse
+                {
+                    Token = GraphToken,
+                    Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30),
+                    IsExchangeable = true
+                });
+            MockGraph
+                .Setup(e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Callback<ITurnContext, string, IList<string>, CancellationToken>((_, _, scopes, _) => exchangedScopes = scopes)
+                .ReturnsAsync(new TokenResponse
+                {
+                    Token = "exchanged token",
+                    Expiration = DateTimeOffset.UtcNow + TimeSpan.FromMinutes(30)
+                });
+
+            var options = new TestApplicationOptions(new MemoryStorage())
+            {
+                UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, new MemoryStorage(), MockConnections.Object, MockGraph.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
+                }
+            };
+            var app = new TestApplication(options);
+
+            app.OnActivity(ActivityTypes.Message, async (turnContext, turnState, cancellationToken) =>
+            {
+                TokenCredential credential = app.UserAuthorization.ExchangeTurnTokenAsTokenCredential(
+                    turnContext,
+                    GraphName,
+                    exchangeScopes: ["configured"]);
+
+                AccessToken token = await credential.GetTokenAsync(
+                    new TokenRequestContext(null),
+                    cancellationToken);
+
+                Assert.Equal("exchanged token", token.Token);
+                await turnContext.SendActivityAsync(MessageFactory.Text("done"), cancellationToken);
+            });
+
+            await new TestFlow(new TestAdapter(), async (turnContext, cancellationToken) =>
+            {
+                await app.OnTurnAsync(turnContext, cancellationToken);
+            })
+                .Send("first message")
+                .AssertReply("done")
+                .StartTestAsync();
+
+            Assert.Equal(["configured"], exchangedScopes);
+        }
+
+        [Fact]
         public async Task Test_ExchangeTurnTokenAsTokenCredential_AfterTurnDisposed_ThrowsFormalError()
         {
             var options = new TestApplicationOptions(new MemoryStorage())

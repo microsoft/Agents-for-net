@@ -146,7 +146,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 }
 
                 IList<string> allScopes = (configuredScopes ?? [])
-                    .Concat(scopes)
+                    .Concat(scopes ?? [])
                     .Distinct(StringComparer.Ordinal)
                     .ToList();
 
