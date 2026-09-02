@@ -83,6 +83,10 @@ public class A2AAdapterTests
 
         // Assert
         mockHttpResponse.VerifySet(r => r.ContentType = "application/json", Times.Once);
+        mockHttpResponse.Object.Body.Position = 0;
+        var agentCard = await JsonSerializer.DeserializeAsync<AgentCard>(
+            mockHttpResponse.Object.Body, A2AJsonUtilities.DefaultOptions);
+        Assert.False(agentCard!.Capabilities.ExtendedAgentCard);
     }
 
     [Fact]
@@ -244,6 +248,35 @@ public class A2AAdapterTests
         var streamText = reader.ReadToEnd();
         Assert.NotEmpty(streamText);
         Assert.Contains("Echo: Hello", streamText);
+    }
+
+    [Fact]
+    public async Task ProcessJsonRpcGetExtendedAgentCardAsync_WhenUnsupported_ReturnsUnsupportedOperation()
+    {
+        // Arrange
+        var record = UseRecord(record =>
+        {
+            var options = new TestApplicationOptions(record.Storage);
+            return new TestApplication(options);
+        });
+
+        var jsonRpcRequest = new JsonRpcRequest
+        {
+            Id = Guid.NewGuid().ToString(),
+            Method = A2AMethods.GetExtendedAgentCard,
+            Params = JsonSerializer.SerializeToElement(new GetExtendedAgentCardRequest())
+        };
+
+        var context = CreateHttpContext(JsonSerializer.Serialize(jsonRpcRequest));
+
+        // Act
+        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        // Assert
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        using var response = await JsonDocument.ParseAsync(context.Response.Body);
+        Assert.Equal((int)A2AErrorCode.UnsupportedOperation, response.RootElement.GetProperty("error").GetProperty("code").GetInt32());
     }
 
     #endregion

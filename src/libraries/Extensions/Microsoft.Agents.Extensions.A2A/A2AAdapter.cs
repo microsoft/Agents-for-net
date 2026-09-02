@@ -104,6 +104,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             Skills = [],
             Capabilities = new AgentCapabilities()
             {
+                ExtendedAgentCard = false,
                 Streaming = true,
             },
             SupportedInterfaces = [],
@@ -247,9 +248,25 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         return cache ? _a2aAgentContext.GetOrAdd(agentContext.RequestId, agentContext) : agentContext;
     }
 
-    private A2AServer GetA2AServerForAgent(AgentRequestContext agentContext)
+    private A2AServerWithoutExtendedAgentCard GetA2AServerForAgent(AgentRequestContext agentContext)
     {
-        return new A2AServer(agentContext, _taskStore, _a2aNotifier, _a2aServerLogger, _a2aServerOptions);
+        return new A2AServerWithoutExtendedAgentCard(agentContext, _taskStore, _a2aNotifier, _a2aServerLogger, _a2aServerOptions);
+    }
+
+    private sealed class A2AServerWithoutExtendedAgentCard(
+        IAgentHandler handler,
+        ITaskStore taskStore,
+        ChannelEventNotifier notifier,
+        ILogger<A2AServer> logger,
+        A2AServerOptions options)
+        : A2AServer(handler, taskStore, notifier, logger, options)
+    {
+        public override Task<AgentCard> GetExtendedAgentCardAsync(
+            GetExtendedAgentCardRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            throw new A2AException("Extended agent cards are not supported.", A2AErrorCode.UnsupportedOperation);
+        }
     }
 
     internal async Task ExecuteAgentTurnAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
