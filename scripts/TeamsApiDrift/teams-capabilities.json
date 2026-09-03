@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "package": "Microsoft.Teams.Apps",
+  "capabilities": {
+    "channels-and-teams": {
+      "description": "Team and channel lifecycle routing and models.",
+      "owners": ["agents-sdk-msteams"],
+      "upstreamNamespaces": ["Microsoft.Teams.Apps.Schema"],
+      "upstreamTypes": ["Microsoft.Teams.Apps.ConversationEventType"],
+      "adoptionPolicy": "review-new-members"
+    },
+    "files": {
+      "description": "Teams file-consent invoke handling.",
+      "owners": ["agents-sdk-msteams"],
+      "upstreamNamespaces": ["Microsoft.Teams.Apps.Files"],
+      "upstreamTypes": [],
+      "adoptionPolicy": "review-new-members"
+    },
+    "meetings": {
+      "description": "Meeting APIs and event payloads.",
+      "owners": ["agents-sdk-msteams"],
+      "upstreamNamespaces": ["Microsoft.Teams.Apps.Clients", "Microsoft.Teams.Apps.Meetings"],
+      "upstreamTypes": ["Microsoft.Teams.Apps.EventName", "Microsoft.Teams.Apps.EventNames"],
+      "adoptionPolicy": "review-new-members"
+    },
+    "message-extensions": {
+      "description": "Message extension invokes, previews, and responses.",
+      "owners": ["agents-sdk-msteams"],
+      "upstreamNamespaces": ["Microsoft.Teams.Apps.MessageExtensions"],
+      "upstreamTypes": ["Microsoft.Teams.Apps.InvokeName", "Microsoft.Teams.Apps.InvokeNames"],
+      "adoptionPolicy": "review-new-members"
+    },
+    "task-modules": {
+      "description": "Task module fetch and submit contracts.",
+      "owners": ["agents-sdk-msteams"],
+      "upstreamNamespaces": ["Microsoft.Teams.Apps.TaskModules"],
+      "upstreamTypes": [],
+      "adoptionPolicy": "review-new-members"
+    },
+    "internal-mapping": {
+      "description": "Shared activity and serialization mappings.",
+      "owners": ["agents-sdk-msteams"],
+      "upstreamNamespaces": ["Microsoft.Teams.Apps.Utils"],
+      "upstreamTypes": ["Microsoft.Teams.Apps.MessageActivity", "Microsoft.Teams.Apps.MessageReaction"],
+      "adoptionPolicy": "review-internal-additions"
+    }
+  }
+}
