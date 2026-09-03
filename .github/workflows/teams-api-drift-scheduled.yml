@@ -49,7 +49,9 @@ jobs:
       - name: Resolve declared baseline version
         id: resolve-baseline-version
         if: always() && steps.tool.outcome == 'success'
-        run: echo "version=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Compare with latest listed stable release
         id: compare
