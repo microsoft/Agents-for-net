@@ -19,6 +19,7 @@ internal static class Program
                 "compare" => await CompareAsync(options).ConfigureAwait(false),
                 "collect-usage" => CollectUsage(options),
                 "validate-usage" => ValidateUsage(options),
+                "validate-metadata" => ValidateMetadata(options),
                 "classify" => Classify(options),
                 "write-test-summary" => WriteTestSummary(options),
                 "render-report" => RenderReport(options),
@@ -63,6 +64,13 @@ internal static class Program
     {
         var assemblies = options.Many("--assembly");
         if (assemblies.Count == 0) throw new ArgumentException("At least one --assembly is required.");
+        var result = CollectUsage(assemblies);
+        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "collected-usage.json", ".json"), result);
+        return 0;
+    }
+
+    private static CollectedUsage CollectUsage(IEnumerable<string> assemblies)
+    {
         var collected = assemblies.Select(AssemblyUsageCollector.Collect).ToArray();
         var usages = collected.SelectMany(item => item.Usages)
             .GroupBy(item => item.UpstreamSymbol, StringComparer.Ordinal)
@@ -73,9 +81,7 @@ internal static class Program
                 group.Any(item => item.Exposure == "publicly-exposed") ? "publicly-exposed" : "internal-only"))
             .ToArray();
         var sourceFiles = collected.SelectMany(item => item.SourceFiles ?? []).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToArray();
-        var result = new CollectedUsage(1, PackageConstants.PackageId, string.Join(",", collected.Select(item => item.Assembly)), usages, sourceFiles);
-        ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "collected-usage.json", ".json"), result);
-        return 0;
+        return new CollectedUsage(1, PackageConstants.PackageId, string.Join(",", collected.Select(item => item.Assembly)), usages, sourceFiles);
     }
 
     private static int ValidateUsage(Arguments options)
@@ -86,6 +92,28 @@ internal static class Program
             ToolJson.Read<ApiModel>(options.Required("--api-model")),
             options.Optional("--repository-root") ?? Directory.GetCurrentDirectory());
         ToolJson.Write(ToolJson.OutputFile(options.Required("--output"), "usage-validation.json", ".json"), result);
+        return result.Valid ? 0 : 1;
+    }
+
+    private static int ValidateMetadata(Arguments options)
+    {
+        var assemblies = options.Many("--assembly");
+        if (assemblies.Count == 0) throw new ArgumentException("At least one --assembly is required.");
+        var propsPath = options.Required("--props");
+        using var props = File.OpenText(propsPath);
+        var result = MetadataValidator.Validate(
+            ToolJson.Read<UsageManifest>(options.Required("--manifest")),
+            ToolJson.Read<CapabilityDocument>(options.Required("--capabilities")),
+            CollectUsage(assemblies),
+            VersionResolver.Resolve(props),
+            options.Optional("--repository-root") ?? Directory.GetCurrentDirectory(),
+            options.Required("--manifest"),
+            options.Required("--capabilities"),
+            options.Optional("--base-ref"));
+        foreach (var finding in result.Findings)
+        {
+            Console.Error.WriteLine($"TeamsApiDrift: [{finding.RuleId}] {finding.Path}: {finding.Message} Fix: {finding.Fix}");
+        }
         return result.Valid ? 0 : 1;
     }
 
@@ -152,5 +180,5 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.Error.WriteLine(
-        "Commands: resolve-version, compare, collect-usage, validate-usage, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report");
+        "Commands: resolve-version, compare, collect-usage, validate-usage, validate-metadata, classify, write-test-summary, render-report, prepare-agent-context, validate-agent-report");
 }
