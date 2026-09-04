@@ -140,11 +140,6 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
             return DelegatedTokenCredentialExtension.Create(async (scopes, ct) =>
             {
-                if (turnContext.Services.HasBeenDisposed)
-                {
-                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, null);
-                }
-
                 IList<string> allScopes = (configuredScopes ?? [])
                     .Concat(scopes ?? [])
                     .Distinct(StringComparer.Ordinal)
