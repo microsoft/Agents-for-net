@@ -22,6 +22,7 @@
     <Microsoft_IdentityClient_PkgVer>4.87.0</Microsoft_IdentityClient_PkgVer>
     <Xunit_PackageVersion>2.9.3</Xunit_PackageVersion>
     <Xunit_v3_PackageVersion>3.0.1</Xunit_v3_PackageVersion>
+    <Microsoft_Teams_Apps_PkgVer Condition="'$(Microsoft_Teams_Apps_PkgVer)' == ''">2.1.0</Microsoft_Teams_Apps_PkgVer>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
@@ -127,8 +128,10 @@
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.3.0" />
     <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.3.0" />
     <!-- Teams -->
-    <PackageVersion Include="Microsoft.Teams.Apps" Version="2.1.0" />
+    <PackageVersion Include="Microsoft.Teams.Apps" Version="$(Microsoft_Teams_Apps_PkgVer)" />
     <PackageVersion Include="Microsoft.Teams.Cards" Version="2.1.0" />
+    <PackageVersion Include="NuGet.Frameworks" Version="7.9.0" />
+    <PackageVersion Include="NuGet.Protocol" Version="7.9.0" />
     <!-- MCP -->
     <PackageVersion Include="ModelContextProtocol" Version="0.2.0-preview.2" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.2.0-preview.2" />
