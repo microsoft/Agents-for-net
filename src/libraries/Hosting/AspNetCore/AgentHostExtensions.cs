@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <code>
     /// builder.AddAgentDefaults()
     ///     .AddAgent&lt;MyAgent&gt;()
-    ///     .AddAgentAuthorization(b =&gt; b.AddAgentAspNetAuthentication());
+    ///     .AddAgentAuthorization(ConfigureAuthentication);
     ///
     /// var app = builder.Build();
     ///
@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// builder.Services.AddHttpClient();
     /// builder.Services.AddControllers();
     /// builder.AddAgent&lt;MyAgent&gt;();
-    /// // Configure authentication (e.g., AddAgentAspNetAuthentication, MISE, or custom)
+    /// // Register the application's ASP.NET Core authentication services.
     ///
     /// var app = builder.Build();
     ///
@@ -98,14 +98,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// Configures token validation for inbound requests. The provided action should register
-        /// authentication services (e.g., call <c>AddAgentAspNetAuthentication</c>).
+        /// the application's ASP.NET Core authentication services.
         /// When enabled, endpoints mapped by <see cref="MapDefaultAgentEndpoints"/> will automatically
         /// require authorization.
         /// </summary>
         /// <param name="builder">The host application builder.</param>
-        /// <param name="configure">Action that configures authentication on the builder. The sample-provided
-        /// <c>AddAgentAspNetAuthentication</c> is the default implementation, but developers may use MISE
-        /// or any other ASP.NET Core authentication mechanism.</param>
+        /// <param name="configure">Action that configures an ASP.NET Core authentication mechanism on the builder.</param>
         /// <param name="forceEnable">
         /// Override for whether authorization is enabled. When <c>null</c> (the default), authorization is
         /// enabled in all environments except Development. Pass an explicit value to override — for example:
@@ -174,7 +172,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// builder.AddAgentDefaults()
         ///     .AddAgent&lt;MyAgent&gt;()
         ///     .UseHeaderPropagation()
-        ///     .AddAgentAuthorization(b =&gt; b.AddAgentAspNetAuthentication());
+        ///     .AddAgentAuthorization(ConfigureAuthentication);
         /// </code>
         /// </summary>
         /// <param name="builder">The host application builder.</param>
