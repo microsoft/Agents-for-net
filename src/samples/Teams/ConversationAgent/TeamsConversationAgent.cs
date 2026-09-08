@@ -24,7 +24,7 @@ namespace ConversationAgent;
 [TeamsExtension]
 public partial class TeamsConversationAgent(AgentApplicationOptions options, ILogger<TeamsConversationAgent> logger) : AgentApplication(options)
 {
-    private readonly ILogger<TeamsConversationAgent> _logger = logger;
+    private readonly ILogger<TeamsConversationAgent> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     [TeamsActivityRoute(ActivityTypes.InstallationUpdate)]
     public async Task OnInstallationUpdateActivityAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)

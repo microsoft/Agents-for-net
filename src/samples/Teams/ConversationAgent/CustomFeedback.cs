@@ -9,12 +9,13 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.MSTeams;
 using Microsoft.Agents.Extensions.MSTeams.App;
 using Microsoft.Extensions.Logging;
-using Microsoft.Teams.Apps;
 using Microsoft.Teams.Apps.Schema;
 using Microsoft.Teams.Apps.TaskModules;
 using Microsoft.Teams.Cards;
 using System;
+using System.Net;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,9 +36,35 @@ public partial class TeamsConversationAgent
     [InvokeRoute("message/fetchTask")]
     public static async Task OnCustomFeedbackFetchAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
-        var request = ProtocolJsonSerializer.ToObject<FeedbackData>(turnContext.Activity.Value);
-        var wrappedRequest = ProtocolJsonSerializer.ToObject<MessageFetchTaskInvokeValue>(turnContext.Activity.Value);
-        var reaction = request?.ActionValue?.Reaction ?? wrappedRequest?.Data?.ActionValue?.Reaction;
+        JsonObject? requestValue;
+        try
+        {
+            requestValue = ProtocolJsonSerializer.ToObject<JsonNode>(turnContext.Activity.Value) as JsonObject;
+        }
+        catch (JsonException)
+        {
+            requestValue = null;
+        }
+
+        var rootActionName = requestValue?["actionName"]?.ToString();
+        var wrappedData = requestValue?["data"] as JsonObject;
+        var wrappedActionName = wrappedData?["actionName"]?.ToString();
+        var actionName = rootActionName ?? wrappedActionName;
+        var hasConflictingActionNames = rootActionName is not null
+            && wrappedActionName is not null
+            && !string.Equals(rootActionName, wrappedActionName, StringComparison.Ordinal);
+
+        if (!string.Equals(actionName, "feedback", StringComparison.Ordinal) || hasConflictingActionNames)
+        {
+            await turnContext.SendActivityAsync(
+                Activity.CreateInvokeResponseActivity(status: (int)HttpStatusCode.BadRequest),
+                cancellationToken);
+            return;
+        }
+
+        var rootActionValue = requestValue?["actionValue"] as JsonObject;
+        var wrappedActionValue = wrappedData?["actionValue"] as JsonObject;
+        var reaction = rootActionValue?["reaction"]?.ToString() ?? wrappedActionValue?["reaction"]?.ToString();
 
         var response = TaskModuleResponse.CreateBuilder()
             .WithType(TaskModuleResponseTypes.Continue)
