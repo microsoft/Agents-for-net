@@ -12,6 +12,7 @@ using Microsoft.Agents.Extensions.MSTeams;
 using Microsoft.Agents.Extensions.MSTeams.App;
 using Microsoft.Agents.Extensions.MSTeams.Channels;
 using Microsoft.Agents.Extensions.MSTeams.Teams;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,8 +22,10 @@ using System.Linq;
 namespace ConversationAgent;
 
 [TeamsExtension]
-public partial class TeamsConversationAgent(AgentApplicationOptions options) : AgentApplication(options)
+public partial class TeamsConversationAgent(AgentApplicationOptions options, ILogger<TeamsConversationAgent> logger) : AgentApplication(options)
 {
+    private readonly ILogger<TeamsConversationAgent> _logger = logger;
+
     [TeamsActivityRoute(ActivityTypes.InstallationUpdate)]
     public async Task OnInstallationUpdateActivityAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -104,7 +107,8 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options) : A
             new CardAction(type: ActionTypes.MessageBack, title: "Mention Me", text: "mentionme"),
             new CardAction(type: ActionTypes.MessageBack, title: "Delete Card", text: "delete"),
             new CardAction(type: ActionTypes.MessageBack, title: "Send Targeted", text: "targeted"),
-            new CardAction(type: ActionTypes.MessageBack, title: "Quoted Reply", text: "quotedreply")
+            new CardAction(type: ActionTypes.MessageBack, title: "Quoted Reply", text: "quotedreply"),
+            new CardAction(type: ActionTypes.MessageBack, title: "Custom Feedback", text: "customfeedback")
         ]
     };
 
