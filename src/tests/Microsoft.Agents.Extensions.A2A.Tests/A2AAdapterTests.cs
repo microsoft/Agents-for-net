@@ -151,10 +151,12 @@ public class A2AAdapterTests
     [Fact]
     public void Constructor_WithNegativeAgentCardCacheMaxAge_ShouldThrow()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new A2AAdapter(
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => new A2AAdapter(
             _mockTaskStore.Object,
             _mockLogger,
             options: new A2AAdapterOptions { AgentCardCacheMaxAge = TimeSpan.FromSeconds(-1) }));
+
+        Assert.Equal("options", exception.ParamName);
     }
 
     [Fact]

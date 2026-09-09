@@ -76,7 +76,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         if (adapterOptions.AgentCardCacheMaxAge < TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(A2AAdapterOptions.AgentCardCacheMaxAge),
+                nameof(options),
                 adapterOptions.AgentCardCacheMaxAge,
                 "Agent Card cache max-age cannot be negative.");
         }
