@@ -52,6 +52,69 @@ public class A2AUserAuthorizationTests
             () => authorization.SignInUserAsync(turnContext));
     }
 
+    /// <summary>
+    /// <c>AgentClaims.IsExchangeableToken</c> requires the audience to contain the app ID that requested
+    /// the token ('azp' for v2, 'appid' for v1). A delegated token acquired by a separate public-client
+    /// registration has <c>aud</c> = Agent API and <c>azp</c> = console client, so it is not exchangeable
+    /// and the OBO route cannot run.
+    /// </summary>
+    [Fact]
+    public async Task SignInUserAsync_DelegatedTokenFromSeparateClientRegistration_IsNotExchangeable()
+    {
+        var turnContext = CreateTurnContext(CreateAuthentication(CreateDelegatedToken(
+            audience: AgentApiClientId,
+            authorizedParty: ConsoleClientId)));
+
+        var response = await CreateAuthorization().SignInUserAsync(turnContext);
+
+        Assert.False(response.IsExchangeable);
+    }
+
+    [Fact]
+    public async Task SignInUserAsync_DelegatedTokenFromAgentApiRegistration_IsExchangeable()
+    {
+        var turnContext = CreateTurnContext(CreateAuthentication(CreateDelegatedToken(
+            audience: AgentApiClientId,
+            authorizedParty: AgentApiClientId)));
+
+        var response = await CreateAuthorization().SignInUserAsync(turnContext);
+
+        Assert.True(response.IsExchangeable);
+    }
+
+    [Fact]
+    public async Task SignInUserAsync_WithOBOScopesAndSeparateClientRegistration_Throws()
+    {
+        var turnContext = CreateTurnContext(CreateAuthentication(CreateDelegatedToken(
+            audience: AgentApiClientId,
+            authorizedParty: ConsoleClientId)));
+        var authorization = new A2AUserAuthorization(
+            "graph",
+            Mock.Of<IConnections>(),
+            new OBOSettings { OBOConnectionName = "ServiceConnection", OBOScopes = ["User.Read"] });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => authorization.SignInUserAsync(turnContext));
+    }
+
+    private const string AgentApiClientId = "22222222-2222-2222-2222-222222222222";
+    private const string ConsoleClientId = "11111111-1111-1111-1111-111111111111";
+
+    private static string CreateDelegatedToken(string audience, string authorizedParty)
+    {
+        var jwt = new JwtSecurityToken(
+            claims:
+            [
+                new Claim("aud", audience),
+                new Claim("ver", "2.0"),
+                new Claim("azp", authorizedParty),
+                new Claim("scp", "access_as_user"),
+            ],
+            expires: DateTime.UtcNow.AddMinutes(30));
+
+        return new JwtSecurityTokenHandler().WriteToken(jwt);
+    }
+
     private static A2AUserAuthorization CreateAuthorization()
         => new("a2a", Mock.Of<IConnections>(), new OBOSettings());
 

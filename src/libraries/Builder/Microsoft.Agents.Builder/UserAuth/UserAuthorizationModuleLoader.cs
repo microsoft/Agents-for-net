@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 #if !NETSTANDARD
@@ -102,14 +103,25 @@ namespace Microsoft.Agents.Builder.UserAuth
 #else
             var assemblies = _loadContext.GetAssemblies();
 #endif
-            var matches = assemblies
+            var candidates = assemblies
                 .Where(assembly => !assembly.IsDynamic)
+                .OrderBy(assembly => assembly.FullName, StringComparer.Ordinal)
                 .SelectMany(GetLoadableTypes)
                 .Where(IsValidProviderType)
-                .Where(type =>
-                    string.Equals(type.FullName, typeName, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(type.Name, typeName, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
+
+            // A fully qualified name is unambiguous, so it wins over a bare type name that happens to
+            // match in another assembly. This keeps resolution independent of assembly load order.
+            var matches = candidates
+                .Where(type => string.Equals(type.FullName, typeName, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (matches.Length == 0)
+            {
+                matches = candidates
+                    .Where(type => string.Equals(type.Name, typeName, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+            }
 
             if (matches.Length > 1)
             {
@@ -126,7 +138,16 @@ namespace Microsoft.Agents.Builder.UserAuth
             return matches.SingleOrDefault();
         }
 
-        private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+        /// <summary>
+        /// Returns the types an assembly can supply for provider discovery.
+        /// </summary>
+        /// <remarks>
+        /// Scanning every loaded assembly means an unrelated assembly whose dependencies cannot be
+        /// resolved must not prevent user-authorization handlers from being created. Only the documented
+        /// <see cref="Assembly.GetTypes"/> failures are handled, and each one is logged; any other
+        /// exception propagates.
+        /// </remarks>
+        internal IEnumerable<Type> GetLoadableTypes(Assembly assembly)
         {
             try
             {
@@ -134,7 +155,17 @@ namespace Microsoft.Agents.Builder.UserAuth
             }
             catch (ReflectionTypeLoadException exception)
             {
+                logger.LogDebug(exception, "Some types in assembly `{assembly}` could not be loaded while resolving user authorization handlers.", assembly.FullName);
                 return exception.Types.Where(type => type != null);
+            }
+            catch (Exception exception) when (
+                exception is TypeLoadException
+                || exception is FileNotFoundException
+                || exception is FileLoadException
+                || exception is BadImageFormatException)
+            {
+                logger.LogDebug(exception, "Assembly `{assembly}` could not be inspected while resolving user authorization handlers.", assembly.FullName);
+                return [];
             }
         }
 
