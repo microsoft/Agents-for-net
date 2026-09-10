@@ -31,7 +31,7 @@ public partial class MyAgent : AgentApplication
     private const string ApplicationHandlerName = "app";
     private readonly IGraphProfileClient _graphClient;
 
-    internal MyAgent(AgentApplicationOptions options, IGraphProfileClient graphClient) : base(options)
+    public MyAgent(AgentApplicationOptions options, IGraphProfileClient graphClient) : base(options)
     {
         _graphClient = graphClient;
     }

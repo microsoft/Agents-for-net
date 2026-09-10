@@ -5,6 +5,6 @@ using System.Text.Json.Serialization;
 
 namespace A2AAgent;
 
-internal sealed record GraphProfile(
+public sealed record GraphProfile(
     [property: JsonPropertyName("displayName")] string DisplayName,
     [property: JsonPropertyName("userPrincipalName")] string UserPrincipalName);

@@ -12,8 +12,11 @@ using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.A2A;
+using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
@@ -32,6 +35,24 @@ public class A2AAgentOAuthRouteTests
     private const string DelegatedHandlerName = "delegated";
     private const string GraphHandlerName = "graph";
     private const string AppHandlerName = "app";
+
+    [Fact]
+    public void MyAgent_ResolvesFromStartupServiceRegistration()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.AddAgentDefaults();
+        builder.Services.AddSingleton<IStorage, MemoryStorage>();
+        builder.Services.AddSingleton(sp => new AgentApplicationOptions(sp.GetRequiredService<IStorage>()));
+        builder.Services.AddHttpClient<IGraphProfileClient, GraphProfileClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
+        });
+        builder.AddAgent<MyAgent>();
+
+        using var provider = builder.Services.BuildServiceProvider();
+
+        _ = provider.GetRequiredService<MyAgent>();
+    }
 
     [Fact]
     public async Task DelegatedRoute_UsesDelegatedHandlerOnly()

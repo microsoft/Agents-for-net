@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace A2AAgent;
 
-internal interface IGraphProfileClient
+public interface IGraphProfileClient
 {
     Task<GraphProfile> GetMeAsync(string accessToken, CancellationToken cancellationToken);
 }
