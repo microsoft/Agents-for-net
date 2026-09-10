@@ -9,6 +9,7 @@
     <IncludeAspNetSampleHelpers>false</IncludeAspNetSampleHelpers>
     <RootNamespace>Microsoft.Agents.Samples.A2AClient</RootNamespace>
     <AssemblyName>A2AClient</AssemblyName>
+    <UserSecretsId>AgentsSdk-A2AClient</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,12 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Microsoft.Agents.Samples.A2A.Tests" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
