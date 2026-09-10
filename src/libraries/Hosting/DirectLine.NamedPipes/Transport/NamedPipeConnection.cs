@@ -57,9 +57,12 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         /// <summary>
         /// Creates the pipe pair and waits for a client to connect to both.
         /// </summary>
+        /// <param name="connectionTimeout">The maximum time to wait for both pipe connections.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        public async Task WaitForConnectionAsync(CancellationToken cancellationToken = default)
+        public async Task WaitForConnectionAsync(TimeSpan connectionTimeout, CancellationToken cancellationToken = default)
         {
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(connectionTimeout, TimeSpan.Zero);
+
             _logger.LogDebug("NamedPipeConnection: Creating pipe pair '{PipeName}.incoming/.outgoing'", _pipeName);
 
             _incomingPipe = new NamedPipeServerStream(
@@ -78,9 +81,11 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
 
             _logger.LogInformation("NamedPipeConnection: Waiting for client connection on '{PipeName}'", _pipeName);
 
+            using var connectionCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            connectionCts.CancelAfter(connectionTimeout);
             await Task.WhenAll(
-                _incomingPipe.WaitForConnectionAsync(cancellationToken),
-                _outgoingPipe.WaitForConnectionAsync(cancellationToken)
+                _incomingPipe.WaitForConnectionAsync(connectionCts.Token),
+                _outgoingPipe.WaitForConnectionAsync(connectionCts.Token)
             ).ConfigureAwait(false);
 
             Reader = new NamedPipeTransport(_incomingPipe);

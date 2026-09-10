@@ -29,6 +29,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
         ILogger<NamedPipeHostedService> logger,
         IConfiguration configuration) : BackgroundService
     {
+        private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromMinutes(5);
         private readonly NamedPipeActivityHandler _activityHandler = activityHandler ?? throw new ArgumentNullException(nameof(activityHandler));
         private readonly NamedPipeMessageHandler _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
         private readonly ILogger<NamedPipeHostedService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -47,7 +48,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
                 try
                 {
                     connection = new NamedPipeConnection(_pipeName, _logger);
-                    await connection.WaitForConnectionAsync(stoppingToken).ConfigureAwait(false);
+                    await connection.WaitForConnectionAsync(ConnectionTimeout, stoppingToken).ConfigureAwait(false);
 
                     protocol = new NamedPipeProtocol(connection.Reader, connection.Writer, _logger)
                     {
