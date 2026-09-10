@@ -1,6 +1,6 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.22/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.22",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
+  "manifestVersion": "devPreview",
   "version": "1.0.0",
   "id": "<<AAD_APP_CLIENT_ID>>",
   "developer": {
@@ -34,12 +34,16 @@
       "supportsCalling": false,
       "supportsVideo": false,
       "supportsFiles": false,
+      "supportsTargetedMessages": true,
       "commandLists": [
         {
           "scopes": [
             "personal",
             "team",
             "groupChat"
+          ],
+          "triggers": [
+            "mention"
           ],
           "commands": [
             {
@@ -53,6 +57,25 @@
             {
               "title": "messageall",
               "description": "Send 1 to 1 message to all members of the current conversation"
+            },
+            {
+              "title": "quotedreply",
+              "description": "Reply with a quote of the incoming message"
+            }
+          ]
+        },
+        {
+          "scopes": [
+            "team",
+            "groupChat"
+          ],
+          "triggers": [
+            "slash"
+          ],
+          "commands": [
+            {
+              "title": "promptpreview",
+              "description": "Send a targeted response with Prompt Preview"
             }
           ]
         }

@@ -35,7 +35,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         private readonly IActivityTaskQueue _activityTaskQueue;
         private readonly AdapterOptions _adapterOptions;
         private readonly ChannelResponseQueue _responseQueue;
-        private readonly IOutboundHostValidator _hostValidator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> class.
@@ -56,13 +55,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             Builder.IMiddleware[] middlewares = null,
             IConfiguration config = null,
             IOutboundHostValidator hostValidator = null)
-            : base(channelServiceClientFactory, logger)
+            : base(channelServiceClientFactory, logger, hostValidator ?? new OutboundHostValidator(config?.GetSection("OutboundHostValidator")?.Get<OutboundHostValidatorOptions>()))
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
             _adapterOptions = options ?? config?.GetSection("CloudAdapterOptions")?.Get<AdapterOptions>() ?? new AdapterOptions();
             _responseQueue = new ChannelResponseQueue(Logger);
-            _hostValidator = hostValidator ?? new OutboundHostValidator(config?.GetSection("OutboundHostValidator")?.Get<OutboundHostValidatorOptions>());
-
             if (middlewares != null)
             {
                 foreach (var middleware in middlewares)
@@ -303,10 +300,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             // Shared allowed-hosts control (opt-in, disabled by default). Evaluated unconditionally so
             // that the allowlist blocks disallowed hosts even when identity is null (no token claims).
-            if (_hostValidator != null
-                && _hostValidator.Enabled
+            if (HostValidator != null
+                && HostValidator.Enabled
                 && !string.IsNullOrWhiteSpace(activity.ServiceUrl)
-                && !_hostValidator.IsAllowed(activity.ServiceUrl))
+                && !HostValidator.IsAllowed(activity.ServiceUrl))
             {
                 CloudAdapterLog.LogServiceUrlHostNotAllowed(Logger, activity.ServiceUrl);
                 return false;
@@ -324,7 +321,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var validActivityUri = Uri.TryCreate(activity.ServiceUrl, UriKind.Absolute, out var activityUrl);
                 if (!validClaimUri || !validActivityUri || !string.Equals(claimUrl.Host, activityUrl.Host, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (_hostValidator.Enabled)
+                    if (HostValidator.Enabled)
                     {
                         CloudAdapterLog.LogInvalidServiceUrl(Logger, serviceUrlClaim.Value, activity.ServiceUrl);
                         return false;

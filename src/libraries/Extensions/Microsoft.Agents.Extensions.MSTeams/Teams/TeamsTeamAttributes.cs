@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams;
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsTeamArchivedRoute]
-/// public async Task OnTeamArchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamArchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team archived event
 /// }
@@ -47,7 +47,7 @@ public class TeamsTeamArchivedRouteAttribute(bool isAgenticOnly = false, ushort 
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsTeamUnarchivedRoute]
-/// public async Task OnTeamUnarchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamUnarchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team unarchived event
 /// }
@@ -79,7 +79,7 @@ public class TeamsTeamUnarchivedRouteAttribute(bool isAgenticOnly = false, ushor
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsTeamDeletedRoute]
-/// public async Task OnTeamDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team deleted event
 /// }
@@ -104,38 +104,6 @@ public class TeamsTeamDeletedRouteAttribute(bool isAgenticOnly = false, ushort r
 }
 
 /// <summary>
-/// Attribute to define a route that handles Teams team hard deleted events.
-/// </summary>
-/// <remarks>
-/// Decorate a method with this attribute to register it as a handler for team hard deleted events in Teams.
-/// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
-/// <code>
-/// [TeamsTeamHardDeletedRoute]
-/// public async Task OnTeamHardDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
-/// {
-///     // Handle team hard deleted event
-/// }
-/// </code>
-/// Alternatively, <see cref="TeamsTeam.OnHardDeleted"/> can be used to register the handler via the fluent API.
-/// </remarks>
-/// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
-/// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
-[AttributeUsage(AttributeTargets.Method, Inherited = true)]
-[RouteHandlerType(typeof(TeamUpdateHandler))]
-public class TeamsTeamHardDeletedRouteAttribute(bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string signInHandlers = null) : Attribute, IRouteAttribute
-{
-    /// <inheritdoc />
-    public void AddRoute(AgentApplication app, MethodInfo method)
-    {
-        var handler = RouteAttributeHelper.CreateHandlerDelegate<TeamUpdateHandler>(app, method);
-        var builder = TeamUpdateRouteBuilder.Create().ForTeamHardDeleted().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
-        RouteAttributeHelper.ApplySignInHandlers(app, signInHandlers, s => builder.WithOAuthHandlers(s), f => builder.WithOAuthHandlers(f));
-        app.AddRoute(builder.Build());
-    }
-}
-
-/// <summary>
 /// Attribute to define a route that handles Teams team renamed events.
 /// </summary>
 /// <remarks>
@@ -143,7 +111,7 @@ public class TeamsTeamHardDeletedRouteAttribute(bool isAgenticOnly = false, usho
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsTeamRenamedRoute]
-/// public async Task OnTeamRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team renamed event
 /// }
@@ -175,7 +143,7 @@ public class TeamsTeamRenamedRouteAttribute(bool isAgenticOnly = false, ushort r
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsTeamRestoredRoute]
-/// public async Task OnTeamRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnTeamRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle team restored event
 /// }
@@ -204,12 +172,12 @@ public class TeamsTeamRestoredRouteAttribute(bool isAgenticOnly = false, ushort 
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for all team update events in Teams,
-/// including archived, unarchived, deleted, hard deleted, renamed, and restored.
+/// including archived, unarchived, deleted, renamed, and restored.
 /// Use the specific event attributes (e.g., <see cref="TeamsTeamArchivedRouteAttribute"/>) to handle individual event types.
 /// The method must match the <see cref="TeamUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsTeamUpdateRoute]
-/// public async Task OnAnyTeamEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+/// public async Task OnAnyTeamEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
 /// {
 ///     // Handle any team update event
 /// }

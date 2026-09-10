@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -10,13 +10,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.TaskModules;
 /// <summary>
 /// Attribute to define a route that handles Teams task module fetch events.
 /// The decorated method must match the <see cref="TaskFetchHandler"/> delegate signature —
-/// the third parameter must be <see cref="Microsoft.Teams.Api.TaskModules.Request"/>.
+/// the third parameter must be <see cref="Microsoft.Teams.Apps.TaskModules.TaskModuleRequest"/>.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams task module fetch events.
 /// <code>
 /// [TeamsTaskFetchRoute("myKey")]
-/// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnFetchAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+/// public async Task&lt;Microsoft.Teams.Apps.TaskModules.TaskModuleResponse&gt; OnFetchAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.TaskModules.TaskModuleRequest request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module fetch event
 /// }
@@ -51,13 +51,13 @@ public class TeamsTaskFetchRouteAttribute(string value = null, string key = null
 /// <summary>
 /// Attribute to define a route that handles Teams task module submit events.
 /// The decorated method must match the <see cref="TaskSubmitHandler"/> delegate signature —
-/// the third parameter must be <see cref="Microsoft.Teams.Api.TaskModules.Request"/>.
+/// the third parameter must be <see cref="Microsoft.Teams.Apps.TaskModules.TaskModuleRequest"/>.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for Teams task module submit events.
 /// <code>
 /// [TeamsTaskSubmitRoute("myKey")]
-/// public async Task&lt;Microsoft.Teams.Api.TaskModules.Response&gt; OnSubmitAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.TaskModules.Request request, CancellationToken cancellationToken)
+/// public async Task&lt;Microsoft.Teams.Apps.TaskModules.TaskModuleResponse&gt; OnSubmitAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.TaskModules.TaskModuleRequest request, CancellationToken cancellationToken)
 /// {
 ///     // Handle task module submit event
 /// }

@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="QuerySettingUrlRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.QuerySettingUrl"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionQuerySettingUrl"/>.
 /// </remarks>
 public class QuerySettingUrlRouteBuilder : RouteBuilderBase<QuerySettingUrlRouteBuilder>
 {
@@ -77,7 +77,7 @@ public class QuerySettingUrlRouteBuilder : RouteBuilderBase<QuerySettingUrlRoute
                 return Task.FromResult(
                     IsContextMatch(ctx, _route)
                     && ctx.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.QuerySettingUrl)
+                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Apps.InvokeNames.MessageExtensionQuerySettingUrl)
                 );
             };
     }

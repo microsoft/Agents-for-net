@@ -5,7 +5,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.MSTeams.Errors;
-using Microsoft.Teams.Api;
+using Microsoft.Teams.Apps.MessageExtensions;
 using System;
 using System.Threading.Tasks;
 
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="QueryLinkRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.QueryLink"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionQueryLink"/>.
 /// </remarks>
 public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
 {
@@ -45,7 +45,7 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
         _route.Handler = async (ctx, ts, ct) =>
         {
             var ttc = new TeamsTurnContext(ctx);
-            AppBasedQueryLink? value = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(ttc.Activity.Value);
+            MessageExtensionQueryLink? value = ProtocolJsonSerializer.ToObject<MessageExtensionQueryLink>(ttc.Activity.Value);
             var response = await handler(ttc, ts, value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ttc, response).ConfigureAwait(false);
         };
@@ -80,7 +80,7 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
                 return Task.FromResult(
                     IsContextMatch(ctx, _route)
                     && ctx.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.QueryLink)
+                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Apps.InvokeNames.MessageExtensionQueryLink)
                 );
             };
     }

@@ -3,12 +3,12 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Teams.Api;
+using Microsoft.Teams.Apps;
+using Microsoft.Teams.Apps.Schema;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static Microsoft.Teams.Api.Activities.ConversationUpdateActivity;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Teams;
 
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams;
 /// </summary>
 /// <remarks>Use <see cref="TeamUpdateRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.ConversationUpdate"/> with
-/// <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> matching team events.
+/// <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData.EventType"/> matching team events.
 /// This builder allows matching specific event types via <see cref="ForTeamArchived()"/>, <see cref="ForTeamDeleted()"/>, etc.,
 /// and supports ordering, oauth, and agentic routing scenarios.
 /// This builder defaults to the <c>Microsoft.Agents.Core.Models.Channels.Msteams</c> channelId unless otherwise specified.
@@ -42,7 +42,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamArchived()
     {
-        _teamEvents.Add(EventType.TeamArchived);
+        _teamEvents.Add(ConversationEventType.TeamArchived);
         return this;
     }
 
@@ -52,7 +52,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <returns>The current instance of the TeamUpdateRouteBuilder, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamUnarchived()
     {
-        _teamEvents.Add(EventType.TeamUnarchived);
+        _teamEvents.Add(ConversationEventType.TeamUnarchived);
         return this;
     }
 
@@ -62,17 +62,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamDeleted()
     {
-        _teamEvents.Add(EventType.TeamDeleted);
-        return this;
-    }
-
-    /// <summary>
-    /// Match on team hard deleted events.
-    /// </summary>
-    /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
-    public TeamUpdateRouteBuilder ForTeamHardDeleted()
-    {
-        _teamEvents.Add(EventType.TeamHardDeleted);
+        _teamEvents.Add(ConversationEventType.TeamDeleted);
         return this;
     }
 
@@ -82,7 +72,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamRenamed()
     {
-        _teamEvents.Add(EventType.TeamRenamed);
+        _teamEvents.Add(ConversationEventType.TeamRenamed);
         return this;
     }
 
@@ -92,7 +82,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamRestored()
     {
-        _teamEvents.Add(EventType.TeamRestored);
+        _teamEvents.Add(ConversationEventType.TeamRestored);
         return this;
     }
 
@@ -103,7 +93,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <returns>The current instance of the TeamUpdateRouteBuilder, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder WithHandler(TeamUpdateHandler handler)
     {
-        _route.Handler = (ctx, ts, ct) => handler(new TeamsTurnContext(ctx), ts, ctx.Activity.GetChannelData<ChannelData>().Team, ct);
+        _route.Handler = (ctx, ts, ct) => handler(new TeamsTurnContext(ctx), ts, ctx.Activity.GetChannelData<TeamsChannelData>().Team, ct);
         return this;
     }
 
@@ -113,7 +103,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
         _route.ChannelId ??= Microsoft.Agents.Core.Models.Channels.Msteams;
         _route.Selector ??= (context, _) =>
         {
-            var teamChannelData = context.Activity.GetChannelData<ChannelData>();
+            var teamChannelData = context.Activity.GetChannelData<TeamsChannelData>();
             return Task.FromResult
             (
                 IsContextMatch(context, _route)

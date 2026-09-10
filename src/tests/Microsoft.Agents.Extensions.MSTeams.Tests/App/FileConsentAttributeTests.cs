@@ -113,7 +113,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Assert
             Assert.True(app.AcceptHandlerCalled);
             Assert.NotNull(app.ReceivedResponse);
-            Assert.Equal("https://upload.example.com/file", app.ReceivedResponse.UploadInfo.UploadUrl);
+            Assert.Equal("https://upload.example.com/file", app.ReceivedResponse.UploadInfo.UploadUrl.ToString());
             Assert.Equal("report.txt", app.ReceivedResponse.UploadInfo.Name);
         }
 
@@ -152,7 +152,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -196,7 +196,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             return (app, turnContext);
         }
@@ -207,7 +207,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
     {
         public bool AcceptHandlerCalled { get; private set; }
         public bool DeclineHandlerCalled { get; private set; }
-        public Microsoft.Teams.Api.FileConsentCardResponse ReceivedResponse { get; private set; }
+        public Microsoft.Teams.Apps.Files.FileConsentValue ReceivedResponse { get; private set; }
 
         public TestFileConsentAttributeApp(AgentApplicationOptions options) : base(options) { }
 
@@ -215,7 +215,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public Task OnFileConsentAcceptAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
-            Microsoft.Teams.Api.FileConsentCardResponse response,
+            Microsoft.Teams.Apps.Files.FileConsentValue response,
             CancellationToken cancellationToken)
         {
             AcceptHandlerCalled = true;
@@ -227,7 +227,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public Task OnFileConsentDeclineAsync(
             ITeamsTurnContext turnContext,
             ITurnState turnState,
-            Microsoft.Teams.Api.FileConsentCardResponse response,
+            Microsoft.Teams.Apps.Files.FileConsentValue response,
             CancellationToken cancellationToken)
         {
             DeclineHandlerCalled = true;

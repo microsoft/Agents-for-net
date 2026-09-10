@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="CardButtonClickedRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.CardButtonClicked"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionCardButtonClicked"/>.
 /// </remarks>
 public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedRouteBuilder>
 {
@@ -82,7 +82,7 @@ public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedR
                 return Task.FromResult(
                     IsContextMatch(ctx, _route)
                     && ctx.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.CardButtonClicked)
+                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Apps.InvokeNames.MessageExtensionCardButtonClicked)
                 );
             };
     }

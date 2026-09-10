@@ -41,12 +41,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             {
                 Type = ActivityTypes.Message,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "teamRenamed" }
+                ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType("teamRenamed") }
             };
 
-            // The typed shadow and the base ChannelData stay in sync.
+            // The typed shadow and the base TeamsChannelData stay in sync.
             Assert.Equal("teamRenamed", activity.ChannelData.EventType);
-            Assert.Equal("teamRenamed", activity.GetChannelData<Microsoft.Teams.Api.ChannelData>().EventType);
+            Assert.Equal("teamRenamed", activity.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>().EventType);
         }
 
         [Fact]
@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
         {
             ITeamsActivity activity = new TeamsActivity
             {
-                ChannelData = new Microsoft.Teams.Api.ChannelData { EventType = "channelDeleted" }
+                ChannelData = new Microsoft.Teams.Apps.Schema.TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType("channelDeleted") }
             };
 
             Assert.Equal("channelDeleted", activity.ChannelData.EventType);

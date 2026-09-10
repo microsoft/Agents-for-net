@@ -136,7 +136,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
         /// builder.AddAgentDefaults()
         ///     .AddAgent&lt;MyAgent&gt;()
         ///     .AddSidecarStartupProbe(failOnUnreachable: false)
-        ///     .AddAgentAuthorization(b =&gt; b.AddAgentAspNetAuthentication());
+        ///     .AddAgentAuthorization(ConfigureAuthentication);
         /// </code>
         /// </summary>
         /// <remarks>

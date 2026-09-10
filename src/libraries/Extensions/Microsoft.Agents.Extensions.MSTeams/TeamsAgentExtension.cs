@@ -7,11 +7,9 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.MSTeams.Config;
 using Microsoft.Agents.Extensions.MSTeams.FileConsents;
 using Microsoft.Agents.Extensions.MSTeams.Meetings;
 using Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
-using Microsoft.Agents.Extensions.MSTeams.Messages;
 using Microsoft.Agents.Extensions.MSTeams.TaskModules;
 using Microsoft.Agents.Extensions.MSTeams.Channels;
 using Microsoft.Agents.Extensions.MSTeams.Teams;
@@ -54,21 +52,16 @@ public class TeamsAgentExtension : AgentExtension
         Channels = new TeamsChannel(agentApplication, ChannelId);
         Teams = new TeamsTeam(agentApplication, ChannelId);
         FileConsent = new FileConsent(agentApplication, ChannelId);
-        Messages = new Message(agentApplication, ChannelId);
-        Config = new TeamsConfig(agentApplication, ChannelId);
 
         _agentApplication = agentApplication;
-        _agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
+        _agentApplication.OnBeforeTurn(async (turnContext, turnState, cancellationToken) =>
         {
             if (turnContext.Activity.ChannelId == ChannelId)
             {
                 // Set the TeamsApiClient in the turn context for use in handlers.
-                turnContext.SetTeamsApiClient(_agentApplication, cancellationToken);
-
-                // Explicit conversion of Activity.ChannelData to Teams' ChannelData for improved performance
-                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.ChannelData>(turnContext.Activity.ChannelData);
+                await turnContext.SetTeamsApiClient(_agentApplication, cancellationToken).ConfigureAwait(false);
             }
-            return Task.FromResult(true);
+            return true;
         });
     }
 
@@ -103,21 +96,11 @@ public class TeamsAgentExtension : AgentExtension
     public FileConsent FileConsent { get; }
 
     /// <summary>
-    /// Message features.
-    /// </summary>
-    public Message Messages { get; }
-
-    /// <summary>
-    /// Teams config features.
-    /// </summary>
-    public TeamsConfig Config { get; }
-
-    /// <summary>
     /// Gets the Teams API client for the specified turn context.
     /// </summary>
     /// <param name="turnContext">The turn context.</param>
     /// <returns>The Teams API client.</returns>
-    public Microsoft.Teams.Api.Clients.ApiClient GetTeamsClient(ITurnContext turnContext)
+    public Microsoft.Teams.Apps.Clients.ApiClient GetTeamsClient(ITurnContext turnContext)
     {
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         return turnContext.GetTeamsApiClient();

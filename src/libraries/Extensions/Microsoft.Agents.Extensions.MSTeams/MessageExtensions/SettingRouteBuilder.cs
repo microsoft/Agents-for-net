@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="SettingRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Setting"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionSetting"/>.
 /// </remarks>
 public class SettingRouteBuilder : RouteBuilderBase<SettingRouteBuilder>
 {
@@ -46,7 +46,7 @@ public class SettingRouteBuilder : RouteBuilderBase<SettingRouteBuilder>
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(ctx.Activity.Value);
+            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery>(ctx.Activity.Value);
             var response = await handler(new TeamsTurnContext(ctx), ts, value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
@@ -81,7 +81,7 @@ public class SettingRouteBuilder : RouteBuilderBase<SettingRouteBuilder>
                 return Task.FromResult(
                     IsContextMatch(ctx, _route)
                     && ctx.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Setting)
+                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Apps.InvokeNames.MessageExtensionSetting)
                 );
             };
     }

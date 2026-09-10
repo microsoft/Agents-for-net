@@ -3,12 +3,12 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Teams.Api;
+using Microsoft.Teams.Apps;
+using Microsoft.Teams.Apps.Schema;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static Microsoft.Teams.Api.Activities.ConversationUpdateActivity;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 /// </summary>
 /// <remarks>Use <see cref="ChannelUpdateRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.ConversationUpdate"/> with
-/// <see cref="Microsoft.Teams.Api.ChannelData.EventType"/> matching channel events.
+/// <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData.EventType"/> matching channel events.
 /// This builder allows matching specific event types via <see cref="ForChannelCreated()"/>, <see cref="ForChannelDeleted()"/>, etc.,
 /// and supports ordering, oauth, and agentic routing scenarios.
 /// This builder defaults to the <c>Microsoft.Agents.Core.Models.Channels.Msteams</c> channelId unless otherwise specified.
@@ -42,7 +42,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelCreated()
     {
-        _channelEvents.Add(EventType.ChannelCreated);
+        _channelEvents.Add(ConversationEventType.ChannelCreated);
         return this;
     }
 
@@ -52,7 +52,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the ChannelUpdateRouteBuilder, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelDeleted()
     {
-        _channelEvents.Add(EventType.ChannelDeleted);
+        _channelEvents.Add(ConversationEventType.ChannelDeleted);
         return this;
     }
 
@@ -62,7 +62,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelRenamed()
     {
-        _channelEvents.Add(EventType.ChannelRenamed);
+        _channelEvents.Add(ConversationEventType.ChannelRenamed);
         return this;
     }
 
@@ -72,7 +72,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelRestored()
     {
-        _channelEvents.Add(EventType.ChannelRestored);
+        _channelEvents.Add(ConversationEventType.ChannelRestored);
         return this;
     }
 
@@ -82,7 +82,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelShared()
     {
-        _channelEvents.Add(EventType.ChannelShared);
+        _channelEvents.Add(ConversationEventType.ChannelShared);
         return this;
     }
 
@@ -92,7 +92,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelUnshared()
     {
-        _channelEvents.Add(EventType.ChannelUnShared);
+        _channelEvents.Add(ConversationEventType.ChannelUnShared);
         return this;
     }
 
@@ -102,7 +102,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelMemberAdded()
     {
-        _channelEvents.Add(EventType.ChannelMemberAdded);
+        _channelEvents.Add(ConversationEventType.ChannelMemberAdded);
         return this;
     }
 
@@ -112,7 +112,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelMemberRemoved()
     {
-        _channelEvents.Add(EventType.ChannelMemberRemoved);
+        _channelEvents.Add(ConversationEventType.ChannelMemberRemoved);
         return this;
     }
 
@@ -123,7 +123,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <returns>The current instance of the ChannelUpdateRouteBuilder, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder WithHandler(ChannelUpdateHandler handler)
     {
-        _route.Handler = (ctx, ts, ct) => handler(new TeamsTurnContext(ctx), ts, ctx.Activity.GetChannelData<ChannelData>().Channel, ct);
+        _route.Handler = (ctx, ts, ct) => handler(new TeamsTurnContext(ctx), ts, ctx.Activity.GetChannelData<TeamsChannelData>().Channel, ct);
         return this;
     }
 
@@ -133,7 +133,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
         _route.ChannelId ??= Microsoft.Agents.Core.Models.Channels.Msteams;
         _route.Selector ??= (context, _) =>
         {
-            var teamChannelData = context.Activity.GetChannelData<ChannelData>();
+            var teamChannelData = context.Activity.GetChannelData<TeamsChannelData>();
             return Task.FromResult
             (
                 IsContextMatch(context, _route)

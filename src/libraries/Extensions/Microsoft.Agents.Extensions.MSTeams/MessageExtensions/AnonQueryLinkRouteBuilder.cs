@@ -5,7 +5,7 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.MSTeams.Errors;
-using Microsoft.Teams.Api;
+using Microsoft.Teams.Apps.MessageExtensions;
 using System;
 using System.Threading.Tasks;
 
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="AnonQueryLinkRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.AnonQueryLink"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionAnonQueryLink"/>.
 /// </remarks>
 public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuilder>
 {
@@ -45,7 +45,7 @@ public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuil
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            AppBasedQueryLink? value = ProtocolJsonSerializer.ToObject<AppBasedQueryLink>(ctx.Activity.Value);
+            MessageExtensionQueryLink? value = ProtocolJsonSerializer.ToObject<MessageExtensionQueryLink>(ctx.Activity.Value);
             var response = await handler(new TeamsTurnContext(ctx), ts, value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
@@ -80,7 +80,7 @@ public class AnonQueryLinkRouteBuilder : RouteBuilderBase<AnonQueryLinkRouteBuil
                 return Task.FromResult(
                     IsContextMatch(ctx, _route)
                     && ctx.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.AnonQueryLink)
+                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Apps.InvokeNames.MessageExtensionAnonQueryLink)
                 );
             };
     }

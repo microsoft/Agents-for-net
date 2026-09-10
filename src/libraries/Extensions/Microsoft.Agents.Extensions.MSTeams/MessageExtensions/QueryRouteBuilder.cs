@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// <remarks>
 /// Use <see cref="QueryRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Query"/>,
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionQuery"/>,
 /// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
 /// </remarks>
 public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
@@ -29,7 +29,7 @@ public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
 
     public QueryRouteBuilder() : base()
     {
-        InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.Query;
+        InvokeName = Microsoft.Teams.Apps.InvokeNames.MessageExtensionQuery;
     }
 
     /// <summary>
@@ -39,13 +39,13 @@ public class QueryRouteBuilder : CommandRouteBuilderBase<QueryRouteBuilder>
     /// extensions. The handler receives the deserialized data from the incoming activity, allowing for type-safe
     /// processing of the query's payload.</remarks>
     /// <param name="handler">An asynchronous delegate that processes the query, receiving the turn context, turn state, deserialized data
-    /// of type <see cref="Microsoft.Teams.Api.MessageExtensions.Query"/>, and a cancellation token.</param>
+    /// of type <see cref="Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery"/>, and a cancellation token.</param>
     /// <returns>The current instance of QueryRouteBuilder, enabling method chaining.</returns>
     public QueryRouteBuilder WithHandler(QueryHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Query>(ctx.Activity.Value);
+            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery>(ctx.Activity.Value);
             var response = await handler(new TeamsTurnContext(ctx), ts, value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
