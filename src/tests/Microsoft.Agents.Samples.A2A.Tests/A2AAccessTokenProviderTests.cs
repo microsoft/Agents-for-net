@@ -45,40 +45,83 @@ public class A2AAccessTokenProviderTests
 public class A2AClientAuthenticationOptionsTests
 {
     [Theory]
-    [InlineData("Delegated", "PublicClientId")]
-    [InlineData("App", "ConfidentialClientId")]
-    public void Validate_MissingRequiredValueForMode_ThrowsArgumentException(string modeName, string expectedParameterName)
+    [InlineData("Delegated", "delegated-token")]
+    [InlineData("App", "app-token")]
+    public async Task AcquireTokenAsync_DoesNotRequireOtherModeConfiguration(string modeName, string expectedToken)
     {
         A2AAuthMode mode = Enum.Parse<A2AAuthMode>(modeName);
         var options = new A2AClientAuthenticationOptions
         {
             TenantId = "tenant-id",
-            PublicClientId = mode == A2AAuthMode.Delegated ? string.Empty : "public-client-id",
-            ConfidentialClientId = mode == A2AAuthMode.App ? string.Empty : "confidential-client-id",
-            ConfidentialClientSecret = "secret",
-            AgentDelegatedScope = "api://agent/.default",
-            AgentApplicationScope = "api://agent-app/.default",
+            PublicClientId = mode == A2AAuthMode.Delegated ? "public-client-id" : null,
+            ConfidentialClientId = mode == A2AAuthMode.App ? "confidential-client-id" : null,
+            ConfidentialClientSecret = mode == A2AAuthMode.App ? "secret" : null,
+            AgentDelegatedScope = mode == A2AAuthMode.Delegated ? "api://agent/.default" : null,
+            AgentApplicationScope = mode == A2AAuthMode.App ? "api://agent-app/.default" : null,
+        };
+        var client = new MsalTokenClient(
+            options,
+            delegatedTokenFactory: static (_, _) => Task.FromResult("delegated-token"),
+            applicationTokenFactory: static (_, _) => Task.FromResult("app-token"));
+
+        string token = mode switch
+        {
+            A2AAuthMode.Delegated => await client.AcquireDelegatedTokenAsync(CancellationToken.None),
+            A2AAuthMode.App => await client.AcquireApplicationTokenAsync(CancellationToken.None),
+            _ => throw new InvalidOperationException("Only delegated and app modes are valid for this test."),
         };
 
-        var exception = Assert.Throws<ArgumentException>(() => options.Validate(mode));
-
-        Assert.Equal(expectedParameterName, exception.ParamName);
+        Assert.Equal(expectedToken, token);
     }
 
-    [Fact]
-    public void Validate_None_DoesNotRequireAuthenticationValues()
+    [Theory]
+    [InlineData("Delegated", "TenantId", "PublicClientId", "AgentDelegatedScope")]
+    [InlineData("App", "TenantId", "ConfidentialClientId", "ConfidentialClientSecret", "AgentApplicationScope")]
+    public async Task AcquireTokenAsync_MissingConfiguration_ThrowsInvalidOperationExceptionNamingEachMissingKey(
+        string modeName,
+        params string[] expectedKeys)
     {
-        var options = new A2AClientAuthenticationOptions
+        A2AAuthMode mode = Enum.Parse<A2AAuthMode>(modeName);
+        var options = new A2AClientAuthenticationOptions();
+        bool factoryInvoked = false;
+        var client = new MsalTokenClient(
+            options,
+            delegatedTokenFactory: (_, _) =>
+            {
+                factoryInvoked = true;
+                return Task.FromResult("delegated-token");
+            },
+            applicationTokenFactory: (_, _) =>
+            {
+                factoryInvoked = true;
+                return Task.FromResult("app-token");
+            });
+
+        InvalidOperationException exception = mode switch
         {
-            TenantId = string.Empty,
-            PublicClientId = string.Empty,
-            ConfidentialClientId = string.Empty,
-            ConfidentialClientSecret = string.Empty,
-            AgentDelegatedScope = string.Empty,
-            AgentApplicationScope = string.Empty,
+            A2AAuthMode.Delegated => await Assert.ThrowsAsync<InvalidOperationException>(() => client.AcquireDelegatedTokenAsync(CancellationToken.None)),
+            A2AAuthMode.App => await Assert.ThrowsAsync<InvalidOperationException>(() => client.AcquireApplicationTokenAsync(CancellationToken.None)),
+            _ => throw new InvalidOperationException("Only delegated and app modes are valid for this test."),
         };
 
-        options.Validate(A2AAuthMode.None);
+        Assert.False(factoryInvoked);
+
+        foreach (string expectedKey in expectedKeys)
+        {
+            Assert.Contains(expectedKey, exception.Message);
+        }
+
+        if (mode == A2AAuthMode.Delegated)
+        {
+            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.ConfidentialClientId), exception.Message);
+            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.ConfidentialClientSecret), exception.Message);
+            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.AgentApplicationScope), exception.Message);
+        }
+        else
+        {
+            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.PublicClientId), exception.Message);
+            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.AgentDelegatedScope), exception.Message);
+        }
     }
 }
 
