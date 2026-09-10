@@ -65,6 +65,7 @@ namespace Microsoft.Agents.Builder.Errors
         internal static readonly AgentErrorDefinition AgenticTokenProviderNotFound = new AgentErrorDefinition(-50023, Properties.Resources.IAgenticTokenProviderNotFound, "https://aka.ms/M365AgentsErrorCodes/#-50023");
         internal static readonly AgentErrorDefinition AgenticTokenProviderFailed = new AgentErrorDefinition(-50024, Properties.Resources.AgenticTokenProviderFailed, "https://aka.ms/M365AgentsErrorCodes/#-50024");
         internal static readonly AgentErrorDefinition NotAnAgenticRequest = new AgentErrorDefinition(-50025, Properties.Resources.NotAnAgenticRequest, "https://aka.ms/M365AgentsErrorCodes/#-50025");
+        internal static readonly AgentErrorDefinition TurnTokenCredentialOutsideTurn = new AgentErrorDefinition(-50026, Properties.Resources.TurnTokenCredentialOutsideTurn, "https://aka.ms/M365AgentsErrorCodes/#-50026");
         // ConnectorUserAuthorization
         internal static readonly AgentErrorDefinition UnexpectedConnectorRequestToken = new AgentErrorDefinition(-50030, Properties.Resources.UnexpectedConnectorRequestToken, "https://aka.ms/M365AgentsErrorCodes/#-50030");
         internal static readonly AgentErrorDefinition UnexpectedConnectorTokenExpiration = new AgentErrorDefinition(-50031, Properties.Resources.UnexpectedConnectorTokenExpiration, "https://aka.ms/M365AgentsErrorCodes/#-50031");

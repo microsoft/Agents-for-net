@@ -376,7 +376,16 @@ namespace Microsoft.Agents.Builder.Properties {
                 return ResourceManager.GetString("UnexpectedAuthorizationState", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to The token credential cannot be used after its originating turn has ended. Create a new credential within the current turn..
+        /// </summary>
+        internal static string TurnTokenCredentialOutsideTurn {
+            get {
+                return ResourceManager.GetString("TurnTokenCredentialOutsideTurn", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Unexpected request token for handler &apos;{0}&apos;..
         /// </summary>
