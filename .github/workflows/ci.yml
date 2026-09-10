@@ -35,6 +35,31 @@ jobs:
     - name: Build
       run: dotnet build --no-restore -c debug AgentSdk.proj
 
+    - name: Validate Teams API metadata
+      shell: pwsh
+      env:
+        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: |
+        $validatorArguments = @(
+          "run",
+          "--project", "scripts/TeamsApiDrift/Microsoft.Agents.TeamsApiDrift.csproj",
+          "-c", "Debug",
+          "--no-build",
+          "--",
+          "validate-metadata",
+          "--assembly", "bin/Debug/CplTeams/net8.0/Microsoft.Agents.Extensions.MSTeams.dll",
+          "--assembly", "bin/Debug/CplTeams/net10.0/Microsoft.Agents.Extensions.MSTeams.dll",
+          "--manifest", "scripts/TeamsApiDrift/teams-api-usage.json",
+          "--capabilities", "scripts/TeamsApiDrift/teams-capabilities.json",
+          "--props", "Directory.Packages.props",
+          "--repository-root", "$env:GITHUB_WORKSPACE"
+        )
+        if (-not [string]::IsNullOrWhiteSpace($env:PR_BASE_SHA)) {
+          $validatorArguments += @("--base-ref", "$env:PR_BASE_SHA")
+        }
+        & dotnet @validatorArguments
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
     - name: Package
       run: dotnet pack --no-build --no-restore -c debug src/Microsoft.Agents.SDK.sln 
 

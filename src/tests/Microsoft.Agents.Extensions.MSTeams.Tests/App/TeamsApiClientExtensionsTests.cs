@@ -21,6 +21,7 @@ using Xunit;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 {
+    [Trait("Category", "TeamsApiBoundary")]
     public class TeamsApiClientExtensionsTests
     {
         [Fact]
