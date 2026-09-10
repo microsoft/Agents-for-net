@@ -122,9 +122,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DialogAgent", "samples\Dial
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Agents.Core.Analyzers", "libraries\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj", "{555F2680-E366-4F31-996B-FA89E46AC5B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "A2AAgent", "samples\A2AAgent\A2AAgent.csproj", "{04302749-0370-5406-3680-024D911759EF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "A2AAgent", "samples\A2A\A2AAgent\A2AAgent.csproj", "{04302749-0370-5406-3680-024D911759EF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "A2ATCKAgent", "samples\A2ATCKAgent\A2ATCKAgent.csproj", "{F330FBB9-8865-5D6F-14CF-3325E360494A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "A2ATCKAgent", "samples\A2A\A2ATCKAgent\A2ATCKAgent.csproj", "{F330FBB9-8865-5D6F-14CF-3325E360494A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgenticAI", "samples\AgenticAI\AgenticAI.csproj", "{8E21BC5B-1E3C-313D-2F5B-4F0181A27AB3}"
 EndProject
