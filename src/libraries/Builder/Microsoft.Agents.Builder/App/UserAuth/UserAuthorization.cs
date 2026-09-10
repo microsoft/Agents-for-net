@@ -140,19 +140,16 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
             return DelegatedTokenCredentialExtension.Create(async (scopes, ct) =>
             {
+                if (turnContext.Services.HasBeenDisposed)
+                {
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, null);
+                }
                 IList<string> allScopes = (configuredScopes ?? [])
                     .Concat(scopes ?? [])
                     .Distinct(StringComparer.Ordinal)
                     .ToList();
 
-                try
-                {
-                    return await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, allScopes, ct).ConfigureAwait(false);
-                }
-                catch (ObjectDisposedException ex)
-                {
-                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, ex);
-                }
+                return await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, allScopes, ct).ConfigureAwait(false);
             });
         }
 

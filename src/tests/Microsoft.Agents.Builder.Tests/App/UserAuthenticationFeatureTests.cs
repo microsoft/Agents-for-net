@@ -223,11 +223,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 });
             MockGraph
                 .Setup(e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns<ITurnContext, string, IList<string>, CancellationToken>((context, _, _, _) =>
-                {
-                    context.Services.Get<IUserTokenClient>();
-                    return Task.FromResult<TokenResponse>(null);
-                });
+                .ThrowsAsync(new InvalidOperationException("Token refresh should not be attempted after the turn is disposed."));
 
             var options = new TestApplicationOptions(new MemoryStorage())
             {
@@ -246,6 +242,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.code, exception.HResult);
             Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.description, exception.Message);
             Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.helplink, exception.HelpLink);
+            MockGraph.Verify(
+                e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
@@ -294,11 +293,7 @@ namespace Microsoft.Agents.Builder.Tests.App
                 });
             MockGraph
                 .Setup(e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
-                .Returns<ITurnContext, string, IList<string>, CancellationToken>((context, _, _, _) =>
-                {
-                    context.Services.Get<IUserTokenClient>();
-                    return Task.FromResult<TokenResponse>(null);
-                });
+                .ThrowsAsync(new InvalidOperationException("Token refresh should not be attempted after the turn is disposed."));
 
             var options = new TestApplicationOptions(new MemoryStorage())
             {
@@ -317,6 +312,9 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.code, exception.HResult);
             Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.description, exception.Message);
             Assert.Equal(ErrorHelper.TurnTokenCredentialOutsideTurn.helplink, exception.HelpLink);
+            MockGraph.Verify(
+                e => e.GetRefreshedUserTokenAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
