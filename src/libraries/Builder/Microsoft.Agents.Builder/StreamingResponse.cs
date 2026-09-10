@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Builder
             string message,
             CancellationToken cancellationToken = default)
         {
-            if (!IsStreamingChannel)
+            if (HasEnded || !IsStreamingChannel)
             {
                 return false;
             }

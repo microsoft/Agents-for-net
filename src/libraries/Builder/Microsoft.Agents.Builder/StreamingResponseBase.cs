@@ -50,8 +50,10 @@ namespace Microsoft.Agents.Builder
     /// </para>
     /// <para>
     /// The four abstract hooks (<see cref="SendChunkAsync"/>, <see cref="SendInformativeAsync"/>,
-    /// <see cref="FinalizeStreamAsync"/>, <see cref="HandleSendErrorAsync"/>) are the only channel-specific
-    /// surface; everything else (buffering, interval loop, sequence numbers, cancellation, end/reset) is shared.
+    /// <see cref="FinalizeStreamAsync"/>, <see cref="HandleSendErrorAsync"/>) define the required channel-specific
+    /// behavior. Optional hooks allow subclasses to transform buffered text, run work before an interval,
+    /// observe successful sends, and reset channel-specific state. Buffering, sequencing, cancellation, and
+    /// stream lifecycle remain shared.
     /// </para>
     /// </remarks>
     public abstract class StreamingResponseBase : IStreamingResponse
@@ -162,6 +164,20 @@ namespace Microsoft.Agents.Builder
         /// than <see cref="StreamingResponseResult.Error"/>.
         /// </summary>
         protected bool UserCancelledStream { get; set; }
+
+        /// <summary>
+        /// Gets whether <see cref="EndStreamAsync"/> has ended this response.
+        /// </summary>
+        protected bool HasEnded
+        {
+            get
+            {
+                lock (this)
+                {
+                    return _ended;
+                }
+            }
+        }
 
         /// <inheritdoc/>
         public int UpdatesSent() => _nextSequence - 1;

@@ -45,7 +45,6 @@ namespace Microsoft.Agents.Builder
             }
             Interval = 1000;
             IsStreamingChannel = true;
-            IsStreamingChannel = true;
         }
 
         protected override async Task<StreamErrorAction> HandleSendErrorAsync(

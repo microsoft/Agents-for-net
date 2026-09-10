@@ -28,7 +28,15 @@ namespace Microsoft.Agents.Builder
         private DateTime? _lastActivityTime;
         private string _lastInformationalMessage = string.Empty;
 
+        /// <summary>
+        /// Gets or sets the maximum streaming duration, measured from the first successful send.
+        /// </summary>
         internal TimeSpan StreamingTimeout { get; set; } = DefaultStreamingTimeout;
+
+        /// <summary>
+        /// Gets or sets the maximum idle duration, measured from the most recent successful send,
+        /// before an informative keep-alive is sent.
+        /// </summary>
         internal TimeSpan WorkingNoticeInterval { get; set; } = DefaultWorkingNoticeInterval;
 
         public M365CopilotStreamingResponse(TurnContext turnContext)

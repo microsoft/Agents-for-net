@@ -267,6 +267,26 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public async Task SendStreamTimedOutNotification_AfterStreamEnded_DoesNotSend()
+        {
+            var responses = new List<IActivity>();
+            var context = new TurnContext(
+                CreateMockAdapter(responses).Object,
+                new Activity { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            context.StreamingResponse.Interval = 10;
+            context.StreamingResponse.InitialDelay = 10;
+
+            context.StreamingResponse.QueueTextChunk("completed response");
+            Assert.Equal(StreamingResponseResult.Success, await context.StreamingResponse.EndStreamAsync());
+
+            var responseCount = responses.Count;
+            var timedOut = await context.StreamingResponse.SendStreamTimedOutNotification("too late");
+
+            Assert.False(timedOut);
+            Assert.Equal(responseCount, responses.Count);
+        }
+
+        [Fact]
         public async Task TeamsStreamingTimeout_UpdatesCheckpointAndFinalMessage()
         {
             const string completedText = "Completed response text.";
