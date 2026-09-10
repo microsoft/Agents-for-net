@@ -3,6 +3,8 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Teams.Core.Schema;
+using System;
 
 namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 
@@ -17,18 +19,27 @@ public static class AttachmentExtensions
     /// <param name="attachment">The attachment.</param>
     /// <param name="previewAttachment">The preview attachment.</param>
     /// <returns>Messaging extension attachment.</returns>
-    public static Microsoft.Teams.Api.MessageExtensions.Attachment ToMessagingExtensionAttachment(this Attachment attachment, Attachment previewAttachment = null)
+    public static Microsoft.Teams.Apps.Schema.TeamsAttachment ToMessagingExtensionAttachment(this Attachment attachment, Attachment previewAttachment = null)
     {
         // We are recreating the attachment so that JsonSerializerSettings with ReferenceLoopHandling set to Error does not generate error
         // while serializing. Refer to issue - https://github.com/OfficeDev/BotBuilder-MicrosoftTeams/issues/52.
-        return new Microsoft.Teams.Api.MessageExtensions.Attachment
+        var result = new Microsoft.Teams.Apps.Schema.TeamsAttachment
         {
             Content = attachment.Content,
-            ContentType = new Microsoft.Teams.Api.ContentType(attachment.ContentType),
-            ContentUrl = attachment.ContentUrl,
+            ContentType = new Microsoft.Teams.Apps.Schema.AttachmentContentType(attachment.ContentType),
+            ContentUrl = string.IsNullOrEmpty(attachment.ContentUrl) ? null : new Uri(attachment.ContentUrl, UriKind.RelativeOrAbsolute),
             Name = attachment.Name,
-            ThumbnailUrl = attachment.ThumbnailUrl,
-            Preview = previewAttachment != null ? ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.Attachment>(previewAttachment) : null
+            ThumbnailUrl = string.IsNullOrEmpty(attachment.ThumbnailUrl) ? null : new Uri(attachment.ThumbnailUrl, UriKind.RelativeOrAbsolute),
         };
+
+        if (previewAttachment != null)
+        {
+            result.Properties = new ExtendedPropertiesDictionary
+            {
+                ["preview"] = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Schema.TeamsAttachment>(previewAttachment)
+            };
+        }
+
+        return result;
     }
 }

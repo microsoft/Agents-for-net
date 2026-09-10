@@ -111,7 +111,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             turnContext.Services.Set<Proactive>(app.Proactive);

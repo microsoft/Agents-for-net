@@ -143,6 +143,13 @@ namespace Microsoft.Agents.Builder.App
 
         protected override void PreBuild()
         {
+            // When no name filter is specified the route matches any invoke — default to Last so
+            // specific-name routes take priority without callers having to set the rank explicitly.
+            if (_invokeName == null && _invokeRegex == null && _route.Rank == RouteRank.Unspecified)
+            {
+                _route.Rank = RouteRank.Last;
+            }
+
             if (_route.Selector != null)
             {
                 if (_invokeName != null || _invokeRegex != null)

@@ -100,6 +100,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
         [JsonInclude]
         internal IDictionary<string, string>? Claims { get; set; }
 
+        // <summary>
+        // Gets or sets the ActivityContext associated with the current conversation.
+        // </summary>
+        [JsonInclude]
+        internal System.Diagnostics.ActivityContext? ActivityContext { get; set; }
+
         /// <summary>
         /// Extracts a dictionary of selected claim types and their values from the specified identity.
         /// </summary>

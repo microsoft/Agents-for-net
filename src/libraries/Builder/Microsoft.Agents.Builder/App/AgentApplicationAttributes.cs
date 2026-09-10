@@ -216,6 +216,65 @@ namespace Microsoft.Agents.Builder.App
     }
 
     /// <summary>
+    /// Attribute to define a route that handles invoke activities, optionally matching a specific invoke name or name pattern.
+    /// </summary>
+    /// <remarks>
+    /// Decorate a method with this attribute to register it as a handler for invoke activities.
+    /// Provide <paramref name="name"/> for an exact match, <paramref name="nameRegex"/> for a pattern match, or neither to match any invoke.
+    /// <paramref name="name"/> and <paramref name="nameRegex"/> are mutually exclusive.
+    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// <code>
+    /// // Match any invoke
+    /// [InvokeRoute]
+    /// public async Task OnAnyInvokeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    /// {
+    ///     // Handle any invoke activity
+    /// }
+    ///
+    /// // Match a specific invoke
+    /// [InvokeRoute("myInvoke")]
+    /// public async Task OnMyInvokeAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    /// {
+    ///     // Handle "myInvoke" invoke
+    /// }
+    ///
+    /// // Match an invoke name pattern
+    /// [InvokeRoute(nameRegex: "my.*Invoke")]
+    /// public async Task OnMyInvokePatternAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    /// {
+    ///     // Handle invokes matching pattern
+    /// }
+    /// </code>
+    /// </remarks>
+    /// <param name="name">The exact invoke name to match (case-insensitive), e.g. <see cref="IActivity.Name"/>. Mutually exclusive with <paramref name="nameRegex"/>. When both are omitted, all invokes are matched.</param>
+    /// <param name="nameRegex">A regular expression pattern matched against <see cref="IActivity.Name"/>. Mutually exclusive with <paramref name="name"/>.</param>
+    /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. When no name filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-name routes take priority.</param>
+    /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
+    [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
+    public class InvokeRouteAttribute(string name = null, string nameRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
+    {
+        public void AddRoute(AgentApplication app, MethodInfo method)
+        {
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(app, method);
+            var b = InvokeRouteBuilder.Create().WithHandler(handler).AsAgentic(isAgenticOnly).WithOrderRank(rank);
+            RouteAttributeHelper.ApplySignInHandlers(app, autoSignInHandlers, s => b.WithOAuthHandlers(s), f => b.WithOAuthHandlers(f));
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                b = b.WithName(name);
+            }
+            else if (!string.IsNullOrWhiteSpace(nameRegex))
+            {
+                b = b.WithName(new Regex(nameRegex));
+            }
+
+            app.AddRoute(b.Build());
+        }
+    }
+
+    /// <summary>
     /// Attribute to define a route that handles conversation update activities, optionally matching a specific event.
     /// </summary>
     /// <remarks>

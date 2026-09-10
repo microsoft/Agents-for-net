@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
@@ -788,6 +789,10 @@ namespace Microsoft.Agents.Builder.App
             {
                 turnContext.Services.Set<IConnections>(Options.Connections);
             }
+            if (Options.ChannelAdapterRegistry != null)
+            {
+                turnContext.Services.Set<IChannelAdapterRegistry>(Options.ChannelAdapterRegistry);
+            }
             turnContext.Services.Set<Proactive.Proactive>(Proactive);
             turnContext.Services.Set<AdaptiveCard>(AdaptiveCards);
             turnContext.Services.Set<ITurnState>(turnState);
@@ -1023,17 +1028,16 @@ namespace Microsoft.Agents.Builder.App
         /// <typeparam name="TExtension"></typeparam>
         /// <param name="extension"></param>
         /// <param name="extensionRegistration"></param>
-        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
+        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration = null)
             where TExtension : IAgentExtension
         {
-            AssertionHelpers.ThrowIfNull(extensionRegistration, nameof(extensionRegistration));
             if (RegisteredExtensions.Contains(extension))
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ExtensionAlreadyRegistered, null, nameof(TExtension));
             }
             // TODO: add Logging event for extension registration
             RegisteredExtensions.Add(extension);
-            extensionRegistration(extension);
+            extensionRegistration?.Invoke(extension);
         }
         #endregion
     }

@@ -371,8 +371,40 @@ namespace Microsoft.Agents.Core.Models
         /// <summary> Sets both <see cref="Microsoft.Agents.Core.Models.IActivity.Value"/> and <see cref="Microsoft.Agents.Core.Models.IActivity.ValueType"/> and returns this activity. </summary>
         IActivity WithValue(object value, string valueType);
 
+        IActivity WithMention(ChannelAccount account, string text = null, bool addText = true);
+
+        IActivity WithMention(string id, string name = null, bool addText = true);
+
         /// <summary> Sets <see cref="Microsoft.Agents.Core.Models.IActivity.SuggestedActions"/> and returns this activity. </summary>
         IActivity WithSuggestedActions(SuggestedActions suggestedActions);
+
+        /// <summary>
+        /// Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Recipient"/>.
+        /// </summary>
+        /// <param name="recipient">The account that should receive the activity.</param>
+        /// <returns>This activity.</returns>
+        IActivity WithRecipient(ChannelAccount recipient);
+
+        /// <summary>
+        /// Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Recipient"/> to a user account with the specified ID.
+        /// </summary>
+        /// <param name="id">The ID of the user account that should receive the activity.</param>
+        /// <returns>This activity.</returns>
+        IActivity WithRecipient(string id);
+
+        /// <summary>
+        /// Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Recipient"/> and marks the activity as visible only to that recipient.
+        /// </summary>
+        /// <param name="recipient">The account that should receive the targeted activity.</param>
+        /// <returns>This activity.</returns>
+        IActivity WithTargetedRecipient(ChannelAccount recipient);
+
+        /// <summary>
+        /// Sets <see cref="Microsoft.Agents.Core.Models.IActivity.Recipient"/> to a user account with the specified ID and marks the activity as visible only to that recipient.
+        /// </summary>
+        /// <param name="id">The ID of the user account that should receive the targeted activity.</param>
+        /// <returns>This activity.</returns>
+        IActivity WithTargetedRecipient(string id);
 
         /// <summary> Appends the given text to <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> and returns this activity. </summary>
         IActivity AddText(string text);

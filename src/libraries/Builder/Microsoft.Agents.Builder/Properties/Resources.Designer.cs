@@ -243,6 +243,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No IChannelAdapterRegistry is available to resolve the adapter for channelId &apos;{0}&apos;. Ensure AddCloudAdapter has been called so the registry is registered..
+        /// </summary>
+        internal static string ProactiveAdapterRegistryNotAvailable {
+            get {
+                return ResourceManager.GetString("ProactiveAdapterRegistryNotAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Conversation instance required for this Proactive request.
         /// </summary>
         internal static string ProactiveConversationRequired {

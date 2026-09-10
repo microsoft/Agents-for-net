@@ -294,4 +294,8 @@
     <value>An instance of type 'ConversationParameters' contains invalid values: {0}</value>
     <comment>Raised when using Proactive with missing or invalid User Id.</comment>
   </data>
+  <data name="ProactiveAdapterRegistryNotAvailable" xml:space="preserve">
+    <value>No IChannelAdapterRegistry is available to resolve the adapter for channelId '{0}'. Ensure AddCloudAdapter has been called so the registry is registered.</value>
+    <comment>Raised when a channelId-based Proactive overload is used but no adapter registry is available.</comment>
+  </data>
 </root>

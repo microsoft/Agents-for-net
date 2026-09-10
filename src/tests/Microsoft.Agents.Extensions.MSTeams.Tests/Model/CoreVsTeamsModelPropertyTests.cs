@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
 {
     /// <summary>
-    /// Enumerates every public model type in Microsoft.Teams.Api, matches each one to a
+    /// Enumerates the explicitly mapped public model types in Microsoft.Teams.Apps, matching each one to a
     /// corresponding Microsoft.Agents.Core.Models type (where one exists), then compares their
     /// JSON-visible property sets.
     ///
@@ -43,35 +43,18 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
             new Dictionary<Type, Type>
             {
                 // ChannelAccount / ConversationAccount
-                [typeof(Microsoft.Teams.Api.Account)]      = typeof(Core.Models.ChannelAccount),
-                [typeof(Microsoft.Teams.Api.Conversation)] = typeof(Core.Models.ConversationAccount),
+                [typeof(Microsoft.Teams.Apps.Schema.TeamsChannelAccount)]      = typeof(Core.Models.ChannelAccount),
+                [typeof(Microsoft.Teams.Apps.Schema.TeamsConversation)] = typeof(Core.Models.ConversationAccount),
 
                 // MessageReaction
 #pragma warning disable ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                [typeof(Microsoft.Teams.Api.Messages.Reaction)] = typeof(Core.Models.MessageReaction),
+                [typeof(Microsoft.Teams.Apps.MessageReaction)] = typeof(Core.Models.MessageReaction),
 #pragma warning restore ExperimentalTeamsReactions // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
-                // Token types — Teams.Api.Token.Response maps to Core TokenResponse;
-                // Teams.Api.Auth.TokenResponse is an OAuth bearer token (different shape)
-                // and is intentionally excluded from auto-matching via ExcludeFromAutoMatch.
-                [typeof(Microsoft.Teams.Api.Token.Response)] = typeof(Core.Models.TokenResponse),
-
-                // TokenExchange (names in Teams namespace: InvokeRequest / InvokeResponse)
-                [typeof(Microsoft.Teams.Api.TokenExchange.InvokeRequest)]  = typeof(Core.Models.TokenExchangeInvokeRequest),
-                [typeof(Microsoft.Teams.Api.TokenExchange.InvokeResponse)] = typeof(Core.Models.TokenExchangeInvokeResponse),
-
-                // Card types — same base name, different parent namespace
-                [typeof(Microsoft.Teams.Api.Cards.Action)]   = typeof(Core.Models.CardAction),
-                [typeof(Microsoft.Teams.Api.Cards.Image)]    = typeof(Core.Models.CardImage),
-                // SignInCard vs SigninCard (capitalisation differs)
-                [typeof(Microsoft.Teams.Api.Cards.SignInCard)] = typeof(Core.Models.SigninCard),
-
                 // Entity subclasses — Teams uses "...Entity" suffix; Core doesn't.
-                // Teams.Api.Messages.Mention is a different type (Teams-only message construct)
-                // and is excluded from auto-matching via ExcludeFromAutoMatch.
-                [typeof(Microsoft.Teams.Api.Entities.MentionEntity)]    = typeof(Core.Models.Mention),
-                [typeof(Microsoft.Teams.Api.Entities.StreamInfoEntity)] = typeof(Core.Models.StreamInfo),
-                [typeof(Microsoft.Teams.Api.Entities.CitationEntity)]   = typeof(Core.Models.AIEntity),
+                [typeof(Microsoft.Teams.Apps.Schema.Entities.MentionEntity)]    = typeof(Core.Models.Mention),
+                [typeof(Microsoft.Teams.Apps.Schema.Entities.StreamInfoEntity)] = typeof(Core.Models.StreamInfo),
+                [typeof(Microsoft.Teams.Apps.Schema.Entities.CitationEntity)]   = typeof(Core.Models.AIEntity),
             };
 
         // -----------------------------------------------------------------------
@@ -89,30 +72,17 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
                 // round-tripped through Core.
                 
                 // these would be retained by serialization but not a factor for compat
-                [typeof(Microsoft.Teams.Api.Entities.MentionEntity)] =
+                [typeof(Microsoft.Teams.Apps.Schema.Entities.MentionEntity)] =
                     new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "@context", "@type" },  
-                [typeof(Microsoft.Teams.Api.Entities.StreamInfoEntity)] =
+                [typeof(Microsoft.Teams.Apps.Schema.Entities.StreamInfoEntity)] =
                     new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "@context", "@type" },
-
-                // these are out of spec properties that aren't interesting to us
-                [typeof(Microsoft.Teams.Api.Cards.OAuthCard)] =
-                    new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "title", "subtitle" },
-                [typeof(Microsoft.Teams.Api.Cards.SignInCard)] =
-                    new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "title", "subtitle" },
             };
 
         // -----------------------------------------------------------------------
         // Teams types whose simple name accidentally collides with a Core type name
         // but are semantically unrelated; exclude them from auto-matching.
         // -----------------------------------------------------------------------
-        private static readonly IReadOnlySet<string> ExcludeFromAutoMatch = new HashSet<string>
-        {
-            typeof(Microsoft.Teams.Api.Auth.TokenResponse).FullName, // OAuth bearer response — unrelated to Core.Models.TokenResponse
-            typeof(Microsoft.Teams.Api.ChannelId).FullName,          // Just a string wrapper, no Core counterpart
-            // Teams.Api.Messages.Mention is a Teams-specific message construct (has required int id,
-            // mentionText); Core.Models.Mention maps instead to Teams.Api.Entities.MentionEntity.
-            typeof(Microsoft.Teams.Api.Messages.Mention).FullName,
-        };
+        private static readonly IReadOnlySet<string> ExcludeFromAutoMatch = new HashSet<string>();
 
         // -----------------------------------------------------------------------
         // Test
@@ -126,7 +96,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
 
             var coreModelsByName = BuildCoreModelsByName();
             var allTeamsTypes    = GetAllTeamsModelTypes();
-            var baseActivity     = typeof(Microsoft.Teams.Api.Activities.Activity);
+            var baseActivity     = typeof(Microsoft.Teams.Apps.Schema.TeamsActivity);
 
             int matched = 0, unmatched = 0;
             var sortedTeamsTypes = allTeamsTypes.OrderBy(t => t.FullName).ToList();
@@ -195,15 +165,17 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
         }
 
         /// <summary>
-        /// Returns all public non-abstract non-nested model classes from the Microsoft.Teams.Api
+        /// Returns the relevant public non-abstract non-nested model classes from the Microsoft.Teams.Apps
         /// assembly that have at least one named, non-ignored, non-catch-all JSON property.
         /// </summary>
         private static List<Type> GetAllTeamsModelTypes()
         {
-            var assembly = typeof(Microsoft.Teams.Api.Account).Assembly;
+            var assembly = typeof(Microsoft.Teams.Apps.Schema.TeamsChannelAccount).Assembly;
 
+            var baseActivity = typeof(Microsoft.Teams.Apps.Schema.TeamsActivity);
             return assembly.GetExportedTypes()
                 .Where(t => t.IsClass && !t.IsAbstract && !t.IsNested)
+                .Where(t => ExplicitMappings.ContainsKey(t) || baseActivity.IsAssignableFrom(t))
                 .Where(t => !typeof(Attribute).IsAssignableFrom(t))
                 .Where(t => !typeof(Exception).IsAssignableFrom(t))
                 .Where(t => !typeof(JsonConverter).IsAssignableFrom(t))

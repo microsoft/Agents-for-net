@@ -271,7 +271,7 @@ namespace Microsoft.Agents.Model.Tests
             ProtocolJsonSerializer.RegisterActivityTypeResolver(
                 (ref Utf8JsonReader reader, in ActivityResolutionContext ctx) =>
                 {
-                    if (!string.Equals(ctx.Type, ActivityTypes.Invoke, StringComparison.OrdinalIgnoreCase))
+                    if (ctx.Type != ActivityTypes.Invoke)
                     {
                         return null;
                     }

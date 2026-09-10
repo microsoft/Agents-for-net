@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Telemetry.App.Scopes;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -226,14 +227,27 @@ namespace Microsoft.Agents.Builder.App
 
         private async Task SendTypingActivityAsync(CancellationToken cancellationToken)
         {
-            // Send directly on the adapter to bypass OnSendActivities middleware (matching
-            // ShowTypingMiddleware's approach) so our own handler doesn't reset the interval.
-            var conversationReference = _turnContext.Activity.GetConversationReference();
-            var typingActivity = _strategy.TypingFactory(_turnContext, conversationReference);
-            typingActivity.ApplyConversationReference(conversationReference);
+            using var telemetryScope = new ScopeTypingIndicator(_turnContext);
+            try
+            {
+                // Send directly on the adapter to bypass OnSendActivities middleware (matching
+                // ShowTypingMiddleware's approach) so our own handler doesn't reset the interval.
+                var conversationReference = _turnContext.Activity.GetConversationReference();
+                var typingActivity = _strategy.TypingFactory(_turnContext, conversationReference);
+                typingActivity.ApplyConversationReference(conversationReference);
 
-            await _turnContext.Adapter.SendActivitiesAsync(
-                _turnContext, [typingActivity], cancellationToken).ConfigureAwait(false);
+                await _turnContext.Adapter.SendActivitiesAsync(
+                    _turnContext, [typingActivity], cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                telemetryScope.SetError(ex);
+                throw;
+            }
         }
 
         /// <summary>

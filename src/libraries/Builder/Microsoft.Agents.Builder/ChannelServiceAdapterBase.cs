@@ -31,10 +31,12 @@ namespace Microsoft.Agents.Builder
     /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
     /// <param name="logger">The ILogger implementation this adapter should use.</param>
     /// <param name="serviceProvider">Optional service provider used to instantiate per-channel <see cref="IStreamingResponseFactory"/> implementations discovered via <see cref="StreamingResponseFactoryAttribute"/>, to assign a channel-specific <see cref="IStreamingResponse"/> to each turn.</param>
+    /// <param name="hostValidator">The validator used to restrict outbound service URLs.</param>
     public abstract class ChannelServiceAdapterBase(
         IChannelServiceClientFactory channelServiceClientFactory,
         ILogger logger,
-        IServiceProvider serviceProvider) : ChannelAdapter(logger)
+        IServiceProvider serviceProvider,
+        IOutboundHostValidator hostValidator) : ChannelAdapter(logger)
     {
         private readonly IServiceProvider _serviceProvider = serviceProvider;
 
@@ -57,7 +59,35 @@ namespace Microsoft.Agents.Builder
         public ChannelServiceAdapterBase(
             IChannelServiceClientFactory channelServiceClientFactory,
             ILogger logger = null)
-            : this(channelServiceClientFactory, logger, null)
+            : this(channelServiceClientFactory, logger, null, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes an adapter with channel-specific streaming response factories.
+        /// </summary>
+        /// <param name="channelServiceClientFactory">The channel service client factory.</param>
+        /// <param name="logger">The logger used by the adapter.</param>
+        /// <param name="serviceProvider">Service provider used to instantiate discovered streaming response factories.</param>
+        public ChannelServiceAdapterBase(
+            IChannelServiceClientFactory channelServiceClientFactory,
+            ILogger logger,
+            IServiceProvider serviceProvider)
+            : this(channelServiceClientFactory, logger, serviceProvider, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes an adapter with outbound service URL validation.
+        /// </summary>
+        /// <param name="channelServiceClientFactory">The channel service client factory.</param>
+        /// <param name="logger">The logger used by the adapter.</param>
+        /// <param name="hostValidator">The validator used to restrict outbound service URLs.</param>
+        public ChannelServiceAdapterBase(
+            IChannelServiceClientFactory channelServiceClientFactory,
+            ILogger logger,
+            IOutboundHostValidator hostValidator)
+            : this(channelServiceClientFactory, logger, null, hostValidator)
         {
         }
 
@@ -68,6 +98,11 @@ namespace Microsoft.Agents.Builder
         /// The <see cref="Microsoft.Agents.Builder.IChannelServiceClientFactory" /> instance for this adapter.
         /// </value>
         protected IChannelServiceClientFactory ChannelServiceFactory { get; private set; } = channelServiceClientFactory ?? throw new ArgumentNullException(nameof(channelServiceClientFactory));
+
+        /// <summary>
+        /// Gets the validator used to restrict outbound service URLs.
+        /// </summary>
+        protected IOutboundHostValidator HostValidator { get; } = hostValidator;
 
         /// <inheritdoc/>
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
@@ -180,6 +215,7 @@ namespace Microsoft.Agents.Builder
             var reference = ConversationReferenceBuilder.Create(identity.GetIncomingAudience(), channelId, serviceUrl)
                 .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(identity.GetIncomingAudience(), role: RoleTypes.User))
                 .Build();
+            ValidateOutboundServiceUrl(reference.ServiceUrl, nameof(serviceUrl));
 
             // Create the initial TurnContext with the create conversation activity, so that we can create the connector client
             // with the correct context and then make the create conversation call.
@@ -228,6 +264,7 @@ namespace Microsoft.Agents.Builder
             }
 
             ValidateContinuationActivity(continuationActivity);
+            ValidateOutboundServiceUrl(continuationActivity.ServiceUrl, nameof(continuationActivity.ServiceUrl));
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
 
@@ -303,6 +340,16 @@ namespace Microsoft.Agents.Builder
 
             // If there are any results they will have been left on the TurnContext. 
             return ProcessTurnResults(context);
+        }
+
+        private void ValidateOutboundServiceUrl(string serviceUrl, string parameterName)
+        {
+            if (HostValidator?.Enabled == true
+                && !string.IsNullOrWhiteSpace(serviceUrl)
+                && !HostValidator.IsAllowed(serviceUrl))
+            {
+                throw new ArgumentException("The service URL host is not allowed.", parameterName);
+            }
         }
 
         protected virtual Task<bool> HostResponseAsync(IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)

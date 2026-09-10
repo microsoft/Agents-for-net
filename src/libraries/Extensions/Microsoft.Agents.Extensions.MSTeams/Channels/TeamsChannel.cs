@@ -22,10 +22,10 @@ public class TeamsChannel
 
     /// <summary>
     /// Registers a handler to be invoked for any channel update event.
-    /// Use <see cref="Microsoft.Teams.Api.Activities.ConversationUpdateActivity.EventType"/> to differentiate between
+    /// Use <see cref="Microsoft.Teams.Apps.ConversationEventType"/> to differentiate between
     /// channel update event types (e.g. created, deleted, etc.) using:
     /// <code>
-    /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Api.ChannelData>().EventType;
+    /// var eventType = turnContext.Activity.GetChannelData&lt;Microsoft.Teams.Apps.Schema.TeamsChannelData>().EventType;
     /// </code>
     /// </summary>
     /// <remarks>Alternatively, the <see cref="TeamsChannelUpdateRouteAttribute"/> can be used to decorate a <see cref="ChannelUpdateHandler"/> method for the same purpose.</remarks>

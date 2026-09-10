@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Errors;
@@ -13,10 +14,12 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -123,8 +126,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     }
 
                     agentGroup.MapMethods(agentInterface.Path, ["POST"],
-                        async (HttpRequest request, HttpResponse response, IAgentHttpAdapter adapter, IServiceProvider services, CancellationToken cancellationToken) =>
+                        async (HttpRequest request, HttpResponse response, IAgentHttpAdapter defaultAdapter, IServiceProvider services, CancellationToken cancellationToken) =>
                         {
+                            // Tier 2 resolution: when channel-specific adapters are registered, peek the
+                            // channelId from the inbound Activity and resolve a channel-specific adapter.
+                            // Otherwise (the common case) use the default AP adapter (CloudAdapter) directly.
+                            var adapter = await ResolveAdapterAsync(services, defaultAdapter, request, cancellationToken).ConfigureAwait(false);
+
                             IAgent agentInstance = (IAgent)services.GetService(agent);
                             // This is to handle declaring an AgentApplication in an AddTransient lambda.
                             agentInstance ??= (IAgent)services.GetRequiredService(typeof(IAgent));
@@ -151,6 +159,245 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
 
             return agentGroup;
+        }
+
+        internal static ValueTask<IAgentHttpAdapter> ResolveAdapterAsync(
+            IServiceProvider services,
+            IAgentHttpAdapter defaultAdapter,
+            HttpRequest request,
+            CancellationToken cancellationToken)
+        {
+            var registry = services.GetService<IChannelAdapterRegistry>();
+            return registry?.HasChannelSpecificAdapters == true
+                ? ResolveAdapterAsync(registry, defaultAdapter, request, cancellationToken)
+                : new ValueTask<IAgentHttpAdapter>(defaultAdapter);
+        }
+
+        /// <summary>
+        /// Tier 2 adapter resolution for a shared Activity Protocol endpoint. Peeks the <c>channelId</c>
+        /// from the inbound Activity and returns the channel-specific adapter when one is registered;
+        /// otherwise returns the default Activity Protocol adapter (CloudAdapter).
+        /// </summary>
+        /// <remarks>Only reached when <see cref="IChannelAdapterRegistry.HasChannelSpecificAdapters"/> is true.</remarks>
+        internal static async ValueTask<IAgentHttpAdapter> ResolveAdapterAsync(
+            IChannelAdapterRegistry registry,
+            IAgentHttpAdapter defaultAdapter,
+            HttpRequest request,
+            CancellationToken cancellationToken)
+        {
+            var channelId = await PeekChannelIdAsync(request, cancellationToken).ConfigureAwait(false);
+
+            // A channel-specific adapter must also handle HTTP (IAgentHttpAdapter) to serve this endpoint.
+            if (channelId != null
+                && registry.TryGetAdapter(channelId, out var channelAdapter)
+                && channelAdapter is IAgentHttpAdapter httpAdapter)
+            {
+                return httpAdapter;
+            }
+
+            // Default: CloudAdapter handles all unspecialized AP channels.
+            return defaultAdapter;
+        }
+
+        /// <summary>
+        /// Extracts the top-level <c>channelId</c> from a buffered JSON request body without deserializing
+        /// the Activity. Enables request buffering so the resolved adapter can re-read the full body in
+        /// <see cref="IAgentHttpAdapter.ProcessAsync"/>.
+        /// </summary>
+        /// <remarks>
+        /// The body is scanned incrementally in bounded chunks with a streaming <see cref="Utf8JsonReader"/>,
+        /// stopping as soon as the top-level <c>channelId</c> is found (or the root object closes). This avoids
+        /// materializing the full payload into a second buffer and avoids sizing an allocation on the
+        /// client-supplied <c>Content-Length</c>. Cancellation is propagated; only body-inspection failures
+        /// fall back to the default adapter.
+        /// </remarks>
+        private static async ValueTask<string> PeekChannelIdAsync(HttpRequest request, CancellationToken cancellationToken)
+        {
+            request.EnableBuffering();
+
+            var body = request.Body;
+            try
+            {
+                return await ScanChannelIdAsync(body, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Propagate cancellation so the pipeline terminates promptly.
+                throw;
+            }
+            catch (Exception)
+            {
+                // If the body cannot be inspected, fall back to the default adapter.
+                return null;
+            }
+            finally
+            {
+                if (body.CanSeek)
+                {
+                    body.Position = 0;
+                }
+            }
+        }
+
+        // Upper bound on the working buffer so a pathological payload (e.g. a huge token before channelId)
+        // cannot force unbounded growth. Beyond this we give up peeking and fall back to the default adapter.
+        private const int MaxPeekBufferSize = 1024 * 1024;
+
+        /// <summary>
+        /// Reads <paramref name="body"/> in bounded chunks and scans for the top-level <c>channelId</c> using a
+        /// resumable <see cref="Utf8JsonReader"/>, without materializing the entire body.
+        /// </summary>
+        private static async ValueTask<string> ScanChannelIdAsync(System.IO.Stream body, CancellationToken cancellationToken)
+        {
+            var buffer = ArrayPool<byte>.Shared.Rent(8192);
+            try
+            {
+                var state = new JsonReaderState();
+                var pendingValue = false;
+                var dataLength = 0;
+
+                while (true)
+                {
+                    var bytesRead = await body.ReadAsync(buffer.AsMemory(dataLength, buffer.Length - dataLength), cancellationToken).ConfigureAwait(false);
+                    dataLength += bytesRead;
+                    var isFinalBlock = bytesRead == 0;
+
+                    if (TryScanChannelId(new ReadOnlySpan<byte>(buffer, 0, dataLength), isFinalBlock, ref state, ref pendingValue, out var consumed, out var channelId, out var done))
+                    {
+                        return channelId;
+                    }
+
+                    if (done || isFinalBlock)
+                    {
+                        return null;
+                    }
+
+                    // Drop consumed bytes; keep the unconsumed remainder for the next reader.
+                    if (consumed > 0)
+                    {
+                        Array.Copy(buffer, consumed, buffer, 0, dataLength - consumed);
+                        dataLength -= consumed;
+                    }
+
+                    // A single token larger than the buffer made no progress: grow (bounded).
+                    if (dataLength == buffer.Length)
+                    {
+                        if (buffer.Length >= MaxPeekBufferSize)
+                        {
+                            return null;
+                        }
+
+                        var bigger = ArrayPool<byte>.Shared.Rent(buffer.Length * 2);
+                        Array.Copy(buffer, bigger, dataLength);
+                        ArrayPool<byte>.Shared.Return(buffer);
+                        buffer = bigger;
+                    }
+                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+
+        /// <summary>
+        /// Scans a JSON chunk for the top-level <c>channelId</c>. Resumable across chunk boundaries via
+        /// <paramref name="state"/> and <paramref name="pendingValue"/>.
+        /// </summary>
+        /// <param name="chunk">The next slice of the JSON body to scan.</param>
+        /// <param name="isFinalBlock"><see langword="true"/> when no more data will follow this chunk.</param>
+        /// <param name="state">Reader state carried across chunk boundaries.</param>
+        /// <param name="pendingValue">
+        /// Carries whether the previous chunk ended immediately after the <c>channelId</c> property name, so the
+        /// next chunk's first token is treated as its value.
+        /// </param>
+        /// <param name="consumed">Bytes fully consumed from the chunk; the remainder must be re-supplied.</param>
+        /// <param name="channelId">The resolved value when found; otherwise <see langword="null"/>.</param>
+        /// <param name="done">
+        /// <see langword="true"/> when scanning is complete (found, root object closed, or malformed).
+        /// </param>
+        /// <returns><see langword="true"/> when a definitive result is reached; <see langword="false"/> to request more data.</returns>
+        private static bool TryScanChannelId(ReadOnlySpan<byte> chunk, bool isFinalBlock, ref JsonReaderState state, ref bool pendingValue, out int consumed, out string channelId, out bool done)
+        {
+            channelId = null;
+            done = false;
+            var reader = new Utf8JsonReader(chunk, isFinalBlock, state);
+
+            try
+            {
+                while (reader.Read())
+                {
+                    if (pendingValue)
+                    {
+                        // This token is the value of the top-level channelId property.
+                        channelId = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
+                        done = true;
+                        consumed = (int)reader.BytesConsumed;
+                        return true;
+                    }
+
+                    if (reader.CurrentDepth == 1
+                        && reader.TokenType == JsonTokenType.PropertyName
+                        && reader.ValueTextEquals("channelId"u8))
+                    {
+                        pendingValue = true;
+                        continue;
+                    }
+
+                    if (reader.CurrentDepth == 0 && reader.TokenType == JsonTokenType.EndObject)
+                    {
+                        // Root object closed without a top-level channelId.
+                        done = true;
+                        consumed = (int)reader.BytesConsumed;
+                        return true;
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // Malformed JSON — let the adapter surface the error; fall back to the default adapter.
+                done = true;
+                consumed = (int)reader.BytesConsumed;
+                return true;
+            }
+
+            state = reader.CurrentState;
+            consumed = (int)reader.BytesConsumed;
+            return false;
+        }
+
+        /// <summary>
+        /// Scans top-level JSON properties for <c>channelId</c> using a zero-allocation streaming reader.
+        /// Returns <see langword="null"/> when the value is absent or the payload is not a JSON object.
+        /// </summary>
+        internal static string TryReadChannelId(ReadOnlySpan<byte> json)
+        {
+            if (json.IsEmpty)
+            {
+                return null;
+            }
+
+            try
+            {
+                var reader = new Utf8JsonReader(json);
+                while (reader.Read())
+                {
+                    if (reader.CurrentDepth == 1
+                        && reader.TokenType == JsonTokenType.PropertyName
+                        && reader.ValueTextEquals("channelId"u8))
+                    {
+                        return reader.Read() && reader.TokenType == JsonTokenType.String
+                            ? reader.GetString()
+                            : null;
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // Malformed JSON — let the adapter surface the error.
+            }
+
+            return null;
         }
 
         /// <summary>

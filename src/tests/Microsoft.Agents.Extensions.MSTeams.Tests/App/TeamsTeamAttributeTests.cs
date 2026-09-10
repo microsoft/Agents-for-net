@@ -9,14 +9,14 @@ using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.MSTeams.Teams;
 using Microsoft.Agents.Extensions.MSTeams.Tests.Model;
-using Microsoft.Teams.Api;
+using Microsoft.Teams.Apps.Schema;
 using Moq;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using static Microsoft.Teams.Api.Activities.ConversationUpdateActivity;
+using Microsoft.Teams.Apps;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 {
@@ -26,13 +26,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public async Task TeamArchivedAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
-            var (app, turnContext) = CreateAppAndContext(EventType.TeamArchived, "archived-team");
+            var (app, turnContext) = CreateAppAndContext(ConversationEventType.TeamArchived, "archived-team");
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
-            Assert.Equal(EventType.TeamArchived, app.LastCalledEvent);
+            Assert.Equal(ConversationEventType.TeamArchived, app.LastCalledEvent);
             Assert.Equal("archived-team", app.LastTeamId);
         }
 
@@ -40,13 +40,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public async Task TeamUnarchivedAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
-            var (app, turnContext) = CreateAppAndContext(EventType.TeamUnarchived, "unarchived-team");
+            var (app, turnContext) = CreateAppAndContext(ConversationEventType.TeamUnarchived, "unarchived-team");
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
-            Assert.Equal(EventType.TeamUnarchived, app.LastCalledEvent);
+            Assert.Equal(ConversationEventType.TeamUnarchived, app.LastCalledEvent);
             Assert.Equal("unarchived-team", app.LastTeamId);
         }
 
@@ -54,41 +54,27 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public async Task TeamDeletedAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
-            var (app, turnContext) = CreateAppAndContext(EventType.TeamDeleted, "deleted-team");
+            var (app, turnContext) = CreateAppAndContext(ConversationEventType.TeamDeleted, "deleted-team");
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
-            Assert.Equal(EventType.TeamDeleted, app.LastCalledEvent);
+            Assert.Equal(ConversationEventType.TeamDeleted, app.LastCalledEvent);
             Assert.Equal("deleted-team", app.LastTeamId);
-        }
-
-        [Fact]
-        public async Task TeamHardDeletedAttribute_AddRoute_CreatesWorkingRoute()
-        {
-            // Arrange
-            var (app, turnContext) = CreateAppAndContext(EventType.TeamHardDeleted, "hard-deleted-team");
-
-            // Act
-            await app.OnTurnAsync(turnContext, CancellationToken.None);
-
-            // Assert
-            Assert.Equal(EventType.TeamHardDeleted, app.LastCalledEvent);
-            Assert.Equal("hard-deleted-team", app.LastTeamId);
         }
 
         [Fact]
         public async Task TeamRenamedAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
-            var (app, turnContext) = CreateAppAndContext(EventType.TeamRenamed, "renamed-team");
+            var (app, turnContext) = CreateAppAndContext(ConversationEventType.TeamRenamed, "renamed-team");
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
-            Assert.Equal(EventType.TeamRenamed, app.LastCalledEvent);
+            Assert.Equal(ConversationEventType.TeamRenamed, app.LastCalledEvent);
             Assert.Equal("renamed-team", app.LastTeamId);
         }
 
@@ -96,41 +82,40 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         public async Task TeamRestoredAttribute_AddRoute_CreatesWorkingRoute()
         {
             // Arrange
-            var (app, turnContext) = CreateAppAndContext(EventType.TeamRestored, "restored-team");
+            var (app, turnContext) = CreateAppAndContext(ConversationEventType.TeamRestored, "restored-team");
 
             // Act
             await app.OnTurnAsync(turnContext, CancellationToken.None);
 
             // Assert
-            Assert.Equal(EventType.TeamRestored, app.LastCalledEvent);
+            Assert.Equal(ConversationEventType.TeamRestored, app.LastCalledEvent);
             Assert.Equal("restored-team", app.LastTeamId);
         }
 
         public static IEnumerable<object[]> AllTeamEventTypes =>
         [
-            [EventType.TeamArchived],
-            [EventType.TeamUnarchived],
-            [EventType.TeamDeleted],
-            [EventType.TeamHardDeleted],
-            [EventType.TeamRenamed],
-            [EventType.TeamRestored],
+            [ConversationEventType.TeamArchived],
+            [ConversationEventType.TeamUnarchived],
+            [ConversationEventType.TeamDeleted],
+            [ConversationEventType.TeamRenamed],
+            [ConversationEventType.TeamRestored],
         ];
 
         public static IEnumerable<object[]> ChannelEventTypes =>
         [
-            [EventType.ChannelCreated],
-            [EventType.ChannelDeleted],
-            [EventType.ChannelRenamed],
-            [EventType.ChannelRestored],
-            [EventType.ChannelShared],
-            [EventType.ChannelUnShared],
-            [EventType.ChannelMemberAdded],
-            [EventType.ChannelMemberRemoved],
+            [ConversationEventType.ChannelCreated],
+            [ConversationEventType.ChannelDeleted],
+            [ConversationEventType.ChannelRenamed],
+            [ConversationEventType.ChannelRestored],
+            [ConversationEventType.ChannelShared],
+            [ConversationEventType.ChannelUnShared],
+            [ConversationEventType.ChannelMemberAdded],
+            [ConversationEventType.ChannelMemberRemoved],
         ];
 
         [Theory]
         [MemberData(nameof(AllTeamEventTypes))]
-        public async Task TeamUpdateAttribute_AddRoute_FiresForAnyTeamEvent(EventType eventType)
+        public async Task TeamUpdateAttribute_AddRoute_FiresForAnyTeamEvent(ConversationEventType eventType)
         {
             // Arrange
             var (app, turnContext) = CreateTeamUpdateAppAndContext(eventType, "test-team");
@@ -145,7 +130,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 
         [Theory]
         [MemberData(nameof(ChannelEventTypes))]
-        public async Task TeamUpdateAttribute_AddRoute_DoesNotFireForChannelEvent(EventType eventType)
+        public async Task TeamUpdateAttribute_AddRoute_DoesNotFireForChannelEvent(ConversationEventType eventType)
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
@@ -153,7 +138,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = eventType, Channel = new Channel { Id = "c1" } },
+                ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Channel = new TeamsChannel { Id = "c1" } },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -163,7 +148,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
 
             // Act
@@ -173,14 +158,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             Assert.False(app.HandlerCalled);
         }
 
-        private static (TestTeamAttributeApp app, ITurnContext turnContext) CreateAppAndContext(EventType eventType, string teamId)
+        private static (TestTeamAttributeApp app, ITurnContext turnContext) CreateAppAndContext(ConversationEventType eventType, string teamId)
         {
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = eventType, Team = new Team { Id = teamId } },
+                ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Team = new Team { Id = teamId } },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -190,19 +175,19 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             return (app, turnContext);
         }
 
-        private static (TestTeamUpdateAttributeApp app, ITurnContext turnContext) CreateTeamUpdateAppAndContext(EventType eventType, string teamId)
+        private static (TestTeamUpdateAttributeApp app, ITurnContext turnContext) CreateTeamUpdateAppAndContext(ConversationEventType eventType, string teamId)
         {
             var adapter = new NotImplementedAdapter();
             var turnContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = eventType, Team = new Team { Id = teamId } },
+                ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Team = new Team { Id = teamId } },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -212,7 +197,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             return (app, turnContext);
         }
@@ -232,47 +217,39 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         [TeamsTeamArchivedRoute]
         public Task OnTeamArchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Team team, CancellationToken cancellationToken)
         {
-            LastCalledEvent = EventType.TeamArchived;
+            LastCalledEvent = ConversationEventType.TeamArchived;
             LastTeamId = team.Id;
             return Task.CompletedTask;
         }
 
         [TeamsTeamUnarchivedRoute]
-        public Task OnTeamUnarchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+        public Task OnTeamUnarchivedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
         {
-            LastCalledEvent = EventType.TeamUnarchived;
+            LastCalledEvent = ConversationEventType.TeamUnarchived;
             LastTeamId = team.Id;
             return Task.CompletedTask;
         }
 
         [TeamsTeamDeletedRoute]
-        public Task OnTeamDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+        public Task OnTeamDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
         {
-            LastCalledEvent = EventType.TeamDeleted;
-            LastTeamId = team.Id;
-            return Task.CompletedTask;
-        }
-
-        [TeamsTeamHardDeletedRoute]
-        public Task OnTeamHardDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
-        {
-            LastCalledEvent = EventType.TeamHardDeleted;
+            LastCalledEvent = ConversationEventType.TeamDeleted;
             LastTeamId = team.Id;
             return Task.CompletedTask;
         }
 
         [TeamsTeamRenamedRoute]
-        public Task OnTeamRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+        public Task OnTeamRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
         {
-            LastCalledEvent = EventType.TeamRenamed;
+            LastCalledEvent = ConversationEventType.TeamRenamed;
             LastTeamId = team.Id;
             return Task.CompletedTask;
         }
 
         [TeamsTeamRestoredRoute]
-        public Task OnTeamRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+        public Task OnTeamRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
         {
-            LastCalledEvent = EventType.TeamRestored;
+            LastCalledEvent = ConversationEventType.TeamRestored;
             LastTeamId = team.Id;
             return Task.CompletedTask;
         }
@@ -290,7 +267,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         }
 
         [TeamsTeamUpdateRoute]
-        public Task OnAnyTeamEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Team team, CancellationToken cancellationToken)
+        public Task OnAnyTeamEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.Team team, CancellationToken cancellationToken)
         {
             HandlerCalled = true;
             LastTeamId = team.Id;

@@ -1072,7 +1072,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var sp = new Mock<IServiceProvider>();
             var queue = new ActivityTaskQueue();
             var adapter = new CloudAdapter(factory.Object, queue, adapterLogger.Object, options: options, hostValidator: hostValidator);
-            var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), queue, serviceLogger.Object);
+            var configuration = new ConfigurationBuilder().Build();
+            var hostedOptions = new HostedActivityServiceOptions(configuration)
+            {
+                UseScopedServices = false
+            };
+            var service = new HostedActivityService(sp.Object, configuration, queue, serviceLogger.Object, hostedOptions);
 
             var record = new Record(null, adapter, factory, service, queue, adapterLogger, serviceLogger);
 
@@ -1183,7 +1188,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var sp = new Mock<IServiceProvider>();
             var queue = new ActivityTaskQueue();
             var adapter = new CloudAdapter(factory.Object, queue, adapterLogger.Object, middlewares: middleware);
-            var service = new HostedActivityService(sp.Object, new ConfigurationBuilder().Build(), queue, serviceLogger.Object);
+            var configuration = new ConfigurationBuilder().Build();
+            var hostedOptions = new HostedActivityServiceOptions(configuration)
+            {
+                UseScopedServices = false
+            };
+            var service = new HostedActivityService(sp.Object, configuration, queue, serviceLogger.Object, hostedOptions);
 
             var record = new Record(null, adapter, factory, service, queue, adapterLogger, serviceLogger);
 
