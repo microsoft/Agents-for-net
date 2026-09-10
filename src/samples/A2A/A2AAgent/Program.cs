@@ -2,39 +2,14 @@
 // Licensed under the MIT License.
 
 using A2AAgent;
-using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Extensions.A2A;
-using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.AddAgentDefaults()
-    .AddAgent<MyAgent>()
-    .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
-
-builder.Services.AddHttpClient<IGraphProfileClient, GraphProfileClient>(client =>
-{
-    client.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
-});
-
-// Register IStorage.  For development, MemoryStorage is suitable.
-// For production Agents, persisted storage should be used so
-// that state survives Agent restarts, and operate correctly
-// in a cluster of Agent instances.
-builder.Services.AddSingleton<IStorage, MemoryStorage>();
+A2AAgentStartup.ConfigureBuilder(builder);
 
 WebApplication app = builder.Build();
 
-// Add the authentication and authorization middleware to the request pipeline.
-app.UseAgents();
-
-// Map the default agent endpoints: GET "/" and the agent message endpoints.
-app.MapDefaultAgentEndpoints();
-
-// Map A2A endpoints.  By default A2A will respond on '/a2a'.
-app.MapA2AApplicationEndpoints();
+A2AAgentStartup.ConfigureApplication(app);
 
 app.Run();

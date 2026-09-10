@@ -155,9 +155,12 @@ namespace Microsoft.Agents.Extensions.A2A
         // Get the A2AUserAuthorization settings
         private static OBOSettings GetOBOSettings(IConfigurationSection config)
         {
-            var settings = config.Get<OBOSettings>();
+            // An empty "Settings": {} node produces a section with no children, and IConfiguration
+            // binding returns null for that. Delegated passthrough and application-token handlers are
+            // configured exactly that way, so treat a missing/empty section as "no OBO".
+            var settings = config?.Get<OBOSettings>() ?? new OBOSettings();
 
-            if (settings.OBOScopes == null)
+            if (settings.OBOScopes == null && config != null)
             {
                 // try reading as a string to compensate for users just setting a non-array string
                 var configScope = config.GetSection(nameof(OBOSettings.OBOScopes)).Get<string>();

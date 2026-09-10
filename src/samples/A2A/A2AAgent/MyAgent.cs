@@ -172,12 +172,12 @@ public partial class MyAgent : AgentApplication
         ArgumentNullException.ThrowIfNull(identity);
 
         var lines = new List<string>();
-        AddClaimLine(lines, "Tenant", identity.FindFirst("tid")?.Value);
-        AddClaimLine(lines, "Object ID", identity.FindFirst("oid")?.Value);
-        AddClaimLine(lines, "Subject", identity.FindFirst("sub")?.Value);
+        AddClaimLine(lines, "Tenant", A2ATokenIdentity.FindTenantId(identity));
+        AddClaimLine(lines, "Object ID", A2ATokenIdentity.FindObjectId(identity));
+        AddClaimLine(lines, "Subject", A2ATokenIdentity.FindSubject(identity));
         if (includeApplicationId)
         {
-            AddClaimLine(lines, "Application ID", identity.FindFirst("azp")?.Value ?? identity.FindFirst("appid")?.Value);
+            AddClaimLine(lines, "Application ID", A2ATokenIdentity.FindApplicationId(identity));
         }
 
         lines.Add($"Authentication type: {identity.AuthenticationType ?? string.Empty}");

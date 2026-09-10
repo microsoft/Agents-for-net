@@ -7,8 +7,11 @@ using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace Microsoft.Agents.Extensions.A2A.Tests;
 
@@ -39,5 +42,42 @@ public class A2AUserAuthorizationConfigurationTests
             storage);
 
         Assert.Equal("request", options.DefaultHandlerName);
+    }
+
+    [Fact]
+    public void Constructor_WithEmptySettingsSection_CreatesHandlerWithoutOBO()
+    {
+        // The A2AAgent sample configures delegated passthrough and application-token handlers with
+        // an empty "Settings": {} node. JSON configuration turns that into a section with no children,
+        // and IConfiguration binding returns null for such a section.
+        var configuration = new ConfigurationBuilder()
+            .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(
+                """
+                {
+                  "UserAuthorization": {
+                    "DefaultHandlerName": "delegated",
+                    "AutoSignIn": false,
+                    "Handlers": {
+                      "delegated": {
+                        "Type": "A2AUserAuthorization",
+                        "Settings": {}
+                      }
+                    }
+                  }
+                }
+                """)))
+            .Build();
+
+        var settings = configuration.GetSection("UserAuthorization:Handlers:delegated:Settings");
+        Assert.False(settings.Exists());
+
+        var handler = new A2AUserAuthorization(
+            "delegated",
+            new MemoryStorage(),
+            Mock.Of<IConnections>(),
+            settings,
+            NullLogger.Instance);
+
+        Assert.Equal("delegated", handler.Name);
     }
 }
