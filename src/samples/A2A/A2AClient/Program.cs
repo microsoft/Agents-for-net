@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -50,11 +51,11 @@ internal sealed class Program
             };
             var accessTokenProvider = new A2AAccessTokenProvider(new MsalTokenClient(options.Authentication));
             using var httpClient = new HttpClient(
-                new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider));
+                new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider, options.AgentUrl));
 
             var resolver = new A2ACardResolver(options.AgentUrl, httpClient);
             AgentCard card = await resolver.GetAgentCardAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-            IA2AClient client = CreateClient(card, httpClient);
+            IA2AClient client = CreateClient(card, httpClient, options.AgentUrl);
 
             var console = new A2AConsole(
                 client,
@@ -147,38 +148,59 @@ internal sealed class Program
         };
     }
 
-    private static IA2AClient CreateClient(AgentCard card, HttpClient httpClient)
+    /// <summary>
+    /// Selects an advertised interface to talk to.
+    /// </summary>
+    /// <remarks>
+    /// Only interfaces on the configured agent origin are accepted. The Agent Card is data returned by the
+    /// agent, so an interface URL pointing somewhere else must fail here — before the shared authenticated
+    /// <see cref="HttpClient"/> could attach the Agent API access token to it.
+    /// </remarks>
+    internal static IA2AClient CreateClient(AgentCard card, HttpClient httpClient, Uri agentUrl)
     {
-        AgentInterface? interfaceDefinition = card.SupportedInterfaces.FirstOrDefault(
-            item => string.Equals(item.ProtocolBinding, ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(item.ProtocolBinding, ProtocolBindingNames.HttpJson, StringComparison.OrdinalIgnoreCase));
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(httpClient);
 
-        if (interfaceDefinition is null)
+        Uri agentOrigin = A2AAgentOrigin.FromAgentUrl(agentUrl);
+
+        List<AgentInterface> supported = (card.SupportedInterfaces ?? [])
+            .Where(item => IsSupportedBinding(item.ProtocolBinding))
+            .ToList();
+
+        if (supported.Count == 0)
         {
             throw new InvalidOperationException(
                 "The Agent Card does not advertise a supported JSON-RPC or HTTP+JSON interface.");
         }
 
-        if (!Uri.TryCreate(interfaceDefinition.Url, UriKind.Absolute, out Uri? interfaceUri))
+        AgentInterface? interfaceDefinition = null;
+        Uri? interfaceUri = null;
+        foreach (AgentInterface candidate in supported)
         {
-            throw new InvalidOperationException(
-                $"The Agent Card interface URL '{interfaceDefinition.Url}' is not an absolute URI.");
+            if (Uri.TryCreate(candidate.Url, UriKind.Absolute, out Uri? candidateUri)
+                && A2AAgentOrigin.IsSameOrigin(agentOrigin, candidateUri))
+            {
+                interfaceDefinition = candidate;
+                interfaceUri = candidateUri;
+                break;
+            }
         }
 
-        return interfaceDefinition.ProtocolBinding switch
+        if (interfaceDefinition is null || interfaceUri is null)
         {
-            string binding when string.Equals(
-                binding,
-                ProtocolBindingNames.JsonRpc,
-                StringComparison.OrdinalIgnoreCase) => new global::A2A.A2AClient(interfaceUri, httpClient),
-            string binding when string.Equals(
-                binding,
-                ProtocolBindingNames.HttpJson,
-                StringComparison.OrdinalIgnoreCase) => new A2AHttpJsonClient(interfaceUri, httpClient),
-            _ => throw new InvalidOperationException(
-                $"Unsupported A2A protocol binding '{interfaceDefinition.ProtocolBinding}'."),
-        };
+            throw new InvalidOperationException(
+                $"The Agent Card advertises no supported interface on the configured agent origin '{agentOrigin.GetLeftPart(UriPartial.Authority)}'. "
+                + "Refusing to use an interface hosted elsewhere.");
+        }
+
+        return string.Equals(interfaceDefinition.ProtocolBinding, ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
+            ? new global::A2A.A2AClient(interfaceUri, httpClient)
+            : new A2AHttpJsonClient(interfaceUri, httpClient);
     }
+
+    private static bool IsSupportedBinding(string? protocolBinding)
+        => string.Equals(protocolBinding, ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(protocolBinding, ProtocolBindingNames.HttpJson, StringComparison.OrdinalIgnoreCase);
 
     private static Uri ReadAbsoluteUri(string[] args, ref int index, string optionName)
     {

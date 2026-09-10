@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,25 +86,59 @@ internal sealed class A2AConsole
                 continue;
             }
 
-            SendMessageRequest request = await CreateRequestAsync(prompt, cancellationToken).ConfigureAwait(false);
-            AgentTask? task = _useStreaming
-                ? await SendStreamingAsync(request, cancellationToken).ConfigureAwait(false)
-                : await SendAsync(request, cancellationToken).ConfigureAwait(false);
-
-            UpdateContinuation(task);
-
-            if (ShowHistory && task is not null && !string.IsNullOrWhiteSpace(task.Id))
+            try
             {
-                AgentTask taskWithHistory = await _client.GetTaskAsync(
-                    new GetTaskRequest { Id = task.Id, HistoryLength = 100 },
-                    cancellationToken).ConfigureAwait(false);
+                SendMessageRequest request = await CreateRequestAsync(prompt, cancellationToken).ConfigureAwait(false);
+                AgentTask? task = _useStreaming
+                    ? await SendStreamingAsync(request, cancellationToken).ConfigureAwait(false)
+                    : await SendAsync(request, cancellationToken).ConfigureAwait(false);
 
-                _output.WriteLine("========= History =========");
-                A2AResponseWriter.WriteHistory(_output, taskWithHistory);
+                UpdateContinuation(task);
+
+                if (ShowHistory && task is not null && !string.IsNullOrWhiteSpace(task.Id))
+                {
+                    AgentTask taskWithHistory = await _client.GetTaskAsync(
+                        new GetTaskRequest { Id = task.Id, HistoryLength = 100 },
+                        cancellationToken).ConfigureAwait(false);
+
+                    _output.WriteLine("========= History =========");
+                    A2AResponseWriter.WriteHistory(_output, taskWithHistory);
+                }
+            }
+            catch (Exception exception) when (IsRecoverableRequestFailure(exception, cancellationToken))
+            {
+                // One failed send or history read must not end the session; the operator can retry,
+                // switch authentication mode, or quit. Only the exception message is shown so no
+                // request/response detail or credential can be written to the console.
+                _output.WriteLine($"Request failed: {exception.GetType().Name}: {exception.Message}");
             }
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// Identifies per-request failures the console can report and continue from. Cancellation requested
+    /// through <paramref name="cancellationToken"/> is never treated as recoverable, so Ctrl+C still ends
+    /// the loop.
+    /// </summary>
+    internal static bool IsRecoverableRequestFailure(Exception exception, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+
+        return exception is A2AException
+            or HttpRequestException
+            or HttpIOException
+            or JsonException
+            or InvalidOperationException
+            or IOException
+            or TimeoutException
+            or OperationCanceledException;
     }
 
     internal bool TryHandleCommand(string input)
@@ -124,8 +159,21 @@ internal sealed class A2AConsole
             if (Enum.TryParse(modeName, ignoreCase: true, out A2AAuthMode mode)
                 && Enum.IsDefined(mode))
             {
+                bool modeChanged = mode != _authenticationSession.Mode;
                 _authenticationSession.SetMode(mode);
                 _output.WriteLine($"Authentication mode: {mode.ToString().ToLowerInvariant()}");
+
+                if (modeChanged && _taskId is not null)
+                {
+                    // The pending task belongs to the previous credential. Continuing it under another
+                    // principal would send that principal's input into the earlier caller's task.
+                    ClearContinuation();
+                    _output.WriteLine("Cleared the continuing task because the authentication mode changed.");
+                }
+                else if (modeChanged)
+                {
+                    ClearContinuation();
+                }
             }
             else
             {
@@ -250,6 +298,11 @@ internal sealed class A2AConsole
             return;
         }
 
+        ClearContinuation();
+    }
+
+    private void ClearContinuation()
+    {
         _taskId = null;
         _contextId = null;
     }
