@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 #if !NETSTANDARD
 using System.Runtime.Loader;
@@ -34,6 +35,32 @@ namespace Microsoft.Agents.Builder.UserAuth
         {
             AssertionHelpers.ThrowIfNullOrEmpty(name, nameof(name));
 
+            if (string.Equals(nameof(AzureBotUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(AzureBotUserAuthorization).FullName;
+            }
+            else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(AgenticUserAuthorization).FullName;
+            }
+            else if (string.Equals(nameof(ConnectorUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(ConnectorUserAuthorization).FullName;
+            }
+
+            if (string.IsNullOrEmpty(assemblyName) && !string.IsNullOrEmpty(typeName))
+            {
+                var loadedType = FindLoadedProviderType(typeName, name);
+                if (loadedType != null)
+                {
+                    return GetConstructor(loadedType) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                        ErrorHelper.FailedToCreateUserAuthorizationHandler,
+                        null,
+                        loadedType.FullName,
+                        loadedType.Assembly.GetName().Name);
+                }
+            }
+
             if (string.IsNullOrEmpty(assemblyName))
             {
                 // A Assembly Lib name wasn't given in config.  Set to the default assembly lib
@@ -46,18 +73,6 @@ namespace Microsoft.Agents.Builder.UserAuth
                 // A Type name wasn't given in config.  Set to the default type name
                 typeName = typeof(AzureBotUserAuthorization).FullName;
                 logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
-            }
-            else if (string.Equals(nameof(AzureBotUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(AzureBotUserAuthorization).FullName;
-            }
-            else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(AgenticUserAuthorization).FullName;
-            }
-            else if (typeName.Equals(nameof(ConnectorUserAuthorization), StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(ConnectorUserAuthorization).FullName;
             }
             
             // This throws for invalid assembly name.
@@ -78,6 +93,49 @@ namespace Microsoft.Agents.Builder.UserAuth
                 }
             }
             return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, null, typeName, assemblyName); 
+        }
+
+        private Type FindLoadedProviderType(string typeName, string handlerName)
+        {
+#if !NETSTANDARD
+            var assemblies = _loadContext.Assemblies;
+#else
+            var assemblies = _loadContext.GetAssemblies();
+#endif
+            var matches = assemblies
+                .Where(assembly => !assembly.IsDynamic)
+                .SelectMany(GetLoadableTypes)
+                .Where(IsValidProviderType)
+                .Where(type =>
+                    string.Equals(type.FullName, typeName, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(type.Name, typeName, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (matches.Length > 1)
+            {
+                var ambiguity = new AmbiguousMatchException(
+                    $"Multiple IUserAuthorization types matched '{typeName}': {string.Join(", ", matches.Select(type => type.AssemblyQualifiedName))}");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.UserAuthorizationTypeNotFound,
+                    ambiguity,
+                    typeName,
+                    "loaded assemblies",
+                    handlerName);
+            }
+
+            return matches.SingleOrDefault();
+        }
+
+        private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException exception)
+            {
+                return exception.Types.Where(type => type != null);
+            }
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)

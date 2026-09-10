@@ -117,28 +117,39 @@ namespace Microsoft.Agents.Extensions.A2A
 
         private TokenResponse CreateTokenResponse(ITurnContext turnContext)
         {
+            var requestToken = turnContext.Services.Get<A2ARequestAuthentication>()?.AccessToken;
+            if (!string.IsNullOrEmpty(requestToken))
+            {
+                return CreateTokenResponse(requestToken);
+            }
+
             if (turnContext.Identity is CaseSensitiveClaimsIdentity identity)
             {
-                var tokenResponse = new TokenResponse()
-                {
-                    Token = identity.SecurityToken.UnsafeToString(),
-                };
-
-                try
-                {
-                    var jwtToken = new JwtSecurityToken(tokenResponse.Token);
-                    tokenResponse.Expiration = jwtToken.ValidTo;
-                    tokenResponse.IsExchangeable = AgentClaims.IsExchangeableToken(jwtToken);
-                }
-                catch (Exception)
-                {
-                    tokenResponse.IsExchangeable = false;
-                }
-
-                return tokenResponse;
+                return CreateTokenResponse(identity.SecurityToken.UnsafeToString());
             }
 
             throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UnexpectedRequestToken, null, [Name]);
+        }
+
+        private static TokenResponse CreateTokenResponse(string token)
+        {
+            var tokenResponse = new TokenResponse()
+            {
+                Token = token,
+            };
+
+            try
+            {
+                var jwtToken = new JwtSecurityToken(token);
+                tokenResponse.Expiration = jwtToken.ValidTo;
+                tokenResponse.IsExchangeable = AgentClaims.IsExchangeableToken(jwtToken);
+            }
+            catch (Exception)
+            {
+                tokenResponse.IsExchangeable = false;
+            }
+
+            return tokenResponse;
         }
 
         // Get the A2AUserAuthorization settings

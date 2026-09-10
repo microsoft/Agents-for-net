@@ -4,7 +4,10 @@
 using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
+using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
@@ -14,6 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.IO;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -145,56 +149,69 @@ public class A2AAdapterTests
     [Fact]
     public async Task ProcessJsonRpcMessageSendAsync()
     {
-        // Arrange
-        var record = UseRecord((record) =>
+        var record = UseRecord(record =>
         {
             var options = new TestApplicationOptions(record.Storage);
             var agent = new TestApplication(options);
-
             agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
             {
                 await context.SendActivityAsync($"Echo: {context.Activity.Text}", cancellationToken: ct);
             });
-
             return agent;
         });
 
-        var jsonRpcRequest = new JsonRpcRequest
-        {
-            Id = Guid.NewGuid().ToString(),
-            Method = A2AMethods.SendMessage,
-            Params = JsonSerializer.SerializeToElement(new SendMessageRequest
-            {
-                Message = new Message
-                {
-                    ContextId = "context-1234",
-                    Parts = [new Part() { Text = "Hello" }]
-                }
-            })
-        };
-
+        var jsonRpcRequest = CreateSendMessageRequest("context-1234");
         var context = CreateHttpContext(JsonSerializer.Serialize(jsonRpcRequest));
-
-        // Act
 
         var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
         await result.ExecuteAsync(context);
 
-        // Assert
-
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
-
-        context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var reader = new StreamReader(context.Response.Body);
-        var streamText = reader.ReadToEnd();
-        var jsonRpcResponse = ProtocolJsonSerializer.ToObject<JsonRpcResponse>(streamText);
-        Assert.NotNull(jsonRpcResponse);
-        var task = ProtocolJsonSerializer.ToObject<AgentTask>(jsonRpcResponse.Result.AsObject().GetAt(0).Value);
-        Assert.NotNull(task);
+        var task = ReadTaskResponse(context);
         Assert.Equal("context-1234", task.ContextId);
         Assert.NotEmpty(task.Id);
         Assert.NotNull(task.Status.Message);
         Assert.Equal("Echo: Hello", task.Status.Message.Parts[0].Text);
+    }
+
+    [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync_WithAutoSignIn_ExposesRequestToken()
+    {
+        var connections = Mock.Of<IConnections>();
+        var record = UseRecord(record =>
+        {
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections,
+                    new A2AUserAuthorization("request", connections, new OBOSettings()))
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
+                }
+            };
+            var agent = new TestApplication(options);
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                var token = await agent.UserAuthorization.GetTurnTokenAsync(context, "request", ct);
+                await context.SendActivityAsync($"Token: {token}", cancellationToken: ct);
+            });
+            return agent;
+        });
+
+        var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-oauth")));
+        context.User = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                [new Claim(ClaimTypes.NameIdentifier, "caller")],
+                authenticationType: "Test"));
+        context.Request.Headers.Authorization = "Bearer opaque-token";
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        Assert.Equal("Token: opaque-token", ReadTaskResponse(context).Status.Message.Parts[0].Text);
     }
 
     [Fact]
@@ -343,6 +360,30 @@ public class A2AAdapterTests
     }
 
     #endregion
+
+    private static JsonRpcRequest CreateSendMessageRequest(string contextId)
+    {
+        return new JsonRpcRequest
+        {
+            Id = Guid.NewGuid().ToString(),
+            Method = A2AMethods.SendMessage,
+            Params = JsonSerializer.SerializeToElement(new SendMessageRequest
+            {
+                Message = new Message
+                {
+                    ContextId = contextId,
+                    Parts = [new Part() { Text = "Hello" }]
+                }
+            })
+        };
+    }
+
+    private static AgentTask ReadTaskResponse(DefaultHttpContext context)
+    {
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var response = ProtocolJsonSerializer.ToObject<JsonRpcResponse>(new StreamReader(context.Response.Body).ReadToEnd());
+        return ProtocolJsonSerializer.ToObject<AgentTask>(response.Result.AsObject().GetAt(0).Value);
+    }
 
     private static DefaultHttpContext CreateHttpContext(string requestContent = null)
     {
