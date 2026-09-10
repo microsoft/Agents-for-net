@@ -78,6 +78,9 @@ Use this flow for `-delegated` and `-me`.
      separate registration has `aud` = Agent API and `azp` = console client, so the exchange is refused.
      Also leave the optional `idtyp` claim off delegated tokens for that registration, because a token
      with `idtyp` of `user` is treated as non-exchangeable as well.
+   - That Agent API registration must also use `requestedAccessTokenVersion = 2` in its manifest or
+     API settings so `api://<agent-client-id>/access_as_user` issues a v2 token with the GUID audience
+     expected by the agent's `TokenValidation:Audiences`.
 1. In **API permissions**, add the delegated permission for the Agent API scope `api://<agent-client-id>/access_as_user`.
 1. Grant consent if your tenant requires it.
 1. Set `Authentication:PublicClientId` to that registration's client ID (the Agent API client ID when testing `-me`).

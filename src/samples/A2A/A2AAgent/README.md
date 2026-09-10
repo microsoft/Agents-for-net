@@ -97,6 +97,7 @@ Two consequences are worth knowing:
 ### 1. Register the Agent API application
 
 1. Create a **single-tenant** Microsoft Entra app registration for the agent API.
+1. In the app registration **Manifest** or **API settings**, set `requestedAccessTokenVersion` to `2` so the delegated scope issues a v2 access token whose `aud` is the API's GUID, which matches `TokenValidation:Audiences`.
 1. In **Expose an API**, publish the delegated scope `api://<agent-client-id>/access_as_user`.
 1. Add an app role named `A2A.Access` and allow the `Applications` member type.
 1. Add the delegated Microsoft Graph permission `User.Read`.
