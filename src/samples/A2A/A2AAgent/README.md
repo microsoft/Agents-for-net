@@ -72,6 +72,28 @@ The sample opts into authentication per route:
 | `-me` | `graph` | Validates an inbound delegated Agent API token, then performs OBO to Microsoft Graph `User.Read`. |
 | `-app` | `app` | Validates an inbound application token. Application identities are not users, so this route does not use `ITurnState.User`. |
 
+### How token validation is enabled
+
+`AddAgentAuthorization` disables authentication in the Development environment by default, and
+`Properties\launchSettings.json` runs the sample as Development. `A2AAgentStartup` therefore enables
+token validation in Development as well, as soon as `TokenValidation:Audiences` contains real client
+IDs instead of the shipped `{{ClientId}}` placeholder:
+
+```csharp
+builder.AddAgentAuthorization(
+    b => b.AddAgentAspNetAuthentication(),
+    forceEnable: !builder.Environment.IsDevelopment() || IsTokenValidationConfigured(builder.Configuration));
+```
+
+Two consequences are worth knowing:
+
+- With placeholders in place, `dotnet run` behaves exactly as before: no authentication scheme is
+  registered and every route is anonymous.
+- Once the placeholders are replaced, inbound bearer tokens are validated. The A2A endpoints are still
+  mapped with `requireAuth: false`, so echo, `-multi`, `-stream`, and `-a2a` stay anonymous while
+  `-delegated`, `-me`, and `-app` obtain the validated token through their route handlers. The Activity
+  Protocol endpoint mapped by `MapDefaultAgentEndpoints` does require authorization.
+
 ### 1. Register the Agent API application
 
 1. Create a **single-tenant** Microsoft Entra app registration for the agent API.
@@ -109,7 +131,24 @@ For the current sample, the relevant keys are:
 
 Do not commit a real secret or token. Keep placeholders in the repo and store the live value locally.
 
-### 2. Manual route checks
+### 2. Registration requirement for the OBO route
+
+`-me` exchanges the inbound token on behalf of the caller. The SDK only exchanges a token that
+`AgentClaims.IsExchangeableToken` accepts, which requires the token's `aud` claim to contain the
+application ID that requested it (`azp` for v2 tokens, `appid` for v1). A delegated token acquired by a
+*separate* public-client registration has `aud` = Agent API and `azp` = console client, so it is not
+exchangeable and `-me` fails with "token is not exchangeable".
+
+For `-me` to work:
+
+- acquire the delegated token with the **Agent API registration itself** — enable public client flows on
+  that registration and set the client's `Authentication:PublicClientId` to the Agent API client ID; and
+- do not add the optional `idtyp` claim to delegated tokens for that registration, because a token with
+  `idtyp` of `user` is also treated as non-exchangeable.
+
+`-delegated` and `-app` do not perform OBO, so they work with a separate console client registration.
+
+### 3. Manual route checks
 
 After the Agent API app registration is in place and the client is configured:
 
@@ -119,11 +158,12 @@ After the Agent API app registration is in place and the client is configured:
 
 The inbound token must target the Agent API, never Microsoft Graph directly. `-me` relies on the agent's `graph` authorization handler to do the OBO exchange after token validation.
 
-### 3. Expected failures
+### 4. Expected failures
 
-- `-me` with `:auth none` fails because the route requires a validated token.
+- `-delegated`, `-me`, or `-app` with `:auth none` fails because the route requires a validated token.
 - `-me` with `:auth app` fails because OBO requires a delegated user token.
-- `-app` with `:auth delegated` may authenticate, but it is the wrong scenario and must not be interpreted as application identity.
+- `-me` with a delegated token from a separate public-client registration fails because that token is not exchangeable (see the registration requirement above).
+- `-app` with `:auth delegated` is rejected because the route requires an application token.
 - A Microsoft Graph token must not be pasted or sent directly to the Agent API.
 
 ## Adding A2A support to an existing SDK agent

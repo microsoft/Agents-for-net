@@ -4,6 +4,14 @@
 Agent Card, selects a JSON-RPC or HTTP+JSON interface, and uses one authenticated
 `HttpClient` for card discovery and task operations.
 
+The Agent Card is data returned by the agent, so its advertised interface URLs are
+not trusted blindly. The client only uses an interface on the configured agent
+origin (scheme, host, and effective port), and only attaches the Agent API access
+token to that origin. A card advertising an interface elsewhere fails before any
+credential is sent. Plaintext HTTP is only accepted for loopback addresses, and
+automatic redirects are disabled because redirects are followed beneath the
+authenticating handler and would bypass the origin check.
+
 ## Run the client
 
 ```powershell
@@ -24,8 +32,13 @@ The current startup options are:
 While the client is running, use these interactive commands:
 
 - `:auth none|delegated|app` switches the authentication mode for future requests.
+  Changing the mode also drops any task the agent is waiting on, so one caller's
+  continuing task is never resumed with another caller's credential.
 - `:history on|off` turns task history display on or off.
 - `:q` or `quit` exits the console.
+
+A failed send, streaming read, or history read prints a short error and returns to
+the prompt instead of ending the session. Ctrl+C still exits.
 
 ## Configuration keys
 
@@ -56,11 +69,18 @@ Keep real secrets out of source control. The committed file should stay on place
 
 Use this flow for `-delegated` and `-me`.
 
-1. Create a **public client** Microsoft Entra app registration in the same tenant as the agent.
-1. In **Authentication**, enable public client flows.
+1. Enable **public client flows** in **Authentication** on a Microsoft Entra app registration in the
+   same tenant as the agent.
+   - For `-delegated` only, this may be a separate public-client registration.
+   - For `-me`, it **must be the Agent API registration itself**. The agent exchanges the inbound token
+     on behalf of the caller, and the SDK only exchanges a token whose `aud` claim contains the
+     application ID that requested it (`azp` for v2 tokens, `appid` for v1). A token acquired by a
+     separate registration has `aud` = Agent API and `azp` = console client, so the exchange is refused.
+     Also leave the optional `idtyp` claim off delegated tokens for that registration, because a token
+     with `idtyp` of `user` is treated as non-exchangeable as well.
 1. In **API permissions**, add the delegated permission for the Agent API scope `api://<agent-client-id>/access_as_user`.
 1. Grant consent if your tenant requires it.
-1. Set `Authentication:PublicClientId` to the public client application's client ID.
+1. Set `Authentication:PublicClientId` to that registration's client ID (the Agent API client ID when testing `-me`).
 1. Set `Authentication:TenantId` to the tenant ID.
 1. Set `Authentication:AgentDelegatedScope` to `api://<agent-client-id>/access_as_user`.
 1. Start the client, then run `:auth delegated`.
@@ -93,9 +113,11 @@ Do not commit the secret. The secret belongs in user secrets or another local se
 
 ## Expected failures and how to interpret them
 
-- `-me` with `:auth none` fails because the route requires a validated inbound token before it can perform OBO.
+- `-delegated`, `-me`, or `-app` with `:auth none` fails because the route requires a validated inbound token.
 - `-me` with `:auth app` fails because Microsoft Graph OBO requires a delegated user token, not an application token.
-- `-app` with `:auth delegated` may authenticate, but it is the wrong scenario and must not be interpreted as application identity.
+- `-me` with a delegated token acquired by a separate public-client registration fails because that token is not exchangeable; see the public client setup above.
+- `-app` with `:auth delegated` is rejected by the agent because that route requires an application token.
 - A Microsoft Graph token must not be pasted or sent directly to the Agent API. The inbound token must target the Agent API audience.
+- An Agent Card whose interface URL is not on the configured agent origin fails at startup, before a token is sent.
 
-Access tokens are attached to requests but are never printed by the sample.
+Access tokens are attached to requests but are never printed by the sample, including in the error text shown after a failed request.
