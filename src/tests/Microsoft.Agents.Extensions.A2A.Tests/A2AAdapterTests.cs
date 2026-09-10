@@ -11,6 +11,7 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -202,11 +203,7 @@ public class A2AAdapterTests
         });
 
         var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-oauth")));
-        context.User = new ClaimsPrincipal(
-            new ClaimsIdentity(
-                [new Claim(ClaimTypes.NameIdentifier, "caller")],
-                authenticationType: "Test"));
-        context.Request.Headers.Authorization = "Bearer opaque-token";
+        AuthenticateContext(context, "opaque-token");
 
         var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
         await result.ExecuteAsync(context);
@@ -393,6 +390,30 @@ public class A2AAdapterTests
         context.Response.StatusCode = 0;
         context.Response.Body = new MemoryStream();
         return context;
+    }
+
+    /// <summary>
+    /// Applies the authentication result an ASP.NET Core handler with <c>SaveToken = true</c> produces:
+    /// an authenticated principal plus a ticket carrying the validated access token.
+    /// </summary>
+    private static void AuthenticateContext(DefaultHttpContext context, string validatedToken)
+    {
+        var principal = new ClaimsPrincipal(
+            new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "caller")], authenticationType: "Test"));
+        var properties = new AuthenticationProperties();
+        properties.StoreTokens([new AuthenticationToken { Name = "access_token", Value = validatedToken }]);
+
+        context.User = principal;
+        context.Features.Set<IAuthenticateResultFeature>(new StubAuthenticateResultFeature
+        {
+            AuthenticateResult = AuthenticateResult.Success(
+                new AuthenticationTicket(principal, properties, "Test")),
+        });
+    }
+
+    private sealed class StubAuthenticateResultFeature : IAuthenticateResultFeature
+    {
+        public AuthenticateResult AuthenticateResult { get; set; }
     }
 
     private static Record UseRecord(Func<Record, IAgent> createAgent)

@@ -4,6 +4,7 @@
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System;
@@ -63,17 +64,36 @@ public class A2AUserAuthorizationTests
         return context.Object;
     }
 
+    /// <summary>
+    /// Builds request authentication the way the runtime does: an authentication ticket that carries the
+    /// validated token, as produced by a handler with <c>SaveToken = true</c>.
+    /// </summary>
     private static A2ARequestAuthentication CreateAuthentication(string token)
     {
-        var httpContext = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(new ClaimsIdentity(authenticationType: "Test"))
-        };
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "caller")], "Test");
+        var properties = new AuthenticationProperties();
         if (token != null)
         {
-            httpContext.Request.Headers.Authorization = $"Bearer {token}";
+            properties.StoreTokens([new AuthenticationToken
+            {
+                Name = A2ARequestAuthentication.AccessTokenName,
+                Value = token,
+            }]);
         }
 
+        var principal = new ClaimsPrincipal(identity);
+        var httpContext = new DefaultHttpContext { User = principal };
+        httpContext.Features.Set<IAuthenticateResultFeature>(new AuthenticateResultFeature
+        {
+            AuthenticateResult = AuthenticateResult.Success(
+                new AuthenticationTicket(principal, properties, "Test")),
+        });
+
         return A2ARequestAuthentication.Create(httpContext.Request);
+    }
+
+    private sealed class AuthenticateResultFeature : IAuthenticateResultFeature
+    {
+        public AuthenticateResult AuthenticateResult { get; set; }
     }
 }
