@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -47,6 +48,22 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
             {
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(
                     () => connection.WaitForConnectionAsync(TimeSpan.FromMilliseconds(100)));
+            }
+            finally
+            {
+                await connection.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task WaitForConnectionAsync_OriginalOverload_PreservesCancellation()
+        {
+            var connection = new NamedPipeConnection($"bfv4.pipes.{Guid.NewGuid()}", NullLogger.Instance);
+
+            try
+            {
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                    () => connection.WaitForConnectionAsync(new CancellationToken(canceled: true)));
             }
             finally
             {

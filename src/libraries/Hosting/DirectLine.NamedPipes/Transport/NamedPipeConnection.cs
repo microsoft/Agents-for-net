@@ -18,6 +18,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
     /// </summary>
     internal sealed class NamedPipeConnection : IAsyncDisposable
     {
+        private static readonly TimeSpan DefaultConnectionTimeout = TimeSpan.FromMinutes(5);
         private readonly string _pipeName;
         private readonly ILogger _logger;
         private NamedPipeServerStream _incomingPipe;
@@ -53,6 +54,13 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         /// Gets a value indicating whether both pipes are connected.
         /// </summary>
         public bool IsConnected => Reader?.IsConnected == true && Writer?.IsConnected == true;
+
+        /// <summary>
+        /// Creates the pipe pair and waits for a client to connect to both.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        public Task WaitForConnectionAsync(CancellationToken cancellationToken = default)
+            => WaitForConnectionAsync(DefaultConnectionTimeout, cancellationToken);
 
         /// <summary>
         /// Creates the pipe pair and waits for a client to connect to both.
