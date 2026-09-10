@@ -7,6 +7,9 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.A2A;
+using System;
+using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,9 +23,18 @@ namespace A2AAgent;
 [A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
 [A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn")]
 [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response")]
-public partial class MyAgent(AgentApplicationOptions options) : AgentApplication(options)
+public partial class MyAgent : AgentApplication
 {
     private const string MultiTurnCountKey = "MultiTurnCount";
+    private const string DelegatedHandlerName = "delegated";
+    private const string GraphHandlerName = "graph";
+    private const string ApplicationHandlerName = "app";
+    private readonly IGraphProfileClient _graphClient;
+
+    internal MyAgent(AgentApplicationOptions options, IGraphProfileClient graphClient) : base(options)
+    {
+        _graphClient = graphClient;
+    }
 
     [A2AMessageRoute("-stream")]
     private async Task OnStreamAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -45,6 +57,38 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
             Code = EndOfConversationCodes.CompletedSuccessfully,
         };
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
+    }
+
+    [A2AMessageRoute("-delegated", autoSignInHandlers: DelegatedHandlerName)]
+    private async Task OnDelegatedAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var _ = await UserAuthorization.GetTurnTokenAsync(turnContext, DelegatedHandlerName, cancellationToken).ConfigureAwait(false);
+        var identity = turnContext.Identity;
+        A2ATokenIdentity.RequireDelegated(identity);
+        var summary = BuildIdentitySummary(identity, includeApplicationId: false);
+        await CompleteTaskAsync(turnContext, summary, cancellationToken).ConfigureAwait(false);
+    }
+
+    [A2AMessageRoute("-me", autoSignInHandlers: GraphHandlerName)]
+    private async Task OnGraphAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var token = await UserAuthorization.GetTurnTokenAsync(turnContext, GraphHandlerName, cancellationToken).ConfigureAwait(false);
+        A2ATokenIdentity.RequireDelegated(turnContext.Identity);
+        var profile = await _graphClient.GetMeAsync(token, cancellationToken).ConfigureAwait(false);
+        await CompleteTaskAsync(
+            turnContext,
+            $"Name: {profile.DisplayName}{Environment.NewLine}User principal name: {profile.UserPrincipalName}",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    [A2AMessageRoute("-app", autoSignInHandlers: ApplicationHandlerName)]
+    private async Task OnApplicationAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var _ = await UserAuthorization.GetTurnTokenAsync(turnContext, ApplicationHandlerName, cancellationToken).ConfigureAwait(false);
+        var identity = turnContext.Identity;
+        A2ATokenIdentity.RequireApplication(identity);
+        var summary = BuildIdentitySummary(identity, includeApplicationId: true);
+        await CompleteTaskAsync(turnContext, summary, cancellationToken).ConfigureAwait(false);
     }
 
     // Received an A2A Message
@@ -121,5 +165,42 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
             var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text} (turn {turnCount})", inputHint: InputHints.ExpectingInput);
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
         }
+    }
+
+    private static string BuildIdentitySummary(ClaimsIdentity identity, bool includeApplicationId)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+
+        var lines = new List<string>();
+        AddClaimLine(lines, "Tenant", identity.FindFirst("tid")?.Value);
+        AddClaimLine(lines, "Object ID", identity.FindFirst("oid")?.Value);
+        AddClaimLine(lines, "Subject", identity.FindFirst("sub")?.Value);
+        if (includeApplicationId)
+        {
+            AddClaimLine(lines, "Application ID", identity.FindFirst("azp")?.Value ?? identity.FindFirst("appid")?.Value);
+        }
+
+        lines.Add($"Authentication type: {identity.AuthenticationType ?? string.Empty}");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static void AddClaimLine(List<string> lines, string label, string? value)
+    {
+        if (!string.IsNullOrEmpty(value))
+        {
+            lines.Add($"{label}: {value}");
+        }
+    }
+
+    private static Task CompleteTaskAsync(IA2ATurnContext turnContext, string text, CancellationToken cancellationToken)
+    {
+        return turnContext.SendActivityAsync(
+            new Activity
+            {
+                Type = ActivityTypes.EndOfConversation,
+                Text = text,
+                Code = EndOfConversationCodes.CompletedSuccessfully,
+            },
+            cancellationToken: cancellationToken);
     }
 }

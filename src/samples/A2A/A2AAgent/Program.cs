@@ -7,12 +7,18 @@ using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddAgentDefaults()
     .AddAgent<MyAgent>()
     .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
+
+builder.Services.AddHttpClient<IGraphProfileClient, GraphProfileClient>(client =>
+{
+    client.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
+});
 
 // Register IStorage.  For development, MemoryStorage is suitable.
 // For production Agents, persisted storage should be used so

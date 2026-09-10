@@ -30,6 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.A2A\Microsoft.Agents.Extensions.A2A.csproj" />
+    <ProjectReference Include="..\..\samples\A2A\A2AAgent\A2AAgent.csproj" Aliases="A2AAgentSample" />
     <ProjectReference Include="..\..\samples\A2A\A2AClient\A2AClient.csproj" />
   </ItemGroup>
 
