@@ -201,6 +201,40 @@ public class A2AAgentOAuthRouteTests
         Assert.Contains("This route requires a delegated user token.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("-delegated")]
+    [InlineData("-me")]
+    public async Task DelegatedRoutes_RejectUnrelatedDelegatedScope(string message)
+    {
+        var context = await ExecuteMessageAsync(
+            CreateRecord(
+                CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token"),
+                CreateAuthorizationHandler(GraphHandlerName, "graph-request-token"),
+                CreateAuthorizationHandler(AppHandlerName, "app-request-token"),
+                new Mock<IGraphProfileClient>(MockBehavior.Strict)),
+            message,
+            CreateDelegatedIdentity("Other.Scope"));
+
+        using var response = await ReadJsonResponseAsync(context);
+        Assert.Contains("This route requires the access_as_user delegated scope.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ApplicationRoute_RejectsUnrelatedApplicationRole()
+    {
+        var context = await ExecuteMessageAsync(
+            CreateRecord(
+                CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token"),
+                CreateAuthorizationHandler(GraphHandlerName, "graph-request-token"),
+                CreateAuthorizationHandler(AppHandlerName, "app-request-token"),
+                new Mock<IGraphProfileClient>(MockBehavior.Strict)),
+            "-app",
+            CreateApplicationIdentity("Other.Access"));
+
+        using var response = await ReadJsonResponseAsync(context);
+        Assert.Contains("This route requires the A2A.Access application role.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
     private static Record CreateRecord(
         Mock<IUserAuthorization> delegated,
         Mock<IUserAuthorization> graph,
@@ -324,26 +358,26 @@ public class A2AAgentOAuthRouteTests
         return await JsonDocument.ParseAsync(context.Response.Body);
     }
 
-    private static ClaimsIdentity CreateDelegatedIdentity()
+    private static ClaimsIdentity CreateDelegatedIdentity(string scope = "access_as_user")
     {
         return new ClaimsIdentity(
         [
             new Claim("tid", "tenant-123"),
             new Claim("oid", "user-456"),
             new Claim("sub", "subject-789"),
-            new Claim("scp", "User.Read")
+            new Claim("scp", scope)
         ],
         authenticationType: "Bearer");
     }
 
-    private static ClaimsIdentity CreateApplicationIdentity()
+    private static ClaimsIdentity CreateApplicationIdentity(string role = "A2A.Access")
     {
         return new ClaimsIdentity(
         [
             new Claim("tid", "tenant-123"),
             new Claim("sub", "subject-789"),
             new Claim("idtyp", "app"),
-            new Claim("roles", "Task.Run"),
+            new Claim("roles", role),
             new Claim("azp", "client-app-id")
         ],
         authenticationType: "Bearer");

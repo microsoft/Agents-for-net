@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using System;
+using System.Linq;
 using System.Security.Claims;
 
 namespace A2AAgent;
@@ -26,6 +27,9 @@ namespace A2AAgent;
 /// </remarks>
 internal static class A2ATokenIdentity
 {
+    internal const string RequiredDelegatedScope = "access_as_user";
+    internal const string RequiredApplicationRole = "A2A.Access";
+
     internal const string ScopeClaim = "scp";
     internal const string RolesClaim = "roles";
     internal const string IdentityTypeClaim = "idtyp";
@@ -44,6 +48,11 @@ internal static class A2ATokenIdentity
         {
             throw new InvalidOperationException("This route requires a delegated user token.");
         }
+
+        if (!HasScope(identity, RequiredDelegatedScope))
+        {
+            throw new InvalidOperationException($"This route requires the {RequiredDelegatedScope} delegated scope.");
+        }
     }
 
     internal static void RequireApplication(ClaimsIdentity identity)
@@ -54,6 +63,11 @@ internal static class A2ATokenIdentity
         if (!isApplication || HasScope(identity))
         {
             throw new InvalidOperationException("This route requires an application token.");
+        }
+
+        if (!HasRole(identity, RequiredApplicationRole))
+        {
+            throw new InvalidOperationException($"This route requires the {RequiredApplicationRole} application role.");
         }
     }
 
@@ -73,8 +87,29 @@ internal static class A2ATokenIdentity
     internal static bool HasScope(ClaimsIdentity identity)
         => FindFirst(identity, ScopeClaim, MappedScopeClaim) != null;
 
+    internal static bool HasScope(ClaimsIdentity identity, string scope)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+        ArgumentException.ThrowIfNullOrEmpty(scope);
+
+        return identity.Claims
+            .Where(claim => claim.Type == ScopeClaim || claim.Type == MappedScopeClaim)
+            .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            .Contains(scope, StringComparer.Ordinal);
+    }
+
     internal static bool HasRoles(ClaimsIdentity identity)
         => FindFirst(identity, RolesClaim, ClaimTypes.Role) != null;
+
+    internal static bool HasRole(ClaimsIdentity identity, string role)
+    {
+        ArgumentNullException.ThrowIfNull(identity);
+        ArgumentException.ThrowIfNullOrEmpty(role);
+
+        return identity.Claims.Any(
+            claim => (claim.Type == RolesClaim || claim.Type == ClaimTypes.Role) &&
+                string.Equals(claim.Value, role, StringComparison.Ordinal));
+    }
 
     private static bool IsApplicationIdentityType(ClaimsIdentity identity)
         => identity.HasClaim(IdentityTypeClaim, "app");
