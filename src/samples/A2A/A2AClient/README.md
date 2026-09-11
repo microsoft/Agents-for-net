@@ -60,6 +60,19 @@ the prompt instead of ending the session. Ctrl+C still exits.
 }
 ```
 
+`PublicClientId` and `ConfidentialClientId` identify the client that calls the Agent API:
+
+- `PublicClientId` is used for delegated user authentication (`:auth delegated`) through the
+  device-code flow. It does not use a client secret. For `-delegated` testing, this can be a
+  separate public-client registration. For `-me`, it must be the App ID of the Agent API
+  registration itself so the agent can perform the on-behalf-of exchange.
+- `ConfidentialClientId` is used for application-only authentication (`:auth app`) through the
+  client-credentials flow. It identifies the confidential client registration whose secret is
+  configured in `ConfidentialClientSecret`.
+
+The agent App ID also appears in `AgentDelegatedScope` and `AgentApplicationScope` because those
+settings identify the target Agent API rather than the calling client.
+
 The client reads configuration from `appsettings.json`, `A2ACLIENT_`-prefixed
 environment variables, and user secrets.
 
