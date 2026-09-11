@@ -9,6 +9,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <IsTestProject Condition="'$(TargetFramework)' != '' and '$(TargetFramework)' != 'net10.0'">false</IsTestProject>
   </PropertyGroup>
 
   <Import Project="..\\..\\Build.Common.core.props" />
