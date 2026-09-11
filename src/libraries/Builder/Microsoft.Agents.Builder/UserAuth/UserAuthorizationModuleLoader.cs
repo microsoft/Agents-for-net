@@ -13,6 +13,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 #if !NETSTANDARD
 using System.Runtime.Loader;
@@ -34,6 +36,32 @@ namespace Microsoft.Agents.Builder.UserAuth
         {
             AssertionHelpers.ThrowIfNullOrEmpty(name, nameof(name));
 
+            if (string.Equals(nameof(AzureBotUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(AzureBotUserAuthorization).FullName;
+            }
+            else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(AgenticUserAuthorization).FullName;
+            }
+            else if (string.Equals(nameof(ConnectorUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            {
+                typeName = typeof(ConnectorUserAuthorization).FullName;
+            }
+
+            if (string.IsNullOrEmpty(assemblyName) && !string.IsNullOrEmpty(typeName))
+            {
+                var loadedType = FindLoadedProviderType(typeName, name);
+                if (loadedType != null)
+                {
+                    return GetConstructor(loadedType) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                        ErrorHelper.FailedToCreateUserAuthorizationHandler,
+                        null,
+                        loadedType.FullName,
+                        loadedType.Assembly.GetName().Name);
+                }
+            }
+
             if (string.IsNullOrEmpty(assemblyName))
             {
                 // A Assembly Lib name wasn't given in config.  Set to the default assembly lib
@@ -46,18 +74,6 @@ namespace Microsoft.Agents.Builder.UserAuth
                 // A Type name wasn't given in config.  Set to the default type name
                 typeName = typeof(AzureBotUserAuthorization).FullName;
                 logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
-            }
-            else if (string.Equals(nameof(AzureBotUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(AzureBotUserAuthorization).FullName;
-            }
-            else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(AgenticUserAuthorization).FullName;
-            }
-            else if (typeName.Equals(nameof(ConnectorUserAuthorization), StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(ConnectorUserAuthorization).FullName;
             }
             
             // This throws for invalid assembly name.
@@ -78,6 +94,79 @@ namespace Microsoft.Agents.Builder.UserAuth
                 }
             }
             return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, null, typeName, assemblyName); 
+        }
+
+        private Type FindLoadedProviderType(string typeName, string handlerName)
+        {
+#if !NETSTANDARD
+            var assemblies = _loadContext.Assemblies;
+#else
+            var assemblies = _loadContext.GetAssemblies();
+#endif
+            var candidates = assemblies
+                .Where(assembly => !assembly.IsDynamic)
+                .OrderBy(assembly => assembly.FullName, StringComparer.Ordinal)
+                .SelectMany(GetLoadableTypes)
+                .Where(IsValidProviderType)
+                .ToArray();
+
+            // A fully qualified name is unambiguous, so it wins over a bare type name that happens to
+            // match in another assembly. This keeps resolution independent of assembly load order.
+            var matches = candidates
+                .Where(type => string.Equals(type.FullName, typeName, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (matches.Length == 0)
+            {
+                matches = candidates
+                    .Where(type => string.Equals(type.Name, typeName, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+            }
+
+            if (matches.Length > 1)
+            {
+                var ambiguity = new AmbiguousMatchException(
+                    $"Multiple IUserAuthorization types matched '{typeName}': {string.Join(", ", matches.Select(type => type.AssemblyQualifiedName))}");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.UserAuthorizationTypeNotFound,
+                    ambiguity,
+                    typeName,
+                    "loaded assemblies",
+                    handlerName);
+            }
+
+            return matches.SingleOrDefault();
+        }
+
+        /// <summary>
+        /// Returns the types an assembly can supply for provider discovery.
+        /// </summary>
+        /// <remarks>
+        /// Scanning every loaded assembly means an unrelated assembly whose dependencies cannot be
+        /// resolved must not prevent user-authorization handlers from being created. Only the documented
+        /// <see cref="Assembly.GetTypes"/> failures are handled, and each one is logged; any other
+        /// exception propagates.
+        /// </remarks>
+        internal IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException exception)
+            {
+                logger.LogDebug(exception, "Some types in assembly `{assembly}` could not be loaded while resolving user authorization handlers.", assembly.FullName);
+                return exception.Types.Where(type => type != null);
+            }
+            catch (Exception exception) when (
+                exception is TypeLoadException
+                || exception is FileNotFoundException
+                || exception is FileLoadException
+                || exception is BadImageFormatException)
+            {
+                logger.LogDebug(exception, "Assembly `{assembly}` could not be inspected while resolving user authorization handlers.", assembly.FullName);
+                return [];
+            }
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)

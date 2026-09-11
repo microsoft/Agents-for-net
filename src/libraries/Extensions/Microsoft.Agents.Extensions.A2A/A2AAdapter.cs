@@ -269,7 +269,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
     }
 
-    internal async Task ExecuteAgentTurnAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
+    internal async Task ExecuteAgentTurnAsync(string requestId, ClaimsIdentity identity, A2ARequestAuthentication authentication, IAgent agent, RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
     {
         var activity = A2AActivity.ActivityFromMessage(requestId, context.TaskId, context.Message);
         if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
@@ -293,7 +293,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         try
         {
-            _ = await ProcessActivityWithA2AAsync(identity, activity, agent.OnTurnAsync, context, eventQueue, cancellationToken).ConfigureAwait(false);
+            _ = await ProcessActivityWithA2AAuthenticationAsync(identity, authentication, activity, agent.OnTurnAsync, context, eventQueue, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -301,7 +301,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
     }
 
-    internal async Task ExecuteAgentCancelTaskAsync(string requestId, ClaimsIdentity identity, IAgent agent, RequestContext context, CancellationToken cancellationToken)
+    internal async Task ExecuteAgentCancelTaskAsync(string requestId, ClaimsIdentity identity, A2ARequestAuthentication authentication, IAgent agent, RequestContext context, CancellationToken cancellationToken)
     {
         using var loggerScope = Logger.BeginScope(new Dictionary<string, object>
         {
@@ -322,7 +322,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
         try
         {
-            _ = await ProcessActivityWithA2AAsync(identity, eoc, agent.OnTurnAsync, context, null, cancellationToken).ConfigureAwait(false);
+            _ = await ProcessActivityWithA2AAuthenticationAsync(identity, authentication, eoc, agent.OnTurnAsync, context, null, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -338,10 +338,19 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         return ProcessActivityWithA2AAsync(claimsIdentity, activity, callback, null, null, cancellationToken);
     }
 
-    public async Task<InvokeResponse> ProcessActivityWithA2AAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, RequestContext a2aContext, AgentEventQueue a2aEventQueue, CancellationToken cancellationToken)
+    public Task<InvokeResponse> ProcessActivityWithA2AAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, RequestContext a2aContext, AgentEventQueue a2aEventQueue, CancellationToken cancellationToken)
+    {
+        return ProcessActivityWithA2AAuthenticationAsync(claimsIdentity, null, activity, callback, a2aContext, a2aEventQueue, cancellationToken);
+    }
+
+    private async Task<InvokeResponse> ProcessActivityWithA2AAuthenticationAsync(ClaimsIdentity claimsIdentity, A2ARequestAuthentication authentication, IActivity activity, AgentCallbackHandler callback, RequestContext a2aContext, AgentEventQueue a2aEventQueue, CancellationToken cancellationToken)
     {
         var context = new TurnContext(this, activity, claimsIdentity);
         context.Services.Set<ITaskStore>(_taskStore);
+        if (authentication != null)
+        {
+            context.Services.Set(authentication);
+        }
         if (a2aContext != null)
         {
             context.Services.Set(a2aContext);
@@ -373,6 +382,7 @@ class AgentRequestContext : IAgentHandler
     public A2AAdapter Adapter { get; } 
     public IAgent Agent { get; }
     public ClaimsIdentity Identity { get; }
+    public A2ARequestAuthentication Authentication { get; }
     public AgentEventQueue EventQueue { get; private set; }
     public ILogger Logger { get; }
 
@@ -380,7 +390,8 @@ class AgentRequestContext : IAgentHandler
     {
         Adapter = adapter;
         Agent = agent;
-        Identity = HttpHelper.GetClaimsIdentity(httpRequest);
+        Authentication = A2ARequestAuthentication.Create(httpRequest);
+        Identity = Authentication.Identity;
         RequestId = httpRequest.HttpContext.TraceIdentifier ?? Guid.NewGuid().ToString();
         Logger = logger;
     }
@@ -395,14 +406,14 @@ class AgentRequestContext : IAgentHandler
             await taskUpdater.SubmitAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        await Adapter.ExecuteAgentTurnAsync(RequestId, Identity, Agent, context, eventQueue, cancellationToken);
+        await Adapter.ExecuteAgentTurnAsync(RequestId, Identity, Authentication, Agent, context, eventQueue, cancellationToken);
     }
 
     public async Task CancelAsync(RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
     {
         var updater = new TaskUpdater(eventQueue, context.TaskId, context.ContextId);
         await updater.CancelAsync(cancellationToken).ConfigureAwait(false);
-        await Adapter.ExecuteAgentCancelTaskAsync(RequestId, Identity, Agent, context, cancellationToken).ConfigureAwait(false);
+        await Adapter.ExecuteAgentCancelTaskAsync(RequestId, Identity, Authentication, Agent, context, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)

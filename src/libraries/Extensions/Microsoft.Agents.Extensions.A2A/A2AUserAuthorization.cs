@@ -117,36 +117,50 @@ namespace Microsoft.Agents.Extensions.A2A
 
         private TokenResponse CreateTokenResponse(ITurnContext turnContext)
         {
+            var requestToken = turnContext.Services.Get<A2ARequestAuthentication>()?.AccessToken;
+            if (!string.IsNullOrEmpty(requestToken))
+            {
+                return CreateTokenResponse(requestToken);
+            }
+
             if (turnContext.Identity is CaseSensitiveClaimsIdentity identity)
             {
-                var tokenResponse = new TokenResponse()
-                {
-                    Token = identity.SecurityToken.UnsafeToString(),
-                };
-
-                try
-                {
-                    var jwtToken = new JwtSecurityToken(tokenResponse.Token);
-                    tokenResponse.Expiration = jwtToken.ValidTo;
-                    tokenResponse.IsExchangeable = AgentClaims.IsExchangeableToken(jwtToken);
-                }
-                catch (Exception)
-                {
-                    tokenResponse.IsExchangeable = false;
-                }
-
-                return tokenResponse;
+                return CreateTokenResponse(identity.SecurityToken.UnsafeToString());
             }
 
             throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UnexpectedRequestToken, null, [Name]);
         }
 
+        private static TokenResponse CreateTokenResponse(string token)
+        {
+            var tokenResponse = new TokenResponse()
+            {
+                Token = token,
+            };
+
+            try
+            {
+                var jwtToken = new JwtSecurityToken(token);
+                tokenResponse.Expiration = jwtToken.ValidTo;
+                tokenResponse.IsExchangeable = AgentClaims.IsExchangeableToken(jwtToken);
+            }
+            catch (Exception)
+            {
+                tokenResponse.IsExchangeable = false;
+            }
+
+            return tokenResponse;
+        }
+
         // Get the A2AUserAuthorization settings
         private static OBOSettings GetOBOSettings(IConfigurationSection config)
         {
-            var settings = config.Get<OBOSettings>();
+            // An empty "Settings": {} node produces a section with no children, and IConfiguration
+            // binding returns null for that. Delegated passthrough and application-token handlers are
+            // configured exactly that way, so treat a missing/empty section as "no OBO".
+            var settings = config?.Get<OBOSettings>() ?? new OBOSettings();
 
-            if (settings.OBOScopes == null)
+            if (settings.OBOScopes == null && config != null)
             {
                 // try reading as a string to compensate for users just setting a non-array string
                 var configScope = config.GetSection(nameof(OBOSettings.OBOScopes)).Get<string>();
