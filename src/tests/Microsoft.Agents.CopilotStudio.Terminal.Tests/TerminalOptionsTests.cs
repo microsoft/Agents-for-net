@@ -8,13 +8,18 @@ public sealed class TerminalOptionsTests
         Assert.False(result.ShowHelp);
     }
 
-    [Theory]
-    [InlineData("tabs", TerminalLayout.Tabs)]
-    [InlineData("split", TerminalLayout.Split)]
-    public void Parse_Layout_UsesRequestedLayout(string value, TerminalLayout expected)
+    [Fact]
+    public void Parse_LayoutTabs_UsesTabs()
     {
-        TerminalOptions result = TerminalOptions.Parse(["--layout", value]);
-        Assert.Equal(expected, result.Layout);
+        TerminalOptions result = TerminalOptions.Parse(["--layout", "tabs"]);
+        Assert.Equal(TerminalLayout.Tabs, result.Layout);
+    }
+
+    [Fact]
+    public void Parse_LayoutSplit_UsesSplit()
+    {
+        TerminalOptions result = TerminalOptions.Parse(["--layout", "split"]);
+        Assert.Equal(TerminalLayout.Split, result.Layout);
     }
 
     [Fact]

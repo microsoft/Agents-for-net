@@ -1,4 +1,4 @@
-public enum TerminalLayout
+internal enum TerminalLayout
 {
     Tabs,
     Split
