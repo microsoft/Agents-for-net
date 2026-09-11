@@ -12,13 +12,16 @@ using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,19 +47,45 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private static readonly string _assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<A2AServer> _a2aServerLogger;
+    private readonly string _agentCardLastModified = DateTimeOffset.UtcNow.ToString("R", CultureInfo.InvariantCulture);
+    private readonly string _agentCardCacheControl;
 
-    public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null) : this(new InMemoryTaskStore(), loggerFactory, a2aNotifier)
+    public A2AAdapter(
+        IStorage storage,
+        ILoggerFactory loggerFactory,
+        ChannelEventNotifier a2aNotifier = null,
+        A2AAdapterOptions options = null,
+        IConfiguration configuration = null)
+        : this(new InMemoryTaskStore(), loggerFactory, a2aNotifier, options, configuration)
     {
     }
 
-    public A2AAdapter(ITaskStore taskStore, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null) : base(loggerFactory.CreateLogger<A2AAdapter>())
+    public A2AAdapter(
+        ITaskStore taskStore,
+        ILoggerFactory loggerFactory,
+        ChannelEventNotifier a2aNotifier = null,
+        A2AAdapterOptions options = null,
+        IConfiguration configuration = null)
+        : base(loggerFactory.CreateLogger<A2AAdapter>())
     {
         AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
+
+        var adapterOptions = options
+            ?? configuration?.GetSection(nameof(A2AAdapterOptions)).Get<A2AAdapterOptions>()
+            ?? new A2AAdapterOptions();
+        if (adapterOptions.AgentCardCacheMaxAge < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                adapterOptions.AgentCardCacheMaxAge,
+                "Agent Card cache max-age cannot be negative.");
+        }
 
         _loggerFactory = loggerFactory;
         _taskStore = taskStore;
         _a2aNotifier = a2aNotifier ?? new ChannelEventNotifier();
         _a2aServerLogger = loggerFactory.CreateLogger<A2AServer>();
+        _agentCardCacheControl = $"public, max-age={(long)Math.Ceiling(adapterOptions.AgentCardCacheMaxAge.TotalSeconds)}";
 
         OnTurnError = (turnContext, exception) =>
         {
@@ -186,8 +215,13 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             Logger.LogDebug("AgentCard: {AgentCard}", json);
         }
 
+        var jsonBytes = Encoding.UTF8.GetBytes(json);
+
         httpResponse.ContentType = "application/json";
-        await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken).ConfigureAwait(false);
+        httpResponse.Headers.CacheControl = _agentCardCacheControl;
+        httpResponse.Headers.ETag = $"\"{Convert.ToHexString(SHA256.HashData(jsonBytes))}\"";
+        httpResponse.Headers.LastModified = _agentCardLastModified;
+        await httpResponse.Body.WriteAsync(jsonBytes, cancellationToken).ConfigureAwait(false);
         await httpResponse.Body.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
