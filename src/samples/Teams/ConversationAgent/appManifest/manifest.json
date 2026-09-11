@@ -61,6 +61,10 @@
             {
               "title": "quotedreply",
               "description": "Reply with a quote of the incoming message"
+            },
+            {
+              "title": "customfeedback",
+              "description": "Open a custom feedback dialog from response feedback buttons"
             }
           ]
         },
