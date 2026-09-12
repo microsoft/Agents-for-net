@@ -27,6 +27,9 @@ public sealed class TerminalOptionsTests
     {
         TerminalOptions result = TerminalOptions.Parse(["--help"]);
         Assert.True(result.ShowHelp);
+        Assert.Contains("Exit codes:", TerminalOptions.Usage);
+        Assert.Contains("1 configuration/startup failure", TerminalOptions.Usage);
+        Assert.Contains("2 option/terminal usage error", TerminalOptions.Usage);
     }
 
     [Fact]

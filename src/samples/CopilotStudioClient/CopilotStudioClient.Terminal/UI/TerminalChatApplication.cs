@@ -144,7 +144,7 @@ internal sealed class TerminalActivityState
     }
 }
 
-internal sealed class TerminalChatApplication(TerminalOptions options) : ITerminalView
+internal sealed class TerminalChatApplication : ITerminalView
 {
     private const string HelpText =
         "Ctrl+1  Chat\r\n"
@@ -154,10 +154,12 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         + "Ctrl+Q  Quit\r\n"
         + "Enter   Send the composer text";
 
-    private readonly TerminalOptions _options = options ?? throw new ArgumentNullException(nameof(options));
+    private readonly TerminalOptions _options;
+    private readonly Func<Uri, bool>? _confirmOpen;
+    private readonly Action<ProcessStartInfo> _startProcess;
     private readonly TerminalChatState _chatState = new();
     private readonly TerminalActivityState _activityState = new();
-    private readonly List<Link> _linkViews = [];
+    private readonly List<ReceivedLink> _linkViews = [];
     private readonly HashSet<Task> _sendTasks = [];
     private readonly object _sendTasksGate = new();
     private IApplication? _application;
@@ -176,6 +178,25 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
 #pragma warning restore CS0618
     private View? _actionBar;
     private bool _isBusy;
+    private bool _startupSucceeded;
+
+    public TerminalChatApplication(TerminalOptions options)
+        : this(
+            options,
+            confirmOpen: null,
+            startProcess: startInfo => { Process.Start(startInfo); })
+    {
+    }
+
+    internal TerminalChatApplication(
+        TerminalOptions options,
+        Func<Uri, bool>? confirmOpen,
+        Action<ProcessStartInfo> startProcess)
+    {
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _confirmOpen = confirmOpen;
+        _startProcess = startProcess ?? throw new ArgumentNullException(nameof(startProcess));
+    }
 
     internal async Task RunAsync(
         TerminalPresenter presenter,
@@ -202,7 +223,11 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
             Task startupTask = Task.Run(
                 () => presenter.StartAsync(shutdownSource.Token),
                 CancellationToken.None);
-            startupMonitor = MonitorStartupAsync(startupTask, application, shutdownSource.Token);
+            startupMonitor = MonitorStartupAsync(
+                startupTask,
+                action => application.Invoke(action),
+                () => RequestStop(application),
+                shutdownSource.Token);
 
             application.Run(window);
         }
@@ -239,6 +264,7 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         _application = application;
         _presenter = presenter;
         _shutdownSource = shutdownSource;
+        _startupSucceeded = false;
 
         Window window = new()
         {
@@ -322,7 +348,7 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
             _isBusy = isBusy;
             if (_composer is not null)
             {
-                _composer.Enabled = !isBusy;
+                UpdateComposerEnabled();
             }
         });
     }
@@ -382,7 +408,8 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
             X = 0,
             Y = Pos.AnchorEnd(1),
             Width = Dim.Fill(),
-            Height = 1
+            Height = 1,
+            Enabled = false
         };
         _composer.Accepting += (_, eventArgs) =>
         {
@@ -529,11 +556,12 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         MessageBox.Query(application, "Help", HelpText, "_Close");
     }
 
-    private void SubmitComposer()
+    internal void SubmitComposer()
     {
         if (_composer is null
             || _presenter is null
             || _shutdownSource is null
+            || !_startupSucceeded
             || _isBusy)
         {
             return;
@@ -592,14 +620,23 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         await Task.WhenAll(pending).ConfigureAwait(false);
     }
 
-    private async Task MonitorStartupAsync(
+    internal async Task MonitorStartupAsync(
         Task startupTask,
-        IApplication application,
+        Action<Action> invoke,
+        Action requestStop,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(startupTask);
+        ArgumentNullException.ThrowIfNull(invoke);
+        ArgumentNullException.ThrowIfNull(requestStop);
+
         try
         {
             await startupTask.ConfigureAwait(false);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                invoke(MarkStartupSucceeded);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -607,7 +644,7 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         catch (Exception exception)
         {
             _startupFailure = exception;
-            RequestStop(application);
+            requestStop();
         }
     }
 
@@ -643,17 +680,10 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         Pos linkX = 0;
         foreach (ChatLink link in _chatState.Links)
         {
-            Link linkView = new()
+            ReceivedLink linkView = new(link.Title, link.Url, OpenReceivedLink)
             {
                 X = linkX,
-                Y = 0,
-                Text = link.Title,
-                Url = link.Url.AbsoluteUri
-            };
-            linkView.Accepting += (_, eventArgs) =>
-            {
-                eventArgs.Handled = true;
-                ConfirmAndOpen(link);
+                Y = 0
             };
             _actionBar.Add(linkView);
             _linkViews.Add(linkView);
@@ -694,29 +724,25 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         }
     }
 
-    private void ConfirmAndOpen(ChatLink link)
+    internal void OpenReceivedLink(Uri target)
     {
-        if (!CanOpenLink(link.Url))
+        ArgumentNullException.ThrowIfNull(target);
+
+        if (!CanOpenLink(target))
         {
-            SetStatus($"Blocked unsupported link scheme: {link.Url.Scheme}", DiagnosticSeverity.Error);
+            SetStatus($"Blocked unsupported link scheme: {target.Scheme}", DiagnosticSeverity.Error);
             return;
         }
 
-        IApplication application = GetApplication();
-        int? selection = MessageBox.Query(
-            application,
-            "Open link?",
-            $"Open {link.Url.AbsoluteUri}?",
-            "_Open",
-            "_Cancel");
-        if (selection != 0)
+        bool confirmed = _confirmOpen?.Invoke(target) ?? ConfirmOpen(target);
+        if (!confirmed)
         {
             return;
         }
 
         try
         {
-            Process.Start(new ProcessStartInfo(link.Url.AbsoluteUri)
+            _startProcess(new ProcessStartInfo(target.AbsoluteUri)
             {
                 UseShellExecute = true
             });
@@ -732,9 +758,22 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         }
     }
 
+    private bool ConfirmOpen(Uri target)
+    {
+        IApplication application = GetApplication();
+        return MessageBox.Query(
+            application,
+            "Open link?",
+            $"Open {target.AbsoluteUri}?",
+            "_Open",
+            "_Cancel") == 0;
+    }
+
     private void CopySelection()
     {
-        string? value = _linkViews.FirstOrDefault(link => link.HasFocus)?.Url;
+        string? value = _linkViews
+            .FirstOrDefault(link => link.HasFocus)
+            ?.Target.AbsoluteUri;
         if (string.IsNullOrEmpty(value))
         {
             value = _activityState.SelectedText;
@@ -804,6 +843,25 @@ internal sealed class TerminalChatApplication(TerminalOptions options) : ITermin
         if (_json is not null)
         {
             _json.Text = _activityState.SelectedText;
+        }
+    }
+
+    private void MarkStartupSucceeded()
+    {
+        if (_shutdownSource?.IsCancellationRequested == true)
+        {
+            return;
+        }
+
+        _startupSucceeded = true;
+        UpdateComposerEnabled();
+    }
+
+    private void UpdateComposerEnabled()
+    {
+        if (_composer is not null)
+        {
+            _composer.Enabled = _startupSucceeded && !_isBusy;
         }
     }
 

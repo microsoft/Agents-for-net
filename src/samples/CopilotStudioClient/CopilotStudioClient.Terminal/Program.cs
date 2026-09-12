@@ -56,6 +56,38 @@ internal static class TerminalProgram
         try
         {
             HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+            return await RunConfiguredAsync(
+                options,
+                builder,
+                error,
+                RunTerminalAsync,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return 0;
+        }
+        catch (Exception exception)
+        {
+            await error.WriteLineAsync($"Startup failed: {exception.Message}").ConfigureAwait(false);
+            return 1;
+        }
+    }
+
+    internal static async Task<int> RunConfiguredAsync(
+        TerminalOptions options,
+        HostApplicationBuilder builder,
+        TextWriter error,
+        Func<IServiceProvider, CancellationToken, Task> runTerminal,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(error);
+        ArgumentNullException.ThrowIfNull(runTerminal);
+
+        try
+        {
             SampleConnectionSettings settings = new(
                 builder.Configuration.GetSection("CopilotStudioClientSettings"));
 
@@ -87,11 +119,7 @@ internal static class TerminalProgram
                 .AddSingleton<TerminalPresenter>();
 
             using IHost host = builder.Build();
-            TerminalChatApplication terminal =
-                host.Services.GetRequiredService<TerminalChatApplication>();
-            TerminalPresenter presenter =
-                host.Services.GetRequiredService<TerminalPresenter>();
-            await terminal.RunAsync(presenter, cancellationToken).ConfigureAwait(false);
+            await runTerminal(host.Services, cancellationToken).ConfigureAwait(false);
             return 0;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -103,5 +131,16 @@ internal static class TerminalProgram
             await error.WriteLineAsync($"Startup failed: {exception.Message}").ConfigureAwait(false);
             return 1;
         }
+    }
+
+    private static Task RunTerminalAsync(
+        IServiceProvider services,
+        CancellationToken cancellationToken)
+    {
+        TerminalChatApplication terminal =
+            services.GetRequiredService<TerminalChatApplication>();
+        TerminalPresenter presenter =
+            services.GetRequiredService<TerminalPresenter>();
+        return terminal.RunAsync(presenter, cancellationToken);
     }
 }

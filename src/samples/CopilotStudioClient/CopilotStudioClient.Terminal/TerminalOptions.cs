@@ -7,7 +7,8 @@ internal enum TerminalLayout
 internal sealed record TerminalOptions(TerminalLayout Layout, bool ShowHelp)
 {
     internal const string Usage =
-        "Usage: dotnet run --project CopilotStudioClient.Terminal.csproj -- [--layout tabs|split] [--help]";
+        "Usage: dotnet run --project CopilotStudioClient.Terminal.csproj -- [--layout tabs|split] [--help]\r\n"
+        + "Exit codes: 0 success/help; 1 configuration/startup failure; 2 option/terminal usage error.";
 
     public static TerminalOptions Parse(string[] args)
     {

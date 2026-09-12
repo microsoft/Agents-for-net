@@ -1,7 +1,13 @@
 #nullable enable
 
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 public sealed class TerminalProgramTests
 {
@@ -58,5 +64,79 @@ public sealed class TerminalProgramTests
         Assert.Equal(2, exitCode);
         Assert.Equal(string.Empty, output.ToString());
         Assert.Contains("interactive terminal", error.ToString());
+    }
+
+    [Fact]
+    public async Task RunConfiguredAsync_InvalidConfigurationReturnsOneWithoutStartingTerminal()
+    {
+        HostApplicationBuilder builder = CreateBuilder(
+            new Dictionary<string, string?>
+            {
+                ["CopilotStudioClientSettings:DirectConnectUrl"] = "",
+                ["CopilotStudioClientSettings:EnvironmentId"] = "",
+                ["CopilotStudioClientSettings:SchemaName"] = "",
+                ["CopilotStudioClientSettings:TenantId"] = "",
+                ["CopilotStudioClientSettings:UseS2SConnection"] = "false",
+                ["CopilotStudioClientSettings:AppClientId"] = "",
+                ["CopilotStudioClientSettings:AppClientSecret"] = ""
+            });
+        StringWriter error = new();
+        bool terminalStarted = false;
+
+        int exitCode = await TerminalProgram.RunConfiguredAsync(
+            new TerminalOptions(TerminalLayout.Tabs, false),
+            builder,
+            error,
+            (_, _) =>
+            {
+                terminalStarted = true;
+                return Task.CompletedTask;
+            },
+            CancellationToken.None);
+
+        Assert.Equal(1, exitCode);
+        Assert.False(terminalStarted);
+        Assert.Contains("Startup failed:", error.ToString());
+        Assert.Contains("AppClientId", error.ToString());
+    }
+
+    [Fact]
+    public async Task RunConfiguredAsync_ValidConfigurationStartsTerminal()
+    {
+        HostApplicationBuilder builder = CreateBuilder(
+            new Dictionary<string, string?>
+            {
+                ["CopilotStudioClientSettings:DirectConnectUrl"] = "https://example.com/direct",
+                ["CopilotStudioClientSettings:TenantId"] = "tenant",
+                ["CopilotStudioClientSettings:UseS2SConnection"] = "false",
+                ["CopilotStudioClientSettings:AppClientId"] = "client"
+            });
+        StringWriter error = new();
+        bool terminalStarted = false;
+
+        int exitCode = await TerminalProgram.RunConfiguredAsync(
+            new TerminalOptions(TerminalLayout.Tabs, false),
+            builder,
+            error,
+            (services, _) =>
+            {
+                Assert.NotNull(services.GetRequiredService<TerminalChatApplication>());
+                terminalStarted = true;
+                return Task.CompletedTask;
+            },
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(terminalStarted);
+        Assert.Equal(string.Empty, error.ToString());
+    }
+
+    private static HostApplicationBuilder CreateBuilder(
+        IReadOnlyDictionary<string, string?> values)
+    {
+        HostApplicationBuilder builder = Host.CreateEmptyApplicationBuilder(
+            new HostApplicationBuilderSettings());
+        builder.Configuration.AddInMemoryCollection(values);
+        return builder;
     }
 }
