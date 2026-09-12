@@ -59,3 +59,36 @@ Implemented the terminal journal and formatter for Copilot Studio client activit
 - Verified `ActivityJournal.Append` clones the incoming `Activity` before formatting or storing it.
 - Verified the regression test covers caller mutation after append, including the emitted record and the journal snapshot.
 - Verified the existing serialization-failure diagnostic path still records a diagnostic activity instead of silently succeeding.
+
+## Fix Round 2/5
+
+**Finding addressed:** Snapshot cloning now happens inside the journal's guarded path, and clone failures emit the activity record plus a diagnostic instead of aborting before anything is recorded.
+
+**What changed**
+
+- Added an injectable `cloner` delegate to `ActivityJournal`, defaulting to `ProtocolJsonSerializer.CloneTo<Activity>()`.
+- Moved snapshot creation inside the guarded serialization path so clone failures are caught with the formatter failures.
+- Kept successful clones immutable by storing the cloned `Activity` in the journal record.
+- On clone failure, the journal still records the activity metadata, leaves `Activity` null, and appends a diagnostic record.
+- Added a regression test that injects a cloner throwing `JsonException` and verifies the activity record, diagnostic record, and non-throwing append behavior.
+
+**Exact Tests and Outcomes**
+
+- `dotnet test C:\s\gh\an\5\src\tests\Microsoft.Agents.CopilotStudio.Terminal.Tests\Microsoft.Agents.CopilotStudio.Terminal.Tests.csproj --filter "FullyQualifiedName~ActivityJournalTests.Append_UnsupportedSnapshotPayload_EmitsActivityAndDiagnosticWithoutThrowing"` — initially failed with `System.InvalidOperationException : Timeouts are not supported on this stream.` from `ProtocolJsonSerializer.CloneTo<Activity>()`; passed after the fix.
+- `dotnet test C:\s\gh\an\5\src\tests\Microsoft.Agents.CopilotStudio.Terminal.Tests\Microsoft.Agents.CopilotStudio.Terminal.Tests.csproj --filter "FullyQualifiedName~ActivityJournalTests"` — passed.
+- `dotnet test C:\s\gh\an\5\src\tests\Microsoft.Agents.CopilotStudio.Terminal.Tests\Microsoft.Agents.CopilotStudio.Terminal.Tests.csproj` — passed.
+
+**Commit**
+
+- `8d5fced45a56e1f6ebac106ca223705eaa6078bb` — `fix: guard activity snapshot failures`
+
+**Self-Review**
+
+- Verified clone failures are caught without using a broad catch.
+- Verified a clone failure still emits the activity record and diagnostic record in order.
+- Verified successful clone paths still keep a frozen `Activity` snapshot in the journal record.
+- Verified the journal no longer aborts before recording when snapshot cloning fails.
+
+**Concerns**
+
+- None.
