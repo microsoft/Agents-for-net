@@ -1,6 +1,6 @@
 # Copilot Studio Terminal Client
 
-`CopilotStudioClient.Terminal` is an interactive terminal sample for Microsoft Copilot Studio conversations. It keeps the chat transcript visible while also journaling every inbound, outbound, and local diagnostic activity for inspection.
+`CopilotStudioClient.Terminal` is an interactive terminal sample for Microsoft Copilot Studio conversations. It keeps the chat transcript visible while also journaling every inbound and outbound `Activity` plus local diagnostics such as startup, transport, and serialization failures for inspection. Protocol-interpretation diagnostics appear in Chat, while the source `Activity` remains inspectable in Activities.
 
 ## What it shows
 
@@ -185,7 +185,7 @@ Malformed or ambiguous stream metadata never overwrites another visible response
 
 - `thought` and `thoughts` entities are surfaced as distinct **Thought** entries in Chat.
 - Unknown entity types are left in the JSON inspector instead of being duplicated into Chat.
-- Suggested actions appear below the associated message.
+- Suggested actions appear in the shared Chat action bar for the active message.
   - Actions with a non-empty `value` populate the composer and send immediately.
   - Actions without a value populate the composer without sending.
 - Adaptive-card attachments stay visible even when they contain no `Action.OpenUrl` actions.
