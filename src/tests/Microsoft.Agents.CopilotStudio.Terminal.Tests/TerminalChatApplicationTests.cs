@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Core.Models;
 using Terminal.Gui.App;
 using Terminal.Gui.Drivers;
 using Terminal.Gui.Input;
@@ -193,6 +194,49 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
+    public void ApplyChatChanges_OneActivityShowsSuggestedActionAndAllAdaptiveCardLinks()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        Activity activity = new()
+        {
+            Id = "response-1",
+            Type = ActivityTypes.Message,
+            Text = "Choose",
+            SuggestedActions = new SuggestedActions(actions:
+            [
+                new CardAction { Title = "Continue", Value = "continue" }
+            ]),
+            Attachments =
+            [
+                new Attachment
+                {
+                    ContentType = ContentTypes.AdaptiveCard,
+                    Content = """{"type":"AdaptiveCard","actions":[{"type":"Action.OpenUrl","title":"First","url":"https://first.example"}]}"""
+                },
+                new Attachment
+                {
+                    ContentType = ContentTypes.AdaptiveCard,
+                    Content = """{"type":"AdaptiveCard","actions":[{"type":"Action.OpenUrl","title":"Second","url":"https://second.example"}]}"""
+                }
+            ]
+        };
+
+        terminal.ApplyChatChanges(new ActivityInterpreter().Process(activity, ActivityDirection.Inbound));
+        RunOneIteration(application, window);
+
+        Assert.Equal(
+            ["https://first.example/", "https://second.example/"],
+            Descendants(window).OfType<ReceivedLink>().Select(link => link.Target.AbsoluteUri));
+        Button action = Assert.Single(Descendants(window).OfType<Button>());
+        Assert.Equal("Continue", action.Text);
+    }
+
+    [Fact]
     public void ApplyChatChanges_NewerActionableMessageReplacesActionBar()
     {
         using IApplication application = Application.Create();
@@ -201,15 +245,30 @@ public sealed class TerminalChatApplicationTests
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
         using TerminalPresenter presenter = CreatePresenter(terminal);
         using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        ActivityInterpreter interpreter = new();
 
-        terminal.ApplyChatChanges(
-        [
-            ActionableChange("first", "Old action", "old")
-        ]);
-        terminal.ApplyChatChanges(
-        [
-            ActionableChange("second", "New action", "new")
-        ]);
+        terminal.ApplyChatChanges(interpreter.Process(
+            new Activity
+            {
+                Id = "first",
+                Type = ActivityTypes.Message,
+                SuggestedActions = new SuggestedActions(actions:
+                [
+                    new CardAction { Title = "Old action", Value = "old" }
+                ])
+            },
+            ActivityDirection.Inbound));
+        terminal.ApplyChatChanges(interpreter.Process(
+            new Activity
+            {
+                Id = "second",
+                Type = ActivityTypes.Message,
+                SuggestedActions = new SuggestedActions(actions:
+                [
+                    new CardAction { Title = "New action", Value = "new" }
+                ])
+            },
+            ActivityDirection.Inbound));
         RunOneIteration(application, window);
 
         Button action = Assert.Single(Descendants(window).OfType<Button>());
@@ -294,7 +353,8 @@ public sealed class TerminalChatApplicationTests
                 "Choose",
                 false,
                 [],
-                [new ChatAction(title, value)]));
+                [new ChatAction(title, value)],
+                key));
     }
 
     private static void RunOneIteration(IApplication application, Window window)

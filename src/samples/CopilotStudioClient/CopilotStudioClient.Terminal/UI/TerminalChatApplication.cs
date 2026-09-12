@@ -23,15 +23,19 @@ internal sealed class TerminalChatState
 
     private readonly List<ChatEntry> _entries = [];
     private readonly Dictionary<string, int> _entryIndexes = new(StringComparer.Ordinal);
-    private int? _actionableEntryIndex;
+    private string? _activeActionGroupKey;
 
     internal IReadOnlyList<ChatEntry> Entries => _entries;
 
     internal IReadOnlyList<ChatLink> Links =>
-        GetActionableEntry()?.Links ?? [];
+        GetActiveActionEntries()
+            .SelectMany(entry => entry.Links)
+            .ToArray();
 
     internal IReadOnlyList<ChatAction> SuggestedActions =>
-        GetActionableEntry()?.SuggestedActions ?? [];
+        GetActiveActionEntries()
+            .SelectMany(entry => entry.SuggestedActions)
+            .ToArray();
 
     internal string Markdown => string.Join(
         "\r\n\r\n",
@@ -41,6 +45,7 @@ internal sealed class TerminalChatState
     {
         ArgumentNullException.ThrowIfNull(changes);
 
+        string? newestActionGroupKey = null;
         foreach (ChatChange change in changes)
         {
             if (change.Kind == ChatChangeKind.Remove)
@@ -55,12 +60,26 @@ internal sealed class TerminalChatState
             }
 
             Upsert(change.Key, change.Entry);
+            if (IsActionable(change.Entry))
+            {
+                newestActionGroupKey = change.Entry.ActionGroupKey;
+            }
+        }
+
+        if (newestActionGroupKey is not null)
+        {
+            _activeActionGroupKey = newestActionGroupKey;
+        }
+        else if (_activeActionGroupKey is not null
+            && !GetActiveActionEntries().Any(IsActionable))
+        {
+            _activeActionGroupKey = null;
         }
     }
 
     internal void ClearActions()
     {
-        _actionableEntryIndex = null;
+        _activeActionGroupKey = null;
     }
 
     private void Upsert(string key, ChatEntry entry)
@@ -68,27 +87,11 @@ internal sealed class TerminalChatState
         if (_entryIndexes.TryGetValue(key, out int existingIndex))
         {
             _entries[existingIndex] = entry;
-            if (_actionableEntryIndex == existingIndex)
-            {
-                _actionableEntryIndex = IsActionable(entry) ? existingIndex : null;
-            }
-            else if (IsActionable(entry)
-                && (_actionableEntryIndex is int actionableIndex
-                    ? existingIndex > actionableIndex
-                    : existingIndex == _entries.Count - 1))
-            {
-                _actionableEntryIndex = existingIndex;
-            }
-
             return;
         }
 
         _entryIndexes.Add(key, _entries.Count);
         _entries.Add(entry);
-        if (IsActionable(entry))
-        {
-            _actionableEntryIndex = _entries.Count - 1;
-        }
     }
 
     private void Remove(string key)
@@ -99,14 +102,6 @@ internal sealed class TerminalChatState
         }
 
         _entries.RemoveAt(removedIndex);
-        if (_actionableEntryIndex == removedIndex)
-        {
-            _actionableEntryIndex = null;
-        }
-        else if (_actionableEntryIndex > removedIndex)
-        {
-            _actionableEntryIndex--;
-        }
 
         for (int index = removedIndex; index < _entries.Count; index++)
         {
@@ -114,9 +109,15 @@ internal sealed class TerminalChatState
         }
     }
 
-    private ChatEntry? GetActionableEntry()
+    private IEnumerable<ChatEntry> GetActiveActionEntries()
     {
-        return _actionableEntryIndex is int index ? _entries[index] : null;
+        return _activeActionGroupKey is null
+            ? []
+            : _entries.Where(
+                entry => string.Equals(
+                    entry.ActionGroupKey,
+                    _activeActionGroupKey,
+                    StringComparison.Ordinal));
     }
 
     private static bool IsActionable(ChatEntry entry)

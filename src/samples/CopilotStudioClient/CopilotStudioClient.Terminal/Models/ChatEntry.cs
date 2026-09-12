@@ -20,7 +20,8 @@ internal sealed record ChatEntry(
     string Text,
     bool IsTransient,
     IReadOnlyList<ChatLink> Links,
-    IReadOnlyList<ChatAction> SuggestedActions);
+    IReadOnlyList<ChatAction> SuggestedActions,
+    string ActionGroupKey);
 
 internal enum ChatChangeKind
 {

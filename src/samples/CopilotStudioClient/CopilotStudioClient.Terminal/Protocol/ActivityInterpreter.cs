@@ -61,6 +61,7 @@ internal sealed class ActivityInterpreter
             changes.Add(CreateDiagnosticChange(
                 $"activity:{activityIdentity}:diagnostic:stream",
                 "Streaming activity has no unambiguous stream identifier.",
+                activityIdentity,
                 suggestedActions));
         }
         else
@@ -76,6 +77,7 @@ internal sealed class ActivityInterpreter
                 changes.Add(CreateDiagnosticChange(
                     $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
                     $"Streaming activity targeted closed stream '{streamId}'.",
+                    activityIdentity,
                     suggestedActions));
             }
             else if (openStream is null && !isValidStart)
@@ -83,6 +85,7 @@ internal sealed class ActivityInterpreter
                 changes.Add(CreateDiagnosticChange(
                     $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
                     $"Streaming activity targeted stream '{streamId}', which is not open.",
+                    activityIdentity,
                     suggestedActions));
             }
             else if (!isFinal
@@ -94,6 +97,7 @@ internal sealed class ActivityInterpreter
                 changes.Add(CreateDiagnosticChange(
                     $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
                     $"Streaming activity sequence {sequence} did not advance stream '{streamId}'.",
+                    activityIdentity,
                     suggestedActions));
             }
             else
@@ -107,7 +111,8 @@ internal sealed class ActivityInterpreter
                         GetMessageText(activity),
                         isTransient: true,
                         links: [],
-                        suggestedActions));
+                        suggestedActions,
+                        activityIdentity));
                 }
                 else
                 {
@@ -119,7 +124,8 @@ internal sealed class ActivityInterpreter
                         GetMessageText(activity),
                         isTransient: !isFinal,
                         links: [],
-                        suggestedActions));
+                        suggestedActions,
+                        activityIdentity));
                 }
 
                 if (isFinal)
@@ -146,7 +152,8 @@ internal sealed class ActivityInterpreter
         {
             changes.Add(CreateDiagnosticChange(
                 $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
-                $"Stream '{streamId}' completed with an error result."));
+                $"Stream '{streamId}' completed with an error result.",
+                activityIdentity));
         }
 
         return changes;
@@ -226,7 +233,8 @@ internal sealed class ActivityInterpreter
             GetTextForKind(activity, kind.Value),
             isTransient: kind == ChatEntryKind.Status,
             links: [],
-            suggestedActions: GetSuggestedActions(activity)));
+            suggestedActions: GetSuggestedActions(activity),
+            actionGroupKey: activityIdentity));
     }
 
     private void AddThoughtEntries(List<ChatChange> changes, Activity activity, ActivityDirection direction, string activityIdentity)
@@ -254,7 +262,8 @@ internal sealed class ActivityInterpreter
                 text,
                 isTransient: false,
                 links: [],
-                suggestedActions: []));
+                suggestedActions: [],
+                actionGroupKey: activityIdentity));
         }
     }
 
@@ -286,13 +295,15 @@ internal sealed class ActivityInterpreter
                 DescribeAttachment(attachment),
                 isTransient: false,
                 links,
-                suggestedActions: []));
+                suggestedActions: [],
+                actionGroupKey: activityIdentity));
 
             if (!string.IsNullOrWhiteSpace(extractionError))
             {
                 changes.Add(CreateDiagnosticChange(
                     $"{key}:diagnostic",
-                    $"Unable to extract adaptive card links: {extractionError}"));
+                    $"Unable to extract adaptive card links: {extractionError}",
+                    activityIdentity));
             }
         }
     }
@@ -304,7 +315,8 @@ internal sealed class ActivityInterpreter
         string text,
         bool isTransient,
         IReadOnlyList<ChatLink> links,
-        IReadOnlyList<ChatAction> suggestedActions)
+        IReadOnlyList<ChatAction> suggestedActions,
+        string actionGroupKey)
     {
         return new ChatChange(
             ChatChangeKind.Upsert,
@@ -316,10 +328,15 @@ internal sealed class ActivityInterpreter
                 text,
                 isTransient,
                 links,
-                suggestedActions));
+                suggestedActions,
+                actionGroupKey));
     }
 
-    private static ChatChange CreateDiagnosticChange(string key, string message, IReadOnlyList<ChatAction>? suggestedActions = null)
+    private static ChatChange CreateDiagnosticChange(
+        string key,
+        string message,
+        string actionGroupKey,
+        IReadOnlyList<ChatAction>? suggestedActions = null)
     {
         return new ChatChange(
             ChatChangeKind.Upsert,
@@ -331,7 +348,8 @@ internal sealed class ActivityInterpreter
                 message,
                 false,
                 [],
-                suggestedActions ?? []));
+                suggestedActions ?? [],
+                actionGroupKey));
     }
 
     private static ChatEntryKind GetMessageKind(ActivityDirection direction)

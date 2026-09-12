@@ -63,6 +63,47 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
+    public void Process_EntriesFromSameActivityShareActionGroupKey()
+    {
+        Activity activity = new()
+        {
+            Id = "response-1",
+            Type = ActivityTypes.Message,
+            Text = "Choose",
+            Entities =
+            [
+                new Entity("thought")
+                {
+                    Properties = { ["content"] = JsonSerializer.SerializeToElement("Checking") }
+                }
+            ],
+            Attachments =
+            [
+                new Attachment
+                {
+                    ContentType = ContentTypes.AdaptiveCard,
+                    Content = """{"type":"AdaptiveCard","actions":[{"type":"Action.OpenUrl","title":"Docs","url":"https://docs.example"}]}"""
+                },
+                new Attachment
+                {
+                    ContentType = ContentTypes.AdaptiveCard,
+                    Content = "{bad"
+                }
+            ]
+        };
+
+        IReadOnlyList<ChatChange> changes = new ActivityInterpreter().Process(activity, ActivityDirection.Inbound);
+
+        ChatEntry[] entries = changes
+            .Where(change => change.Entry is not null)
+            .Select(change => change.Entry!)
+            .ToArray();
+        Assert.Equal(5, entries.Length);
+        Assert.DoesNotContain(entries, entry => string.IsNullOrWhiteSpace(entry.ActionGroupKey));
+        Assert.Single(entries.Select(entry => entry.ActionGroupKey).Distinct(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void Process_ActionFreeAdaptiveCard_AddsAttachmentWithoutDiagnostic()
     {
         Activity activity = CreateMessageWithCard("""{"type":"AdaptiveCard","body":[{"type":"FactSet","facts":[]}]}""");
