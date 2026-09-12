@@ -192,6 +192,65 @@ public sealed class TerminalChatApplicationTests
         Assert.True(stopRequested);
     }
 
+    [Fact]
+    public void ApplyChatChanges_NewerActionableMessageReplacesActionBar()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+
+        terminal.ApplyChatChanges(
+        [
+            ActionableChange("first", "Old action", "old")
+        ]);
+        terminal.ApplyChatChanges(
+        [
+            ActionableChange("second", "New action", "new")
+        ]);
+        RunOneIteration(application, window);
+
+        Button action = Assert.Single(Descendants(window).OfType<Button>());
+        Assert.Equal("New action", action.Text);
+    }
+
+    [Fact]
+    public async Task SubmitComposer_ClearsCurrentActionBar()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        FakeCopilotConversationClient client = new()
+        {
+            ExecuteStarted = new TaskCompletionSource<object?>(
+                TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal, client);
+        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        TextField composer = Assert.Single(Descendants(window).OfType<TextField>());
+
+        await terminal.MonitorStartupAsync(
+            Task.CompletedTask,
+            action => action(),
+            () => throw new InvalidOperationException("Successful startup must not stop the application."),
+            CancellationToken.None);
+        terminal.ApplyChatChanges(
+        [
+            ActionableChange("entry", "Send action", "send")
+        ]);
+        RunOneIteration(application, window);
+        Assert.Single(Descendants(window).OfType<Button>());
+
+        composer.Value = "new request";
+        terminal.SubmitComposer();
+        await client.ExecuteStarted!.Task;
+
+        Assert.Empty(Descendants(window).OfType<Button>());
+    }
+
     private static TerminalPresenter CreatePresenter(ITerminalView view)
     {
         return CreatePresenter(view, new FakeCopilotConversationClient());
@@ -221,6 +280,27 @@ public sealed class TerminalChatApplicationTests
         Assert.True(json.ScrollBars);
         Assert.False(descendants.OfType<TextField>().Single().Enabled);
         Assert.Contains(descendants.OfType<Label>(), label => label.Text == "Ready.");
+    }
+
+    private static ChatChange ActionableChange(string key, string title, string value)
+    {
+        return new ChatChange(
+            ChatChangeKind.Upsert,
+            key,
+            new ChatEntry(
+                key,
+                ChatEntryKind.Agent,
+                "Agent",
+                "Choose",
+                false,
+                [],
+                [new ChatAction(title, value)]));
+    }
+
+    private static void RunOneIteration(IApplication application, Window window)
+    {
+        application.StopAfterFirstIteration = true;
+        application.Run(window);
     }
 
     private static IEnumerable<View> Descendants(View view)

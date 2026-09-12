@@ -90,6 +90,32 @@ public sealed class TerminalPresenterTests
     }
 
     [Fact]
+    public async Task SendAsync_UnexpectedTaskCancellation_AppendsDiagnosticAndSetsErrorStatus()
+    {
+        TaskCanceledException failure = new("transport timed out");
+        FakeCopilotConversationClient client = new()
+        {
+            ExecuteException = failure
+        };
+
+        ActivityJournal journal = new();
+        ActivityInterpreter interpreter = new();
+        FakeTerminalView view = new();
+        TerminalPresenter presenter = CreatePresenter(client, journal, interpreter, view);
+
+        TaskCanceledException thrown = await Assert.ThrowsAsync<TaskCanceledException>(
+            () => presenter.SendAsync("Hello", CancellationToken.None));
+
+        Assert.Same(failure, thrown);
+        Assert.Single(view.Statuses, status => status.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(
+            view.Statuses,
+            status => status.Text.Contains("transport timed out", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(journal.Snapshot(), record => record.Direction == ActivityDirection.Diagnostic);
+        Assert.Single(view.Activities, record => record.Direction == ActivityDirection.Diagnostic);
+    }
+
+    [Fact]
     public async Task SendAsync_WhitespaceText_ShowsInformationStatusWithoutInvokingSession()
     {
         FakeCopilotConversationClient client = new();

@@ -52,8 +52,8 @@ internal sealed class ActivityInterpreter
         bool isFinal = string.Equals(streamInfo.StreamType, StreamTypes.Final, StringComparison.OrdinalIgnoreCase);
         List<ChatChange> changes = [];
         IReadOnlyList<ChatAction> suggestedActions = GetSuggestedActions(activity);
-        bool isTrueStart = IsTrueStreamStart(activity, streamInfo, isInformative, isFinal);
-        string? streamId = ResolveStreamId(activity, streamInfo, isTrueStart);
+        bool isValidStart = IsValidStreamStart(streamInfo, isInformative, isFinal);
+        string? streamId = ResolveStreamId(activity, streamInfo, isValidStart);
         bool mutatedStream = false;
 
         if (string.IsNullOrWhiteSpace(streamId))
@@ -70,13 +70,19 @@ internal sealed class ActivityInterpreter
             string statusKey = $"stream:{streamId}:status";
             ChatEntryKind responseKind = GetMessageKind(direction);
 
-            if (!isFinal
-                && openStream is null
+            if (openStream is null
                 && _closedStreamIds.Contains(streamId))
             {
                 changes.Add(CreateDiagnosticChange(
                     $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
                     $"Streaming activity targeted closed stream '{streamId}'.",
+                    suggestedActions));
+            }
+            else if (openStream is null && !isValidStart)
+            {
+                changes.Add(CreateDiagnosticChange(
+                    $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
+                    $"Streaming activity targeted stream '{streamId}', which is not open.",
                     suggestedActions));
             }
             else if (!isFinal
@@ -146,19 +152,19 @@ internal sealed class ActivityInterpreter
         return changes;
     }
 
-    private string? ResolveStreamId(Activity activity, StreamInfo streamInfo, bool isTrueStart)
+    private string? ResolveStreamId(Activity activity, StreamInfo streamInfo, bool isValidStart)
     {
         if (!string.IsNullOrWhiteSpace(streamInfo.StreamId))
         {
             return streamInfo.StreamId;
         }
 
-        if (isTrueStart && !string.IsNullOrWhiteSpace(activity.Id))
+        if (isValidStart && !string.IsNullOrWhiteSpace(activity.Id))
         {
             return activity.Id;
         }
 
-        if (!isTrueStart && _streams.Count == 1)
+        if (!isValidStart && _streams.Count == 1)
         {
             return _streams.Keys.Single();
         }
@@ -166,9 +172,9 @@ internal sealed class ActivityInterpreter
         return null;
     }
 
-    private static bool IsTrueStreamStart(Activity activity, StreamInfo streamInfo, bool isInformative, bool isFinal)
+    private static bool IsValidStreamStart(StreamInfo streamInfo, bool isInformative, bool isFinal)
     {
-        if (!string.IsNullOrWhiteSpace(streamInfo.StreamId) || isFinal)
+        if (isFinal)
         {
             return false;
         }
@@ -179,7 +185,6 @@ internal sealed class ActivityInterpreter
         }
 
         return isInformative
-            && !string.IsNullOrWhiteSpace(activity.Id)
             && streamInfo.StreamSequence is null;
     }
 
@@ -460,24 +465,29 @@ internal sealed class ActivityInterpreter
 
     private static string DescribeAttachment(Attachment attachment)
     {
+        List<string> details = [];
+
         if (!string.IsNullOrWhiteSpace(attachment.Name))
         {
-            return attachment.Name;
+            details.Add($"Name: {attachment.Name}");
         }
 
         if (!string.IsNullOrWhiteSpace(attachment.ContentType))
         {
-            return string.Equals(attachment.ContentType, ContentTypes.AdaptiveCard, StringComparison.OrdinalIgnoreCase)
-                ? "Adaptive card"
+            string type = string.Equals(attachment.ContentType, ContentTypes.AdaptiveCard, StringComparison.OrdinalIgnoreCase)
+                ? $"Adaptive card ({attachment.ContentType})"
                 : attachment.ContentType;
+            details.Add($"Type: {type}");
         }
 
         if (!string.IsNullOrWhiteSpace(attachment.ContentUrl))
         {
-            return attachment.ContentUrl;
+            details.Add($"URL: {attachment.ContentUrl}");
         }
 
-        return "Attachment";
+        return details.Count == 0
+            ? "Attachment"
+            : string.Join("; ", details);
     }
 
     private string GetActivityIdentity(Activity activity)

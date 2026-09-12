@@ -86,6 +86,54 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
+    public void Process_AttachmentDescription_IncludesNameTypeAndContentUrl()
+    {
+        Activity activity = new()
+        {
+            Type = ActivityTypes.Message,
+            Attachments =
+            [
+                new Attachment
+                {
+                    Name = "report.csv",
+                    ContentType = "text/csv",
+                    ContentUrl = "https://files.example/report.csv"
+                }
+            ]
+        };
+
+        IReadOnlyList<ChatChange> changes = new ActivityInterpreter().Process(activity, ActivityDirection.Inbound);
+
+        ChatEntry attachment = Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.Attachment).Entry!;
+        Assert.Contains("report.csv", attachment.Text);
+        Assert.Contains("text/csv", attachment.Text);
+        Assert.Contains("https://files.example/report.csv", attachment.Text);
+    }
+
+    [Fact]
+    public void Process_HostedAdaptiveCardDescription_IncludesContentUrl()
+    {
+        Activity activity = new()
+        {
+            Type = ActivityTypes.Message,
+            Attachments =
+            [
+                new Attachment
+                {
+                    ContentType = ContentTypes.AdaptiveCard,
+                    ContentUrl = "https://cards.example/card.json"
+                }
+            ]
+        };
+
+        IReadOnlyList<ChatChange> changes = new ActivityInterpreter().Process(activity, ActivityDirection.Inbound);
+
+        ChatEntry attachment = Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.Attachment).Entry!;
+        Assert.Contains(ContentTypes.AdaptiveCard, attachment.Text);
+        Assert.Contains("https://cards.example/card.json", attachment.Text);
+    }
+
+    [Fact]
     public void Process_OutboundMessage_RendersUserEntry()
     {
         Activity activity = new()
@@ -283,7 +331,10 @@ public sealed class ActivityInterpreterTests
     {
         ActivityInterpreter interpreter = new();
         interpreter.Process(
-            StreamActivity(ActivityTypes.Typing, "seed", "First", "s", StreamTypes.Streaming, 2),
+            StreamActivity(ActivityTypes.Typing, "seed", "Starting", "s", StreamTypes.Streaming, 1),
+            ActivityDirection.Inbound);
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "update", "First", "s", StreamTypes.Streaming, 2),
             ActivityDirection.Inbound);
 
         Activity update = StreamActivity(ActivityTypes.Typing, "u", "Older", "s", StreamTypes.Streaming, 1);
@@ -299,6 +350,30 @@ public sealed class ActivityInterpreterTests
         Assert.Contains(changes, change => change.Entry?.Kind == ChatEntryKind.Attachment);
         AssertDiagnostic(changes, "adaptive card links");
         Assert.DoesNotContain(changes, change => change.Entry?.Kind == ChatEntryKind.Agent);
+    }
+
+    [Fact]
+    public void Process_UnknownContinuation_AddsDiagnosticWithoutCreatingStream()
+    {
+        ActivityInterpreter interpreter = new();
+
+        IReadOnlyList<ChatChange> continuationChanges = interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "update", "Unexpected", "missing", StreamTypes.Streaming, 2),
+            ActivityDirection.Inbound);
+        IReadOnlyList<ChatChange> finalChanges = interpreter.Process(
+            StreamActivity(ActivityTypes.Message, "final", "Unexpected final", "missing", StreamTypes.Final, null),
+            ActivityDirection.Inbound);
+
+        AssertDiagnostic(continuationChanges, "not open");
+        Assert.DoesNotContain(
+            continuationChanges,
+            change => change.Kind == ChatChangeKind.Remove
+                || change.Entry?.Kind is ChatEntryKind.Agent or ChatEntryKind.Status);
+        AssertDiagnostic(finalChanges, "not open");
+        Assert.DoesNotContain(
+            finalChanges,
+            change => change.Kind == ChatChangeKind.Remove
+                || change.Entry?.Kind is ChatEntryKind.Agent or ChatEntryKind.Status);
     }
 
     [Fact]
@@ -336,6 +411,55 @@ public sealed class ActivityInterpreterTests
 
         AssertDiagnostic(changes, "closed");
         Assert.DoesNotContain(changes, change => change.Entry?.Kind is ChatEntryKind.Agent or ChatEntryKind.Status);
+    }
+
+    [Fact]
+    public void Process_DuplicateFinal_AddsDiagnosticWithoutOverwritingFinalizedResponse()
+    {
+        ActivityInterpreter interpreter = new();
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "start-1", "Working", null, StreamTypes.Streaming, 1),
+            ActivityDirection.Inbound);
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Message, "final-1", "Done", "start-1", StreamTypes.Final, null),
+            ActivityDirection.Inbound);
+
+        IReadOnlyList<ChatChange> changes = interpreter.Process(
+            StreamActivity(ActivityTypes.Message, "duplicate-final", "Replacement", "start-1", StreamTypes.Final, null),
+            ActivityDirection.Inbound);
+
+        AssertDiagnostic(changes, "closed");
+        Assert.DoesNotContain(
+            changes,
+            change => change.Kind == ChatChangeKind.Remove
+                || change.Entry?.Kind is ChatEntryKind.Agent or ChatEntryKind.Status);
+    }
+
+    [Fact]
+    public void Process_UnknownFinal_AddsDiagnosticWithoutMutatingOrClosingOpenStream()
+    {
+        ActivityInterpreter interpreter = new();
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "start-1", "Working", null, StreamTypes.Streaming, 1),
+            ActivityDirection.Inbound);
+
+        IReadOnlyList<ChatChange> finalChanges = interpreter.Process(
+            StreamActivity(ActivityTypes.Message, "unknown-final", "Wrong response", "unknown", StreamTypes.Final, null),
+            ActivityDirection.Inbound);
+        IReadOnlyList<ChatChange> intendedStreamChanges = interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "update-1", "Still working", "start-1", StreamTypes.Streaming, 2),
+            ActivityDirection.Inbound);
+
+        AssertDiagnostic(finalChanges, "not open");
+        Assert.DoesNotContain(
+            finalChanges,
+            change => change.Kind == ChatChangeKind.Remove
+                || change.Entry?.Kind is ChatEntryKind.Agent or ChatEntryKind.Status);
+        AssertAgentUpsert(
+            intendedStreamChanges,
+            "Still working",
+            "stream:start-1:response",
+            transient: true);
     }
 
     private static Activity CreateMessageWithCard(string cardJson)

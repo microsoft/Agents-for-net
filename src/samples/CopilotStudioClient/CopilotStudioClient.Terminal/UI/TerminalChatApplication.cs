@@ -23,13 +23,15 @@ internal sealed class TerminalChatState
 
     private readonly List<ChatEntry> _entries = [];
     private readonly Dictionary<string, int> _entryIndexes = new(StringComparer.Ordinal);
+    private int? _actionableEntryIndex;
 
     internal IReadOnlyList<ChatEntry> Entries => _entries;
 
-    internal IReadOnlyList<ChatLink> Links => _entries.SelectMany(entry => entry.Links).ToArray();
+    internal IReadOnlyList<ChatLink> Links =>
+        GetActionableEntry()?.Links ?? [];
 
     internal IReadOnlyList<ChatAction> SuggestedActions =>
-        _entries.SelectMany(entry => entry.SuggestedActions).ToArray();
+        GetActionableEntry()?.SuggestedActions ?? [];
 
     internal string Markdown => string.Join(
         "\r\n\r\n",
@@ -56,16 +58,37 @@ internal sealed class TerminalChatState
         }
     }
 
+    internal void ClearActions()
+    {
+        _actionableEntryIndex = null;
+    }
+
     private void Upsert(string key, ChatEntry entry)
     {
         if (_entryIndexes.TryGetValue(key, out int existingIndex))
         {
             _entries[existingIndex] = entry;
+            if (_actionableEntryIndex == existingIndex)
+            {
+                _actionableEntryIndex = IsActionable(entry) ? existingIndex : null;
+            }
+            else if (IsActionable(entry)
+                && (_actionableEntryIndex is int actionableIndex
+                    ? existingIndex > actionableIndex
+                    : existingIndex == _entries.Count - 1))
+            {
+                _actionableEntryIndex = existingIndex;
+            }
+
             return;
         }
 
         _entryIndexes.Add(key, _entries.Count);
         _entries.Add(entry);
+        if (IsActionable(entry))
+        {
+            _actionableEntryIndex = _entries.Count - 1;
+        }
     }
 
     private void Remove(string key)
@@ -76,10 +99,29 @@ internal sealed class TerminalChatState
         }
 
         _entries.RemoveAt(removedIndex);
+        if (_actionableEntryIndex == removedIndex)
+        {
+            _actionableEntryIndex = null;
+        }
+        else if (_actionableEntryIndex > removedIndex)
+        {
+            _actionableEntryIndex--;
+        }
+
         for (int index = removedIndex; index < _entries.Count; index++)
         {
             _entryIndexes[_entries[index].Key] = index;
         }
+    }
+
+    private ChatEntry? GetActionableEntry()
+    {
+        return _actionableEntryIndex is int index ? _entries[index] : null;
+    }
+
+    private static bool IsActionable(ChatEntry entry)
+    {
+        return entry.Links.Count > 0 || entry.SuggestedActions.Count > 0;
     }
 
     private static string EscapeMarkdown(string text)
@@ -569,6 +611,8 @@ internal sealed class TerminalChatApplication : ITerminalView
 
         string text = _composer.Value ?? string.Empty;
         _composer.Value = string.Empty;
+        _chatState.ClearActions();
+        RebuildActions();
         TrackSend(ObserveSendAsync(_presenter.SendAsync(text, _shutdownSource.Token)));
     }
 

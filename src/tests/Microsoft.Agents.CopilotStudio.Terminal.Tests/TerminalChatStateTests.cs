@@ -88,8 +88,61 @@ public sealed class TerminalChatStateTests
         Assert.Equal("new", Assert.Single(state.SuggestedActions).Value);
     }
 
+    [Fact]
+    public void Apply_NewerActionableEntryReplacesCurrentLinksAndActions()
+    {
+        TerminalChatState state = new();
+        state.Apply(
+        [
+            ActionableEntry("first", "Old", "https://old.example", "Old action", "old")
+        ]);
+
+        state.Apply(
+        [
+            ActionableEntry("second", "New", "https://new.example", "New action", "new")
+        ]);
+
+        Assert.Equal("https://new.example/", Assert.Single(state.Links).Url.AbsoluteUri);
+        Assert.Equal("new", Assert.Single(state.SuggestedActions).Value);
+    }
+
+    [Fact]
+    public void ClearActions_RemovesCurrentLinksAndSuggestedActions()
+    {
+        TerminalChatState state = new();
+        state.Apply(
+        [
+            ActionableEntry("entry", "Choose", "https://example.com", "Choose action", "choose")
+        ]);
+
+        state.ClearActions();
+
+        Assert.Empty(state.Links);
+        Assert.Empty(state.SuggestedActions);
+    }
+
     private static ChatEntry Entry(string key, string text, bool isTransient = false)
     {
         return new ChatEntry(key, ChatEntryKind.Agent, "Agent", text, isTransient, [], []);
+    }
+
+    private static ChatChange ActionableEntry(
+        string key,
+        string text,
+        string url,
+        string actionTitle,
+        string actionValue)
+    {
+        return new ChatChange(
+            ChatChangeKind.Upsert,
+            key,
+            new ChatEntry(
+                key,
+                ChatEntryKind.Agent,
+                "Agent",
+                text,
+                false,
+                [new ChatLink(text, new Uri(url))],
+                [new ChatAction(actionTitle, actionValue)]));
     }
 }

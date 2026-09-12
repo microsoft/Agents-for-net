@@ -80,11 +80,6 @@ internal sealed class TerminalPresenter : IDisposable
 
     private void OnSessionFailed(object? sender, Exception exception)
     {
-        if (exception is OperationCanceledException)
-        {
-            return;
-        }
-
         string message = GetStatusMessage(exception);
         _journal.AppendDiagnostic(message, DiagnosticSeverity.Error);
         _view.SetStatus(message, DiagnosticSeverity.Error);
