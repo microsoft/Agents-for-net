@@ -13,7 +13,7 @@ internal sealed class TerminalPresenter : IDisposable
     private readonly ITerminalView _view;
     private bool _disposed;
 
-    internal TerminalPresenter(
+    public TerminalPresenter(
         ConversationSession session,
         ActivityJournal journal,
         ActivityInterpreter interpreter,

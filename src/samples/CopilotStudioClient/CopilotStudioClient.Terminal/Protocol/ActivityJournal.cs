@@ -12,7 +12,7 @@ internal sealed class ActivityJournal
     private readonly Func<Activity, string> _formatter;
     private long _nextSequence;
 
-    internal ActivityJournal(
+    public ActivityJournal(
         Func<Activity, string>? formatter = null,
         Func<Activity, Activity>? cloner = null)
     {

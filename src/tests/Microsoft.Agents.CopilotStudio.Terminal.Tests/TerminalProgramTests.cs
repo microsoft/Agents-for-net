@@ -121,12 +121,13 @@ public sealed class TerminalProgramTests
             (services, _) =>
             {
                 Assert.NotNull(services.GetRequiredService<TerminalChatApplication>());
+                Assert.NotNull(services.GetRequiredService<TerminalPresenter>());
                 terminalStarted = true;
                 return Task.CompletedTask;
             },
             CancellationToken.None);
 
-        Assert.Equal(0, exitCode);
+        Assert.True(exitCode == 0, error.ToString());
         Assert.True(terminalStarted);
         Assert.Equal(string.Empty, error.ToString());
     }

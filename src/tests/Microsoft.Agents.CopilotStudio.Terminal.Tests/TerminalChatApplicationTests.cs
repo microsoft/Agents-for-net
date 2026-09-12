@@ -101,7 +101,7 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
-    public void CreateWindow_TabsLayoutBuildsThreeTabsAndSelectsChat()
+    public void CreateWindow_TabsLayoutBuildsFourTabsAndSelectsChat()
     {
         using IApplication application = Application.Create();
         using CancellationTokenSource shutdown = new();
@@ -111,7 +111,7 @@ public sealed class TerminalChatApplicationTests
         using Window window = terminal.CreateWindow(application, presenter, shutdown);
 
         Tabs tabs = Assert.IsType<Tabs>(Assert.Single(window.SubViews, view => view is Tabs));
-        Assert.Equal(["_Chat", "_Activities", "_Help"], tabs.TabCollection.Select(view => view.Title));
+        Assert.Equal(["_Chat", "_Thoughts", "_Activities", "_Help"], tabs.TabCollection.Select(view => view.Title));
         Assert.NotNull(tabs.Value);
         Assert.Equal("_Chat", tabs.Value.Title);
         Assert.Contains(window.SubViews, view => view is StatusBar);
@@ -119,7 +119,7 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
-    public void CreateWindow_SplitLayoutBuildsChatAndActivityFramesWithoutTabs()
+    public void CreateWindow_SplitLayoutBuildsChatAndThoughtTabsBesideActivities()
     {
         using IApplication application = Application.Create();
         using CancellationTokenSource shutdown = new();
@@ -128,11 +128,45 @@ public sealed class TerminalChatApplicationTests
 
         using Window window = terminal.CreateWindow(application, presenter, shutdown);
 
-        Assert.DoesNotContain(window.SubViews, view => view is Tabs);
-        Assert.Contains(window.SubViews, view => view is FrameView frame && frame.Title == "_Chat");
+        Tabs tabs = Assert.IsType<Tabs>(Assert.Single(window.SubViews, view => view is Tabs));
+        Assert.Equal(["_Chat", "_Thoughts"], tabs.TabCollection.Select(view => view.Title));
         Assert.Contains(window.SubViews, view => view is FrameView frame && frame.Title == "_Activities");
         Assert.Contains(window.SubViews, view => view is StatusBar);
         AssertRequiredChatControls(window);
+    }
+
+    [Fact]
+    public void ApplyChatChanges_RoutesThoughtsSeparatelyFromChat()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        Tabs tabs = Assert.IsType<Tabs>(Assert.Single(window.SubViews, view => view is Tabs));
+        FrameView chat = Assert.IsType<FrameView>(tabs.TabCollection.Single(view => view.Title == "_Chat"));
+        FrameView thoughts = Assert.IsType<FrameView>(tabs.TabCollection.Single(view => view.Title == "_Thoughts"));
+
+        terminal.ApplyChatChanges(
+        [
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "answer",
+                new ChatEntry("answer", ChatEntryKind.Agent, "Agent", "Final answer", false, [], [], "answer")),
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "thought",
+                new ChatEntry("thought", ChatEntryKind.Thought, "Agent", "Reasoning step", true, [], [], "thought"))
+        ]);
+        RunOneIteration(application, window);
+
+        string chatText = Descendants(chat).OfType<Markdown>().Single().Text;
+        string thoughtText = Descendants(thoughts).OfType<Markdown>().Single().Text;
+        Assert.Contains("Final answer", chatText);
+        Assert.DoesNotContain("Reasoning step", chatText);
+        Assert.Contains("Reasoning step", thoughtText);
+        Assert.DoesNotContain("Final answer", thoughtText);
     }
 
     [Fact]
@@ -328,7 +362,7 @@ public sealed class TerminalChatApplicationTests
     private static void AssertRequiredChatControls(View root)
     {
         IReadOnlyList<View> descendants = Descendants(root).ToArray();
-        Assert.Single(descendants.OfType<Markdown>());
+        Assert.Equal(2, descendants.OfType<Markdown>().Count());
         Assert.Single(descendants.OfType<TextField>());
         Assert.Single(descendants.OfType<ListView<ActivityRecord>>());
 

@@ -23,7 +23,13 @@ internal sealed class TerminalChatState
 
     private readonly List<ChatEntry> _entries = [];
     private readonly Dictionary<string, int> _entryIndexes = new(StringComparer.Ordinal);
+    private readonly Func<ChatEntry, bool> _includesEntry;
     private string? _activeActionGroupKey;
+
+    internal TerminalChatState(Func<ChatEntry, bool>? includesEntry = null)
+    {
+        _includesEntry = includesEntry ?? (_ => true);
+    }
 
     internal IReadOnlyList<ChatEntry> Entries => _entries;
 
@@ -57,6 +63,12 @@ internal sealed class TerminalChatState
             if (change.Entry is null)
             {
                 throw new ArgumentException("An upsert change must include an entry.", nameof(changes));
+            }
+
+            if (!_includesEntry(change.Entry))
+            {
+                Remove(change.Key);
+                continue;
             }
 
             Upsert(change.Key, change.Entry);
@@ -191,8 +203,9 @@ internal sealed class TerminalChatApplication : ITerminalView
 {
     private const string HelpText =
         "Ctrl+1  Chat\r\n"
-        + "Ctrl+2  Activities\r\n"
-        + "Ctrl+3  Help\r\n"
+        + "Ctrl+2  Thoughts\r\n"
+        + "Ctrl+3  Activities\r\n"
+        + "Ctrl+4  Help\r\n"
         + "Ctrl+C  Copy focused link or selected activity JSON\r\n"
         + "Ctrl+Q  Quit\r\n"
         + "Enter   Send the composer text";
@@ -200,7 +213,10 @@ internal sealed class TerminalChatApplication : ITerminalView
     private readonly TerminalOptions _options;
     private readonly Func<Uri, bool>? _confirmOpen;
     private readonly Action<ProcessStartInfo> _startProcess;
-    private readonly TerminalChatState _chatState = new();
+    private readonly TerminalChatState _chatState =
+        new(entry => entry.Kind != ChatEntryKind.Thought);
+    private readonly TerminalChatState _thoughtState =
+        new(entry => entry.Kind == ChatEntryKind.Thought);
     private readonly TerminalActivityState _activityState = new();
     private readonly List<ReceivedLink> _linkViews = [];
     private readonly HashSet<Task> _sendTasks = [];
@@ -210,9 +226,11 @@ internal sealed class TerminalChatApplication : ITerminalView
     private CancellationTokenSource? _shutdownSource;
     private Tabs? _tabs;
     private View? _chatTab;
+    private View? _thoughtsTab;
     private View? _activitiesTab;
     private View? _helpTab;
     private Markdown? _transcript;
+    private Markdown? _thoughtTranscript;
     private Label? _status;
     private TextField? _composer;
     private ListView<ActivityRecord>? _activityList;
@@ -317,8 +335,10 @@ internal sealed class TerminalChatApplication : ITerminalView
         };
 
         FrameView chat = BuildChatView();
+        FrameView thoughts = BuildThoughtsView();
         FrameView activities = BuildActivitiesView();
         _chatTab = chat;
+        _thoughtsTab = thoughts;
         _activitiesTab = activities;
 
         if (_options.Layout == TerminalLayout.Tabs)
@@ -330,23 +350,29 @@ internal sealed class TerminalChatApplication : ITerminalView
                 Width = Dim.Fill(),
                 Height = Dim.Fill()
             };
-            tabs.Add(chat, activities, help);
+            tabs.Add(chat, thoughts, activities, help);
             tabs.Value = chat;
             _tabs = tabs;
             window.Add(tabs);
         }
         else
         {
-            chat.X = 0;
-            chat.Y = 0;
-            chat.Width = Dim.Percent(55);
-            chat.Height = Dim.Fill();
+            Tabs conversationTabs = new()
+            {
+                X = 0,
+                Y = 0,
+                Width = Dim.Percent(55),
+                Height = Dim.Fill()
+            };
+            conversationTabs.Add(chat, thoughts);
+            conversationTabs.Value = chat;
+            _tabs = conversationTabs;
 
-            activities.X = Pos.Right(chat);
+            activities.X = Pos.Right(conversationTabs);
             activities.Y = 0;
             activities.Width = Dim.Fill();
             activities.Height = Dim.Fill();
-            window.Add(chat, activities);
+            window.Add(conversationTabs, activities);
         }
 
         window.KeyDown += OnWindowKeyDown;
@@ -375,9 +401,15 @@ internal sealed class TerminalChatApplication : ITerminalView
         Invoke(() =>
         {
             _chatState.Apply(changes);
+            _thoughtState.Apply(changes);
             if (_transcript is not null)
             {
                 _transcript.Text = _chatState.Markdown;
+            }
+
+            if (_thoughtTranscript is not null)
+            {
+                _thoughtTranscript.Text = _thoughtState.Markdown;
             }
 
             RebuildActions();
@@ -505,6 +537,27 @@ internal sealed class TerminalChatApplication : ITerminalView
         return frame;
     }
 
+    private FrameView BuildThoughtsView()
+    {
+        FrameView frame = new()
+        {
+            Title = "_Thoughts",
+            Width = Dim.Fill(),
+            Height = Dim.Fill()
+        };
+
+        _thoughtTranscript = new Markdown
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            Text = string.Empty
+        };
+        frame.Add(_thoughtTranscript);
+        return frame;
+    }
+
     private static FrameView BuildHelpView()
     {
         FrameView frame = new()
@@ -529,8 +582,9 @@ internal sealed class TerminalChatApplication : ITerminalView
         return new StatusBar(
         [
             new Shortcut(Key.D1.WithCtrl, "Chat", FocusChat),
-            new Shortcut(Key.D2.WithCtrl, "Activities", FocusActivities),
-            new Shortcut(Key.D3.WithCtrl, "Help", ShowHelp),
+            new Shortcut(Key.D2.WithCtrl, "Thoughts", FocusThoughts),
+            new Shortcut(Key.D3.WithCtrl, "Activities", FocusActivities),
+            new Shortcut(Key.D4.WithCtrl, "Help", ShowHelp),
             new Shortcut(Key.C.WithCtrl, "Copy", CopySelection),
             new Shortcut(Key.Q.WithCtrl, "Quit", RequestQuit)
         ]);
@@ -544,9 +598,13 @@ internal sealed class TerminalChatApplication : ITerminalView
         }
         else if (key.Equals(Key.D2.WithCtrl))
         {
-            FocusActivities();
+            FocusThoughts();
         }
         else if (key.Equals(Key.D3.WithCtrl))
+        {
+            FocusActivities();
+        }
+        else if (key.Equals(Key.D4.WithCtrl))
         {
             ShowHelp();
         }
@@ -578,12 +636,23 @@ internal sealed class TerminalChatApplication : ITerminalView
 
     private void FocusActivities()
     {
-        if (_tabs is not null && _activitiesTab is not null)
+        if (_options.Layout == TerminalLayout.Tabs
+            && _tabs is not null
+            && _activitiesTab is not null)
         {
             _tabs.Value = _activitiesTab;
         }
 
         _activityList?.SetFocus();
+    }
+
+    private void FocusThoughts()
+    {
+        if (_tabs is not null && _thoughtsTab is not null)
+        {
+            _tabs.Value = _thoughtsTab;
+            _thoughtsTab.SetFocus();
+        }
     }
 
     private void ShowHelp()

@@ -15,7 +15,9 @@ internal sealed class ActivityInterpreter
     private sealed record OpenStream(
         string Id,
         string ResponseKey,
-        int? LastSequence);
+        int? LastSequence,
+        string ResponseText,
+        Dictionary<string, string> ThoughtTexts);
 
     private readonly Dictionary<string, OpenStream> _streams =
         new(StringComparer.Ordinal);
@@ -70,6 +72,9 @@ internal sealed class ActivityInterpreter
             string responseKey = openStream?.ResponseKey ?? $"stream:{streamId}:response";
             string statusKey = $"stream:{streamId}:status";
             ChatEntryKind responseKind = GetMessageKind(direction);
+            string responseText = openStream?.ResponseText ?? string.Empty;
+            Dictionary<string, string> thoughtTexts =
+                openStream?.ThoughtTexts ?? new Dictionary<string, string>(StringComparer.Ordinal);
 
             if (openStream is null
                 && _closedStreamIds.Contains(streamId))
@@ -102,6 +107,14 @@ internal sealed class ActivityInterpreter
             }
             else
             {
+                AddStreamingThoughtEntries(
+                    changes,
+                    activity,
+                    direction,
+                    streamId,
+                    thoughtTexts,
+                    isTransient: !isFinal);
+
                 if (isInformative)
                 {
                     changes.Add(CreateEntryChange(
@@ -116,34 +129,53 @@ internal sealed class ActivityInterpreter
                 }
                 else
                 {
+                    string messageText = GetMessageText(activity);
+                    responseText = !isFinal
+                        && string.Equals(activity.Type, ActivityTypes.Typing, StringComparison.OrdinalIgnoreCase)
+                            ? responseText + messageText
+                            : messageText;
                     changes.Add(new ChatChange(ChatChangeKind.Remove, statusKey, null));
-                    changes.Add(CreateEntryChange(
-                        responseKey,
-                        responseKind,
-                        GetAuthor(activity, responseKind, direction),
-                        GetMessageText(activity),
-                        isTransient: !isFinal,
-                        links: [],
-                        suggestedActions,
-                        activityIdentity));
+                    if (!string.IsNullOrEmpty(messageText) || isFinal)
+                    {
+                        changes.Add(CreateEntryChange(
+                            responseKey,
+                            responseKind,
+                            GetAuthor(activity, responseKind, direction),
+                            responseText,
+                            isTransient: !isFinal,
+                            links: [],
+                            suggestedActions,
+                            activityIdentity));
+                    }
                 }
 
                 if (isFinal)
                 {
+                    FinalizeStreamingThoughts(changes, activity, direction, streamId, thoughtTexts);
+
                     _streams.Remove(streamId);
                     RememberClosedStreamId(streamId);
                 }
                 else
                 {
                     int? updatedSequence = streamInfo.StreamSequence ?? openStream?.LastSequence;
-                    _streams[streamId] = new OpenStream(streamId, responseKey, updatedSequence);
+                    _streams[streamId] = new OpenStream(
+                        streamId,
+                        responseKey,
+                        updatedSequence,
+                        responseText,
+                        thoughtTexts);
                 }
 
                 mutatedStream = true;
             }
         }
 
-        AddThoughtEntries(changes, activity, direction, activityIdentity);
+        if (!mutatedStream)
+        {
+            AddThoughtEntries(changes, activity, direction, activityIdentity);
+        }
+
         AddAttachmentEntries(changes, activity, direction, activityIdentity);
 
         if (mutatedStream
@@ -457,6 +489,81 @@ internal sealed class ActivityInterpreter
             entity.GetType(),
             ProtocolJsonSerializer.SerializationOptions);
         return JsonSerializer.Serialize(serialized, IndentedJsonOptions);
+    }
+
+    private void AddStreamingThoughtEntries(
+        List<ChatChange> changes,
+        Activity activity,
+        ActivityDirection direction,
+        string streamId,
+        Dictionary<string, string> thoughtTexts,
+        bool isTransient)
+    {
+        if (activity.Entities is null)
+        {
+            return;
+        }
+
+        foreach (Entity entity in activity.Entities)
+        {
+            if (!IsThoughtEntity(entity))
+            {
+                continue;
+            }
+
+            string chainId = TryGetStringProperty(entity, "chainOfThoughtId", out string? value)
+                && !string.IsNullOrWhiteSpace(value)
+                    ? value
+                    : "default";
+            string key = $"stream:{streamId}:thought:{chainId}";
+            thoughtTexts.TryGetValue(key, out string? currentText);
+            string text = (currentText ?? string.Empty) + GetThoughtText(entity);
+            thoughtTexts[key] = text;
+            changes.Add(CreateEntryChange(
+                key,
+                ChatEntryKind.Thought,
+                GetAuthor(activity, ChatEntryKind.Thought, direction),
+                text,
+                isTransient,
+                links: [],
+                suggestedActions: [],
+                actionGroupKey: streamId));
+        }
+    }
+
+    private void FinalizeStreamingThoughts(
+        List<ChatChange> changes,
+        Activity activity,
+        ActivityDirection direction,
+        string streamId,
+        IReadOnlyDictionary<string, string> thoughtTexts)
+    {
+        foreach (KeyValuePair<string, string> thought in thoughtTexts)
+        {
+            if (changes.Any(change =>
+                change.Key == thought.Key
+                && change.Entry?.Kind == ChatEntryKind.Thought
+                && !change.Entry.IsTransient))
+            {
+                continue;
+            }
+
+            changes.Add(CreateEntryChange(
+                thought.Key,
+                ChatEntryKind.Thought,
+                GetAuthor(activity, ChatEntryKind.Thought, direction),
+                thought.Value,
+                isTransient: false,
+                links: [],
+                suggestedActions: [],
+                actionGroupKey: streamId));
+        }
+    }
+
+    private static bool IsThoughtEntity(Entity entity)
+    {
+        return string.Equals(entity.Type, "thought", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(entity.Type, "thoughts", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryGetStringProperty(Entity entity, string propertyName, out string? value)

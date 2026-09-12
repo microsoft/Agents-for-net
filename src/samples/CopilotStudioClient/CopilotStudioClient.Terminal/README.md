@@ -4,7 +4,8 @@
 
 ## What it shows
 
-- **Chat**: messages, streaming status, streaming responses, thoughts, suggested actions, attachments, and adaptive-card `Action.OpenUrl` links.
+- **Chat**: messages, streaming status, streaming responses, suggested actions, attachments, and adaptive-card `Action.OpenUrl` links.
+- **Thoughts**: streamed reasoning chains, retained in chronological history for the session.
 - **Activities**: a chronological activity timeline plus formatted SDK `Activity` JSON for the selected record.
 - **Help**: in-app shortcuts and navigation help.
 
@@ -146,21 +147,23 @@ dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Termina
 
 ### Tabs layout
 
-`--layout tabs` is the default. It opens three tabs:
+`--layout tabs` is the default. It opens four tabs:
 
 1. **Chat**
-2. **Activities**
-3. **Help**
+2. **Thoughts**
+3. **Activities**
+4. **Help**
 
 ### Split layout
 
-`--layout split` keeps **Chat** on the left and **Activities** on the right. It uses the same conversation state, activity journal, shortcuts, and commands as the tabbed view.
+`--layout split` keeps **Chat** and **Thoughts** as tabs on the left and **Activities** on the right. It uses the same conversation state, activity journal, shortcuts, and commands as the tabbed view.
 
 ## Keyboard shortcuts
 
 - `Ctrl+1`: focus **Chat**
-- `Ctrl+2`: focus **Activities**
-- `Ctrl+3`: focus **Help** in tab mode, or show the help dialog in split mode
+- `Ctrl+2`: focus **Thoughts**
+- `Ctrl+3`: focus **Activities**
+- `Ctrl+4`: focus **Help** in tab mode, or show the help dialog in split mode
 - `Tab` / `Shift+Tab`: move focus
 - `Enter`: send the composer text or activate the focused link/action
 - `Ctrl+C`: copy the focused link or the selected activity JSON when clipboard support is available
@@ -173,7 +176,8 @@ The composer is disabled until startup completes, disabled again while a request
 The chat transcript follows the same stream interpretation described in the design:
 
 - `informative` updates replace the transient status line.
-- `streaming` updates replace the current transient agent response text instead of blindly appending.
+- `streaming` typing updates append text chunks to the current transient agent response.
+- Streaming `thought` text is accumulated independently in the **Thoughts** tab.
 - `final` activities finalize the visible response and clear the transient status.
 - Streams correlate by `streamInfo.streamId`.
 - A start activity can omit `streamInfo.streamId`; in that case the sample uses the activity `id` as the provisional stream identifier.
@@ -183,7 +187,9 @@ Malformed or ambiguous stream metadata never overwrites another visible response
 
 ## Thoughts, suggested actions, and adaptive cards
 
-- `thought` and `thoughts` entities are surfaced as distinct **Thought** entries in Chat.
+- `thought` and `thoughts` entities are shown in **Thoughts**, not duplicated into Chat.
+- Streaming thought deltas update one entry in place. `chainOfThoughtId` separates concurrent chains when present; otherwise the response stream identifies the chain.
+- Completed chains remain in chronological history for the life of the process.
 - Unknown entity types are left in the JSON inspector instead of being duplicated into Chat.
 - Suggested actions appear in the shared Chat action bar for the active message.
   - Actions with a non-empty `value` populate the composer and send immediately.

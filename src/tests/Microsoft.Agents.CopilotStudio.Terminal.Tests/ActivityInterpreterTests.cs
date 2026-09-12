@@ -353,7 +353,7 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
-    public void Process_StreamingText_ReplacesRatherThanAppends()
+    public void Process_StreamingTypingText_AppendsDeltaChunks()
     {
         ActivityInterpreter interpreter = new();
         interpreter.Process(
@@ -361,10 +361,117 @@ public sealed class ActivityInterpreterTests
             ActivityDirection.Inbound);
 
         IReadOnlyList<ChatChange> changes = interpreter.Process(
-            StreamActivity(ActivityTypes.Typing, "u", "A brown fox", "s", StreamTypes.Streaming, 2),
+            StreamActivity(ActivityTypes.Typing, "u", " fox", "s", StreamTypes.Streaming, 2),
             ActivityDirection.Inbound);
 
         AssertAgentUpsert(changes, "A brown fox", "stream:s:response", transient: true);
+    }
+
+    [Fact]
+    public void Process_StreamingTypingThoughtDeltas_AccumulatesSingleThoughtWithoutChatResponse()
+    {
+        ActivityInterpreter interpreter = new();
+        Activity first = StreamActivity(ActivityTypes.Typing, "s", string.Empty, null, StreamTypes.Streaming, 1);
+        first.Entities!.Insert(
+            0,
+            new Entity("thought")
+            {
+                Properties = { ["text"] = JsonSerializer.SerializeToElement("The user is asking") }
+            });
+        Activity second = StreamActivity(ActivityTypes.Typing, "u", string.Empty, null, StreamTypes.Streaming, 2);
+        second.Entities!.Insert(
+            0,
+            new Entity("thought")
+            {
+                Properties = { ["text"] = JsonSerializer.SerializeToElement(" what I can do") }
+            });
+
+        IReadOnlyList<ChatChange> firstChanges = interpreter.Process(first, ActivityDirection.Inbound);
+        IReadOnlyList<ChatChange> secondChanges = interpreter.Process(second, ActivityDirection.Inbound);
+
+        AssertThoughtUpsert(firstChanges, "The user is asking", "stream:s:thought:default", transient: true);
+        Assert.DoesNotContain(firstChanges, change => change.Entry?.Kind == ChatEntryKind.Agent);
+        AssertThoughtUpsert(secondChanges, "The user is asking what I can do", "stream:s:thought:default", transient: true);
+        Assert.DoesNotContain(secondChanges, change => change.Entry?.Kind == ChatEntryKind.Agent);
+    }
+
+    [Fact]
+    public void Process_StreamingThoughts_UsesChainOfThoughtIdToKeepChainsSeparate()
+    {
+        ActivityInterpreter interpreter = new();
+        Activity first = StreamingThoughtActivity("s", null, 1, "chain-a", "First");
+        Activity second = StreamingThoughtActivity("u1", null, 2, "chain-b", "Other");
+        Activity third = StreamingThoughtActivity("u2", null, 3, "chain-a", " chain");
+
+        IReadOnlyList<ChatChange> firstChanges = interpreter.Process(first, ActivityDirection.Inbound);
+        IReadOnlyList<ChatChange> secondChanges = interpreter.Process(second, ActivityDirection.Inbound);
+        IReadOnlyList<ChatChange> thirdChanges = interpreter.Process(third, ActivityDirection.Inbound);
+
+        AssertThoughtUpsert(firstChanges, "First", "stream:s:thought:chain-a", transient: true);
+        AssertThoughtUpsert(secondChanges, "Other", "stream:s:thought:chain-b", transient: true);
+        AssertThoughtUpsert(thirdChanges, "First chain", "stream:s:thought:chain-a", transient: true);
+    }
+
+    [Fact]
+    public void Process_FinalMessage_FinalizesStreamingThoughtInPlace()
+    {
+        ActivityInterpreter interpreter = new();
+        interpreter.Process(
+            StreamingThoughtActivity("s", null, 1, string.Empty, "Checking"),
+            ActivityDirection.Inbound);
+
+        IReadOnlyList<ChatChange> finalChanges = interpreter.Process(
+            StreamActivity(ActivityTypes.Message, "f", "Done", "s", StreamTypes.Final, null),
+            ActivityDirection.Inbound);
+
+        AssertThoughtUpsert(finalChanges, "Checking", "stream:s:thought:default", transient: false);
+        AssertAgentUpsert(finalChanges, "Done", "stream:s:response", transient: false);
+    }
+
+    [Fact]
+    public void Process_FinalThoughtDelta_FinalizesEveryChain()
+    {
+        ActivityInterpreter interpreter = new();
+        interpreter.Process(
+            StreamingThoughtActivity("s", null, 1, "chain-a", "First"),
+            ActivityDirection.Inbound);
+        interpreter.Process(
+            StreamingThoughtActivity("u", null, 2, "chain-b", "Other"),
+            ActivityDirection.Inbound);
+        Activity final = StreamActivity(ActivityTypes.Message, "f", "Done", "s", StreamTypes.Final, null);
+        final.Entities!.Insert(
+            0,
+            new Entity("thought")
+            {
+                Properties =
+                {
+                    ["chainOfThoughtId"] = JsonSerializer.SerializeToElement("chain-a"),
+                    ["text"] = JsonSerializer.SerializeToElement(" done")
+                }
+            });
+
+        IReadOnlyList<ChatChange> finalChanges = interpreter.Process(final, ActivityDirection.Inbound);
+
+        AssertThoughtUpsert(finalChanges, "First done", "stream:s:thought:chain-a", transient: false);
+        AssertThoughtUpsert(finalChanges, "Other", "stream:s:thought:chain-b", transient: false);
+    }
+
+    [Fact]
+    public void Process_FinalMessage_ReplacesAccumulatedStreamingDraft()
+    {
+        ActivityInterpreter interpreter = new();
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "s", "A brown", null, StreamTypes.Streaming, 1),
+            ActivityDirection.Inbound);
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "u", " fox", "s", StreamTypes.Streaming, 2),
+            ActivityDirection.Inbound);
+
+        IReadOnlyList<ChatChange> changes = interpreter.Process(
+            StreamActivity(ActivityTypes.Message, "f", "A brown fox.", "s", StreamTypes.Final, null),
+            ActivityDirection.Inbound);
+
+        AssertAgentUpsert(changes, "A brown fox.", "stream:s:response", transient: false);
     }
 
     [Fact]
@@ -488,7 +595,7 @@ public sealed class ActivityInterpreterTests
             StreamActivity(ActivityTypes.Message, "unknown-final", "Wrong response", "unknown", StreamTypes.Final, null),
             ActivityDirection.Inbound);
         IReadOnlyList<ChatChange> intendedStreamChanges = interpreter.Process(
-            StreamActivity(ActivityTypes.Typing, "update-1", "Still working", "start-1", StreamTypes.Streaming, 2),
+            StreamActivity(ActivityTypes.Typing, "update-1", " still working", "start-1", StreamTypes.Streaming, 2),
             ActivityDirection.Inbound);
 
         AssertDiagnostic(finalChanges, "not open");
@@ -498,7 +605,7 @@ public sealed class ActivityInterpreterTests
                 || change.Entry?.Kind is ChatEntryKind.Agent or ChatEntryKind.Status);
         AssertAgentUpsert(
             intendedStreamChanges,
-            "Still working",
+            "Working still working",
             "stream:start-1:response",
             transient: true);
     }
@@ -567,6 +674,33 @@ public sealed class ActivityInterpreterTests
         };
     }
 
+    private static Activity StreamingThoughtActivity(
+        string activityId,
+        string? streamId,
+        int sequence,
+        string chainOfThoughtId,
+        string text)
+    {
+        Activity activity = StreamActivity(
+            ActivityTypes.Typing,
+            activityId,
+            string.Empty,
+            streamId,
+            StreamTypes.Streaming,
+            sequence);
+        activity.Entities!.Insert(
+            0,
+            new Entity("thought")
+            {
+                Properties =
+                {
+                    ["chainOfThoughtId"] = JsonSerializer.SerializeToElement(chainOfThoughtId),
+                    ["text"] = JsonSerializer.SerializeToElement(text)
+                }
+            });
+        return activity;
+    }
+
     private static void AssertStatus(IReadOnlyList<ChatChange> changes, string text, string key)
     {
         ChatChange change = Assert.Single(changes, item => item.Entry?.Kind == ChatEntryKind.Status);
@@ -578,6 +712,17 @@ public sealed class ActivityInterpreterTests
     private static void AssertAgentUpsert(IReadOnlyList<ChatChange> changes, string text, string key, bool transient)
     {
         ChatChange change = Assert.Single(changes, item => item.Entry?.Kind == ChatEntryKind.Agent);
+        Assert.Equal(ChatChangeKind.Upsert, change.Kind);
+        Assert.Equal(key, change.Key);
+        Assert.Equal(text, change.Entry!.Text);
+        Assert.Equal(transient, change.Entry.IsTransient);
+    }
+
+    private static void AssertThoughtUpsert(IReadOnlyList<ChatChange> changes, string text, string key, bool transient)
+    {
+        ChatChange change = Assert.Single(
+            changes,
+            item => item.Entry?.Kind == ChatEntryKind.Thought && item.Key == key);
         Assert.Equal(ChatChangeKind.Upsert, change.Kind);
         Assert.Equal(key, change.Key);
         Assert.Equal(text, change.Entry!.Text);

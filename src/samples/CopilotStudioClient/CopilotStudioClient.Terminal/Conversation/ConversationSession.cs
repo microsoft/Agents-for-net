@@ -9,7 +9,7 @@ internal sealed class ConversationSession
     private readonly string _conversationId = $"Sample-{Guid.NewGuid():N}";
     private int _busy;
 
-    internal ConversationSession(
+    public ConversationSession(
         ICopilotConversationClient client,
         ActivityJournal journal,
         ActivityInterpreter interpreter)
