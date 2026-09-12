@@ -78,4 +78,32 @@ public sealed class ActivityJournalTests
         Assert.Equal(ActivityDirection.Diagnostic, added[1].Direction);
         Assert.Contains("bad payload", added[1].Summary);
     }
+
+    [Fact]
+    public void Append_UnsupportedSnapshotPayload_EmitsActivityAndDiagnosticWithoutThrowing()
+    {
+        Activity activity = new()
+        {
+            Type = ActivityTypes.Message,
+            Text = "hello"
+        };
+
+        ActivityJournal journal = new(cloner: _ => throw new JsonException("bad payload"));
+        List<ActivityRecord> added = [];
+        journal.RecordAdded += (_, record) => added.Add(record);
+
+        ActivityRecord record = journal.Append(activity, ActivityDirection.Inbound);
+
+        activity.Text = "changed";
+
+        Assert.Equal("message", record.Type);
+        Assert.Equal("hello", record.Summary);
+        Assert.Null(record.Activity);
+        Assert.Equal(2, added.Count);
+        Assert.Equal("hello", added[0].Summary);
+        Assert.Null(added[0].Activity);
+        Assert.Equal(ActivityDirection.Diagnostic, added[1].Direction);
+        Assert.Contains("Unable to snapshot activity JSON", added[1].Summary);
+        Assert.Single(journal.Snapshot(), item => item.Direction == ActivityDirection.Inbound);
+    }
 }

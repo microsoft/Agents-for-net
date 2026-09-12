@@ -8,12 +8,16 @@ internal sealed class ActivityJournal
 {
     private readonly object _gate = new();
     private readonly List<ActivityRecord> _records = [];
+    private readonly Func<Activity, Activity> _cloner;
     private readonly Func<Activity, string> _formatter;
     private long _nextSequence;
 
-    internal ActivityJournal(Func<Activity, string>? formatter = null)
+    internal ActivityJournal(
+        Func<Activity, string>? formatter = null,
+        Func<Activity, Activity>? cloner = null)
     {
         _formatter = formatter ?? ActivityJsonFormatter.Format;
+        _cloner = cloner ?? SnapshotActivity;
     }
 
     internal event ActivityRecordAddedHandler? RecordAdded;
@@ -22,11 +26,12 @@ internal sealed class ActivityJournal
     {
         ArgumentNullException.ThrowIfNull(activity);
 
-        Activity frozenActivity = SnapshotActivity(activity);
+        Activity? frozenActivity = null;
         string? json = null;
         Exception? serializationError = null;
         try
         {
+            frozenActivity = _cloner(activity);
             json = _formatter(frozenActivity);
         }
         catch (Exception exception) when (
@@ -37,10 +42,11 @@ internal sealed class ActivityJournal
             serializationError = exception;
         }
 
+        Activity sourceActivity = frozenActivity ?? activity;
         ActivityRecord record = AddRecord(
             direction,
-            frozenActivity.Type ?? "unknown",
-            GetSummary(frozenActivity),
+            sourceActivity.Type ?? "unknown",
+            GetSummary(sourceActivity),
             frozenActivity,
             json,
             null);
@@ -49,7 +55,7 @@ internal sealed class ActivityJournal
         if (serializationError is not null)
         {
             AppendDiagnostic(
-                $"Unable to format activity JSON: {serializationError.Message}",
+                $"{(frozenActivity is null ? "Unable to snapshot" : "Unable to format")} activity JSON: {serializationError.Message}",
                 DiagnosticSeverity.Error);
         }
 
