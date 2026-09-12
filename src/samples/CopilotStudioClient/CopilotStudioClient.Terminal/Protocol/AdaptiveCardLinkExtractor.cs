@@ -69,22 +69,22 @@ internal static class AdaptiveCardLinkExtractor
             return;
         }
 
-        if (TryGetPropertyIgnoreCase(element, "type", out JsonElement typeElement)
-            && string.Equals(typeElement.GetString(), "Action.OpenUrl", StringComparison.OrdinalIgnoreCase)
-            && TryGetPropertyIgnoreCase(element, "url", out JsonElement urlElement)
-            && Uri.TryCreate(urlElement.GetString(), UriKind.Absolute, out Uri? url)
+        if (TryGetStringPropertyIgnoreCase(element, "type", out string? type)
+            && string.Equals(type, "Action.OpenUrl", StringComparison.OrdinalIgnoreCase)
+            && TryGetStringPropertyIgnoreCase(element, "url", out string? urlText)
+            && Uri.TryCreate(urlText, UriKind.Absolute, out Uri? url)
             && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps))
         {
-            string title = TryGetPropertyIgnoreCase(element, "title", out JsonElement titleElement)
-                ? titleElement.GetString() ?? url.AbsoluteUri
+            string linkTitle = TryGetStringPropertyIgnoreCase(element, "title", out string? title)
+                ? title ?? url.AbsoluteUri
                 : url.AbsoluteUri;
 
-            if (string.IsNullOrWhiteSpace(title))
+            if (string.IsNullOrWhiteSpace(linkTitle))
             {
-                title = url.AbsoluteUri;
+                linkTitle = url.AbsoluteUri;
             }
 
-            links.Add(new ChatLink(title, url));
+            links.Add(new ChatLink(linkTitle, url));
         }
 
         foreach (JsonProperty property in element.EnumerateObject())
@@ -93,18 +93,24 @@ internal static class AdaptiveCardLinkExtractor
         }
     }
 
-    private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement value)
+    private static bool TryGetStringPropertyIgnoreCase(JsonElement element, string propertyName, out string? value)
     {
         foreach (JsonProperty property in element.EnumerateObject())
         {
             if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
             {
-                value = property.Value;
-                return true;
+                if (property.Value.ValueKind == JsonValueKind.String)
+                {
+                    value = property.Value.GetString();
+                    return true;
+                }
+
+                value = null;
+                return false;
             }
         }
 
-        value = default;
+        value = null;
         return false;
     }
 }

@@ -54,6 +54,69 @@ public sealed class AdaptiveCardLinkExtractorTests
     }
 
     [Fact]
+    public void Extract_IgnoresOpenUrlActionWithNonStringType()
+    {
+        const string card = """
+            {
+              "type": "AdaptiveCard",
+              "actions": [
+                { "type": 123, "title": "Broken", "url": "https://broken.example/" },
+                { "type": "Action.OpenUrl", "title": "Help", "url": "https://help.example/" }
+              ]
+            }
+            """;
+
+        LinkExtractionResult result = AdaptiveCardLinkExtractor.Extract(card);
+
+        Assert.Null(result.Error);
+        Assert.Equal([new ChatLink("Help", new Uri("https://help.example/"))], result.Links);
+    }
+
+    [Fact]
+    public void Extract_IgnoresNestedOpenUrlActionWithNonStringUrl()
+    {
+        const string card = """
+            {
+              "type": "AdaptiveCard",
+              "body": [
+                {
+                  "type": "ActionSet",
+                  "actions": [
+                    { "type": "Action.OpenUrl", "title": "Broken", "url": 123 }
+                  ]
+                }
+              ],
+              "actions": [
+                { "type": "Action.OpenUrl", "title": "Help", "url": "https://help.example/" }
+              ]
+            }
+            """;
+
+        LinkExtractionResult result = AdaptiveCardLinkExtractor.Extract(card);
+
+        Assert.Null(result.Error);
+        Assert.Equal([new ChatLink("Help", new Uri("https://help.example/"))], result.Links);
+    }
+
+    [Fact]
+    public void Extract_UsesUrlWhenOpenUrlTitleIsNotString()
+    {
+        const string card = """
+            {
+              "type": "AdaptiveCard",
+              "actions": [
+                { "type": "Action.OpenUrl", "title": {}, "url": "https://docs.example/" }
+              ]
+            }
+            """;
+
+        LinkExtractionResult result = AdaptiveCardLinkExtractor.Extract(card);
+
+        Assert.Null(result.Error);
+        Assert.Equal([new ChatLink("https://docs.example/", new Uri("https://docs.example/"))], result.Links);
+    }
+
+    [Fact]
     public void Extract_RuntimeObject_UsesProtocolSerialization()
     {
         object card = new
