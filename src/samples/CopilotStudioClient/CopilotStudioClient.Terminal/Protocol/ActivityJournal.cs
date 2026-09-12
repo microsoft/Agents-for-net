@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 
 internal delegate void ActivityRecordAddedHandler(object? sender, ActivityRecord record);
 
@@ -21,11 +22,12 @@ internal sealed class ActivityJournal
     {
         ArgumentNullException.ThrowIfNull(activity);
 
+        Activity frozenActivity = SnapshotActivity(activity);
         string? json = null;
         Exception? serializationError = null;
         try
         {
-            json = _formatter(activity);
+            json = _formatter(frozenActivity);
         }
         catch (Exception exception) when (
             exception is JsonException
@@ -37,9 +39,9 @@ internal sealed class ActivityJournal
 
         ActivityRecord record = AddRecord(
             direction,
-            activity.Type ?? "unknown",
-            GetSummary(activity),
-            activity,
+            frozenActivity.Type ?? "unknown",
+            GetSummary(frozenActivity),
+            frozenActivity,
             json,
             null);
         RecordAdded?.Invoke(this, record);
@@ -125,5 +127,10 @@ internal sealed class ActivityJournal
         }
 
         return "activity";
+    }
+
+    private static Activity SnapshotActivity(Activity activity)
+    {
+        return ProtocolJsonSerializer.CloneTo<Activity>(activity);
     }
 }

@@ -32,6 +32,36 @@ public sealed class ActivityJournalTests
     }
 
     [Fact]
+    public void Append_SnapshotsActivityBeforeCallerMutatesIt()
+    {
+        Activity activity = new()
+        {
+            Type = ActivityTypes.Message,
+            Text = "hello",
+            Entities = [new Entity("custom") { Properties = { ["answer"] = JsonSerializer.SerializeToElement(42) } }]
+        };
+
+        ActivityJournal journal = new();
+        List<ActivityRecord> added = [];
+        journal.RecordAdded += (_, record) => added.Add(record);
+        ActivityRecord record = journal.Append(activity, ActivityDirection.Inbound);
+
+        activity.Text = "changed";
+        activity.Entities[0].Properties["answer"] = JsonSerializer.SerializeToElement(99);
+
+        ActivityRecord snapshot = journal.Snapshot()[0];
+
+        Assert.NotSame(activity, record.Activity);
+        Assert.Equal("hello", record.Activity!.Text);
+        Assert.Equal(42, record.Activity.Entities[0].Properties["answer"].GetInt32());
+        Assert.Equal("hello", record.Summary);
+        Assert.Equal("hello", added[0].Activity!.Text);
+        Assert.Equal(42, added[0].Activity.Entities[0].Properties["answer"].GetInt32());
+        Assert.Equal("hello", snapshot.Activity!.Text);
+        Assert.Equal(42, snapshot.Activity.Entities[0].Properties["answer"].GetInt32());
+    }
+
+    [Fact]
     public void Append_SerializationFailure_PreservesActivityAndAddsDiagnostic()
     {
         ActivityJournal journal = new(_ => throw new JsonException("bad payload"));
