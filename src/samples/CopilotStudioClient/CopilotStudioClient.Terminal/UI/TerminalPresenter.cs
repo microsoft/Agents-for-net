@@ -5,12 +5,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 
-internal sealed class TerminalPresenter
+internal sealed class TerminalPresenter : IDisposable
 {
     private readonly ConversationSession _session;
     private readonly ActivityJournal _journal;
     private readonly ActivityInterpreter _interpreter;
     private readonly ITerminalView _view;
+    private bool _disposed;
 
     internal TerminalPresenter(
         ConversationSession session,
@@ -44,6 +45,20 @@ internal sealed class TerminalPresenter
         }
 
         await _session.SendAsync(trimmed, cancellationToken).ConfigureAwait(false);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _session.ActivityPublished -= OnActivityPublished;
+        _session.BusyChanged -= OnBusyChanged;
+        _session.Failed -= OnSessionFailed;
+        _journal.RecordAdded -= OnRecordAdded;
+        _disposed = true;
     }
 
     private void OnActivityPublished(object? sender, PublishedActivityEventArgs args)

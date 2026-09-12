@@ -22,4 +22,10 @@ internal sealed record ActivityRecord(
     string Summary,
     Activity? Activity,
     string? Json,
-    DiagnosticSeverity? Severity);
+    DiagnosticSeverity? Severity)
+{
+    public override string ToString()
+    {
+        return $"{Sequence,4} {Direction,-10} {Type,-18} {Summary}";
+    }
+}

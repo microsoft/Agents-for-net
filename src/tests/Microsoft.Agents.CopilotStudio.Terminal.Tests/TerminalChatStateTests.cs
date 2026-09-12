@@ -1,0 +1,95 @@
+using System;
+
+public sealed class TerminalChatStateTests
+{
+    [Fact]
+    public void Apply_ReplacesExistingKeyInPlaceAndRemovesTransientEntry()
+    {
+        TerminalChatState state = new();
+        ChatEntry first = Entry("first", "First");
+        ChatEntry transient = Entry("status", "Working", isTransient: true);
+
+        state.Apply(
+        [
+            new ChatChange(ChatChangeKind.Upsert, first.Key, first),
+            new ChatChange(ChatChangeKind.Upsert, transient.Key, transient)
+        ]);
+        state.Apply(
+        [
+            new ChatChange(ChatChangeKind.Upsert, first.Key, Entry("first", "Updated")),
+            new ChatChange(ChatChangeKind.Remove, transient.Key, null)
+        ]);
+
+        ChatEntry remaining = Assert.Single(state.Entries);
+        Assert.Equal("first", remaining.Key);
+        Assert.Equal("Updated", remaining.Text);
+    }
+
+    [Fact]
+    public void Markdown_EscapesReceivedFormattingAndControlCharacters()
+    {
+        TerminalChatState state = new();
+
+        state.Apply(
+        [
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "entry",
+                new ChatEntry(
+                    "entry",
+                    ChatEntryKind.Agent,
+                    "# Agent",
+                    "**bold** [unsafe](https://example.com)\u001b",
+                    false,
+                    [],
+                    []))
+        ]);
+
+        Assert.Equal(
+            "## \\# Agent\r\n\r\n\\*\\*bold\\*\\* \\[unsafe\\]\\(https://example\\.com\\)\\u001B",
+            state.Markdown);
+    }
+
+    [Fact]
+    public void Apply_ReplacingEntryRemovesItsOldLinksAndActions()
+    {
+        TerminalChatState state = new();
+        state.Apply(
+        [
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "entry",
+                new ChatEntry(
+                    "entry",
+                    ChatEntryKind.Agent,
+                    "Agent",
+                    "First",
+                    false,
+                    [new ChatLink("Old", new Uri("https://old.example"))],
+                    [new ChatAction("Old action", "old")]))
+        ]);
+
+        state.Apply(
+        [
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "entry",
+                new ChatEntry(
+                    "entry",
+                    ChatEntryKind.Agent,
+                    "Agent",
+                    "Updated",
+                    false,
+                    [new ChatLink("New", new Uri("https://new.example"))],
+                    [new ChatAction("New action", "new")]))
+        ]);
+
+        Assert.Equal("https://new.example/", Assert.Single(state.Links).Url.AbsoluteUri);
+        Assert.Equal("new", Assert.Single(state.SuggestedActions).Value);
+    }
+
+    private static ChatEntry Entry(string key, string text, bool isTransient = false)
+    {
+        return new ChatEntry(key, ChatEntryKind.Agent, "Agent", text, isTransient, [], []);
+    }
+}

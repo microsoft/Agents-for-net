@@ -14,4 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.CopilotStudio.Client\Microsoft.Agents.CopilotStudio.Client.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

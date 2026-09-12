@@ -108,6 +108,32 @@ public sealed class TerminalPresenterTests
         Assert.Contains(view.Statuses, status => status.Text.Contains("message", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task Dispose_DetachesViewFromSessionEvents()
+    {
+        FakeCopilotConversationClient client = new()
+        {
+            StartActivities =
+            [
+                new Activity
+                {
+                    Type = ActivityTypes.Message,
+                    Text = "Late activity"
+                }
+            ]
+        };
+        ActivityJournal journal = new();
+        ActivityInterpreter interpreter = new();
+        FakeTerminalView view = new();
+        TerminalPresenter presenter = CreatePresenter(client, journal, interpreter, view);
+
+        presenter.Dispose();
+        await presenter.StartAsync(CancellationToken.None);
+
+        Assert.Empty(view.Activities);
+        Assert.Empty(view.ChatChanges);
+    }
+
     private static TerminalPresenter CreatePresenter(
         FakeCopilotConversationClient client,
         ActivityJournal journal,
