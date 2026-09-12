@@ -5,6 +5,8 @@ using Microsoft.Agents.Core.Serialization;
 
 internal sealed class ActivityInterpreter
 {
+    private const int ClosedStreamIdCapacity = 256;
+
     private static readonly JsonSerializerOptions IndentedJsonOptions = new()
     {
         WriteIndented = true
@@ -17,6 +19,11 @@ internal sealed class ActivityInterpreter
 
     private readonly Dictionary<string, OpenStream> _streams =
         new(StringComparer.Ordinal);
+
+    private readonly HashSet<string> _closedStreamIds =
+        new(StringComparer.Ordinal);
+
+    private readonly Queue<string> _closedStreamIdOrder = new();
 
     private long _nextSyntheticId;
 
@@ -41,73 +48,95 @@ internal sealed class ActivityInterpreter
     private IReadOnlyList<ChatChange> ProcessStream(Activity activity, ActivityDirection direction, StreamInfo streamInfo)
     {
         string activityIdentity = GetActivityIdentity(activity);
-        string? streamId = ResolveStreamId(activity, streamInfo);
-        if (string.IsNullOrWhiteSpace(streamId))
-        {
-            return [CreateDiagnosticChange(
-                $"activity:{activityIdentity}:diagnostic:stream",
-                "Streaming activity has no unambiguous stream identifier.")];
-        }
-
         bool isInformative = string.Equals(streamInfo.StreamType, StreamTypes.Informative, StringComparison.OrdinalIgnoreCase);
         bool isFinal = string.Equals(streamInfo.StreamType, StreamTypes.Final, StringComparison.OrdinalIgnoreCase);
-        string responseKey = _streams.TryGetValue(streamId, out OpenStream? openStream)
-            ? openStream.ResponseKey
-            : $"stream:{streamId}:response";
-
-        if (!isFinal
-            && openStream is not null
-            && streamInfo.StreamSequence is int sequence
-            && openStream.LastSequence is int lastSequence
-            && sequence <= lastSequence)
-        {
-            return [CreateDiagnosticChange(
-                $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
-                $"Streaming activity sequence {sequence} did not advance stream '{streamId}'.")];
-        }
-
         List<ChatChange> changes = [];
-        string statusKey = $"stream:{streamId}:status";
-        ChatEntryKind responseKind = GetMessageKind(direction);
+        IReadOnlyList<ChatAction> suggestedActions = GetSuggestedActions(activity);
+        bool isTrueStart = IsTrueStreamStart(activity, streamInfo, isInformative, isFinal);
+        string? streamId = ResolveStreamId(activity, streamInfo, isTrueStart);
+        bool mutatedStream = false;
 
-        if (isInformative)
+        if (string.IsNullOrWhiteSpace(streamId))
         {
-            changes.Add(CreateEntryChange(
-                statusKey,
-                ChatEntryKind.Status,
-                GetAuthor(activity, ChatEntryKind.Status, direction),
-                GetMessageText(activity),
-                isTransient: true,
-                links: [],
-                suggestedActions: GetSuggestedActions(activity)));
+            changes.Add(CreateDiagnosticChange(
+                $"activity:{activityIdentity}:diagnostic:stream",
+                "Streaming activity has no unambiguous stream identifier.",
+                suggestedActions));
         }
         else
         {
-            changes.Add(new ChatChange(ChatChangeKind.Remove, statusKey, null));
-            changes.Add(CreateEntryChange(
-                responseKey,
-                responseKind,
-                GetAuthor(activity, responseKind, direction),
-                GetMessageText(activity),
-                isTransient: !isFinal,
-                links: [],
-                suggestedActions: GetSuggestedActions(activity)));
-        }
+            _streams.TryGetValue(streamId, out OpenStream? openStream);
+            string responseKey = openStream?.ResponseKey ?? $"stream:{streamId}:response";
+            string statusKey = $"stream:{streamId}:status";
+            ChatEntryKind responseKind = GetMessageKind(direction);
 
-        if (isFinal)
-        {
-            _streams.Remove(streamId);
-        }
-        else
-        {
-            int? updatedSequence = streamInfo.StreamSequence ?? openStream?.LastSequence;
-            _streams[streamId] = new OpenStream(streamId, responseKey, updatedSequence);
+            if (!isFinal
+                && openStream is null
+                && _closedStreamIds.Contains(streamId))
+            {
+                changes.Add(CreateDiagnosticChange(
+                    $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
+                    $"Streaming activity targeted closed stream '{streamId}'.",
+                    suggestedActions));
+            }
+            else if (!isFinal
+                && openStream is not null
+                && streamInfo.StreamSequence is int sequence
+                && openStream.LastSequence is int lastSequence
+                && sequence <= lastSequence)
+            {
+                changes.Add(CreateDiagnosticChange(
+                    $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
+                    $"Streaming activity sequence {sequence} did not advance stream '{streamId}'.",
+                    suggestedActions));
+            }
+            else
+            {
+                if (isInformative)
+                {
+                    changes.Add(CreateEntryChange(
+                        statusKey,
+                        ChatEntryKind.Status,
+                        GetAuthor(activity, ChatEntryKind.Status, direction),
+                        GetMessageText(activity),
+                        isTransient: true,
+                        links: [],
+                        suggestedActions));
+                }
+                else
+                {
+                    changes.Add(new ChatChange(ChatChangeKind.Remove, statusKey, null));
+                    changes.Add(CreateEntryChange(
+                        responseKey,
+                        responseKind,
+                        GetAuthor(activity, responseKind, direction),
+                        GetMessageText(activity),
+                        isTransient: !isFinal,
+                        links: [],
+                        suggestedActions));
+                }
+
+                if (isFinal)
+                {
+                    _streams.Remove(streamId);
+                    RememberClosedStreamId(streamId);
+                }
+                else
+                {
+                    int? updatedSequence = streamInfo.StreamSequence ?? openStream?.LastSequence;
+                    _streams[streamId] = new OpenStream(streamId, responseKey, updatedSequence);
+                }
+
+                mutatedStream = true;
+            }
         }
 
         AddThoughtEntries(changes, activity, direction, activityIdentity);
         AddAttachmentEntries(changes, activity, direction, activityIdentity);
 
-        if (string.Equals(streamInfo.StreamResult, StreamResults.Error, StringComparison.OrdinalIgnoreCase))
+        if (mutatedStream
+            && !string.IsNullOrWhiteSpace(streamId)
+            && string.Equals(streamInfo.StreamResult, StreamResults.Error, StringComparison.OrdinalIgnoreCase))
         {
             changes.Add(CreateDiagnosticChange(
                 $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
@@ -117,19 +146,19 @@ internal sealed class ActivityInterpreter
         return changes;
     }
 
-    private string? ResolveStreamId(Activity activity, StreamInfo streamInfo)
+    private string? ResolveStreamId(Activity activity, StreamInfo streamInfo, bool isTrueStart)
     {
         if (!string.IsNullOrWhiteSpace(streamInfo.StreamId))
         {
             return streamInfo.StreamId;
         }
 
-        if (CanSeedStreamFromActivityId(activity, streamInfo))
+        if (isTrueStart && !string.IsNullOrWhiteSpace(activity.Id))
         {
             return activity.Id;
         }
 
-        if (_streams.Count == 1)
+        if (!isTrueStart && _streams.Count == 1)
         {
             return _streams.Keys.Single();
         }
@@ -137,20 +166,36 @@ internal sealed class ActivityInterpreter
         return null;
     }
 
-    private bool CanSeedStreamFromActivityId(Activity activity, StreamInfo streamInfo)
+    private static bool IsTrueStreamStart(Activity activity, StreamInfo streamInfo, bool isInformative, bool isFinal)
     {
-        if (string.IsNullOrWhiteSpace(activity.Id))
+        if (!string.IsNullOrWhiteSpace(streamInfo.StreamId) || isFinal)
         {
             return false;
         }
 
-        if (string.Equals(streamInfo.StreamType, StreamTypes.Final, StringComparison.OrdinalIgnoreCase))
+        if (streamInfo.StreamSequence == 1)
         {
-            return false;
+            return true;
         }
 
-        return streamInfo.StreamSequence == 1
-            || (_streams.Count == 0 && streamInfo.StreamSequence is null);
+        return isInformative
+            && !string.IsNullOrWhiteSpace(activity.Id)
+            && streamInfo.StreamSequence is null;
+    }
+
+    private void RememberClosedStreamId(string streamId)
+    {
+        if (!_closedStreamIds.Add(streamId))
+        {
+            return;
+        }
+
+        _closedStreamIdOrder.Enqueue(streamId);
+        while (_closedStreamIdOrder.Count > ClosedStreamIdCapacity)
+        {
+            string oldestStreamId = _closedStreamIdOrder.Dequeue();
+            _closedStreamIds.Remove(oldestStreamId);
+        }
     }
 
     private void AddOrdinaryEntry(List<ChatChange> changes, Activity activity, ActivityDirection direction, string activityIdentity)
@@ -269,7 +314,7 @@ internal sealed class ActivityInterpreter
                 suggestedActions));
     }
 
-    private static ChatChange CreateDiagnosticChange(string key, string message)
+    private static ChatChange CreateDiagnosticChange(string key, string message, IReadOnlyList<ChatAction>? suggestedActions = null)
     {
         return new ChatChange(
             ChatChangeKind.Upsert,
@@ -281,7 +326,7 @@ internal sealed class ActivityInterpreter
                 message,
                 false,
                 [],
-                []));
+                suggestedActions ?? []));
     }
 
     private static ChatEntryKind GetMessageKind(ActivityDirection direction)

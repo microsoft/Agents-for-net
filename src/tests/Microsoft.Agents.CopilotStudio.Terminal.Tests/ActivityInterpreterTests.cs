@@ -184,6 +184,22 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
+    public void Process_InformativeStartWithoutSequence_UsesActivityIdEvenWhenAnotherStreamIsOpen()
+    {
+        ActivityInterpreter interpreter = new();
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "first", "First status", null, StreamTypes.Informative, 1),
+            ActivityDirection.Inbound);
+
+        IReadOnlyList<ChatChange> changes = interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "second", "Second status", null, StreamTypes.Informative, null),
+            ActivityDirection.Inbound);
+
+        AssertStatus(changes, "Second status", "stream:second:status");
+        Assert.DoesNotContain(changes, change => change.Key == "stream:first:status");
+    }
+
+    [Fact]
     public void Process_UpdateWithoutStreamId_CorrelatesToOnlyOpenStream()
     {
         ActivityInterpreter interpreter = new();
@@ -222,7 +238,7 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
-    public void Process_AmbiguousUpdateWithoutStreamIdentifier_AddsDiagnostic()
+    public void Process_AmbiguousUpdateWithoutStreamIdentifier_PreservesSupplementalContent()
     {
         ActivityInterpreter interpreter = new();
         interpreter.Process(
@@ -232,11 +248,18 @@ public sealed class ActivityInterpreterTests
             StreamActivity(ActivityTypes.Typing, "second", "Second status", null, StreamTypes.Informative, 1),
             ActivityDirection.Inbound);
 
+        Activity update = StreamActivity(ActivityTypes.Typing, "update", "Unknown", null, StreamTypes.Streaming, 2);
+        AddSupplementalContent(update, "Checking tools");
+
         IReadOnlyList<ChatChange> changes = interpreter.Process(
-            StreamActivity(ActivityTypes.Typing, "update", "Unknown", null, StreamTypes.Streaming, 2),
+            update,
             ActivityDirection.Inbound);
 
-        AssertDiagnostic(changes, "unambiguous");
+        ChatEntry diagnostic = AssertDiagnostic(changes, "unambiguous");
+        Assert.Equal([new ChatAction("Retry", "retry")], diagnostic.SuggestedActions);
+        Assert.Contains(changes, change => change.Entry?.Kind == ChatEntryKind.Thought && change.Entry.Text == "Checking tools");
+        Assert.Contains(changes, change => change.Entry?.Kind == ChatEntryKind.Attachment);
+        AssertDiagnostic(changes, "adaptive card links");
         Assert.DoesNotContain(changes, change => change.Entry?.Kind is ChatEntryKind.Agent or ChatEntryKind.Status);
     }
 
@@ -256,18 +279,25 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
-    public void Process_SequenceRegression_AddsDiagnosticWithoutReplacingResponse()
+    public void Process_SequenceRegression_PreservesSupplementalContentWithoutReplacingResponse()
     {
         ActivityInterpreter interpreter = new();
         interpreter.Process(
             StreamActivity(ActivityTypes.Typing, "seed", "First", "s", StreamTypes.Streaming, 2),
             ActivityDirection.Inbound);
 
+        Activity update = StreamActivity(ActivityTypes.Typing, "u", "Older", "s", StreamTypes.Streaming, 1);
+        AddSupplementalContent(update, "Stale update");
+
         IReadOnlyList<ChatChange> changes = interpreter.Process(
-            StreamActivity(ActivityTypes.Typing, "u", "Older", "s", StreamTypes.Streaming, 1),
+            update,
             ActivityDirection.Inbound);
 
-        AssertDiagnostic(changes, "sequence");
+        ChatEntry diagnostic = AssertDiagnostic(changes, "sequence");
+        Assert.Equal([new ChatAction("Retry", "retry")], diagnostic.SuggestedActions);
+        Assert.Contains(changes, change => change.Entry?.Kind == ChatEntryKind.Thought && change.Entry.Text == "Stale update");
+        Assert.Contains(changes, change => change.Entry?.Kind == ChatEntryKind.Attachment);
+        AssertDiagnostic(changes, "adaptive card links");
         Assert.DoesNotContain(changes, change => change.Entry?.Kind == ChatEntryKind.Agent);
     }
 
@@ -289,6 +319,25 @@ public sealed class ActivityInterpreterTests
         Assert.True(upsertIndex >= 0 && diagnosticIndex > upsertIndex);
     }
 
+    [Fact]
+    public void Process_LateUpdateAfterFinal_AddsDiagnosticWithoutReopeningStream()
+    {
+        ActivityInterpreter interpreter = new();
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "start-1", "Working", null, StreamTypes.Streaming, 1),
+            ActivityDirection.Inbound);
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Message, "final-1", "Done", "start-1", StreamTypes.Final, null),
+            ActivityDirection.Inbound);
+
+        IReadOnlyList<ChatChange> changes = interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "late-1", "Too late", "start-1", StreamTypes.Streaming, 2),
+            ActivityDirection.Inbound);
+
+        AssertDiagnostic(changes, "closed");
+        Assert.DoesNotContain(changes, change => change.Entry?.Kind is ChatEntryKind.Agent or ChatEntryKind.Status);
+    }
+
     private static Activity CreateMessageWithCard(string cardJson)
     {
         return new Activity
@@ -303,6 +352,27 @@ public sealed class ActivityInterpreterTests
                 }
             ]
         };
+    }
+
+    private static void AddSupplementalContent(Activity activity, string thoughtText)
+    {
+        activity.Entities!.Add(
+            new Entity("thought")
+            {
+                Properties = { ["text"] = JsonSerializer.SerializeToElement(thoughtText) }
+            });
+        activity.Attachments =
+        [
+            new Attachment
+            {
+                ContentType = ContentTypes.AdaptiveCard,
+                Content = "{bad"
+            }
+        ];
+        activity.SuggestedActions = new SuggestedActions(actions:
+        [
+            new CardAction { Title = "Retry", Value = "retry" }
+        ]);
     }
 
     private static Activity StreamActivity(
@@ -349,11 +419,13 @@ public sealed class ActivityInterpreterTests
         Assert.Equal(transient, change.Entry.IsTransient);
     }
 
-    private static void AssertDiagnostic(IReadOnlyList<ChatChange> changes, string textFragment)
+    private static ChatEntry AssertDiagnostic(IReadOnlyList<ChatChange> changes, string textFragment)
     {
-        Assert.Contains(
+        ChatChange diagnostic = Assert.Single(
             changes,
             change => change.Entry?.Kind == ChatEntryKind.Diagnostic
                 && change.Entry.Text.Contains(textFragment, StringComparison.OrdinalIgnoreCase));
+
+        return diagnostic.Entry!;
     }
 }
