@@ -132,6 +132,59 @@ public sealed class TerminalTimelineLayoutTests
         Assert.Equal(string.Empty, PlainText(result.Lines[2]));
     }
 
+    [Fact]
+    public void Build_TruncatesHeaderWithoutSplittingSurrogatePairs()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("emoji", ChatEntryKind.Agent, "🙂Alpha", string.Empty)],
+            width: 4,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        string header = PlainText(result.Lines[0]);
+
+        Assert.Equal("*  🙂", header);
+        Assert.True(IsWellFormedUtf16(header));
+    }
+
+    [Fact]
+    public void Build_WrapsBodyWithoutSplittingSurrogatePairs()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("emoji", ChatEntryKind.Agent, "Agent", "🙂🙂")],
+            width: 1,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(["*", "🙂", "🙂"], result.Lines.Select(PlainText));
+        Assert.All(result.Lines, line => Assert.True(IsWellFormedUtf16(PlainText(line))));
+    }
+
+    [Fact]
+    public void Build_PreservesLiteralUnicodeEscapeAsText()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("escape", ChatEntryKind.Agent, "Agent", "prefix \\u1234 suffix")],
+            width: 40,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(["*  Agent", "prefix \\u1234 suffix"], result.Lines.Select(PlainText));
+    }
+
+    [Fact]
+    public void Build_ExpandsTabsBeforeMeasuringBodyWidth()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("tab", ChatEntryKind.Agent, "Agent", "a\tb")],
+            width: 4,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.DoesNotContain('\t', PlainText(result.Lines[1]));
+        Assert.All(result.Lines, line => Assert.True(DisplayWidth(PlainText(line)) <= 4));
+    }
+
     private static ChatEntry Entry(
         string key,
         ChatEntryKind kind,
@@ -145,5 +198,49 @@ public sealed class TerminalTimelineLayoutTests
     private static string PlainText(TimelineLine line)
     {
         return string.Concat(line.Spans.Select(span => span.Text));
+    }
+
+    private static bool IsWellFormedUtf16(string value)
+    {
+        for (int index = 0; index < value.Length; index++)
+        {
+            char current = value[index];
+            if (char.IsHighSurrogate(current))
+            {
+                if (index + 1 >= value.Length || !char.IsLowSurrogate(value[index + 1]))
+                {
+                    return false;
+                }
+
+                index++;
+                continue;
+            }
+
+            if (char.IsLowSurrogate(current))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static int DisplayWidth(string value)
+    {
+        const int tabStop = 8;
+        int width = 0;
+
+        foreach (char character in value)
+        {
+            if (character == '\t')
+            {
+                width += tabStop - (width % tabStop);
+                continue;
+            }
+
+            width++;
+        }
+
+        return width;
     }
 }

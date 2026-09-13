@@ -47,6 +47,17 @@ internal sealed record TimelineGlyphSet(
 
 internal static class TerminalTimelineLayout
 {
+    private const int TabStop = 8;
+
+    private enum RenderTokenKind
+    {
+        Text,
+        ControlEscape,
+        Tab
+    }
+
+    private readonly record struct RenderToken(RenderTokenKind Kind, string Text, bool LeadingSpace);
+
     internal static TimelineLayoutResult Build(
         IReadOnlyList<ChatEntry> entries,
         int width,
@@ -66,7 +77,7 @@ internal static class TerminalTimelineLayout
             int start = lines.Count;
 
             (string headerGlyph, TimelineRole headerRole) = GetHeader(entry.Kind, glyphs);
-            string headerText = BuildHeaderText(headerGlyph, SanitizeSingleLine(entry.Author), contentWidth);
+            string headerText = BuildHeaderText(headerGlyph, entry.Author, contentWidth);
             lines.Add(new TimelineLine(entry.Key, [new TimelineSpan(headerText, headerRole)]));
 
             string bodyText = GetBodyText(entry, collapseCompletedThoughts);
@@ -116,31 +127,35 @@ internal static class TerminalTimelineLayout
 
     private static string BuildHeaderText(string glyph, string author, int width)
     {
-        string text = string.IsNullOrEmpty(author)
+        string normalizedAuthor = NormalizeInlineText(author);
+        string text = string.IsNullOrEmpty(normalizedAuthor)
             ? glyph
-            : string.Concat(glyph, "  ", author);
+            : string.Concat(glyph, "  ", normalizedAuthor);
 
-        return text.Length <= width ? text : text[..width];
+        return TruncateTextElements(text, width);
     }
 
     private static string GetBodyText(ChatEntry entry, bool collapseCompletedThoughts)
     {
         if (entry.Kind == ChatEntryKind.Thought && collapseCompletedThoughts && !entry.IsTransient)
         {
-            return string.Concat(SanitizeSingleLine(entry.Author), " complete · Ctrl+2 for details");
+            return string.Concat(NormalizeInlineText(entry.Author), " complete · Ctrl+2 for details");
         }
 
-        return Sanitize(entry.Text);
+        return entry.Text;
     }
 
     private static IReadOnlyList<string> Wrap(string value, int width)
     {
-        string[] paragraphs = Sanitize(value).Split('\n');
+        ArgumentNullException.ThrowIfNull(value);
+
+        int contentWidth = Math.Max(1, width);
+        string normalized = value.Replace("\r\n", "\n").Replace('\r', '\n');
         List<string> lines = new();
 
-        foreach (string paragraph in paragraphs)
+        foreach (string paragraph in normalized.Split('\n'))
         {
-            WrapParagraph(paragraph, width, lines);
+            WrapParagraph(TokenizeParagraph(paragraph), contentWidth, lines);
         }
 
         if (lines.Count == 0)
@@ -151,136 +166,298 @@ internal static class TerminalTimelineLayout
         return lines;
     }
 
-    private static void WrapParagraph(string paragraph, int width, List<string> lines)
+    private static void WrapParagraph(IReadOnlyList<RenderToken> tokens, int width, List<string> lines)
     {
-        if (paragraph.Length == 0)
+        if (tokens.Count == 0)
         {
             lines.Add(string.Empty);
             return;
         }
 
-        string? current = null;
-        int index = 0;
-        while (index < paragraph.Length)
+        StringBuilder current = new();
+        int currentWidth = 0;
+
+        void EmitCurrentLine()
         {
-            while (index < paragraph.Length && paragraph[index] == ' ')
+            lines.Add(current.ToString());
+            current.Clear();
+            currentWidth = 0;
+        }
+
+        void EmitTextPieces(string text)
+        {
+            foreach (string piece in SliceTextElements(text, width))
             {
-                index++;
-            }
-
-            if (index >= paragraph.Length)
-            {
-                break;
-            }
-
-            int start = index;
-            while (index < paragraph.Length && paragraph[index] != ' ')
-            {
-                index++;
-            }
-
-            string token = paragraph[start..index];
-            if (IsControlEscapeToken(token))
-            {
-                if (current is not null)
-                {
-                    lines.Add(current);
-                    current = null;
-                }
-
-                lines.Add(token);
-                continue;
-            }
-
-            if (token.Length > width)
-            {
-                if (current is not null)
-                {
-                    lines.Add(current);
-                    current = null;
-                }
-
-                for (int offset = 0; offset < token.Length; offset += width)
-                {
-                    lines.Add(token.Substring(offset, Math.Min(width, token.Length - offset)));
-                }
-
-                continue;
-            }
-
-            if (current is null)
-            {
-                current = token;
-                continue;
-            }
-
-            if (current.Length + 1 + token.Length <= width)
-            {
-                current = string.Concat(current, " ", token);
-            }
-            else
-            {
-                lines.Add(current);
-                current = token;
+                lines.Add(piece);
             }
         }
 
-        if (current is not null)
+        void EmitTab()
         {
-            lines.Add(current);
+            int tabSpaces = TabStop - (currentWidth % TabStop);
+            if (currentWidth > 0 && currentWidth + tabSpaces > width)
+            {
+                EmitCurrentLine();
+                tabSpaces = TabStop;
+            }
+
+            while (tabSpaces > 0)
+            {
+                if (currentWidth == width)
+                {
+                    EmitCurrentLine();
+                }
+
+                int available = width - currentWidth;
+                if (available == 0)
+                {
+                    EmitCurrentLine();
+                    continue;
+                }
+
+                int toWrite = Math.Min(tabSpaces, available);
+                current.Append(' ', toWrite);
+                currentWidth += toWrite;
+                tabSpaces -= toWrite;
+
+                if (currentWidth == width && tabSpaces > 0)
+                {
+                    EmitCurrentLine();
+                }
+            }
+        }
+
+        void AppendTextToken(RenderToken token, bool treatAsControlEscape)
+        {
+            int tokenWidth = MeasureTextElements(token.Text);
+
+            if (treatAsControlEscape)
+            {
+                if (currentWidth > 0)
+                {
+                    EmitCurrentLine();
+                }
+
+                EmitTextPieces(token.Text);
+                return;
+            }
+
+            if (token.LeadingSpace && currentWidth > 0)
+            {
+                if (currentWidth + 1 + tokenWidth > width)
+                {
+                    EmitCurrentLine();
+                }
+                else
+                {
+                    current.Append(' ');
+                    currentWidth++;
+                }
+            }
+
+            if (tokenWidth > width)
+            {
+                if (currentWidth > 0)
+                {
+                    EmitCurrentLine();
+                }
+
+                EmitTextPieces(token.Text);
+                return;
+            }
+
+            if (currentWidth + tokenWidth > width)
+            {
+                EmitCurrentLine();
+            }
+
+            current.Append(token.Text);
+            currentWidth += tokenWidth;
+        }
+
+        foreach (RenderToken token in tokens)
+        {
+            switch (token.Kind)
+            {
+                case RenderTokenKind.Tab:
+                    EmitTab();
+                    break;
+                case RenderTokenKind.ControlEscape:
+                    AppendTextToken(token, treatAsControlEscape: true);
+                    break;
+                case RenderTokenKind.Text:
+                    AppendTextToken(token, treatAsControlEscape: false);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported token kind {token.Kind}.");
+            }
+        }
+
+        if (currentWidth > 0 || current.Length > 0)
+        {
+            EmitCurrentLine();
         }
     }
 
-    private static bool IsControlEscapeToken(string token)
+    private static IReadOnlyList<RenderToken> TokenizeParagraph(string paragraph)
     {
-        return token.Length == 6
-            && token[0] == '\\'
-            && token[1] == 'u'
-            && IsHexDigit(token[2])
-            && IsHexDigit(token[3])
-            && IsHexDigit(token[4])
-            && IsHexDigit(token[5]);
+        List<RenderToken> tokens = new();
+        StringBuilder current = new();
+        bool leadingSpace = false;
+
+        void FlushCurrentWord()
+        {
+            if (current.Length == 0)
+            {
+                return;
+            }
+
+            tokens.Add(new RenderToken(RenderTokenKind.Text, current.ToString(), leadingSpace));
+            current.Clear();
+            leadingSpace = false;
+        }
+
+        foreach (string textElement in EnumerateTextElements(paragraph))
+        {
+            if (textElement == " ")
+            {
+                if (current.Length > 0)
+                {
+                    FlushCurrentWord();
+                }
+
+                leadingSpace = true;
+                continue;
+            }
+
+            if (textElement == "\t")
+            {
+                FlushCurrentWord();
+                tokens.Add(new RenderToken(RenderTokenKind.Tab, string.Empty, false));
+                leadingSpace = false;
+                continue;
+            }
+
+            if (textElement.Length == 1 && char.IsControl(textElement[0]))
+            {
+                FlushCurrentWord();
+                tokens.Add(new RenderToken(RenderTokenKind.ControlEscape, EscapeControl(textElement[0]), leadingSpace));
+                leadingSpace = false;
+                continue;
+            }
+
+            current.Append(textElement);
+        }
+
+        FlushCurrentWord();
+        return tokens;
     }
 
-    private static bool IsHexDigit(char value)
-    {
-        return (value >= '0' && value <= '9')
-            || (value >= 'A' && value <= 'F')
-            || (value >= 'a' && value <= 'f');
-    }
-
-    private static string Sanitize(string value)
+    private static string NormalizeInlineText(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
         string normalized = value.Replace("\r\n", "\n").Replace('\r', '\n');
         StringBuilder builder = new(normalized.Length);
+        int column = 0;
 
-        foreach (char character in normalized)
+        foreach (string textElement in EnumerateTextElements(normalized))
         {
-            if (character == '\n' || character == '\t')
+            if (textElement == "\n")
             {
-                builder.Append(character);
+                builder.Append(' ');
+                column++;
                 continue;
             }
 
-            if (char.IsControl(character))
+            if (textElement == "\t")
             {
-                builder.Append(' ');
-                builder.Append("\\u");
-                builder.Append(((int)character).ToString("X4", CultureInfo.InvariantCulture));
-                builder.Append(' ');
+                int spaces = TabStop - (column % TabStop);
+                builder.Append(' ', spaces);
+                column += spaces;
                 continue;
             }
 
-            builder.Append(character);
+            if (textElement.Length == 1 && char.IsControl(textElement[0]))
+            {
+                builder.Append(' ');
+                builder.Append(EscapeControl(textElement[0]));
+                builder.Append(' ');
+                column += 8;
+                continue;
+            }
+
+            builder.Append(textElement);
+            column++;
+        }
+
+        return builder.ToString().Trim();
+    }
+
+    private static string TruncateTextElements(string value, int width)
+    {
+        int remaining = Math.Max(1, width);
+        StringBuilder builder = new();
+
+        foreach (string textElement in EnumerateTextElements(value))
+        {
+            if (remaining == 0)
+            {
+                break;
+            }
+
+            builder.Append(textElement);
+            remaining--;
         }
 
         return builder.ToString();
     }
 
-    private static string SanitizeSingleLine(string value)
+    private static int MeasureTextElements(string value)
     {
-        return Sanitize(value).Replace('\n', ' ').Trim();
+        int count = 0;
+        foreach (string _ in EnumerateTextElements(value))
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    private static IEnumerable<string> SliceTextElements(string value, int width)
+    {
+        int remaining = Math.Max(1, width);
+        StringBuilder builder = new();
+
+        foreach (string textElement in EnumerateTextElements(value))
+        {
+            builder.Append(textElement);
+            remaining--;
+            if (remaining == 0)
+            {
+                yield return builder.ToString();
+                builder.Clear();
+                remaining = Math.Max(1, width);
+            }
+        }
+
+        if (builder.Length > 0)
+        {
+            yield return builder.ToString();
+        }
+    }
+
+    private static IEnumerable<string> EnumerateTextElements(string value)
+    {
+        TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(value);
+        while (enumerator.MoveNext())
+        {
+            yield return (string)enumerator.Current!;
+        }
+    }
+
+    private static string EscapeControl(char character)
+    {
+        return string.Concat("\\u", ((int)character).ToString("X4", CultureInfo.InvariantCulture));
     }
 }
