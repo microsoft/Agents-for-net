@@ -21,7 +21,8 @@ internal sealed record ChatEntry(
     bool IsTransient,
     IReadOnlyList<ChatLink> Links,
     IReadOnlyList<ChatAction> SuggestedActions,
-    string ActionGroupKey);
+    string ActionGroupKey,
+    DiagnosticSeverity? Severity = null);
 
 internal enum ChatChangeKind
 {

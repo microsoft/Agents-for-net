@@ -82,6 +82,8 @@ internal static class TerminalTimelineLayout
         TimelineTextStyle LeadingSpaceStyle,
         Uri? LeadingSpaceLinkTarget);
 
+    private sealed record ControlPlaceholderScope(string Prefix);
+
     internal static TimelineLayoutResult Build(
         IReadOnlyList<ChatEntry> entries,
         int width,
@@ -178,7 +180,7 @@ internal static class TerminalTimelineLayout
         ChatEntryKind.Thought => TimelineRole.Thought,
         ChatEntryKind.Event => TimelineRole.Muted,
         ChatEntryKind.Attachment => TimelineRole.Link,
-        ChatEntryKind.Diagnostic => IsErrorDiagnostic(entry) ? TimelineRole.Error : TimelineRole.Warning,
+        ChatEntryKind.Diagnostic => entry.Severity == DiagnosticSeverity.Error ? TimelineRole.Error : TimelineRole.Warning,
         _ => TimelineRole.Primary
     };
 
@@ -209,19 +211,35 @@ internal static class TerminalTimelineLayout
             return [new TimelineBlock(TimelineBlockKind.Paragraph, [new TimelineSpan(summary, role)])];
         }
 
-        return DecodeControlPlaceholders(TerminalMarkdown.Parse(EncodeControlCharacters(entry.Text), role));
+        if (ShouldParseMarkdown(entry.Kind))
+        {
+            ControlPlaceholderScope scope = CreateControlPlaceholderScope(entry.Text);
+            return DecodeControlPlaceholders(
+                TerminalMarkdown.Parse(EncodeControlCharacters(entry.Text, scope), role),
+                scope);
+        }
+
+        return CreateLiteralBodyBlocks(entry.Text, role);
     }
 
-    private static bool IsErrorDiagnostic(ChatEntry entry)
+    private static bool ShouldParseMarkdown(ChatEntryKind kind)
     {
-        return ContainsErrorTerm(entry.Author) || ContainsErrorTerm(entry.Text);
+        return kind is ChatEntryKind.User or ChatEntryKind.Agent or ChatEntryKind.Thought;
     }
 
-    private static bool ContainsErrorTerm(string value)
+    private static IReadOnlyList<TimelineBlock> CreateLiteralBodyBlocks(string value, TimelineRole role)
     {
-        return value.Contains("error", StringComparison.OrdinalIgnoreCase)
-            || value.Contains("fail", StringComparison.OrdinalIgnoreCase)
-            || value.Contains("unable", StringComparison.OrdinalIgnoreCase);
+        string normalized = value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        string[] lines = normalized.Split('\n');
+        TimelineBlock[] blocks = new TimelineBlock[lines.Length];
+        for (int index = 0; index < lines.Length; index++)
+        {
+            blocks[index] = new TimelineBlock(
+                TimelineBlockKind.Paragraph,
+                [new TimelineSpan(lines[index], role)]);
+        }
+
+        return Array.AsReadOnly(blocks);
     }
 
     private static IReadOnlyList<TimelineSpan> GetRenderableSpans(TimelineBlock block)
@@ -265,7 +283,24 @@ internal static class TerminalTimelineLayout
             markerRole);
     }
 
-    private static string EncodeControlCharacters(string value)
+    private static ControlPlaceholderScope CreateControlPlaceholderScope(string value)
+    {
+        for (int nonce = 0; ; nonce++)
+        {
+            string prefix = string.Concat(
+                ControlPlaceholderStart,
+                "agents-control-",
+                nonce.ToString(CultureInfo.InvariantCulture),
+                ":");
+
+            if (!value.Contains(prefix, StringComparison.Ordinal))
+            {
+                return new ControlPlaceholderScope(prefix);
+            }
+        }
+    }
+
+    private static string EncodeControlCharacters(string value, ControlPlaceholderScope scope)
     {
         StringBuilder builder = new(value.Length);
 
@@ -277,7 +312,7 @@ internal static class TerminalTimelineLayout
                 continue;
             }
 
-            builder.Append(ControlPlaceholderStart);
+            builder.Append(scope.Prefix);
             builder.Append(((int)character).ToString("X4", CultureInfo.InvariantCulture));
             builder.Append(ControlPlaceholderEnd);
         }
@@ -285,7 +320,9 @@ internal static class TerminalTimelineLayout
         return builder.ToString();
     }
 
-    private static IReadOnlyList<TimelineBlock> DecodeControlPlaceholders(IReadOnlyList<TimelineBlock> blocks)
+    private static IReadOnlyList<TimelineBlock> DecodeControlPlaceholders(
+        IReadOnlyList<TimelineBlock> blocks,
+        ControlPlaceholderScope scope)
     {
         List<TimelineBlock> decodedBlocks = new(blocks.Count);
         foreach (TimelineBlock block in blocks)
@@ -293,7 +330,7 @@ internal static class TerminalTimelineLayout
             List<TimelineSpan> decodedSpans = new(block.Spans.Count);
             foreach (TimelineSpan span in block.Spans)
             {
-                decodedSpans.Add(span with { Text = DecodeControlPlaceholders(span.Text) });
+                decodedSpans.Add(span with { Text = DecodeControlPlaceholders(span.Text, scope) });
             }
 
             decodedBlocks.Add(block with { Spans = Array.AsReadOnly(decodedSpans.ToArray()) });
@@ -302,22 +339,29 @@ internal static class TerminalTimelineLayout
         return Array.AsReadOnly(decodedBlocks.ToArray());
     }
 
-    private static string DecodeControlPlaceholders(string value)
+    private static string DecodeControlPlaceholders(string value, ControlPlaceholderScope scope)
     {
         StringBuilder builder = new(value.Length);
         for (int index = 0; index < value.Length; index++)
         {
-            if (index + 5 < value.Length
-                && value[index] == ControlPlaceholderStart
-                && value[index + 5] == ControlPlaceholderEnd
+            int codeStart = index + scope.Prefix.Length;
+            if (value.Length - index >= scope.Prefix.Length + 5
+                && string.Compare(
+                    value,
+                    index,
+                    scope.Prefix,
+                    0,
+                    scope.Prefix.Length,
+                    StringComparison.Ordinal) == 0
+                && value[codeStart + 4] == ControlPlaceholderEnd
                 && int.TryParse(
-                    value.AsSpan(index + 1, 4),
+                    value.AsSpan(codeStart, 4),
                     NumberStyles.HexNumber,
                     CultureInfo.InvariantCulture,
                     out int codePoint))
             {
                 builder.Append((char)codePoint);
-                index += 5;
+                index += scope.Prefix.Length + 4;
                 continue;
             }
 

@@ -18,8 +18,8 @@ public sealed class TerminalTimelineLayoutTests
             Entry("s", ChatEntryKind.Status, "Status", "Working", isTransient: true),
             Entry("t", ChatEntryKind.Thought, "Reasoning", "Checking", isTransient: true),
             Entry("e", ChatEntryKind.Event, "Event", "Tool finished"),
-            Entry("w", ChatEntryKind.Diagnostic, "Warning", "Retrying"),
-            Entry("x", ChatEntryKind.Diagnostic, "Error", "Failed")
+            Entry("w", ChatEntryKind.Diagnostic, "System", "Retrying", severity: DiagnosticSeverity.Warning),
+            Entry("x", ChatEntryKind.Diagnostic, "System", "Localized fatal condition", severity: DiagnosticSeverity.Error)
         ];
 
         TimelineLayoutResult result = TerminalTimelineLayout.Build(
@@ -35,8 +35,8 @@ public sealed class TerminalTimelineLayoutTests
                 "○  Status", "Working", "",
                 "◆  Reasoning", "Checking", "",
                 "↗  Event", "Tool finished", "",
-                "!  Warning", "Retrying", "",
-                "!  Error", "Failed"
+                "!  System", "Retrying", "",
+                "!  System", "Localized fatal condition"
             ],
             result.Lines.Select(PlainText));
         Assert.Equal(TimelineRole.User, result.Lines[0].Spans[0].Role);
@@ -98,6 +98,87 @@ public sealed class TerminalTimelineLayoutTests
             collapseCompletedThoughts: true);
 
         Assert.Contains(result.Lines, line => PlainText(line) == "Reasoning complete · F2 for details");
+    }
+
+    [Fact]
+    public void Build_DiagnosticRoleUsesSeverityInsteadOfText()
+    {
+        ChatEntry[] entries =
+        [
+            Entry(
+                "warning",
+                ChatEntryKind.Diagnostic,
+                "System",
+                "Warning message mentions failed retries.",
+                severity: DiagnosticSeverity.Warning),
+            Entry(
+                "error",
+                ChatEntryKind.Diagnostic,
+                "System",
+                "Localized fatal condition.",
+                severity: DiagnosticSeverity.Error)
+        ];
+
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            entries,
+            width: 80,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        TimelineLine warningBody = Assert.Single(
+            result.Lines,
+            line => line.EntryKey == "warning" && PlainText(line).Contains("failed", StringComparison.Ordinal));
+        TimelineLine errorBody = Assert.Single(
+            result.Lines,
+            line => line.EntryKey == "error" && PlainText(line).Contains("Localized", StringComparison.Ordinal));
+        Assert.Equal(TimelineRole.Warning, Assert.Single(warningBody.Spans).Role);
+        Assert.Equal(TimelineRole.Error, Assert.Single(errorBody.Spans).Role);
+    }
+
+    [Fact]
+    public void Build_EscapesRealControlsWithoutDecodingLiteralPrivateUseSentinelText()
+    {
+        const string literalSentinelText = "\uE000001B\uE001";
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("a", ChatEntryKind.Agent, "Agent", $"literal {literalSentinelText} real \u001B")],
+            width: 80,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Contains(result.Lines, line => PlainText(line) == $"literal {literalSentinelText} real");
+        Assert.Contains(result.Lines, line => PlainText(line) == "\\u001B");
+    }
+
+    [Fact]
+    public void Build_DoesNotParseMarkdownInNonConversationalBodies()
+    {
+        ChatEntry[] entries =
+        [
+            Entry("status", ChatEntryKind.Status, "Status", "**not bold** file_name_*", isTransient: true),
+            Entry("event", ChatEntryKind.Event, "Event", "[literal](https://example.com) *event*"),
+            Entry("attachment", ChatEntryKind.Attachment, "Agent", "report_1_*final*.md"),
+            Entry(
+                "diagnostic",
+                ChatEntryKind.Diagnostic,
+                "System",
+                "**warning** for path_*",
+                severity: DiagnosticSeverity.Warning)
+        ];
+
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            entries,
+            width: 80,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        Assert.Contains(result.Lines, line => PlainText(line) == "**not bold** file_name_*");
+        Assert.Contains(result.Lines, line => PlainText(line) == "[literal](https://example.com) *event*");
+        Assert.Contains(result.Lines, line => PlainText(line) == "report_1_*final*.md");
+        Assert.Contains(result.Lines, line => PlainText(line) == "**warning** for path_*");
+        Assert.DoesNotContain(
+            result.Lines.Where(line => line.EntryKey is "status" or "event" or "attachment" or "diagnostic")
+                .SelectMany(line => line.Spans),
+            span => span.Style != TimelineTextStyle.None || span.LinkTarget is not null || span.Role == TimelineRole.Code);
     }
 
     [Fact]
@@ -360,9 +441,10 @@ public sealed class TerminalTimelineLayoutTests
         ChatEntryKind kind,
         string author,
         string text,
-        bool isTransient = false)
+        bool isTransient = false,
+        DiagnosticSeverity? severity = null)
     {
-        return new ChatEntry(key, kind, author, text, isTransient, [], [], key);
+        return new ChatEntry(key, kind, author, text, isTransient, [], [], key, severity);
     }
 
     private static string PlainText(TimelineLine line)

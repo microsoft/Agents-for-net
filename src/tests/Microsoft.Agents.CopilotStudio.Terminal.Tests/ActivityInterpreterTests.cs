@@ -345,6 +345,7 @@ public sealed class ActivityInterpreterTests
             ActivityDirection.Inbound);
 
         ChatEntry diagnostic = AssertDiagnostic(changes, "unambiguous");
+        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
         Assert.Equal([new ChatAction("Retry", "retry")], diagnostic.SuggestedActions);
         Assert.Contains(changes, change => change.Entry?.Kind == ChatEntryKind.Thought && change.Entry.Text == "Checking tools");
         Assert.Contains(changes, change => change.Entry?.Kind == ChatEntryKind.Attachment);
@@ -540,6 +541,7 @@ public sealed class ActivityInterpreterTests
         int upsertIndex = changes.ToList().FindIndex(change => change.Entry?.Kind == ChatEntryKind.Agent);
         int diagnosticIndex = changes.ToList().FindIndex(change => change.Entry?.Kind == ChatEntryKind.Diagnostic);
         Assert.True(upsertIndex >= 0 && diagnosticIndex > upsertIndex);
+        Assert.Equal(DiagnosticSeverity.Error, changes[diagnosticIndex].Entry!.Severity);
     }
 
     [Fact]
