@@ -48,6 +48,7 @@ internal sealed record TimelineGlyphSet(
 internal static class TerminalTimelineLayout
 {
     private const int TabStop = 8;
+    private static readonly TimelineLine[] NoLines = [];
 
     private enum RenderTokenKind
     {
@@ -96,7 +97,7 @@ internal static class TerminalTimelineLayout
             entryRows.Add(entry.Key, new TimelineRowRange(start, count));
         }
 
-        return new TimelineLayoutResult(lines, entryRows);
+        return new TimelineLayoutResult(lines.Count == 0 ? NoLines : lines.ToArray(), entryRows);
     }
 
     private static (string Glyph, TimelineRole Role) GetHeader(

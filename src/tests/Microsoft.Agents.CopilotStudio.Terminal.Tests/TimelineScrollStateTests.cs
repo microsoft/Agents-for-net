@@ -41,6 +41,25 @@ public sealed class TimelineScrollStateTests
         Assert.False(state.IsFollowingLatest);
     }
 
+    [Fact]
+    public void SetDimensions_WhenTallerViewportClampsToBottom_TracksLatestOnSubsequentGrowth()
+    {
+        TimelineScrollState state = new();
+        state.SetDimensions(contentHeight: 20, viewportHeight: 10);
+        state.ScrollToEnd();
+        state.ScrollBy(-1);
+
+        state.SetDimensions(contentHeight: 20, viewportHeight: 11);
+
+        Assert.Equal(9, state.Offset);
+        Assert.True(state.IsFollowingLatest);
+
+        state.SetDimensions(contentHeight: 21, viewportHeight: 11);
+
+        Assert.Equal(10, state.Offset);
+        Assert.True(state.IsFollowingLatest);
+    }
+
     [Theory]
     [InlineData(-100, 0)]
     [InlineData(100, 10)]

@@ -26,6 +26,7 @@ internal sealed class TimelineScrollState
         }
 
         Offset = Math.Min(Offset, MaximumOffset);
+        isFollowingLatest = Offset == MaximumOffset;
     }
 
     internal void ScrollBy(int delta)

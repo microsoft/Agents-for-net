@@ -1,6 +1,8 @@
 #nullable enable
 
+using System;
 using System.Linq;
+using System.Collections.Generic;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Input;
 
@@ -74,6 +76,25 @@ public sealed class TerminalTimelineViewTests
     }
 
     [Fact]
+    public void ResizeToTallerViewport_WhenClampReachesBottom_FollowsAppendedEntries()
+    {
+        using TerminalTimelineView view = new() { Width = 20, Height = 4 };
+
+        view.SetEntries(ManyEntries(4));
+        view.NewKeyDownEvent(Key.End);
+        view.NewKeyDownEvent(Key.CursorUp);
+
+        view.Height = 5;
+        view.Layout();
+
+        Assert.Equal(view.MaximumScrollOffset, view.ScrollOffset);
+
+        view.SetEntries(ManyEntries(5));
+
+        Assert.Equal(view.MaximumScrollOffset, view.ScrollOffset);
+    }
+
+    [Fact]
     public void MouseWheelScrolling_MovesOneRowPerWheelEvent()
     {
         using TerminalTimelineView view = new() { Width = 20, Height = 4 };
@@ -86,6 +107,34 @@ public sealed class TerminalTimelineViewTests
 
         Assert.True(view.NewMouseEvent(new Mouse { Flags = MouseFlags.WheeledDown }) ?? false);
         Assert.Equal(bottomOffset, view.ScrollOffset);
+    }
+
+    [Fact]
+    public void MouseWheelScrolling_HandlesWheelFlagsCombinedWithModifiers()
+    {
+        using TerminalTimelineView view = new() { Width = 20, Height = 4 };
+
+        view.SetEntries(ManyEntries(10));
+        int bottomOffset = view.ScrollOffset;
+
+        Assert.True(view.NewMouseEvent(new Mouse { Flags = MouseFlags.WheeledUp | MouseFlags.Shift }) ?? false);
+        Assert.Equal(bottomOffset - 1, view.ScrollOffset);
+
+        Assert.True(view.NewMouseEvent(new Mouse { Flags = MouseFlags.WheeledDown | MouseFlags.Ctrl }) ?? false);
+        Assert.Equal(bottomOffset, view.ScrollOffset);
+    }
+
+    [Fact]
+    public void RenderedLines_DoesNotAllowMutationThroughCollectionCast()
+    {
+        using TerminalTimelineView view = new() { Width = 40, Height = 10 };
+
+        view.SetEntries([Entry("entry", "Hello")]);
+
+        ICollection<TimelineLine> renderedLines = Assert.IsAssignableFrom<ICollection<TimelineLine>>(view.RenderedLines);
+
+        Assert.Throws<NotSupportedException>(() => renderedLines.Add(new TimelineLine("mutated", [])));
+        Assert.DoesNotContain(view.RenderedLines, line => line.EntryKey == "mutated");
     }
 
     private static ChatEntry Entry(string key, string text, bool isTransient = false)

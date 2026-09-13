@@ -8,7 +8,7 @@ using Terminal.Gui.ViewBase;
 internal sealed class TerminalTimelineView : View
 {
     private static readonly TimelineLayoutResult EmptyLayout = new(
-        [],
+        Array.Empty<TimelineLine>(),
         new Dictionary<string, TimelineRowRange>(StringComparer.Ordinal));
 
     private readonly TimelineScrollState _scrollState = new();
@@ -102,12 +102,19 @@ internal sealed class TerminalTimelineView : View
 
     protected override bool OnMouseEvent(Mouse mouse)
     {
-        bool handled = mouse.Flags switch
+        bool handled;
+        if ((mouse.Flags & MouseFlags.WheeledUp) == MouseFlags.WheeledUp)
         {
-            MouseFlags.WheeledUp => ScrollBy(-1),
-            MouseFlags.WheeledDown => ScrollBy(1),
-            _ => false
-        };
+            handled = ScrollBy(-1);
+        }
+        else if ((mouse.Flags & MouseFlags.WheeledDown) == MouseFlags.WheeledDown)
+        {
+            handled = ScrollBy(1);
+        }
+        else
+        {
+            handled = false;
+        }
 
         if (handled)
         {
