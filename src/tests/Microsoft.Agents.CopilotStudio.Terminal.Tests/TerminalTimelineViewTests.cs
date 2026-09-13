@@ -1,0 +1,115 @@
+#nullable enable
+
+using System.Linq;
+using Terminal.Gui.Drawing;
+using Terminal.Gui.Input;
+
+public sealed class TerminalTimelineViewTests
+{
+    [Fact]
+    public void SetEntries_ReplacesRenderedStreamingEntryByKey()
+    {
+        using TerminalTimelineView view = new() { Width = 40, Height = 10 };
+
+        view.SetEntries([Entry("stream", "Hel", isTransient: true)]);
+        view.SetEntries([Entry("stream", "Hello", isTransient: true)]);
+
+        Assert.Single(
+            view.RenderedLines,
+            line => line.EntryKey == "stream" && PlainText(line) == "Hello");
+        Assert.DoesNotContain(view.RenderedLines, line => PlainText(line) == "Hel");
+    }
+
+    [Fact]
+    public void Layout_RewrapsWhenViewportNarrows()
+    {
+        using TerminalTimelineView view = new() { Width = 30, Height = 10 };
+
+        view.SetEntries([Entry("a", "one two three four")]);
+        int wideLineCount = view.RenderedLines.Count;
+
+        view.Width = 10;
+        view.Layout();
+
+        Assert.True(view.RenderedLines.Count > wideLineCount);
+    }
+
+    [Fact]
+    public void SemanticRoles_MapToAdaptiveTerminalRoles()
+    {
+        using TerminalTimelineView view = new();
+
+        Assert.Equal(VisualRole.HotNormal, view.GetVisualRole(TimelineRole.Accent));
+        Assert.Equal(VisualRole.Active, view.GetVisualRole(TimelineRole.Success));
+        Assert.Equal(VisualRole.Disabled, view.GetVisualRole(TimelineRole.Muted));
+        Assert.Equal(VisualRole.HotActive, view.GetVisualRole(TimelineRole.Warning));
+    }
+
+    [Fact]
+    public void KeyboardScrolling_PreservesManualPositionAcrossUpdate()
+    {
+        using TerminalTimelineView view = new() { Width = 20, Height = 4 };
+
+        view.SetEntries(ManyEntries(10));
+        view.NewKeyDownEvent(Key.End);
+        view.NewKeyDownEvent(Key.CursorUp);
+        int manualOffset = view.ScrollOffset;
+
+        view.SetEntries(ManyEntries(11));
+
+        Assert.Equal(manualOffset, view.ScrollOffset);
+    }
+
+    [Fact]
+    public void UpdatingLastStreamKeepsLatestLineVisibleWhenFollowing()
+    {
+        using TerminalTimelineView view = new() { Width = 12, Height = 4 };
+
+        view.SetEntries(ManyEntries(8));
+        view.NewKeyDownEvent(Key.End);
+
+        view.SetEntries(ManyEntries(8, finalText: "long streaming update wraps"));
+
+        Assert.Equal(view.MaximumScrollOffset, view.ScrollOffset);
+    }
+
+    [Fact]
+    public void MouseWheelScrolling_MovesOneRowPerWheelEvent()
+    {
+        using TerminalTimelineView view = new() { Width = 20, Height = 4 };
+
+        view.SetEntries(ManyEntries(10));
+        int bottomOffset = view.ScrollOffset;
+
+        Assert.True(view.NewMouseEvent(new Mouse { Flags = MouseFlags.WheeledUp }) ?? false);
+        Assert.Equal(bottomOffset - 1, view.ScrollOffset);
+
+        Assert.True(view.NewMouseEvent(new Mouse { Flags = MouseFlags.WheeledDown }) ?? false);
+        Assert.Equal(bottomOffset, view.ScrollOffset);
+    }
+
+    private static ChatEntry Entry(string key, string text, bool isTransient = false)
+    {
+        return new ChatEntry(key, ChatEntryKind.Agent, "Agent", text, isTransient, [], [], key);
+    }
+
+    private static ChatEntry[] ManyEntries(int count, string? finalText = null)
+    {
+        return Enumerable.Range(0, count)
+            .Select(index => new ChatEntry(
+                $"entry-{index}",
+                ChatEntryKind.Agent,
+                "Agent",
+                index == count - 1 ? finalText ?? $"item {index}" : $"item {index}",
+                index == count - 1,
+                [],
+                [],
+                $"entry-{index}"))
+            .ToArray();
+    }
+
+    private static string PlainText(TimelineLine line)
+    {
+        return string.Concat(line.Spans.Select(span => span.Text));
+    }
+}
