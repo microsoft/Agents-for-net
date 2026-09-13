@@ -128,6 +128,43 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 services.AddSingleton<IConnections, ConfigurationConnections>();
             }
 
+            return AddAgentCoreServices<TAdapter>(services);
+        }
+
+        /// <summary>
+        /// Adds core services required for Agent functionality, including the specified cloud adapter, to
+        /// the application's dependency injection container, using custom configuration section paths for
+        /// connections and the connections map.
+        /// </summary>
+        /// <remarks>
+        /// This method does not replace an existing <see cref="IConnections"/> registration. Call it before
+        /// other agent registration methods when custom configuration section paths are required.
+        /// </remarks>
+        /// <typeparam name="TAdapter">The type of cloud adapter to register. Must inherit from CloudAdapter.</typeparam>
+        /// <param name="services">The service collection to which the agent core services will be added.</param>
+        /// <param name="connectionsKey">The configuration section path containing connection definitions.</param>
+        /// <param name="mapKey">The configuration section path containing the connections map.</param>
+        /// <returns>The same service collection to allow for method chaining.</returns>
+        public static IServiceCollection AddAgentCore<TAdapter>(this IServiceCollection services, string connectionsKey, string mapKey) where TAdapter : CloudAdapter
+        {
+            ArgumentException.ThrowIfNullOrEmpty(connectionsKey);
+            ArgumentException.ThrowIfNullOrEmpty(mapKey);
+
+            if (!services.Any(x => x.ServiceType == typeof(IConnections)))
+            {
+                services.AddSingleton<IConnections>(serviceProvider =>
+                    new ConfigurationConnections(
+                        serviceProvider,
+                        serviceProvider.GetRequiredService<IConfiguration>(),
+                        connectionsKey,
+                        mapKey));
+            }
+
+            return AddAgentCoreServices<TAdapter>(services);
+        }
+
+        private static IServiceCollection AddAgentCoreServices<TAdapter>(IServiceCollection services) where TAdapter : CloudAdapter
+        {
             if (!services.Any(x => x.ServiceType == typeof(IChannelServiceClientFactory)))
             {
                 // Add factory for ConnectorClient and UserTokenClient creation
