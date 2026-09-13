@@ -1,0 +1,149 @@
+#nullable enable
+
+using System;
+using System.Linq;
+using System.Text;
+
+public sealed class TerminalTimelineLayoutTests
+{
+    [Fact]
+    public void Build_AssignsSemanticGlyphsAndRoles()
+    {
+        ChatEntry[] entries =
+        [
+            Entry("u", ChatEntryKind.User, "You", "Question"),
+            Entry("a", ChatEntryKind.Agent, "Agent", "Answer"),
+            Entry("s", ChatEntryKind.Status, "Status", "Working", isTransient: true),
+            Entry("e", ChatEntryKind.Event, "Event", "Tool finished"),
+            Entry("x", ChatEntryKind.Diagnostic, "Error", "Failed")
+        ];
+
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            entries,
+            width: 40,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(
+            [">  You", "Question", "", "●  Agent", "Answer", "", "○  Status", "Working", "", "↗  Event", "Tool finished", "", "!  Error", "Failed"],
+            result.Lines.Select(PlainText));
+        Assert.Equal(TimelineRole.Accent, result.Lines[0].Spans[0].Role);
+        Assert.Equal(TimelineRole.Success, result.Lines[3].Spans[0].Role);
+        Assert.Equal(TimelineRole.Muted, result.Lines[6].Spans[0].Role);
+        Assert.Equal(TimelineRole.Warning, result.Lines[12].Spans[0].Role);
+    }
+
+    [Fact]
+    public void Build_UsesAsciiGlyphSetWhenRequested()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("a", ChatEntryKind.Agent, "Agent", "Answer")],
+            width: 40,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal("*  Agent", PlainText(result.Lines[0]));
+    }
+
+    [Fact]
+    public void ForEncoding_UsesAsciiFallbackForNonUnicodeOutput()
+    {
+        Assert.Equal(TimelineGlyphSet.Ascii, TimelineGlyphSet.ForEncoding(Encoding.ASCII));
+        Assert.Equal(TimelineGlyphSet.Unicode, TimelineGlyphSet.ForEncoding(Encoding.UTF8));
+    }
+
+    [Fact]
+    public void Build_SanitizesControlsAndWrapsBodyToWidth()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("a", ChatEntryKind.Agent, "Agent", "alpha beta\u001B gamma")],
+            width: 12,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(
+            ["*  Agent", "alpha beta", "\\u001B", "gamma"],
+            result.Lines.Select(PlainText));
+        Assert.All(result.Lines, line => Assert.True(PlainText(line).Length <= 12));
+    }
+
+    [Fact]
+    public void Build_CollapsesCompletedThoughtButKeepsActiveThoughtExpanded()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [
+                Entry("active", ChatEntryKind.Thought, "Reasoning", "Checking account", isTransient: true),
+                Entry("done", ChatEntryKind.Thought, "Reasoning", "Compared all records", isTransient: false)
+            ],
+            width: 80,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        Assert.Contains(result.Lines, line => PlainText(line) == "Checking account");
+        Assert.DoesNotContain(result.Lines, line => PlainText(line) == "Compared all records");
+        Assert.Contains(
+            result.Lines,
+            line => PlainText(line) == "Reasoning complete · Ctrl+2 for details");
+    }
+
+    [Fact]
+    public void Build_ThoughtInspectorKeepsCompletedThoughtExpanded()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("done", ChatEntryKind.Thought, "Reasoning", "Compared all records")],
+            width: 80,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: false);
+
+        Assert.Contains(result.Lines, line => PlainText(line) == "Compared all records");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Build_NarrowWidthsNeverProduceOverwideLinesOrThrow(int width)
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("a", ChatEntryKind.Agent, "Agent", "longcontent")],
+            width,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.All(result.Lines, line =>
+            Assert.True(PlainText(line).Length <= Math.Max(1, width)));
+    }
+
+    [Fact]
+    public void Build_TracksRowRangesWithoutCountingSeparators()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [
+                Entry("first", ChatEntryKind.Agent, "Agent", "One"),
+                Entry("second", ChatEntryKind.Agent, "Agent", "Two")
+            ],
+            width: 40,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(new TimelineRowRange(0, 2), result.EntryRows["first"]);
+        Assert.Equal(new TimelineRowRange(3, 2), result.EntryRows["second"]);
+        Assert.Equal(5, result.Lines.Count);
+        Assert.Equal(string.Empty, PlainText(result.Lines[2]));
+    }
+
+    private static ChatEntry Entry(
+        string key,
+        ChatEntryKind kind,
+        string author,
+        string text,
+        bool isTransient = false)
+    {
+        return new ChatEntry(key, kind, author, text, isTransient, [], [], key);
+    }
+
+    private static string PlainText(TimelineLine line)
+    {
+        return string.Concat(line.Spans.Select(span => span.Text));
+    }
+}
