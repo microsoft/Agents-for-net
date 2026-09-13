@@ -65,10 +65,16 @@ public sealed class TerminalTimelineViewTests
     {
         using TerminalTimelineView view = new();
 
-        Assert.Equal(VisualRole.HotNormal, view.GetVisualRole(TimelineRole.Accent));
-        Assert.Equal(VisualRole.Active, view.GetVisualRole(TimelineRole.Success));
+        Assert.Equal(VisualRole.Normal, view.GetVisualRole(TimelineRole.Primary));
         Assert.Equal(VisualRole.Disabled, view.GetVisualRole(TimelineRole.Muted));
+        Assert.Equal(VisualRole.HotNormal, view.GetVisualRole(TimelineRole.User));
+        Assert.Equal(VisualRole.Active, view.GetVisualRole(TimelineRole.Agent));
+        Assert.Equal(VisualRole.HotNormal, view.GetVisualRole(TimelineRole.Thought));
+        Assert.Equal(VisualRole.Focus, view.GetVisualRole(TimelineRole.Link));
+        Assert.Equal(VisualRole.HotFocus, view.GetVisualRole(TimelineRole.ActiveNavigation));
         Assert.Equal(VisualRole.HotActive, view.GetVisualRole(TimelineRole.Warning));
+        Assert.Equal(VisualRole.HotActive, view.GetVisualRole(TimelineRole.Error));
+        Assert.Equal(VisualRole.Code, view.GetVisualRole(TimelineRole.Code));
     }
 
     [Fact]

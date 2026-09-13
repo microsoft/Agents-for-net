@@ -162,7 +162,7 @@ internal sealed class TimelineRoleLabel : View
 {
     internal string Content { get; init; } = string.Empty;
 
-    internal TimelineRole Role { get; init; } = TimelineRole.Normal;
+    internal TimelineRole Role { get; init; } = TimelineRole.Primary;
 
     internal TimelineRoleLabel()
     {
@@ -182,10 +182,16 @@ internal sealed class TimelineRoleLabel : View
 
     private static VisualRole GetVisualRole(TimelineRole role) => role switch
     {
-        TimelineRole.Accent => VisualRole.HotNormal,
-        TimelineRole.Success => VisualRole.Active,
+        TimelineRole.Primary => VisualRole.Normal,
         TimelineRole.Muted => VisualRole.Disabled,
+        TimelineRole.User => VisualRole.HotNormal,
+        TimelineRole.Agent => VisualRole.Active,
+        TimelineRole.Thought => VisualRole.HotNormal,
+        TimelineRole.Link => VisualRole.Focus,
+        TimelineRole.ActiveNavigation => VisualRole.HotFocus,
         TimelineRole.Warning => VisualRole.HotActive,
+        TimelineRole.Error => VisualRole.HotActive,
+        TimelineRole.Code => VisualRole.Code,
         _ => VisualRole.Normal
     };
 }
@@ -288,7 +294,7 @@ internal sealed class TerminalChatApplication : ITerminalView
     private static readonly IReadOnlyList<TimelineLine> EmptyConversationLines = Array.AsReadOnly(
         new[]
         {
-            new TimelineLine(string.Empty, [new TimelineSpan("Copilot Studio", TimelineRole.Accent)]),
+            new TimelineLine(string.Empty, [new TimelineSpan("Copilot Studio", TimelineRole.Primary)]),
             new TimelineLine(
                 string.Empty,
                 [new TimelineSpan("Connected conversations and streaming activity appear here.", TimelineRole.Muted)]),
@@ -544,7 +550,7 @@ internal sealed class TerminalChatApplication : ITerminalView
             Width = Dim.Fill(),
             Height = 1,
             Content = "Copilot Studio (connected)",
-            Role = TimelineRole.Accent
+            Role = TimelineRole.Primary
         };
 
         _transcript = new TerminalTimelineView

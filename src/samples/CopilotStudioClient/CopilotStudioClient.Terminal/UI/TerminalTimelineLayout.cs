@@ -8,11 +8,16 @@ using Terminal.Gui.Text;
 
 internal enum TimelineRole
 {
-    Normal,
-    Accent,
-    Success,
+    Primary,
     Muted,
-    Warning
+    User,
+    Agent,
+    Thought,
+    Link,
+    ActiveNavigation,
+    Warning,
+    Error,
+    Code
 }
 
 internal sealed record TimelineSpan(string Text, TimelineRole Role);
@@ -114,26 +119,26 @@ internal static class TerminalTimelineLayout
         ChatEntryKind kind,
         TimelineGlyphSet glyphs) => kind switch
     {
-        ChatEntryKind.User => (glyphs.User, TimelineRole.Accent),
-        ChatEntryKind.Agent => (glyphs.Agent, TimelineRole.Success),
+        ChatEntryKind.User => (glyphs.User, TimelineRole.User),
+        ChatEntryKind.Agent => (glyphs.Agent, TimelineRole.Agent),
         ChatEntryKind.Status => (glyphs.Status, TimelineRole.Muted),
-        ChatEntryKind.Thought => (glyphs.Thought, TimelineRole.Accent),
+        ChatEntryKind.Thought => (glyphs.Thought, TimelineRole.Thought),
         ChatEntryKind.Event => (glyphs.Event, TimelineRole.Muted),
-        ChatEntryKind.Attachment => (glyphs.Attachment, TimelineRole.Accent),
+        ChatEntryKind.Attachment => (glyphs.Attachment, TimelineRole.Link),
         ChatEntryKind.Diagnostic => (glyphs.Diagnostic, TimelineRole.Warning),
-        _ => (glyphs.Event, TimelineRole.Normal)
+        _ => (glyphs.Event, TimelineRole.Primary)
     };
 
     private static TimelineRole GetBodyRole(ChatEntryKind kind) => kind switch
     {
-        ChatEntryKind.User => TimelineRole.Normal,
-        ChatEntryKind.Agent => TimelineRole.Normal,
+        ChatEntryKind.User => TimelineRole.Primary,
+        ChatEntryKind.Agent => TimelineRole.Primary,
         ChatEntryKind.Status => TimelineRole.Muted,
         ChatEntryKind.Thought => TimelineRole.Muted,
         ChatEntryKind.Event => TimelineRole.Muted,
-        ChatEntryKind.Attachment => TimelineRole.Accent,
+        ChatEntryKind.Attachment => TimelineRole.Link,
         ChatEntryKind.Diagnostic => TimelineRole.Warning,
-        _ => TimelineRole.Normal
+        _ => TimelineRole.Primary
     };
 
     private static string BuildHeaderText(string glyph, string author, int width)

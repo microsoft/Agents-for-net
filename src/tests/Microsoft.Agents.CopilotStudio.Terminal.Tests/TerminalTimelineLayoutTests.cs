@@ -28,8 +28,8 @@ public sealed class TerminalTimelineLayoutTests
         Assert.Equal(
             [">  You", "Question", "", "●  Agent", "Answer", "", "○  Status", "Working", "", "↗  Event", "Tool finished", "", "!  Error", "Failed"],
             result.Lines.Select(PlainText));
-        Assert.Equal(TimelineRole.Accent, result.Lines[0].Spans[0].Role);
-        Assert.Equal(TimelineRole.Success, result.Lines[3].Spans[0].Role);
+        Assert.Equal(TimelineRole.User, result.Lines[0].Spans[0].Role);
+        Assert.Equal(TimelineRole.Agent, result.Lines[3].Spans[0].Role);
         Assert.Equal(TimelineRole.Muted, result.Lines[6].Spans[0].Role);
         Assert.Equal(TimelineRole.Warning, result.Lines[12].Spans[0].Role);
     }

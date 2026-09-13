@@ -53,10 +53,16 @@ internal sealed class TerminalTimelineView : View
 
     internal VisualRole GetVisualRole(TimelineRole role) => role switch
     {
-        TimelineRole.Accent => VisualRole.HotNormal,
-        TimelineRole.Success => VisualRole.Active,
+        TimelineRole.Primary => VisualRole.Normal,
         TimelineRole.Muted => VisualRole.Disabled,
+        TimelineRole.User => VisualRole.HotNormal,
+        TimelineRole.Agent => VisualRole.Active,
+        TimelineRole.Thought => VisualRole.HotNormal,
+        TimelineRole.Link => VisualRole.Focus,
+        TimelineRole.ActiveNavigation => VisualRole.HotFocus,
         TimelineRole.Warning => VisualRole.HotActive,
+        TimelineRole.Error => VisualRole.HotActive,
+        TimelineRole.Code => VisualRole.Code,
         _ => VisualRole.Normal
     };
 
@@ -212,7 +218,7 @@ internal sealed class TerminalTimelineView : View
     private void ClearRow(int visibleRow, int visibleWidth)
     {
         Move(0, visibleRow);
-        SetAttribute(GetAttributeForRole(GetVisualRole(TimelineRole.Normal)));
+        SetAttribute(GetAttributeForRole(GetVisualRole(TimelineRole.Primary)));
         AddStr(new string(' ', visibleWidth));
     }
 
