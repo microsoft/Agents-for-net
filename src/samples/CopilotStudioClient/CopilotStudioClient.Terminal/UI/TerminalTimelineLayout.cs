@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
+using Terminal.Gui.Text;
 
 internal enum TimelineRole
 {
@@ -31,13 +32,14 @@ internal sealed record TimelineGlyphSet(
     string Thought,
     string Event,
     string Attachment,
-    string Diagnostic)
+    string Diagnostic,
+    string DetailSeparator)
 {
     internal static TimelineGlyphSet Unicode { get; } =
-        new(">", "●", "○", "◆", "↗", "▣", "!");
+        new(">", "●", "○", "◆", "↗", "▣", "!", "·");
 
     internal static TimelineGlyphSet Ascii { get; } =
-        new(">", "*", "o", "~", "^", "+", "!");
+        new(">", "*", "o", "~", "^", "+", "!", "-");
 
     internal static TimelineGlyphSet ForEncoding(Encoding encoding)
     {
@@ -82,7 +84,7 @@ internal static class TerminalTimelineLayout
             string headerText = BuildHeaderText(headerGlyph, entry.Author, contentWidth);
             lines.Add(new TimelineLine(entry.Key, [new TimelineSpan(headerText, headerRole)]));
 
-            string bodyText = GetBodyText(entry, collapseCompletedThoughts);
+            string bodyText = GetBodyText(entry, glyphs, collapseCompletedThoughts);
             TimelineRole bodyRole = GetBodyRole(entry.Kind);
             foreach (string line in Wrap(bodyText, contentWidth))
             {
@@ -141,14 +143,21 @@ internal static class TerminalTimelineLayout
             ? glyph
             : string.Concat(glyph, "  ", normalizedAuthor);
 
-        return TruncateTextElements(text, width);
+        return TruncateToDisplayWidth(text, width);
     }
 
-    private static string GetBodyText(ChatEntry entry, bool collapseCompletedThoughts)
+    private static string GetBodyText(
+        ChatEntry entry,
+        TimelineGlyphSet glyphs,
+        bool collapseCompletedThoughts)
     {
         if (entry.Kind == ChatEntryKind.Thought && collapseCompletedThoughts && !entry.IsTransient)
         {
-            return string.Concat(NormalizeInlineText(entry.Author), " complete · Ctrl+2 for details");
+            return string.Concat(
+                NormalizeInlineText(entry.Author),
+                " complete ",
+                glyphs.DetailSeparator,
+                " Ctrl+2 for details");
         }
 
         return entry.Text;
@@ -238,7 +247,7 @@ internal static class TerminalTimelineLayout
 
         void AppendTextToken(RenderToken token, bool treatAsControlEscape)
         {
-            int tokenWidth = MeasureTextElements(token.Text);
+            int tokenWidth = MeasureDisplayWidth(token.Text);
 
             if (treatAsControlEscape)
             {
@@ -397,57 +406,79 @@ internal static class TerminalTimelineLayout
             }
 
             builder.Append(textElement);
-            column++;
+            column += Math.Max(0, textElement.GetColumns());
         }
 
         return builder.ToString().Trim();
     }
 
-    private static string TruncateTextElements(string value, int width)
+    private static string TruncateToDisplayWidth(string value, int width)
     {
-        int remaining = Math.Max(1, width);
+        int contentWidth = Math.Max(1, width);
+        int usedWidth = 0;
         StringBuilder builder = new();
 
         foreach (string textElement in EnumerateTextElements(value))
         {
-            if (remaining == 0)
+            int elementWidth = Math.Max(0, textElement.GetColumns());
+            if (elementWidth > contentWidth)
+            {
+                if (builder.Length == 0)
+                {
+                    builder.Append('?');
+                }
+
+                break;
+            }
+
+            if (usedWidth + elementWidth > contentWidth)
             {
                 break;
             }
 
             builder.Append(textElement);
-            remaining--;
+            usedWidth += elementWidth;
         }
 
         return builder.ToString();
     }
 
-    private static int MeasureTextElements(string value)
+    private static int MeasureDisplayWidth(string value)
     {
-        int count = 0;
-        foreach (string _ in EnumerateTextElements(value))
-        {
-            count++;
-        }
-
-        return count;
+        return Math.Max(0, value.GetColumns());
     }
 
     private static IEnumerable<string> SliceTextElements(string value, int width)
     {
-        int remaining = Math.Max(1, width);
+        int contentWidth = Math.Max(1, width);
+        int usedWidth = 0;
         StringBuilder builder = new();
 
         foreach (string textElement in EnumerateTextElements(value))
         {
-            builder.Append(textElement);
-            remaining--;
-            if (remaining == 0)
+            int elementWidth = Math.Max(0, textElement.GetColumns());
+            if (elementWidth > contentWidth)
+            {
+                if (builder.Length > 0)
+                {
+                    yield return builder.ToString();
+                    builder.Clear();
+                    usedWidth = 0;
+                }
+
+                yield return "?";
+                continue;
+            }
+
+            if (usedWidth > 0 && usedWidth + elementWidth > contentWidth)
             {
                 yield return builder.ToString();
                 builder.Clear();
-                remaining = Math.Max(1, width);
+                usedWidth = 0;
             }
+
+            builder.Append(textElement);
+            usedWidth += elementWidth;
         }
 
         if (builder.Length > 0)

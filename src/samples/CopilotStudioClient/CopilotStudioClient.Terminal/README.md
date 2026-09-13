@@ -147,12 +147,14 @@ dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Termina
 
 ### Default layout
 
-The default layout opens four tabs:
+The default layout shows the chrome-free **Chat** timeline. Full-size inspector surfaces remain hidden until selected:
 
 1. **Chat**
 2. **Thoughts**
 3. **Activities**
 4. **Help**
+
+`--layout tabs` remains accepted for command-line compatibility and selects this same chrome-free timeline mode; it does not render a tab strip.
 
 ### Split layout
 
@@ -163,7 +165,7 @@ The default layout opens four tabs:
 - `Ctrl+1`: focus **Chat**
 - `Ctrl+2`: focus **Thoughts**
 - `Ctrl+3`: focus **Activities**
-- `Ctrl+4`: focus **Help** in tab mode, or show the help dialog in split mode
+- `Ctrl+4`: focus the full-size **Help** surface in the default layout, or show the help dialog in split mode
 - `Tab` / `Shift+Tab`: move focus
 - `Up` / `Down`, `PageUp` / `PageDown`, and the mouse wheel: scroll the focused pane or inspector
 - `Enter`: send the composer text or activate the focused link/action

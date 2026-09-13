@@ -431,15 +431,15 @@ internal sealed class TerminalChatApplication : ITerminalView
         {
             View help = BuildHelpView();
             _helpTab = help;
-            Tabs tabs = new()
+            View surfaces = new()
             {
                 Width = Dim.Fill(),
-                Height = Dim.Fill()
+                Height = Dim.Fill(),
+                CanFocus = true
             };
-            tabs.Add(chat, thoughts, activities, help);
-            tabs.Value = chat;
-            _tabs = tabs;
-            window.Add(tabs);
+            surfaces.Add(chat, thoughts, activities, help);
+            ShowDefaultSurface(chat);
+            window.Add(surfaces);
         }
         else
         {
@@ -769,21 +769,35 @@ internal sealed class TerminalChatApplication : ITerminalView
 
     private void FocusChat()
     {
-        if (_tabs is not null && _chatTab is not null)
+        if (_chatTab is not null)
         {
-            _tabs.Value = _chatTab;
+            if (_options.Layout == TerminalLayout.Tabs)
+            {
+                ShowDefaultSurface(_chatTab);
+                _chatTab.SetFocus();
+            }
+            else if (_tabs is not null)
+            {
+                _tabs.Value = _chatTab;
+            }
         }
 
-        _composer?.SetFocus();
+        if (_composer?.Enabled == true)
+        {
+            _composer.SetFocus();
+        }
+        else
+        {
+            _transcript?.SetFocus();
+        }
     }
 
     private void FocusActivities()
     {
-        if (_options.Layout == TerminalLayout.Tabs
-            && _tabs is not null
-            && _activitiesTab is not null)
+        if (_options.Layout == TerminalLayout.Tabs && _activitiesTab is not null)
         {
-            _tabs.Value = _activitiesTab;
+            ShowDefaultSurface(_activitiesTab);
+            _activitiesTab.SetFocus();
         }
 
         _activityList?.SetFocus();
@@ -791,24 +805,56 @@ internal sealed class TerminalChatApplication : ITerminalView
 
     private void FocusThoughts()
     {
-        if (_tabs is not null && _thoughtsTab is not null)
+        if (_thoughtsTab is not null)
         {
-            _tabs.Value = _thoughtsTab;
+            if (_options.Layout == TerminalLayout.Tabs)
+            {
+                ShowDefaultSurface(_thoughtsTab);
+                _thoughtsTab.SetFocus();
+            }
+            else if (_tabs is not null)
+            {
+                _tabs.Value = _thoughtsTab;
+            }
+
             _thoughtTranscript?.SetFocus();
         }
     }
 
     private void ShowHelp()
     {
-        if (_tabs is not null && _helpTab is not null)
+        if (_options.Layout == TerminalLayout.Tabs && _helpTab is not null)
         {
-            _tabs.Value = _helpTab;
+            ShowDefaultSurface(_helpTab);
             _helpTab.SetFocus();
             return;
         }
 
         IApplication application = GetApplication();
         MessageBox.Query(application, "Help", HelpText, "_Close");
+    }
+
+    private void ShowDefaultSurface(View selectedSurface)
+    {
+        if (_chatTab is not null)
+        {
+            _chatTab.Visible = ReferenceEquals(_chatTab, selectedSurface);
+        }
+
+        if (_thoughtsTab is not null)
+        {
+            _thoughtsTab.Visible = ReferenceEquals(_thoughtsTab, selectedSurface);
+        }
+
+        if (_activitiesTab is not null)
+        {
+            _activitiesTab.Visible = ReferenceEquals(_activitiesTab, selectedSurface);
+        }
+
+        if (_helpTab is not null)
+        {
+            _helpTab.Visible = ReferenceEquals(_helpTab, selectedSurface);
+        }
     }
 
     internal void SubmitComposer()

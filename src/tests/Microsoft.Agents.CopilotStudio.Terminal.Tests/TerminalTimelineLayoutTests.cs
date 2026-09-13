@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using Terminal.Gui.Text;
 
 public sealed class TerminalTimelineLayoutTests
 {
@@ -87,6 +88,23 @@ public sealed class TerminalTimelineLayoutTests
     }
 
     [Fact]
+    public void Build_CollapsedThoughtSummaryUsesAsciiOnlyWithAsciiGlyphs()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("done", ChatEntryKind.Thought, "Reasoning", "Compared all records")],
+            width: 80,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        string summary = Assert.Single(
+            result.Lines.Select(PlainText),
+            line => line.Contains("complete", StringComparison.Ordinal));
+
+        Assert.Equal("Reasoning complete - Ctrl+2 for details", summary);
+        Assert.All(summary, character => Assert.InRange(character, '\0', '\u007F'));
+    }
+
+    [Fact]
     public void Build_ThoughtInspectorKeepsCompletedThoughtExpanded()
     {
         TimelineLayoutResult result = TerminalTimelineLayout.Build(
@@ -135,9 +153,10 @@ public sealed class TerminalTimelineLayoutTests
     [Fact]
     public void Build_TruncatesHeaderWithoutSplittingSurrogatePairs()
     {
+        const int width = 5;
         TimelineLayoutResult result = TerminalTimelineLayout.Build(
             [Entry("emoji", ChatEntryKind.Agent, "🙂Alpha", string.Empty)],
-            width: 4,
+            width,
             TimelineGlyphSet.Ascii,
             collapseCompletedThoughts: true);
 
@@ -145,19 +164,71 @@ public sealed class TerminalTimelineLayoutTests
 
         Assert.Equal("*  🙂", header);
         Assert.True(IsWellFormedUtf16(header));
+        Assert.True(header.GetColumns() <= width);
     }
 
     [Fact]
     public void Build_WrapsBodyWithoutSplittingSurrogatePairs()
     {
+        const int width = 2;
         TimelineLayoutResult result = TerminalTimelineLayout.Build(
             [Entry("emoji", ChatEntryKind.Agent, "Agent", "🙂🙂")],
-            width: 1,
+            width,
             TimelineGlyphSet.Ascii,
             collapseCompletedThoughts: true);
 
-        Assert.Equal(["*", "🙂", "🙂"], result.Lines.Select(PlainText));
-        Assert.All(result.Lines, line => Assert.True(IsWellFormedUtf16(PlainText(line))));
+        Assert.Equal(["* ", "🙂", "🙂"], result.Lines.Select(PlainText));
+        Assert.All(result.Lines, line =>
+        {
+            Assert.True(IsWellFormedUtf16(PlainText(line)));
+            Assert.True(PlainText(line).GetColumns() <= width);
+        });
+    }
+
+    [Fact]
+    public void Build_WrapsCjkAtTerminalCellWidth()
+    {
+        const int width = 4;
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("cjk", ChatEntryKind.Agent, "A", "界界界")],
+            width,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(["*  A", "界界", "界"], result.Lines.Select(PlainText));
+        Assert.All(result.Lines, line => Assert.True(PlainText(line).GetColumns() <= width));
+    }
+
+    [Fact]
+    public void Build_WrapsEmojiWithoutSplittingCombiningGraphemes()
+    {
+        const int width = 4;
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("graphemes", ChatEntryKind.Agent, "A", "e\u0301e\u0301🙂🙂")],
+            width,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(["*  A", "e\u0301e\u0301🙂", "🙂"], result.Lines.Select(PlainText));
+        Assert.All(result.Lines, line =>
+        {
+            Assert.True(IsWellFormedUtf16(PlainText(line)));
+            Assert.True(PlainText(line).GetColumns() <= width);
+        });
+    }
+
+    [Fact]
+    public void Build_ReplacesSingleGraphemeThatCannotFitOneTerminalCell()
+    {
+        const int width = 1;
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("wide", ChatEntryKind.Agent, string.Empty, "界")],
+            width,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(["*", "?"], result.Lines.Select(PlainText));
+        Assert.All(result.Lines, line => Assert.True(PlainText(line).GetColumns() <= width));
     }
 
     [Fact]
