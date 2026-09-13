@@ -108,3 +108,36 @@ Complete.
 - `TimelineScrollState.SetDimensions(...)` now re-enters follow-latest mode whenever a manual offset is clamped onto the current bottom during resize, which keeps later appends anchored correctly without changing manual-scroll behavior away from the bottom.
 - `TerminalTimelineView.OnMouseEvent(...)` now checks wheel flags bitwise, so modifier combinations still scroll while unrelated mouse events continue through the base path.
 - `TerminalTimelineLayout.Build(...)` now stores rendered lines as the same array-backed immutable collection consumed by the view, closing the `ICollection<T>` mutation hole without introducing a second render representation.
+
+## Round 2 Fixes
+
+### Scope
+
+- Added a focused regression test for replacing an existing rendered line through the runtime `IList<TimelineLine>` interface.
+- Switched the layout/view line storage seam from a bare array to an `Array.AsReadOnly(...)` wrapper so the draw source and `RenderedLines` share the same read-only collection instance.
+
+### Red 5
+
+- Command:
+  `dotnet test C:\s\gh\an\5\.worktrees\copilot-terminal-timeline\src\tests\Microsoft.Agents.CopilotStudio.Terminal.Tests\Microsoft.Agents.CopilotStudio.Terminal.Tests.csproj --filter "FullyQualifiedName~TerminalTimelineViewTests.RenderedLines_DoesNotAllowElementReplacementThroughListIndexer" --no-restore --nologo`
+- Outcome:
+  failed as expected because `view.RenderedLines` exposed a runtime `IList<TimelineLine>` that allowed `renderedLines[0] = ...` without throwing.
+
+### Green 5
+
+- Command:
+  `dotnet test C:\s\gh\an\5\.worktrees\copilot-terminal-timeline\src\tests\Microsoft.Agents.CopilotStudio.Terminal.Tests\Microsoft.Agents.CopilotStudio.Terminal.Tests.csproj --filter "FullyQualifiedName~TerminalTimelineViewTests.RenderedLines_DoesNotAllowElementReplacementThroughListIndexer" --no-restore --nologo`
+- Outcome:
+  passed with `Failed: 0, Passed: 1, Skipped: 0, Total: 1`.
+
+### Green 6 / Layout-Scroll-View Verification
+
+- Command:
+  `dotnet test C:\s\gh\an\5\.worktrees\copilot-terminal-timeline\src\tests\Microsoft.Agents.CopilotStudio.Terminal.Tests\Microsoft.Agents.CopilotStudio.Terminal.Tests.csproj --filter "FullyQualifiedName~TerminalTimelineLayoutTests|FullyQualifiedName~TimelineScrollStateTests|FullyQualifiedName~TerminalTimelineViewTests" --no-restore --nologo`
+- Outcome:
+  passed with `Failed: 0, Passed: 32, Skipped: 0, Total: 32`.
+
+### Self-review
+
+- The failing test now covers the exact remaining hole: replacing an existing element via the runtime `IList<TimelineLine>` view rather than only appending via `ICollection<T>`.
+- `TerminalTimelineLayout.Build(...)` remains the single producer of render lines, and `TerminalTimelineView.RenderedLines` now exposes that same `ReadOnlyCollection<TimelineLine>` used for drawing, so there is no mutable alias for callers to downcast into.

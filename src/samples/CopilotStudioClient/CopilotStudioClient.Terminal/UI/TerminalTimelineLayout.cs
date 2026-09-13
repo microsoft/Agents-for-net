@@ -1,6 +1,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
 
@@ -48,7 +49,7 @@ internal sealed record TimelineGlyphSet(
 internal static class TerminalTimelineLayout
 {
     private const int TabStop = 8;
-    private static readonly TimelineLine[] NoLines = [];
+    private static readonly ReadOnlyCollection<TimelineLine> NoLines = Array.AsReadOnly(Array.Empty<TimelineLine>());
 
     private enum RenderTokenKind
     {
@@ -97,7 +98,9 @@ internal static class TerminalTimelineLayout
             entryRows.Add(entry.Key, new TimelineRowRange(start, count));
         }
 
-        return new TimelineLayoutResult(lines.Count == 0 ? NoLines : lines.ToArray(), entryRows);
+        return new TimelineLayoutResult(
+            lines.Count == 0 ? NoLines : Array.AsReadOnly(lines.ToArray()),
+            entryRows);
     }
 
     private static (string Glyph, TimelineRole Role) GetHeader(

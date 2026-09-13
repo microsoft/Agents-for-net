@@ -137,6 +137,19 @@ public sealed class TerminalTimelineViewTests
         Assert.DoesNotContain(view.RenderedLines, line => line.EntryKey == "mutated");
     }
 
+    [Fact]
+    public void RenderedLines_DoesNotAllowElementReplacementThroughListIndexer()
+    {
+        using TerminalTimelineView view = new() { Width = 40, Height = 10 };
+
+        view.SetEntries([Entry("entry", "Hello")]);
+
+        IList<TimelineLine> renderedLines = Assert.IsAssignableFrom<IList<TimelineLine>>(view.RenderedLines);
+
+        Assert.Throws<NotSupportedException>(() => renderedLines[0] = new TimelineLine("mutated", []));
+        Assert.Equal("entry", view.RenderedLines[0].EntryKey);
+    }
+
     private static ChatEntry Entry(string key, string text, bool isTransient = false)
     {
         return new ChatEntry(key, ChatEntryKind.Agent, "Agent", text, isTransient, [], [], key);

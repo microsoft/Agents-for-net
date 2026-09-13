@@ -8,7 +8,7 @@ using Terminal.Gui.ViewBase;
 internal sealed class TerminalTimelineView : View
 {
     private static readonly TimelineLayoutResult EmptyLayout = new(
-        Array.Empty<TimelineLine>(),
+        Array.AsReadOnly(Array.Empty<TimelineLine>()),
         new Dictionary<string, TimelineRowRange>(StringComparer.Ordinal));
 
     private readonly TimelineScrollState _scrollState = new();
