@@ -20,7 +20,11 @@ internal enum TimelineRole
     Code
 }
 
-internal sealed record TimelineSpan(string Text, TimelineRole Role);
+internal sealed record TimelineSpan(
+    string Text,
+    TimelineRole Role,
+    TimelineTextStyle Style = TimelineTextStyle.None,
+    Uri? LinkTarget = null);
 
 internal sealed record TimelineLine(string EntryKey, IReadOnlyList<TimelineSpan> Spans);
 
