@@ -1,12 +1,12 @@
 # Copilot Studio Terminal Client
 
-`CopilotStudioClient.Terminal` is an interactive terminal sample for Microsoft Copilot Studio conversations. It keeps the chat transcript visible while also journaling every inbound and outbound `Activity` plus local diagnostics such as startup, transport, and serialization failures for inspection. Protocol-interpretation diagnostics appear in Chat, while the source `Activity` remains inspectable in Activities.
+`CopilotStudioClient.Terminal` is an interactive terminal sample for Microsoft Copilot Studio conversations. It renders a glyph-led conversation timeline in the terminal, uses adaptive colors to separate message types and diagnostics, and keeps the current chat visible while also journaling every inbound and outbound `Activity` for inspection. Protocol-interpretation diagnostics appear inline in Chat, while the source `Activity` remains inspectable in Activities.
 
 ## What it shows
 
 - **Chat**: messages, streaming status, streaming responses, suggested actions, attachments, and adaptive-card `Action.OpenUrl` links.
-- **Thoughts**: streamed reasoning chains, retained in chronological history for the session.
-- **Activities**: a chronological activity timeline plus formatted SDK `Activity` JSON for the selected record.
+- **Thoughts**: active thought streams appear inline as they arrive, and completed thought chains stay available as a session summary.
+- **Activities**: a full chronological activity inspector plus formatted SDK `Activity` JSON for the selected record.
 - **Help**: in-app shortcuts and navigation help.
 
 The activity inspector shows the complete `Activity` model after the SDK has deserialized it and `ProtocolJsonSerializer` has reformatted it with indentation. It does **not** capture raw SSE frames or byte-for-byte HTTP transport payloads.
@@ -145,9 +145,9 @@ dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Termina
 
 ## Layouts
 
-### Tabs layout
+### Default layout
 
-`--layout tabs` is the default. It opens four tabs:
+The default layout opens four tabs:
 
 1. **Chat**
 2. **Thoughts**
@@ -156,7 +156,7 @@ dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Termina
 
 ### Split layout
 
-`--layout split` keeps **Chat** and **Thoughts** as tabs on the left and **Activities** on the right. It uses the same conversation state, activity journal, shortcuts, and commands as the tabbed view.
+`--layout split` keeps **Chat** and **Thoughts** as tabs on the left and **Activities** on the right. It uses the same conversation state, activity journal, shortcuts, and commands as the default view.
 
 ## Keyboard shortcuts
 
@@ -165,6 +165,7 @@ dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Termina
 - `Ctrl+3`: focus **Activities**
 - `Ctrl+4`: focus **Help** in tab mode, or show the help dialog in split mode
 - `Tab` / `Shift+Tab`: move focus
+- `Up` / `Down`, `PageUp` / `PageDown`, and the mouse wheel: scroll the focused pane or inspector
 - `Enter`: send the composer text or activate the focused link/action
 - `Ctrl+C`: copy the focused link or the selected activity JSON when clipboard support is available
 - `Ctrl+Q`: cancel active work and quit
