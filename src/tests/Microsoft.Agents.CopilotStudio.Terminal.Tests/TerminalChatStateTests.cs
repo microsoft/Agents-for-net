@@ -27,9 +27,9 @@ public sealed class TerminalChatStateTests
     }
 
     [Fact]
-    public void Markdown_EscapesReceivedFormattingAndControlCharacters()
+    public void Apply_FilterExcludesEntriesOutsidePredicate()
     {
-        TerminalChatState state = new();
+        TerminalChatState state = new(entry => entry.Kind == ChatEntryKind.Thought);
 
         state.Apply(
         [
@@ -39,17 +39,29 @@ public sealed class TerminalChatStateTests
                 new ChatEntry(
                     "entry",
                     ChatEntryKind.Agent,
-                    "# Agent",
-                    "**bold** [unsafe](https://example.com)\u001b",
+                    "Agent",
+                    "Final answer",
                     false,
                     [],
                     [],
-                    "entry"))
+                    "entry")),
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "thought",
+                new ChatEntry(
+                    "thought",
+                    ChatEntryKind.Thought,
+                    "Reasoning",
+                    "Checking account",
+                    true,
+                    [],
+                    [],
+                    "thought"))
         ]);
 
-        Assert.Equal(
-            "## \\# Agent\r\n\r\n\\*\\*bold\\*\\* \\[unsafe\\]\\(https://example\\.com\\)\\u001B",
-            state.Markdown);
+        ChatEntry thought = Assert.Single(state.Entries);
+        Assert.Equal("thought", thought.Key);
+        Assert.Equal("Checking account", thought.Text);
     }
 
     [Fact]

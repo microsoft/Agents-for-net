@@ -10,6 +10,7 @@ internal sealed class TerminalTimelineView : View
     private static readonly TimelineLayoutResult EmptyLayout = new(
         Array.AsReadOnly(Array.Empty<TimelineLine>()),
         new Dictionary<string, TimelineRowRange>(StringComparer.Ordinal));
+    private static readonly IReadOnlyList<TimelineLine> NoLines = Array.AsReadOnly(Array.Empty<TimelineLine>());
 
     private readonly TimelineScrollState _scrollState = new();
     private IReadOnlyList<ChatEntry> _entries = [];
@@ -25,11 +26,14 @@ internal sealed class TerminalTimelineView : View
 
     internal TimelineGlyphSet Glyphs { get; init; } = TimelineGlyphSet.Unicode;
 
+    internal IReadOnlyList<TimelineLine> EmptyStateLines { get; init; } = NoLines;
+
     internal int ScrollOffset => _scrollState.Offset;
 
     internal int MaximumScrollOffset => _scrollState.MaximumOffset;
 
-    internal IReadOnlyList<TimelineLine> RenderedLines => _layout.Lines;
+    internal IReadOnlyList<TimelineLine> RenderedLines =>
+        _layout.Lines.Count == 0 ? EmptyStateLines : _layout.Lines;
 
     internal void SetEntries(IReadOnlyList<ChatEntry> entries)
     {
@@ -61,13 +65,14 @@ internal sealed class TerminalTimelineView : View
 
         int visibleWidth = GetViewportWidth();
         int visibleHeight = GetViewportHeight();
+        IReadOnlyList<TimelineLine> lines = RenderedLines;
         int lineIndex = ScrollOffset;
         int visibleRow = 0;
 
-        for (; visibleRow < visibleHeight && lineIndex < _layout.Lines.Count; visibleRow++, lineIndex++)
+        for (; visibleRow < visibleHeight && lineIndex < lines.Count; visibleRow++, lineIndex++)
         {
             ClearRow(visibleRow, visibleWidth);
-            DrawLine(_layout.Lines[lineIndex], visibleRow);
+            DrawLine(lines[lineIndex], visibleRow);
         }
 
         for (; visibleRow < visibleHeight; visibleRow++)
@@ -152,7 +157,7 @@ internal sealed class TerminalTimelineView : View
 
     private void UpdateScrollDimensions()
     {
-        _scrollState.SetDimensions(_layout.Lines.Count, GetViewportHeight());
+        _scrollState.SetDimensions(RenderedLines.Count, GetViewportHeight());
     }
 
     private int GetLayoutWidth()

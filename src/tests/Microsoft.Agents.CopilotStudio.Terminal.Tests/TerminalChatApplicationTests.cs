@@ -114,8 +114,28 @@ public sealed class TerminalChatApplicationTests
         Assert.Equal(["_Chat", "_Thoughts", "_Activities", "_Help"], tabs.TabCollection.Select(view => view.Title));
         Assert.NotNull(tabs.Value);
         Assert.Equal("_Chat", tabs.Value.Title);
-        Assert.Contains(window.SubViews, view => view is StatusBar);
         AssertRequiredChatControls(window);
+    }
+
+    [Fact]
+    public void CreateWindow_TabsLayoutUsesTimelineConversationSurfaceAndBorderedComposer()
+    {
+        using IApplication application = Application.Create();
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+
+        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+
+        Tabs tabs = Assert.IsType<Tabs>(Assert.Single(window.SubViews, view => view is Tabs));
+        View chat = Assert.Single(tabs.TabCollection, view => view.Title == "_Chat");
+        TerminalTimelineView timeline = Assert.Single(
+            Descendants(chat).OfType<TerminalTimelineView>(),
+            view => view.CollapseCompletedThoughts);
+
+        Assert.DoesNotContain(Descendants(chat), view => view is FrameView { Title: "_Conversation" });
+        Assert.Contains(Descendants(chat).OfType<FrameView>(), frame => frame.Title == "_Message");
+        Assert.Equal(TimelineGlyphSet.ForEncoding(Console.OutputEncoding), timeline.Glyphs);
     }
 
     [Fact]
@@ -130,13 +150,13 @@ public sealed class TerminalChatApplicationTests
 
         Tabs tabs = Assert.IsType<Tabs>(Assert.Single(window.SubViews, view => view is Tabs));
         Assert.Equal(["_Chat", "_Thoughts"], tabs.TabCollection.Select(view => view.Title));
-        Assert.Contains(window.SubViews, view => view is FrameView frame && frame.Title == "_Activities");
-        Assert.Contains(window.SubViews, view => view is StatusBar);
+        Assert.Contains(window.SubViews, view => view.Title == "_Activities");
+        Assert.DoesNotContain(window.SubViews, view => view is FrameView { Title: "_Activities" });
         AssertRequiredChatControls(window);
     }
 
     [Fact]
-    public void ApplyChatChanges_RoutesThoughtsSeparatelyFromChat()
+    public void ApplyChatChanges_ShowsActiveThoughtInlineAndFullThoughtsInInspector()
     {
         using IApplication application = Application.Create();
         application.Init(DriverRegistry.Names.ANSI);
@@ -145,28 +165,52 @@ public sealed class TerminalChatApplicationTests
         using TerminalPresenter presenter = CreatePresenter(terminal);
         using Window window = terminal.CreateWindow(application, presenter, shutdown);
         Tabs tabs = Assert.IsType<Tabs>(Assert.Single(window.SubViews, view => view is Tabs));
-        FrameView chat = Assert.IsType<FrameView>(tabs.TabCollection.Single(view => view.Title == "_Chat"));
-        FrameView thoughts = Assert.IsType<FrameView>(tabs.TabCollection.Single(view => view.Title == "_Thoughts"));
+        View chat = Assert.Single(tabs.TabCollection, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(tabs.TabCollection, view => view.Title == "_Thoughts");
 
         terminal.ApplyChatChanges(
         [
             new ChatChange(
                 ChatChangeKind.Upsert,
-                "answer",
-                new ChatEntry("answer", ChatEntryKind.Agent, "Agent", "Final answer", false, [], [], "answer")),
+                "thought-active",
+                new ChatEntry(
+                    "thought-active",
+                    ChatEntryKind.Thought,
+                    "Reasoning",
+                    "Checking account",
+                    true,
+                    [],
+                    [],
+                    "thought-active")),
             new ChatChange(
                 ChatChangeKind.Upsert,
-                "thought",
-                new ChatEntry("thought", ChatEntryKind.Thought, "Agent", "Reasoning step", true, [], [], "thought"))
+                "thought-complete",
+                new ChatEntry(
+                    "thought-complete",
+                    ChatEntryKind.Thought,
+                    "Reasoning",
+                    "Compared all records",
+                    false,
+                    [],
+                    [],
+                    "thought-complete"))
         ]);
         RunOneIteration(application, window);
 
-        string chatText = Descendants(chat).OfType<Markdown>().Single().Text;
-        string thoughtText = Descendants(thoughts).OfType<Markdown>().Single().Text;
-        Assert.Contains("Final answer", chatText);
-        Assert.DoesNotContain("Reasoning step", chatText);
-        Assert.Contains("Reasoning step", thoughtText);
-        Assert.DoesNotContain("Final answer", thoughtText);
+        TerminalTimelineView conversation = Assert.Single(
+            Descendants(chat).OfType<TerminalTimelineView>(),
+            view => view.CollapseCompletedThoughts);
+        TerminalTimelineView thoughtInspector = Assert.Single(
+            Descendants(thoughts).OfType<TerminalTimelineView>(),
+            view => !view.CollapseCompletedThoughts);
+
+        Assert.Contains(conversation.RenderedLines, line => PlainText(line) == "Checking account");
+        Assert.DoesNotContain(conversation.RenderedLines, line => PlainText(line) == "Compared all records");
+        Assert.Contains(
+            conversation.RenderedLines,
+            line => PlainText(line) == "Reasoning complete · Ctrl+2 for details");
+        Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Checking account");
+        Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Compared all records");
     }
 
     [Fact]
@@ -362,9 +406,12 @@ public sealed class TerminalChatApplicationTests
     private static void AssertRequiredChatControls(View root)
     {
         IReadOnlyList<View> descendants = Descendants(root).ToArray();
-        Assert.Equal(2, descendants.OfType<Markdown>().Count());
+        Assert.Equal(2, descendants.OfType<TerminalTimelineView>().Count());
+        Assert.DoesNotContain(descendants, view => view is Markdown);
         Assert.Single(descendants.OfType<TextField>());
         Assert.Single(descendants.OfType<ListView<ActivityRecord>>());
+        Assert.Contains(descendants.OfType<FrameView>(), frame => frame.Title == "_Message");
+        Assert.Single(descendants.OfType<StatusBar>());
 
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
         TextView json = Assert.Single(descendants.OfType<TextView>());
@@ -407,5 +454,10 @@ public sealed class TerminalChatApplicationTests
                 yield return descendant;
             }
         }
+    }
+
+    private static string PlainText(TimelineLine line)
+    {
+        return string.Concat(line.Spans.Select(span => span.Text));
     }
 }
