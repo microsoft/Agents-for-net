@@ -103,6 +103,11 @@ internal static class TerminalTimelineLayout
             entryRows);
     }
 
+    internal static IReadOnlyList<string> WrapText(string value, int width)
+    {
+        return Wrap(value, width);
+    }
+
     private static (string Glyph, TimelineRole Role) GetHeader(
         ChatEntryKind kind,
         TimelineGlyphSet glyphs) => kind switch

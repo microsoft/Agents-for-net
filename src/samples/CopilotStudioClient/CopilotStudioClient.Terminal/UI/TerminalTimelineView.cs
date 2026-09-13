@@ -1,6 +1,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Text;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Input;
 using Terminal.Gui.ViewBase;
@@ -32,8 +33,14 @@ internal sealed class TerminalTimelineView : View
 
     internal int MaximumScrollOffset => _scrollState.MaximumOffset;
 
-    internal IReadOnlyList<TimelineLine> RenderedLines =>
-        _layout.Lines.Count == 0 ? EmptyStateLines : _layout.Lines;
+    internal IReadOnlyList<TimelineLine> RenderedLines
+    {
+        get
+        {
+            EnsureLayoutMatchesViewport();
+            return _layout.Lines;
+        }
+    }
 
     internal void SetEntries(IReadOnlyList<ChatEntry> entries)
     {
@@ -65,7 +72,7 @@ internal sealed class TerminalTimelineView : View
 
         int visibleWidth = GetViewportWidth();
         int visibleHeight = GetViewportHeight();
-        IReadOnlyList<TimelineLine> lines = RenderedLines;
+        IReadOnlyList<TimelineLine> lines = _layout.Lines;
         int lineIndex = ScrollOffset;
         int visibleRow = 0;
 
@@ -150,14 +157,16 @@ internal sealed class TerminalTimelineView : View
     private void RebuildLayout(int width)
     {
         int contentWidth = Math.Max(1, width);
-        _layout = TerminalTimelineLayout.Build(_entries, contentWidth, Glyphs, CollapseCompletedThoughts);
+        _layout = _entries.Count == 0
+            ? new TimelineLayoutResult(BuildEmptyStateLayout(contentWidth), EmptyLayout.EntryRows)
+            : TerminalTimelineLayout.Build(_entries, contentWidth, Glyphs, CollapseCompletedThoughts);
         _lastLayoutWidth = contentWidth;
         UpdateScrollDimensions();
     }
 
     private void UpdateScrollDimensions()
     {
-        _scrollState.SetDimensions(RenderedLines.Count, GetViewportHeight());
+        _scrollState.SetDimensions(_layout.Lines.Count, GetViewportHeight());
     }
 
     private int GetLayoutWidth()
@@ -205,6 +214,40 @@ internal sealed class TerminalTimelineView : View
         Move(0, visibleRow);
         SetAttribute(GetAttributeForRole(GetVisualRole(TimelineRole.Normal)));
         AddStr(new string(' ', visibleWidth));
+    }
+
+    private IReadOnlyList<TimelineLine> BuildEmptyStateLayout(int width)
+    {
+        if (EmptyStateLines.Count == 0)
+        {
+            return NoLines;
+        }
+
+        List<TimelineLine> wrappedLines = new(EmptyStateLines.Count);
+        foreach (TimelineLine line in EmptyStateLines)
+        {
+            if (line.Spans.Count == 0)
+            {
+                wrappedLines.Add(line);
+                continue;
+            }
+
+            StringBuilder text = new();
+            foreach (TimelineSpan span in line.Spans)
+            {
+                text.Append(span.Text);
+            }
+
+            TimelineRole role = line.Spans[0].Role;
+            foreach (string wrappedText in TerminalTimelineLayout.WrapText(text.ToString(), width))
+            {
+                wrappedLines.Add(new TimelineLine(line.EntryKey, [new TimelineSpan(wrappedText, role)]));
+            }
+        }
+
+        return wrappedLines.Count == 0
+            ? NoLines
+            : Array.AsReadOnly(wrappedLines.ToArray());
     }
 
     private bool ScrollBy(int delta)

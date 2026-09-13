@@ -190,6 +190,91 @@ internal sealed class TimelineRoleLabel : View
     };
 }
 
+internal sealed class ChatTranscriptLayoutView : View
+{
+    private readonly View _header;
+    private readonly View _transcript;
+    private readonly View _actionBar;
+    private readonly View _status;
+    private readonly View _composer;
+    private readonly View _footer;
+
+    internal ChatTranscriptLayoutView(
+        View header,
+        View transcript,
+        View actionBar,
+        View status,
+        View composer,
+        View footer)
+    {
+        _header = header ?? throw new ArgumentNullException(nameof(header));
+        _transcript = transcript ?? throw new ArgumentNullException(nameof(transcript));
+        _actionBar = actionBar ?? throw new ArgumentNullException(nameof(actionBar));
+        _status = status ?? throw new ArgumentNullException(nameof(status));
+        _composer = composer ?? throw new ArgumentNullException(nameof(composer));
+        _footer = footer ?? throw new ArgumentNullException(nameof(footer));
+        CanFocus = true;
+
+        Add(_header, _transcript, _actionBar, _status, _composer, _footer);
+    }
+
+    protected override void OnSubViewLayout(LayoutEventArgs args)
+    {
+        base.OnSubViewLayout(args);
+
+        int width = Math.Max(0, Viewport.Width > 0 ? Viewport.Width : Frame.Width);
+        int height = Math.Max(0, Viewport.Height > 0 ? Viewport.Height : Frame.Height);
+
+        int transcriptHeight = height > 0 ? 1 : 0;
+        int remainingHeight = Math.Max(0, height - transcriptHeight);
+        int headerHeight = remainingHeight > 0 ? 1 : 0;
+        remainingHeight -= headerHeight;
+
+        int footerHeight = AllocateExactHeight(ref remainingHeight, 1);
+        int composerHeight = AllocateExactHeight(ref remainingHeight, 3);
+        int statusHeight = AllocateExactHeight(ref remainingHeight, 1);
+        int actionBarHeight = AllocateHeight(ref remainingHeight, 2);
+        transcriptHeight += remainingHeight;
+
+        int y = 0;
+        SetFrameAndLayout(_header, y, width, headerHeight);
+        y += headerHeight;
+        SetFrameAndLayout(_transcript, y, width, transcriptHeight);
+        y += transcriptHeight;
+        SetFrameAndLayout(_actionBar, y, width, actionBarHeight);
+        y += actionBarHeight;
+        SetFrameAndLayout(_status, y, width, statusHeight);
+        y += statusHeight;
+        SetFrameAndLayout(_composer, y, width, composerHeight);
+        y += composerHeight;
+        SetFrameAndLayout(_footer, y, width, footerHeight);
+    }
+
+    private static int AllocateHeight(ref int remainingHeight, int desiredHeight)
+    {
+        int allocatedHeight = Math.Min(remainingHeight, desiredHeight);
+        remainingHeight -= allocatedHeight;
+        return allocatedHeight;
+    }
+
+    private static int AllocateExactHeight(ref int remainingHeight, int desiredHeight)
+    {
+        if (remainingHeight < desiredHeight)
+        {
+            return 0;
+        }
+
+        remainingHeight -= desiredHeight;
+        return desiredHeight;
+    }
+
+    private static void SetFrameAndLayout(View view, int y, int width, int height)
+    {
+        view.Frame = new System.Drawing.Rectangle(0, y, width, height);
+        view.Layout();
+    }
+}
+
 internal sealed class TerminalChatApplication : ITerminalView
 {
     private const string HelpText =
@@ -452,15 +537,7 @@ internal sealed class TerminalChatApplication : ITerminalView
     private View BuildChatView()
     {
         TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(Console.OutputEncoding);
-        View conversation = new()
-        {
-            Title = "_Conversation",
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
-            CanFocus = true
-        };
-
-        conversation.Add(new TimelineRoleLabel
+        TimelineRoleLabel header = new()
         {
             X = 0,
             Y = 0,
@@ -468,14 +545,14 @@ internal sealed class TerminalChatApplication : ITerminalView
             Height = 1,
             Content = "Copilot Studio (connected)",
             Role = TimelineRole.Accent
-        });
+        };
 
         _transcript = new TerminalTimelineView
         {
             X = 0,
-            Y = 1,
+            Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Fill(8),
+            Height = Dim.Fill(),
             CollapseCompletedThoughts = true,
             Glyphs = glyphs,
             EmptyStateLines = EmptyConversationLines
@@ -485,7 +562,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         _actionBar = new View
         {
             X = 0,
-            Y = Pos.AnchorEnd(7),
+            Y = 0,
             Width = Dim.Fill(),
             Height = 2,
             CanFocus = false
@@ -494,7 +571,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         _status = new Label
         {
             X = 0,
-            Y = Pos.AnchorEnd(5),
+            Y = 0,
             Width = Dim.Fill(),
             Height = 1,
             Text = "Ready."
@@ -503,7 +580,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         FrameView composerFrame = new()
         {
             X = 0,
-            Y = Pos.AnchorEnd(4),
+            Y = 0,
             Width = Dim.Fill(),
             Height = 3,
             Title = "_Message"
@@ -535,11 +612,23 @@ internal sealed class TerminalChatApplication : ITerminalView
 
         StatusBar footer = BuildStatusBar();
         footer.X = 0;
-        footer.Y = Pos.AnchorEnd(1);
+        footer.Y = 0;
         footer.Width = Dim.Fill();
         footer.Height = 1;
 
-        conversation.Add(_transcript, _actionBar, _status, composerFrame, footer);
+        View conversation = new ChatTranscriptLayoutView(
+            header,
+            _transcript,
+            _actionBar,
+            _status,
+            composerFrame,
+            footer)
+        {
+            Title = "_Conversation",
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            CanFocus = true
+        };
         return conversation;
     }
 

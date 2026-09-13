@@ -214,6 +214,57 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
+    public void CreateWindow_TabsLayoutKeepsTranscriptVisibleWithoutOverlappingBottomStackAtShortHeights()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+
+        Tabs tabs = Assert.IsType<Tabs>(Assert.Single(window.SubViews, view => view is Tabs));
+        View chat = Assert.Single(tabs.TabCollection, view => view.Title == "_Chat");
+        View conversation = Assert.Single(chat.SubViews);
+
+        conversation.Frame = new System.Drawing.Rectangle(0, 0, 50, 7);
+        Assert.True(conversation.Layout());
+
+        TimelineRoleLabel header = Assert.Single(conversation.SubViews.OfType<TimelineRoleLabel>());
+        TerminalTimelineView transcript = Assert.Single(conversation.SubViews.OfType<TerminalTimelineView>());
+        Label status = Assert.Single(conversation.SubViews.OfType<Label>(), label => label.Text == "Ready.");
+        FrameView composer = Assert.Single(conversation.SubViews.OfType<FrameView>(), frame => frame.Title == "_Message");
+        StatusBar footer = Assert.Single(conversation.SubViews.OfType<StatusBar>());
+        View actionBar = Assert.Single(
+            conversation.SubViews,
+            view => view is not TimelineRoleLabel
+                && view is not TerminalTimelineView
+                && view is not Label
+                && view is not FrameView
+                && view is not StatusBar);
+
+        Assert.True(transcript.Frame.Height >= 1, $"Transcript frame: {transcript.Frame}");
+        Assert.True(
+            header.Frame.Y + header.Frame.Height <= transcript.Frame.Y,
+            $"Header {header.Frame} overlaps transcript {transcript.Frame}");
+        Assert.True(
+            transcript.Frame.Y + transcript.Frame.Height <= actionBar.Frame.Y,
+            $"Transcript {transcript.Frame} overlaps action bar {actionBar.Frame}");
+        Assert.True(
+            actionBar.Frame.Y + actionBar.Frame.Height <= status.Frame.Y,
+            $"Action bar {actionBar.Frame} overlaps status {status.Frame}");
+        Assert.True(
+            status.Frame.Y + status.Frame.Height <= composer.Frame.Y,
+            $"Status {status.Frame} overlaps composer {composer.Frame}");
+        Assert.True(
+            composer.Frame.Y + composer.Frame.Height <= footer.Frame.Y,
+            $"Composer {composer.Frame} overlaps footer {footer.Frame}");
+        Assert.True(
+            footer.Frame.Y + footer.Frame.Height <= conversation.Frame.Height,
+            $"Footer {footer.Frame} exceeds conversation height {conversation.Frame.Height}");
+    }
+
+    [Fact]
     public async Task Composer_CannotSendUntilStartupSucceeds()
     {
         using IApplication application = Application.Create();

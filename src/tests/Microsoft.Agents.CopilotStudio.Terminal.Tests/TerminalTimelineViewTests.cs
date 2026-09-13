@@ -37,6 +37,30 @@ public sealed class TerminalTimelineViewTests
     }
 
     [Fact]
+    public void EmptyState_RewrapsWhenViewportNarrows()
+    {
+        using TerminalTimelineView view = new()
+        {
+            Width = 60,
+            Height = 4,
+            EmptyStateLines =
+            [
+                new TimelineLine(
+                    string.Empty,
+                    [new TimelineSpan("Connected conversations and streaming activity appear here.", TimelineRole.Muted)])
+            ]
+        };
+
+        int wideLineCount = view.RenderedLines.Count;
+
+        view.Width = 12;
+        view.Layout();
+
+        Assert.True(view.RenderedLines.Count > wideLineCount);
+        Assert.All(view.RenderedLines, line => Assert.True(PlainText(line).Length <= 12));
+    }
+
+    [Fact]
     public void SemanticRoles_MapToAdaptiveTerminalRoles()
     {
         using TerminalTimelineView view = new();
