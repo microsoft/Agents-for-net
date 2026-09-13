@@ -60,6 +60,8 @@ internal sealed record TimelineGlyphSet(
 internal static class TerminalTimelineLayout
 {
     private const int TabStop = 8;
+    private const char ControlPlaceholderStart = '\uE000';
+    private const char ControlPlaceholderEnd = '\uE001';
     private static readonly ReadOnlyCollection<TimelineLine> NoLines = Array.AsReadOnly(Array.Empty<TimelineLine>());
 
     private enum RenderTokenKind
@@ -69,7 +71,16 @@ internal static class TerminalTimelineLayout
         Tab
     }
 
-    private readonly record struct RenderToken(RenderTokenKind Kind, string Text, bool LeadingSpace);
+    private readonly record struct RenderToken(
+        RenderTokenKind Kind,
+        string Text,
+        bool LeadingSpace,
+        TimelineRole Role,
+        TimelineTextStyle Style,
+        Uri? LinkTarget,
+        TimelineRole LeadingSpaceRole,
+        TimelineTextStyle LeadingSpaceStyle,
+        Uri? LeadingSpaceLinkTarget);
 
     internal static TimelineLayoutResult Build(
         IReadOnlyList<ChatEntry> entries,
@@ -89,15 +100,14 @@ internal static class TerminalTimelineLayout
             ChatEntry entry = entries[index];
             int start = lines.Count;
 
-            (string headerGlyph, TimelineRole headerRole) = GetHeader(entry.Kind, glyphs);
+            TimelineRole entryRole = GetEntryRole(entry);
+            (string headerGlyph, TimelineRole headerRole) = GetHeader(entry.Kind, entryRole, glyphs);
             string headerText = BuildHeaderText(headerGlyph, entry.Author, contentWidth);
             lines.Add(new TimelineLine(entry.Key, [new TimelineSpan(headerText, headerRole)]));
 
-            string bodyText = GetBodyText(entry, glyphs, collapseCompletedThoughts);
-            TimelineRole bodyRole = GetBodyRole(entry.Kind);
-            foreach (string line in Wrap(bodyText, contentWidth))
+            foreach (TimelineLine line in WrapBlocks(GetBodyBlocks(entry, entryRole, glyphs, collapseCompletedThoughts), contentWidth))
             {
-                lines.Add(new TimelineLine(entry.Key, [new TimelineSpan(line, bodyRole)]));
+                lines.Add(line with { EntryKey = entry.Key });
             }
 
             int count = lines.Count - start;
@@ -116,32 +126,59 @@ internal static class TerminalTimelineLayout
 
     internal static IReadOnlyList<string> WrapText(string value, int width)
     {
-        return Wrap(value, width);
+        return WrapBlocks(
+                [new TimelineBlock(TimelineBlockKind.Paragraph, [new TimelineSpan(value, TimelineRole.Primary)])],
+                width)
+            .Select(line => string.Concat(line.Spans.Select(span => span.Text)))
+            .ToArray();
+    }
+
+    internal static IReadOnlyList<TimelineLine> WrapBlocks(
+        IReadOnlyList<TimelineBlock> blocks,
+        int width)
+    {
+        ArgumentNullException.ThrowIfNull(blocks);
+
+        int contentWidth = Math.Max(1, width);
+        List<TimelineLine> lines = new();
+
+        foreach (TimelineBlock block in blocks)
+        {
+            WrapParagraph(TokenizeParagraph(GetRenderableSpans(block)), contentWidth, lines);
+        }
+
+        if (lines.Count == 0)
+        {
+            lines.Add(new TimelineLine(string.Empty, []));
+        }
+
+        return Array.AsReadOnly(lines.ToArray());
     }
 
     private static (string Glyph, TimelineRole Role) GetHeader(
         ChatEntryKind kind,
+        TimelineRole entryRole,
         TimelineGlyphSet glyphs) => kind switch
     {
-        ChatEntryKind.User => (glyphs.User, TimelineRole.User),
-        ChatEntryKind.Agent => (glyphs.Agent, TimelineRole.Agent),
-        ChatEntryKind.Status => (glyphs.Status, TimelineRole.Muted),
-        ChatEntryKind.Thought => (glyphs.Thought, TimelineRole.Thought),
-        ChatEntryKind.Event => (glyphs.Event, TimelineRole.Muted),
-        ChatEntryKind.Attachment => (glyphs.Attachment, TimelineRole.Link),
-        ChatEntryKind.Diagnostic => (glyphs.Diagnostic, TimelineRole.Warning),
+        ChatEntryKind.User => (glyphs.User, entryRole),
+        ChatEntryKind.Agent => (glyphs.Agent, entryRole),
+        ChatEntryKind.Status => (glyphs.Status, entryRole),
+        ChatEntryKind.Thought => (glyphs.Thought, entryRole),
+        ChatEntryKind.Event => (glyphs.Event, entryRole),
+        ChatEntryKind.Attachment => (glyphs.Attachment, entryRole),
+        ChatEntryKind.Diagnostic => (glyphs.Diagnostic, entryRole),
         _ => (glyphs.Event, TimelineRole.Primary)
     };
 
-    private static TimelineRole GetBodyRole(ChatEntryKind kind) => kind switch
+    private static TimelineRole GetEntryRole(ChatEntry entry) => entry.Kind switch
     {
-        ChatEntryKind.User => TimelineRole.Primary,
-        ChatEntryKind.Agent => TimelineRole.Primary,
+        ChatEntryKind.User => TimelineRole.User,
+        ChatEntryKind.Agent => TimelineRole.Agent,
         ChatEntryKind.Status => TimelineRole.Muted,
-        ChatEntryKind.Thought => TimelineRole.Muted,
+        ChatEntryKind.Thought => TimelineRole.Thought,
         ChatEntryKind.Event => TimelineRole.Muted,
         ChatEntryKind.Attachment => TimelineRole.Link,
-        ChatEntryKind.Diagnostic => TimelineRole.Warning,
+        ChatEntryKind.Diagnostic => IsErrorDiagnostic(entry) ? TimelineRole.Error : TimelineRole.Warning,
         _ => TimelineRole.Primary
     };
 
@@ -155,71 +192,174 @@ internal static class TerminalTimelineLayout
         return TruncateToDisplayWidth(text, width);
     }
 
-    private static string GetBodyText(
+    private static IReadOnlyList<TimelineBlock> GetBodyBlocks(
         ChatEntry entry,
+        TimelineRole role,
         TimelineGlyphSet glyphs,
         bool collapseCompletedThoughts)
     {
         if (entry.Kind == ChatEntryKind.Thought && collapseCompletedThoughts && !entry.IsTransient)
         {
-            return string.Concat(
+            string summary = string.Concat(
                 NormalizeInlineText(entry.Author),
                 " complete ",
                 glyphs.DetailSeparator,
-                " Ctrl+2 for details");
+                " F2 for details");
+
+            return [new TimelineBlock(TimelineBlockKind.Paragraph, [new TimelineSpan(summary, role)])];
         }
 
-        return entry.Text;
+        return DecodeControlPlaceholders(TerminalMarkdown.Parse(EncodeControlCharacters(entry.Text), role));
     }
 
-    private static IReadOnlyList<string> Wrap(string value, int width)
+    private static bool IsErrorDiagnostic(ChatEntry entry)
     {
-        ArgumentNullException.ThrowIfNull(value);
-
-        int contentWidth = Math.Max(1, width);
-        string normalized = value.Replace("\r\n", "\n").Replace('\r', '\n');
-        List<string> lines = new();
-
-        foreach (string paragraph in normalized.Split('\n'))
-        {
-            WrapParagraph(TokenizeParagraph(paragraph), contentWidth, lines);
-        }
-
-        if (lines.Count == 0)
-        {
-            lines.Add(string.Empty);
-        }
-
-        return lines;
+        return ContainsErrorTerm(entry.Author) || ContainsErrorTerm(entry.Text);
     }
 
-    private static void WrapParagraph(IReadOnlyList<RenderToken> tokens, int width, List<string> lines)
+    private static bool ContainsErrorTerm(string value)
+    {
+        return value.Contains("error", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("fail", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("unable", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyList<TimelineSpan> GetRenderableSpans(TimelineBlock block)
+    {
+        List<TimelineSpan> spans = new();
+        bool isHeading = block.Kind
+            is TimelineBlockKind.Heading1
+            or TimelineBlockKind.Heading2
+            or TimelineBlockKind.Heading3;
+
+        if (block.Kind == TimelineBlockKind.UnorderedListItem)
+        {
+            TimelineSpan marker = CreateListMarker(block, "- ");
+            spans.Add(marker);
+        }
+        else if (block.Kind == TimelineBlockKind.OrderedListItem)
+        {
+            TimelineSpan marker = CreateListMarker(
+                block,
+                string.Concat(block.Ordinal.GetValueOrDefault().ToString(CultureInfo.InvariantCulture), ". "));
+            spans.Add(marker);
+        }
+
+        foreach (TimelineSpan span in block.Spans)
+        {
+            spans.Add(isHeading ? span with { Style = span.Style | TimelineTextStyle.Bold } : span);
+        }
+
+        return Array.AsReadOnly(spans.ToArray());
+    }
+
+    private static TimelineSpan CreateListMarker(TimelineBlock block, string marker)
+    {
+        TimelineSpan? firstSpan = block.Spans.Count > 0 ? block.Spans[0] : null;
+        TimelineRole markerRole = firstSpan?.Role == TimelineRole.Link
+            ? TimelineRole.Primary
+            : firstSpan?.Role ?? TimelineRole.Primary;
+
+        return new TimelineSpan(
+            marker,
+            markerRole);
+    }
+
+    private static string EncodeControlCharacters(string value)
+    {
+        StringBuilder builder = new(value.Length);
+
+        foreach (char character in value)
+        {
+            if (character is '\r' or '\n' || !char.IsControl(character))
+            {
+                builder.Append(character);
+                continue;
+            }
+
+            builder.Append(ControlPlaceholderStart);
+            builder.Append(((int)character).ToString("X4", CultureInfo.InvariantCulture));
+            builder.Append(ControlPlaceholderEnd);
+        }
+
+        return builder.ToString();
+    }
+
+    private static IReadOnlyList<TimelineBlock> DecodeControlPlaceholders(IReadOnlyList<TimelineBlock> blocks)
+    {
+        List<TimelineBlock> decodedBlocks = new(blocks.Count);
+        foreach (TimelineBlock block in blocks)
+        {
+            List<TimelineSpan> decodedSpans = new(block.Spans.Count);
+            foreach (TimelineSpan span in block.Spans)
+            {
+                decodedSpans.Add(span with { Text = DecodeControlPlaceholders(span.Text) });
+            }
+
+            decodedBlocks.Add(block with { Spans = Array.AsReadOnly(decodedSpans.ToArray()) });
+        }
+
+        return Array.AsReadOnly(decodedBlocks.ToArray());
+    }
+
+    private static string DecodeControlPlaceholders(string value)
+    {
+        StringBuilder builder = new(value.Length);
+        for (int index = 0; index < value.Length; index++)
+        {
+            if (index + 5 < value.Length
+                && value[index] == ControlPlaceholderStart
+                && value[index + 5] == ControlPlaceholderEnd
+                && int.TryParse(
+                    value.AsSpan(index + 1, 4),
+                    NumberStyles.HexNumber,
+                    CultureInfo.InvariantCulture,
+                    out int codePoint))
+            {
+                builder.Append((char)codePoint);
+                index += 5;
+                continue;
+            }
+
+            builder.Append(value[index]);
+        }
+
+        return builder.ToString();
+    }
+
+    private static void WrapParagraph(IReadOnlyList<RenderToken> tokens, int width, List<TimelineLine> lines)
     {
         if (tokens.Count == 0)
         {
-            lines.Add(string.Empty);
+            lines.Add(new TimelineLine(string.Empty, []));
             return;
         }
 
-        StringBuilder current = new();
+        List<TimelineSpan> current = new();
         int currentWidth = 0;
 
         void EmitCurrentLine()
         {
-            lines.Add(current.ToString());
-            current.Clear();
+            lines.Add(new TimelineLine(
+                string.Empty,
+                current.Count == 0 ? [] : Array.AsReadOnly(current.ToArray())));
+            current = new List<TimelineSpan>();
             currentWidth = 0;
         }
 
-        void EmitTextPieces(string text)
+        void EmitTextPieces(
+            string text,
+            TimelineRole role,
+            TimelineTextStyle style,
+            Uri? linkTarget)
         {
             foreach (string piece in SliceTextElements(text, width))
             {
-                lines.Add(piece);
+                lines.Add(new TimelineLine(string.Empty, [new TimelineSpan(piece, role, style, linkTarget)]));
             }
         }
 
-        void EmitTab()
+        void EmitTab(RenderToken token)
         {
             int tabSpaces = TabStop - (currentWidth % TabStop);
             if (currentWidth > 0 && currentWidth + tabSpaces > width)
@@ -243,7 +383,12 @@ internal static class TerminalTimelineLayout
                 }
 
                 int toWrite = Math.Min(tabSpaces, available);
-                current.Append(' ', toWrite);
+                Append(
+                    current,
+                    new string(' ', toWrite),
+                    token.Role,
+                    token.Style,
+                    token.LinkTarget);
                 currentWidth += toWrite;
                 tabSpaces -= toWrite;
 
@@ -260,12 +405,17 @@ internal static class TerminalTimelineLayout
 
             if (treatAsControlEscape)
             {
+                if (token.LeadingSpace && currentWidth > 0)
+                {
+                    EmitCurrentLine();
+                }
+
                 if (currentWidth > 0)
                 {
                     EmitCurrentLine();
                 }
 
-                EmitTextPieces(token.Text);
+                EmitTextPieces(token.Text, token.Role, token.Style, token.LinkTarget);
                 return;
             }
 
@@ -277,7 +427,12 @@ internal static class TerminalTimelineLayout
                 }
                 else
                 {
-                    current.Append(' ');
+                    Append(
+                        current,
+                        " ",
+                        token.LeadingSpaceRole,
+                        token.LeadingSpaceStyle,
+                        token.LeadingSpaceLinkTarget);
                     currentWidth++;
                 }
             }
@@ -289,7 +444,7 @@ internal static class TerminalTimelineLayout
                     EmitCurrentLine();
                 }
 
-                EmitTextPieces(token.Text);
+                EmitTextPieces(token.Text, token.Role, token.Style, token.LinkTarget);
                 return;
             }
 
@@ -298,7 +453,7 @@ internal static class TerminalTimelineLayout
                 EmitCurrentLine();
             }
 
-            current.Append(token.Text);
+            Append(current, token.Text, token.Role, token.Style, token.LinkTarget);
             currentWidth += tokenWidth;
         }
 
@@ -307,7 +462,7 @@ internal static class TerminalTimelineLayout
             switch (token.Kind)
             {
                 case RenderTokenKind.Tab:
-                    EmitTab();
+                    EmitTab(token);
                     break;
                 case RenderTokenKind.ControlEscape:
                     AppendTextToken(token, treatAsControlEscape: true);
@@ -320,17 +475,23 @@ internal static class TerminalTimelineLayout
             }
         }
 
-        if (currentWidth > 0 || current.Length > 0)
+        if (currentWidth > 0 || current.Count > 0)
         {
             EmitCurrentLine();
         }
     }
 
-    private static IReadOnlyList<RenderToken> TokenizeParagraph(string paragraph)
+    private static IReadOnlyList<RenderToken> TokenizeParagraph(IReadOnlyList<TimelineSpan> spans)
     {
         List<RenderToken> tokens = new();
         StringBuilder current = new();
         bool leadingSpace = false;
+        TimelineRole currentRole = TimelineRole.Primary;
+        TimelineTextStyle currentStyle = TimelineTextStyle.None;
+        Uri? currentLinkTarget = null;
+        TimelineRole leadingSpaceRole = TimelineRole.Primary;
+        TimelineTextStyle leadingSpaceStyle = TimelineTextStyle.None;
+        Uri? leadingSpaceLinkTarget = null;
 
         void FlushCurrentWord()
         {
@@ -339,45 +500,115 @@ internal static class TerminalTimelineLayout
                 return;
             }
 
-            tokens.Add(new RenderToken(RenderTokenKind.Text, current.ToString(), leadingSpace));
+            tokens.Add(new RenderToken(
+                RenderTokenKind.Text,
+                current.ToString(),
+                leadingSpace,
+                currentRole,
+                currentStyle,
+                currentLinkTarget,
+                leadingSpaceRole,
+                leadingSpaceStyle,
+                leadingSpaceLinkTarget));
             current.Clear();
             leadingSpace = false;
         }
 
-        foreach (string textElement in EnumerateTextElements(paragraph))
+        foreach (TimelineSpan span in spans)
         {
-            if (textElement == " ")
+            foreach (string textElement in EnumerateTextElements(span.Text))
             {
-                if (current.Length > 0)
+                if (current.Length > 0
+                    && (currentRole != span.Role
+                        || currentStyle != span.Style
+                        || !Equals(currentLinkTarget, span.LinkTarget)))
                 {
                     FlushCurrentWord();
                 }
 
-                leadingSpace = true;
-                continue;
-            }
+                currentRole = span.Role;
+                currentStyle = span.Style;
+                currentLinkTarget = span.LinkTarget;
 
-            if (textElement == "\t")
-            {
-                FlushCurrentWord();
-                tokens.Add(new RenderToken(RenderTokenKind.Tab, string.Empty, false));
-                leadingSpace = false;
-                continue;
-            }
+                if (textElement == " ")
+                {
+                    if (current.Length > 0)
+                    {
+                        FlushCurrentWord();
+                    }
 
-            if (textElement.Length == 1 && char.IsControl(textElement[0]))
-            {
-                FlushCurrentWord();
-                tokens.Add(new RenderToken(RenderTokenKind.ControlEscape, EscapeControl(textElement[0]), leadingSpace));
-                leadingSpace = false;
-                continue;
-            }
+                    leadingSpace = true;
+                    leadingSpaceRole = span.Role;
+                    leadingSpaceStyle = span.Style;
+                    leadingSpaceLinkTarget = span.LinkTarget;
+                    continue;
+                }
 
-            current.Append(textElement);
+                if (textElement == "\t")
+                {
+                    FlushCurrentWord();
+                    tokens.Add(new RenderToken(
+                        RenderTokenKind.Tab,
+                        string.Empty,
+                        false,
+                        span.Role,
+                        span.Style,
+                        span.LinkTarget,
+                        TimelineRole.Primary,
+                        TimelineTextStyle.None,
+                        null));
+                    leadingSpace = false;
+                    continue;
+                }
+
+                if (textElement.Length == 1 && char.IsControl(textElement[0]))
+                {
+                    FlushCurrentWord();
+                    tokens.Add(new RenderToken(
+                        RenderTokenKind.ControlEscape,
+                        EscapeControl(textElement[0]),
+                        leadingSpace,
+                        span.Role,
+                        span.Style,
+                        span.LinkTarget,
+                        leadingSpaceRole,
+                        leadingSpaceStyle,
+                        leadingSpaceLinkTarget));
+                    leadingSpace = false;
+                    continue;
+                }
+
+                current.Append(textElement);
+            }
         }
 
         FlushCurrentWord();
         return tokens;
+    }
+
+    private static void Append(
+        List<TimelineSpan> line,
+        string text,
+        TimelineRole role,
+        TimelineTextStyle style,
+        Uri? linkTarget)
+    {
+        if (text.Length == 0)
+        {
+            return;
+        }
+
+        if (line.Count > 0
+            && line[^1].Role == role
+            && line[^1].Style == style
+            && Equals(line[^1].LinkTarget, linkTarget))
+        {
+            TimelineSpan previous = line[^1];
+            line[^1] = previous with { Text = previous.Text + text };
+            return;
+        }
+
+        line.Add(new TimelineSpan(text, role, style, linkTarget));
     }
 
     private static string NormalizeInlineText(string value)

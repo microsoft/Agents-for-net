@@ -1,7 +1,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using System.Text;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Input;
 using Terminal.Gui.ViewBase;
@@ -27,6 +26,8 @@ internal sealed class TerminalTimelineView : View
 
     internal TimelineGlyphSet Glyphs { get; init; } = TimelineGlyphSet.Unicode;
 
+    internal TerminalPalette Palette { get; init; } = TerminalPalette.Create(null, supportsTrueColor: false);
+
     internal IReadOnlyList<TimelineLine> EmptyStateLines { get; init; } = NoLines;
 
     internal int ScrollOffset => _scrollState.Offset;
@@ -50,21 +51,6 @@ internal sealed class TerminalTimelineView : View
         RebuildLayout();
         SetNeedsDraw();
     }
-
-    internal VisualRole GetVisualRole(TimelineRole role) => role switch
-    {
-        TimelineRole.Primary => VisualRole.Normal,
-        TimelineRole.Muted => VisualRole.Disabled,
-        TimelineRole.User => VisualRole.HotNormal,
-        TimelineRole.Agent => VisualRole.Active,
-        TimelineRole.Thought => VisualRole.HotNormal,
-        TimelineRole.Link => VisualRole.Focus,
-        TimelineRole.ActiveNavigation => VisualRole.HotFocus,
-        TimelineRole.Warning => VisualRole.HotActive,
-        TimelineRole.Error => VisualRole.HotActive,
-        TimelineRole.Code => VisualRole.Code,
-        _ => VisualRole.Normal
-    };
 
     protected override void OnViewportChanged(DrawEventArgs args)
     {
@@ -210,7 +196,7 @@ internal sealed class TerminalTimelineView : View
         Move(0, visibleRow);
         foreach (TimelineSpan span in line.Spans)
         {
-            SetAttribute(GetAttributeForRole(GetVisualRole(span.Role)));
+            SetAttribute(Palette.Get(span.Role, span.Style));
             AddStr(span.Text);
         }
     }
@@ -218,7 +204,7 @@ internal sealed class TerminalTimelineView : View
     private void ClearRow(int visibleRow, int visibleWidth)
     {
         Move(0, visibleRow);
-        SetAttribute(GetAttributeForRole(GetVisualRole(TimelineRole.Primary)));
+        SetAttribute(Palette.Get(TimelineRole.Primary));
         AddStr(new string(' ', visibleWidth));
     }
 
@@ -238,16 +224,14 @@ internal sealed class TerminalTimelineView : View
                 continue;
             }
 
-            StringBuilder text = new();
-            foreach (TimelineSpan span in line.Spans)
-            {
-                text.Append(span.Text);
-            }
+            IReadOnlyList<TimelineBlock> blocks =
+            [
+                new TimelineBlock(TimelineBlockKind.Paragraph, line.Spans)
+            ];
 
-            TimelineRole role = line.Spans[0].Role;
-            foreach (string wrappedText in TerminalTimelineLayout.WrapText(text.ToString(), width))
+            foreach (TimelineLine wrappedLine in TerminalTimelineLayout.WrapBlocks(blocks, width))
             {
-                wrappedLines.Add(new TimelineLine(line.EntryKey, [new TimelineSpan(wrappedText, role)]));
+                wrappedLines.Add(wrappedLine with { EntryKey = line.EntryKey });
             }
         }
 

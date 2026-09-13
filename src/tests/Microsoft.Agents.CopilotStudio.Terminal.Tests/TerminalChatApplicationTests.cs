@@ -12,6 +12,7 @@ using Terminal.Gui.Input;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
 
+[Collection("TerminalGui")]
 public sealed class TerminalChatApplicationTests
 {
     [Theory]
@@ -274,7 +275,7 @@ public sealed class TerminalChatApplicationTests
         Assert.DoesNotContain(conversation.RenderedLines, line => PlainText(line) == "Compared all records");
         Assert.Contains(
             conversation.RenderedLines,
-            line => PlainText(line) == "Reasoning complete · Ctrl+2 for details");
+            line => PlainText(line) == "Reasoning complete · F2 for details");
         Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Checking account");
         Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Compared all records");
     }

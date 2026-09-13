@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Terminal.Gui.Text;
@@ -15,7 +16,9 @@ public sealed class TerminalTimelineLayoutTests
             Entry("u", ChatEntryKind.User, "You", "Question"),
             Entry("a", ChatEntryKind.Agent, "Agent", "Answer"),
             Entry("s", ChatEntryKind.Status, "Status", "Working", isTransient: true),
+            Entry("t", ChatEntryKind.Thought, "Reasoning", "Checking", isTransient: true),
             Entry("e", ChatEntryKind.Event, "Event", "Tool finished"),
+            Entry("w", ChatEntryKind.Diagnostic, "Warning", "Retrying"),
             Entry("x", ChatEntryKind.Diagnostic, "Error", "Failed")
         ];
 
@@ -26,12 +29,108 @@ public sealed class TerminalTimelineLayoutTests
             collapseCompletedThoughts: true);
 
         Assert.Equal(
-            [">  You", "Question", "", "●  Agent", "Answer", "", "○  Status", "Working", "", "↗  Event", "Tool finished", "", "!  Error", "Failed"],
+            [
+                ">  You", "Question", "",
+                "●  Agent", "Answer", "",
+                "○  Status", "Working", "",
+                "◆  Reasoning", "Checking", "",
+                "↗  Event", "Tool finished", "",
+                "!  Warning", "Retrying", "",
+                "!  Error", "Failed"
+            ],
             result.Lines.Select(PlainText));
         Assert.Equal(TimelineRole.User, result.Lines[0].Spans[0].Role);
+        Assert.Equal(TimelineRole.User, result.Lines[1].Spans[0].Role);
         Assert.Equal(TimelineRole.Agent, result.Lines[3].Spans[0].Role);
+        Assert.Equal(TimelineRole.Agent, result.Lines[4].Spans[0].Role);
         Assert.Equal(TimelineRole.Muted, result.Lines[6].Spans[0].Role);
-        Assert.Equal(TimelineRole.Warning, result.Lines[12].Spans[0].Role);
+        Assert.Equal(TimelineRole.Muted, result.Lines[7].Spans[0].Role);
+        Assert.Equal(TimelineRole.Thought, result.Lines[9].Spans[0].Role);
+        Assert.Equal(TimelineRole.Thought, result.Lines[10].Spans[0].Role);
+        Assert.Equal(TimelineRole.Muted, result.Lines[12].Spans[0].Role);
+        Assert.Equal(TimelineRole.Muted, result.Lines[13].Spans[0].Role);
+        Assert.Equal(TimelineRole.Warning, result.Lines[15].Spans[0].Role);
+        Assert.Equal(TimelineRole.Warning, result.Lines[16].Spans[0].Role);
+        Assert.Equal(TimelineRole.Error, result.Lines[18].Spans[0].Role);
+        Assert.Equal(TimelineRole.Error, result.Lines[19].Spans[0].Role);
+    }
+
+    [Fact]
+    public void Build_StylesMarkdownBodyButNeverParsesAuthorHeader()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("a", ChatEntryKind.Agent, "**Agent**", "**Answer** and `code`")],
+            width: 40,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal("●  **Agent**", PlainText(result.Lines[0]));
+        Assert.Equal("Answer and code", PlainText(result.Lines[1]));
+        Assert.Contains(result.Lines[1].Spans, span =>
+            span.Text == "Answer" && span.Style == TimelineTextStyle.Bold);
+        Assert.Contains(result.Lines[1].Spans, span =>
+            span.Text == "code" && span.Role == TimelineRole.Code);
+    }
+
+    [Fact]
+    public void Build_WrapsStyledCjkAndEmojiAtCellWidthWithoutLosingMetadata()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("a", ChatEntryKind.Agent, "A", "**界界**🙂🙂")],
+            width: 4,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.All(result.Lines, line => Assert.True(PlainText(line).GetColumns() <= 4));
+        Assert.All(
+            result.Lines.SelectMany(line => line.Spans).Where(span => span.Text.Contains('界')),
+            span => Assert.True(span.Style.HasFlag(TimelineTextStyle.Bold)));
+        Assert.All(result.Lines, line => Assert.True(IsWellFormedUtf16(PlainText(line))));
+    }
+
+    [Fact]
+    public void Build_CollapsedThoughtUsesPortableF2Hint()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("done", ChatEntryKind.Thought, "Reasoning", "Complete")],
+            width: 80,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        Assert.Contains(result.Lines, line => PlainText(line) == "Reasoning complete · F2 for details");
+    }
+
+    [Fact]
+    public void WrapBlocks_FormatsBlocksAndPreservesOnlySourceSpanMetadata()
+    {
+        Uri target = new("https://example.com/docs");
+        IReadOnlyList<TimelineLine> lines = TerminalTimelineLayout.WrapBlocks(
+            [
+                new TimelineBlock(
+                    TimelineBlockKind.Heading1,
+                    [new TimelineSpan("Title", TimelineRole.Agent)]),
+                new TimelineBlock(
+                    TimelineBlockKind.UnorderedListItem,
+                    [new TimelineSpan("Docs", TimelineRole.Link, TimelineTextStyle.Underline, target)]),
+                new TimelineBlock(
+                    TimelineBlockKind.OrderedListItem,
+                    [new TimelineSpan("界界", TimelineRole.Agent, TimelineTextStyle.Bold)],
+                    7)
+            ],
+            width: 20);
+
+        Assert.Equal("Title", PlainText(lines[0]));
+        Assert.All(lines[0].Spans, span => Assert.True(span.Style.HasFlag(TimelineTextStyle.Bold)));
+        Assert.Equal("- Docs", PlainText(lines[1]));
+        Assert.Equal("- ", lines[1].Spans[0].Text);
+        Assert.Null(lines[1].Spans[0].LinkTarget);
+        TimelineSpan link = Assert.Single(lines.SelectMany(line => line.Spans), span => span.LinkTarget is not null);
+        Assert.Equal("Docs", link.Text);
+        Assert.Equal(target, link.LinkTarget);
+        Assert.Contains(lines, line => PlainText(line) == "7. 界界");
+        Assert.All(
+            lines.SelectMany(line => line.Spans).Where(span => span.Text.Contains('界')),
+            span => Assert.True(span.Style.HasFlag(TimelineTextStyle.Bold)));
     }
 
     [Fact]
@@ -84,7 +183,7 @@ public sealed class TerminalTimelineLayoutTests
         Assert.DoesNotContain(result.Lines, line => PlainText(line) == "Compared all records");
         Assert.Contains(
             result.Lines,
-            line => PlainText(line) == "Reasoning complete · Ctrl+2 for details");
+            line => PlainText(line) == "Reasoning complete · F2 for details");
     }
 
     [Fact]
@@ -100,7 +199,7 @@ public sealed class TerminalTimelineLayoutTests
             result.Lines.Select(PlainText),
             line => line.Contains("complete", StringComparison.Ordinal));
 
-        Assert.Equal("Reasoning complete - Ctrl+2 for details", summary);
+        Assert.Equal("Reasoning complete - F2 for details", summary);
         Assert.All(summary, character => Assert.InRange(character, '\0', '\u007F'));
     }
 
