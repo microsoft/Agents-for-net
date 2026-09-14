@@ -323,6 +323,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         new(entry => entry.Kind is not ChatEntryKind.Thought and not ChatEntryKind.ToolCall);
     private readonly TerminalChatState _thoughtState =
         new(entry => entry.Kind is ChatEntryKind.Thought or ChatEntryKind.ToolCall);
+    private readonly TerminalChatState _actionState = new();
     private readonly TerminalActivityState _activityState = new();
     private readonly List<ReceivedLink> _linkViews = [];
     private readonly HashSet<Task> _sendTasks = [];
@@ -551,6 +552,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         {
             _chatState.Apply(changes);
             _thoughtState.Apply(changes);
+            _actionState.Apply(changes);
             _transcript?.SetEntries(_chatState.Entries);
             _thoughtTranscript?.SetEntries(_thoughtState.Entries);
 
@@ -868,7 +870,7 @@ internal sealed class TerminalChatApplication : ITerminalView
 
         string text = _composer.Value ?? string.Empty;
         _composer.Value = string.Empty;
-        _chatState.ClearActions();
+        _actionState.ClearActions();
         RebuildActions();
         TrackSend(ObserveSendAsync(_presenter.SendAsync(text, _shutdownSource.Token)));
     }
@@ -992,7 +994,7 @@ internal sealed class TerminalChatApplication : ITerminalView
             linkX = Pos.Right(linkView) + 1;
         }
 
-        foreach (ChatLink link in _chatState.Links)
+        foreach (ChatLink link in _actionState.Links)
         {
             AddLink(link.Title, link.Url);
         }
@@ -1010,7 +1012,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         }
 
         Pos actionX = 0;
-        foreach (ChatAction action in _chatState.SuggestedActions)
+        foreach (ChatAction action in _actionState.SuggestedActions)
         {
             Button button = new()
             {

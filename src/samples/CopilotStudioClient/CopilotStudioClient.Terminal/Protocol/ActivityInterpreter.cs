@@ -41,9 +41,17 @@ internal sealed class ActivityInterpreter
 
         string activityIdentity = GetActivityIdentity(activity);
         List<ChatChange> changes = [];
+        IReadOnlyList<ChatAction> toolCallSuggestedActions = IsToolCallOnlyMessage(activity)
+            ? GetSuggestedActions(activity)
+            : [];
         AddOrdinaryEntry(changes, activity, direction, activityIdentity);
         AddThoughtEntries(changes, activity, direction, activityIdentity);
-        AddToolCallEntries(changes, activity, direction, activityIdentity);
+        AddToolCallEntries(
+            changes,
+            activity,
+            direction,
+            activityIdentity,
+            toolCallSuggestedActions);
         AddAttachmentEntries(changes, activity, direction, activityIdentity);
         return changes;
     }
@@ -58,6 +66,7 @@ internal sealed class ActivityInterpreter
         bool isValidStart = IsValidStreamStart(streamInfo, isInformative, isFinal);
         string? streamId = ResolveStreamId(activity, streamInfo, isValidStart);
         bool mutatedStream = false;
+        bool carrySuggestedActionsOnToolCall = false;
 
         if (string.IsNullOrWhiteSpace(streamId))
         {
@@ -131,12 +140,26 @@ internal sealed class ActivityInterpreter
                 else
                 {
                     string messageText = GetMessageText(activity);
-                    responseText = !isFinal
-                        && string.Equals(activity.Type, ActivityTypes.Typing, StringComparison.OrdinalIgnoreCase)
-                            ? responseText + messageText
-                            : messageText;
+                    string accumulatedResponseText = responseText;
+                    if (!isFinal
+                        && string.Equals(activity.Type, ActivityTypes.Typing, StringComparison.OrdinalIgnoreCase))
+                    {
+                        responseText += messageText;
+                    }
+                    else if (!isFinal
+                        || !string.IsNullOrWhiteSpace(messageText)
+                        || string.IsNullOrWhiteSpace(responseText))
+                    {
+                        responseText = messageText;
+                    }
+
+                    bool suppressFinalToolOnlyResponse = isFinal
+                        && string.IsNullOrWhiteSpace(accumulatedResponseText)
+                        && string.IsNullOrWhiteSpace(messageText)
+                        && IsValidToolCallOnlyStreamMessage(activity);
                     changes.Add(new ChatChange(ChatChangeKind.Remove, statusKey, null));
-                    if (!string.IsNullOrEmpty(messageText) || isFinal)
+                    if ((!string.IsNullOrEmpty(messageText) || isFinal)
+                        && !suppressFinalToolOnlyResponse)
                     {
                         changes.Add(CreateEntryChange(
                             responseKey,
@@ -148,6 +171,8 @@ internal sealed class ActivityInterpreter
                             suggestedActions,
                             activityIdentity));
                     }
+
+                    carrySuggestedActionsOnToolCall = suppressFinalToolOnlyResponse;
                 }
 
                 if (isFinal)
@@ -177,7 +202,12 @@ internal sealed class ActivityInterpreter
             AddThoughtEntries(changes, activity, direction, activityIdentity);
         }
 
-        AddToolCallEntries(changes, activity, direction, activityIdentity);
+        AddToolCallEntries(
+            changes,
+            activity,
+            direction,
+            activityIdentity,
+            carrySuggestedActionsOnToolCall ? suggestedActions : []);
         AddAttachmentEntries(changes, activity, direction, activityIdentity);
 
         if (mutatedStream
@@ -245,13 +275,19 @@ internal sealed class ActivityInterpreter
         }
     }
 
-    private void AddToolCallEntries(List<ChatChange> changes, Activity activity, ActivityDirection direction, string actionGroupKey)
+    private void AddToolCallEntries(
+        List<ChatChange> changes,
+        Activity activity,
+        ActivityDirection direction,
+        string actionGroupKey,
+        IReadOnlyList<ChatAction> suggestedActions)
     {
         if (activity.Entities is null || activity.Entities.Count == 0)
         {
             return;
         }
 
+        bool actionsAssigned = false;
         foreach (Entity entity in activity.Entities)
         {
             if (!IsToolCallEntity(entity))
@@ -267,7 +303,9 @@ internal sealed class ActivityInterpreter
                     changes.Add(CreateDiagnosticChange(
                         $"{actionGroupKey}:diagnostic:toolcall:{NextSyntheticIdentity()}",
                         error!,
-                        actionGroupKey));
+                        actionGroupKey,
+                        actionsAssigned ? [] : suggestedActions));
+                    actionsAssigned = actionsAssigned || suggestedActions.Count > 0;
                 }
 
                 continue;
@@ -284,9 +322,10 @@ internal sealed class ActivityInterpreter
                     string.Empty,
                     IsTransientToolStatus(details.Status),
                     [],
-                    [],
+                    actionsAssigned ? [] : suggestedActions,
                     actionGroupKey,
                     ToolCall: details)));
+            actionsAssigned = actionsAssigned || suggestedActions.Count > 0;
         }
     }
 
@@ -497,6 +536,35 @@ internal sealed class ActivityInterpreter
             && string.IsNullOrWhiteSpace(activity.Summary)
             && activity.Entities is { Count: > 0 }
             && activity.Entities.All(IsToolCallEntity);
+    }
+
+    private static bool IsValidToolCallOnlyStreamMessage(Activity activity)
+    {
+        if (!string.Equals(activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
+            || !string.IsNullOrWhiteSpace(activity.Text)
+            || !string.IsNullOrWhiteSpace(activity.Summary)
+            || activity.Entities is not { Count: > 0 })
+        {
+            return false;
+        }
+
+        bool hasValidToolCall = false;
+        foreach (Entity entity in activity.Entities)
+        {
+            if (entity is StreamInfo)
+            {
+                continue;
+            }
+
+            if (!IsToolCallEntity(entity))
+            {
+                return false;
+            }
+
+            hasValidToolCall = ParseToolCall(entity, out _) is not null || hasValidToolCall;
+        }
+
+        return hasValidToolCall;
     }
 
     private static string GetStatusOrEventText(Activity activity)

@@ -792,6 +792,38 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
+    public void Process_EmptyFinalToolCall_PreservesAccumulatedStreamingResponse()
+    {
+        ActivityInterpreter interpreter = new();
+        interpreter.Process(
+            StreamActivity(ActivityTypes.Typing, "s", "Partial answer", null, StreamTypes.Streaming, 1),
+            ActivityDirection.Inbound);
+        Activity final = StreamActivity(
+            ActivityTypes.Message,
+            "f",
+            string.Empty,
+            "s",
+            StreamTypes.Final,
+            null);
+        final.Entities!.Insert(
+            0,
+            ToolCallEntity(
+                "completed",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>())));
+
+        IReadOnlyList<ChatChange> changes = interpreter.Process(final, ActivityDirection.Inbound);
+
+        AssertAgentUpsert(changes, "Partial answer", "stream:s:response", transient: false);
+        Assert.Equal(
+            "completed",
+            Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.ToolCall)
+                .Entry!
+                .ToolCall!
+                .Status);
+    }
+
+    [Fact]
     public void Process_SequenceRegression_PreservesSupplementalContentWithoutReplacingResponse()
     {
         ActivityInterpreter interpreter = new();

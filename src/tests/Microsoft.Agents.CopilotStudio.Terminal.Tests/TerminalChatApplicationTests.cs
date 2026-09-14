@@ -974,6 +974,77 @@ public sealed class TerminalChatApplicationTests
         Assert.Contains(thoughtTimeline.RenderedLines, line => PlainText(line).Contains("Waiting for", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void ApplyChatChanges_EmptyFinalStreamingToolCallUpdatesThoughtsWithoutBlankChatRow()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        View surfaces = Assert.IsType<TerminalShellView>(shell).ContentRegion;
+        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(surfaces.SubViews, view => view.Title == "_Thoughts");
+        TerminalTimelineView chatTimeline = Assert.Single(Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(Descendants(thoughts).OfType<TerminalTimelineView>());
+        ActivityInterpreter interpreter = new();
+        Activity started = StreamActivity(
+            ActivityTypes.Typing,
+            "stream-1",
+            string.Empty,
+            null,
+            StreamTypes.Streaming,
+            1);
+        started.Entities!.Insert(
+            0,
+            ToolCallEntity(
+                "started",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+                JsonSerializer.SerializeToElement(new[] { "units" })));
+        Activity completed = StreamActivity(
+            ActivityTypes.Message,
+            "final-1",
+            string.Empty,
+            "stream-1",
+            StreamTypes.Final,
+            null);
+        completed.Entities!.Insert(
+            0,
+            ToolCallEntity(
+                "completed",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle", units = "I" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>()),
+                durationMs: 2971));
+
+        terminal.ApplyChatChanges(interpreter.Process(started, ActivityDirection.Inbound));
+        RunOneIteration(application, shell);
+        Assert.Contains(
+            thoughtTimeline.RenderedLines,
+            line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn"
+                && PlainText(line).Contains("Running", StringComparison.Ordinal));
+
+        terminal.ApplyChatChanges(interpreter.Process(completed, ActivityDirection.Inbound));
+        RunOneIteration(application, shell);
+
+        Assert.DoesNotContain(
+            chatTimeline.RenderedLines,
+            line => line.EntryKey == "stream:stream-1:response");
+        string completedThoughtText = string.Join(
+            Environment.NewLine,
+            thoughtTimeline.RenderedLines
+                .Where(line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn")
+                .Select(PlainText));
+        Assert.Contains("Completed in 2.97 s", completedThoughtText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Running", completedThoughtText, StringComparison.Ordinal);
+        Assert.Equal(
+            ["tool:toolu_01EAp1krYNiK2odqQv9mu7hn"],
+            thoughtTimeline.RenderedLines
+                .Where(line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn")
+                .Select(line => line.EntryKey)
+                .Distinct());
+    }
+
     [Theory]
     [InlineData((int)DiagnosticSeverity.Information, "Ready.", (int)TimelineRole.Muted)]
     [InlineData((int)DiagnosticSeverity.Warning, "Warning: Reconnecting", (int)TimelineRole.Warning)]
@@ -1168,6 +1239,60 @@ public sealed class TerminalChatApplicationTests
             Descendants(shell).OfType<ReceivedLink>().Select(link => link.Target.AbsoluteUri));
         Button action = Assert.Single(Descendants(shell).OfType<Button>());
         Assert.Equal("Continue", action.Text);
+    }
+
+    [Fact]
+    public async Task ApplyChatChanges_ToolOnlyMessageKeepsSuggestedActionUsableWithoutBlankChatRow()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        FakeCopilotConversationClient client = new()
+        {
+            ExecuteStarted = new TaskCompletionSource<object?>(
+                TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal, client);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        View surfaces = Assert.IsType<TerminalShellView>(shell).ContentRegion;
+        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(surfaces.SubViews, view => view.Title == "_Thoughts");
+        TerminalTimelineView chatTimeline = Assert.Single(Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(Descendants(thoughts).OfType<TerminalTimelineView>());
+        Activity activity = ToolCallActivity(
+            ToolCallEntity(
+                "started",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>())));
+        activity.Id = "response-1";
+        activity.SuggestedActions = new SuggestedActions(actions:
+        [
+            new CardAction { Title = "Continue", Value = "continue" }
+        ]);
+
+        await terminal.MonitorStartupAsync(
+            Task.CompletedTask,
+            action => action(),
+            () => throw new InvalidOperationException("Successful startup must not stop the application."),
+            CancellationToken.None);
+        terminal.ApplyChatChanges(new ActivityInterpreter().Process(activity, ActivityDirection.Inbound));
+        RunOneIteration(application, shell);
+
+        Assert.DoesNotContain(
+            chatTimeline.RenderedLines,
+            line => line.EntryKey == "activity:response-1:entry"
+                || line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn");
+        Assert.Contains(
+            thoughtTimeline.RenderedLines,
+            line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn");
+        Button action = Assert.Single(Descendants(shell).OfType<Button>());
+        Assert.Equal("Continue", action.Text);
+
+        action.InvokeCommand(Command.Accept);
+        await client.ExecuteStarted.Task;
+
+        Assert.Equal("continue", Assert.Single(client.Requests).Text);
     }
 
     [Fact]
