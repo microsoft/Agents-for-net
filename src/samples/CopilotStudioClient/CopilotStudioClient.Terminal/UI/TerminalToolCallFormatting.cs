@@ -73,10 +73,7 @@ internal static class TerminalToolCallFormatting
                 TimelineRole.Muted)));
             foreach (ToolCallParameter parameter in details.FilledParameters)
             {
-                blocks.Add(Paragraph(
-                    new TimelineSpan(parameter.Name, TimelineRole.User),
-                    new TimelineSpan(" = ", TimelineRole.Muted),
-                    new TimelineSpan(FormatParameterValue(parameter.Value), TimelineRole.Primary)));
+                AddFilledParameterBlocks(blocks, parameter);
             }
         }
 
@@ -177,6 +174,29 @@ internal static class TerminalToolCallFormatting
         return value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? string.Empty
             : JsonSerializer.Serialize(value);
+    }
+
+    private static void AddFilledParameterBlocks(List<TimelineBlock> blocks, ToolCallParameter parameter)
+    {
+        if (parameter.Value.ValueKind == JsonValueKind.String)
+        {
+            foreach (string line in TerminalTimelineLayout.SplitLiteralLines(parameter.Value.GetString() ?? string.Empty))
+            {
+                blocks.Add(CreateFilledParameterBlock(parameter.Name, line));
+            }
+
+            return;
+        }
+
+        blocks.Add(CreateFilledParameterBlock(parameter.Name, FormatParameterValue(parameter.Value)));
+    }
+
+    private static TimelineBlock CreateFilledParameterBlock(string name, string value)
+    {
+        return Paragraph(
+            new TimelineSpan(name, TimelineRole.User),
+            new TimelineSpan(" = ", TimelineRole.Muted),
+            new TimelineSpan(value, TimelineRole.Primary));
     }
 
     private static TimelineBlock Paragraph(params TimelineSpan[] spans)

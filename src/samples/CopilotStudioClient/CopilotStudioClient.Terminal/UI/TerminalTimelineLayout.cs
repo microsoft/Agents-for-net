@@ -156,6 +156,14 @@ internal static class TerminalTimelineLayout
             .ToArray();
     }
 
+    internal static IReadOnlyList<string> SplitLiteralLines(string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+
+        string normalized = value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        return Array.AsReadOnly(normalized.Split('\n'));
+    }
+
     internal static IReadOnlyList<TimelineLine> WrapBlocks(
         IReadOnlyList<TimelineBlock> blocks,
         int width)
@@ -258,10 +266,9 @@ internal static class TerminalTimelineLayout
 
     private static IReadOnlyList<TimelineBlock> CreateLiteralBodyBlocks(string value, TimelineRole role)
     {
-        string normalized = value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
-        string[] lines = normalized.Split('\n');
-        TimelineBlock[] blocks = new TimelineBlock[lines.Length];
-        for (int index = 0; index < lines.Length; index++)
+        IReadOnlyList<string> lines = SplitLiteralLines(value);
+        TimelineBlock[] blocks = new TimelineBlock[lines.Count];
+        for (int index = 0; index < lines.Count; index++)
         {
             blocks[index] = new TimelineBlock(
                 TimelineBlockKind.Paragraph,

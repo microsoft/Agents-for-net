@@ -151,6 +151,31 @@ public sealed class TerminalToolCallFormattingTests
             Flatten(blocks).Where(line => line.Contains(" = ", System.StringComparison.Ordinal)).ToArray());
     }
 
+    [Fact]
+    public void BuildBlocks_MultilineStringParametersSplitIntoReadableContinuationParagraphs()
+    {
+        ToolCallDetails details = WeatherTool(
+            status: "completed",
+            durationMs: null,
+            filled:
+            [
+                Parameter("notes", "alpha\r\nbeta\ngamma"),
+                Parameter("units", "I")
+            ],
+            unfilled: []);
+
+        IReadOnlyList<TimelineBlock> blocks = TerminalToolCallFormatting.BuildBlocks(details);
+
+        Assert.Equal(
+            [
+                "notes = alpha",
+                "notes = beta",
+                "notes = gamma",
+                "units = I"
+            ],
+            Flatten(blocks).Where(line => line.Contains(" = ", System.StringComparison.Ordinal)).ToArray());
+    }
+
     private static string[] Flatten(IReadOnlyList<TimelineBlock> blocks)
     {
         return blocks

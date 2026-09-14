@@ -292,6 +292,38 @@ public sealed class TerminalTimelineLayoutTests
     }
 
     [Fact]
+    public void Build_ToolCallMultilineStringParametersRenderReadableContinuationLines()
+    {
+        ChatEntry entry = ToolEntry(
+            "tool-1",
+            "completed",
+            string.Empty,
+            [
+                Parameter("notes", "alpha\r\nbeta\u001B\ngamma"),
+                Parameter("units", "I")
+            ],
+            [],
+            durationMs: 2971);
+
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [entry],
+            width: 40,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        string[] renderedLines = result.Lines.Select(PlainText).ToArray();
+
+        Assert.Contains("notes = alpha", renderedLines);
+        Assert.Contains("notes = beta", renderedLines);
+        Assert.Contains("notes = gamma", renderedLines);
+        Assert.Contains("\\u001B", renderedLines);
+        Assert.Contains("units = I", renderedLines);
+        Assert.DoesNotContain(renderedLines, line => line.Contains("\\u000A", StringComparison.Ordinal));
+        Assert.DoesNotContain(renderedLines, line => line.Contains("\\u000D", StringComparison.Ordinal));
+        Assert.DoesNotContain(renderedLines, line => line.Contains('\u001B'));
+    }
+
+    [Fact]
     public void WrapBlocks_FormatsBlocksAndPreservesOnlySourceSpanMetadata()
     {
         Uri target = new("https://example.com/docs");
