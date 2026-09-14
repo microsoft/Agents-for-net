@@ -47,71 +47,89 @@ internal sealed class A2AAgentCardAuthentication
                 $"Authentication mode '{mode}' does not acquire an Agent API access token.");
         }
 
-        bool foundOAuthScheme = false;
+        var rejectedAlternatives = new List<string>();
         foreach (SecurityRequirement requirement in GetRequirements(card))
         {
             if (requirement.Schemes is null || requirement.Schemes.Count == 0)
             {
+                rejectedAlternatives.Add("it does not name a security scheme");
                 continue;
             }
 
             if (requirement.Schemes.Count != 1)
             {
-                throw new InvalidOperationException(
-                    "This A2A client POC cannot satisfy a security requirement that combines multiple schemes.");
+                rejectedAlternatives.Add("it combines multiple security schemes");
+                continue;
             }
 
             KeyValuePair<string, StringList> schemeRequirement = requirement.Schemes.Single();
             if (card.SecuritySchemes is null
                 || !card.SecuritySchemes.TryGetValue(schemeRequirement.Key, out SecurityScheme? scheme))
             {
-                throw new InvalidOperationException(
-                    $"The Agent Card security requirement references missing scheme '{schemeRequirement.Key}'.");
+                rejectedAlternatives.Add($"it references missing scheme '{schemeRequirement.Key}'");
+                continue;
             }
 
             OAuthFlows? flows = scheme.OAuth2SecurityScheme?.Flows;
             if (flows is null)
             {
+                rejectedAlternatives.Add($"scheme '{schemeRequirement.Key}' is not an OAuth security scheme");
                 continue;
             }
 
-            foundOAuthScheme = true;
             IReadOnlyList<string> scopes = (schemeRequirement.Value?.List ?? [])
+                .Where(scope => !string.IsNullOrWhiteSpace(scope))
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
             if (scopes.Count == 0)
             {
-                throw new InvalidOperationException(
-                    $"The Agent Card requirement for scheme '{schemeRequirement.Key}' does not specify acquisition scopes.");
+                rejectedAlternatives.Add($"scheme '{schemeRequirement.Key}' does not specify acquisition scopes");
+                continue;
             }
 
             if (mode == A2AAuthMode.Delegated && flows.DeviceCode is not null)
             {
+                if (!TryGetRequiredEndpoint(schemeRequirement.Key, "token", flows.DeviceCode.TokenUrl, out string? tokenUrl, out string? failure)
+                    || !TryGetRequiredEndpoint(schemeRequirement.Key, "device authorization", flows.DeviceCode.DeviceAuthorizationUrl, out string? deviceAuthorizationUrl, out failure))
+                {
+                    rejectedAlternatives.Add(failure!);
+                    continue;
+                }
+
                 return new A2AAgentCardAuthentication(
                     mode,
                     schemeRequirement.Key,
-                    GetRequiredEndpoint(schemeRequirement.Key, "token", flows.DeviceCode.TokenUrl),
-                    GetRequiredEndpoint(schemeRequirement.Key, "device authorization", flows.DeviceCode.DeviceAuthorizationUrl),
+                    tokenUrl,
+                    deviceAuthorizationUrl,
                     scopes);
             }
 
             if (mode == A2AAuthMode.App && flows.ClientCredentials is not null)
             {
+                if (!TryGetRequiredEndpoint(schemeRequirement.Key, "token", flows.ClientCredentials.TokenUrl, out string? tokenUrl, out string? failure))
+                {
+                    rejectedAlternatives.Add(failure!);
+                    continue;
+                }
+
                 return new A2AAgentCardAuthentication(
                     mode,
                     schemeRequirement.Key,
-                    GetRequiredEndpoint(schemeRequirement.Key, "token", flows.ClientCredentials.TokenUrl),
+                    tokenUrl,
                     deviceAuthorizationUrl: null,
                     scopes);
             }
+
+            rejectedAlternatives.Add(
+                $"scheme '{schemeRequirement.Key}' does not advertise a supported {(mode == A2AAuthMode.Delegated ? "Device Code" : "Client Credentials")} OAuth flow");
         }
 
         string expectedFlow = mode == A2AAuthMode.Delegated ? "Device Code" : "Client Credentials";
-        string reason = foundOAuthScheme
-            ? $"does not advertise a supported {expectedFlow} OAuth flow"
-            : "does not advertise an OAuth security scheme";
+        string reason = rejectedAlternatives.Count == 0
+            ? "does not declare security requirements"
+            : $"has no satisfiable alternative: {string.Join("; ", rejectedAlternatives.Distinct(StringComparer.Ordinal))}";
         throw new InvalidOperationException(
-            $"The Agent Card {reason}. This client POC supports only Device Code and Client Credentials flows.");
+            $"The Agent Card {reason} for {expectedFlow} authentication. This client POC supports only Device Code and Client Credentials flows.");
     }
 
     private static IEnumerable<SecurityRequirement> GetRequirements(AgentCard card)
@@ -130,14 +148,22 @@ internal sealed class A2AAgentCardAuthentication
         }
     }
 
-    private static string GetRequiredEndpoint(string schemeName, string endpointName, string? value)
+    private static bool TryGetRequiredEndpoint(
+        string schemeName,
+        string endpointName,
+        string? value,
+        out string endpointValue,
+        out string? failure)
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? endpoint) || !endpoint.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException(
-                $"The Agent Card scheme '{schemeName}' must provide an absolute HTTPS {endpointName} endpoint.");
+            endpointValue = string.Empty;
+            failure = $"scheme '{schemeName}' must provide an absolute HTTPS {endpointName} endpoint";
+            return false;
         }
 
-        return endpoint.AbsoluteUri;
+        endpointValue = endpoint.AbsoluteUri;
+        failure = null;
+        return true;
     }
 }

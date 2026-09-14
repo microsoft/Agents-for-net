@@ -20,8 +20,8 @@ public class A2AAgentCardAuthenticationTests
             {
                 DeviceCode = new()
                 {
-                    DeviceAuthorizationUrl = "https://login.example.com/devicecode",
-                    TokenUrl = "https://login.example.com/token",
+                    DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                    TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
                 },
             },
             "api://agent/access_as_user",
@@ -30,8 +30,8 @@ public class A2AAgentCardAuthenticationTests
         A2AAgentCardAuthentication selection = A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated);
 
         Assert.Equal("delegated", selection.SecuritySchemeName);
-        Assert.Equal("https://login.example.com/devicecode", selection.DeviceAuthorizationUrl);
-        Assert.Equal("https://login.example.com/token", selection.TokenUrl);
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode", selection.DeviceAuthorizationUrl);
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", selection.TokenUrl);
         Assert.Equal(["api://agent/access_as_user"], selection.Scopes);
     }
 
@@ -101,15 +101,131 @@ public class A2AAgentCardAuthenticationTests
         Assert.Contains("missing", exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Select_SkipsUnsatisfiedAlternativeAndUsesLaterSatisfiableAlternative()
+    {
+        AgentCard card = CreateCard(
+            "delegated",
+            CreateDeviceCodeFlows(),
+            ["api://agent/access_as_user"],
+            new SecurityRequirement
+            {
+                Schemes = new Dictionary<string, StringList>
+                {
+                    ["missing"] = new() { List = ["api://agent/access_as_user"] },
+                },
+            });
+
+        A2AAgentCardAuthentication selection = A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated);
+
+        Assert.Equal("delegated", selection.SecuritySchemeName);
+    }
+
+    [Fact]
+    public void Select_SkipsCompoundAlternativeAndUsesLaterSatisfiableAlternative()
+    {
+        AgentCard card = CreateCard(
+            "delegated",
+            CreateDeviceCodeFlows(),
+            ["api://agent/access_as_user"],
+            new SecurityRequirement
+            {
+                Schemes = new Dictionary<string, StringList>
+                {
+                    ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                    ["second"] = new() { List = ["api://second/access_as_user"] },
+                },
+            });
+
+        card.SecuritySchemes!["second"] = new()
+        {
+            OAuth2SecurityScheme = new OAuth2SecurityScheme { Flows = CreateDeviceCodeFlows() },
+        };
+
+        A2AAgentCardAuthentication selection = A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated);
+
+        Assert.Equal("delegated", selection.SecuritySchemeName);
+    }
+
+    [Fact]
+    public void Select_EmptyAcquisitionScopes_ThrowsAfterRejectingAlternative()
+    {
+        AgentCard card = CreateCard("delegated", CreateDeviceCodeFlows(), []);
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated));
+
+        Assert.Contains("acquisition scopes", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("http://login.microsoftonline.com/organizations/oauth2/v2.0/token", "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode")]
+    [InlineData("not an endpoint", "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode")]
+    [InlineData("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", "http://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode")]
+    [InlineData("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", "not an endpoint")]
+    public void Select_NonHttpsOrMalformedEndpoints_ThrowsAfterRejectingAlternative(string tokenUrl, string deviceAuthorizationUrl)
+    {
+        AgentCard card = CreateCard(
+            "delegated",
+            new OAuthFlows
+            {
+                DeviceCode = new()
+                {
+                    TokenUrl = tokenUrl,
+                    DeviceAuthorizationUrl = deviceAuthorizationUrl,
+                },
+            },
+            ["api://agent/access_as_user"]);
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated));
+
+        Assert.Contains("HTTPS", exception.Message, StringComparison.Ordinal);
+    }
+
+    private static OAuthFlows CreateDeviceCodeFlows()
+    {
+        return new OAuthFlows
+        {
+            DeviceCode = new()
+            {
+                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+            },
+        };
+    }
+
     private static AgentCard CreateCard(string schemeName, OAuthFlows flows, string requiredScope, bool skillRequirement = false)
+    {
+        return CreateCard(
+            schemeName,
+            flows,
+            [requiredScope],
+            additionalRequirement: null,
+            skillRequirement);
+    }
+
+    private static AgentCard CreateCard(
+        string schemeName,
+        OAuthFlows flows,
+        IReadOnlyList<string> requiredScopes,
+        SecurityRequirement? additionalRequirement = null,
+        bool skillRequirement = false)
     {
         var requirement = new SecurityRequirement
         {
             Schemes = new Dictionary<string, StringList>
             {
-                [schemeName] = new() { List = [requiredScope] },
+                [schemeName] = new() { List = [.. requiredScopes] },
             },
         };
+        var requirements = new List<SecurityRequirement>();
+        if (additionalRequirement is not null)
+        {
+            requirements.Add(additionalRequirement);
+        }
+
+        requirements.Add(requirement);
         return new AgentCard
         {
             SecuritySchemes = new Dictionary<string, SecurityScheme>
@@ -122,7 +238,7 @@ public class A2AAgentCardAuthenticationTests
                     },
                 },
             },
-            SecurityRequirements = skillRequirement ? null : [requirement],
+            SecurityRequirements = skillRequirement ? null : requirements,
             Skills = skillRequirement
                 ? [new AgentSkill { SecurityRequirements = [requirement] }]
                 : [],

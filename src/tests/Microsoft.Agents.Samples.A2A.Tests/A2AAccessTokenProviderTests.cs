@@ -61,8 +61,8 @@ public class A2AClientAuthenticationOptionsTests
         };
         var client = new MsalTokenClient(
             options,
-            delegatedTokenFactory: static (_, _) => Task.FromResult("delegated-token"),
-            applicationTokenFactory: static (_, _) => Task.FromResult("app-token"));
+            delegatedTokenFactory: static (_, _, _) => Task.FromResult("delegated-token"),
+            applicationTokenFactory: static (_, _, _) => Task.FromResult("app-token"));
         client.Configure(CreateAuthentication(mode));
 
         string token = mode switch
@@ -87,12 +87,12 @@ public class A2AClientAuthenticationOptionsTests
         bool factoryInvoked = false;
         var client = new MsalTokenClient(
             options,
-            delegatedTokenFactory: (_, _) =>
+            delegatedTokenFactory: (_, _, _) =>
             {
                 factoryInvoked = true;
                 return Task.FromResult("delegated-token");
             },
-            applicationTokenFactory: (_, _) =>
+            applicationTokenFactory: (_, _, _) =>
             {
                 factoryInvoked = true;
                 return Task.FromResult("app-token");
@@ -132,14 +132,14 @@ public class A2AClientAuthenticationOptionsTests
             DeviceCode = mode == A2AAuthMode.Delegated
                 ? new()
                 {
-                    DeviceAuthorizationUrl = "https://login.example.com/devicecode",
-                    TokenUrl = "https://login.example.com/token",
+                    DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                    TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
                 }
                 : null,
             ClientCredentials = mode == A2AAuthMode.App
                 ? new()
                 {
-                    TokenUrl = "https://login.example.com/token",
+                    TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
                 }
                 : null,
         };
@@ -168,6 +168,86 @@ public class A2AClientAuthenticationOptionsTests
         };
 
         return A2AAgentCardAuthentication.Select(card, mode);
+    }
+
+    [Fact]
+    public async Task AcquireDelegatedTokenAsync_PassesCardScopesAndAuthorityToAcquisitionPath()
+    {
+        MsalTokenAcquisitionRequest? request = null;
+        var client = new MsalTokenClient(
+            new A2AClientAuthenticationOptions
+            {
+                TenantId = "tenant-id",
+                PublicClientId = "public-client-id",
+            },
+            delegatedTokenFactory: (_, acquisitionRequest, _) =>
+            {
+                request = acquisitionRequest;
+                return Task.FromResult("delegated-token");
+            },
+            applicationTokenFactory: null);
+        client.Configure(CreateAuthentication(A2AAuthMode.Delegated));
+
+        string token = await client.AcquireDelegatedTokenAsync(CancellationToken.None);
+
+        Assert.Equal("delegated-token", token);
+        Assert.NotNull(request);
+        Assert.Equal(["api://agent/access_as_user"], request.Scopes);
+        Assert.Equal(
+            new Uri("https://login.microsoftonline.com/organizations"),
+            request.Authority);
+        Assert.Equal(
+            new Uri("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode"),
+            request.DeviceAuthorizationUrl);
+    }
+
+    [Theory]
+    [InlineData("https://login.microsoftonline.com/organizations/devicecode", "path")]
+    [InlineData("https://login.microsoftonline.com/common/oauth2/v2.0/devicecode", "tenant path")]
+    [InlineData("https://attacker.example/organizations/oauth2/v2.0/devicecode", "authority")]
+    [InlineData("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode?ignored=true", "path")]
+    public void Configure_DelegatedDeviceEndpointIncompatibleWithTokenAuthority_Throws(string deviceAuthorizationUrl, string? expectedReason)
+    {
+        var client = new MsalTokenClient(new A2AClientAuthenticationOptions());
+        AgentCard card = new()
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                                DeviceAuthorizationUrl = deviceAuthorizationUrl,
+                            },
+                        },
+                    },
+                },
+            },
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                    },
+                },
+            ],
+        };
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => client.Configure(A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated)));
+
+        Assert.Contains("device authorization endpoint", exception.Message, StringComparison.OrdinalIgnoreCase);
+        if (expectedReason is not null)
+        {
+            Assert.Contains(expectedReason, exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
 

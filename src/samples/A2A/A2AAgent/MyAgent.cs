@@ -56,8 +56,7 @@ public partial class MyAgent : AgentApplication
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
     }
 
-    [A2ASkill(name: "Delegated identity", description: "Displays the delegated caller identity.", tags: "a2a, sample, authentication", text: "-delegated")]
-    [A2AMessageRoute("-delegated", autoSignInHandlers: DelegatedHandlerName)]
+    [A2ASkill(name: "Delegated identity", description: "Displays the delegated caller identity.", tags: "a2a, sample, authentication", text: "-delegated", autoSigninHandlers: DelegatedHandlerName)]
     private async Task OnDelegatedAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var _ = await UserAuthorization.GetTurnTokenAsync(turnContext, DelegatedHandlerName, cancellationToken).ConfigureAwait(false);
@@ -67,8 +66,7 @@ public partial class MyAgent : AgentApplication
         await CompleteTaskAsync(turnContext, summary, cancellationToken).ConfigureAwait(false);
     }
 
-    [A2ASkill(name: "Microsoft Graph profile", description: "Reads the delegated caller profile from Microsoft Graph.", tags: "a2a, sample, authentication, graph", text: "-me")]
-    [A2AMessageRoute("-me", autoSignInHandlers: GraphHandlerName)]
+    [A2ASkill(name: "Microsoft Graph profile", description: "Reads the delegated caller profile from Microsoft Graph.", tags: "a2a, sample, authentication, graph", text: "-me", autoSigninHandlers: GraphHandlerName)]
     private async Task OnGraphAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var token = await UserAuthorization.GetTurnTokenAsync(turnContext, GraphHandlerName, cancellationToken).ConfigureAwait(false);
@@ -80,8 +78,7 @@ public partial class MyAgent : AgentApplication
             cancellationToken).ConfigureAwait(false);
     }
 
-    [A2ASkill(name: "Application identity", description: "Displays the calling application identity.", tags: "a2a, sample, authentication", text: "-app")]
-    [A2AMessageRoute("-app", autoSignInHandlers: ApplicationHandlerName)]
+    [A2ASkill(name: "Application identity", description: "Displays the calling application identity.", tags: "a2a, sample, authentication", text: "-app", autoSigninHandlers: ApplicationHandlerName)]
     private async Task OnApplicationAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var _ = await UserAuthorization.GetTurnTokenAsync(turnContext, ApplicationHandlerName, cancellationToken).ConfigureAwait(false);

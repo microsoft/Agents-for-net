@@ -21,6 +21,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -52,6 +54,20 @@ public class A2AAgentOAuthRouteTests
         using var provider = builder.Services.BuildServiceProvider();
 
         _ = provider.GetRequiredService<MyAgent>();
+    }
+
+    [Theory]
+    [InlineData("OnDelegatedAsync", DelegatedHandlerName)]
+    [InlineData("OnGraphAsync", GraphHandlerName)]
+    [InlineData("OnApplicationAsync", AppHandlerName)]
+    public void AuthenticatedSkills_DeclareTheirOwnAutoSignInHandlerAndNoDuplicateRoute(string methodName, string handlerName)
+    {
+        MethodInfo method = typeof(MyAgent).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        A2ASkillAttribute skill = Assert.Single(method.GetCustomAttributes<A2ASkillAttribute>());
+
+        Assert.Equal([handlerName], skill.AutoSignInHandlers);
+        Assert.Empty(method.GetCustomAttributes<A2AMessageRouteAttribute>());
     }
 
     [Fact]
