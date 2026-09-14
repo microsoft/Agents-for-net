@@ -344,6 +344,34 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
+    public void CreateShell_ResolvesDefaultOutputEncodingAfterDriverInitialization()
+    {
+        Encoding originalEncoding = Console.OutputEncoding;
+        try
+        {
+            Console.OutputEncoding = Encoding.ASCII;
+            TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+
+            using IApplication application = Application.Create();
+            application.Init(DriverRegistry.Names.ANSI);
+            using CancellationTokenSource shutdown = new();
+            using TerminalPresenter presenter = CreatePresenter(terminal);
+            using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+            TerminalTimelineView conversation = Assert.Single(
+                Descendants(shell).OfType<TerminalTimelineView>(),
+                view => view.CollapseCompletedThoughts);
+            Assert.Equal(
+                TimelineGlyphSet.ForEncoding(Console.OutputEncoding),
+                conversation.Glyphs);
+        }
+        finally
+        {
+            Console.OutputEncoding = originalEncoding;
+        }
+    }
+
+    [Fact]
     public async Task DefaultLayout_ApplicationBindingsNavigateFromEveryPrimaryControl()
     {
         using IApplication application = Application.Create();
