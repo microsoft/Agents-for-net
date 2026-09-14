@@ -7,7 +7,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Security;
+using System.Text;
 using Terminal.Gui.App;
+using Terminal.Gui.Drivers;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Input;
 using Terminal.Gui.ViewBase;
@@ -160,13 +162,35 @@ internal sealed class TerminalActivityState
 
 internal sealed class TimelineRoleLabel : View
 {
-    internal string Content { get; init; } = string.Empty;
+    private readonly TerminalPalette _palette;
+    private string _content = string.Empty;
+    private TimelineRole _role = TimelineRole.Primary;
 
-    internal TimelineRole Role { get; init; } = TimelineRole.Normal;
-
-    internal TimelineRoleLabel()
+    internal TimelineRoleLabel(TerminalPalette palette)
     {
+        _palette = palette ?? throw new ArgumentNullException(nameof(palette));
         CanFocus = false;
+        Height = 1;
+    }
+
+    internal string Content
+    {
+        get => _content;
+        set
+        {
+            _content = value ?? string.Empty;
+            SetNeedsDraw();
+        }
+    }
+
+    internal TimelineRole Role
+    {
+        get => _role;
+        set
+        {
+            _role = value;
+            SetNeedsDraw();
+        }
     }
 
     protected override bool OnDrawingContent(DrawContext? context)
@@ -175,19 +199,10 @@ internal sealed class TimelineRoleLabel : View
         string text = Content.Length <= width ? Content : Content[..width];
 
         Move(0, 0);
-        SetAttribute(GetAttributeForRole(GetVisualRole(Role)));
+        SetAttribute(_palette.Get(Role));
         AddStr(text.PadRight(width));
         return true;
     }
-
-    private static VisualRole GetVisualRole(TimelineRole role) => role switch
-    {
-        TimelineRole.Accent => VisualRole.HotNormal,
-        TimelineRole.Success => VisualRole.Active,
-        TimelineRole.Muted => VisualRole.Disabled,
-        TimelineRole.Warning => VisualRole.HotActive,
-        _ => VisualRole.Normal
-    };
 }
 
 internal sealed class ChatTranscriptLayoutView : View
@@ -278,17 +293,18 @@ internal sealed class ChatTranscriptLayoutView : View
 internal sealed class TerminalChatApplication : ITerminalView
 {
     private const string HelpText =
-        "Ctrl+1  Chat\r\n"
-        + "Ctrl+2  Thoughts\r\n"
-        + "Ctrl+3  Activities\r\n"
-        + "Ctrl+4  Help\r\n"
+        "F1      Chat\r\n"
+        + "F2      Thoughts\r\n"
+        + "F3      Activities\r\n"
+        + "F4      Help\r\n"
+        + "Esc     Return to chat\r\n"
         + "Ctrl+C  Copy focused link or selected activity JSON\r\n"
         + "Ctrl+Q  Quit\r\n"
         + "Enter   Send the composer text";
     private static readonly IReadOnlyList<TimelineLine> EmptyConversationLines = Array.AsReadOnly(
         new[]
         {
-            new TimelineLine(string.Empty, [new TimelineSpan("Copilot Studio", TimelineRole.Accent)]),
+            new TimelineLine(string.Empty, [new TimelineSpan("Copilot Studio", TimelineRole.Primary)]),
             new TimelineLine(
                 string.Empty,
                 [new TimelineSpan("Connected conversations and streaming activity appear here.", TimelineRole.Muted)]),
@@ -300,6 +316,9 @@ internal sealed class TerminalChatApplication : ITerminalView
     private readonly TerminalOptions _options;
     private readonly Func<Uri, bool>? _confirmOpen;
     private readonly Action<ProcessStartInfo> _startProcess;
+    private readonly Encoding? _outputEncodingOverride;
+    private readonly Func<Encoding> _outputEncodingResolver;
+    private Encoding _outputEncoding = Encoding.UTF8;
     private readonly TerminalChatState _chatState = new();
     private readonly TerminalChatState _thoughtState =
         new(entry => entry.Kind == ChatEntryKind.Thought);
@@ -310,14 +329,14 @@ internal sealed class TerminalChatApplication : ITerminalView
     private IApplication? _application;
     private TerminalPresenter? _presenter;
     private CancellationTokenSource? _shutdownSource;
-    private Tabs? _tabs;
+    private TerminalPalette? _palette;
+    private Scheme? _controlScheme;
     private View? _chatTab;
     private View? _thoughtsTab;
-    private View? _activitiesTab;
     private View? _helpTab;
     private TerminalTimelineView? _transcript;
     private TerminalTimelineView? _thoughtTranscript;
-    private Label? _status;
+    private TimelineRoleLabel? _status;
     private TextField? _composer;
     private ListView<ActivityRecord>? _activityList;
 #pragma warning disable CS0618 // Task 7 explicitly requires TextView for the JSON inspector.
@@ -331,18 +350,23 @@ internal sealed class TerminalChatApplication : ITerminalView
         : this(
             options,
             confirmOpen: null,
-            startProcess: startInfo => { Process.Start(startInfo); })
+            startProcess: startInfo => { Process.Start(startInfo); },
+            outputEncoding: null)
     {
     }
 
     internal TerminalChatApplication(
         TerminalOptions options,
         Func<Uri, bool>? confirmOpen,
-        Action<ProcessStartInfo> startProcess)
+        Action<ProcessStartInfo> startProcess,
+        Encoding? outputEncoding = null,
+        Func<Encoding>? outputEncodingResolver = null)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _confirmOpen = confirmOpen;
         _startProcess = startProcess ?? throw new ArgumentNullException(nameof(startProcess));
+        _outputEncodingOverride = outputEncoding;
+        _outputEncodingResolver = outputEncodingResolver ?? (() => Console.OutputEncoding);
     }
 
     internal async Task RunAsync(
@@ -354,7 +378,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         using CancellationTokenSource shutdownSource =
             CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using IApplication application = Application.Create();
-        Window? window = null;
+        Runnable? shell = null;
         Exception? startupFailure = null;
         Task startupMonitor = Task.CompletedTask;
         _startupFailure = null;
@@ -362,7 +386,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         try
         {
             application.Init();
-            window = CreateWindow(application, presenter, shutdownSource);
+            shell = CreateShell(application, presenter, shutdownSource);
 
             using CancellationTokenRegistration cancellationRegistration =
                 cancellationToken.Register(() => RequestStop(application));
@@ -376,7 +400,7 @@ internal sealed class TerminalChatApplication : ITerminalView
                 () => RequestStop(application),
                 shutdownSource.Token);
 
-            application.Run(window);
+            application.Run(shell);
         }
         finally
         {
@@ -385,7 +409,7 @@ internal sealed class TerminalChatApplication : ITerminalView
             await AwaitSendTasksAsync().ConfigureAwait(false);
             await startupMonitor.ConfigureAwait(false);
             startupFailure = _startupFailure;
-            window?.Dispose();
+            shell?.Dispose();
             _application = null;
             _presenter = null;
             _shutdownSource = null;
@@ -399,7 +423,7 @@ internal sealed class TerminalChatApplication : ITerminalView
 
     private Exception? _startupFailure;
 
-    internal Window CreateWindow(
+    internal Runnable CreateShell(
         IApplication application,
         TerminalPresenter presenter,
         CancellationTokenSource shutdownSource)
@@ -412,56 +436,95 @@ internal sealed class TerminalChatApplication : ITerminalView
         _presenter = presenter;
         _shutdownSource = shutdownSource;
         _startupSucceeded = false;
-
-        Window window = new()
-        {
-            Title = "Copilot Studio Terminal Client",
-            Width = Dim.Fill(),
-            Height = Dim.Fill()
-        };
+        IDriver driver = application.Driver
+            ?? throw new InvalidOperationException("The terminal application has not been initialized.");
+        _outputEncoding = _outputEncodingOverride ?? _outputEncodingResolver();
+        _palette = TerminalPalette.Create(
+            driver.DefaultAttribute,
+            driver.SupportsTrueColor && !driver.Force16Colors);
+        _controlScheme = _palette.CreateControlScheme();
 
         View chat = BuildChatTab();
         View thoughts = BuildThoughtsView();
         View activities = BuildActivitiesView();
+        View help = BuildHelpView();
         _chatTab = chat;
         _thoughtsTab = thoughts;
-        _activitiesTab = activities;
+        _helpTab = help;
+
+        IReadOnlyDictionary<TerminalSurface, View> surfaces;
 
         if (_options.Layout == TerminalLayout.Tabs)
         {
-            View help = BuildHelpView();
-            _helpTab = help;
-            View surfaces = new()
+            surfaces = new Dictionary<TerminalSurface, View>
             {
-                Width = Dim.Fill(),
-                Height = Dim.Fill(),
-                CanFocus = true
+                [TerminalSurface.Chat] = chat,
+                [TerminalSurface.Thoughts] = thoughts,
+                [TerminalSurface.Activities] = activities,
+                [TerminalSurface.Help] = help
             };
-            surfaces.Add(chat, thoughts, activities, help);
-            ShowDefaultSurface(chat);
-            window.Add(surfaces);
         }
         else
         {
-            Tabs conversationTabs = new()
+            View left = new()
             {
+                Title = "_Left",
                 X = 0,
                 Y = 0,
                 Width = Dim.Percent(55),
-                Height = Dim.Fill()
+                Height = Dim.Fill(),
+                CanFocus = true,
+                BorderStyle = LineStyle.None
             };
-            conversationTabs.Add(chat, thoughts);
-            conversationTabs.Value = chat;
-            _tabs = conversationTabs;
+            left.SetScheme(GetControlScheme());
+            left.Add(chat, thoughts);
+            ShowSplitConversation(TerminalSurface.Chat);
 
-            activities.X = Pos.Right(conversationTabs);
+            activities.X = Pos.Right(left);
             activities.Y = 0;
             activities.Width = Dim.Fill();
             activities.Height = Dim.Fill();
-            window.Add(conversationTabs, activities);
+
+            View split = new()
+            {
+                Title = "_Split",
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = Dim.Fill(),
+                CanFocus = true,
+                BorderStyle = LineStyle.None
+            };
+            split.SetScheme(GetControlScheme());
+            split.Add(left, activities);
+
+            surfaces = new Dictionary<TerminalSurface, View>
+            {
+                [TerminalSurface.Chat] = split,
+                [TerminalSurface.Thoughts] = split,
+                [TerminalSurface.Activities] = split,
+                [TerminalSurface.Help] = help
+            };
         }
-        window.KeyDown += OnWindowKeyDown;
-        return window;
+
+        TerminalNavigationView navigation = new()
+        {
+            Palette = GetPalette()
+        };
+        TerminalShellView shell = new(
+            navigation,
+            surfaces,
+            ResolveFocusTarget,
+            CopySelection,
+            RequestQuit,
+            exception => SetStatus(
+                $"Navigation failed: {exception.Message}",
+                DiagnosticSeverity.Error));
+        shell.SetScheme(GetControlScheme());
+        shell.ContentRegion.SetScheme(GetControlScheme());
+        shell.RegisterApplicationBindings(application);
+        shell.Show(TerminalSurface.Chat);
+        return shell;
     }
 
     public void AddActivity(ActivityRecord record)
@@ -512,9 +575,15 @@ internal sealed class TerminalChatApplication : ITerminalView
         {
             if (_status is not null)
             {
-                _status.Text = severity == DiagnosticSeverity.Information
+                _status.Content = severity == DiagnosticSeverity.Information
                     ? text
                     : $"{severity}: {text}";
+                _status.Role = severity switch
+                {
+                    DiagnosticSeverity.Error => TimelineRole.Error,
+                    DiagnosticSeverity.Warning => TimelineRole.Warning,
+                    _ => TimelineRole.Muted
+                };
             }
         });
     }
@@ -526,8 +595,10 @@ internal sealed class TerminalChatApplication : ITerminalView
             Title = "_Chat",
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            CanFocus = true
+            CanFocus = true,
+            BorderStyle = LineStyle.None
         };
+        chat.SetScheme(GetControlScheme());
 
         View conversation = BuildChatView();
         chat.Add(conversation);
@@ -536,16 +607,17 @@ internal sealed class TerminalChatApplication : ITerminalView
 
     private View BuildChatView()
     {
-        TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(Console.OutputEncoding);
-        TimelineRoleLabel header = new()
+        TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(_outputEncoding);
+        TimelineRoleLabel header = new(GetPalette())
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = 1,
-            Content = "Copilot Studio (connected)",
-            Role = TimelineRole.Accent
+            Content = $"{glyphs.Agent} Copilot Studio  connected",
+            Role = TimelineRole.Agent
         };
+        header.SetScheme(GetControlScheme());
 
         _transcript = new TerminalTimelineView
         {
@@ -555,8 +627,10 @@ internal sealed class TerminalChatApplication : ITerminalView
             Height = Dim.Fill(),
             CollapseCompletedThoughts = true,
             Glyphs = glyphs,
+            Palette = GetPalette(),
             EmptyStateLines = EmptyConversationLines
         };
+        _transcript.SetScheme(GetControlScheme());
         _transcript.SetEntries(_chatState.Entries);
 
         _actionBar = new View
@@ -565,70 +639,71 @@ internal sealed class TerminalChatApplication : ITerminalView
             Y = 0,
             Width = Dim.Fill(),
             Height = 2,
-            CanFocus = false
+            CanFocus = false,
+            BorderStyle = LineStyle.None
         };
+        _actionBar.SetScheme(GetControlScheme());
 
-        _status = new Label
+        _status = new TimelineRoleLabel(GetPalette())
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = 1,
-            Text = "Ready."
+            Content = "Ready.",
+            Role = TimelineRole.Muted
         };
-
-        FrameView composerFrame = new()
-        {
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = 3,
-            Title = "_Message"
-        };
-
-        composerFrame.Add(new Label
-        {
-            X = 0,
-            Y = 0,
-            Width = 1,
-            Height = 1,
-            Text = ">"
-        });
+        _status.SetScheme(GetControlScheme());
 
         _composer = new TextField
         {
-            X = 2,
+            X = 0,
             Y = 0,
-            Width = Dim.Fill(2),
+            Width = Dim.Fill(),
             Height = 1,
             Enabled = false
         };
+        _composer.SetScheme(GetControlScheme());
         _composer.Accepting += (_, eventArgs) =>
         {
             eventArgs.Handled = true;
             SubmitComposer();
         };
-        composerFrame.Add(_composer);
 
-        StatusBar footer = BuildStatusBar();
+        TerminalComposerView composer = new(
+            _composer,
+            GetPalette(),
+            _outputEncoding.CodePage == Encoding.UTF8.CodePage)
+        {
+            BorderStyle = LineStyle.None
+        };
+        composer.SetScheme(GetControlScheme());
+
+        TerminalFooterView footer = new(
+            GetPalette(),
+            _outputEncoding.CodePage == Encoding.UTF8.CodePage);
         footer.X = 0;
         footer.Y = 0;
         footer.Width = Dim.Fill();
         footer.Height = 1;
+        footer.BorderStyle = LineStyle.None;
+        footer.SetScheme(GetControlScheme());
 
         View conversation = new ChatTranscriptLayoutView(
             header,
             _transcript,
             _actionBar,
             _status,
-            composerFrame,
+            composer,
             footer)
         {
             Title = "_Conversation",
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            CanFocus = true
+            CanFocus = true,
+            BorderStyle = LineStyle.None
         };
+        conversation.SetScheme(GetControlScheme());
         return conversation;
     }
 
@@ -639,15 +714,13 @@ internal sealed class TerminalChatApplication : ITerminalView
             Title = "_Activities",
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            CanFocus = true
+            CanFocus = true,
+            BorderStyle = LineStyle.None
         };
+        activities.SetScheme(GetControlScheme());
 
         _activityList = new ListView<ActivityRecord>
         {
-            X = 0,
-            Y = 0,
-            Width = Dim.Percent(40),
-            Height = Dim.Fill()
         };
         _activityList.SetSource(_activityState.Records);
         _activityList.ValueChanged += (_, eventArgs) =>
@@ -659,10 +732,6 @@ internal sealed class TerminalChatApplication : ITerminalView
 #pragma warning disable CS0618 // Task 7 explicitly requires TextView for the JSON inspector.
         _json = new TextView
         {
-            X = Pos.Right(_activityList),
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
             ReadOnly = true,
             ScrollBars = true,
             WordWrap = false,
@@ -670,20 +739,24 @@ internal sealed class TerminalChatApplication : ITerminalView
         };
 #pragma warning restore CS0618
 
-        activities.Add(_activityList, _json);
+        TerminalActivityView inspector = new(_activityList, _json, GetPalette());
+        inspector.SetScheme(GetControlScheme());
+        activities.Add(inspector);
         return activities;
     }
 
     private View BuildThoughtsView()
     {
-        TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(Console.OutputEncoding);
+        TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(_outputEncoding);
         View thoughts = new()
         {
             Title = "_Thoughts",
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            CanFocus = true
+            CanFocus = true,
+            BorderStyle = LineStyle.None
         };
+        thoughts.SetScheme(GetControlScheme());
 
         _thoughtTranscript = new TerminalTimelineView
         {
@@ -692,169 +765,82 @@ internal sealed class TerminalChatApplication : ITerminalView
             Width = Dim.Fill(),
             Height = Dim.Fill(),
             CollapseCompletedThoughts = false,
-            Glyphs = glyphs
+            Glyphs = glyphs,
+            Palette = GetPalette()
         };
+        _thoughtTranscript.SetScheme(GetControlScheme());
         _thoughtTranscript.SetEntries(_thoughtState.Entries);
 
         thoughts.Add(_thoughtTranscript);
         return thoughts;
     }
 
-    private static View BuildHelpView()
+    private View BuildHelpView()
     {
         View help = new()
         {
             Title = "_Help",
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            CanFocus = true
+            CanFocus = true,
+            BorderStyle = LineStyle.None
         };
-        help.Add(new Label
+        help.SetScheme(GetControlScheme());
+        Label content = new()
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
             Text = HelpText
-        });
+        };
+        content.SetScheme(GetControlScheme());
+        help.Add(content);
         return help;
     }
 
-    private StatusBar BuildStatusBar()
+    private View? ResolveFocusTarget(TerminalSurface surface)
     {
-        return new StatusBar(
-        [
-            new Shortcut(Key.D1.WithCtrl, "Chat", FocusChat),
-            new Shortcut(Key.D2.WithCtrl, "Thoughts", FocusThoughts),
-            new Shortcut(Key.D3.WithCtrl, "Activities", FocusActivities),
-            new Shortcut(Key.D4.WithCtrl, "Help", ShowHelp),
-            new Shortcut(Key.C.WithCtrl, "Copy", CopySelection),
-            new Shortcut(Key.Q.WithCtrl, "Quit", RequestQuit)
-        ]);
+        if (_options.Layout == TerminalLayout.Split
+            && surface is TerminalSurface.Chat or TerminalSurface.Thoughts)
+        {
+            ShowSplitConversation(surface);
+        }
+
+        return surface switch
+        {
+            TerminalSurface.Chat when _composer?.Enabled == true => _composer,
+            TerminalSurface.Chat => _transcript,
+            TerminalSurface.Thoughts => _thoughtTranscript,
+            TerminalSurface.Activities => _activityList,
+            TerminalSurface.Help => _helpTab,
+            _ => null
+        };
     }
 
-    private void OnWindowKeyDown(object? sender, Key key)
-    {
-        if (key.Equals(Key.D1.WithCtrl))
-        {
-            FocusChat();
-        }
-        else if (key.Equals(Key.D2.WithCtrl))
-        {
-            FocusThoughts();
-        }
-        else if (key.Equals(Key.D3.WithCtrl))
-        {
-            FocusActivities();
-        }
-        else if (key.Equals(Key.D4.WithCtrl))
-        {
-            ShowHelp();
-        }
-        else if (key.Equals(Key.C.WithCtrl))
-        {
-            CopySelection();
-        }
-        else if (key.Equals(Key.Q.WithCtrl))
-        {
-            RequestQuit();
-        }
-        else
-        {
-            return;
-        }
-
-        key.Handled = true;
-    }
-
-    private void FocusChat()
+    private void ShowSplitConversation(TerminalSurface surface)
     {
         if (_chatTab is not null)
         {
-            if (_options.Layout == TerminalLayout.Tabs)
-            {
-                ShowDefaultSurface(_chatTab);
-                _chatTab.SetFocus();
-            }
-            else if (_tabs is not null)
-            {
-                _tabs.Value = _chatTab;
-            }
-        }
-
-        if (_composer?.Enabled == true)
-        {
-            _composer.SetFocus();
-        }
-        else
-        {
-            _transcript?.SetFocus();
-        }
-    }
-
-    private void FocusActivities()
-    {
-        if (_options.Layout == TerminalLayout.Tabs && _activitiesTab is not null)
-        {
-            ShowDefaultSurface(_activitiesTab);
-            _activitiesTab.SetFocus();
-        }
-
-        _activityList?.SetFocus();
-    }
-
-    private void FocusThoughts()
-    {
-        if (_thoughtsTab is not null)
-        {
-            if (_options.Layout == TerminalLayout.Tabs)
-            {
-                ShowDefaultSurface(_thoughtsTab);
-                _thoughtsTab.SetFocus();
-            }
-            else if (_tabs is not null)
-            {
-                _tabs.Value = _thoughtsTab;
-            }
-
-            _thoughtTranscript?.SetFocus();
-        }
-    }
-
-    private void ShowHelp()
-    {
-        if (_options.Layout == TerminalLayout.Tabs && _helpTab is not null)
-        {
-            ShowDefaultSurface(_helpTab);
-            _helpTab.SetFocus();
-            return;
-        }
-
-        IApplication application = GetApplication();
-        MessageBox.Query(application, "Help", HelpText, "_Close");
-    }
-
-    private void ShowDefaultSurface(View selectedSurface)
-    {
-        if (_chatTab is not null)
-        {
-            _chatTab.Visible = ReferenceEquals(_chatTab, selectedSurface);
+            _chatTab.Visible = surface == TerminalSurface.Chat;
         }
 
         if (_thoughtsTab is not null)
         {
-            _thoughtsTab.Visible = ReferenceEquals(_thoughtsTab, selectedSurface);
+            _thoughtsTab.Visible = surface == TerminalSurface.Thoughts;
         }
+    }
 
-        if (_activitiesTab is not null)
-        {
-            _activitiesTab.Visible = ReferenceEquals(_activitiesTab, selectedSurface);
-        }
+    private TerminalPalette GetPalette()
+    {
+        return _palette
+            ?? throw new InvalidOperationException("The terminal palette has not been initialized.");
+    }
 
-        if (_helpTab is not null)
-        {
-            _helpTab.Visible = ReferenceEquals(_helpTab, selectedSurface);
-        }
+    private Scheme GetControlScheme()
+    {
+        return _controlScheme
+            ?? throw new InvalidOperationException("The terminal control scheme has not been initialized.");
     }
 
     internal void SubmitComposer()
@@ -981,16 +967,34 @@ internal sealed class TerminalChatApplication : ITerminalView
         }
 
         Pos linkX = 0;
-        foreach (ChatLink link in _chatState.Links)
+        void AddLink(string text, Uri target)
         {
-            ReceivedLink linkView = new(link.Title, link.Url, OpenReceivedLink)
+            ReceivedLink linkView = new(text, target, OpenReceivedLink)
             {
                 X = linkX,
                 Y = 0
             };
+            linkView.SetScheme(GetControlScheme());
             _actionBar.Add(linkView);
             _linkViews.Add(linkView);
             linkX = Pos.Right(linkView) + 1;
+        }
+
+        foreach (ChatLink link in _chatState.Links)
+        {
+            AddLink(link.Title, link.Url);
+        }
+
+        HashSet<(string EntryKey, string Text, string Target)> markdownLinks = [];
+        IEnumerable<TimelineLink> parsedLinks =
+            (_transcript?.Links ?? [])
+            .Concat(_thoughtTranscript?.Links ?? []);
+        foreach (TimelineLink link in parsedLinks)
+        {
+            if (markdownLinks.Add((link.EntryKey, link.Text, link.Target.AbsoluteUri)))
+            {
+                AddLink(link.Text, link.Target);
+            }
         }
 
         Pos actionX = 0;
@@ -1002,10 +1006,13 @@ internal sealed class TerminalChatApplication : ITerminalView
                 Y = 1,
                 Text = action.Title
             };
+            button.SetScheme(GetControlScheme());
             button.Accepted += (_, _) => ActivateAction(action);
             _actionBar.Add(button);
             actionX = Pos.Right(button) + 1;
         }
+
+        _actionBar.CanFocus = _actionBar.SubViews.Count > 0;
     }
 
     private void ActivateAction(ChatAction action)
@@ -1111,6 +1118,7 @@ internal sealed class TerminalChatApplication : ITerminalView
             Width = Dim.Percent(80),
             Height = Dim.Percent(60)
         };
+        dialog.SetScheme(GetControlScheme());
 #pragma warning disable CS0618 // Task 7 explicitly requires selectable TextView fallback content.
         TextView textView = new()
         {
@@ -1122,6 +1130,7 @@ internal sealed class TerminalChatApplication : ITerminalView
             ScrollBars = true,
             Text = value
         };
+        textView.SetScheme(GetControlScheme());
 #pragma warning restore CS0618
         Button close = new()
         {
@@ -1130,6 +1139,7 @@ internal sealed class TerminalChatApplication : ITerminalView
             IsDefault = true,
             Text = "_Close"
         };
+        close.SetScheme(GetControlScheme());
         close.Accepted += (_, _) => application.RequestStop(dialog);
         dialog.Add(textView, close);
         application.Run(dialog);

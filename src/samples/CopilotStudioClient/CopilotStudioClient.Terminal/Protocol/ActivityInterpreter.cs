@@ -185,7 +185,8 @@ internal sealed class ActivityInterpreter
             changes.Add(CreateDiagnosticChange(
                 $"stream:{streamId}:diagnostic:{NextSyntheticIdentity()}",
                 $"Stream '{streamId}' completed with an error result.",
-                activityIdentity));
+                activityIdentity,
+                severity: DiagnosticSeverity.Error));
         }
 
         return changes;
@@ -368,7 +369,8 @@ internal sealed class ActivityInterpreter
         string key,
         string message,
         string actionGroupKey,
-        IReadOnlyList<ChatAction>? suggestedActions = null)
+        IReadOnlyList<ChatAction>? suggestedActions = null,
+        DiagnosticSeverity severity = DiagnosticSeverity.Warning)
     {
         return new ChatChange(
             ChatChangeKind.Upsert,
@@ -381,7 +383,8 @@ internal sealed class ActivityInterpreter
                 false,
                 [],
                 suggestedActions ?? [],
-                actionGroupKey));
+                actionGroupKey,
+                severity));
     }
 
     private static ChatEntryKind GetMessageKind(ActivityDirection direction)

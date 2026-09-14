@@ -3,9 +3,13 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Terminal.Gui.App;
 using Terminal.Gui.Drawing;
+using Terminal.Gui.Drivers;
 using Terminal.Gui.Input;
+using Terminal.Gui.Views;
 
+[Collection("TerminalGui")]
 public sealed class TerminalTimelineViewTests
 {
     [Fact]
@@ -20,6 +24,45 @@ public sealed class TerminalTimelineViewTests
             view.RenderedLines,
             line => line.EntryKey == "stream" && PlainText(line) == "Hello");
         Assert.DoesNotContain(view.RenderedLines, line => PlainText(line) == "Hel");
+    }
+
+    [Fact]
+    public void StreamingMarkdownReplacementKeepsOneStyledEntryAndFollowsLatest()
+    {
+        using TerminalTimelineView view = new() { Width = 12, Height = 3 };
+        ChatEntry[] initialEntries =
+        [
+            Entry("older-1", "first response"),
+            Entry("older-2", "second response"),
+            Entry("older-3", "third response"),
+            Entry("stream", "**Hel", isTransient: true)
+        ];
+        ChatEntry[] replacementEntries =
+        [
+            Entry("older-1", "first response"),
+            Entry("older-2", "second response"),
+            Entry("older-3", "third response"),
+            Entry("stream", "**Hello**", isTransient: true)
+        ];
+
+        view.SetEntries(initialEntries);
+        view.NewKeyDownEvent(Key.End);
+
+        view.SetEntries(replacementEntries);
+
+        TimelineLine[] streamLines = view.RenderedLines
+            .Where(line => line.EntryKey == "stream")
+            .ToArray();
+        Assert.Equal(["●  Agent", "Hello"], streamLines.Select(PlainText));
+        Assert.DoesNotContain(streamLines, line => PlainText(line) == "**Hel");
+        TimelineSpan styledText = Assert.Single(
+            streamLines.SelectMany(line => line.Spans),
+            span => span.Text == "Hello");
+        Assert.True(styledText.Style.HasFlag(TimelineTextStyle.Bold));
+        Assert.Equal(view.MaximumScrollOffset, view.ScrollOffset);
+        Assert.Contains(
+            view.RenderedLines.Skip(view.ScrollOffset).Take(3),
+            line => PlainText(line) == "Hello");
     }
 
     [Fact]
@@ -61,14 +104,40 @@ public sealed class TerminalTimelineViewTests
     }
 
     [Fact]
-    public void SemanticRoles_MapToAdaptiveTerminalRoles()
+    public void Drawing_UsesPaletteAndTextStyleForEachSpan()
     {
-        using TerminalTimelineView view = new();
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        TerminalPalette palette = TerminalPalette.Create(
+            new Terminal.Gui.Drawing.Attribute(new Color("#c9d1d9"), new Color("#0d1117")),
+            supportsTrueColor: true);
+        using TerminalTimelineView view = new()
+        {
+            X = 0,
+            Y = 0,
+            Width = 40,
+            Height = 4,
+            Palette = palette
+        };
+        using Window host = new()
+        {
+            Width = 40,
+            Height = 4
+        };
+        host.Add(view);
 
-        Assert.Equal(VisualRole.HotNormal, view.GetVisualRole(TimelineRole.Accent));
-        Assert.Equal(VisualRole.Active, view.GetVisualRole(TimelineRole.Success));
-        Assert.Equal(VisualRole.Disabled, view.GetVisualRole(TimelineRole.Muted));
-        Assert.Equal(VisualRole.HotActive, view.GetVisualRole(TimelineRole.Warning));
+        view.SetEntries([Entry("a", "**bold** and `code`")]);
+        RunOneIteration(application, host);
+        IDriver driver = Assert.IsAssignableFrom<IDriver>(application.Driver);
+        Assert.NotNull(driver.Contents);
+        Cell[,] contents = driver.Contents!;
+
+        Assert.Contains(view.RenderedLines.SelectMany(line => line.Spans), span =>
+            span.Text == "bold" && span.Style.HasFlag(TimelineTextStyle.Bold));
+        Assert.Contains(view.RenderedLines.SelectMany(line => line.Spans), span =>
+            span.Text == "code" && span.Role == TimelineRole.Code);
+        Assert.Equal(palette.Get(TimelineRole.Agent, TimelineTextStyle.Bold), FindAttribute(contents, "b"));
+        Assert.Equal(palette.Get(TimelineRole.Code), FindAttribute(contents, "c"));
     }
 
     [Fact]
@@ -197,5 +266,28 @@ public sealed class TerminalTimelineViewTests
     private static string PlainText(TimelineLine line)
     {
         return string.Concat(line.Spans.Select(span => span.Text));
+    }
+
+
+    private static Terminal.Gui.Drawing.Attribute? FindAttribute(Cell[,] contents, string grapheme)
+    {
+        for (int row = 0; row < contents.GetLength(0); row++)
+        {
+            for (int column = 0; column < contents.GetLength(1); column++)
+            {
+                if (contents[row, column].Grapheme == grapheme)
+                {
+                    return contents[row, column].Attribute;
+                }
+            }
+        }
+
+        throw new InvalidOperationException($"Rendered cell '{grapheme}' was not found.");
+    }
+
+    private static void RunOneIteration(IApplication application, Window window)
+    {
+        application.StopAfterFirstIteration = true;
+        application.Run(window);
     }
 }

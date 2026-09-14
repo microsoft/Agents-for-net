@@ -1,7 +1,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using System.Text;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Input;
 using Terminal.Gui.ViewBase;
@@ -10,7 +9,8 @@ internal sealed class TerminalTimelineView : View
 {
     private static readonly TimelineLayoutResult EmptyLayout = new(
         Array.AsReadOnly(Array.Empty<TimelineLine>()),
-        new Dictionary<string, TimelineRowRange>(StringComparer.Ordinal));
+        new Dictionary<string, TimelineRowRange>(StringComparer.Ordinal),
+        Array.AsReadOnly(Array.Empty<TimelineLink>()));
     private static readonly IReadOnlyList<TimelineLine> NoLines = Array.AsReadOnly(Array.Empty<TimelineLine>());
 
     private readonly TimelineScrollState _scrollState = new();
@@ -27,6 +27,8 @@ internal sealed class TerminalTimelineView : View
 
     internal TimelineGlyphSet Glyphs { get; init; } = TimelineGlyphSet.Unicode;
 
+    internal TerminalPalette Palette { get; init; } = TerminalPalette.Create(null, supportsTrueColor: false);
+
     internal IReadOnlyList<TimelineLine> EmptyStateLines { get; init; } = NoLines;
 
     internal int ScrollOffset => _scrollState.Offset;
@@ -42,6 +44,15 @@ internal sealed class TerminalTimelineView : View
         }
     }
 
+    internal IReadOnlyList<TimelineLink> Links
+    {
+        get
+        {
+            EnsureLayoutMatchesViewport();
+            return _layout.Links;
+        }
+    }
+
     internal void SetEntries(IReadOnlyList<ChatEntry> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
@@ -50,15 +61,6 @@ internal sealed class TerminalTimelineView : View
         RebuildLayout();
         SetNeedsDraw();
     }
-
-    internal VisualRole GetVisualRole(TimelineRole role) => role switch
-    {
-        TimelineRole.Accent => VisualRole.HotNormal,
-        TimelineRole.Success => VisualRole.Active,
-        TimelineRole.Muted => VisualRole.Disabled,
-        TimelineRole.Warning => VisualRole.HotActive,
-        _ => VisualRole.Normal
-    };
 
     protected override void OnViewportChanged(DrawEventArgs args)
     {
@@ -158,7 +160,10 @@ internal sealed class TerminalTimelineView : View
     {
         int contentWidth = Math.Max(1, width);
         _layout = _entries.Count == 0
-            ? new TimelineLayoutResult(BuildEmptyStateLayout(contentWidth), EmptyLayout.EntryRows)
+            ? new TimelineLayoutResult(
+                BuildEmptyStateLayout(contentWidth),
+                EmptyLayout.EntryRows,
+                EmptyLayout.Links)
             : TerminalTimelineLayout.Build(_entries, contentWidth, Glyphs, CollapseCompletedThoughts);
         _lastLayoutWidth = contentWidth;
         UpdateScrollDimensions();
@@ -204,7 +209,7 @@ internal sealed class TerminalTimelineView : View
         Move(0, visibleRow);
         foreach (TimelineSpan span in line.Spans)
         {
-            SetAttribute(GetAttributeForRole(GetVisualRole(span.Role)));
+            SetAttribute(Palette.Get(span.Role, span.Style));
             AddStr(span.Text);
         }
     }
@@ -212,7 +217,7 @@ internal sealed class TerminalTimelineView : View
     private void ClearRow(int visibleRow, int visibleWidth)
     {
         Move(0, visibleRow);
-        SetAttribute(GetAttributeForRole(GetVisualRole(TimelineRole.Normal)));
+        SetAttribute(Palette.Get(TimelineRole.Primary));
         AddStr(new string(' ', visibleWidth));
     }
 
@@ -232,16 +237,14 @@ internal sealed class TerminalTimelineView : View
                 continue;
             }
 
-            StringBuilder text = new();
-            foreach (TimelineSpan span in line.Spans)
-            {
-                text.Append(span.Text);
-            }
+            IReadOnlyList<TimelineBlock> blocks =
+            [
+                new TimelineBlock(TimelineBlockKind.Paragraph, line.Spans)
+            ];
 
-            TimelineRole role = line.Spans[0].Role;
-            foreach (string wrappedText in TerminalTimelineLayout.WrapText(text.ToString(), width))
+            foreach (TimelineLine wrappedLine in TerminalTimelineLayout.WrapBlocks(blocks, width))
             {
-                wrappedLines.Add(new TimelineLine(line.EntryKey, [new TimelineSpan(wrappedText, role)]));
+                wrappedLines.Add(wrappedLine with { EntryKey = line.EntryKey });
             }
         }
 

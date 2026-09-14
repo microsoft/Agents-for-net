@@ -3,15 +3,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
 using Terminal.Gui.App;
 using Terminal.Gui.Drivers;
+using Terminal.Gui.Drawing;
 using Terminal.Gui.Input;
+using Terminal.Gui.Text;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
 
+[Collection("TerminalGui")]
 public sealed class TerminalChatApplicationTests
 {
     [Theory]
@@ -101,44 +105,292 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
-    public void CreateWindow_DefaultLayoutUsesChromeFreeTimelineAndHiddenInspectors()
+    public void ApplyChatChanges_CreatesControlOnlyForSafeMarkdownLink()
     {
         using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
         using CancellationTokenSource shutdown = new();
-        TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
         using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
 
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        terminal.ApplyChatChanges(
+        [
+            MarkdownChange("safe", "[Docs](https://example.com/docs)"),
+            MarkdownChange("unsafe", "[Local](file:///C:/secret.txt)")
+        ]);
+        RunOneIteration(application, shell);
 
-        Assert.DoesNotContain(Descendants(window), view => view is Tabs);
-        View surfaces = Assert.Single(window.SubViews);
-        Assert.IsNotType<Tabs>(surfaces);
-        Assert.Equal(
-            ["_Chat", "_Thoughts", "_Activities", "_Help"],
-            surfaces.SubViews.Select(view => view.Title));
-        AssertDefaultSurface(surfaces, "_Chat");
-        AssertRequiredChatControls(window);
+        ReceivedLink link = Assert.Single(Descendants(shell).OfType<ReceivedLink>());
+        Assert.Equal("Docs", link.Text);
+        Assert.Equal("https://example.com/docs", link.Target.AbsoluteUri);
+        TerminalTimelineView timeline = Assert.Single(
+            Descendants(shell).OfType<TerminalTimelineView>(),
+            view => view.CollapseCompletedThoughts);
+        Assert.Contains(
+            timeline.RenderedLines,
+            line => PlainText(line) == "[Local](file:///C:/secret.txt)");
     }
 
     [Fact]
-    public async Task DefaultLayout_ShortcutsSwitchVisibleSurfaceAndFocusItsPrimaryControl()
+    public void ApplyChatChanges_StreamReplacementUpdatesMarkdownLinkControlByKey()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        terminal.ApplyChatChanges(
+        [
+            MarkdownChange(
+                "stream",
+                "[Old](https://example.com/old)",
+                isTransient: true)
+        ]);
+        int stage = 0;
+        int attempts = 0;
+        application.Iteration += (_, _) =>
+        {
+            ReceivedLink[] links = Descendants(shell).OfType<ReceivedLink>().ToArray();
+            if (links.Length == 0 && ++attempts < 5)
+            {
+                return;
+            }
+
+            try
+            {
+                ReceivedLink link = Assert.Single(links);
+                if (stage == 0)
+                {
+                    Assert.Equal("https://example.com/old", link.Target.AbsoluteUri);
+                    stage = 1;
+                    terminal.ApplyChatChanges(
+                    [
+                        MarkdownChange(
+                            "stream",
+                            "[Current](https://example.com/current)",
+                            isTransient: true)
+                    ]);
+                    return;
+                }
+
+                Assert.Equal("Current", link.Text);
+                Assert.Equal("https://example.com/current", link.Target.AbsoluteUri);
+                stage = 2;
+                application.RequestStop();
+            }
+            catch
+            {
+                application.RequestStop();
+                throw;
+            }
+        };
+
+        application.Run(shell);
+        Assert.Equal(2, stage);
+    }
+
+    [Fact]
+    public void MarkdownLink_FocusedActivationRequestsExactUrlThroughConfirmation()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        Uri target = new("https://example.com/docs?q=terminal");
+        Uri? confirmationTarget = null;
+        int starts = 0;
+        TerminalChatApplication terminal = new(
+            new TerminalOptions(TerminalLayout.Tabs, false),
+            uri =>
+            {
+                confirmationTarget = uri;
+                return false;
+            },
+            _ => starts++);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        terminal.ApplyChatChanges([MarkdownChange("link", $"[Docs]({target.AbsoluteUri})")]);
+        int attempts = 0;
+        application.Iteration += (_, _) =>
+        {
+            ReceivedLink[] links = Descendants(shell).OfType<ReceivedLink>().ToArray();
+            if (links.Length == 0 && ++attempts < 5)
+            {
+                return;
+            }
+
+            try
+            {
+                ReceivedLink link = Assert.Single(links);
+                link.SetFocus();
+                Assert.True(link.HasFocus);
+
+                link.InvokeCommand(Command.Activate);
+
+                Assert.Equal(target.AbsoluteUri, confirmationTarget?.AbsoluteUri);
+                Assert.Equal(0, starts);
+            }
+            finally
+            {
+                application.RequestStop();
+            }
+        };
+
+        application.Run(shell);
+    }
+
+    [Fact]
+    public void MarkdownLink_CtrlCCopiesFocusedExactUrlThroughApplicationBinding()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        FakeClipboard clipboard = new(
+            fakeClipboardThrowsNotSupportedException: false,
+            isSupportedAlwaysFalse: false);
+        application.Driver!.Clipboard = clipboard;
+        using CancellationTokenSource shutdown = new();
+        Uri target = new("https://example.com/docs?q=copy");
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        terminal.ApplyChatChanges([MarkdownChange("link", $"[Docs]({target.AbsoluteUri})")]);
+        int attempts = 0;
+        application.Iteration += (_, _) =>
+        {
+            ReceivedLink[] links = Descendants(shell).OfType<ReceivedLink>().ToArray();
+            if (links.Length == 0 && ++attempts < 5)
+            {
+                return;
+            }
+
+            try
+            {
+                ReceivedLink link = Assert.Single(links);
+                link.SetFocus();
+                Assert.True(link.HasFocus);
+
+                RaiseTerminalKey(application, Key.C.WithCtrl);
+
+                Assert.Equal(target.AbsoluteUri, clipboard.GetClipboardData());
+                Assert.Equal("Copied to clipboard.", GetStatus(shell).Content);
+            }
+            finally
+            {
+                application.RequestStop();
+            }
+        };
+
+        application.Run(shell);
+    }
+
+    [Fact]
+    public void CreateShell_DefaultLayoutIsBorderlessAndKeepsNavigationVisible()
     {
         using IApplication application = Application.Create();
         application.Init(DriverRegistry.Names.ANSI);
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
         using TerminalPresenter presenter = CreatePresenter(terminal);
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
-        View surfaces = Assert.Single(window.SubViews);
+
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+
+        Assert.Equal(LineStyle.None, shell.BorderStyle);
+        Assert.Equal(string.Empty, shell.Title);
+        Assert.Same(shell.Navigation, shell.SubViews.First());
+        Assert.DoesNotContain(
+            Descendants(shell),
+            view => view is Window or Tabs or FrameView or StatusBar);
+        View surfaces = shell.ContentRegion;
+        Assert.Equal(
+            ["_Chat", "_Thoughts", "_Activities", "_Help"],
+            surfaces.SubViews.Select(view => view.Title));
+        AssertDefaultSurface(surfaces, "_Chat");
+        AssertRequiredChatControls(shell);
+    }
+
+    [Theory]
+    [InlineData(false, "* Copilot Studio  connected")]
+    [InlineData(true, "● Copilot Studio  connected")]
+    public void CreateShell_ConnectionHeaderUsesEncodingSelectedAgentGlyph(
+        bool useUnicode,
+        string expected)
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        Encoding outputEncoding = useUnicode ? Encoding.UTF8 : Encoding.ASCII;
+        TerminalChatApplication terminal = new(
+            new TerminalOptions(TerminalLayout.Tabs, false),
+            confirmOpen: null,
+            startProcess: _ => { },
+            outputEncoding: outputEncoding);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        TimelineRoleLabel header = Assert.Single(
+            Descendants(shell).OfType<TimelineRoleLabel>(),
+            label => label.Role == TimelineRole.Agent);
+        TerminalTimelineView conversation = Assert.Single(
+            Descendants(shell).OfType<TerminalTimelineView>(),
+            view => view.CollapseCompletedThoughts);
+        Assert.Equal(expected, header.Content);
+        Assert.Equal(TimelineGlyphSet.ForEncoding(outputEncoding), conversation.Glyphs);
+    }
+
+    [Fact]
+    public void CreateShell_ResolvesDefaultOutputEncodingAfterDriverInitialization()
+    {
+        Encoding currentEncoding = Encoding.ASCII;
+        TerminalChatApplication terminal = new(
+            TerminalOptions.Parse([]),
+            confirmOpen: null,
+            startProcess: _ => { },
+            outputEncodingResolver: () => currentEncoding);
+
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        currentEncoding = Encoding.UTF8;
+        using CancellationTokenSource shutdown = new();
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        TerminalTimelineView conversation = Assert.Single(
+            Descendants(shell).OfType<TerminalTimelineView>(),
+            view => view.CollapseCompletedThoughts);
+        Assert.Equal(TimelineGlyphSet.Unicode, conversation.Glyphs);
+    }
+
+    [Fact]
+    public async Task DefaultLayout_ApplicationBindingsNavigateFromEveryPrimaryControl()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View surfaces = shell.ContentRegion;
+        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
         View thoughts = Assert.Single(surfaces.SubViews, view => view.Title == "_Thoughts");
         View activities = Assert.Single(surfaces.SubViews, view => view.Title == "_Activities");
         View help = Assert.Single(surfaces.SubViews, view => view.Title == "_Help");
+        TerminalTimelineView conversationTimeline = Assert.Single(
+            Descendants(chat).OfType<TerminalTimelineView>());
         TerminalTimelineView thoughtTimeline = Assert.Single(
             Descendants(thoughts).OfType<TerminalTimelineView>());
         ListView<ActivityRecord> activityList = Assert.Single(
             Descendants(activities).OfType<ListView<ActivityRecord>>());
         TextField composer = Assert.Single(Descendants(surfaces).OfType<TextField>());
-        List<(string Title, bool PrimaryControlFocused)> observed = [];
+#pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
+        TextView json = Assert.Single(Descendants(activities).OfType<TextView>());
+#pragma warning restore CS0618
 
         await terminal.MonitorStartupAsync(
             Task.CompletedTask,
@@ -147,78 +399,407 @@ public sealed class TerminalChatApplicationTests
             CancellationToken.None);
         application.Iteration += (_, _) =>
         {
-            window.NewKeyDownEvent(Key.D2.WithCtrl);
-            observed.Add((Assert.Single(surfaces.SubViews, view => view.Visible).Title, thoughtTimeline.HasFocus));
+            try
+            {
+                Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D1.WithCtrl, out _));
+                Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D2.WithCtrl, out _));
+                Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D3.WithCtrl, out _));
+                Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D4.WithCtrl, out _));
 
-            window.NewKeyDownEvent(Key.D3.WithCtrl);
-            observed.Add((Assert.Single(surfaces.SubViews, view => view.Visible).Title, activityList.HasFocus));
+                (TerminalSurface Surface, View Control)[] startingFocuses =
+                [
+                    (TerminalSurface.Chat, composer),
+                    (TerminalSurface.Chat, conversationTimeline),
+                    (TerminalSurface.Activities, activityList),
+                    (TerminalSurface.Activities, json)
+                ];
 
-            window.NewKeyDownEvent(Key.D4.WithCtrl);
-            observed.Add((Assert.Single(surfaces.SubViews, view => view.Visible).Title, help.HasFocus));
+                foreach ((TerminalSurface startingSurface, View startingControl) in startingFocuses)
+                {
+                    shell.Show(startingSurface);
+                    startingControl.SetFocus();
+                    Assert.True(startingControl.HasFocus);
 
-            window.NewKeyDownEvent(Key.D1.WithCtrl);
-            observed.Add((Assert.Single(surfaces.SubViews, view => view.Visible).Title, composer.HasFocus));
-            application.RequestStop();
+                    RaiseTerminalKey(application, Key.F2);
+                    Assert.Equal(TerminalSurface.Thoughts, shell.ActiveSurface);
+                    Assert.True(thoughtTimeline.HasFocus);
+
+                    RaiseTerminalKey(application, Key.F3);
+                    Assert.Equal(TerminalSurface.Activities, shell.ActiveSurface);
+                    Assert.True(activityList.HasFocus);
+
+                    RaiseTerminalKey(application, Key.F4);
+                    Assert.Equal(TerminalSurface.Help, shell.ActiveSurface);
+                    Assert.True(help.HasFocus);
+
+                    RaiseTerminalKey(application, Key.Esc);
+                    Assert.Equal(TerminalSurface.Chat, shell.ActiveSurface);
+                    Assert.True(composer.HasFocus);
+                }
+
+                foreach (Key navigationKey in new[] { Key.F2, Key.F3, Key.F4 })
+                {
+                    RaiseTerminalKey(application, navigationKey);
+                    RaiseTerminalKey(application, Key.Esc);
+                    Assert.Equal(TerminalSurface.Chat, shell.ActiveSurface);
+                    Assert.True(composer.HasFocus);
+                }
+
+                RaiseTerminalKey(application, Key.C.WithCtrl);
+                Assert.Equal("Nothing is selected to copy.", GetStatus(shell).Content);
+
+                RaiseTerminalKey(application, Key.Q.WithCtrl);
+                Assert.True(shutdown.IsCancellationRequested);
+                Assert.True(shell.StopRequested);
+            }
+            finally
+            {
+                application.RequestStop();
+            }
         };
 
-        application.Run(window);
-
-        Assert.Equal(["_Thoughts", "_Activities", "_Help", "_Chat"], observed.Select(item => item.Title));
-        Assert.All(observed, item => Assert.True(item.PrimaryControlFocused, $"{item.Title} did not receive focus."));
+        application.Run(shell);
     }
 
     [Fact]
-    public void CreateWindow_TabsOptionUsesChromeFreeTimelineMode()
+    public void CreateShell_TabsOptionUsesBorderlessSurfaceMode()
     {
         using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(TerminalOptions.Parse(["--layout", "tabs"]));
         using TerminalPresenter presenter = CreatePresenter(terminal);
 
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
 
-        Assert.DoesNotContain(Descendants(window), view => view is Tabs);
-        View surfaces = Assert.Single(window.SubViews);
+        Assert.DoesNotContain(
+            Descendants(shell),
+            view => view is Window or Tabs or FrameView or StatusBar);
+        View surfaces = shell.ContentRegion;
         AssertDefaultSurface(surfaces, "_Chat");
-        AssertRequiredChatControls(window);
+        AssertRequiredChatControls(shell);
     }
 
     [Fact]
-    public void CreateWindow_DefaultLayoutUsesTimelineConversationSurfaceAndBorderedComposer()
+    public void CreateShell_DefaultChatUsesOnlyCustomChrome()
     {
         using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
         using TerminalPresenter presenter = CreatePresenter(terminal);
 
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        IReadOnlyList<View> descendants = Descendants(shell).ToArray();
 
-        View surfaces = Assert.Single(window.SubViews);
-        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
+        Assert.DoesNotContain(descendants, view => view is Window);
+        Assert.DoesNotContain(descendants, view => view is FrameView);
+        Assert.DoesNotContain(descendants, view => view is StatusBar);
+        Assert.DoesNotContain(descendants, view => view is Tabs);
+        Assert.Single(descendants.OfType<TerminalNavigationView>());
+        Assert.Single(descendants.OfType<TerminalComposerView>());
+        Assert.Single(descendants.OfType<TerminalFooterView>());
+
+        View chat = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Chat");
+        View conversation = Assert.Single(chat.SubViews);
+        TimelineRoleLabel header = Assert.Single(
+            conversation.SubViews.OfType<TimelineRoleLabel>(),
+            label => string.Equals(label.Content, "● Copilot Studio  connected", StringComparison.Ordinal));
         TerminalTimelineView timeline = Assert.Single(
             Descendants(chat).OfType<TerminalTimelineView>(),
             view => view.CollapseCompletedThoughts);
 
-        Assert.DoesNotContain(Descendants(chat), view => view is FrameView { Title: "_Conversation" });
-        Assert.Contains(Descendants(chat).OfType<FrameView>(), frame => frame.Title == "_Message");
+        Assert.Equal(TimelineRole.Agent, header.Role);
         Assert.Equal(TimelineGlyphSet.ForEncoding(Console.OutputEncoding), timeline.Glyphs);
     }
 
     [Fact]
-    public void CreateWindow_SplitLayoutBuildsChatAndThoughtTabsBesideActivities()
+    public void CreateShell_ActivitiesSurfaceWrapsControlsInResponsiveInspectorView()
     {
         using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View activities = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Activities");
+
+        Assert.IsType<TerminalActivityView>(Assert.Single(activities.SubViews));
+    }
+
+    [Fact]
+    public void SplitLayoutUsesPersistentNavigationAndBorderlessSurfaces()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Split, false));
-        TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
 
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
 
-        Tabs tabs = Assert.IsType<Tabs>(Assert.Single(window.SubViews, view => view is Tabs));
-        Assert.Equal(["_Chat", "_Thoughts"], tabs.TabCollection.Select(view => view.Title));
-        Assert.Contains(window.SubViews, view => view.Title == "_Activities");
-        Assert.DoesNotContain(window.SubViews, view => view is FrameView { Title: "_Activities" });
-        AssertRequiredChatControls(window);
+        Assert.DoesNotContain(
+            Descendants(shell),
+            view => view is Window or Tabs or FrameView or StatusBar);
+        View split = Assert.Single(shell.ContentRegion.SubViews, view => view.Visible);
+        Assert.Equal("_Split", split.Title);
+        Assert.Equal(["_Left", "_Activities"], split.SubViews.Select(view => view.Title));
+        Assert.All(split.SubViews, view => Assert.Equal(LineStyle.None, view.BorderStyle));
+        AssertRequiredChatControls(shell);
+
+        View left = Assert.Single(split.SubViews, view => view.Title == "_Left");
+        View chat = Assert.Single(left.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(left.SubViews, view => view.Title == "_Thoughts");
+        View activities = Assert.Single(split.SubViews, view => view.Title == "_Activities");
+        TerminalTimelineView conversationTimeline = Assert.Single(
+            Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(
+            Descendants(thoughts).OfType<TerminalTimelineView>());
+        ListView<ActivityRecord> activityList = Assert.Single(
+            Descendants(activities).OfType<ListView<ActivityRecord>>());
+        View help = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Help");
+
+        application.Iteration += (_, _) =>
+        {
+            try
+            {
+                AssertNavigation(shell, TerminalSurface.Chat);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.True(chat.Visible);
+                Assert.False(thoughts.Visible);
+                Assert.True(activities.Visible);
+
+                RaiseTerminalKey(application, Key.F3);
+                RaiseTerminalKey(application, Key.F1);
+                AssertNavigation(shell, TerminalSurface.Chat);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.True(chat.Visible);
+                Assert.False(thoughts.Visible);
+                Assert.True(activities.Visible);
+                Assert.True(conversationTimeline.HasFocus);
+
+                RaiseTerminalKey(application, Key.F2);
+                AssertNavigation(shell, TerminalSurface.Thoughts);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.False(chat.Visible);
+                Assert.True(thoughts.Visible);
+                Assert.True(activities.Visible);
+                Assert.True(thoughtTimeline.HasFocus);
+
+                RaiseTerminalKey(application, Key.F3);
+                AssertNavigation(shell, TerminalSurface.Activities);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.False(chat.Visible);
+                Assert.True(thoughts.Visible);
+                Assert.True(activities.Visible);
+                Assert.True(activityList.HasFocus);
+
+                RaiseTerminalKey(application, Key.F4);
+                AssertNavigation(shell, TerminalSurface.Help);
+                Assert.True(shell.Navigation.Visible);
+                Assert.False(split.Visible);
+                Assert.True(help.Visible);
+                Assert.True(help.HasFocus);
+
+                RaiseTerminalKey(application, Key.Esc);
+                AssertNavigation(shell, TerminalSurface.Chat);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.True(chat.Visible);
+                Assert.False(thoughts.Visible);
+                Assert.True(activities.Visible);
+                Assert.True(conversationTimeline.HasFocus);
+            }
+            finally
+            {
+                application.RequestStop();
+            }
+        };
+
+        application.Run(shell);
+    }
+
+    [Fact]
+    public async Task SplitLayout_ApplicationBindingsSwitchLeftContentAndPreserveActivities()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Split, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View split = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Split");
+        View left = Assert.Single(split.SubViews, view => view.Title == "_Left");
+        View chat = Assert.Single(left.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(left.SubViews, view => view.Title == "_Thoughts");
+        View activities = Assert.Single(split.SubViews, view => view.Title == "_Activities");
+        TextField composer = Assert.Single(Descendants(chat).OfType<TextField>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(
+            Descendants(thoughts).OfType<TerminalTimelineView>());
+        ListView<ActivityRecord> activityList = Assert.Single(
+            Descendants(activities).OfType<ListView<ActivityRecord>>());
+        View help = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Help");
+
+        await terminal.MonitorStartupAsync(
+            Task.CompletedTask,
+            action => action(),
+            () => throw new InvalidOperationException("Successful startup must not stop the application."),
+            CancellationToken.None);
+        application.Iteration += (_, _) =>
+        {
+            RaiseTerminalKey(application, Key.F2);
+            Assert.True(split.Visible);
+            Assert.False(chat.Visible);
+            Assert.True(thoughts.Visible);
+            Assert.True(activities.Visible);
+            Assert.True(thoughtTimeline.HasFocus);
+
+            RaiseTerminalKey(application, Key.F3);
+            Assert.True(thoughts.Visible);
+            Assert.True(activities.Visible);
+            Assert.True(activityList.HasFocus);
+
+            RaiseTerminalKey(application, Key.F4);
+            Assert.False(split.Visible);
+            Assert.True(help.Visible);
+            Assert.True(help.HasFocus);
+
+            RaiseTerminalKey(application, Key.Esc);
+            Assert.True(split.Visible);
+            Assert.True(chat.Visible);
+            Assert.False(thoughts.Visible);
+            Assert.True(activities.Visible);
+            Assert.True(composer.HasFocus);
+            application.RequestStop();
+        };
+
+        application.Run(shell);
+    }
+
+    [Fact]
+    public void NarrowResizeKeepsChatAndActivitiesWithinViewport()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Split, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View split = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Split");
+        View left = Assert.Single(split.SubViews, view => view.Title == "_Left");
+        View chat = Assert.Single(left.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(left.SubViews, view => view.Title == "_Thoughts");
+        View activities = Assert.Single(split.SubViews, view => view.Title == "_Activities");
+        TerminalTimelineView conversationTimeline = Assert.Single(
+            Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(
+            Descendants(thoughts).OfType<TerminalTimelineView>());
+#pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
+        TextView json = Assert.Single(Descendants(activities).OfType<TextView>());
+#pragma warning restore CS0618
+        ListView<ActivityRecord> activityList = Assert.Single(
+            Descendants(activities).OfType<ListView<ActivityRecord>>());
+
+        terminal.ApplyChatChanges(
+        [
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "chat",
+                new ChatEntry(
+                    "chat",
+                    ChatEntryKind.Agent,
+                    "Agent",
+                    "**Hello** narrow world 界界 🙂🙂\twith controls \u001B",
+                    false,
+                    [],
+                    [],
+                    "chat")),
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "thought",
+                new ChatEntry(
+                    "thought",
+                    ChatEntryKind.Thought,
+                    "Reasoning",
+                    "Inspecting responsive split layout",
+                    true,
+                    [],
+                    [],
+                    "thought"))
+        ]);
+        terminal.AddActivity(new ActivityRecord(
+            1,
+            ActivityDirection.Inbound,
+            DateTimeOffset.Parse("2026-09-13T12:00:00Z"),
+            ActivityTypes.Message,
+            "message activity",
+            new Activity { Type = ActivityTypes.Message, Text = "hello" },
+            """{"type":"message","text":"hello"}""",
+            null));
+
+        foreach (int width in new[] { 20, 40, 71, 72, 100 })
+        {
+            foreach (int height in new[] { 6, 10, 24 })
+            {
+                shell.Frame = new System.Drawing.Rectangle(0, 0, width, height);
+                Assert.True(shell.Layout(), $"Layout failed for {width}x{height}.");
+
+                AssertNavigation(shell, TerminalSurface.Chat);
+                Assert.True(split.Visible, $"Split hidden at {width}x{height}.");
+                Assert.True(chat.Visible, $"Chat hidden at {width}x{height}.");
+                Assert.False(thoughts.Visible, $"Thoughts visible while Chat is active at {width}x{height}.");
+                Assert.True(activities.Visible, $"Activities hidden at {width}x{height}.");
+                AssertWithinParent(shell);
+
+                Assert.All(
+                    conversationTimeline.RenderedLines,
+                    line => Assert.True(
+                        PlainText(line).GetColumns() <= Math.Max(1, conversationTimeline.Frame.Width),
+                        $"Conversation line '{PlainText(line)}' exceeds {conversationTimeline.Frame.Width} cells at {width}x{height}."));
+                Assert.True(activityList.Frame.Width > 0, $"Activity list has no width at {width}x{height}.");
+                Assert.True(activityList.Frame.Height > 0, $"Activity list has no height at {width}x{height}.");
+                Assert.True(json.Frame.Width > 0, $"JSON inspector has no width at {width}x{height}.");
+                Assert.True(json.Frame.Height > 0, $"JSON inspector has no height at {width}x{height}.");
+
+                shell.Show(TerminalSurface.Thoughts);
+                Assert.True(shell.Layout(), $"Thought layout failed for {width}x{height}.");
+                AssertNavigation(shell, TerminalSurface.Thoughts);
+                Assert.True(split.Visible, $"Split hidden after F2 equivalent at {width}x{height}.");
+                Assert.False(chat.Visible, $"Chat visible while Thoughts is active at {width}x{height}.");
+                Assert.True(thoughts.Visible, $"Thoughts hidden at {width}x{height}.");
+                Assert.True(activities.Visible, $"Activities hidden while Thoughts is active at {width}x{height}.");
+                AssertWithinParent(shell);
+                Assert.All(
+                    thoughtTimeline.RenderedLines,
+                    line => Assert.True(
+                        PlainText(line).GetColumns() <= Math.Max(1, thoughtTimeline.Frame.Width),
+                        $"Thought line '{PlainText(line)}' exceeds {thoughtTimeline.Frame.Width} cells at {width}x{height}."));
+
+                shell.Show(TerminalSurface.Activities);
+                Assert.True(shell.Layout(), $"Activities layout failed for {width}x{height}.");
+                AssertNavigation(shell, TerminalSurface.Activities);
+                Assert.True(split.Visible, $"Split hidden after F3 equivalent at {width}x{height}.");
+                Assert.True(activities.Visible, $"Activities hidden after F3 equivalent at {width}x{height}.");
+                AssertWithinParent(shell);
+                Assert.True(activityList.Frame.Width > 0, $"Activity list has no width after F3 equivalent at {width}x{height}.");
+                Assert.True(activityList.Frame.Height > 0, $"Activity list has no height after F3 equivalent at {width}x{height}.");
+                Assert.True(json.Frame.Width > 0, $"JSON inspector has no width after F3 equivalent at {width}x{height}.");
+                Assert.True(json.Frame.Height > 0, $"JSON inspector has no height after F3 equivalent at {width}x{height}.");
+
+                shell.Show(TerminalSurface.Chat);
+            }
+        }
     }
 
     [Fact]
@@ -229,8 +810,8 @@ public sealed class TerminalChatApplicationTests
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
         using TerminalPresenter presenter = CreatePresenter(terminal);
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
-        View surfaces = Assert.Single(window.SubViews);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        View surfaces = Assert.IsType<TerminalShellView>(shell).ContentRegion;
         View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
         View thoughts = Assert.Single(surfaces.SubViews, view => view.Title == "_Thoughts");
 
@@ -261,7 +842,7 @@ public sealed class TerminalChatApplicationTests
                     [],
                     "thought-complete"))
         ]);
-        RunOneIteration(application, window);
+        RunOneIteration(application, shell);
 
         TerminalTimelineView conversation = Assert.Single(
             Descendants(chat).OfType<TerminalTimelineView>(),
@@ -274,60 +855,103 @@ public sealed class TerminalChatApplicationTests
         Assert.DoesNotContain(conversation.RenderedLines, line => PlainText(line) == "Compared all records");
         Assert.Contains(
             conversation.RenderedLines,
-            line => PlainText(line) == "Reasoning complete · Ctrl+2 for details");
+            line => PlainText(line) == "Reasoning complete · F2 for details");
         Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Checking account");
         Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Compared all records");
     }
 
-    [Fact]
-    public void CreateWindow_DefaultLayoutKeepsTranscriptVisibleWithoutOverlappingBottomStackAtShortHeights()
+    [Theory]
+    [InlineData((int)DiagnosticSeverity.Information, "Ready.", (int)TimelineRole.Muted)]
+    [InlineData((int)DiagnosticSeverity.Warning, "Warning: Reconnecting", (int)TimelineRole.Warning)]
+    [InlineData((int)DiagnosticSeverity.Error, "Error: Connection lost", (int)TimelineRole.Error)]
+    public void SetStatus_UsesSemanticStatusRoles(
+        int severityValue,
+        string expectedText,
+        int expectedRoleValue)
     {
         using IApplication application = Application.Create();
         application.Init(DriverRegistry.Names.ANSI);
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
         using TerminalPresenter presenter = CreatePresenter(terminal);
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        DiagnosticSeverity severity = (DiagnosticSeverity)severityValue;
+        TimelineRole expectedRole = (TimelineRole)expectedRoleValue;
 
-        View surfaces = Assert.Single(window.SubViews);
-        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
-        View conversation = Assert.Single(chat.SubViews);
+        string text = severity switch
+        {
+            DiagnosticSeverity.Warning => "Reconnecting",
+            DiagnosticSeverity.Error => "Connection lost",
+            _ => "Ready."
+        };
 
-        conversation.Frame = new System.Drawing.Rectangle(0, 0, 50, 7);
+        terminal.SetStatus(text, severity);
+        RunOneIteration(application, shell);
+
+        TimelineRoleLabel status = GetStatus(shell);
+
+        Assert.Equal(expectedText, status.Content);
+        Assert.Equal(expectedRole, status.Role);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    [InlineData(8)]
+    [InlineData(9)]
+    [InlineData(10)]
+    public void CreateShell_DefaultLayoutKeepsTranscriptVisibleWithoutOverlappingBottomStackAtShortHeights(int height)
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        View conversation = GetChatConversation(shell);
+
+        conversation.Frame = new System.Drawing.Rectangle(0, 0, 50, height);
         Assert.True(conversation.Layout());
 
-        TimelineRoleLabel header = Assert.Single(conversation.SubViews.OfType<TimelineRoleLabel>());
+        TimelineRoleLabel[] labels = conversation.SubViews.OfType<TimelineRoleLabel>().ToArray();
+        TimelineRoleLabel header = Assert.Single(labels, label => label.Role == TimelineRole.Agent);
+        TimelineRoleLabel status = Assert.Single(labels, label => !ReferenceEquals(label, header));
         TerminalTimelineView transcript = Assert.Single(conversation.SubViews.OfType<TerminalTimelineView>());
-        Label status = Assert.Single(conversation.SubViews.OfType<Label>(), label => label.Text == "Ready.");
-        FrameView composer = Assert.Single(conversation.SubViews.OfType<FrameView>(), frame => frame.Title == "_Message");
-        StatusBar footer = Assert.Single(conversation.SubViews.OfType<StatusBar>());
+        TerminalComposerView composer = Assert.Single(conversation.SubViews.OfType<TerminalComposerView>());
+        TerminalFooterView footer = Assert.Single(conversation.SubViews.OfType<TerminalFooterView>());
         View actionBar = Assert.Single(
             conversation.SubViews,
             view => view is not TimelineRoleLabel
                 && view is not TerminalTimelineView
                 && view is not Label
-                && view is not FrameView
-                && view is not StatusBar);
+                && view is not TerminalComposerView
+                && view is not TerminalFooterView);
 
-        Assert.True(transcript.Frame.Height >= 1, $"Transcript frame: {transcript.Frame}");
+        Assert.True(transcript.Frame.Height >= 1, $"Height {height}: transcript frame {transcript.Frame}");
         Assert.True(
             header.Frame.Y + header.Frame.Height <= transcript.Frame.Y,
-            $"Header {header.Frame} overlaps transcript {transcript.Frame}");
+            $"Height {height}: header {header.Frame} overlaps transcript {transcript.Frame}");
         Assert.True(
             transcript.Frame.Y + transcript.Frame.Height <= actionBar.Frame.Y,
-            $"Transcript {transcript.Frame} overlaps action bar {actionBar.Frame}");
+            $"Height {height}: transcript {transcript.Frame} overlaps action bar {actionBar.Frame}");
         Assert.True(
             actionBar.Frame.Y + actionBar.Frame.Height <= status.Frame.Y,
-            $"Action bar {actionBar.Frame} overlaps status {status.Frame}");
+            $"Height {height}: action bar {actionBar.Frame} overlaps status {status.Frame}");
         Assert.True(
             status.Frame.Y + status.Frame.Height <= composer.Frame.Y,
-            $"Status {status.Frame} overlaps composer {composer.Frame}");
+            $"Height {height}: status {status.Frame} overlaps composer {composer.Frame}");
         Assert.True(
             composer.Frame.Y + composer.Frame.Height <= footer.Frame.Y,
-            $"Composer {composer.Frame} overlaps footer {footer.Frame}");
+            $"Height {height}: composer {composer.Frame} overlaps footer {footer.Frame}");
         Assert.True(
             footer.Frame.Y + footer.Frame.Height <= conversation.Frame.Height,
-            $"Footer {footer.Frame} exceeds conversation height {conversation.Frame.Height}");
+            $"Height {height}: footer {footer.Frame} exceeds conversation height {conversation.Frame.Height}");
     }
 
     [Fact]
@@ -343,8 +967,8 @@ public sealed class TerminalChatApplicationTests
         };
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
         using TerminalPresenter presenter = CreatePresenter(terminal, client);
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
-        TextField composer = Assert.Single(Descendants(window).OfType<TextField>());
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        TextField composer = Assert.Single(Descendants(shell).OfType<TextField>());
 
         composer.Value = "too early";
         terminal.SubmitComposer();
@@ -371,11 +995,12 @@ public sealed class TerminalChatApplicationTests
     public async Task Composer_StartupFailureLeavesComposerDisabled()
     {
         using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
         using TerminalPresenter presenter = CreatePresenter(terminal);
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
-        TextField composer = Assert.Single(Descendants(window).OfType<TextField>());
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        TextField composer = Assert.Single(Descendants(shell).OfType<TextField>());
         bool stopRequested = false;
 
         await terminal.MonitorStartupAsync(
@@ -396,7 +1021,7 @@ public sealed class TerminalChatApplicationTests
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
         using TerminalPresenter presenter = CreatePresenter(terminal);
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
         Activity activity = new()
         {
             Id = "response-1",
@@ -422,12 +1047,12 @@ public sealed class TerminalChatApplicationTests
         };
 
         terminal.ApplyChatChanges(new ActivityInterpreter().Process(activity, ActivityDirection.Inbound));
-        RunOneIteration(application, window);
+        RunOneIteration(application, shell);
 
         Assert.Equal(
             ["https://first.example/", "https://second.example/"],
-            Descendants(window).OfType<ReceivedLink>().Select(link => link.Target.AbsoluteUri));
-        Button action = Assert.Single(Descendants(window).OfType<Button>());
+            Descendants(shell).OfType<ReceivedLink>().Select(link => link.Target.AbsoluteUri));
+        Button action = Assert.Single(Descendants(shell).OfType<Button>());
         Assert.Equal("Continue", action.Text);
     }
 
@@ -439,7 +1064,7 @@ public sealed class TerminalChatApplicationTests
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
         using TerminalPresenter presenter = CreatePresenter(terminal);
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
         ActivityInterpreter interpreter = new();
 
         terminal.ApplyChatChanges(interpreter.Process(
@@ -464,9 +1089,9 @@ public sealed class TerminalChatApplicationTests
                 ])
             },
             ActivityDirection.Inbound));
-        RunOneIteration(application, window);
+        RunOneIteration(application, shell);
 
-        Button action = Assert.Single(Descendants(window).OfType<Button>());
+        Button action = Assert.Single(Descendants(shell).OfType<Button>());
         Assert.Equal("New action", action.Text);
     }
 
@@ -483,8 +1108,8 @@ public sealed class TerminalChatApplicationTests
         };
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
         using TerminalPresenter presenter = CreatePresenter(terminal, client);
-        using Window window = terminal.CreateWindow(application, presenter, shutdown);
-        TextField composer = Assert.Single(Descendants(window).OfType<TextField>());
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        TextField composer = Assert.Single(Descendants(shell).OfType<TextField>());
 
         await terminal.MonitorStartupAsync(
             Task.CompletedTask,
@@ -495,14 +1120,14 @@ public sealed class TerminalChatApplicationTests
         [
             ActionableChange("entry", "Send action", "send")
         ]);
-        RunOneIteration(application, window);
-        Assert.Single(Descendants(window).OfType<Button>());
+        RunOneIteration(application, shell);
+        Assert.Single(Descendants(shell).OfType<Button>());
 
         composer.Value = "new request";
         terminal.SubmitComposer();
         await client.ExecuteStarted!.Task;
 
-        Assert.Empty(Descendants(window).OfType<Button>());
+        Assert.Empty(Descendants(shell).OfType<Button>());
     }
 
     private static TerminalPresenter CreatePresenter(ITerminalView view)
@@ -527,8 +1152,8 @@ public sealed class TerminalChatApplicationTests
         Assert.DoesNotContain(descendants, view => view is Markdown);
         Assert.Single(descendants.OfType<TextField>());
         Assert.Single(descendants.OfType<ListView<ActivityRecord>>());
-        Assert.Contains(descendants.OfType<FrameView>(), frame => frame.Title == "_Message");
-        Assert.Single(descendants.OfType<StatusBar>());
+        Assert.Single(descendants.OfType<TerminalComposerView>());
+        Assert.Single(descendants.OfType<TerminalFooterView>());
 
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
         TextView json = Assert.Single(descendants.OfType<TextView>());
@@ -536,7 +1161,32 @@ public sealed class TerminalChatApplicationTests
         Assert.True(json.ReadOnly);
         Assert.True(json.ScrollBars);
         Assert.False(descendants.OfType<TextField>().Single().Enabled);
-        Assert.Contains(descendants.OfType<Label>(), label => label.Text == "Ready.");
+        Assert.Equal("Ready.", GetStatus(root).Content);
+    }
+
+    private static void AssertNavigation(TerminalShellView shell, TerminalSurface activeSurface)
+    {
+        Assert.Equal(activeSurface, shell.ActiveSurface);
+        Assert.Equal(activeSurface, shell.Navigation.ActiveSurface);
+        Assert.Same(shell.Navigation, shell.SubViews.First());
+    }
+
+    private static void AssertWithinParent(View parent)
+    {
+        foreach (View child in parent.SubViews)
+        {
+            Assert.True(child.Frame.X >= 0, $"{child.Title} has negative X in {parent.Title}: {child.Frame}");
+            Assert.True(child.Frame.Y >= 0, $"{child.Title} has negative Y in {parent.Title}: {child.Frame}");
+            Assert.True(child.Frame.Width >= 0, $"{child.Title} has negative width in {parent.Title}: {child.Frame}");
+            Assert.True(child.Frame.Height >= 0, $"{child.Title} has negative height in {parent.Title}: {child.Frame}");
+            Assert.True(
+                child.Frame.X + child.Frame.Width <= Math.Max(0, parent.Frame.Width),
+                $"{child.Title} exceeds parent width {parent.Frame.Width} in {parent.Title}: {child.Frame}");
+            Assert.True(
+                child.Frame.Y + child.Frame.Height <= Math.Max(0, parent.Frame.Height),
+                $"{child.Title} exceeds parent height {parent.Frame.Height} in {parent.Title}: {child.Frame}");
+            AssertWithinParent(child);
+        }
     }
 
     private static void AssertDefaultSurface(View surfaces, string visibleTitle)
@@ -565,10 +1215,47 @@ public sealed class TerminalChatApplicationTests
                 key));
     }
 
-    private static void RunOneIteration(IApplication application, Window window)
+    private static ChatChange MarkdownChange(string key, string text, bool isTransient = false)
+    {
+        return new ChatChange(
+            ChatChangeKind.Upsert,
+            key,
+            new ChatEntry(
+                key,
+                ChatEntryKind.Agent,
+                "Agent",
+                text,
+                isTransient,
+                [],
+                [],
+                key));
+    }
+
+    private static void RunOneIteration(IApplication application, Runnable shell)
     {
         application.StopAfterFirstIteration = true;
-        application.Run(window);
+        application.Run(shell);
+    }
+
+    private static void RaiseTerminalKey(IApplication application, Key key)
+    {
+        bool handled = application.Keyboard.RaiseKeyDownEvent(key);
+        Assert.True(handled, $"{key} was not handled by the application binding.");
+    }
+
+    private static View GetChatConversation(View root)
+    {
+        View chat = Assert.Single(Descendants(root), view => view.Title == "_Chat");
+        return Assert.Single(chat.SubViews);
+    }
+
+    private static TimelineRoleLabel GetStatus(View root)
+    {
+        TimelineRoleLabel[] labels = GetChatConversation(root).SubViews.OfType<TimelineRoleLabel>().ToArray();
+        Assert.Equal(2, labels.Length);
+        return Assert.Single(
+            labels,
+            label => !label.Content.Contains("Copilot Studio", StringComparison.Ordinal));
     }
 
     private static IEnumerable<View> Descendants(View view)
