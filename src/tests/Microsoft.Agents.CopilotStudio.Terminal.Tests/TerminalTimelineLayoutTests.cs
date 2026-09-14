@@ -73,6 +73,24 @@ public sealed class TerminalTimelineLayoutTests
     }
 
     [Fact]
+    public void Build_ReplacedStreamingMarkdownKeepsOneRangeAndStyledText()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [Entry("stream", ChatEntryKind.Agent, "Agent", "**Hello**", isTransient: true)],
+            width: 40,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        KeyValuePair<string, TimelineRowRange> range = Assert.Single(result.EntryRows);
+        Assert.Equal("stream", range.Key);
+        Assert.Equal(new TimelineRowRange(0, 2), range.Value);
+        Assert.Equal(["●  Agent", "Hello"], result.Lines.Select(PlainText));
+        TimelineSpan body = Assert.Single(result.Lines[1].Spans);
+        Assert.Equal("Hello", body.Text);
+        Assert.True(body.Style.HasFlag(TimelineTextStyle.Bold));
+    }
+
+    [Fact]
     public void Build_WrapsStyledCjkAndEmojiAtCellWidthWithoutLosingMetadata()
     {
         TimelineLayoutResult result = TerminalTimelineLayout.Build(

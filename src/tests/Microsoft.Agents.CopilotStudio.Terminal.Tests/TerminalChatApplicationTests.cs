@@ -10,6 +10,7 @@ using Terminal.Gui.App;
 using Terminal.Gui.Drivers;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Input;
+using Terminal.Gui.Text;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
 
@@ -161,55 +162,62 @@ public sealed class TerminalChatApplicationTests
             CancellationToken.None);
         application.Iteration += (_, _) =>
         {
-            Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D1.WithCtrl, out _));
-            Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D2.WithCtrl, out _));
-            Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D3.WithCtrl, out _));
-            Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D4.WithCtrl, out _));
-
-            (TerminalSurface Surface, View Control)[] startingFocuses =
-            [
-                (TerminalSurface.Chat, composer),
-                (TerminalSurface.Chat, conversationTimeline),
-                (TerminalSurface.Activities, activityList),
-                (TerminalSurface.Activities, json)
-            ];
-
-            foreach ((TerminalSurface startingSurface, View startingControl) in startingFocuses)
+            try
             {
-                shell.Show(startingSurface);
-                startingControl.SetFocus();
-                Assert.True(startingControl.HasFocus);
+                Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D1.WithCtrl, out _));
+                Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D2.WithCtrl, out _));
+                Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D3.WithCtrl, out _));
+                Assert.False(application.Keyboard.KeyBindings.TryGet(Key.D4.WithCtrl, out _));
 
-                RaiseTerminalKey(application, Key.F2);
-                Assert.Equal(TerminalSurface.Thoughts, shell.ActiveSurface);
-                Assert.True(thoughtTimeline.HasFocus);
+                (TerminalSurface Surface, View Control)[] startingFocuses =
+                [
+                    (TerminalSurface.Chat, composer),
+                    (TerminalSurface.Chat, conversationTimeline),
+                    (TerminalSurface.Activities, activityList),
+                    (TerminalSurface.Activities, json)
+                ];
 
-                RaiseTerminalKey(application, Key.F3);
-                Assert.Equal(TerminalSurface.Activities, shell.ActiveSurface);
-                Assert.True(activityList.HasFocus);
+                foreach ((TerminalSurface startingSurface, View startingControl) in startingFocuses)
+                {
+                    shell.Show(startingSurface);
+                    startingControl.SetFocus();
+                    Assert.True(startingControl.HasFocus);
 
-                RaiseTerminalKey(application, Key.F4);
-                Assert.Equal(TerminalSurface.Help, shell.ActiveSurface);
-                Assert.True(help.HasFocus);
+                    RaiseTerminalKey(application, Key.F2);
+                    Assert.Equal(TerminalSurface.Thoughts, shell.ActiveSurface);
+                    Assert.True(thoughtTimeline.HasFocus);
 
-                RaiseTerminalKey(application, Key.Esc);
-                Assert.Equal(TerminalSurface.Chat, shell.ActiveSurface);
-                Assert.True(composer.HasFocus);
+                    RaiseTerminalKey(application, Key.F3);
+                    Assert.Equal(TerminalSurface.Activities, shell.ActiveSurface);
+                    Assert.True(activityList.HasFocus);
+
+                    RaiseTerminalKey(application, Key.F4);
+                    Assert.Equal(TerminalSurface.Help, shell.ActiveSurface);
+                    Assert.True(help.HasFocus);
+
+                    RaiseTerminalKey(application, Key.Esc);
+                    Assert.Equal(TerminalSurface.Chat, shell.ActiveSurface);
+                    Assert.True(composer.HasFocus);
+                }
+
+                foreach (Key navigationKey in new[] { Key.F2, Key.F3, Key.F4 })
+                {
+                    RaiseTerminalKey(application, navigationKey);
+                    RaiseTerminalKey(application, Key.Esc);
+                    Assert.Equal(TerminalSurface.Chat, shell.ActiveSurface);
+                    Assert.True(composer.HasFocus);
+                }
+
+                RaiseTerminalKey(application, Key.C.WithCtrl);
+                Assert.Equal("Nothing is selected to copy.", GetStatus(shell).Content);
+
+                RaiseTerminalKey(application, Key.Q.WithCtrl);
+                Assert.True(shutdown.IsCancellationRequested);
             }
-
-            foreach (Key navigationKey in new[] { Key.F2, Key.F3, Key.F4 })
+            finally
             {
-                RaiseTerminalKey(application, navigationKey);
-                RaiseTerminalKey(application, Key.Esc);
-                Assert.Equal(TerminalSurface.Chat, shell.ActiveSurface);
-                Assert.True(composer.HasFocus);
+                application.RequestStop();
             }
-
-            RaiseTerminalKey(application, Key.C.WithCtrl);
-            Assert.Equal("Nothing is selected to copy.", GetStatus(shell).Content);
-
-            RaiseTerminalKey(application, Key.Q.WithCtrl);
-            Assert.True(shutdown.IsCancellationRequested);
         };
 
         application.Run(shell);
@@ -286,13 +294,13 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
-    public void CreateShell_SplitLayoutUsesBorderlessContainersBesideActivities()
+    public void SplitLayoutUsesPersistentNavigationAndBorderlessSurfaces()
     {
         using IApplication application = Application.Create();
         application.Init(DriverRegistry.Names.ANSI);
         using CancellationTokenSource shutdown = new();
         TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Split, false));
-        TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
 
         using TerminalShellView shell = Assert.IsType<TerminalShellView>(
             terminal.CreateShell(application, presenter, shutdown));
@@ -305,6 +313,81 @@ public sealed class TerminalChatApplicationTests
         Assert.Equal(["_Left", "_Activities"], split.SubViews.Select(view => view.Title));
         Assert.All(split.SubViews, view => Assert.Equal(LineStyle.None, view.BorderStyle));
         AssertRequiredChatControls(shell);
+
+        View left = Assert.Single(split.SubViews, view => view.Title == "_Left");
+        View chat = Assert.Single(left.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(left.SubViews, view => view.Title == "_Thoughts");
+        View activities = Assert.Single(split.SubViews, view => view.Title == "_Activities");
+        TerminalTimelineView conversationTimeline = Assert.Single(
+            Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(
+            Descendants(thoughts).OfType<TerminalTimelineView>());
+        ListView<ActivityRecord> activityList = Assert.Single(
+            Descendants(activities).OfType<ListView<ActivityRecord>>());
+        View help = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Help");
+
+        application.Iteration += (_, _) =>
+        {
+            try
+            {
+                AssertNavigation(shell, TerminalSurface.Chat);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.True(chat.Visible);
+                Assert.False(thoughts.Visible);
+                Assert.True(activities.Visible);
+
+                RaiseTerminalKey(application, Key.F3);
+                RaiseTerminalKey(application, Key.F1);
+                AssertNavigation(shell, TerminalSurface.Chat);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.True(chat.Visible);
+                Assert.False(thoughts.Visible);
+                Assert.True(activities.Visible);
+                Assert.True(conversationTimeline.HasFocus);
+
+                RaiseTerminalKey(application, Key.F2);
+                AssertNavigation(shell, TerminalSurface.Thoughts);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.False(chat.Visible);
+                Assert.True(thoughts.Visible);
+                Assert.True(activities.Visible);
+                Assert.True(thoughtTimeline.HasFocus);
+
+                RaiseTerminalKey(application, Key.F3);
+                AssertNavigation(shell, TerminalSurface.Activities);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.False(chat.Visible);
+                Assert.True(thoughts.Visible);
+                Assert.True(activities.Visible);
+                Assert.True(activityList.HasFocus);
+
+                RaiseTerminalKey(application, Key.F4);
+                AssertNavigation(shell, TerminalSurface.Help);
+                Assert.True(shell.Navigation.Visible);
+                Assert.False(split.Visible);
+                Assert.True(help.Visible);
+                Assert.True(help.HasFocus);
+
+                RaiseTerminalKey(application, Key.Esc);
+                AssertNavigation(shell, TerminalSurface.Chat);
+                Assert.True(shell.Navigation.Visible);
+                Assert.True(split.Visible);
+                Assert.True(chat.Visible);
+                Assert.False(thoughts.Visible);
+                Assert.True(activities.Visible);
+                Assert.True(conversationTimeline.HasFocus);
+            }
+            finally
+            {
+                application.RequestStop();
+            }
+        };
+
+        application.Run(shell);
     }
 
     [Fact]
@@ -363,6 +446,118 @@ public sealed class TerminalChatApplicationTests
         };
 
         application.Run(shell);
+    }
+
+    [Fact]
+    public void NarrowResizeKeepsChatAndActivitiesWithinViewport()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Split, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View split = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Split");
+        View left = Assert.Single(split.SubViews, view => view.Title == "_Left");
+        View chat = Assert.Single(left.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(left.SubViews, view => view.Title == "_Thoughts");
+        View activities = Assert.Single(split.SubViews, view => view.Title == "_Activities");
+        TerminalTimelineView conversationTimeline = Assert.Single(
+            Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(
+            Descendants(thoughts).OfType<TerminalTimelineView>());
+#pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
+        TextView json = Assert.Single(Descendants(activities).OfType<TextView>());
+#pragma warning restore CS0618
+        ListView<ActivityRecord> activityList = Assert.Single(
+            Descendants(activities).OfType<ListView<ActivityRecord>>());
+
+        terminal.ApplyChatChanges(
+        [
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "chat",
+                new ChatEntry(
+                    "chat",
+                    ChatEntryKind.Agent,
+                    "Agent",
+                    "**Hello** narrow world 界界 🙂🙂\twith controls \u001B",
+                    false,
+                    [],
+                    [],
+                    "chat")),
+            new ChatChange(
+                ChatChangeKind.Upsert,
+                "thought",
+                new ChatEntry(
+                    "thought",
+                    ChatEntryKind.Thought,
+                    "Reasoning",
+                    "Inspecting responsive split layout",
+                    true,
+                    [],
+                    [],
+                    "thought"))
+        ]);
+        terminal.AddActivity(new ActivityRecord(
+            1,
+            ActivityDirection.Inbound,
+            DateTimeOffset.Parse("2026-09-13T12:00:00Z"),
+            ActivityTypes.Message,
+            "message activity",
+            new Activity { Type = ActivityTypes.Message, Text = "hello" },
+            """{"type":"message","text":"hello"}""",
+            null));
+
+        foreach (int width in new[] { 20, 40, 71, 72, 100 })
+        {
+            foreach (int height in new[] { 6, 10, 24 })
+            {
+                shell.Frame = new System.Drawing.Rectangle(0, 0, width, height);
+                Assert.True(shell.Layout(), $"Layout failed for {width}x{height}.");
+
+                AssertNavigation(shell, TerminalSurface.Chat);
+                Assert.True(split.Visible, $"Split hidden at {width}x{height}.");
+                Assert.True(chat.Visible, $"Chat hidden at {width}x{height}.");
+                Assert.False(thoughts.Visible, $"Thoughts visible while Chat is active at {width}x{height}.");
+                Assert.True(activities.Visible, $"Activities hidden at {width}x{height}.");
+                AssertWithinParent(shell);
+
+                Assert.All(
+                    conversationTimeline.RenderedLines,
+                    line => Assert.True(
+                        PlainText(line).GetColumns() <= Math.Max(1, conversationTimeline.Frame.Width),
+                        $"Conversation line '{PlainText(line)}' exceeds {conversationTimeline.Frame.Width} cells at {width}x{height}."));
+                Assert.True(activityList.Frame.Width > 0, $"Activity list has no width at {width}x{height}.");
+                Assert.True(activityList.Frame.Height > 0, $"Activity list has no height at {width}x{height}.");
+                Assert.True(json.Frame.Width > 0, $"JSON inspector has no width at {width}x{height}.");
+                Assert.True(json.Frame.Height > 0, $"JSON inspector has no height at {width}x{height}.");
+
+                shell.Show(TerminalSurface.Thoughts);
+                Assert.True(shell.Layout(), $"Thought layout failed for {width}x{height}.");
+                AssertNavigation(shell, TerminalSurface.Thoughts);
+                Assert.True(split.Visible, $"Split hidden after F2 equivalent at {width}x{height}.");
+                Assert.False(chat.Visible, $"Chat visible while Thoughts is active at {width}x{height}.");
+                Assert.True(thoughts.Visible, $"Thoughts hidden at {width}x{height}.");
+                Assert.True(activities.Visible, $"Activities hidden while Thoughts is active at {width}x{height}.");
+                AssertWithinParent(shell);
+                Assert.All(
+                    thoughtTimeline.RenderedLines,
+                    line => Assert.True(
+                        PlainText(line).GetColumns() <= Math.Max(1, thoughtTimeline.Frame.Width),
+                        $"Thought line '{PlainText(line)}' exceeds {thoughtTimeline.Frame.Width} cells at {width}x{height}."));
+
+                shell.Show(TerminalSurface.Activities);
+                Assert.True(shell.Layout(), $"Activities layout failed for {width}x{height}.");
+                AssertNavigation(shell, TerminalSurface.Activities);
+                Assert.True(split.Visible, $"Split hidden after F3 equivalent at {width}x{height}.");
+                Assert.True(activities.Visible, $"Activities hidden after F3 equivalent at {width}x{height}.");
+                AssertWithinParent(shell);
+
+                shell.Show(TerminalSurface.Chat);
+            }
+        }
     }
 
     [Fact]
@@ -725,6 +920,31 @@ public sealed class TerminalChatApplicationTests
         Assert.True(json.ScrollBars);
         Assert.False(descendants.OfType<TextField>().Single().Enabled);
         Assert.Equal("Ready.", GetStatus(root).Content);
+    }
+
+    private static void AssertNavigation(TerminalShellView shell, TerminalSurface activeSurface)
+    {
+        Assert.Equal(activeSurface, shell.ActiveSurface);
+        Assert.Equal(activeSurface, shell.Navigation.ActiveSurface);
+        Assert.Same(shell.Navigation, shell.SubViews.First());
+    }
+
+    private static void AssertWithinParent(View parent)
+    {
+        foreach (View child in parent.SubViews)
+        {
+            Assert.True(child.Frame.X >= 0, $"{child.Title} has negative X in {parent.Title}: {child.Frame}");
+            Assert.True(child.Frame.Y >= 0, $"{child.Title} has negative Y in {parent.Title}: {child.Frame}");
+            Assert.True(child.Frame.Width >= 0, $"{child.Title} has negative width in {parent.Title}: {child.Frame}");
+            Assert.True(child.Frame.Height >= 0, $"{child.Title} has negative height in {parent.Title}: {child.Frame}");
+            Assert.True(
+                child.Frame.X + child.Frame.Width <= Math.Max(0, parent.Frame.Width),
+                $"{child.Title} exceeds parent width {parent.Frame.Width} in {parent.Title}: {child.Frame}");
+            Assert.True(
+                child.Frame.Y + child.Frame.Height <= Math.Max(0, parent.Frame.Height),
+                $"{child.Title} exceeds parent height {parent.Frame.Height} in {parent.Title}: {child.Frame}");
+            AssertWithinParent(child);
+        }
     }
 
     private static void AssertDefaultSurface(View surfaces, string visibleTitle)

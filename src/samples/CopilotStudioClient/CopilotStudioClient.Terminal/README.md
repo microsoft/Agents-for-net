@@ -1,6 +1,6 @@
 # Copilot Studio Terminal Client
 
-`CopilotStudioClient.Terminal` is an interactive terminal sample for Microsoft Copilot Studio conversations. It renders a glyph-led conversation timeline in the terminal, uses adaptive colors to separate message types and diagnostics, and keeps the current chat visible while also journaling every inbound and outbound `Activity` for inspection. Protocol-interpretation diagnostics appear inline in Chat, while the source `Activity` remains inspectable in Activities.
+`CopilotStudioClient.Terminal` is an interactive terminal sample for Microsoft Copilot Studio conversations. It renders a borderless, glyph-led conversation timeline in the terminal, uses adaptive colors to separate message types and diagnostics, and keeps persistent navigation available while also journaling every inbound and outbound `Activity` for inspection. Protocol-interpretation diagnostics appear inline in Chat, while the source `Activity` remains inspectable in Activities.
 
 ## What it shows
 
@@ -147,30 +147,39 @@ dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Termina
 
 ### Default layout
 
-The default layout shows the chrome-free **Chat** timeline. Full-size inspector surfaces remain hidden until selected:
+The default layout shows the borderless **Chat** timeline below a persistent navigation row. Full-size inspector surfaces remain hidden until selected:
 
 1. **Chat**
 2. **Thoughts**
 3. **Activities**
 4. **Help**
 
-`--layout tabs` remains accepted for command-line compatibility and selects this same chrome-free timeline mode; it does not render a tab strip.
+`--layout tabs` remains accepted for command-line compatibility and selects this same borderless surface mode; it does not render a tab strip.
 
 ### Split layout
 
-`--layout split` keeps **Chat** and **Thoughts** as tabs on the left and **Activities** on the right. It uses the same conversation state, activity journal, shortcuts, and commands as the default view.
+`--layout split` keeps **Chat** or **Thoughts** in a borderless conversation pane on the left and the responsive **Activities** inspector on the right. The same navigation row, conversation state, activity journal, shortcuts, and commands are used as the default view. At narrow widths, the Activities list stacks above its JSON inspector; at wider widths, the list sits beside the JSON inspector.
 
 ## Keyboard shortcuts
 
-- `Ctrl+1`: focus **Chat**
-- `Ctrl+2`: focus **Thoughts**
-- `Ctrl+3`: focus **Activities**
-- `Ctrl+4`: focus the full-size **Help** surface in the default layout, or show the help dialog in split mode
-- `Tab` / `Shift+Tab`: move focus
-- `Up` / `Down`, `PageUp` / `PageDown`, and the mouse wheel: scroll the focused pane or inspector
-- `Enter`: send the composer text or activate the focused link/action
-- `Ctrl+C`: copy the focused link or the selected activity JSON when clipboard support is available
+- `F1`: show **Chat**
+- `F2`: show **Thoughts**
+- `F3`: show **Activities**
+- `F4`: show **Help**
+- `Esc`: return to **Chat**
+- `Ctrl+C`: copy the focused link or selected activity JSON
 - `Ctrl+Q`: cancel active work and quit
+- `Enter`: send the composer text or activate the focused link/action
+
+`Tab` / `Shift+Tab` move focus within the active surface. `Up` / `Down`, `PageUp` / `PageDown`, and the mouse wheel scroll the focused timeline or inspector.
+
+## Rendering and terminal compatibility
+
+The shell renders without stock terminal chrome. A persistent navigation row stays visible above the active borderless surface so the current surface and shortcut keys remain discoverable in default and split layouts.
+
+Chat, Thoughts, and diagnostic entries use a rendered Markdown subset for conversational text, including headings, bold, italic, inline code, ordered and unordered lists, and `http`/`https` links. Non-conversational activity details remain literal so protocol payloads are not reformatted as Markdown.
+
+The palette adapts to dark and light terminal backgrounds when true color is available, and falls back to readable limited-color roles when color detection or true color is unavailable. Terminals that do not report UTF-8 output use ASCII timeline glyphs and ASCII status separators instead of Unicode symbols.
 
 The composer is disabled until startup completes, disabled again while a request is active, and restored after completion, cancellation, or failure. Sending an empty message never calls Copilot Studio; the app shows an in-terminal informational status instead.
 

@@ -27,6 +27,54 @@ public sealed class TerminalTimelineViewTests
     }
 
     [Fact]
+    public void StreamingMarkdownReplacementKeepsOneStyledEntryAndFollowsLatest()
+    {
+        using TerminalTimelineView view = new() { Width = 12, Height = 3 };
+        ChatEntry[] initialEntries =
+        [
+            Entry("older-1", "first response"),
+            Entry("older-2", "second response"),
+            Entry("older-3", "third response"),
+            Entry("stream", "**Hel", isTransient: true)
+        ];
+        ChatEntry[] replacementEntries =
+        [
+            Entry("older-1", "first response"),
+            Entry("older-2", "second response"),
+            Entry("older-3", "third response"),
+            Entry("stream", "**Hello**", isTransient: true)
+        ];
+
+        view.SetEntries(initialEntries);
+        view.NewKeyDownEvent(Key.End);
+
+        view.SetEntries(replacementEntries);
+
+        TimelineLayoutResult layout = TerminalTimelineLayout.Build(
+            replacementEntries,
+            width: 12,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+        Assert.Single(layout.EntryRows.Keys, key => key == "stream");
+        TimelineRowRange streamRange = layout.EntryRows["stream"];
+        Assert.Equal(2, streamRange.Count);
+
+        TimelineLine[] streamLines = view.RenderedLines
+            .Where(line => line.EntryKey == "stream")
+            .ToArray();
+        Assert.Contains(streamLines, line => PlainText(line) == "Hello");
+        Assert.DoesNotContain(streamLines, line => PlainText(line) == "**Hel");
+        TimelineSpan styledText = Assert.Single(
+            streamLines.SelectMany(line => line.Spans),
+            span => span.Text == "Hello");
+        Assert.True(styledText.Style.HasFlag(TimelineTextStyle.Bold));
+        Assert.Equal(view.MaximumScrollOffset, view.ScrollOffset);
+        Assert.Contains(
+            view.RenderedLines.Skip(view.ScrollOffset).Take(3),
+            line => PlainText(line) == "Hello");
+    }
+
+    [Fact]
     public void Layout_RewrapsWhenViewportNarrows()
     {
         using TerminalTimelineView view = new() { Width = 30, Height = 10 };
@@ -228,6 +276,7 @@ public sealed class TerminalTimelineViewTests
     {
         return string.Concat(line.Spans.Select(span => span.Text));
     }
+
 
     private static Terminal.Gui.Drawing.Attribute? FindAttribute(Cell[,] contents, string grapheme)
     {
