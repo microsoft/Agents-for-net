@@ -77,6 +77,56 @@ public class A2AUserAuthorizationConfigurationTests
     }
 
     [Fact]
+    public void Configuration_WithWhitespaceSecuritySchemeAndInlineFlow_UsesInlineMetadata()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecurityScheme": "   ",
+                  "SecuritySchemeName": "deviceCode",
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token"
+                    }
+                  }
+                }
+              }
+            }
+            """);
+
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+
+        Assert.Equal("deviceCode", metadata.SecuritySchemeName);
+        Assert.Null(metadata.ReferencedSecurityScheme);
+        Assert.NotNull(metadata.SecurityScheme);
+    }
+
+    [Fact]
+    public void Configuration_WithMixedCaseTypeAndAssembly_ResolvesAuthorizationMetadata()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "mIcRoSoFt.aGeNtS.eXtEnSiOnS.A2A.A2AuSeRaUtHoRiZaTiOn",
+                "Assembly": "mIcRoSoFt.aGeNtS.eXtEnSiOnS.A2A",
+                "Settings": {
+                  "SecurityScheme": "agentBearer"
+                }
+              }
+            }
+            """);
+
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+
+        Assert.Equal("agentBearer", metadata.SecuritySchemeName);
+    }
+
+    [Fact]
     public void Configuration_WithInlineAndReferencedScheme_Throws()
     {
         var configuration = CreateAgentApplicationConfiguration(

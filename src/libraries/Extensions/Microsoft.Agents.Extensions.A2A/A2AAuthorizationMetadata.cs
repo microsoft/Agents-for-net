@@ -17,8 +17,10 @@ internal sealed class A2AAuthorizationMetadata
     private A2AAuthorizationMetadata(string handlerName, A2AUserAuthorizationSettings settings)
     {
         HandlerName = handlerName;
-        SecuritySchemeName = settings.SecurityScheme ?? settings.SecuritySchemeName;
-        ReferencedSecurityScheme = settings.SecurityScheme;
+        ReferencedSecurityScheme = string.IsNullOrWhiteSpace(settings.SecurityScheme)
+            ? null
+            : settings.SecurityScheme;
+        SecuritySchemeName = ReferencedSecurityScheme ?? settings.SecuritySchemeName;
         SecurityScheme = settings.OAuthFlows == null
             ? null
             : new SecurityScheme
@@ -77,8 +79,8 @@ internal sealed class A2AAuthorizationMetadata
         foreach (var handler in handlers.GetChildren())
         {
             var type = handler.GetValue<string>("Type");
-            if (type == typeof(A2AUserAuthorization).Name ||
-                type == typeof(A2AUserAuthorization).FullName)
+            if (string.Equals(type, typeof(A2AUserAuthorization).Name, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(type, typeof(A2AUserAuthorization).FullName, StringComparison.OrdinalIgnoreCase))
             {
                 metadata.Add(new A2AAuthorizationMetadata(
                     handler.Key,
