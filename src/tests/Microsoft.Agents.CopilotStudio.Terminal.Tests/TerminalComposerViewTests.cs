@@ -1,6 +1,9 @@
 #nullable enable
 
 using System;
+using Terminal.Gui.App;
+using Terminal.Gui.Drivers;
+using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
 
 [Collection("TerminalGui")]
@@ -51,6 +54,38 @@ public sealed class TerminalComposerViewTests
     }
 
     [Fact]
+    public void InitializedRootFocusesEmbeddedInputThroughComposerHierarchy()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using TextField input = new();
+        using TerminalComposerView composer = new(input, LimitedPalette(), useUnicode: false)
+        {
+            Width = 20,
+            Height = 3
+        };
+        using View root = new()
+        {
+            Width = 20,
+            Height = 3,
+            CanFocus = true
+        };
+        using Window window = new()
+        {
+            Width = 20,
+            Height = 3
+        };
+
+        root.Add(composer);
+        window.Add(root);
+
+        RunOneIteration(application, window);
+
+        Assert.True(input.HasFocus);
+        Assert.Same(input, root.MostFocused);
+    }
+
+    [Fact]
     public void Footer_IsMutedAndCannotReceiveFocus()
     {
         using TerminalFooterView footer = new(LimitedPalette());
@@ -61,4 +96,10 @@ public sealed class TerminalComposerViewTests
     }
 
     private static TerminalPalette LimitedPalette() => TerminalPalette.Create(null, supportsTrueColor: false);
+
+    private static void RunOneIteration(IApplication application, Window window)
+    {
+        application.StopAfterFirstIteration = true;
+        application.Run(window);
+    }
 }

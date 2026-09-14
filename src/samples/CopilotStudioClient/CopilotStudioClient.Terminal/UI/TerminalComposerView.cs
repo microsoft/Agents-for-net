@@ -19,9 +19,9 @@ internal sealed class TerminalComposerView : View
         _borderCharacters = useUnicode
             ? new BorderCharacters('╭', '─', '╮', '│', '╰', '╯')
             : new BorderCharacters('+', '-', '+', '|', '+', '+');
-
         Height = 3;
-        CanFocus = false;
+        CanFocus = true;
+        TabStop = TabBehavior.NoStop;
         Add(Input);
     }
 
