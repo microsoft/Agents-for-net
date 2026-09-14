@@ -90,27 +90,34 @@ public sealed class ActivityInterpreterTests
     public void Process_CompletedToolCall_UsesSameKeyAndFinalSnapshot()
     {
         ActivityInterpreter interpreter = new();
-        ChatEntry started = SingleToolEntry(interpreter.Process(
-            ToolCallActivity(ToolCallEntity(
-                "started",
-                JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
-                JsonSerializer.SerializeToElement(new[] { "units" }))),
-            ActivityDirection.Inbound));
-        ChatEntry completed = SingleToolEntry(interpreter.Process(
-            ToolCallActivity(ToolCallEntity(
-                "completed",
-                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
-                JsonSerializer.SerializeToElement(Array.Empty<string>()),
-                durationMs: 2971)),
-            ActivityDirection.Inbound));
+        ChatEntry started = SingleToolEntry(interpreter.Process(StartedWeatherActivity(), ActivityDirection.Inbound));
+        ChatEntry completed = SingleToolEntry(interpreter.Process(CompletedWeatherActivity(), ActivityDirection.Inbound));
 
         Assert.Equal(started.Key, completed.Key);
         Assert.Equal("completed", completed.ToolCall!.Status);
         Assert.Equal(2971, completed.ToolCall.DurationMs);
         Assert.False(completed.IsTransient);
-        Assert.DoesNotContain(
-            completed.ToolCall.UnfilledParameters,
-            value => value == "units");
+        Assert.Collection(
+            completed.ToolCall.FilledParameters,
+            value =>
+            {
+                Assert.Equal("Location", value.Name);
+                Assert.Equal("Seattle, WA, USA", value.Value.GetString());
+            },
+            value =>
+            {
+                Assert.Equal("units", value.Name);
+                Assert.Equal("I", value.Value.GetString());
+            });
+        Assert.Empty(completed.ToolCall.UnfilledParameters);
+        Assert.DoesNotContain(completed.ToolCall.FilledParameters, value => value.Name == "query");
+
+        string projected = JsonSerializer.Serialize(completed.ToolCall);
+        Assert.Contains("Seattle, WA, USA", projected, StringComparison.Ordinal);
+        Assert.Contains("\"Name\":\"units\"", projected, StringComparison.Ordinal);
+        Assert.DoesNotContain("Seatle", projected, StringComparison.Ordinal);
+        Assert.DoesNotContain("metric", projected, StringComparison.Ordinal);
+        Assert.DoesNotContain("date", projected, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -121,13 +128,31 @@ public sealed class ActivityInterpreterTests
             entry => entry.Kind is ChatEntryKind.Thought or ChatEntryKind.ToolCall);
 
         thoughts.Apply(interpreter.Process(StartedWeatherActivity(), ActivityDirection.Inbound));
-        Assert.Single(thoughts.Entries);
-        Assert.Equal("started", thoughts.Entries[0].ToolCall!.Status);
+        ChatEntry started = Assert.Single(thoughts.Entries);
+        Assert.Equal("started", started.ToolCall!.Status);
+        Assert.Collection(
+            started.ToolCall.FilledParameters,
+            value => Assert.Equal("query", value.Name));
+        Assert.Equal(["date"], started.ToolCall.UnfilledParameters);
 
         thoughts.Apply(interpreter.Process(CompletedWeatherActivity(), ActivityDirection.Inbound));
         ChatEntry completed = Assert.Single(thoughts.Entries);
         Assert.Equal("completed", completed.ToolCall!.Status);
         Assert.Equal(2971, completed.ToolCall.DurationMs);
+        Assert.Collection(
+            completed.ToolCall.FilledParameters,
+            value =>
+            {
+                Assert.Equal("Location", value.Name);
+                Assert.Equal("Seattle, WA, USA", value.Value.GetString());
+            },
+            value =>
+            {
+                Assert.Equal("units", value.Name);
+                Assert.Equal("I", value.Value.GetString());
+            });
+        Assert.Empty(completed.ToolCall.UnfilledParameters);
+        Assert.DoesNotContain(completed.ToolCall.FilledParameters, value => value.Name == "query");
 
         TimelineLayoutResult layout = TerminalTimelineLayout.Build(
             thoughts.Entries,
@@ -138,6 +163,14 @@ public sealed class ActivityInterpreterTests
             Environment.NewLine,
             layout.Lines.Select(line => string.Concat(line.Spans.Select(span => span.Text))));
         Assert.Contains("Completed in 2.97 s", rendered);
+        Assert.Contains("Location = Seattle, WA, USA", rendered, StringComparison.Ordinal);
+        Assert.Contains("units = I", rendered, StringComparison.Ordinal);
+        Assert.Contains("No parameters were left unfilled.", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("query =", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("Seatle", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("metric", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("date", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("Waiting for", rendered, StringComparison.Ordinal);
         Assert.DoesNotContain("must-not-render", rendered, StringComparison.Ordinal);
     }
 
@@ -928,8 +961,15 @@ public sealed class ActivityInterpreterTests
         return ToolCallActivity(
             ToolCallEntity(
                 "started",
-                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
-                JsonSerializer.SerializeToElement(Array.Empty<string>())));
+                JsonSerializer.SerializeToElement(new
+                {
+                    query = new
+                    {
+                        city = "Seatle",
+                        units = "metric"
+                    }
+                }),
+                JsonSerializer.SerializeToElement(new[] { "date" })));
     }
 
     private static Activity CompletedWeatherActivity()

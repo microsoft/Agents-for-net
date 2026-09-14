@@ -908,10 +908,24 @@ public sealed class TerminalChatApplicationTests
 
         terminal.ApplyChatChanges(interpreter.Process(StartedWeatherActivity(), ActivityDirection.Inbound));
         RunOneIteration(application, shell);
-        Assert.Contains(thoughtTimeline.RenderedLines, line => PlainText(line).Contains("Running", StringComparison.Ordinal));
+        string startedThoughtText = string.Join(
+            Environment.NewLine,
+            thoughtTimeline.RenderedLines
+                .Where(line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn")
+                .Select(PlainText));
+        Assert.Contains("Running", startedThoughtText, StringComparison.Ordinal);
+        Assert.Contains("query = {\"city\":\"Seatle\",\"units\":\"metric\"}", startedThoughtText, StringComparison.Ordinal);
+        Assert.Contains("Waiting for", startedThoughtText, StringComparison.Ordinal);
+        Assert.Contains("date", startedThoughtText, StringComparison.Ordinal);
 
         terminal.ApplyChatChanges(interpreter.Process(CompletedWeatherActivity(), ActivityDirection.Inbound));
         RunOneIteration(application, shell);
+
+        string completedThoughtText = string.Join(
+            Environment.NewLine,
+            thoughtTimeline.RenderedLines
+                .Where(line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn")
+                .Select(PlainText));
 
         Assert.DoesNotContain(chatTimeline.RenderedLines, line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn");
         Assert.Equal(
@@ -920,8 +934,17 @@ public sealed class TerminalChatApplicationTests
                 .Where(line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn")
                 .Select(line => line.EntryKey)
                 .Distinct());
-        Assert.Contains(thoughtTimeline.RenderedLines, line => PlainText(line).Contains("Completed in 2.97 s", StringComparison.Ordinal));
-        Assert.DoesNotContain(thoughtTimeline.RenderedLines, line => PlainText(line).Contains("Running", StringComparison.Ordinal));
+        Assert.Contains("Completed in 2.97 s", completedThoughtText, StringComparison.Ordinal);
+        Assert.Contains("Location = Seattle, WA, USA", completedThoughtText, StringComparison.Ordinal);
+        Assert.Contains("units = I", completedThoughtText, StringComparison.Ordinal);
+        Assert.Contains("No parameters were left unfilled.", completedThoughtText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Running", completedThoughtText, StringComparison.Ordinal);
+        Assert.DoesNotContain("query =", completedThoughtText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Seatle", completedThoughtText, StringComparison.Ordinal);
+        Assert.DoesNotContain("metric", completedThoughtText, StringComparison.Ordinal);
+        Assert.DoesNotContain("date", completedThoughtText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Waiting for", completedThoughtText, StringComparison.Ordinal);
+        Assert.DoesNotContain("must-not-render", completedThoughtText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1352,8 +1375,15 @@ public sealed class TerminalChatApplicationTests
         return ToolCallActivity(
             ToolCallEntity(
                 "started",
-                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
-                JsonSerializer.SerializeToElement(Array.Empty<string>())));
+                JsonSerializer.SerializeToElement(new
+                {
+                    query = new
+                    {
+                        city = "Seatle",
+                        units = "metric"
+                    }
+                }),
+                JsonSerializer.SerializeToElement(new[] { "date" })));
     }
 
     private static Activity CompletedWeatherActivity()
