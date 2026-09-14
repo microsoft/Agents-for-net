@@ -36,7 +36,7 @@ internal sealed class A2AAgentCardComposer
         var authorizations = _configuration == null
             ? []
             : A2AAuthorizationMetadata.Resolve(_configuration);
-        var authorizationsByHandler = authorizations.ToDictionary(metadata => metadata.HandlerName, StringComparer.Ordinal);
+        var authorizationsByHandler = authorizations.ToDictionary(metadata => metadata.HandlerName, StringComparer.OrdinalIgnoreCase);
 
         AddInlineSchemes(hostDefaults, authorizations);
         if (_configuration != null)
@@ -114,6 +114,11 @@ internal sealed class A2AAgentCardComposer
         }
 
         var handlerName = userAuthorization.GetValue<string>(nameof(UserAuthorizationOptions.DefaultHandlerName));
+        if (string.IsNullOrWhiteSpace(handlerName))
+        {
+            handlerName = userAuthorization.GetSection("Handlers").GetChildren().FirstOrDefault()?.Key;
+        }
+
         if (!string.IsNullOrWhiteSpace(handlerName) && authorizations.TryGetValue(handlerName, out var authorization))
         {
             agentCard.SecurityRequirements ??= [];
@@ -155,13 +160,25 @@ internal sealed class A2AAgentCardComposer
                 OutputModes = registration.OutputModes.ToList(),
             };
 
+            SecurityRequirement requirement = null;
             foreach (var handlerName in registration.AutoSignInHandlers)
             {
                 if (authorizations.TryGetValue(handlerName, out var authorization))
                 {
-                    skill.SecurityRequirements ??= [];
-                    skill.SecurityRequirements.Add(CreateRequirement(authorization));
+                    requirement ??= new SecurityRequirement
+                    {
+                        Schemes = new Dictionary<string, StringList>(),
+                    };
+                    requirement.Schemes[authorization.SecuritySchemeName] = new StringList
+                    {
+                        List = authorization.RequiredScopes?.ToList() ?? [],
+                    };
                 }
+            }
+
+            if (requirement != null)
+            {
+                skill.SecurityRequirements = [requirement];
             }
 
             agentCard.Skills.Add(skill);

@@ -116,6 +116,69 @@ public class A2AAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAgentCard_WithImplicitDefaultHandler_EmitsAgentRequirement()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+        }));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)));
+
+        var requirement = Assert.Single(agentCard.SecurityRequirements);
+        Assert.Equal(["api://agent/access_as_user"], requirement.Schemes["agentBearer"].List);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithCaseInsensitiveGlobalHandlerName_EmitsAgentRequirement()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
+            ["AgentApplication:UserAuthorization:Handlers:Request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:Request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:Request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+        }));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)));
+
+        var requirement = Assert.Single(agentCard.SecurityRequirements);
+        Assert.Equal(["api://agent/access_as_user"], requirement.Schemes["agentBearer"].List);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithCaseInsensitiveSkillHandlerName_EmitsSkillRequirement()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
+            ["AgentApplication:UserAuthorization:Handlers:Request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:Request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:Request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+        }));
+        var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
+        var extension = new A2AAgentExtension(agent);
+        agent.RegisteredExtensions.Add(extension);
+        extension.Skill("weather", skill => skill
+            .WithName("Weather")
+            .WithDescription("Gets weather.")
+            .OnMessage((_, _, _) => Task.CompletedTask, autoSigninHandlers: ["request"]));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, agent);
+
+        var skill = Assert.Single(agentCard.Skills);
+        var requirement = Assert.Single(skill.SecurityRequirements);
+        Assert.Equal(["api://agent/access_as_user"], requirement.Schemes["agentBearer"].List);
+    }
+
+    [Fact]
     public async Task ProcessAgentCard_WithProtectedSkill_EmitsSkillRequirement()
     {
         var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
@@ -139,6 +202,37 @@ public class A2AAdapterTests
         var skill = Assert.Single(agentCard.Skills);
         var requirement = Assert.Single(skill.SecurityRequirements);
         Assert.Equal(["api://agent/access_as_user"], requirement.Schemes["agentBearer"].List);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithMultipleProtectedSkillHandlers_EmitsCombinedRequirement()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:profileBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+            ["AgentApplication:UserAuthorization:Handlers:profile:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:profile:Settings:SecurityScheme"] = "profileBearer",
+            ["AgentApplication:UserAuthorization:Handlers:profile:Settings:RequiredScopes:0"] = "api://agent/profile",
+        }));
+        var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
+        var extension = new A2AAgentExtension(agent);
+        agent.RegisteredExtensions.Add(extension);
+        extension.Skill("weather", skill => skill
+            .WithName("Weather")
+            .WithDescription("Gets weather.")
+            .OnMessage((_, _, _) => Task.CompletedTask, autoSigninHandlers: ["request", "profile"]));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, agent);
+
+        var skill = Assert.Single(agentCard.Skills);
+        var requirement = Assert.Single(skill.SecurityRequirements);
+        Assert.Equal(["api://agent/access_as_user"], requirement.Schemes["agentBearer"].List);
+        Assert.Equal(["api://agent/profile"], requirement.Schemes["profileBearer"].List);
     }
 
     [Fact]
