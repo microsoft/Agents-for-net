@@ -346,29 +346,24 @@ public sealed class TerminalChatApplicationTests
     [Fact]
     public void CreateShell_ResolvesDefaultOutputEncodingAfterDriverInitialization()
     {
-        Encoding originalEncoding = Console.OutputEncoding;
-        try
-        {
-            Console.OutputEncoding = Encoding.ASCII;
-            TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+        Encoding currentEncoding = Encoding.ASCII;
+        TerminalChatApplication terminal = new(
+            TerminalOptions.Parse([]),
+            confirmOpen: null,
+            startProcess: _ => { },
+            outputEncodingResolver: () => currentEncoding);
 
-            using IApplication application = Application.Create();
-            application.Init(DriverRegistry.Names.ANSI);
-            using CancellationTokenSource shutdown = new();
-            using TerminalPresenter presenter = CreatePresenter(terminal);
-            using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        currentEncoding = Encoding.UTF8;
+        using CancellationTokenSource shutdown = new();
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
 
-            TerminalTimelineView conversation = Assert.Single(
-                Descendants(shell).OfType<TerminalTimelineView>(),
-                view => view.CollapseCompletedThoughts);
-            Assert.Equal(
-                TimelineGlyphSet.ForEncoding(Console.OutputEncoding),
-                conversation.Glyphs);
-        }
-        finally
-        {
-            Console.OutputEncoding = originalEncoding;
-        }
+        TerminalTimelineView conversation = Assert.Single(
+            Descendants(shell).OfType<TerminalTimelineView>(),
+            view => view.CollapseCompletedThoughts);
+        Assert.Equal(TimelineGlyphSet.Unicode, conversation.Glyphs);
     }
 
     [Fact]

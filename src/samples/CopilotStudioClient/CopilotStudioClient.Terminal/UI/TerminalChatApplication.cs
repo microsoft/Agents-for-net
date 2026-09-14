@@ -317,6 +317,7 @@ internal sealed class TerminalChatApplication : ITerminalView
     private readonly Func<Uri, bool>? _confirmOpen;
     private readonly Action<ProcessStartInfo> _startProcess;
     private readonly Encoding? _outputEncodingOverride;
+    private readonly Func<Encoding> _outputEncodingResolver;
     private Encoding _outputEncoding = Encoding.UTF8;
     private readonly TerminalChatState _chatState = new();
     private readonly TerminalChatState _thoughtState =
@@ -358,12 +359,14 @@ internal sealed class TerminalChatApplication : ITerminalView
         TerminalOptions options,
         Func<Uri, bool>? confirmOpen,
         Action<ProcessStartInfo> startProcess,
-        Encoding? outputEncoding = null)
+        Encoding? outputEncoding = null,
+        Func<Encoding>? outputEncodingResolver = null)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _confirmOpen = confirmOpen;
         _startProcess = startProcess ?? throw new ArgumentNullException(nameof(startProcess));
         _outputEncodingOverride = outputEncoding;
+        _outputEncodingResolver = outputEncodingResolver ?? (() => Console.OutputEncoding);
     }
 
     internal async Task RunAsync(
@@ -435,7 +438,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         _startupSucceeded = false;
         IDriver driver = application.Driver
             ?? throw new InvalidOperationException("The terminal application has not been initialized.");
-        _outputEncoding = _outputEncodingOverride ?? Console.OutputEncoding;
+        _outputEncoding = _outputEncodingOverride ?? _outputEncodingResolver();
         _palette = TerminalPalette.Create(
             driver.DefaultAttribute,
             driver.SupportsTrueColor && !driver.Force16Colors);
