@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Extensions.A2A
     /// </summary>
     public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     {
-        private readonly OBOSettings _settings;
+        private readonly A2AUserAuthorizationSettings _settings;
 
         /// <summary>
         /// Required constructor for the UserAuthorizationModuleLoader (when using IConfiguration)
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Extensions.A2A
         /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public A2AUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null)
-            : this(name, connections, GetOBOSettings(configurationSection), logger)
+            : this(name, connections, A2AUserAuthorizationSettings.FromConfiguration(configurationSection), logger)
         {
         }
 
@@ -47,9 +47,21 @@ namespace Microsoft.Agents.Extensions.A2A
         /// <param name="settings"></param>
         /// <param name="logger"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public A2AUserAuthorization(string name, IConnections connections, OBOSettings settings, ILogger logger = null) : base(connections)
+        public A2AUserAuthorization(string name, IConnections connections, OBOSettings settings, ILogger logger = null)
+            : this(name, connections, A2AUserAuthorizationSettings.FromOBOSettings(settings), logger)
         {
-            _settings = settings;
+        }
+
+        /// <summary>
+        /// Code-first constructor that accepts Agent Card authorization metadata.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="connections"></param>
+        /// <param name="settings"></param>
+        /// <param name="logger"></param>
+        public A2AUserAuthorization(string name, IConnections connections, A2AUserAuthorizationSettings settings, ILogger logger = null) : base(connections)
+        {
+            _settings = settings ?? new A2AUserAuthorizationSettings();
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
@@ -152,25 +164,5 @@ namespace Microsoft.Agents.Extensions.A2A
             return tokenResponse;
         }
 
-        // Get the A2AUserAuthorization settings
-        private static OBOSettings GetOBOSettings(IConfigurationSection config)
-        {
-            // An empty "Settings": {} node produces a section with no children, and IConfiguration
-            // binding returns null for that. Delegated passthrough and application-token handlers are
-            // configured exactly that way, so treat a missing/empty section as "no OBO".
-            var settings = config?.Get<OBOSettings>() ?? new OBOSettings();
-
-            if (settings.OBOScopes == null && config != null)
-            {
-                // try reading as a string to compensate for users just setting a non-array string
-                var configScope = config.GetSection(nameof(OBOSettings.OBOScopes)).Get<string>();
-                if (!string.IsNullOrEmpty(configScope))
-                {
-                    settings.OBOScopes = [configScope];
-                }
-            }
-
-            return settings;
-        }
     }
 }

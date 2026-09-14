@@ -9,14 +9,148 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Microsoft.Agents.Extensions.A2A.Tests;
 
 public class A2AUserAuthorizationConfigurationTests
 {
+    [Fact]
+    public void Configuration_WithSecuritySchemeReference_BindsRequiredScopesAndPolicy()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecurityScheme": "agentBearer",
+                  "RequiredScopes": [ "api://agent/access_as_user" ],
+                  "AuthorizationPolicy": "AgentAccess"
+                }
+              }
+            }
+            """);
+
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+
+        Assert.Equal("request", metadata.HandlerName);
+        Assert.Equal("agentBearer", metadata.SecuritySchemeName);
+        Assert.Null(metadata.SecurityScheme);
+        Assert.Equal(["api://agent/access_as_user"], metadata.RequiredScopes);
+        Assert.Equal("AgentAccess", metadata.AuthorizationPolicy);
+    }
+
+    [Fact]
+    public void Configuration_WithInlineDeviceCodeFlow_BindsA2AOAuthFlows()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecuritySchemeName": "deviceCode",
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token",
+                      "Scopes": {
+                        "agent.read": "Access the agent"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """);
+
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+
+        Assert.Equal("deviceCode", metadata.SecuritySchemeName);
+        Assert.Equal("https://login.example.com/devicecode", metadata.SecurityScheme.OAuth2SecurityScheme.Flows.DeviceCode.DeviceAuthorizationUrl);
+        Assert.Equal("Access the agent", metadata.SecurityScheme.OAuth2SecurityScheme.Flows.DeviceCode.Scopes["agent.read"]);
+    }
+
+    [Fact]
+    public void Configuration_WithInlineAndReferencedScheme_Throws()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecurityScheme": "agentBearer",
+                  "SecuritySchemeName": "deviceCode",
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token"
+                    }
+                  }
+                }
+              }
+            }
+            """);
+
+        Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
+    }
+
+    [Fact]
+    public void Configuration_WithMultipleOAuthFlows_Throws()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecuritySchemeName": "agentOAuth",
+                  "OAuthFlows": {
+                    "ClientCredentials": {
+                      "TokenUrl": "https://login.example.com/token"
+                    },
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token"
+                    }
+                  }
+                }
+              }
+            }
+            """);
+
+        Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
+    }
+
+    [Fact]
+    public void Configuration_KeepsOBOScopesSeparateFromAgentCardScopes()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecurityScheme": "agentBearer",
+                  "RequiredScopes": [ "api://agent/access_as_user" ],
+                  "OBOScopes": [ "User.Read" ]
+                }
+              }
+            }
+            """);
+
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+
+        Assert.Equal(["api://agent/access_as_user"], metadata.RequiredScopes);
+        Assert.Equal(["User.Read"], metadata.OBOSettings.OBOScopes);
+    }
+
     [Fact]
     public void Constructor_WithExplicitA2ATypeAndNoAssembly_LoadsHandler()
     {
@@ -80,4 +214,18 @@ public class A2AUserAuthorizationConfigurationTests
 
         Assert.Equal("delegated", handler.Name);
     }
+
+    private static IConfiguration CreateAgentApplicationConfiguration(string handlers)
+        => new ConfigurationBuilder()
+            .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(
+                $$"""
+                {
+                  "AgentApplication": {
+                    "UserAuthorization": {
+                      "Handlers": {{handlers}}
+                    }
+                  }
+                }
+                """)))
+            .Build();
 }
