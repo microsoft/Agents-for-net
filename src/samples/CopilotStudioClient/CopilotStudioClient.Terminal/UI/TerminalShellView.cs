@@ -61,15 +61,15 @@ internal sealed class TerminalShellView : Runnable
         ContentRegion.Add(_surfaces.Values.Distinct().ToArray());
         Add(Navigation, ContentRegion);
 
-        AddCommand(Command.Home, () => Navigate(TerminalSurface.Chat));
-        AddCommand(Command.Find, () => Navigate(TerminalSurface.Thoughts));
-        AddCommand(Command.Open, () => Navigate(TerminalSurface.Activities));
-        AddCommand(Command.Context, () => Navigate(TerminalSurface.Help));
+        AddCommand(Command.Home, () => IsCurrentTop && Navigate(TerminalSurface.Chat));
+        AddCommand(Command.Find, () => IsCurrentTop && Navigate(TerminalSurface.Thoughts));
+        AddCommand(Command.Open, () => IsCurrentTop && Navigate(TerminalSurface.Activities));
+        AddCommand(Command.Context, () => IsCurrentTop && Navigate(TerminalSurface.Help));
         AddCommand(
             Command.Cancel,
             () =>
             {
-                if (ActiveSurface == TerminalSurface.Chat)
+                if (!IsCurrentTop || ActiveSurface == TerminalSurface.Chat)
                 {
                     return false;
                 }
@@ -81,6 +81,11 @@ internal sealed class TerminalShellView : Runnable
             Command.Copy,
             () =>
             {
+                if (!IsCurrentTop)
+                {
+                    return false;
+                }
+
                 copy();
                 return true;
             });
@@ -88,10 +93,16 @@ internal sealed class TerminalShellView : Runnable
             Command.Quit,
             () =>
             {
+                if (!IsCurrentTop)
+                {
+                    return false;
+                }
+
                 quit();
                 return true;
             });
 
+        HotKeyBindings.Add(Key.Esc, [Command.Cancel]);
         SetVisibleSurface(TerminalSurface.Chat);
     }
 
@@ -109,8 +120,6 @@ internal sealed class TerminalShellView : Runnable
         application.Keyboard.KeyBindings.AddApp(Key.F2, this, [Command.Find]);
         application.Keyboard.KeyBindings.AddApp(Key.F3, this, [Command.Open]);
         application.Keyboard.KeyBindings.AddApp(Key.F4, this, [Command.Context]);
-        application.Keyboard.KeyBindings.Remove(Key.Esc);
-        application.Keyboard.KeyBindings.AddApp(Key.Esc, this, [Command.Cancel]);
         application.Keyboard.KeyBindings.AddApp(Key.C.WithCtrl, this, [Command.Copy]);
         application.Keyboard.KeyBindings.AddApp(Key.Q.WithCtrl, this, [Command.Quit]);
     }

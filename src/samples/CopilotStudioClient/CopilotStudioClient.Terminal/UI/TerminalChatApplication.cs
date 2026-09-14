@@ -310,7 +310,6 @@ internal sealed class TerminalChatApplication : ITerminalView
     private Scheme? _controlScheme;
     private View? _chatTab;
     private View? _thoughtsTab;
-    private View? _activitiesTab;
     private View? _helpTab;
     private TerminalTimelineView? _transcript;
     private TerminalTimelineView? _thoughtTranscript;
@@ -422,7 +421,6 @@ internal sealed class TerminalChatApplication : ITerminalView
         View help = BuildHelpView();
         _chatTab = chat;
         _thoughtsTab = thoughts;
-        _activitiesTab = activities;
         _helpTab = help;
 
         IReadOnlyDictionary<TerminalSurface, View> surfaces;
@@ -641,10 +639,6 @@ internal sealed class TerminalChatApplication : ITerminalView
             GetPalette(),
             Console.OutputEncoding.CodePage == Encoding.UTF8.CodePage)
         {
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = 3,
             BorderStyle = LineStyle.None
         };
         composer.SetScheme(GetControlScheme());

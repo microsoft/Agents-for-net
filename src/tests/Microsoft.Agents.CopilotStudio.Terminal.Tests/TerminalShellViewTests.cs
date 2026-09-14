@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Terminal.Gui.App;
+using Terminal.Gui.Drivers;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Input;
 using Terminal.Gui.ViewBase;
@@ -75,17 +77,107 @@ public sealed class TerminalShellViewTests
     [Fact]
     public void Cancel_CommandRemainsUnhandledWhenChatIsAlreadyActive()
     {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
         using TerminalShellView shell = CreateShell();
+        SessionToken shellSession = Assert.IsType<SessionToken>(application.Begin(shell));
 
-        bool? handled = shell.InvokeCommand(Command.Cancel);
+        try
+        {
+            bool? handled = shell.InvokeCommand(Command.Cancel);
 
-        Assert.False(handled);
-        Assert.Equal(TerminalSurface.Chat, shell.ActiveSurface);
+            Assert.False(handled);
+            Assert.Equal(TerminalSurface.Chat, shell.ActiveSurface);
+        }
+        finally
+        {
+            application.End(shellSession);
+        }
     }
+
+    [Fact]
+    public void Modal_EscapeStopsModalWithoutChangingBackgroundShell()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using TerminalShellView shell = CreateShell();
+        using Dialog modal = new();
+        shell.Show(TerminalSurface.Thoughts);
+        shell.RegisterApplicationBindings(application);
+        SessionToken shellSession = Assert.IsType<SessionToken>(application.Begin(shell));
+        SessionToken modalSession = Assert.IsType<SessionToken>(application.Begin(modal));
+
+        try
+        {
+            Assert.Same(modal, application.TopRunnable);
+
+            bool handled = application.Keyboard.RaiseKeyDownEvent(Key.Esc);
+
+            Assert.True(handled);
+            Assert.True(modal.StopRequested);
+            Assert.False(shell.StopRequested);
+            Assert.Equal(TerminalSurface.Thoughts, shell.ActiveSurface);
+        }
+        finally
+        {
+            application.End(modalSession);
+            application.End(shellSession);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(ModalShellCommandKeys))]
+    public void Modal_ShellApplicationCommandDoesNotReachBackgroundShell(
+        Key key,
+        int initialSurfaceValue)
+    {
+        TerminalSurface initialSurface = (TerminalSurface)initialSurfaceValue;
+        int shellCopies = 0;
+        int shellQuits = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using TerminalShellView shell = CreateShell(
+            copy: () => shellCopies++,
+            quit: () => shellQuits++);
+        using Dialog modal = new();
+        shell.Show(initialSurface);
+        shell.RegisterApplicationBindings(application);
+        SessionToken shellSession = Assert.IsType<SessionToken>(application.Begin(shell));
+        SessionToken modalSession = Assert.IsType<SessionToken>(application.Begin(modal));
+
+        try
+        {
+            Assert.Same(modal, application.TopRunnable);
+            bool handled = application.Keyboard.RaiseKeyDownEvent(key);
+
+            Assert.False(handled);
+            Assert.Equal(0, shellCopies);
+            Assert.Equal(0, shellQuits);
+            Assert.Equal(initialSurface, shell.ActiveSurface);
+        }
+        finally
+        {
+            application.End(modalSession);
+            application.End(shellSession);
+        }
+    }
+
+    public static TheoryData<Key, int> ModalShellCommandKeys =>
+        new()
+        {
+            { Key.F1, (int)TerminalSurface.Help },
+            { Key.F2, (int)TerminalSurface.Help },
+            { Key.F3, (int)TerminalSurface.Help },
+            { Key.F4, (int)TerminalSurface.Chat },
+            { Key.C.WithCtrl, (int)TerminalSurface.Thoughts },
+            { Key.Q.WithCtrl, (int)TerminalSurface.Activities }
+        };
 
     private static TerminalShellView CreateShell(
         Func<TerminalSurface, View?>? resolveFocusTarget = null,
-        Action<Exception>? reportNavigationFailure = null)
+        Action<Exception>? reportNavigationFailure = null,
+        Action? copy = null,
+        Action? quit = null)
     {
         Dictionary<TerminalSurface, View> surfaces = new()
         {
@@ -99,8 +191,8 @@ public sealed class TerminalShellViewTests
             new TerminalNavigationView(),
             surfaces,
             resolveFocusTarget ?? (surface => surfaces[surface]),
-            copy: () => { },
-            quit: () => { },
+            copy ?? (() => { }),
+            quit ?? (() => { }),
             reportNavigationFailure ?? (_ => { }));
     }
 }
