@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
@@ -889,6 +890,67 @@ public sealed class TerminalChatApplicationTests
             thoughtTimeline.RenderedLines.Select(line => line.EntryKey).Distinct());
     }
 
+    [Fact]
+    public void ApplyChatChanges_InterpreterLifecycleUpdatesOneThoughtToolBlock()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        View surfaces = Assert.IsType<TerminalShellView>(shell).ContentRegion;
+        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(surfaces.SubViews, view => view.Title == "_Thoughts");
+        TerminalTimelineView chatTimeline = Assert.Single(Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(Descendants(thoughts).OfType<TerminalTimelineView>());
+        ActivityInterpreter interpreter = new();
+
+        terminal.ApplyChatChanges(interpreter.Process(StartedWeatherActivity(), ActivityDirection.Inbound));
+        RunOneIteration(application, shell);
+        Assert.Contains(thoughtTimeline.RenderedLines, line => PlainText(line).Contains("Running", StringComparison.Ordinal));
+
+        terminal.ApplyChatChanges(interpreter.Process(CompletedWeatherActivity(), ActivityDirection.Inbound));
+        RunOneIteration(application, shell);
+
+        Assert.DoesNotContain(chatTimeline.RenderedLines, line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn");
+        Assert.Equal(
+            ["tool:toolu_01EAp1krYNiK2odqQv9mu7hn"],
+            thoughtTimeline.RenderedLines
+                .Where(line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn")
+                .Select(line => line.EntryKey)
+                .Distinct());
+        Assert.Contains(thoughtTimeline.RenderedLines, line => PlainText(line).Contains("Completed in 2.97 s", StringComparison.Ordinal));
+        Assert.DoesNotContain(thoughtTimeline.RenderedLines, line => PlainText(line).Contains("Running", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ApplyChatChanges_InterpreterStreamToolCallCoexistsWithStatusThoughtsAndAttachments()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        View surfaces = Assert.IsType<TerminalShellView>(shell).ContentRegion;
+        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(surfaces.SubViews, view => view.Title == "_Thoughts");
+        TerminalTimelineView chatTimeline = Assert.Single(Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(Descendants(thoughts).OfType<TerminalTimelineView>());
+        ActivityInterpreter interpreter = new();
+
+        terminal.ApplyChatChanges(interpreter.Process(StreamWeatherActivity(), ActivityDirection.Inbound));
+        RunOneIteration(application, shell);
+
+        Assert.Contains(chatTimeline.RenderedLines, line => PlainText(line) == "Calling current_weather...");
+        Assert.Contains(chatTimeline.RenderedLines, line => PlainText(line).Contains("report.csv", StringComparison.Ordinal));
+        Assert.DoesNotContain(chatTimeline.RenderedLines, line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn");
+        Assert.Contains(thoughtTimeline.RenderedLines, line => PlainText(line) == "Checking weather");
+        Assert.Contains(thoughtTimeline.RenderedLines, line => line.EntryKey == "tool:toolu_01EAp1krYNiK2odqQv9mu7hn");
+        Assert.Contains(thoughtTimeline.RenderedLines, line => PlainText(line).Contains("Waiting for", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData((int)DiagnosticSeverity.Information, "Ready.", (int)TimelineRole.Muted)]
     [InlineData((int)DiagnosticSeverity.Warning, "Warning: Reconnecting", (int)TimelineRole.Warning)]
@@ -1283,6 +1345,126 @@ public sealed class TerminalChatApplicationTests
                     [],
                     [],
                     null)));
+    }
+
+    private static Activity StartedWeatherActivity()
+    {
+        return ToolCallActivity(
+            ToolCallEntity(
+                "started",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>())));
+    }
+
+    private static Activity CompletedWeatherActivity()
+    {
+        return ToolCallActivity(
+            ToolCallEntity(
+                "completed",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>()),
+                durationMs: 2971));
+    }
+
+    private static Activity StreamWeatherActivity()
+    {
+        Activity activity = StreamActivity(
+            ActivityTypes.Typing,
+            "stream-1",
+            "Calling current_weather...",
+            null,
+            StreamTypes.Informative,
+            1);
+        activity.Entities!.Insert(0, ToolCallEntity(
+            "started",
+            JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+            JsonSerializer.SerializeToElement(new[] { "units" })));
+        activity.Entities.Add(
+            new Entity("thought")
+            {
+                Properties = { ["content"] = JsonSerializer.SerializeToElement("Checking weather") }
+            });
+        activity.Attachments =
+        [
+            new Attachment
+            {
+                Name = "report.csv",
+                ContentType = "text/csv",
+                ContentUrl = "https://files.example/report.csv"
+            }
+        ];
+
+        return activity;
+    }
+
+    private static Activity ToolCallActivity(Entity toolCallEntity)
+    {
+        return new Activity
+        {
+            Type = ActivityTypes.Message,
+            Entities =
+            [
+                toolCallEntity
+            ]
+        };
+    }
+
+    private static Activity StreamActivity(
+        string activityType,
+        string activityId,
+        string text,
+        string? streamId,
+        string streamType,
+        int? sequence,
+        string? streamResult = null)
+    {
+        return new Activity
+        {
+            Type = activityType,
+            Id = activityId,
+            Text = text,
+            Entities =
+            [
+                new StreamInfo
+                {
+                    StreamId = streamId!,
+                    StreamType = streamType,
+                    StreamSequence = sequence,
+                    StreamResult = streamResult!
+                }
+            ]
+        };
+    }
+
+    private static Entity ToolCallEntity(
+        string status,
+        JsonElement filledParameters,
+        JsonElement unfilledParameters,
+        long? durationMs = null)
+    {
+        Entity entity = new("toolCall")
+        {
+            Properties =
+            {
+                ["toolCallId"] = JsonSerializer.SerializeToElement("toolu_01EAp1krYNiK2odqQv9mu7hn"),
+                ["toolName"] = JsonSerializer.SerializeToElement("current_weather"),
+                ["toolDisplayName"] = JsonSerializer.SerializeToElement("Get current weather"),
+                ["toolCategory"] = JsonSerializer.SerializeToElement("Connector"),
+                ["status"] = JsonSerializer.SerializeToElement(status),
+                ["filledParameters"] = filledParameters,
+                ["unfilledParameters"] = unfilledParameters,
+                ["hiddenFilledParameters"] = JsonSerializer.SerializeToElement(new { apiKey = "must-not-render" }),
+                ["hiddenUnfilledParameters"] = JsonSerializer.SerializeToElement(new[] { "secret" }),
+                ["result"] = JsonSerializer.SerializeToElement("must-not-render")
+            }
+        };
+
+        if (durationMs is not null)
+        {
+            entity.Properties["durationMs"] = JsonSerializer.SerializeToElement(durationMs.Value);
+        }
+
+        return entity;
     }
 
     private static void RunOneIteration(IApplication application, Runnable shell)

@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.Json;
 using Terminal.Gui.App;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Drivers;
@@ -63,6 +64,31 @@ public sealed class TerminalTimelineViewTests
         Assert.Contains(
             view.RenderedLines.Skip(view.ScrollOffset).Take(3),
             line => PlainText(line) == "Hello");
+    }
+
+    [Fact]
+    public void SetEntries_ReplacesRenderedToolCallLifecycleEntryByKey()
+    {
+        using TerminalTimelineView view = new()
+        {
+            Width = 40,
+            Height = 8,
+            CollapseCompletedThoughts = false
+        };
+
+        view.SetEntries([ToolEntry("tool:1", "started")]);
+        view.SetEntries([ToolEntry("tool:1", "completed", durationMs: 2971)]);
+
+        string rendered = string.Join(Environment.NewLine, view.RenderedLines.Select(PlainText));
+
+        Assert.Equal(
+            ["tool:1"],
+            view.RenderedLines
+                .Where(line => line.EntryKey == "tool:1")
+                .Select(line => line.EntryKey)
+                .Distinct());
+        Assert.Contains("Completed in 2.97 s", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("Running", rendered, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -261,6 +287,28 @@ public sealed class TerminalTimelineViewTests
                 [],
                 $"entry-{index}"))
             .ToArray();
+    }
+
+    private static ChatEntry ToolEntry(string key, string status, long? durationMs = null)
+    {
+        return new ChatEntry(
+            key,
+            ChatEntryKind.ToolCall,
+            "Agent",
+            string.Empty,
+            !string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase),
+            [],
+            [],
+            key,
+            ToolCall: new ToolCallDetails(
+                key["tool:".Length..],
+                "current_weather",
+                "Get current weather",
+                "Connector",
+                status,
+                [new ToolCallParameter("Location", JsonSerializer.SerializeToElement("Seattle, WA, USA"))],
+                [],
+                durationMs));
     }
 
     private static string PlainText(TimelineLine line)

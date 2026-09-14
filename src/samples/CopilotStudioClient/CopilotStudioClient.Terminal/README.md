@@ -200,6 +200,7 @@ Malformed or ambiguous stream metadata never overwrites another visible response
 ## Thoughts, suggested actions, and adaptive cards
 
 - `thought` and `thoughts` entities are shown in **Thoughts**, not duplicated into Chat.
+- **F2 Thoughts** shows agent reasoning and structured tool-call lifecycle blocks. Tool calls update in place from Running to Completed and show the visible parameter snapshot plus elapsed time. Hidden parameters and raw tool results are not shown there; use Activities when raw protocol inspection is required.
 - Streaming thought deltas update one entry in place. `chainOfThoughtId` separates concurrent chains when present; otherwise the response stream identifies the chain.
 - Completed chains remain in chronological history for the life of the process.
 - Unknown entity types are left in the JSON inspector instead of being duplicated into Chat.

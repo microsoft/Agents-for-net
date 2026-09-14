@@ -114,6 +114,34 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
+    public void ToolCallLifecycle_UpdatesOneThoughtBlockFromRunningToCompleted()
+    {
+        ActivityInterpreter interpreter = new();
+        TerminalChatState thoughts = new(
+            entry => entry.Kind is ChatEntryKind.Thought or ChatEntryKind.ToolCall);
+
+        thoughts.Apply(interpreter.Process(StartedWeatherActivity(), ActivityDirection.Inbound));
+        Assert.Single(thoughts.Entries);
+        Assert.Equal("started", thoughts.Entries[0].ToolCall!.Status);
+
+        thoughts.Apply(interpreter.Process(CompletedWeatherActivity(), ActivityDirection.Inbound));
+        ChatEntry completed = Assert.Single(thoughts.Entries);
+        Assert.Equal("completed", completed.ToolCall!.Status);
+        Assert.Equal(2971, completed.ToolCall.DurationMs);
+
+        TimelineLayoutResult layout = TerminalTimelineLayout.Build(
+            thoughts.Entries,
+            80,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: false);
+        string rendered = string.Join(
+            Environment.NewLine,
+            layout.Lines.Select(line => string.Concat(line.Spans.Select(span => span.Text))));
+        Assert.Contains("Completed in 2.97 s", rendered);
+        Assert.DoesNotContain("must-not-render", rendered, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Process_ToolCall_DoesNotProjectHiddenParametersOrResult()
     {
         ChatEntry entry = SingleToolEntry(
@@ -177,6 +205,47 @@ public sealed class ActivityInterpreterTests
         AssertStatus(changes, "Working...", "stream:stream-1:status");
         ChatEntry toolCall = Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.ToolCall).Entry!;
         Assert.Equal("tool:toolu_01EAp1krYNiK2odqQv9mu7hn", toolCall.Key);
+    }
+
+    [Fact]
+    public void Process_StreamingToolCall_PreservesStatusThoughtsAndAttachments()
+    {
+        Activity activity = StreamActivity(
+            ActivityTypes.Typing,
+            "stream-1",
+            "Calling current_weather...",
+            null,
+            StreamTypes.Informative,
+            1);
+        activity.Entities!.Insert(0, ToolCallEntity(
+            "started",
+            JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+            JsonSerializer.SerializeToElement(new[] { "units" })));
+        activity.Entities.Add(
+            new Entity("thought")
+            {
+                Properties = { ["content"] = JsonSerializer.SerializeToElement("Checking weather") }
+            });
+        activity.Attachments =
+        [
+            new Attachment
+            {
+                Name = "report.csv",
+                ContentType = "text/csv",
+                ContentUrl = "https://files.example/report.csv"
+            }
+        ];
+
+        IReadOnlyList<ChatChange> changes = new ActivityInterpreter().Process(activity, ActivityDirection.Inbound);
+
+        AssertStatus(changes, "Calling current_weather...", "stream:stream-1:status");
+        ChatEntry toolCall = Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.ToolCall).Entry!;
+        Assert.Equal("tool:toolu_01EAp1krYNiK2odqQv9mu7hn", toolCall.Key);
+        ChatEntry thought = Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.Thought).Entry!;
+        Assert.Equal("Checking weather", thought.Text);
+        ChatEntry attachment = Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.Attachment).Entry!;
+        Assert.Contains("report.csv", attachment.Text);
+        Assert.Contains("https://files.example/report.csv", attachment.Text);
     }
 
     [Fact]
@@ -852,6 +921,25 @@ public sealed class ActivityInterpreterTests
                 toolCallEntity
             ]
         };
+    }
+
+    private static Activity StartedWeatherActivity()
+    {
+        return ToolCallActivity(
+            ToolCallEntity(
+                "started",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>())));
+    }
+
+    private static Activity CompletedWeatherActivity()
+    {
+        return ToolCallActivity(
+            ToolCallEntity(
+                "completed",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>()),
+                durationMs: 2971));
     }
 
     private static ChatEntry SingleToolEntry(IReadOnlyList<ChatChange> changes)
