@@ -177,7 +177,7 @@ The default layout shows the borderless **Chat** timeline below a persistent nav
 
 The shell renders without stock terminal chrome. A persistent navigation row stays visible above the active borderless surface so the current surface and shortcut keys remain discoverable in default and split layouts.
 
-Chat, Thoughts, and diagnostic entries use a rendered Markdown subset for conversational text, including headings, bold, italic, inline code, ordered and unordered lists, and `http`/`https` links. Non-conversational activity details remain literal so protocol payloads are not reformatted as Markdown.
+The shell renders Markdown only for conversational User, Agent, and Thought entries, including headings, bold, italic, inline code, ordered and unordered lists, and `http`/`https` links. Diagnostic entries and non-conversational activity details remain literal so protocol payloads and diagnostics are not reformatted as Markdown.
 
 The palette adapts to dark and light terminal backgrounds when true color is available, and falls back to readable limited-color roles when color detection or true color is unavailable. Terminals that do not report UTF-8 output use ASCII timeline glyphs and ASCII status separators instead of Unicode symbols.
 
@@ -189,7 +189,7 @@ The chat transcript follows the same stream interpretation described in the desi
 
 - `informative` updates replace the transient status line.
 - `streaming` typing updates append text chunks to the current transient agent response.
-- Streaming `thought` text is accumulated independently in the **Thoughts** tab.
+- Streaming `thought` text is accumulated independently in the **Thoughts** view.
 - `final` activities finalize the visible response and clear the transient status.
 - Streams correlate by `streamInfo.streamId`.
 - A start activity can omit `streamInfo.streamId`; in that case the sample uses the activity `id` as the provisional stream identifier.

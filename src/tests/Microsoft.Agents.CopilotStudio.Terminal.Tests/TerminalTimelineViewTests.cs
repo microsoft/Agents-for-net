@@ -50,19 +50,10 @@ public sealed class TerminalTimelineViewTests
 
         view.SetEntries(replacementEntries);
 
-        TimelineLayoutResult layout = TerminalTimelineLayout.Build(
-            replacementEntries,
-            width: 12,
-            TimelineGlyphSet.Ascii,
-            collapseCompletedThoughts: true);
-        Assert.Single(layout.EntryRows.Keys, key => key == "stream");
-        TimelineRowRange streamRange = layout.EntryRows["stream"];
-        Assert.Equal(2, streamRange.Count);
-
         TimelineLine[] streamLines = view.RenderedLines
             .Where(line => line.EntryKey == "stream")
             .ToArray();
-        Assert.Contains(streamLines, line => PlainText(line) == "Hello");
+        Assert.Equal(["●  Agent", "Hello"], streamLines.Select(PlainText));
         Assert.DoesNotContain(streamLines, line => PlainText(line) == "**Hel");
         TimelineSpan styledText = Assert.Single(
             streamLines.SelectMany(line => line.Spans),

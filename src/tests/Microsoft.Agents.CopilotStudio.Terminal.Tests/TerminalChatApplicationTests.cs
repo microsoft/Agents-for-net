@@ -213,6 +213,7 @@ public sealed class TerminalChatApplicationTests
 
                 RaiseTerminalKey(application, Key.Q.WithCtrl);
                 Assert.True(shutdown.IsCancellationRequested);
+                Assert.True(shell.StopRequested);
             }
             finally
             {
@@ -554,6 +555,10 @@ public sealed class TerminalChatApplicationTests
                 Assert.True(split.Visible, $"Split hidden after F3 equivalent at {width}x{height}.");
                 Assert.True(activities.Visible, $"Activities hidden after F3 equivalent at {width}x{height}.");
                 AssertWithinParent(shell);
+                Assert.True(activityList.Frame.Width > 0, $"Activity list has no width after F3 equivalent at {width}x{height}.");
+                Assert.True(activityList.Frame.Height > 0, $"Activity list has no height after F3 equivalent at {width}x{height}.");
+                Assert.True(json.Frame.Width > 0, $"JSON inspector has no width after F3 equivalent at {width}x{height}.");
+                Assert.True(json.Frame.Height > 0, $"JSON inspector has no height after F3 equivalent at {width}x{height}.");
 
                 shell.Show(TerminalSurface.Chat);
             }
