@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
+using Terminal.Gui.Text;
 
 internal static class TerminalToolCallFormatting
 {
@@ -180,23 +181,52 @@ internal static class TerminalToolCallFormatting
     {
         if (parameter.Value.ValueKind == JsonValueKind.String)
         {
-            foreach (string line in TerminalTimelineLayout.SplitLiteralLines(parameter.Value.GetString() ?? string.Empty))
+            IReadOnlyList<string> lines = TerminalTimelineLayout.SplitLiteralLines(parameter.Value.GetString() ?? string.Empty);
+            int continuationIndent = GetParameterValueIndent(parameter.Name);
+            for (int index = 0; index < lines.Count; index++)
             {
-                blocks.Add(CreateFilledParameterBlock(parameter.Name, line));
+                blocks.Add(CreateFilledParameterBlock(
+                    parameter.Name,
+                    lines[index],
+                    includeLabel: index == 0,
+                    continuationIndent));
             }
 
             return;
         }
 
-        blocks.Add(CreateFilledParameterBlock(parameter.Name, FormatParameterValue(parameter.Value)));
+        blocks.Add(CreateFilledParameterBlock(
+            parameter.Name,
+            FormatParameterValue(parameter.Value),
+            includeLabel: true,
+            GetParameterValueIndent(parameter.Name)));
     }
 
-    private static TimelineBlock CreateFilledParameterBlock(string name, string value)
+    private static TimelineBlock CreateFilledParameterBlock(
+        string name,
+        string value,
+        bool includeLabel,
+        int continuationIndent)
     {
-        return Paragraph(
-            new TimelineSpan(name, TimelineRole.User),
-            new TimelineSpan(" = ", TimelineRole.Muted),
-            new TimelineSpan(value, TimelineRole.Primary));
+        return includeLabel
+            ? new TimelineBlock(
+                TimelineBlockKind.Paragraph,
+                [
+                    new TimelineSpan(name, TimelineRole.User),
+                    new TimelineSpan(" = ", TimelineRole.Muted),
+                    new TimelineSpan(value, TimelineRole.Primary)
+                ],
+                ContinuationIndent: continuationIndent)
+            : new TimelineBlock(
+                TimelineBlockKind.Paragraph,
+                [new TimelineSpan(value, TimelineRole.Primary)],
+                InitialIndent: continuationIndent,
+                ContinuationIndent: continuationIndent);
+    }
+
+    private static int GetParameterValueIndent(string name)
+    {
+        return Math.Max(0, string.Concat(name, " = ").GetColumns());
     }
 
     private static TimelineBlock Paragraph(params TimelineSpan[] spans)

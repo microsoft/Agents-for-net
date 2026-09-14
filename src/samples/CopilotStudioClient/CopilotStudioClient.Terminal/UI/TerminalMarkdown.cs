@@ -18,7 +18,9 @@ internal enum TimelineBlockKind
 internal sealed record TimelineBlock(
     TimelineBlockKind Kind,
     IReadOnlyList<TimelineSpan> Spans,
-    int? Ordinal = null);
+    int? Ordinal = null,
+    int InitialIndent = 0,
+    int ContinuationIndent = 0);
 
 internal static class TerminalMarkdown
 {

@@ -175,7 +175,7 @@ internal static class TerminalTimelineLayout
 
         foreach (TimelineBlock block in blocks)
         {
-            WrapParagraph(TokenizeParagraph(GetRenderableSpans(block)), contentWidth, lines);
+            WrapParagraph(block, contentWidth, lines);
         }
 
         if (lines.Count == 0)
@@ -407,16 +407,20 @@ internal static class TerminalTimelineLayout
         return builder.ToString();
     }
 
-    private static void WrapParagraph(IReadOnlyList<RenderToken> tokens, int width, List<TimelineLine> lines)
+    private static void WrapParagraph(TimelineBlock block, int width, List<TimelineLine> lines)
     {
+        IReadOnlyList<RenderToken> tokens = TokenizeParagraph(GetRenderableSpans(block));
         if (tokens.Count == 0)
         {
             lines.Add(new TimelineLine(string.Empty, []));
             return;
         }
 
+        int firstLineIndent = NormalizeIndent(block.InitialIndent, width);
+        int continuationIndent = NormalizeIndent(block.ContinuationIndent, width);
         List<TimelineSpan> current = new();
         int currentWidth = 0;
+        int currentIndent = firstLineIndent;
 
         void EmitCurrentLine()
         {
@@ -425,26 +429,56 @@ internal static class TerminalTimelineLayout
                 current.Count == 0 ? [] : Array.AsReadOnly(current.ToArray())));
             current = new List<TimelineSpan>();
             currentWidth = 0;
+            currentIndent = continuationIndent;
         }
 
-        void EmitTextPieces(
+        void EnsureIndent()
+        {
+            if (currentWidth > 0 || currentIndent == 0)
+            {
+                return;
+            }
+
+            Append(current, new string(' ', currentIndent), TimelineRole.Primary, TimelineTextStyle.None, null);
+            currentWidth = currentIndent;
+        }
+
+        void EmitWrappedText(
             string text,
             TimelineRole role,
             TimelineTextStyle style,
             Uri? linkTarget)
         {
-            foreach (string piece in SliceTextElements(text, width))
+            string remaining = text;
+            while (remaining.Length > 0)
             {
-                lines.Add(new TimelineLine(string.Empty, [new TimelineSpan(piece, role, style, linkTarget)]));
+                EnsureIndent();
+                int available = width - currentWidth;
+                if (available <= 0)
+                {
+                    EmitCurrentLine();
+                    continue;
+                }
+
+                (string piece, int consumedLength) = SliceLeadingTextElements(remaining, available);
+                Append(current, piece, role, style, linkTarget);
+                currentWidth += MeasureDisplayWidth(piece);
+                remaining = remaining[consumedLength..];
+                if (remaining.Length > 0)
+                {
+                    EmitCurrentLine();
+                }
             }
         }
 
         void EmitTab(RenderToken token)
         {
+            EnsureIndent();
             int tabSpaces = TabStop - (currentWidth % TabStop);
             if (currentWidth > 0 && currentWidth + tabSpaces > width)
             {
                 EmitCurrentLine();
+                EnsureIndent();
                 tabSpaces = TabStop;
             }
 
@@ -495,7 +529,11 @@ internal static class TerminalTimelineLayout
                     EmitCurrentLine();
                 }
 
-                EmitTextPieces(token.Text, token.Role, token.Style, token.LinkTarget);
+                EmitWrappedText(token.Text, token.Role, token.Style, token.LinkTarget);
+                if (currentWidth > 0 || current.Count > 0)
+                {
+                    EmitCurrentLine();
+                }
                 return;
             }
 
@@ -524,13 +562,20 @@ internal static class TerminalTimelineLayout
                     EmitCurrentLine();
                 }
 
-                EmitTextPieces(token.Text, token.Role, token.Style, token.LinkTarget);
+                EmitWrappedText(token.Text, token.Role, token.Style, token.LinkTarget);
                 return;
             }
 
+            EnsureIndent();
             if (currentWidth + tokenWidth > width)
             {
                 EmitCurrentLine();
+                EnsureIndent();
+                if (currentWidth + tokenWidth > width)
+                {
+                    EmitWrappedText(token.Text, token.Role, token.Style, token.LinkTarget);
+                    return;
+                }
             }
 
             Append(current, token.Text, token.Role, token.Style, token.LinkTarget);
@@ -766,6 +811,50 @@ internal static class TerminalTimelineLayout
     private static int MeasureDisplayWidth(string value)
     {
         return Math.Max(0, value.GetColumns());
+    }
+
+    private static int NormalizeIndent(int requestedIndent, int width)
+    {
+        return Math.Max(0, Math.Min(requestedIndent, Math.Max(0, width - 1)));
+    }
+
+    private static (string Piece, int ConsumedLength) SliceLeadingTextElements(string value, int width)
+    {
+        int contentWidth = Math.Max(1, width);
+        int usedWidth = 0;
+        int consumedLength = 0;
+        StringBuilder builder = new();
+
+        foreach (string textElement in EnumerateTextElements(value))
+        {
+            int elementWidth = Math.Max(0, textElement.GetColumns());
+            if (elementWidth > contentWidth)
+            {
+                if (builder.Length > 0)
+                {
+                    break;
+                }
+
+                return ("?", textElement.Length);
+            }
+
+            if (usedWidth > 0 && usedWidth + elementWidth > contentWidth)
+            {
+                break;
+            }
+
+            builder.Append(textElement);
+            usedWidth += elementWidth;
+            consumedLength += textElement.Length;
+        }
+
+        if (builder.Length == 0)
+        {
+            string fallback = EnumerateTextElements(value).First();
+            return ("?", fallback.Length);
+        }
+
+        return (builder.ToString(), consumedLength);
     }
 
     private static IEnumerable<string> SliceTextElements(string value, int width)

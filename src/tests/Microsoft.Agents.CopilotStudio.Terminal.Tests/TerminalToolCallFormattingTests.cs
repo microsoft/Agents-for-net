@@ -166,14 +166,34 @@ public sealed class TerminalToolCallFormattingTests
 
         IReadOnlyList<TimelineBlock> blocks = TerminalToolCallFormatting.BuildBlocks(details);
 
-        Assert.Equal(
-            [
-                "notes = alpha",
-                "notes = beta",
-                "notes = gamma",
-                "units = I"
-            ],
-            Flatten(blocks).Where(line => line.Contains(" = ", System.StringComparison.Ordinal)).ToArray());
+        TimelineBlock[] parameterBlocks = blocks
+            .Where(block => string.Concat(block.Spans.Select(span => span.Text)).Length > 0)
+            .Where(block => block.Spans.Any(span => span.Text.Contains("notes", System.StringComparison.Ordinal))
+                || block.Spans.Any(span => span.Text is "alpha" or "beta" or "gamma"))
+            .ToArray();
+
+        Assert.Collection(
+            parameterBlocks,
+            block =>
+            {
+                Assert.Equal("notes = alpha", string.Concat(block.Spans.Select(span => span.Text)));
+                Assert.Equal(0, block.InitialIndent);
+                Assert.Equal("notes = ".Length, block.ContinuationIndent);
+            },
+            block =>
+            {
+                Assert.Equal("beta", string.Concat(block.Spans.Select(span => span.Text)));
+                Assert.Equal("notes = ".Length, block.InitialIndent);
+                Assert.Equal("notes = ".Length, block.ContinuationIndent);
+                Assert.DoesNotContain(block.Spans, span => span.Text.Contains("notes =", System.StringComparison.Ordinal));
+            },
+            block =>
+            {
+                Assert.Equal("gamma", string.Concat(block.Spans.Select(span => span.Text)));
+                Assert.Equal("notes = ".Length, block.InitialIndent);
+                Assert.Equal("notes = ".Length, block.ContinuationIndent);
+                Assert.DoesNotContain(block.Spans, span => span.Text.Contains("notes =", System.StringComparison.Ordinal));
+            });
     }
 
     private static string[] Flatten(IReadOnlyList<TimelineBlock> blocks)

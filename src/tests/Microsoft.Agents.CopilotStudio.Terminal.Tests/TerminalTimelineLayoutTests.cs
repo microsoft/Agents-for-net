@@ -299,7 +299,7 @@ public sealed class TerminalTimelineLayoutTests
             "completed",
             string.Empty,
             [
-                Parameter("notes", "alpha\r\nbeta\u001B\ngamma"),
+                Parameter("notes", "alpha\r\nbeta\ngamma"),
                 Parameter("units", "I")
             ],
             [],
@@ -313,14 +313,45 @@ public sealed class TerminalTimelineLayoutTests
 
         string[] renderedLines = result.Lines.Select(PlainText).ToArray();
 
-        Assert.Contains("notes = alpha", renderedLines);
-        Assert.Contains("notes = beta", renderedLines);
-        Assert.Contains("notes = gamma", renderedLines);
-        Assert.Contains("\\u001B", renderedLines);
+        string alphaLine = Assert.Single(renderedLines, line => line.Contains("notes = alpha", StringComparison.Ordinal));
+        string betaLine = Assert.Single(renderedLines, line => line.TrimStart().StartsWith("beta", StringComparison.Ordinal));
+        string gammaLine = Assert.Single(renderedLines, line => line.TrimStart().StartsWith("gamma", StringComparison.Ordinal));
+
+        Assert.DoesNotContain(renderedLines, line => line.Contains("notes = beta", StringComparison.Ordinal));
+        Assert.DoesNotContain(renderedLines, line => line.Contains("notes = gamma", StringComparison.Ordinal));
         Assert.Contains("units = I", renderedLines);
         Assert.DoesNotContain(renderedLines, line => line.Contains("\\u000A", StringComparison.Ordinal));
         Assert.DoesNotContain(renderedLines, line => line.Contains("\\u000D", StringComparison.Ordinal));
-        Assert.DoesNotContain(renderedLines, line => line.Contains('\u001B'));
+        Assert.Equal(alphaLine.IndexOf("alpha", StringComparison.Ordinal), betaLine.IndexOf("beta", StringComparison.Ordinal));
+        Assert.Equal(alphaLine.IndexOf("alpha", StringComparison.Ordinal), gammaLine.IndexOf("gamma", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Build_ToolCallWrappedParameterContinuationsStayAlignedUnderValueColumn()
+    {
+        ChatEntry entry = ToolEntry(
+            "tool-1",
+            "started",
+            string.Empty,
+            [
+                Parameter("notes", "alphabet soup simmering")
+            ],
+            []);
+
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [entry],
+            width: 18,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        string[] renderedLines = result.Lines.Select(PlainText).ToArray();
+        string alphabetLine = Assert.Single(renderedLines, line => line.Contains("notes = alphabet", StringComparison.Ordinal));
+        string soupLine = Assert.Single(renderedLines, line => line.TrimStart().StartsWith("soup", StringComparison.Ordinal));
+        string simmeringLine = Assert.Single(renderedLines, line => line.TrimStart().StartsWith("simmering", StringComparison.Ordinal));
+
+        Assert.Equal(1, renderedLines.Count(line => line.Contains("notes =", StringComparison.Ordinal)));
+        Assert.Equal(alphabetLine.IndexOf("alphabet", StringComparison.Ordinal), soupLine.IndexOf("soup", StringComparison.Ordinal));
+        Assert.Equal(alphabetLine.IndexOf("alphabet", StringComparison.Ordinal), simmeringLine.IndexOf("simmering", StringComparison.Ordinal));
     }
 
     [Fact]
