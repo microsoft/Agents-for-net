@@ -162,15 +162,35 @@ internal sealed class TerminalActivityState
 
 internal sealed class TimelineRoleLabel : View
 {
-    internal string Content { get; init; } = string.Empty;
+    private readonly TerminalPalette _palette;
+    private string _content = string.Empty;
+    private TimelineRole _role = TimelineRole.Primary;
 
-    internal TimelineRole Role { get; init; } = TimelineRole.Primary;
-
-    internal TerminalPalette Palette { get; init; } = TerminalPalette.Create(null, supportsTrueColor: false);
-
-    internal TimelineRoleLabel()
+    internal TimelineRoleLabel(TerminalPalette palette)
     {
+        _palette = palette ?? throw new ArgumentNullException(nameof(palette));
         CanFocus = false;
+        Height = 1;
+    }
+
+    internal string Content
+    {
+        get => _content;
+        set
+        {
+            _content = value ?? string.Empty;
+            SetNeedsDraw();
+        }
+    }
+
+    internal TimelineRole Role
+    {
+        get => _role;
+        set
+        {
+            _role = value;
+            SetNeedsDraw();
+        }
     }
 
     protected override bool OnDrawingContent(DrawContext? context)
@@ -179,7 +199,7 @@ internal sealed class TimelineRoleLabel : View
         string text = Content.Length <= width ? Content : Content[..width];
 
         Move(0, 0);
-        SetAttribute(Palette.Get(Role));
+        SetAttribute(_palette.Get(Role));
         AddStr(text.PadRight(width));
         return true;
     }
@@ -313,7 +333,7 @@ internal sealed class TerminalChatApplication : ITerminalView
     private View? _helpTab;
     private TerminalTimelineView? _transcript;
     private TerminalTimelineView? _thoughtTranscript;
-    private Label? _status;
+    private TimelineRoleLabel? _status;
     private TextField? _composer;
     private ListView<ActivityRecord>? _activityList;
 #pragma warning disable CS0618 // Task 7 explicitly requires TextView for the JSON inspector.
@@ -546,9 +566,15 @@ internal sealed class TerminalChatApplication : ITerminalView
         {
             if (_status is not null)
             {
-                _status.Text = severity == DiagnosticSeverity.Information
+                _status.Content = severity == DiagnosticSeverity.Information
                     ? text
                     : $"{severity}: {text}";
+                _status.Role = severity switch
+                {
+                    DiagnosticSeverity.Error => TimelineRole.Error,
+                    DiagnosticSeverity.Warning => TimelineRole.Warning,
+                    _ => TimelineRole.Muted
+                };
             }
         });
     }
@@ -573,16 +599,16 @@ internal sealed class TerminalChatApplication : ITerminalView
     private View BuildChatView()
     {
         TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(Console.OutputEncoding);
-        TimelineRoleLabel header = new()
+        TimelineRoleLabel header = new(GetPalette())
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = 1,
-            Content = "Copilot Studio (connected)",
-            Role = TimelineRole.Primary,
-            Palette = GetPalette()
+            Content = "● Copilot Studio  connected",
+            Role = TimelineRole.Agent
         };
+        header.SetScheme(GetControlScheme());
 
         _transcript = new TerminalTimelineView
         {
@@ -609,13 +635,14 @@ internal sealed class TerminalChatApplication : ITerminalView
         };
         _actionBar.SetScheme(GetControlScheme());
 
-        _status = new Label
+        _status = new TimelineRoleLabel(GetPalette())
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = 1,
-            Text = "Ready."
+            Content = "Ready.",
+            Role = TimelineRole.Muted
         };
         _status.SetScheme(GetControlScheme());
 

@@ -206,7 +206,7 @@ public sealed class TerminalChatApplicationTests
             }
 
             RaiseTerminalKey(application, Key.C.WithCtrl);
-            Assert.Equal("Nothing is selected to copy.", GetStatus(shell).Text);
+            Assert.Equal("Nothing is selected to copy.", GetStatus(shell).Content);
 
             RaiseTerminalKey(application, Key.Q.WithCtrl);
             Assert.True(shutdown.IsCancellationRequested);
@@ -236,7 +236,7 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
-    public void CreateShell_DefaultLayoutUsesTimelineConversationAndCustomComposer()
+    public void CreateShell_DefaultChatUsesOnlyCustomChrome()
     {
         using IApplication application = Application.Create();
         application.Init(DriverRegistry.Names.ANSI);
@@ -246,15 +246,26 @@ public sealed class TerminalChatApplicationTests
 
         using TerminalShellView shell = Assert.IsType<TerminalShellView>(
             terminal.CreateShell(application, presenter, shutdown));
+        IReadOnlyList<View> descendants = Descendants(shell).ToArray();
 
-        View surfaces = shell.ContentRegion;
-        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
+        Assert.DoesNotContain(descendants, view => view is Window);
+        Assert.DoesNotContain(descendants, view => view is FrameView);
+        Assert.DoesNotContain(descendants, view => view is StatusBar);
+        Assert.DoesNotContain(descendants, view => view is Tabs);
+        Assert.Single(descendants.OfType<TerminalNavigationView>());
+        Assert.Single(descendants.OfType<TerminalComposerView>());
+        Assert.Single(descendants.OfType<TerminalFooterView>());
+
+        View chat = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Chat");
+        View conversation = Assert.Single(chat.SubViews);
+        TimelineRoleLabel header = Assert.Single(
+            conversation.SubViews.OfType<TimelineRoleLabel>(),
+            label => string.Equals(label.Content, "● Copilot Studio  connected", StringComparison.Ordinal));
         TerminalTimelineView timeline = Assert.Single(
             Descendants(chat).OfType<TerminalTimelineView>(),
             view => view.CollapseCompletedThoughts);
 
-        Assert.DoesNotContain(Descendants(chat), view => view is FrameView { Title: "_Conversation" });
-        Assert.Single(Descendants(chat).OfType<TerminalComposerView>());
+        Assert.Equal(TimelineRole.Agent, header.Role);
         Assert.Equal(TimelineGlyphSet.ForEncoding(Console.OutputEncoding), timeline.Glyphs);
     }
 
@@ -396,8 +407,52 @@ public sealed class TerminalChatApplicationTests
         Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Compared all records");
     }
 
-    [Fact]
-    public void CreateShell_DefaultLayoutKeepsTranscriptVisibleWithoutOverlappingBottomStackAtShortHeights()
+    [Theory]
+    [InlineData((int)DiagnosticSeverity.Information, "Ready.", (int)TimelineRole.Muted)]
+    [InlineData((int)DiagnosticSeverity.Warning, "Warning: Reconnecting", (int)TimelineRole.Warning)]
+    [InlineData((int)DiagnosticSeverity.Error, "Error: Connection lost", (int)TimelineRole.Error)]
+    public void SetStatus_UsesSemanticStatusRoles(
+        int severityValue,
+        string expectedText,
+        int expectedRoleValue)
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        DiagnosticSeverity severity = (DiagnosticSeverity)severityValue;
+        TimelineRole expectedRole = (TimelineRole)expectedRoleValue;
+
+        string text = severity switch
+        {
+            DiagnosticSeverity.Warning => "Reconnecting",
+            DiagnosticSeverity.Error => "Connection lost",
+            _ => "Ready."
+        };
+
+        terminal.SetStatus(text, severity);
+        RunOneIteration(application, shell);
+
+        TimelineRoleLabel status = GetStatus(shell);
+
+        Assert.Equal(expectedText, status.Content);
+        Assert.Equal(expectedRole, status.Role);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    [InlineData(8)]
+    [InlineData(9)]
+    [InlineData(10)]
+    public void CreateShell_DefaultLayoutKeepsTranscriptVisibleWithoutOverlappingBottomStackAtShortHeights(int height)
     {
         using IApplication application = Application.Create();
         application.Init(DriverRegistry.Names.ANSI);
@@ -406,16 +461,15 @@ public sealed class TerminalChatApplicationTests
         using TerminalPresenter presenter = CreatePresenter(terminal);
         using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
 
-        View surfaces = Assert.IsType<TerminalShellView>(shell).ContentRegion;
-        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
-        View conversation = Assert.Single(chat.SubViews);
+        View conversation = GetChatConversation(shell);
 
-        conversation.Frame = new System.Drawing.Rectangle(0, 0, 50, 7);
+        conversation.Frame = new System.Drawing.Rectangle(0, 0, 50, height);
         Assert.True(conversation.Layout());
 
-        TimelineRoleLabel header = Assert.Single(conversation.SubViews.OfType<TimelineRoleLabel>());
+        TimelineRoleLabel[] labels = conversation.SubViews.OfType<TimelineRoleLabel>().ToArray();
+        TimelineRoleLabel header = Assert.Single(labels, label => label.Role == TimelineRole.Agent);
+        TimelineRoleLabel status = Assert.Single(labels, label => !ReferenceEquals(label, header));
         TerminalTimelineView transcript = Assert.Single(conversation.SubViews.OfType<TerminalTimelineView>());
-        Label status = Assert.Single(conversation.SubViews.OfType<Label>(), label => label.Text == "Ready.");
         TerminalComposerView composer = Assert.Single(conversation.SubViews.OfType<TerminalComposerView>());
         TerminalFooterView footer = Assert.Single(conversation.SubViews.OfType<TerminalFooterView>());
         View actionBar = Assert.Single(
@@ -426,25 +480,25 @@ public sealed class TerminalChatApplicationTests
                 && view is not TerminalComposerView
                 && view is not TerminalFooterView);
 
-        Assert.True(transcript.Frame.Height >= 1, $"Transcript frame: {transcript.Frame}");
+        Assert.True(transcript.Frame.Height >= 1, $"Height {height}: transcript frame {transcript.Frame}");
         Assert.True(
             header.Frame.Y + header.Frame.Height <= transcript.Frame.Y,
-            $"Header {header.Frame} overlaps transcript {transcript.Frame}");
+            $"Height {height}: header {header.Frame} overlaps transcript {transcript.Frame}");
         Assert.True(
             transcript.Frame.Y + transcript.Frame.Height <= actionBar.Frame.Y,
-            $"Transcript {transcript.Frame} overlaps action bar {actionBar.Frame}");
+            $"Height {height}: transcript {transcript.Frame} overlaps action bar {actionBar.Frame}");
         Assert.True(
             actionBar.Frame.Y + actionBar.Frame.Height <= status.Frame.Y,
-            $"Action bar {actionBar.Frame} overlaps status {status.Frame}");
+            $"Height {height}: action bar {actionBar.Frame} overlaps status {status.Frame}");
         Assert.True(
             status.Frame.Y + status.Frame.Height <= composer.Frame.Y,
-            $"Status {status.Frame} overlaps composer {composer.Frame}");
+            $"Height {height}: status {status.Frame} overlaps composer {composer.Frame}");
         Assert.True(
             composer.Frame.Y + composer.Frame.Height <= footer.Frame.Y,
-            $"Composer {composer.Frame} overlaps footer {footer.Frame}");
+            $"Height {height}: composer {composer.Frame} overlaps footer {footer.Frame}");
         Assert.True(
             footer.Frame.Y + footer.Frame.Height <= conversation.Frame.Height,
-            $"Footer {footer.Frame} exceeds conversation height {conversation.Frame.Height}");
+            $"Height {height}: footer {footer.Frame} exceeds conversation height {conversation.Frame.Height}");
     }
 
     [Fact]
@@ -654,7 +708,7 @@ public sealed class TerminalChatApplicationTests
         Assert.True(json.ReadOnly);
         Assert.True(json.ScrollBars);
         Assert.False(descendants.OfType<TextField>().Single().Enabled);
-        Assert.Contains(descendants.OfType<Label>(), label => label.Text == "Ready.");
+        Assert.Equal("Ready.", GetStatus(root).Content);
     }
 
     private static void AssertDefaultSurface(View surfaces, string visibleTitle)
@@ -695,11 +749,19 @@ public sealed class TerminalChatApplicationTests
         Assert.True(handled, $"{key} was not handled by the application binding.");
     }
 
-    private static Label GetStatus(View root)
+    private static View GetChatConversation(View root)
     {
+        View chat = Assert.Single(Descendants(root), view => view.Title == "_Chat");
+        return Assert.Single(chat.SubViews);
+    }
+
+    private static TimelineRoleLabel GetStatus(View root)
+    {
+        TimelineRoleLabel[] labels = GetChatConversation(root).SubViews.OfType<TimelineRoleLabel>().ToArray();
+        Assert.Equal(2, labels.Length);
         return Assert.Single(
-            Descendants(root).OfType<Label>(),
-            label => label.Text == "Nothing is selected to copy.");
+            labels,
+            label => !label.Content.Contains("Copilot Studio", StringComparison.Ordinal));
     }
 
     private static IEnumerable<View> Descendants(View view)
