@@ -12,8 +12,4 @@ internal sealed class A2AClientAuthenticationOptions
     public string? ConfidentialClientId { get; init; }
 
     public string? ConfidentialClientSecret { get; init; }
-
-    public string? AgentDelegatedScope { get; init; }
-
-    public string? AgentApplicationScope { get; init; }
 }

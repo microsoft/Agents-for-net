@@ -49,12 +49,15 @@ internal sealed class Program
             {
                 Mode = startupOptions.AuthMode,
             };
-            var accessTokenProvider = new A2AAccessTokenProvider(new MsalTokenClient(options.Authentication));
+            var msalTokenClient = new MsalTokenClient(options.Authentication);
+            var accessTokenProvider = new A2AAccessTokenProvider(msalTokenClient);
             using var httpClient = new HttpClient(
                 new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider, options.AgentUrl));
 
             var resolver = new A2ACardResolver(options.AgentUrl, httpClient);
             AgentCard card = await resolver.GetAgentCardAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+            msalTokenClient.Configure(A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated));
+            msalTokenClient.Configure(A2AAgentCardAuthentication.Select(card, A2AAuthMode.App));
             IA2AClient client = CreateClient(card, httpClient, options.AgentUrl);
 
             var console = new A2AConsole(

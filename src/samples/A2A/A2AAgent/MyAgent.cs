@@ -56,6 +56,7 @@ public partial class MyAgent : AgentApplication
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
     }
 
+    [A2ASkill(name: "Delegated identity", description: "Displays the delegated caller identity.", tags: "a2a, sample, authentication", text: "-delegated")]
     [A2AMessageRoute("-delegated", autoSignInHandlers: DelegatedHandlerName)]
     private async Task OnDelegatedAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -66,6 +67,7 @@ public partial class MyAgent : AgentApplication
         await CompleteTaskAsync(turnContext, summary, cancellationToken).ConfigureAwait(false);
     }
 
+    [A2ASkill(name: "Microsoft Graph profile", description: "Reads the delegated caller profile from Microsoft Graph.", tags: "a2a, sample, authentication, graph", text: "-me")]
     [A2AMessageRoute("-me", autoSignInHandlers: GraphHandlerName)]
     private async Task OnGraphAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -78,6 +80,7 @@ public partial class MyAgent : AgentApplication
             cancellationToken).ConfigureAwait(false);
     }
 
+    [A2ASkill(name: "Application identity", description: "Displays the calling application identity.", tags: "a2a, sample, authentication", text: "-app")]
     [A2AMessageRoute("-app", autoSignInHandlers: ApplicationHandlerName)]
     private async Task OnApplicationAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {

@@ -42,7 +42,7 @@ the prompt instead of ending the session. Ctrl+C still exits.
 
 ## Configuration keys
 
-`src\samples\A2A\A2AClient\appsettings.json` contains placeholders for these exact keys:
+`src\samples\A2A\A2AClient\appsettings.json` contains placeholders for these local client keys:
 
 ```json
 {
@@ -53,12 +53,16 @@ the prompt instead of ending the session. Ctrl+C still exits.
     "TenantId": "<tenant-id>",
     "PublicClientId": "<public-client-id>",
     "ConfidentialClientId": "<confidential-client-id>",
-    "ConfidentialClientSecret": "",
-    "AgentDelegatedScope": "api://<agent-client-id>/access_as_user",
-    "AgentApplicationScope": "api://<agent-client-id>/.default"
+    "ConfidentialClientSecret": ""
   }
 }
 ```
+
+After resolving the Agent Card, the client selects the Device Code flow for `:auth delegated`
+and the Client Credentials flow for `:auth app`. The selected card security requirement provides
+the Agent API scopes, while the selected OAuth scheme provides the token endpoint and the device
+authorization endpoint where applicable. The client rejects any other flow, missing scheme, empty
+acquisition scope list, or endpoint that is not absolute HTTPS.
 
 `PublicClientId` and `ConfidentialClientId` identify the client that calls the Agent API:
 
@@ -69,9 +73,6 @@ the prompt instead of ending the session. Ctrl+C still exits.
 - `ConfidentialClientId` is used for application-only authentication (`:auth app`) through the
   client-credentials flow. It identifies the confidential client registration whose secret is
   configured in `ConfidentialClientSecret`.
-
-The agent App ID also appears in `AgentDelegatedScope` and `AgentApplicationScope` because those
-settings identify the target Agent API rather than the calling client.
 
 The client reads configuration from `appsettings.json`, `A2ACLIENT_`-prefixed
 environment variables, and user secrets.
@@ -98,7 +99,6 @@ Use this flow for `-delegated` and `-me`.
 1. Grant consent if your tenant requires it.
 1. Set `Authentication:PublicClientId` to that registration's client ID (the Agent API client ID when testing `-me`).
 1. Set `Authentication:TenantId` to the tenant ID.
-1. Set `Authentication:AgentDelegatedScope` to `api://<agent-client-id>/access_as_user`.
 1. Start the client, then run `:auth delegated`.
 1. Send `-delegated` to validate delegated passthrough.
 1. Send `-me` to validate delegated on-behalf-of exchange to Microsoft Graph `User.Read`.
@@ -121,7 +121,6 @@ Use this flow for `-app`.
 
 1. Set `Authentication:ConfidentialClientId` to the confidential client's client ID.
 1. Set `Authentication:TenantId` to the tenant ID.
-1. Set `Authentication:AgentApplicationScope` to `api://<agent-client-id>/.default`.
 1. Start the client, then run `:auth app`.
 1. Send `-app`.
 

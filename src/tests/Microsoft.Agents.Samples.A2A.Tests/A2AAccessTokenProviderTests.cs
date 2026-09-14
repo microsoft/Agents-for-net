@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System;
+using A2A;
 using Microsoft.Agents.Samples.A2AClient;
 using Moq;
 using Xunit;
@@ -56,13 +58,12 @@ public class A2AClientAuthenticationOptionsTests
             PublicClientId = mode == A2AAuthMode.Delegated ? "public-client-id" : null,
             ConfidentialClientId = mode == A2AAuthMode.App ? "confidential-client-id" : null,
             ConfidentialClientSecret = mode == A2AAuthMode.App ? "secret" : null,
-            AgentDelegatedScope = mode == A2AAuthMode.Delegated ? "api://agent/.default" : null,
-            AgentApplicationScope = mode == A2AAuthMode.App ? "api://agent-app/.default" : null,
         };
         var client = new MsalTokenClient(
             options,
             delegatedTokenFactory: static (_, _) => Task.FromResult("delegated-token"),
             applicationTokenFactory: static (_, _) => Task.FromResult("app-token"));
+        client.Configure(CreateAuthentication(mode));
 
         string token = mode switch
         {
@@ -75,8 +76,8 @@ public class A2AClientAuthenticationOptionsTests
     }
 
     [Theory]
-    [InlineData("Delegated", "TenantId", "PublicClientId", "AgentDelegatedScope")]
-    [InlineData("App", "TenantId", "ConfidentialClientId", "ConfidentialClientSecret", "AgentApplicationScope")]
+    [InlineData("Delegated", "TenantId", "PublicClientId")]
+    [InlineData("App", "TenantId", "ConfidentialClientId", "ConfidentialClientSecret")]
     public async Task AcquireTokenAsync_MissingConfiguration_ThrowsInvalidOperationExceptionNamingEachMissingKey(
         string modeName,
         params string[] expectedKeys)
@@ -96,6 +97,7 @@ public class A2AClientAuthenticationOptionsTests
                 factoryInvoked = true;
                 return Task.FromResult("app-token");
             });
+        client.Configure(CreateAuthentication(mode));
 
         InvalidOperationException exception = mode switch
         {
@@ -115,13 +117,57 @@ public class A2AClientAuthenticationOptionsTests
         {
             Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.ConfidentialClientId), exception.Message);
             Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.ConfidentialClientSecret), exception.Message);
-            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.AgentApplicationScope), exception.Message);
         }
         else
         {
             Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.PublicClientId), exception.Message);
-            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.AgentDelegatedScope), exception.Message);
         }
+    }
+
+    private static A2AAgentCardAuthentication CreateAuthentication(A2AAuthMode mode)
+    {
+        string schemeName = mode == A2AAuthMode.Delegated ? "delegated" : "application";
+        var flows = new OAuthFlows
+        {
+            DeviceCode = mode == A2AAuthMode.Delegated
+                ? new()
+                {
+                    DeviceAuthorizationUrl = "https://login.example.com/devicecode",
+                    TokenUrl = "https://login.example.com/token",
+                }
+                : null,
+            ClientCredentials = mode == A2AAuthMode.App
+                ? new()
+                {
+                    TokenUrl = "https://login.example.com/token",
+                }
+                : null,
+        };
+        var card = new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                [schemeName] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme { Flows = flows },
+                },
+            },
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        [schemeName] = new()
+                        {
+                            List = [mode == A2AAuthMode.Delegated ? "api://agent/access_as_user" : "api://agent/.default"],
+                        },
+                    },
+                },
+            ],
+        };
+
+        return A2AAgentCardAuthentication.Select(card, mode);
     }
 }
 

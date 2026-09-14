@@ -35,8 +35,6 @@ internal sealed class A2AClientOptions
                 PublicClientId = configuration["Authentication:PublicClientId"],
                 ConfidentialClientId = configuration["Authentication:ConfidentialClientId"],
                 ConfidentialClientSecret = configuration["Authentication:ConfidentialClientSecret"],
-                AgentDelegatedScope = configuration["Authentication:AgentDelegatedScope"],
-                AgentApplicationScope = configuration["Authentication:AgentApplicationScope"],
             },
             ShowHistory = startupOptions.ShowHistory,
             UsePushNotifications = startupOptions.UsePushNotifications,
