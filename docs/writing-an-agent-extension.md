@@ -34,6 +34,12 @@ An extension can use any combination of these extensibility points:
 | Custom access-token providers | Acquire application/service tokens for named connections | `IAccessTokenProvider` selected by `Connections` configuration |
 | Custom user authorization | Implement end-user sign-in, refresh, sign-out, and flow state | `IUserAuthorization` selected by `AgentApplication:UserAuthorization` configuration |
 
+## AgentExtension boundaries
+
+Keep protocol-, channel-, and feature-specific implementation inside the extension project that owns it. Shared SDK changes are only appropriate when they add a general-purpose extensibility capability that any extension can use, such as a route builder base, registration hook, or discovery contract. A2A-, Teams-, Slack-, or other protocol-specific branching should remain in the extension package, not in Agents SDK Core, Builder, or Hosting.
+
+If a pull request changes code outside the extension project, it must explain why the extension cannot use existing extensibility points and identify the related Core documentation updates needed to describe the new shared capability.
+
 ### In this guide
 
 - [Design the extension-facing API](#design-the-extension-facing-api)
