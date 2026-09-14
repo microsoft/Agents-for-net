@@ -270,6 +270,22 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
+    public void CreateShell_ActivitiesSurfaceWrapsControlsInResponsiveInspectorView()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View activities = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Activities");
+
+        Assert.IsType<TerminalActivityView>(Assert.Single(activities.SubViews));
+    }
+
+    [Fact]
     public void CreateShell_SplitLayoutUsesBorderlessContainersBesideActivities()
     {
         using IApplication application = Application.Create();

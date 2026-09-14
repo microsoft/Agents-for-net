@@ -712,12 +712,7 @@ internal sealed class TerminalChatApplication : ITerminalView
 
         _activityList = new ListView<ActivityRecord>
         {
-            X = 0,
-            Y = 0,
-            Width = Dim.Percent(40),
-            Height = Dim.Fill()
         };
-        _activityList.SetScheme(GetControlScheme());
         _activityList.SetSource(_activityState.Records);
         _activityList.ValueChanged += (_, eventArgs) =>
         {
@@ -728,19 +723,16 @@ internal sealed class TerminalChatApplication : ITerminalView
 #pragma warning disable CS0618 // Task 7 explicitly requires TextView for the JSON inspector.
         _json = new TextView
         {
-            X = Pos.Right(_activityList),
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
             ReadOnly = true,
             ScrollBars = true,
             WordWrap = false,
             Text = string.Empty
         };
-        _json.SetScheme(GetControlScheme());
 #pragma warning restore CS0618
 
-        activities.Add(_activityList, _json);
+        TerminalActivityView inspector = new(_activityList, _json, GetPalette());
+        inspector.SetScheme(GetControlScheme());
+        activities.Add(inspector);
         return activities;
     }
 
