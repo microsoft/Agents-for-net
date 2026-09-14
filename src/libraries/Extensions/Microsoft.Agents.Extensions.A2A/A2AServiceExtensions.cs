@@ -44,7 +44,7 @@ public static class A2AServiceExtensions
     /// <param name="services"></param>
     public static void AddA2AAdapter(this IServiceCollection services)
     {
-        services.TryAddSingleton<A2AAdapter>();
+        services.TryAddSingleton(sp => ActivatorUtilities.CreateInstance<A2AAdapter>(sp));
         services.TryAddSingleton<IA2AHttpAdapter>(sp => sp.GetRequiredService<A2AAdapter>());
     }
 

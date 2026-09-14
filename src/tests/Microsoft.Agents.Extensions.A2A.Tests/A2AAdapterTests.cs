@@ -13,10 +13,12 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Claims;
 using System.Text;
@@ -75,6 +77,132 @@ public class A2AAdapterTests
     #region ProcessAgentCardAsync Tests
 
     [Fact]
+    public async Task ProcessAgentCard_WithConfiguredScheme_EmitsOAuth2Scheme()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "deviceCode",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:DeviceAuthorizationUrl"] = "https://login.example.com/devicecode",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:TokenUrl"] = "https://login.example.com/token",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:Scopes:agent.read"] = "Access the agent",
+        }));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)));
+
+        var scheme = agentCard.SecuritySchemes["deviceCode"].OAuth2SecurityScheme;
+        Assert.NotNull(scheme);
+        Assert.Equal("https://login.example.com/devicecode", scheme.Flows.DeviceCode.DeviceAuthorizationUrl);
+        Assert.Equal("Access the agent", scheme.Flows.DeviceCode.Scopes["agent.read"]);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithGlobalAutoSignin_EmitsAgentRequirement()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+        }));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)));
+
+        var requirement = Assert.Single(agentCard.SecurityRequirements);
+        Assert.Equal(["api://agent/access_as_user"], requirement.Schemes["agentBearer"].List);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithProtectedSkill_EmitsSkillRequirement()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+        }));
+        var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
+        var extension = new A2AAgentExtension(agent);
+        agent.RegisteredExtensions.Add(extension);
+        extension.Skill("weather", skill => skill
+            .WithName("Weather")
+            .WithDescription("Gets weather.")
+            .WithTags("weather")
+            .OnMessage((_, _, _) => Task.CompletedTask, autoSigninHandlers: ["request"]));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, agent);
+
+        var skill = Assert.Single(agentCard.Skills);
+        var requirement = Assert.Single(skill.SecurityRequirements);
+        Assert.Equal(["api://agent/access_as_user"], requirement.Schemes["agentBearer"].List);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithGraphOBO_DoesNotEmitGraphScopes()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OBOConnectionName"] = "graphConnection",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OBOScopes:0"] = "User.Read",
+        }));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)));
+        var json = ProtocolJsonSerializer.ToJson(agentCard);
+
+        Assert.DoesNotContain("User.Read", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("graphConnection", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithMissingSchemeReference_Throws()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "missing",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "agent.read",
+        }));
+        var request = CreateMockHttpRequest("https", "localhost:3978");
+        var response = CreateMockHttpResponse();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => adapter.ProcessAgentCardAsync(
+            request.Object,
+            response.Object,
+            new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)),
+            "/a2a",
+            CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithHandlerOverride_PreservesFinalCustomization()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:Name"] = "Configured agent",
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+        }));
+        var agent = new TestAgentApplicationWithCardHandler(new AgentApplicationOptions(_mockStorage.Object));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, agent);
+
+        Assert.True(agent.CardHandlerCalled);
+        Assert.Equal("Customized agent", agentCard.Name);
+        Assert.True(agentCard.SecuritySchemes.ContainsKey("handlerBearer"));
+    }
+
+    [Fact]
     public async Task ProcessAgentCardAsync_ShouldReturnDefaultAgentCard()
     {
         // Arrange
@@ -92,6 +220,7 @@ public class A2AAdapterTests
         var agentCard = await JsonSerializer.DeserializeAsync<AgentCard>(
             mockHttpResponse.Object.Body, A2AJsonUtilities.DefaultOptions);
         Assert.False(agentCard!.Capabilities.ExtendedAgentCard);
+        Assert.Null(agentCard.SecurityRequirements);
     }
 
     [Fact]
@@ -297,6 +426,29 @@ public class A2AAdapterTests
 
     #region Helper Methods
 
+    private A2AAdapter CreateAdapter(IConfiguration configuration)
+    {
+        return new A2AAdapter(_mockTaskStore.Object, _mockLogger, configuration: configuration);
+    }
+
+    private static IConfiguration CreateConfiguration(IDictionary<string, string> values)
+    {
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(values)
+            .Build();
+    }
+
+    private async Task<AgentCard> ProcessAgentCardAsync(A2AAdapter adapter, IAgent agent)
+    {
+        var request = CreateMockHttpRequest("https", "localhost:3978");
+        var response = CreateMockHttpResponse();
+
+        await adapter.ProcessAgentCardAsync(request.Object, response.Object, agent, "/a2a", CancellationToken.None);
+
+        response.Object.Body.Position = 0;
+        return (await JsonSerializer.DeserializeAsync<AgentCard>(response.Object.Body, A2AJsonUtilities.DefaultOptions))!;
+    }
+
     private Mock<HttpRequest> CreateMockHttpRequest(string scheme = "https", string host = "localhost:3978")
     {
         var mockRequest = new Mock<HttpRequest>();
@@ -351,6 +503,27 @@ public class A2AAdapterTests
         {
             CardHandlerCalled = true;
             defaultCard.Name = "Custom Agent";
+            return Task.FromResult(defaultCard);
+        }
+    }
+
+    private sealed class TestAgentApplicationWithCardHandler : AgentApplication, IAgentCardHandler
+    {
+        public TestAgentApplicationWithCardHandler(AgentApplicationOptions options)
+            : base(options)
+        {
+        }
+
+        public bool CardHandlerCalled { get; private set; }
+
+        public Task<AgentCard> GetAgentCard(AgentCard defaultCard)
+        {
+            CardHandlerCalled = true;
+            defaultCard.Name = "Customized agent";
+            defaultCard.SecuritySchemes["handlerBearer"] = new SecurityScheme
+            {
+                HttpAuthSecurityScheme = new HttpAuthSecurityScheme { Scheme = "bearer" },
+            };
             return Task.FromResult(defaultCard);
         }
     }

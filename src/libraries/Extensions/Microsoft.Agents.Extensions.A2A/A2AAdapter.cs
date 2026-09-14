@@ -12,6 +12,7 @@ using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -44,12 +45,13 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private static readonly string _assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<A2AServer> _a2aServerLogger;
+    private readonly IConfiguration _configuration;
 
-    public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null) : this(new InMemoryTaskStore(), loggerFactory, a2aNotifier)
+    public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null, IConfiguration configuration = null) : this(new InMemoryTaskStore(), loggerFactory, a2aNotifier, configuration)
     {
     }
 
-    public A2AAdapter(ITaskStore taskStore, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null) : base(loggerFactory.CreateLogger<A2AAdapter>())
+    public A2AAdapter(ITaskStore taskStore, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null, IConfiguration configuration = null) : base(loggerFactory.CreateLogger<A2AAdapter>())
     {
         AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
 
@@ -57,6 +59,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         _taskStore = taskStore;
         _a2aNotifier = a2aNotifier ?? new ChannelEventNotifier();
         _a2aServerLogger = loggerFactory.CreateLogger<A2AServer>();
+        _configuration = configuration;
 
         OnTurnError = (turnContext, exception) =>
         {
@@ -153,31 +156,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             }
         }
 
-        var skills = agent.GetType().GetCustomAttributes<A2ASkillAttribute>();
-        if (skills != null && skills.Any())
-        {
-            foreach (var skillAttr in skills)
-            {
-                var skill = new AgentSkill()
-                {
-                    Id = skillAttr.Id,
-                    Name = skillAttr.Name,
-                    Description = skillAttr.Description,
-                    Tags = skillAttr.Tags,
-                    Examples = skillAttr.Examples,
-                    InputModes = skillAttr.InputModes,
-                    OutputModes = skillAttr.OutputModes,
-                };
-                agentCard.Skills.Add(skill);
-            }
-        }
-
-        // AgentApplication could implement IAgentCardHandler to set agent specific values.  But if
-        // it doesn't, the default card will be used.
-        if (agent is IAgentCardHandler agentCardHandler)
-        {
-            agentCard = await agentCardHandler.GetAgentCard(agentCard);
-        }
+        agentCard = await new A2AAgentCardComposer(_configuration).ComposeAsync(agentCard, agent).ConfigureAwait(false);
 
         var json = ProtocolJsonSerializer.ToJson(agentCard);
 
