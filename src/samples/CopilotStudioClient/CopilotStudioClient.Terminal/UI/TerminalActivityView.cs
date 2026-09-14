@@ -15,11 +15,13 @@ internal sealed class TerminalActivityView : View
     internal TerminalActivityView(
         ListView<ActivityRecord> activityList,
         TextView json,
-        TerminalPalette palette)
+        TerminalPalette palette,
+        Action requestFullRefresh)
     {
         ActivityList = activityList ?? throw new ArgumentNullException(nameof(activityList));
         Json = json ?? throw new ArgumentNullException(nameof(json));
         ArgumentNullException.ThrowIfNull(palette);
+        ArgumentNullException.ThrowIfNull(requestFullRefresh);
 
         ActivityList.SetScheme(palette.CreateActivityListScheme());
         Json.SetScheme(palette.CreateControlScheme());
@@ -30,6 +32,16 @@ internal sealed class TerminalActivityView : View
         BorderStyle = LineStyle.None;
 
         Add(ActivityList, Json);
+        ActivityList.ValueChanged += (_, _) =>
+        {
+            SetNeedsDraw();
+            requestFullRefresh();
+        };
+        ActivityList.ViewportChanged += (_, _) =>
+        {
+            SetNeedsDraw();
+            requestFullRefresh();
+        };
     }
 
     internal ListView<ActivityRecord> ActivityList { get; }

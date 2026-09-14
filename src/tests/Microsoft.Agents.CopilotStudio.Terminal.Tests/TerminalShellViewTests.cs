@@ -62,6 +62,19 @@ public sealed class TerminalShellViewTests
     }
 
     [Fact]
+    public void Navigation_RequestsFullRefreshAfterChangingSurface()
+    {
+        int refreshRequests = 0;
+        using TerminalShellView shell = CreateShell(
+            requestFullRefresh: () => refreshRequests++);
+        int requestsBeforeNavigation = refreshRequests;
+
+        shell.Show(TerminalSurface.Activities);
+
+        Assert.Equal(requestsBeforeNavigation + 1, refreshRequests);
+    }
+
+    [Fact]
     public void Navigation_UnexpectedFocusTransitionFailurePropagates()
     {
         NotSupportedException failure = new("unexpected");
@@ -177,14 +190,15 @@ public sealed class TerminalShellViewTests
         Func<TerminalSurface, View?>? resolveFocusTarget = null,
         Action<Exception>? reportNavigationFailure = null,
         Action? copy = null,
-        Action? quit = null)
+        Action? quit = null,
+        Action? requestFullRefresh = null)
     {
         Dictionary<TerminalSurface, View> surfaces = new()
         {
-            [TerminalSurface.Chat] = new View(),
-            [TerminalSurface.Thoughts] = new View(),
-            [TerminalSurface.Activities] = new View(),
-            [TerminalSurface.Help] = new View()
+            [TerminalSurface.Chat] = CreateSurface(),
+            [TerminalSurface.Thoughts] = CreateSurface(),
+            [TerminalSurface.Activities] = CreateSurface(),
+            [TerminalSurface.Help] = CreateSurface()
         };
 
         return new TerminalShellView(
@@ -193,6 +207,17 @@ public sealed class TerminalShellViewTests
             resolveFocusTarget ?? (surface => surfaces[surface]),
             copy ?? (() => { }),
             quit ?? (() => { }),
+            requestFullRefresh ?? (() => { }),
             reportNavigationFailure ?? (_ => { }));
     }
+
+    private static View CreateSurface()
+    {
+        return new View
+        {
+            Width = Dim.Fill(),
+            Height = Dim.Fill()
+        };
+    }
+
 }

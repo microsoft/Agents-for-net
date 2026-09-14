@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Agents.Core.Models;
 using Terminal.Gui.Drawing;
 using Terminal.Gui.Views;
@@ -114,26 +115,68 @@ public sealed class TerminalActivityViewTests
         Assert.True(scheme.Active.Style.HasFlag(TextStyle.Bold));
     }
 
+    [Fact]
+    public void SelectionChange_InvalidatesInspectorAndRequestsFullRefresh()
+    {
+        int refreshRequests = 0;
+#pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
+        using TerminalActivityView inspector = CreateInspector(
+            60,
+            24,
+            out ListView<ActivityRecord> list,
+            out _,
+            requestFullRefresh: () => refreshRequests++);
+#pragma warning restore CS0618
+        ActivityRecord second = CreateActivity(2);
+        list.SetSource([CreateActivity(1), second]);
+        ClearNeedsDraw(inspector);
+        int requestsBeforeSelection = refreshRequests;
+
+        list.Value = second;
+
+        Assert.True(inspector.NeedsDraw);
+        Assert.True(refreshRequests > requestsBeforeSelection);
+    }
+
+    [Fact]
+    public void ViewportScroll_RequestsFullRefreshWithoutChangingSelection()
+    {
+        int refreshRequests = 0;
+#pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
+        using TerminalActivityView inspector = CreateInspector(
+            60,
+            24,
+            out ListView<ActivityRecord> list,
+            out _,
+            requestFullRefresh: () => refreshRequests++);
+#pragma warning restore CS0618
+        ActivityRecord[] activities = Enumerable.Range(1, 20)
+            .Select(sequence => CreateActivity(sequence))
+            .ToArray();
+        list.SetSource([.. activities]);
+        list.Value = activities[0];
+        ActivityRecord? selected = list.Value;
+        int requestsBeforeScroll = refreshRequests;
+
+        Assert.True(list.ScrollVertical(1));
+
+        Assert.Same(selected, list.Value);
+        Assert.Equal(requestsBeforeScroll + 1, refreshRequests);
+    }
+
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
     private static TerminalActivityView CreateInspector(
         int width,
         int height,
         out ListView<ActivityRecord> list,
         out TextView json,
-        TerminalPalette? palette = null)
+        TerminalPalette? palette = null,
+        Action? requestFullRefresh = null)
     {
         list = new ListView<ActivityRecord>();
         list.SetSource(
         [
-            new ActivityRecord(
-                1,
-                ActivityDirection.Inbound,
-                DateTimeOffset.Parse("2026-09-13T12:00:00Z"),
-                ActivityTypes.Message,
-                "A long activity summary that should clip at the viewport edge instead of collapsing.",
-                null,
-                """{"type":"message"}""",
-                null)
+            CreateActivity(1)
         ]);
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
         json = new TextView
@@ -148,10 +191,31 @@ public sealed class TerminalActivityViewTests
         TerminalActivityView inspector = new(
             list,
             json,
-            palette ?? TerminalPalette.Create(null, supportsTrueColor: false));
+            palette ?? TerminalPalette.Create(null, supportsTrueColor: false),
+            requestFullRefresh ?? (() => { }));
         inspector.Frame = new System.Drawing.Rectangle(0, 0, width, height);
         Assert.True(inspector.Layout());
         return inspector;
+    }
+
+    private static ActivityRecord CreateActivity(long sequence)
+    {
+        return new ActivityRecord(
+            sequence,
+            ActivityDirection.Inbound,
+            DateTimeOffset.Parse("2026-09-13T12:00:00Z"),
+            ActivityTypes.Message,
+            "A long activity summary that should clip at the viewport edge instead of collapsing.",
+            null,
+            """{"type":"message"}""",
+            null);
+    }
+
+    private static void ClearNeedsDraw(TerminalActivityView inspector)
+    {
+        typeof(Terminal.Gui.ViewBase.View)
+            .GetMethod("ClearNeedsDraw", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(inspector, null);
     }
 #pragma warning restore CS0618
 }

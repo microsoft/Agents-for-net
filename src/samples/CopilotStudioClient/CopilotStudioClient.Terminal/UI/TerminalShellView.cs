@@ -13,6 +13,7 @@ internal sealed class TerminalShellView : Runnable
 {
     private readonly IReadOnlyDictionary<TerminalSurface, View> _surfaces;
     private readonly Func<TerminalSurface, View?> _resolveFocusTarget;
+    private readonly Action _requestFullRefresh;
     private readonly Action<Exception> _reportNavigationFailure;
 
     internal TerminalShellView(
@@ -21,6 +22,7 @@ internal sealed class TerminalShellView : Runnable
         Func<TerminalSurface, View?> resolveFocusTarget,
         Action copy,
         Action quit,
+        Action requestFullRefresh,
         Action<Exception> reportNavigationFailure)
     {
         Navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
@@ -28,6 +30,8 @@ internal sealed class TerminalShellView : Runnable
         _resolveFocusTarget = resolveFocusTarget ?? throw new ArgumentNullException(nameof(resolveFocusTarget));
         ArgumentNullException.ThrowIfNull(copy);
         ArgumentNullException.ThrowIfNull(quit);
+        _requestFullRefresh = requestFullRefresh
+            ?? throw new ArgumentNullException(nameof(requestFullRefresh));
         _reportNavigationFailure = reportNavigationFailure
             ?? throw new ArgumentNullException(nameof(reportNavigationFailure));
 
@@ -161,5 +165,6 @@ internal sealed class TerminalShellView : Runnable
         ActiveSurface = surface;
         Navigation.ActiveSurface = surface;
         Navigation.SetNeedsDraw();
+        _requestFullRefresh();
     }
 }

@@ -517,6 +517,7 @@ internal sealed class TerminalChatApplication : ITerminalView
             ResolveFocusTarget,
             CopySelection,
             RequestQuit,
+            () => application.ClearScreenNextIteration = true,
             exception => SetStatus(
                 $"Navigation failed: {exception.Message}",
                 DiagnosticSeverity.Error));
@@ -739,7 +740,17 @@ internal sealed class TerminalChatApplication : ITerminalView
         };
 #pragma warning restore CS0618
 
-        TerminalActivityView inspector = new(_activityList, _json, GetPalette());
+        TerminalActivityView inspector = new(
+            _activityList,
+            _json,
+            GetPalette(),
+            () =>
+            {
+                if (_application is not null)
+                {
+                    _application.ClearScreenNextIteration = true;
+                }
+            });
         inspector.SetScheme(GetControlScheme());
         activities.Add(inspector);
         return activities;
