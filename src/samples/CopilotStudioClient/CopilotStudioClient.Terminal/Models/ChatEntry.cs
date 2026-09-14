@@ -5,6 +5,7 @@ internal enum ChatEntryKind
     Status,
     Event,
     Thought,
+    ToolCall,
     Attachment,
     Diagnostic
 }
@@ -22,7 +23,8 @@ internal sealed record ChatEntry(
     IReadOnlyList<ChatLink> Links,
     IReadOnlyList<ChatAction> SuggestedActions,
     string ActionGroupKey,
-    DiagnosticSeverity? Severity = null);
+    DiagnosticSeverity? Severity = null,
+    ToolCallDetails? ToolCall = null);
 
 internal enum ChatChangeKind
 {

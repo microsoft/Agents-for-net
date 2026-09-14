@@ -43,6 +43,7 @@ internal sealed class ActivityInterpreter
         List<ChatChange> changes = [];
         AddOrdinaryEntry(changes, activity, direction, activityIdentity);
         AddThoughtEntries(changes, activity, direction, activityIdentity);
+        AddToolCallEntries(changes, activity, direction, activityIdentity);
         AddAttachmentEntries(changes, activity, direction, activityIdentity);
         return changes;
     }
@@ -176,6 +177,7 @@ internal sealed class ActivityInterpreter
             AddThoughtEntries(changes, activity, direction, activityIdentity);
         }
 
+        AddToolCallEntries(changes, activity, direction, activityIdentity);
         AddAttachmentEntries(changes, activity, direction, activityIdentity);
 
         if (mutatedStream
@@ -240,6 +242,51 @@ internal sealed class ActivityInterpreter
         {
             string oldestStreamId = _closedStreamIdOrder.Dequeue();
             _closedStreamIds.Remove(oldestStreamId);
+        }
+    }
+
+    private void AddToolCallEntries(List<ChatChange> changes, Activity activity, ActivityDirection direction, string actionGroupKey)
+    {
+        if (activity.Entities is null || activity.Entities.Count == 0)
+        {
+            return;
+        }
+
+        foreach (Entity entity in activity.Entities)
+        {
+            if (!IsToolCallEntity(entity))
+            {
+                continue;
+            }
+
+            ToolCallDetails? details = ParseToolCall(entity, out string? error);
+            if (details is null)
+            {
+                if (!string.IsNullOrWhiteSpace(error))
+                {
+                    changes.Add(CreateDiagnosticChange(
+                        $"{actionGroupKey}:diagnostic:toolcall:{NextSyntheticIdentity()}",
+                        error!,
+                        actionGroupKey));
+                }
+
+                continue;
+            }
+
+            string key = $"tool:{details.Id}";
+            changes.Add(new ChatChange(
+                ChatChangeKind.Upsert,
+                key,
+                new ChatEntry(
+                    key,
+                    ChatEntryKind.ToolCall,
+                    GetAuthor(activity, ChatEntryKind.ToolCall, direction),
+                    string.Empty,
+                    IsTransientToolStatus(details.Status),
+                    [],
+                    [],
+                    actionGroupKey,
+                    ToolCall: details)));
         }
     }
 
@@ -413,6 +460,7 @@ internal sealed class ActivityInterpreter
             ChatEntryKind.Status => direction == ActivityDirection.Outbound ? "You" : "Agent",
             ChatEntryKind.Event => "System",
             ChatEntryKind.Thought => direction == ActivityDirection.Outbound ? "You" : "Agent",
+            ChatEntryKind.ToolCall => direction == ActivityDirection.Outbound ? "You" : "Agent",
             ChatEntryKind.Attachment => direction == ActivityDirection.Outbound ? "You" : "Agent",
             ChatEntryKind.Diagnostic => "System",
             _ => "System"
@@ -569,6 +617,91 @@ internal sealed class ActivityInterpreter
             || string.Equals(entity.Type, "thoughts", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsToolCallEntity(Entity entity)
+    {
+        return string.Equals(entity.Type, "toolCall", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static ToolCallDetails? ParseToolCall(Entity entity, out string? error)
+    {
+        string id = GetOptionalString(entity, "toolCallId")?.Trim() ?? string.Empty;
+        if (id.Length == 0)
+        {
+            error = "Tool call entity has no toolCallId.";
+            return null;
+        }
+
+        string name = GetOptionalString(entity, "toolName")
+            ?? GetOptionalString(entity, "toolDisplayName")
+            ?? "tool";
+        string? displayName = GetOptionalString(entity, "toolDisplayName");
+        string? category = GetOptionalString(entity, "toolCategory");
+        string status = GetOptionalString(entity, "status") ?? "unknown";
+        long? durationMs = TryGetNonnegativeInt64(entity, "durationMs");
+        IReadOnlyList<ToolCallParameter> filledParameters = ParseFilledParameters(entity);
+        IReadOnlyList<string> unfilledParameters = ParseUnfilledParameters(entity);
+
+        error = null;
+        return new ToolCallDetails(
+            id,
+            name,
+            displayName,
+            category,
+            status,
+            filledParameters,
+            unfilledParameters,
+            durationMs);
+    }
+
+    private static IReadOnlyList<ToolCallParameter> ParseFilledParameters(Entity entity)
+    {
+        if (!TryGetProperty(entity, "filledParameters", out JsonElement value))
+        {
+            return [];
+        }
+
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            List<ToolCallParameter> parameters = [];
+            foreach (JsonProperty property in value.EnumerateObject())
+            {
+                parameters.Add(new ToolCallParameter(property.Name, property.Value.Clone()));
+            }
+
+            return parameters;
+        }
+
+        return [new ToolCallParameter("parameters", value.Clone())];
+    }
+
+    private static IReadOnlyList<string> ParseUnfilledParameters(Entity entity)
+    {
+        if (!TryGetProperty(entity, "unfilledParameters", out JsonElement value))
+        {
+            return [];
+        }
+
+        if (value.ValueKind == JsonValueKind.Array)
+        {
+            List<string> parameters = [];
+            foreach (JsonElement item in value.EnumerateArray())
+            {
+                parameters.Add(item.ValueKind == JsonValueKind.String
+                    ? item.GetString() ?? string.Empty
+                    : JsonSerializer.Serialize(item, ProtocolJsonSerializer.SerializationOptions));
+            }
+
+            return parameters;
+        }
+
+        return [JsonSerializer.Serialize(value, ProtocolJsonSerializer.SerializationOptions)];
+    }
+
+    private static bool IsTransientToolStatus(string status)
+    {
+        return !string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool TryGetStringProperty(Entity entity, string propertyName, out string? value)
     {
         foreach (KeyValuePair<string, JsonElement> property in entity.Properties)
@@ -589,6 +722,43 @@ internal sealed class ActivityInterpreter
 
         value = null;
         return false;
+    }
+
+    private static string? GetOptionalString(Entity entity, string propertyName)
+    {
+        return TryGetStringProperty(entity, propertyName, out string? value)
+            ? value
+            : null;
+    }
+
+    private static bool TryGetProperty(Entity entity, string propertyName, out JsonElement value)
+    {
+        foreach (KeyValuePair<string, JsonElement> property in entity.Properties)
+        {
+            if (!string.Equals(property.Key, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            value = property.Value;
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static long? TryGetNonnegativeInt64(Entity entity, string propertyName)
+    {
+        if (!TryGetProperty(entity, propertyName, out JsonElement value)
+            || value.ValueKind != JsonValueKind.Number
+            || !value.TryGetInt64(out long result)
+            || result < 0)
+        {
+            return null;
+        }
+
+        return result;
     }
 
     private static string DescribeAttachment(Attachment attachment)

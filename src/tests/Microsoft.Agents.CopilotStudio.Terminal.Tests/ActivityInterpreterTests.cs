@@ -63,6 +63,205 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
+    public void Process_StartedToolCall_CreatesStructuredRunningEntry()
+    {
+        Activity activity = ToolCallActivity(
+            ToolCallEntity(
+                "started",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>())));
+
+        ChatEntry entry = Assert.Single(
+            new ActivityInterpreter().Process(activity, ActivityDirection.Inbound),
+            change => change.Entry?.Kind == ChatEntryKind.ToolCall).Entry!;
+
+        Assert.Equal("tool:toolu_01EAp1krYNiK2odqQv9mu7hn", entry.Key);
+        Assert.Equal("current_weather", entry.ToolCall!.Name);
+        Assert.Equal("started", entry.ToolCall.Status);
+        Assert.True(entry.IsTransient);
+        Assert.Collection(
+            entry.ToolCall.FilledParameters,
+            value => Assert.Equal("Location", value.Name),
+            value => Assert.Equal("units", value.Name));
+        Assert.Null(entry.ToolCall.DurationMs);
+    }
+
+    [Fact]
+    public void Process_CompletedToolCall_UsesSameKeyAndFinalSnapshot()
+    {
+        ActivityInterpreter interpreter = new();
+        ChatEntry started = SingleToolEntry(interpreter.Process(
+            ToolCallActivity(ToolCallEntity(
+                "started",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+                JsonSerializer.SerializeToElement(new[] { "units" }))),
+            ActivityDirection.Inbound));
+        ChatEntry completed = SingleToolEntry(interpreter.Process(
+            ToolCallActivity(ToolCallEntity(
+                "completed",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>()),
+                durationMs: 2971)),
+            ActivityDirection.Inbound));
+
+        Assert.Equal(started.Key, completed.Key);
+        Assert.Equal("completed", completed.ToolCall!.Status);
+        Assert.Equal(2971, completed.ToolCall.DurationMs);
+        Assert.False(completed.IsTransient);
+        Assert.DoesNotContain(
+            completed.ToolCall.UnfilledParameters,
+            value => value == "units");
+    }
+
+    [Fact]
+    public void Process_ToolCall_DoesNotProjectHiddenParametersOrResult()
+    {
+        ChatEntry entry = SingleToolEntry(
+            new ActivityInterpreter().Process(
+                ToolCallActivity(ToolCallEntity(
+                    "started",
+                    JsonSerializer.SerializeToElement(new { Location = "Seattle", units = "I" }),
+                    JsonSerializer.SerializeToElement(Array.Empty<string>()))),
+                ActivityDirection.Inbound));
+
+        string projected = JsonSerializer.Serialize(entry.ToolCall);
+
+        Assert.DoesNotContain("must-not-render", projected, StringComparison.Ordinal);
+        Assert.DoesNotContain("apiKey", projected, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Process_ToolCallWithoutId_AddsWarningDiagnostic()
+    {
+        Activity activity = ToolCallActivity(
+            new Entity("toolCall")
+            {
+                Properties =
+                {
+                    ["toolName"] = JsonSerializer.SerializeToElement("current_weather"),
+                    ["status"] = JsonSerializer.SerializeToElement("started"),
+                    ["filledParameters"] = JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+                    ["unfilledParameters"] = JsonSerializer.SerializeToElement(Array.Empty<string>()),
+                    ["hiddenFilledParameters"] = JsonSerializer.SerializeToElement(new { apiKey = "must-not-render" }),
+                    ["hiddenUnfilledParameters"] = JsonSerializer.SerializeToElement(new[] { "secret" }),
+                    ["result"] = JsonSerializer.SerializeToElement("must-not-render")
+                }
+            });
+
+        ChatEntry diagnostic = Assert.Single(
+            new ActivityInterpreter().Process(activity, ActivityDirection.Inbound),
+            change => change.Entry?.Kind == ChatEntryKind.Diagnostic).Entry!;
+
+        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
+        Assert.Contains("toolCallId", diagnostic.Text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("must-not-render", diagnostic.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Process_StreamingToolCall_AddsEntryWithoutChangingStreamStatus()
+    {
+        Activity activity = StreamActivity(
+            ActivityTypes.Typing,
+            "stream-1",
+            "Working...",
+            null,
+            StreamTypes.Informative,
+            null);
+        activity.Entities!.Insert(0, ToolCallEntity(
+            "started",
+            JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+            JsonSerializer.SerializeToElement(Array.Empty<string>())));
+
+        IReadOnlyList<ChatChange> changes = new ActivityInterpreter().Process(activity, ActivityDirection.Inbound);
+
+        AssertStatus(changes, "Working...", "stream:stream-1:status");
+        ChatEntry toolCall = Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.ToolCall).Entry!;
+        Assert.Equal("tool:toolu_01EAp1krYNiK2odqQv9mu7hn", toolCall.Key);
+    }
+
+    [Fact]
+    public void Process_CompletedToolCallWithoutStart_StillCreatesCompletedEntry()
+    {
+        ChatEntry completed = SingleToolEntry(
+            new ActivityInterpreter().Process(
+                ToolCallActivity(ToolCallEntity(
+                    "completed",
+                    JsonSerializer.SerializeToElement(new { Location = "Seattle, WA, USA", units = "I" }),
+                    JsonSerializer.SerializeToElement(Array.Empty<string>()),
+                    durationMs: 2971)),
+                ActivityDirection.Inbound));
+
+        Assert.Equal("completed", completed.ToolCall!.Status);
+        Assert.Equal(2971, completed.ToolCall.DurationMs);
+    }
+
+    [Fact]
+    public void Process_ToolCallParsing_IsCaseInsensitiveAndHandlesMalformedShapes()
+    {
+        Activity activity = new()
+        {
+            Type = ActivityTypes.Message,
+            Entities =
+            [
+                new Entity("TOOLCALL")
+                {
+                    Properties =
+                    {
+                        ["TOOLCALLID"] = JsonSerializer.SerializeToElement("toolu_01EAp1krYNiK2odqQv9mu7hn"),
+                        ["TOOLNAME"] = JsonSerializer.SerializeToElement("current_weather"),
+                        ["TOOLDISPLAYNAME"] = JsonSerializer.SerializeToElement("Get current weather"),
+                        ["STATUS"] = JsonSerializer.SerializeToElement("COMPLETED"),
+                        ["FILLEDPARAMETERS"] = JsonSerializer.SerializeToElement("fallback"),
+                        ["UNFILLEDPARAMETERS"] = JsonSerializer.SerializeToElement(new { item = "waiting" }),
+                        ["DURATIONMS"] = JsonSerializer.SerializeToElement(-1)
+                    }
+                }
+            ]
+        };
+
+        ChatEntry entry = SingleToolEntry(new ActivityInterpreter().Process(activity, ActivityDirection.Inbound));
+
+        Assert.Equal("toolu_01EAp1krYNiK2odqQv9mu7hn", entry.ToolCall!.Id);
+        Assert.Equal("current_weather", entry.ToolCall.Name);
+        Assert.Equal("Get current weather", entry.ToolCall.DisplayName);
+        Assert.Equal("COMPLETED", entry.ToolCall.Status);
+        Assert.Null(entry.ToolCall.DurationMs);
+        Assert.Collection(
+            entry.ToolCall.FilledParameters,
+            value =>
+            {
+                Assert.Equal("parameters", value.Name);
+                Assert.Equal(JsonValueKind.String, value.Value.ValueKind);
+                Assert.Equal("fallback", value.Value.GetString());
+            });
+        Assert.Collection(
+            entry.ToolCall.UnfilledParameters,
+            value => Assert.Equal("{\"item\":\"waiting\"}", value));
+
+        Activity stringDurationActivity = new()
+        {
+            Type = ActivityTypes.Message,
+            Entities =
+            [
+                new Entity("toolCall")
+                {
+                    Properties =
+                    {
+                        ["toolCallId"] = JsonSerializer.SerializeToElement("toolu_01EAp1krYNiK2odqQv9mu7hn"),
+                        ["toolName"] = JsonSerializer.SerializeToElement("current_weather"),
+                        ["status"] = JsonSerializer.SerializeToElement("started"),
+                        ["filledParameters"] = JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+                        ["unfilledParameters"] = JsonSerializer.SerializeToElement(Array.Empty<string>()),
+                        ["durationMs"] = JsonSerializer.SerializeToElement("bad")
+                    }
+                }
+            ]
+        };
+
+        Assert.Null(SingleToolEntry(new ActivityInterpreter().Process(stringDurationActivity, ActivityDirection.Inbound)).ToolCall!.DurationMs);
+    }
+
+    [Fact]
     public void Process_EntriesFromSameActivityShareActionGroupKey()
     {
         Activity activity = new()
@@ -626,6 +825,56 @@ public sealed class ActivityInterpreterTests
                 }
             ]
         };
+    }
+
+    private static Activity ToolCallActivity(Entity toolCallEntity)
+    {
+        return new Activity
+        {
+            Type = ActivityTypes.Message,
+            Entities =
+            [
+                toolCallEntity
+            ]
+        };
+    }
+
+    private static ChatEntry SingleToolEntry(IReadOnlyList<ChatChange> changes)
+    {
+        return Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.ToolCall).Entry!;
+    }
+
+    private static Entity ToolCallEntity(
+        string status,
+        JsonElement filledParameters,
+        JsonElement unfilledParameters,
+        long? durationMs = null)
+    {
+        Entity entity = new("toolCall")
+        {
+            Properties =
+            {
+                ["toolCallId"] = JsonSerializer.SerializeToElement("toolu_01EAp1krYNiK2odqQv9mu7hn"),
+                ["toolName"] = JsonSerializer.SerializeToElement("current_weather"),
+                ["toolDisplayName"] = JsonSerializer.SerializeToElement("Get current weather"),
+                ["toolCategory"] = JsonSerializer.SerializeToElement("Connector"),
+                ["status"] = JsonSerializer.SerializeToElement(status),
+                ["filledParameters"] = filledParameters,
+                ["unfilledParameters"] = unfilledParameters,
+                ["hiddenFilledParameters"] = JsonSerializer.SerializeToElement(
+                    new { apiKey = "must-not-render" }),
+                ["hiddenUnfilledParameters"] = JsonSerializer.SerializeToElement(
+                    new[] { "secret" }),
+                ["result"] = JsonSerializer.SerializeToElement("must-not-render")
+            }
+        };
+
+        if (durationMs is not null)
+        {
+            entity.Properties["durationMs"] = JsonSerializer.SerializeToElement(durationMs.Value);
+        }
+
+        return entity;
     }
 
     private static void AddSupplementalContent(Activity activity, string thoughtText)
