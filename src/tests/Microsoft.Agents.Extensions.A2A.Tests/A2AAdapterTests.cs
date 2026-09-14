@@ -330,7 +330,6 @@ public class A2AAdapterTests
     }
 
     [Agent(name: "SkillAgent")]
-    [A2ASkill(id: "skill1", name: "Test Skill", tags: "tag1;tag2", description: "A test skill")]
     private class TestAgentWithSkills : IAgent
     {
         public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)

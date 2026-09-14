@@ -20,9 +20,6 @@ namespace A2AAgent;
 [AgentInterface(AgentTransportProtocol.ActivityProtocol, "/api/messages")]
 [AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/a2a")]
 [AgentInterface(A2AAgentTransportProtocol.HttpJson, "/a2a")]
-[A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
-[A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn")]
-[A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response")]
 public partial class MyAgent : AgentApplication
 {
     private const string MultiTurnCountKey = "MultiTurnCount";
@@ -36,7 +33,7 @@ public partial class MyAgent : AgentApplication
         _graphClient = graphClient;
     }
 
-    [A2AMessageRoute("-stream")]
+    [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response", text: "-stream")]
     private async Task OnStreamAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         turnContext.StreamingResponse.EnableGeneratedByAILabel = true;
@@ -92,7 +89,7 @@ public partial class MyAgent : AgentApplication
     }
 
     // Received an A2A Message
-    [A2AMessageRoute]
+    [A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
     private async Task OnMessageAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // ConversationState is associated with the A2A Task.
@@ -137,7 +134,7 @@ public partial class MyAgent : AgentApplication
         return Task.CompletedTask;
     }
 
-    [A2AMessageRoute("-multi")]
+    [A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn", text: "-multi")]
     private async Task OnMultiTurnAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var turnCount = turnState.Conversation.GetValue<int>(MultiTurnCountKey) + 1;

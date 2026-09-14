@@ -13,14 +13,13 @@ using System.Threading.Tasks;
 namespace A2ATCKAgent;
 
 [A2AExtension]
-[A2ASkill("TCK", "tck")]
 public partial class MyAgent : AgentApplication
 {
     public MyAgent(AgentApplicationOptions options) : base(options)
     {
-        A2AExtension.OnMessage(OnA2AMessageAsync);
     }
 
+    [A2ASkill("TCK", "tck")]
     private async Task OnA2AMessageAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // Reference: a2a-tck\sut\a2a-python\sut_agent.py

@@ -7,6 +7,7 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Moq;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -98,6 +99,49 @@ public class AgentApplicationAttributesTests
         Assert.IsAssignableFrom<IA2ATurnContext>(app.captured);
         Assert.IsAssignableFrom<IA2AActivity>(app.captured.Activity);
     }
+
+    [Fact]
+    public async Task A2ASkillAttribute_MethodRegistration_AddsExecutableRoute()
+    {
+        var app = new SkillAttributeApp(new AgentApplicationOptions((IStorage)null));
+        var extension = new A2AAgentExtension(app);
+        var turnContext = CreateTurnContext(MakeActivity(ActivityTypes.Message, "-skill"));
+
+        await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+        Assert.Equal(["OnSkill"], app.calls);
+        var registration = Assert.Single(extension.SkillRegistrations);
+        Assert.Equal("test-skill", registration.Id);
+    }
+
+    [Fact]
+    public void A2ASkillAttribute_RepeatedId_GroupsCompatibleRoutes()
+    {
+        var app = new RepeatedSkillAttributeApp(new AgentApplicationOptions((IStorage)null));
+        var extension = new A2AAgentExtension(app);
+
+        var registrations = extension.SkillRegistrations;
+        Assert.Equal(2, registrations.Count);
+        Assert.All(registrations, registration =>
+        {
+            Assert.Equal("shared-skill", registration.Id);
+            Assert.Equal("Shared skill", registration.Name);
+            Assert.Equal("Handles shared work.", registration.Description);
+            Assert.Equal(["shared"], registration.Tags);
+            Assert.Equal(["text"], registration.InputModes);
+            Assert.Equal(["text"], registration.OutputModes);
+            Assert.Equal(["request"], registration.AutoSignInHandlers);
+        });
+    }
+
+    [Fact]
+    public void A2ASkillAttribute_RepeatedIdWithConflictingMetadata_Throws()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => new A2AAgentExtension(new ConflictingSkillAttributeApp(new AgentApplicationOptions((IStorage)null))));
+
+        Assert.Contains("shared-skill", exception.Message);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -130,4 +174,34 @@ class TypedMessageRouteApp(AgentApplicationOptions options) : AgentApplication(o
         captured = ctx;
         return Task.CompletedTask;
     }
+}
+
+class SkillAttributeApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    public List<string> calls = [];
+
+    [A2ASkill("Test skill", "test", id: "test-skill", description: "Handles test work.", text: "-skill")]
+    private Task OnSkill(IA2ATurnContext ctx, ITurnState state, CancellationToken ct)
+    {
+        calls.Add(nameof(OnSkill));
+        return Task.CompletedTask;
+    }
+}
+
+class RepeatedSkillAttributeApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    [A2ASkill("Shared skill", "shared", id: "shared-skill", description: "Handles shared work.", inputModes: "text", outputModes: "text", text: "-first", autoSigninHandlers: "request")]
+    private Task OnFirst(IA2ATurnContext ctx, ITurnState state, CancellationToken ct) => Task.CompletedTask;
+
+    [A2ASkill("Shared skill", "shared", id: "shared-skill", description: "Handles shared work.", inputModes: "text", outputModes: "text", text: "-second", autoSigninHandlers: "request")]
+    private Task OnSecond(IA2ATurnContext ctx, ITurnState state, CancellationToken ct) => Task.CompletedTask;
+}
+
+class ConflictingSkillAttributeApp(AgentApplicationOptions options) : AgentApplication(options)
+{
+    [A2ASkill("Shared skill", "shared", id: "shared-skill", description: "First description", text: "-first")]
+    private Task OnFirst(IA2ATurnContext ctx, ITurnState state, CancellationToken ct) => Task.CompletedTask;
+
+    [A2ASkill("Shared skill", "shared", id: "shared-skill", description: "Second description", text: "-second")]
+    private Task OnSecond(IA2ATurnContext ctx, ITurnState state, CancellationToken ct) => Task.CompletedTask;
 }
