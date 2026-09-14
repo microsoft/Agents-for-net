@@ -108,7 +108,10 @@ internal static class TerminalTimelineLayout
 
             TimelineRole entryRole = GetEntryRole(entry);
             (string headerGlyph, TimelineRole headerRole) = GetHeader(entry.Kind, entryRole, glyphs);
-            string headerText = BuildHeaderText(headerGlyph, entry.Author, contentWidth);
+            string headerAuthor = entry.Kind == ChatEntryKind.ToolCall
+                ? entry.ToolCall?.Name ?? entry.Author
+                : entry.Author;
+            string headerText = BuildHeaderText(headerGlyph, headerAuthor, contentWidth);
             lines.Add(new TimelineLine(entry.Key, [new TimelineSpan(headerText, headerRole)]));
 
             IReadOnlyList<TimelineBlock> bodyBlocks =
@@ -184,6 +187,7 @@ internal static class TerminalTimelineLayout
         ChatEntryKind.Agent => (glyphs.Agent, entryRole),
         ChatEntryKind.Status => (glyphs.Status, entryRole),
         ChatEntryKind.Thought => (glyphs.Thought, entryRole),
+        ChatEntryKind.ToolCall => (glyphs.Thought, TimelineRole.User),
         ChatEntryKind.Event => (glyphs.Event, entryRole),
         ChatEntryKind.Attachment => (glyphs.Attachment, entryRole),
         ChatEntryKind.Diagnostic => (glyphs.Diagnostic, entryRole),
@@ -218,6 +222,13 @@ internal static class TerminalTimelineLayout
         TimelineGlyphSet glyphs,
         bool collapseCompletedThoughts)
     {
+        if (entry.Kind == ChatEntryKind.ToolCall)
+        {
+            return entry.ToolCall is null
+                ? CreateLiteralBodyBlocks("Tool call details unavailable.", TimelineRole.Warning)
+                : TerminalToolCallFormatting.BuildBlocks(entry.ToolCall, glyphs);
+        }
+
         if (entry.Kind == ChatEntryKind.Thought && collapseCompletedThoughts && !entry.IsTransient)
         {
             string summary = string.Concat(

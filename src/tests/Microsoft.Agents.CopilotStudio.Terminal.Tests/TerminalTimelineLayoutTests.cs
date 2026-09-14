@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using Terminal.Gui.Text;
 
 public sealed class TerminalTimelineLayoutTests
@@ -197,6 +198,97 @@ public sealed class TerminalTimelineLayoutTests
             result.Lines.Where(line => line.EntryKey is "status" or "event" or "attachment" or "diagnostic")
                 .SelectMany(line => line.Spans),
             span => span.Style != TimelineTextStyle.None || span.LinkTarget is not null || span.Role == TimelineRole.Code);
+    }
+
+    [Theory]
+    [InlineData(true, "◆  current_weather")]
+    [InlineData(false, "~  current_weather")]
+    public void Build_ToolCallHeaderUsesThoughtGlyphAndToolName(bool unicode, string expectedHeader)
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [CompletedToolEntry()],
+            width: 40,
+            unicode ? TimelineGlyphSet.Unicode : TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        Assert.Equal(expectedHeader, PlainText(result.Lines[0]));
+        Assert.Equal(TimelineRole.User, result.Lines[0].Spans[0].Role);
+    }
+
+    [Fact]
+    public void Build_CompletedToolCall_RemainsExpandedInCollapsedChatMode()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [CompletedToolEntry()],
+            width: 40,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        string rendered = string.Join(
+            "\n",
+            result.Lines.Select(line => string.Concat(line.Spans.Select(span => span.Text))));
+
+        Assert.Contains("◆  current_weather", rendered, StringComparison.Ordinal);
+        Assert.Contains("✓ Completed in 2.97 s", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("F2 for details", rendered, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Build_ToolCallBypassesMarkdownParsingAndIgnoresEntryText()
+    {
+        ChatEntry entry = ToolEntry(
+            "tool-1",
+            "completed",
+            "must-not-render",
+            [
+                Parameter("query", "[literal](https://example.com) **bold**"),
+                Parameter("details", new { city = "Seattle" })
+            ]);
+
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [entry],
+            width: 80,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        string rendered = string.Join("\n", result.Lines.Select(PlainText));
+        TimelineLine queryLine = Assert.Single(
+            result.Lines,
+            line => PlainText(line).Contains("query =", StringComparison.Ordinal));
+
+        Assert.Contains("query = [literal](https://example.com) **bold**", rendered, StringComparison.Ordinal);
+        Assert.Contains("details = {\"city\":\"Seattle\"}", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("must-not-render", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain(queryLine.Spans, span => span.LinkTarget is not null || span.Role == TimelineRole.Code);
+        Assert.All(queryLine.Spans, span => Assert.Equal(TimelineTextStyle.None, span.Style));
+    }
+
+    [Fact]
+    public void Build_ToolCallWrapsLongParametersAndEscapesControls()
+    {
+        ChatEntry entry = ToolEntry(
+            "tool-1",
+            "started",
+            string.Empty,
+            [
+                Parameter("payload", "alpha beta\u001B gamma delta epsilon")
+            ],
+            ["region"]);
+
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [entry],
+            width: 16,
+            TimelineGlyphSet.Ascii,
+            collapseCompletedThoughts: true);
+
+        string rendered = string.Join("\n", result.Lines.Select(PlainText));
+
+        Assert.Contains("payload = alpha", rendered, StringComparison.Ordinal);
+        Assert.Contains("\\u001B", rendered, StringComparison.Ordinal);
+        Assert.Contains("Waiting for", rendered, StringComparison.Ordinal);
+        Assert.DoesNotContain("\u001B", rendered, StringComparison.Ordinal);
+        Assert.All(rendered, character => Assert.InRange(character, '\0', '\u007F'));
+        Assert.All(result.Lines, line => Assert.True(PlainText(line).GetColumns() <= 16));
     }
 
     [Fact]
@@ -489,6 +581,53 @@ public sealed class TerminalTimelineLayoutTests
         DiagnosticSeverity? severity = null)
     {
         return new ChatEntry(key, kind, author, text, isTransient, [], [], key, severity);
+    }
+
+    private static ChatEntry CompletedToolEntry()
+    {
+        return ToolEntry(
+            "tool-1",
+            "completed",
+            string.Empty,
+            [
+                Parameter("Location", "Seattle, WA, USA"),
+                Parameter("units", "I")
+            ],
+            [],
+            durationMs: 2971);
+    }
+
+    private static ChatEntry ToolEntry(
+        string id,
+        string status,
+        string text,
+        IReadOnlyList<ToolCallParameter> filledParameters,
+        IReadOnlyList<string>? unfilledParameters = null,
+        long? durationMs = null)
+    {
+        return new ChatEntry(
+            $"tool:{id}",
+            ChatEntryKind.ToolCall,
+            "Agent",
+            text,
+            !string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase),
+            [],
+            [],
+            "stream-1",
+            ToolCall: new ToolCallDetails(
+                id,
+                "current_weather",
+                "Get current weather",
+                "Connector",
+                status,
+                filledParameters,
+                unfilledParameters ?? [],
+                durationMs));
+    }
+
+    private static ToolCallParameter Parameter(string name, object? value)
+    {
+        return new ToolCallParameter(name, JsonSerializer.SerializeToElement(value));
     }
 
     private static string PlainText(TimelineLine line)
