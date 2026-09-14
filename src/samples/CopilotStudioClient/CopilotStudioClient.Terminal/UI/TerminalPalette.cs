@@ -24,7 +24,7 @@ internal sealed class TerminalPalette
         {
             [TimelineRole.Primary] = new("#c9d1d9"),
             [TimelineRole.Muted] = new("#8b949e"),
-            [TimelineRole.User] = new("#58a6ff"),
+            [TimelineRole.User] = new("#f2cc60"),
             [TimelineRole.Agent] = new("#3fb950"),
             [TimelineRole.Thought] = new("#bc8cff"),
             [TimelineRole.Link] = new("#58a6ff"),
@@ -54,7 +54,7 @@ internal sealed class TerminalPalette
         {
             [TimelineRole.Primary] = ColorName16.White,
             [TimelineRole.Muted] = ColorName16.Gray,
-            [TimelineRole.User] = ColorName16.Blue,
+            [TimelineRole.User] = ColorName16.Yellow,
             [TimelineRole.Agent] = ColorName16.Green,
             [TimelineRole.Thought] = ColorName16.Magenta,
             [TimelineRole.Link] = ColorName16.Blue,

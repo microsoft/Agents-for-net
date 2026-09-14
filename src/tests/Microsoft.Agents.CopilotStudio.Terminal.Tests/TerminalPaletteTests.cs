@@ -15,6 +15,10 @@ public sealed class TerminalPaletteTests
 
         Assert.True(palette.IsDark);
         Assert.True(palette.UsesTrueColor);
+        Assert.Equal(new Color("#f2cc60"), palette.Get(TimelineRole.User).Foreground);
+        Assert.True(ContrastRatio(
+            palette.Get(TimelineRole.User).Foreground,
+            palette.Get(TimelineRole.User).Background) >= 4.5);
         Assert.NotEqual(palette.Get(TimelineRole.User), palette.Get(TimelineRole.Agent));
         Assert.NotEqual(palette.Get(TimelineRole.Thought), palette.Get(TimelineRole.Warning));
     }
@@ -27,8 +31,27 @@ public sealed class TerminalPaletteTests
             supportsTrueColor: true);
 
         Assert.False(palette.IsDark);
+        Assert.Equal(new Color("#0969da"), palette.Get(TimelineRole.User).Foreground);
+        Assert.True(ContrastRatio(
+            palette.Get(TimelineRole.User).Foreground,
+            palette.Get(TimelineRole.User).Background) >= 4.5);
         Assert.NotEqual(palette.Get(TimelineRole.Primary), palette.Get(TimelineRole.Muted));
         Assert.NotEqual(palette.Get(TimelineRole.ActiveNavigation), palette.Get(TimelineRole.Link));
+    }
+
+    [Theory]
+    [InlineData(ColorName16.White, ColorName16.Black, ColorName16.Yellow)]
+    [InlineData(ColorName16.Black, ColorName16.White, ColorName16.Blue)]
+    public void Create_UsesBackgroundAwareUserColorInLimitedColorPalettes(
+        ColorName16 foreground,
+        ColorName16 background,
+        ColorName16 expectedUserColor)
+    {
+        TerminalPalette palette = TerminalPalette.Create(
+            new Terminal.Gui.Drawing.Attribute(foreground, background),
+            supportsTrueColor: false);
+
+        Assert.Equal(expectedUserColor, palette.Get(TimelineRole.User).Foreground);
     }
 
     [Theory]
