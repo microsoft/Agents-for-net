@@ -45,7 +45,7 @@ internal sealed class A2ASkillRegistration
         Handler = handler;
         Rank = rank;
         IsAgenticOnly = isAgenticOnly;
-        AutoSignInHandlers = ToReadOnlyList(autoSignInHandlers);
+        AutoSignInHandlers = ToReadOnlyList(autoSignInHandlers?.Select(name => name?.Trim()));
     }
 
     public string Id { get; }

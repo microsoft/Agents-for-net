@@ -45,10 +45,7 @@ internal sealed class Program
                 .Build();
 
             A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
-            var authenticationSession = new A2AAuthenticationSession
-            {
-                Mode = startupOptions.AuthMode,
-            };
+            var authenticationSession = new A2AAuthenticationSession();
             var msalTokenClient = new MsalTokenClient(options.Authentication);
             var accessTokenProvider = new A2AAccessTokenProvider(msalTokenClient);
             using var httpClient = new HttpClient(
@@ -56,8 +53,8 @@ internal sealed class Program
 
             var resolver = new A2ACardResolver(options.AgentUrl, httpClient);
             AgentCard card = await resolver.GetAgentCardAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-            msalTokenClient.Configure(A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated));
-            msalTokenClient.Configure(A2AAgentCardAuthentication.Select(card, A2AAuthMode.App));
+            msalTokenClient.Configure(card);
+            authenticationSession.SetMode(startupOptions.AuthMode);
             IA2AClient client = CreateClient(card, httpClient, options.AgentUrl);
 
             var console = new A2AConsole(

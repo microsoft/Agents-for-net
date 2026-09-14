@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using A2A;
 using Microsoft.Identity.Client;
 
 namespace Microsoft.Agents.Samples.A2AClient;
@@ -18,8 +19,8 @@ internal sealed class MsalTokenClient
     private readonly Func<A2AClientAuthenticationOptions, MsalTokenAcquisitionRequest, CancellationToken, Task<string>>? _applicationTokenFactory;
     private IPublicClientApplication? _publicClientApplication;
     private IConfidentialClientApplication? _confidentialClientApplication;
-    private MsalTokenAcquisitionRequest? _delegatedAcquisitionRequest;
-    private MsalTokenAcquisitionRequest? _applicationAcquisitionRequest;
+    private Lazy<MsalTokenAcquisitionRequest>? _delegatedAcquisitionRequest;
+    private Lazy<MsalTokenAcquisitionRequest>? _applicationAcquisitionRequest;
 
     public MsalTokenClient(A2AClientAuthenticationOptions options)
         : this(options, delegatedTokenFactory: null, applicationTokenFactory: null)
@@ -36,6 +37,17 @@ internal sealed class MsalTokenClient
         _applicationTokenFactory = applicationTokenFactory;
     }
 
+    public void Configure(AgentCard card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        _delegatedAcquisitionRequest = new(() =>
+            CreateAcquisitionRequest(A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated)));
+        _applicationAcquisitionRequest = new(() =>
+            CreateAcquisitionRequest(A2AAgentCardAuthentication.Select(card, A2AAuthMode.App)));
+        _publicClientApplication = null;
+        _confidentialClientApplication = null;
+    }
+
     public void Configure(A2AAgentCardAuthentication authentication)
     {
         ArgumentNullException.ThrowIfNull(authentication);
@@ -44,11 +56,11 @@ internal sealed class MsalTokenClient
         switch (authentication.Mode)
         {
             case A2AAuthMode.Delegated:
-                _delegatedAcquisitionRequest = acquisitionRequest;
+                _delegatedAcquisitionRequest = new(() => acquisitionRequest);
                 _publicClientApplication = null;
                 break;
             case A2AAuthMode.App:
-                _applicationAcquisitionRequest = acquisitionRequest;
+                _applicationAcquisitionRequest = new(() => acquisitionRequest);
                 _confidentialClientApplication = null;
                 break;
             default:
@@ -58,10 +70,10 @@ internal sealed class MsalTokenClient
 
     public async Task<string> AcquireDelegatedTokenAsync(CancellationToken cancellationToken)
     {
+        MsalTokenAcquisitionRequest acquisitionRequest = GetConfiguredAcquisitionRequest(A2AAuthMode.Delegated);
         ValidateRequiredConfiguration(
             (nameof(A2AClientAuthenticationOptions.TenantId), _options.TenantId),
             (nameof(A2AClientAuthenticationOptions.PublicClientId), _options.PublicClientId));
-        MsalTokenAcquisitionRequest acquisitionRequest = GetConfiguredAcquisitionRequest(A2AAuthMode.Delegated);
 
         if (_delegatedTokenFactory is not null)
         {
@@ -106,11 +118,11 @@ internal sealed class MsalTokenClient
 
     public async Task<string> AcquireApplicationTokenAsync(CancellationToken cancellationToken)
     {
+        MsalTokenAcquisitionRequest acquisitionRequest = GetConfiguredAcquisitionRequest(A2AAuthMode.App);
         ValidateRequiredConfiguration(
             (nameof(A2AClientAuthenticationOptions.TenantId), _options.TenantId),
             (nameof(A2AClientAuthenticationOptions.ConfidentialClientId), _options.ConfidentialClientId),
             (nameof(A2AClientAuthenticationOptions.ConfidentialClientSecret), _options.ConfidentialClientSecret));
-        MsalTokenAcquisitionRequest acquisitionRequest = GetConfiguredAcquisitionRequest(A2AAuthMode.App);
 
         if (_applicationTokenFactory is not null)
         {
@@ -166,10 +178,10 @@ internal sealed class MsalTokenClient
 
     private MsalTokenAcquisitionRequest GetConfiguredAcquisitionRequest(A2AAuthMode mode)
     {
-        MsalTokenAcquisitionRequest? acquisitionRequest = mode == A2AAuthMode.Delegated
+        Lazy<MsalTokenAcquisitionRequest>? acquisitionRequest = mode == A2AAuthMode.Delegated
             ? _delegatedAcquisitionRequest
             : _applicationAcquisitionRequest;
-        return acquisitionRequest ?? throw new InvalidOperationException(
+        return acquisitionRequest?.Value ?? throw new InvalidOperationException(
             $"The Agent Card has not configured a {mode} OAuth flow.");
     }
 

@@ -16,6 +16,7 @@ using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -29,6 +30,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using A2AAgentSample::A2AAgent;
+using Microsoft.Agents.Samples.A2AClient;
 
 namespace Microsoft.Agents.Samples.A2A.Tests;
 
@@ -37,6 +39,47 @@ public class A2AAgentOAuthRouteTests
     private const string DelegatedHandlerName = "delegated";
     private const string GraphHandlerName = "graph";
     private const string AppHandlerName = "app";
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AgentCard_FromSampleConfiguration_AdvertisesTenantedClientCredentials(bool protectedSkills)
+    {
+        const string tenantId = "11111111-1111-1111-1111-111111111111";
+        const string clientId = "22222222-2222-2222-2222-222222222222";
+        string settings = (await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "A2AAgent.appsettings.json")))
+            .Replace("{{TenantId}}", tenantId, StringComparison.Ordinal)
+            .Replace("{{ClientId}}", clientId, StringComparison.Ordinal);
+        using var settingsStream = new MemoryStream(Encoding.UTF8.GetBytes(settings));
+        var configuration = new ConfigurationBuilder().AddJsonStream(settingsStream).Build();
+        var storage = new MemoryStorage();
+        var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance, configuration: configuration);
+        IAgent agent = protectedSkills
+            ? new MyAgent(new AgentApplicationOptions(storage), Mock.Of<IGraphProfileClient>())
+            : new AgentApplication(new AgentApplicationOptions(storage));
+        var context = new DefaultHttpContext();
+        context.Request.Scheme = "https";
+        context.Request.Host = new HostString("agent.example");
+        using var responseBody = new MemoryStream();
+        context.Response.Body = responseBody;
+
+        await adapter.ProcessAgentCardAsync(context.Request, context.Response, agent, "/a2a", CancellationToken.None);
+        responseBody.Position = 0;
+        var card = (await JsonSerializer.DeserializeAsync<AgentCard>(responseBody, A2AJsonUtilities.DefaultOptions))!;
+        Assert.NotNull(card.SecuritySchemes);
+        var application = card.SecuritySchemes["application"].OAuth2SecurityScheme!.Flows!.ClientCredentials!;
+        var delegated = card.SecuritySchemes["delegated"].OAuth2SecurityScheme!.Flows!.DeviceCode!;
+
+        Assert.Equal("https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/oauth2/v2.0/token", application.TokenUrl);
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", delegated.TokenUrl);
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode", delegated.DeviceAuthorizationUrl);
+        if (protectedSkills)
+        {
+            Assert.Equal(
+                ["api://22222222-2222-2222-2222-222222222222/.default"],
+                A2AAgentCardAuthentication.Select(card, A2AAuthMode.App).Scopes);
+        }
+    }
 
     [Fact]
     public void MyAgent_ResolvesFromStartupServiceRegistration()

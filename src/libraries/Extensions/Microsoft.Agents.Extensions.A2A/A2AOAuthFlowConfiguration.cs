@@ -1,0 +1,53 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using A2A;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Microsoft.Agents.Extensions.A2A;
+
+internal static class A2AOAuthFlowConfiguration
+{
+    internal static void BindScopes(IConfigurationSection configuration, OAuthFlows flows)
+    {
+        if (configuration == null || flows == null)
+        {
+            return;
+        }
+
+        if (flows.AuthorizationCode != null)
+        {
+            flows.AuthorizationCode.Scopes = ReadScopes(configuration.GetSection(nameof(OAuthFlows.AuthorizationCode)));
+        }
+        if (flows.ClientCredentials != null)
+        {
+            flows.ClientCredentials.Scopes = ReadScopes(configuration.GetSection(nameof(OAuthFlows.ClientCredentials)));
+        }
+        if (flows.DeviceCode != null)
+        {
+            flows.DeviceCode.Scopes = ReadScopes(configuration.GetSection(nameof(OAuthFlows.DeviceCode)));
+        }
+#pragma warning disable CS0618 // Preserve configured scope catalogs without changing validation of deprecated flows.
+        if (flows.Implicit != null)
+        {
+            flows.Implicit.Scopes = ReadScopes(configuration.GetSection(nameof(OAuthFlows.Implicit)));
+        }
+        if (flows.Password != null)
+        {
+            flows.Password.Scopes = ReadScopes(configuration.GetSection(nameof(OAuthFlows.Password)));
+        }
+#pragma warning restore CS0618
+    }
+
+    private static Dictionary<string, string> ReadScopes(IConfigurationSection flow)
+    {
+        // IConfiguration treats ':' in URI scopes as a path separator; retain each complete relative key.
+        return flow.GetSection("Scopes")
+            .AsEnumerable(makePathsRelative: true)
+            .Where(entry => entry.Value != null)
+            .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+    }
+}

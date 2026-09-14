@@ -42,6 +42,7 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
     internal static A2AUserAuthorizationSettings FromConfiguration(IConfigurationSection configurationSection)
     {
         var settings = configurationSection?.Get<A2AUserAuthorizationSettings>() ?? new A2AUserAuthorizationSettings();
+        A2AOAuthFlowConfiguration.BindScopes(configurationSection?.GetSection(nameof(OAuthFlows)), settings.OAuthFlows);
 
         if (settings.OBOScopes == null && configurationSection != null)
         {

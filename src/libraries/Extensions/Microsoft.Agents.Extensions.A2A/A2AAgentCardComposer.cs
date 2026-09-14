@@ -31,6 +31,13 @@ internal sealed class A2AAgentCardComposer
         ValidateProtectedConfiguration(optionsSection);
         var options = optionsSection?.Get<A2AAgentCardOptions>() ?? new A2AAgentCardOptions();
 
+        foreach (var scheme in options.SecuritySchemes)
+        {
+            A2AOAuthFlowConfiguration.BindScopes(
+                optionsSection?.GetSection($"SecuritySchemes:{scheme.Key}:OAuth2SecurityScheme:Flows"),
+                scheme.Value?.OAuth2SecurityScheme?.Flows);
+        }
+
         ApplySafeOptions(hostDefaults, options);
 
         var authorizations = _configuration == null
@@ -119,8 +126,9 @@ internal sealed class A2AAgentCardComposer
             handlerName = userAuthorization.GetSection("Handlers").GetChildren().FirstOrDefault()?.Key;
         }
 
-        if (!string.IsNullOrWhiteSpace(handlerName) && authorizations.TryGetValue(handlerName, out var authorization))
+        if (!string.IsNullOrWhiteSpace(handlerName))
         {
+            var authorization = ResolveRequirementAuthorization(handlerName, authorizations, "global AutoSignIn");
             agentCard.SecurityRequirements ??= [];
             agentCard.SecurityRequirements.Add(CreateRequirement(authorization));
         }
@@ -163,25 +171,24 @@ internal sealed class A2AAgentCardComposer
             SecurityRequirement requirement = null;
             foreach (var handlerName in registration.AutoSignInHandlers)
             {
-                if (authorizations.TryGetValue(handlerName, out var authorization))
+                var authorization = ResolveRequirementAuthorization(
+                    handlerName, authorizations, $"skill '{registration.Id}' autoSignInHandlers");
+                requirement ??= new SecurityRequirement
                 {
-                    requirement ??= new SecurityRequirement
-                    {
-                        Schemes = new Dictionary<string, StringList>(),
-                    };
+                    Schemes = new Dictionary<string, StringList>(),
+                };
 
-                    if (!requirement.Schemes.TryGetValue(authorization.SecuritySchemeName, out var requiredScopes))
-                    {
-                        requiredScopes = new StringList { List = [] };
-                        requirement.Schemes.Add(authorization.SecuritySchemeName, requiredScopes);
-                    }
+                if (!requirement.Schemes.TryGetValue(authorization.SecuritySchemeName, out var requiredScopes))
+                {
+                    requiredScopes = new StringList { List = [] };
+                    requirement.Schemes.Add(authorization.SecuritySchemeName, requiredScopes);
+                }
 
-                    foreach (var scope in authorization.RequiredScopes ?? [])
+                foreach (var scope in authorization.RequiredScopes ?? [])
+                {
+                    if (!requiredScopes.List.Contains(scope, StringComparer.Ordinal))
                     {
-                        if (!requiredScopes.List.Contains(scope, StringComparer.Ordinal))
-                        {
-                            requiredScopes.List.Add(scope);
-                        }
+                        requiredScopes.List.Add(scope);
                     }
                 }
             }
@@ -193,6 +200,27 @@ internal sealed class A2AAgentCardComposer
 
             agentCard.Skills.Add(skill);
         }
+    }
+
+    private static A2AAuthorizationMetadata ResolveRequirementAuthorization(
+        string handlerName,
+        Dictionary<string, A2AAuthorizationMetadata> authorizations,
+        string context)
+    {
+        var normalizedName = handlerName?.Trim();
+        if (string.IsNullOrEmpty(normalizedName) || !authorizations.TryGetValue(normalizedName, out var authorization))
+        {
+            throw new InvalidOperationException(
+                $"A2A {context} references authorization handler '{normalizedName ?? "<null>"}', which must be configured as an {nameof(A2AUserAuthorization)} handler.");
+        }
+
+        if (string.IsNullOrWhiteSpace(authorization.SecuritySchemeName))
+        {
+            throw new InvalidOperationException(
+                $"A2A authorization handler '{authorization.HandlerName}' used by {context} requires Agent Card metadata: configure {nameof(A2AUserAuthorizationSettings.SecurityScheme)} or {nameof(A2AUserAuthorizationSettings.SecuritySchemeName)} together with {nameof(A2AUserAuthorizationSettings.OAuthFlows)}.");
+        }
+
+        return authorization;
     }
 
     private static SecurityRequirement CreateRequirement(A2AAuthorizationMetadata authorization)

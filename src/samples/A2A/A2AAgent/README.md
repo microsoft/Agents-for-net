@@ -132,6 +132,15 @@ For the current sample, the relevant keys are:
 
 Do not commit a real secret or token. Keep placeholders in the repo and store the live value locally.
 
+The Agent Card also uses these existing placeholders under
+`AgentApplication:A2A:AgentCard:SecuritySchemes`. Replace `{{ClientId}}` in the advertised
+Agent API scopes and the handlers' `RequiredScopes`, and replace `{{TenantId}}` in the
+application scheme's token URL:
+`https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token`.
+Client Credentials metadata must name a tenant; Entra does not support `/organizations/`
+for that flow. The delegated Device Code endpoints keep `/organizations/`. These are
+manual configuration replacements, not a runtime templating feature.
+
 ### 2. Registration requirement for the OBO route
 
 `-me` exchanges the inbound token on behalf of the caller. The SDK only exchanges a token that

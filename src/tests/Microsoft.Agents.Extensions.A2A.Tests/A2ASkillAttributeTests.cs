@@ -415,6 +415,19 @@ namespace Microsoft.Agents.Extensions.A2A.Tests
         }
 
         [Fact]
+        public void Skill_WhitespacePaddedHandlerNames_NormalizesRegistration()
+        {
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)null));
+            var extension = new A2AAgentExtension(app);
+
+            extension.Skill("weather", skill => skill
+                .OnMessage("-weather", (_, _, _) => Task.CompletedTask, autoSigninHandlers: [" request ", "\tprofile\r\n"]));
+
+            var registration = Assert.Single(extension.SkillRegistrations);
+            Assert.Equal(["request", "profile"], registration.AutoSignInHandlers);
+        }
+
+        [Fact]
         public void ExamplesProperty_CanBeSetAndRetrieved()
         {
             // Arrange

@@ -115,6 +115,218 @@ public class A2AAdapterTests
         Assert.Equal(["api://agent/access_as_user"], requirement.Schemes["agentBearer"].List);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" \t ")]
+    public async Task ProcessAgentCard_WithSchemeLessGlobalHandler_ThrowsNamedMetadataError(string schemeName)
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "legacy-request",
+            ["AgentApplication:UserAuthorization:Handlers:legacy-request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:legacy-request:Settings:SecurityScheme"] = schemeName,
+            ["AgentApplication:UserAuthorization:Handlers:legacy-request:Settings:SecuritySchemeName"] = schemeName,
+        }));
+        var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ProcessAgentCardAsync(adapter, agent));
+
+        Assert.Contains("legacy-request", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("global", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("SecurityScheme", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("SecuritySchemeName", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("OAuthFlows", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" \t ")]
+    public async Task ProcessAgentCard_WithSchemeLessSkillHandler_ThrowsNamedMetadataError(string schemeName)
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
+            ["AgentApplication:UserAuthorization:Handlers:legacy-request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:legacy-request:Settings:SecurityScheme"] = schemeName,
+            ["AgentApplication:UserAuthorization:Handlers:legacy-request:Settings:SecuritySchemeName"] = schemeName,
+        }));
+        var agent = CreateSkillAgent("legacy-request");
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ProcessAgentCardAsync(adapter, agent));
+
+        Assert.Contains("legacy-request", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("weather", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("SecurityScheme", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("SecuritySchemeName", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("OAuthFlows", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("A2AUserAuthorization")]
+    [InlineData("AzureBotUserAuthorization")]
+    public async Task ProcessAgentCard_WithUnreferencedSchemeLessHandler_DoesNotRequireItsMetadata(string handlerType)
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:unused:Type"] = handlerType,
+        }));
+
+        var card = await ProcessAgentCardAsync(adapter, CreateSkillAgent("request"));
+
+        Assert.Equal("agentBearer", Assert.Single(Assert.Single(card.SecurityRequirements).Schemes).Key);
+        Assert.Equal("agentBearer", Assert.Single(Assert.Single(Assert.Single(card.Skills).SecurityRequirements).Schemes).Key);
+        Assert.DoesNotContain("unused", card.SecuritySchemes.Keys);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProcessAgentCard_WithUriQualifiedOAuthScopes_PreservesScopeCatalog(bool inlineScheme)
+    {
+        var values = new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:1"] = "urn:agent:read",
+        };
+        string flowsPath;
+        if (inlineScheme)
+        {
+            values["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "delegated";
+            flowsPath = "AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows";
+        }
+        else
+        {
+            values["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "delegated";
+            flowsPath = "AgentApplication:A2A:AgentCard:SecuritySchemes:delegated:OAuth2SecurityScheme:Flows";
+        }
+        values[$"{flowsPath}:DeviceCode:TokenUrl"] = "https://login.example.com/token";
+        values[$"{flowsPath}:DeviceCode:DeviceAuthorizationUrl"] = "https://login.example.com/devicecode";
+        values[$"{flowsPath}:DeviceCode:Scopes:api://agent/access_as_user"] = "Access the agent";
+        values[$"{flowsPath}:DeviceCode:Scopes:urn:agent:read"] = "Read the agent";
+        values[$"{flowsPath}:DeviceCode:Scopes:agent.profile"] = "Read the profile";
+
+        var card = await ProcessAgentCardAsync(
+            CreateAdapter(CreateConfiguration(values)),
+            new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)));
+
+        var scopes = card.SecuritySchemes["delegated"].OAuth2SecurityScheme.Flows.DeviceCode.Scopes;
+        Assert.Equal(3, scopes.Count);
+        Assert.Equal("Access the agent", scopes["api://agent/access_as_user"]);
+        Assert.Equal("Read the agent", scopes["urn:agent:read"]);
+        Assert.Equal("Read the profile", scopes["agent.profile"]);
+        Assert.Equal(["api://agent/access_as_user", "urn:agent:read"], Assert.Single(card.SecurityRequirements).Schemes["delegated"].List);
+    }
+
+    [Theory]
+    [InlineData("missing", null, true)]
+    [InlineData("requset", null, true)]
+    [InlineData("external", "AzureBotUserAuthorization", true)]
+    [InlineData("external", "AzureBotUserAuthorization", false)]
+    public async Task ProcessAgentCard_WithUnresolvedGlobalHandler_ThrowsNamedContextError(
+        string handlerName,
+        string handlerType,
+        bool explicitDefault)
+    {
+        var values = new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+        };
+        if (explicitDefault)
+        {
+            values["AgentApplication:UserAuthorization:DefaultHandlerName"] = handlerName;
+        }
+        if (handlerType != null)
+        {
+            values[$"AgentApplication:UserAuthorization:Handlers:{handlerName}:Type"] = handlerType;
+        }
+        var adapter = CreateAdapter(CreateConfiguration(values));
+        var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ProcessAgentCardAsync(adapter, agent));
+
+        Assert.Contains(handlerName, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("global", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("A2AUserAuthorization", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("missing", null)]
+    [InlineData("requset", null)]
+    [InlineData("external", "AzureBotUserAuthorization")]
+    public async Task ProcessAgentCard_WithUnresolvedSkillHandler_ThrowsNamedContextError(string handlerName, string handlerType)
+    {
+        var values = new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+        };
+        if (handlerType != null)
+        {
+            values[$"AgentApplication:UserAuthorization:Handlers:{handlerName}:Type"] = handlerType;
+        }
+        var adapter = CreateAdapter(CreateConfiguration(values));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ProcessAgentCardAsync(adapter, CreateSkillAgent("request", handlerName)));
+
+        Assert.Contains(handlerName, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("weather", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("A2AUserAuthorization", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(" request ")]
+    [InlineData("\tReQuEsT\r\n")]
+    public async Task ProcessAgentCard_WithWhitespacePaddedGlobalHandler_EmitsAgentRequirement(string handlerName)
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = handlerName,
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+        }));
+
+        var card = await ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)));
+
+        Assert.Equal(["api://agent/access_as_user"], Assert.Single(card.SecurityRequirements).Schemes["agentBearer"].List);
+    }
+
+    [Theory]
+    [InlineData(" request ")]
+    [InlineData("\tReQuEsT\r\n")]
+    public async Task ProcessAgentCard_WithWhitespacePaddedSkillHandler_EmitsSkillRequirement(string handlerName)
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+        }));
+
+        var card = await ProcessAgentCardAsync(adapter, CreateSkillAgent(handlerName));
+
+        Assert.Null(card.SecurityRequirements);
+        Assert.Equal(["api://agent/access_as_user"], Assert.Single(Assert.Single(card.Skills).SecurityRequirements).Schemes["agentBearer"].List);
+    }
+
     [Fact]
     public async Task ProcessAgentCard_WithImplicitDefaultHandler_EmitsAgentRequirement()
     {
@@ -559,6 +771,18 @@ public class A2AAdapterTests
         return new ConfigurationBuilder()
             .AddInMemoryCollection(values)
             .Build();
+    }
+
+    private AgentApplication CreateSkillAgent(params string[] handlerNames)
+    {
+        var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
+        var extension = new A2AAgentExtension(agent);
+        agent.RegisteredExtensions.Add(extension);
+        extension.Skill("weather", skill => skill
+            .WithName("Weather")
+            .WithDescription("Gets weather.")
+            .OnMessage((_, _, _) => Task.CompletedTask, autoSigninHandlers: handlerNames));
+        return agent;
     }
 
     private async Task<AgentCard> ProcessAgentCardAsync(A2AAdapter adapter, IAgent agent)
