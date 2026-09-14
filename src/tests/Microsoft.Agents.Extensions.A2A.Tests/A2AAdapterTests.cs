@@ -236,6 +236,35 @@ public class A2AAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAgentCard_WithHandlersSharingScheme_CombinesRequiredScopes()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
+            ["AgentApplication:UserAuthorization:Handlers:profile:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:profile:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:profile:Settings:RequiredScopes:0"] = "api://agent/profile",
+        }));
+        var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
+        var extension = new A2AAgentExtension(agent);
+        agent.RegisteredExtensions.Add(extension);
+        extension.Skill("weather", skill => skill
+            .WithName("Weather")
+            .WithDescription("Gets weather.")
+            .OnMessage((_, _, _) => Task.CompletedTask, autoSigninHandlers: ["request", "profile"]));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, agent);
+
+        var skill = Assert.Single(agentCard.Skills);
+        var requirement = Assert.Single(skill.SecurityRequirements);
+        Assert.Equal(["api://agent/access_as_user", "api://agent/profile"], requirement.Schemes["agentBearer"].List);
+    }
+
+    [Fact]
     public async Task ProcessAgentCard_WithGraphOBO_DoesNotEmitGraphScopes()
     {
         var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>

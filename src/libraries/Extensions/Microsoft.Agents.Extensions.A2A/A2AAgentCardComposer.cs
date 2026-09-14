@@ -169,10 +169,20 @@ internal sealed class A2AAgentCardComposer
                     {
                         Schemes = new Dictionary<string, StringList>(),
                     };
-                    requirement.Schemes[authorization.SecuritySchemeName] = new StringList
+
+                    if (!requirement.Schemes.TryGetValue(authorization.SecuritySchemeName, out var requiredScopes))
                     {
-                        List = authorization.RequiredScopes?.ToList() ?? [],
-                    };
+                        requiredScopes = new StringList { List = [] };
+                        requirement.Schemes.Add(authorization.SecuritySchemeName, requiredScopes);
+                    }
+
+                    foreach (var scope in authorization.RequiredScopes ?? [])
+                    {
+                        if (!requiredScopes.List.Contains(scope, StringComparer.Ordinal))
+                        {
+                            requiredScopes.List.Add(scope);
+                        }
+                    }
                 }
             }
 
