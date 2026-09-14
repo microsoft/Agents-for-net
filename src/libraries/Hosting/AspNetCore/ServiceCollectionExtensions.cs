@@ -147,8 +147,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <returns>The same service collection to allow for method chaining.</returns>
         public static IServiceCollection AddAgentCore<TAdapter>(this IServiceCollection services, string connectionsKey, string mapKey) where TAdapter : CloudAdapter
         {
-            ArgumentException.ThrowIfNullOrEmpty(connectionsKey);
-            ArgumentException.ThrowIfNullOrEmpty(mapKey);
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionsKey);
+            ArgumentException.ThrowIfNullOrWhiteSpace(mapKey);
 
             if (!services.Any(x => x.ServiceType == typeof(IConnections)))
             {

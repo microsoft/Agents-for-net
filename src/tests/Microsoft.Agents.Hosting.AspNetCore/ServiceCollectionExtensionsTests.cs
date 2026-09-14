@@ -202,8 +202,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         [Theory]
         [InlineData(null, "Agent:ConnectionsMap")]
         [InlineData("", "Agent:ConnectionsMap")]
+        [InlineData(" ", "Agent:ConnectionsMap")]
         [InlineData("Agent:Connections", null)]
         [InlineData("Agent:Connections", "")]
+        [InlineData("Agent:Connections", " ")]
         public void AddAgentCore_WithInvalidConfigurationSection_Throws(string connectionsKey, string mapKey)
         {
             var services = new ServiceCollection();
