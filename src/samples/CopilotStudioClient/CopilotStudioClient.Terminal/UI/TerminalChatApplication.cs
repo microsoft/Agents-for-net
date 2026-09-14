@@ -319,9 +319,10 @@ internal sealed class TerminalChatApplication : ITerminalView
     private readonly Encoding? _outputEncodingOverride;
     private readonly Func<Encoding> _outputEncodingResolver;
     private Encoding _outputEncoding = Encoding.UTF8;
-    private readonly TerminalChatState _chatState = new();
+    private readonly TerminalChatState _chatState =
+        new(entry => entry.Kind is not ChatEntryKind.Thought and not ChatEntryKind.ToolCall);
     private readonly TerminalChatState _thoughtState =
-        new(entry => entry.Kind == ChatEntryKind.Thought);
+        new(entry => entry.Kind is ChatEntryKind.Thought or ChatEntryKind.ToolCall);
     private readonly TerminalActivityState _activityState = new();
     private readonly List<ReceivedLink> _linkViews = [];
     private readonly HashSet<Task> _sendTasks = [];

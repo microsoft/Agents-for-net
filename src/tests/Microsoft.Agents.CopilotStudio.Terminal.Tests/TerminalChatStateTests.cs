@@ -65,6 +65,24 @@ public sealed class TerminalChatStateTests
     }
 
     [Fact]
+    public void ChatAndThoughtStates_RouteToolCallOnlyToThoughts()
+    {
+        TerminalChatState chat = new(
+            entry => entry.Kind is not ChatEntryKind.Thought and not ChatEntryKind.ToolCall);
+        TerminalChatState thoughts = new(
+            entry => entry.Kind is ChatEntryKind.Thought or ChatEntryKind.ToolCall);
+        ChatChange change = new(ChatChangeKind.Upsert, "tool:1", ToolEntry("1", "started"));
+
+        chat.Apply([change]);
+        thoughts.Apply([change]);
+
+        Assert.Empty(chat.Entries);
+        ChatEntry thought = Assert.Single(thoughts.Entries);
+        Assert.Equal("tool:1", thought.Key);
+        Assert.Equal(ChatEntryKind.ToolCall, thought.Kind);
+    }
+
+    [Fact]
     public void Apply_ReplacingEntryRemovesItsOldLinksAndActions()
     {
         TerminalChatState state = new();
@@ -244,4 +262,24 @@ public sealed class TerminalChatStateTests
                 [new ChatAction(actionTitle, actionValue)],
                 key));
     }
+
+    private static ChatEntry ToolEntry(string id, string status) =>
+        new(
+            $"tool:{id}",
+            ChatEntryKind.ToolCall,
+            "Agent",
+            string.Empty,
+            !string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase),
+            [],
+            [],
+            "stream-1",
+            ToolCall: new ToolCallDetails(
+                id,
+                "current_weather",
+                "Get current weather",
+                "Connector",
+                status,
+                [],
+                [],
+                null));
 }

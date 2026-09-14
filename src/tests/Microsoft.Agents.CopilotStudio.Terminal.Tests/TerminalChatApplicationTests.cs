@@ -803,7 +803,7 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
-    public void ApplyChatChanges_ShowsActiveThoughtInlineAndFullThoughtsInInspector()
+    public void ApplyChatChanges_ShowsThoughtsOnlyInInspector()
     {
         using IApplication application = Application.Create();
         application.Init(DriverRegistry.Names.ANSI);
@@ -851,13 +851,42 @@ public sealed class TerminalChatApplicationTests
             Descendants(thoughts).OfType<TerminalTimelineView>(),
             view => !view.CollapseCompletedThoughts);
 
-        Assert.Contains(conversation.RenderedLines, line => PlainText(line) == "Checking account");
+        Assert.DoesNotContain(conversation.RenderedLines, line => PlainText(line) == "Checking account");
         Assert.DoesNotContain(conversation.RenderedLines, line => PlainText(line) == "Compared all records");
-        Assert.Contains(
+        Assert.DoesNotContain(
             conversation.RenderedLines,
             line => PlainText(line) == "Reasoning complete · F2 for details");
         Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Checking account");
         Assert.Contains(thoughtInspector.RenderedLines, line => PlainText(line) == "Compared all records");
+    }
+
+    [Fact]
+    public void ApplyChatChanges_RoutesToolCallsOnlyToThoughts()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+        View surfaces = Assert.IsType<TerminalShellView>(shell).ContentRegion;
+        View chat = Assert.Single(surfaces.SubViews, view => view.Title == "_Chat");
+        View thoughts = Assert.Single(surfaces.SubViews, view => view.Title == "_Thoughts");
+        TerminalTimelineView chatTimeline = Assert.Single(Descendants(chat).OfType<TerminalTimelineView>());
+        TerminalTimelineView thoughtTimeline = Assert.Single(
+            Descendants(thoughts).OfType<TerminalTimelineView>());
+
+        terminal.ApplyChatChanges(
+        [
+            ToolChange("tool:1", "started"),
+            ToolChange("tool:1", "completed")
+        ]);
+        RunOneIteration(application, shell);
+
+        Assert.DoesNotContain(chatTimeline.RenderedLines, line => line.EntryKey == "tool:1");
+        Assert.Equal(
+            ["tool:1"],
+            thoughtTimeline.RenderedLines.Select(line => line.EntryKey).Distinct());
     }
 
     [Theory]
@@ -1229,6 +1258,31 @@ public sealed class TerminalChatApplicationTests
                 [],
                 [],
                 key));
+    }
+
+    private static ChatChange ToolChange(string key, string status)
+    {
+        return new ChatChange(
+            ChatChangeKind.Upsert,
+            key,
+            new ChatEntry(
+                key,
+                ChatEntryKind.ToolCall,
+                "Agent",
+                string.Empty,
+                !string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase),
+                [],
+                [],
+                "stream-1",
+                ToolCall: new ToolCallDetails(
+                    key["tool:".Length..],
+                    "current_weather",
+                    "Get current weather",
+                    "Connector",
+                    status,
+                    [],
+                    [],
+                    null)));
     }
 
     private static void RunOneIteration(IApplication application, Runnable shell)
