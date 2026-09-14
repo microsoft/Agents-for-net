@@ -141,11 +141,24 @@ internal sealed class TerminalPalette
 
     internal Scheme CreateControlScheme()
     {
+        return CreateControlScheme(
+            Get(TimelineRole.Link, TimelineTextStyle.Underline),
+            Get(TimelineRole.ActiveNavigation));
+    }
+
+    internal Scheme CreateActivityListScheme()
+    {
+        GuiAttribute selection = Get(TimelineRole.User, TimelineTextStyle.Bold);
+        return CreateControlScheme(selection, selection);
+    }
+
+    private Scheme CreateControlScheme(GuiAttribute focus, GuiAttribute active)
+    {
         Scheme scheme = new()
         {
             Normal = Get(TimelineRole.Primary),
-            Focus = Get(TimelineRole.Link, TimelineTextStyle.Underline),
-            Active = Get(TimelineRole.ActiveNavigation),
+            Focus = focus,
+            Active = active,
             HotNormal = Get(TimelineRole.Link),
             HotFocus = Get(TimelineRole.ActiveNavigation, TimelineTextStyle.Underline),
             HotActive = Get(TimelineRole.Warning),

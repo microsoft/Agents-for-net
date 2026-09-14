@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using Microsoft.Agents.Core.Models;
+using Terminal.Gui.Drawing;
 using Terminal.Gui.Views;
 
 [Collection("TerminalGui")]
@@ -61,12 +62,65 @@ public sealed class TerminalActivityViewTests
         Assert.False(json.WordWrap);
     }
 
+    [Theory]
+    [InlineData("#c9d1d9", "#0d1117", "#f2cc60")]
+    [InlineData("#24292f", "#ffffff", "#0969da")]
+    public void Inspector_UsesAdaptiveUserColorForSelectedActivity(
+        string foreground,
+        string background,
+        string expectedSelection)
+    {
+        TerminalPalette palette = TerminalPalette.Create(
+            new Terminal.Gui.Drawing.Attribute(
+                new Color(foreground),
+                new Color(background)),
+            supportsTrueColor: true);
+#pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
+        using TerminalActivityView inspector = CreateInspector(
+            60,
+            24,
+            out ListView<ActivityRecord> list,
+            out _,
+            palette);
+#pragma warning restore CS0618
+
+        Scheme scheme = list.GetScheme();
+        Assert.Equal(new Color(expectedSelection), scheme.Focus.Foreground);
+        Assert.Equal(new Color(expectedSelection), scheme.Active.Foreground);
+        Assert.True(scheme.Focus.Style.HasFlag(TextStyle.Bold));
+        Assert.True(scheme.Active.Style.HasFlag(TextStyle.Bold));
+        Assert.NotEqual(scheme.Focus, inspector.Json.GetScheme().Focus);
+    }
+
+    [Fact]
+    public void Inspector_UsesYellowForSelectedActivityInDarkLimitedColorPalette()
+    {
+        TerminalPalette palette = TerminalPalette.Create(
+            new Terminal.Gui.Drawing.Attribute(ColorName16.White, ColorName16.Black),
+            supportsTrueColor: false);
+#pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
+        using TerminalActivityView inspector = CreateInspector(
+            60,
+            24,
+            out ListView<ActivityRecord> list,
+            out _,
+            palette);
+#pragma warning restore CS0618
+
+        Scheme scheme = list.GetScheme();
+        Assert.Equal(ColorName16.Yellow, scheme.Focus.Foreground);
+        Assert.Equal(ColorName16.Yellow, scheme.Active.Foreground);
+        Assert.True(scheme.Focus.Style.HasFlag(TextStyle.Bold));
+        Assert.True(scheme.Active.Style.HasFlag(TextStyle.Bold));
+    }
+
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
     private static TerminalActivityView CreateInspector(
         int width,
         int height,
         out ListView<ActivityRecord> list,
-        out TextView json)
+        out TextView json,
+        TerminalPalette? palette = null)
     {
         list = new ListView<ActivityRecord>();
         list.SetSource(
@@ -94,7 +148,7 @@ public sealed class TerminalActivityViewTests
         TerminalActivityView inspector = new(
             list,
             json,
-            TerminalPalette.Create(null, supportsTrueColor: false));
+            palette ?? TerminalPalette.Create(null, supportsTrueColor: false));
         inspector.Frame = new System.Drawing.Rectangle(0, 0, width, height);
         Assert.True(inspector.Layout());
         return inspector;

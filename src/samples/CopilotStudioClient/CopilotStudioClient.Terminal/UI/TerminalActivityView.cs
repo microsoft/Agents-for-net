@@ -21,9 +21,8 @@ internal sealed class TerminalActivityView : View
         Json = json ?? throw new ArgumentNullException(nameof(json));
         ArgumentNullException.ThrowIfNull(palette);
 
-        Scheme controlScheme = palette.CreateControlScheme();
-        ActivityList.SetScheme(controlScheme);
-        Json.SetScheme(controlScheme);
+        ActivityList.SetScheme(palette.CreateActivityListScheme());
+        Json.SetScheme(palette.CreateControlScheme());
 
         Width = Dim.Fill();
         Height = Dim.Fill();
