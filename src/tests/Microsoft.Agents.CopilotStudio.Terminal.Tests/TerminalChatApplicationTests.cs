@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
@@ -104,6 +105,189 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
+    public void ApplyChatChanges_CreatesControlOnlyForSafeMarkdownLink()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        terminal.ApplyChatChanges(
+        [
+            MarkdownChange("safe", "[Docs](https://example.com/docs)"),
+            MarkdownChange("unsafe", "[Local](file:///C:/secret.txt)")
+        ]);
+        RunOneIteration(application, shell);
+
+        ReceivedLink link = Assert.Single(Descendants(shell).OfType<ReceivedLink>());
+        Assert.Equal("Docs", link.Text);
+        Assert.Equal("https://example.com/docs", link.Target.AbsoluteUri);
+        TerminalTimelineView timeline = Assert.Single(
+            Descendants(shell).OfType<TerminalTimelineView>(),
+            view => view.CollapseCompletedThoughts);
+        Assert.Contains(
+            timeline.RenderedLines,
+            line => PlainText(line) == "[Local](file:///C:/secret.txt)");
+    }
+
+    [Fact]
+    public void ApplyChatChanges_StreamReplacementUpdatesMarkdownLinkControlByKey()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        terminal.ApplyChatChanges(
+        [
+            MarkdownChange(
+                "stream",
+                "[Old](https://example.com/old)",
+                isTransient: true)
+        ]);
+        int stage = 0;
+        int attempts = 0;
+        application.Iteration += (_, _) =>
+        {
+            ReceivedLink[] links = Descendants(shell).OfType<ReceivedLink>().ToArray();
+            if (links.Length == 0 && ++attempts < 5)
+            {
+                return;
+            }
+
+            try
+            {
+                ReceivedLink link = Assert.Single(links);
+                if (stage == 0)
+                {
+                    Assert.Equal("https://example.com/old", link.Target.AbsoluteUri);
+                    stage = 1;
+                    terminal.ApplyChatChanges(
+                    [
+                        MarkdownChange(
+                            "stream",
+                            "[Current](https://example.com/current)",
+                            isTransient: true)
+                    ]);
+                    return;
+                }
+
+                Assert.Equal("Current", link.Text);
+                Assert.Equal("https://example.com/current", link.Target.AbsoluteUri);
+                stage = 2;
+                application.RequestStop();
+            }
+            catch
+            {
+                application.RequestStop();
+                throw;
+            }
+        };
+
+        application.Run(shell);
+        Assert.Equal(2, stage);
+    }
+
+    [Fact]
+    public void MarkdownLink_FocusedActivationRequestsExactUrlThroughConfirmation()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        Uri target = new("https://example.com/docs?q=terminal");
+        Uri? confirmationTarget = null;
+        int starts = 0;
+        TerminalChatApplication terminal = new(
+            new TerminalOptions(TerminalLayout.Tabs, false),
+            uri =>
+            {
+                confirmationTarget = uri;
+                return false;
+            },
+            _ => starts++);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        terminal.ApplyChatChanges([MarkdownChange("link", $"[Docs]({target.AbsoluteUri})")]);
+        int attempts = 0;
+        application.Iteration += (_, _) =>
+        {
+            ReceivedLink[] links = Descendants(shell).OfType<ReceivedLink>().ToArray();
+            if (links.Length == 0 && ++attempts < 5)
+            {
+                return;
+            }
+
+            try
+            {
+                ReceivedLink link = Assert.Single(links);
+                link.SetFocus();
+                Assert.True(link.HasFocus);
+
+                link.InvokeCommand(Command.Activate);
+
+                Assert.Equal(target.AbsoluteUri, confirmationTarget?.AbsoluteUri);
+                Assert.Equal(0, starts);
+            }
+            finally
+            {
+                application.RequestStop();
+            }
+        };
+
+        application.Run(shell);
+    }
+
+    [Fact]
+    public void MarkdownLink_CtrlCCopiesFocusedExactUrlThroughApplicationBinding()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        FakeClipboard clipboard = new(
+            fakeClipboardThrowsNotSupportedException: false,
+            isSupportedAlwaysFalse: false);
+        application.Driver!.Clipboard = clipboard;
+        using CancellationTokenSource shutdown = new();
+        Uri target = new("https://example.com/docs?q=copy");
+        TerminalChatApplication terminal = new(new TerminalOptions(TerminalLayout.Tabs, false));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        terminal.ApplyChatChanges([MarkdownChange("link", $"[Docs]({target.AbsoluteUri})")]);
+        int attempts = 0;
+        application.Iteration += (_, _) =>
+        {
+            ReceivedLink[] links = Descendants(shell).OfType<ReceivedLink>().ToArray();
+            if (links.Length == 0 && ++attempts < 5)
+            {
+                return;
+            }
+
+            try
+            {
+                ReceivedLink link = Assert.Single(links);
+                link.SetFocus();
+                Assert.True(link.HasFocus);
+
+                RaiseTerminalKey(application, Key.C.WithCtrl);
+
+                Assert.Equal(target.AbsoluteUri, clipboard.GetClipboardData());
+                Assert.Equal("Copied to clipboard.", GetStatus(shell).Content);
+            }
+            finally
+            {
+                application.RequestStop();
+            }
+        };
+
+        application.Run(shell);
+    }
+
+    [Fact]
     public void CreateShell_DefaultLayoutIsBorderlessAndKeepsNavigationVisible()
     {
         using IApplication application = Application.Create();
@@ -127,6 +311,36 @@ public sealed class TerminalChatApplicationTests
             surfaces.SubViews.Select(view => view.Title));
         AssertDefaultSurface(surfaces, "_Chat");
         AssertRequiredChatControls(shell);
+    }
+
+    [Theory]
+    [InlineData(false, "* Copilot Studio  connected")]
+    [InlineData(true, "● Copilot Studio  connected")]
+    public void CreateShell_ConnectionHeaderUsesEncodingSelectedAgentGlyph(
+        bool useUnicode,
+        string expected)
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        Encoding outputEncoding = useUnicode ? Encoding.UTF8 : Encoding.ASCII;
+        TerminalChatApplication terminal = new(
+            new TerminalOptions(TerminalLayout.Tabs, false),
+            confirmOpen: null,
+            startProcess: _ => { },
+            outputEncoding: outputEncoding);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+
+        using Runnable shell = terminal.CreateShell(application, presenter, shutdown);
+
+        TimelineRoleLabel header = Assert.Single(
+            Descendants(shell).OfType<TimelineRoleLabel>(),
+            label => label.Role == TimelineRole.Agent);
+        TerminalTimelineView conversation = Assert.Single(
+            Descendants(shell).OfType<TerminalTimelineView>(),
+            view => view.CollapseCompletedThoughts);
+        Assert.Equal(expected, header.Content);
+        Assert.Equal(TimelineGlyphSet.ForEncoding(outputEncoding), conversation.Glyphs);
     }
 
     [Fact]
@@ -975,6 +1189,22 @@ public sealed class TerminalChatApplicationTests
                 false,
                 [],
                 [new ChatAction(title, value)],
+                key));
+    }
+
+    private static ChatChange MarkdownChange(string key, string text, bool isTransient = false)
+    {
+        return new ChatChange(
+            ChatChangeKind.Upsert,
+            key,
+            new ChatEntry(
+                key,
+                ChatEntryKind.Agent,
+                "Agent",
+                text,
+                isTransient,
+                [],
+                [],
                 key));
     }
 

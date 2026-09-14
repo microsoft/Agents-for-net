@@ -316,6 +316,7 @@ internal sealed class TerminalChatApplication : ITerminalView
     private readonly TerminalOptions _options;
     private readonly Func<Uri, bool>? _confirmOpen;
     private readonly Action<ProcessStartInfo> _startProcess;
+    private readonly Encoding _outputEncoding;
     private readonly TerminalChatState _chatState = new();
     private readonly TerminalChatState _thoughtState =
         new(entry => entry.Kind == ChatEntryKind.Thought);
@@ -347,18 +348,21 @@ internal sealed class TerminalChatApplication : ITerminalView
         : this(
             options,
             confirmOpen: null,
-            startProcess: startInfo => { Process.Start(startInfo); })
+            startProcess: startInfo => { Process.Start(startInfo); },
+            outputEncoding: null)
     {
     }
 
     internal TerminalChatApplication(
         TerminalOptions options,
         Func<Uri, bool>? confirmOpen,
-        Action<ProcessStartInfo> startProcess)
+        Action<ProcessStartInfo> startProcess,
+        Encoding? outputEncoding = null)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _confirmOpen = confirmOpen;
         _startProcess = startProcess ?? throw new ArgumentNullException(nameof(startProcess));
+        _outputEncoding = outputEncoding ?? Console.OutputEncoding;
     }
 
     internal async Task RunAsync(
@@ -598,14 +602,14 @@ internal sealed class TerminalChatApplication : ITerminalView
 
     private View BuildChatView()
     {
-        TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(Console.OutputEncoding);
+        TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(_outputEncoding);
         TimelineRoleLabel header = new(GetPalette())
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = 1,
-            Content = "● Copilot Studio  connected",
+            Content = $"{glyphs.Agent} Copilot Studio  connected",
             Role = TimelineRole.Agent
         };
         header.SetScheme(GetControlScheme());
@@ -664,7 +668,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         TerminalComposerView composer = new(
             _composer,
             GetPalette(),
-            Console.OutputEncoding.CodePage == Encoding.UTF8.CodePage)
+            _outputEncoding.CodePage == Encoding.UTF8.CodePage)
         {
             BorderStyle = LineStyle.None
         };
@@ -672,7 +676,7 @@ internal sealed class TerminalChatApplication : ITerminalView
 
         TerminalFooterView footer = new(
             GetPalette(),
-            Console.OutputEncoding.CodePage == Encoding.UTF8.CodePage);
+            _outputEncoding.CodePage == Encoding.UTF8.CodePage);
         footer.X = 0;
         footer.Y = 0;
         footer.Width = Dim.Fill();
@@ -738,7 +742,7 @@ internal sealed class TerminalChatApplication : ITerminalView
 
     private View BuildThoughtsView()
     {
-        TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(Console.OutputEncoding);
+        TimelineGlyphSet glyphs = TimelineGlyphSet.ForEncoding(_outputEncoding);
         View thoughts = new()
         {
             Title = "_Thoughts",
@@ -958,9 +962,9 @@ internal sealed class TerminalChatApplication : ITerminalView
         }
 
         Pos linkX = 0;
-        foreach (ChatLink link in _chatState.Links)
+        void AddLink(string text, Uri target)
         {
-            ReceivedLink linkView = new(link.Title, link.Url, OpenReceivedLink)
+            ReceivedLink linkView = new(text, target, OpenReceivedLink)
             {
                 X = linkX,
                 Y = 0
@@ -969,6 +973,23 @@ internal sealed class TerminalChatApplication : ITerminalView
             _actionBar.Add(linkView);
             _linkViews.Add(linkView);
             linkX = Pos.Right(linkView) + 1;
+        }
+
+        foreach (ChatLink link in _chatState.Links)
+        {
+            AddLink(link.Title, link.Url);
+        }
+
+        HashSet<(string EntryKey, string Text, string Target)> markdownLinks = [];
+        IEnumerable<TimelineLink> parsedLinks =
+            (_transcript?.Links ?? [])
+            .Concat(_thoughtTranscript?.Links ?? []);
+        foreach (TimelineLink link in parsedLinks)
+        {
+            if (markdownLinks.Add((link.EntryKey, link.Text, link.Target.AbsoluteUri)))
+            {
+                AddLink(link.Text, link.Target);
+            }
         }
 
         Pos actionX = 0;
@@ -985,6 +1006,8 @@ internal sealed class TerminalChatApplication : ITerminalView
             _actionBar.Add(button);
             actionX = Pos.Right(button) + 1;
         }
+
+        _actionBar.CanFocus = _actionBar.SubViews.Count > 0;
     }
 
     private void ActivateAction(ChatAction action)

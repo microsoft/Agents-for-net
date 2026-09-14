@@ -9,7 +9,8 @@ internal sealed class TerminalTimelineView : View
 {
     private static readonly TimelineLayoutResult EmptyLayout = new(
         Array.AsReadOnly(Array.Empty<TimelineLine>()),
-        new Dictionary<string, TimelineRowRange>(StringComparer.Ordinal));
+        new Dictionary<string, TimelineRowRange>(StringComparer.Ordinal),
+        Array.AsReadOnly(Array.Empty<TimelineLink>()));
     private static readonly IReadOnlyList<TimelineLine> NoLines = Array.AsReadOnly(Array.Empty<TimelineLine>());
 
     private readonly TimelineScrollState _scrollState = new();
@@ -40,6 +41,15 @@ internal sealed class TerminalTimelineView : View
         {
             EnsureLayoutMatchesViewport();
             return _layout.Lines;
+        }
+    }
+
+    internal IReadOnlyList<TimelineLink> Links
+    {
+        get
+        {
+            EnsureLayoutMatchesViewport();
+            return _layout.Links;
         }
     }
 
@@ -150,7 +160,10 @@ internal sealed class TerminalTimelineView : View
     {
         int contentWidth = Math.Max(1, width);
         _layout = _entries.Count == 0
-            ? new TimelineLayoutResult(BuildEmptyStateLayout(contentWidth), EmptyLayout.EntryRows)
+            ? new TimelineLayoutResult(
+                BuildEmptyStateLayout(contentWidth),
+                EmptyLayout.EntryRows,
+                EmptyLayout.Links)
             : TerminalTimelineLayout.Build(_entries, contentWidth, Glyphs, CollapseCompletedThoughts);
         _lastLayoutWidth = contentWidth;
         UpdateScrollDimensions();

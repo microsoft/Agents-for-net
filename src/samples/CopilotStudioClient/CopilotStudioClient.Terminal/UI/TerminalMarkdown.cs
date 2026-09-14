@@ -299,6 +299,12 @@ internal static class TerminalMarkdown
             return false;
         }
 
+        if (delimiter == '_' && !CanOpenUnderscore(content, index))
+        {
+            result = default;
+            return false;
+        }
+
         int close = FindClosingSingleDelimiter(content, index + 1, delimiter);
         if (close < 0)
         {
@@ -399,13 +405,28 @@ internal static class TerminalMarkdown
         {
             if (content[index] == delimiter
                 && (index == 0 || content[index - 1] != delimiter)
-                && (index + 1 >= content.Length || content[index + 1] != delimiter))
+                && (index + 1 >= content.Length || content[index + 1] != delimiter)
+                && (delimiter != '_' || CanCloseUnderscore(content, index)))
             {
                 return index;
             }
         }
 
         return -1;
+    }
+
+    private static bool CanOpenUnderscore(string content, int index)
+    {
+        return index + 1 < content.Length
+            && !char.IsWhiteSpace(content[index + 1])
+            && (index == 0 || !char.IsLetterOrDigit(content[index - 1]));
+    }
+
+    private static bool CanCloseUnderscore(string content, int index)
+    {
+        return index > 0
+            && !char.IsWhiteSpace(content[index - 1])
+            && (index + 1 >= content.Length || !char.IsLetterOrDigit(content[index + 1]));
     }
 
     private static bool IsHttpLink(Uri target)

@@ -62,6 +62,33 @@ public sealed class TerminalMarkdownTests
         Assert.Equal("alpha\\u001Bbeta", PlainText(blocks));
     }
 
+    [Theory]
+    [InlineData("file_name_with_underscores")]
+    [InlineData(@"C:\repo_name\file_name.txt")]
+    [InlineData("https://example.com/path_with_underscores")]
+    public void Parse_DoesNotTreatIntrawordUnderscoresAsEmphasis(string input)
+    {
+        IReadOnlyList<TimelineBlock> blocks = TerminalMarkdown.Parse(input, TimelineRole.Agent);
+
+        Assert.Equal(input, PlainText(blocks));
+        Assert.DoesNotContain(
+            blocks.SelectMany(block => block.Spans),
+            span => span.Style.HasFlag(TimelineTextStyle.Italic));
+    }
+
+    [Fact]
+    public void Parse_EmitsSingleUnderscoreEmphasisAtWordBoundaries()
+    {
+        IReadOnlyList<TimelineBlock> blocks =
+            TerminalMarkdown.Parse("This is _italic_.", TimelineRole.Agent);
+
+        Assert.Equal("This is italic.", PlainText(blocks));
+        TimelineSpan italic = Assert.Single(
+            blocks.SelectMany(block => block.Spans),
+            span => span.Text == "italic");
+        Assert.True(italic.Style.HasFlag(TimelineTextStyle.Italic));
+    }
+
     private static string PlainText(IReadOnlyList<TimelineBlock> blocks)
     {
         return string.Concat(blocks.SelectMany(block => block.Spans).Select(span => span.Text));

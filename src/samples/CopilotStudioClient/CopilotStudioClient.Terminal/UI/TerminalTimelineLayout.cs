@@ -26,11 +26,14 @@ internal sealed record TimelineSpan(
     TimelineTextStyle Style = TimelineTextStyle.None,
     Uri? LinkTarget = null);
 
+internal sealed record TimelineLink(string EntryKey, string Text, Uri Target);
+
 internal sealed record TimelineLine(string EntryKey, IReadOnlyList<TimelineSpan> Spans);
 
 internal sealed record TimelineLayoutResult(
     IReadOnlyList<TimelineLine> Lines,
-    IReadOnlyDictionary<string, TimelineRowRange> EntryRows);
+    IReadOnlyDictionary<string, TimelineRowRange> EntryRows,
+    IReadOnlyList<TimelineLink> Links);
 
 internal readonly record struct TimelineRowRange(int Start, int Count);
 
@@ -96,6 +99,7 @@ internal static class TerminalTimelineLayout
         int contentWidth = Math.Max(1, width);
         List<TimelineLine> lines = new(entries.Count * 3);
         Dictionary<string, TimelineRowRange> entryRows = new(entries.Count, StringComparer.Ordinal);
+        List<TimelineLink> links = [];
 
         for (int index = 0; index < entries.Count; index++)
         {
@@ -107,7 +111,20 @@ internal static class TerminalTimelineLayout
             string headerText = BuildHeaderText(headerGlyph, entry.Author, contentWidth);
             lines.Add(new TimelineLine(entry.Key, [new TimelineSpan(headerText, headerRole)]));
 
-            foreach (TimelineLine line in WrapBlocks(GetBodyBlocks(entry, entryRole, glyphs, collapseCompletedThoughts), contentWidth))
+            IReadOnlyList<TimelineBlock> bodyBlocks =
+                GetBodyBlocks(entry, entryRole, glyphs, collapseCompletedThoughts);
+            foreach (TimelineBlock block in bodyBlocks)
+            {
+                foreach (TimelineSpan span in block.Spans)
+                {
+                    if (span.LinkTarget is not null)
+                    {
+                        links.Add(new TimelineLink(entry.Key, span.Text, span.LinkTarget));
+                    }
+                }
+            }
+
+            foreach (TimelineLine line in WrapBlocks(bodyBlocks, contentWidth))
             {
                 lines.Add(line with { EntryKey = entry.Key });
             }
@@ -123,7 +140,8 @@ internal static class TerminalTimelineLayout
 
         return new TimelineLayoutResult(
             lines.Count == 0 ? NoLines : Array.AsReadOnly(lines.ToArray()),
-            entryRows);
+            entryRows,
+            Array.AsReadOnly(links.ToArray()));
     }
 
     internal static IReadOnlyList<string> WrapText(string value, int width)

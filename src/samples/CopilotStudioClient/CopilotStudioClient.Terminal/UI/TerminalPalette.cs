@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using GuiAttribute = Terminal.Gui.Drawing.Attribute;
 using Terminal.Gui.Drawing;
 
+[Flags]
 internal enum TimelineTextStyle
 {
     None = 0,
@@ -15,6 +16,9 @@ internal enum TimelineTextStyle
 
 internal sealed class TerminalPalette
 {
+    private static readonly Color DarkTrueColorCodeBackground = new("#161b22");
+    private static readonly Color LightTrueColorCodeBackground = new("#f6f8fa");
+
     private static readonly IReadOnlyDictionary<TimelineRole, Color> DarkTrueColorForegrounds =
         new Dictionary<TimelineRole, Color>
         {
@@ -57,7 +61,7 @@ internal sealed class TerminalPalette
             [TimelineRole.ActiveNavigation] = ColorName16.Cyan,
             [TimelineRole.Warning] = ColorName16.Yellow,
             [TimelineRole.Error] = ColorName16.Red,
-            [TimelineRole.Code] = ColorName16.White
+            [TimelineRole.Code] = ColorName16.Black
         };
 
     private static readonly IReadOnlyDictionary<TimelineRole, ColorName16> LightFallbackForegrounds =
@@ -78,19 +82,22 @@ internal sealed class TerminalPalette
     private readonly GuiAttribute _terminalDefault;
     private readonly IReadOnlyDictionary<TimelineRole, Color> _trueColorForegrounds;
     private readonly IReadOnlyDictionary<TimelineRole, ColorName16> _fallbackForegrounds;
+    private readonly Color _codeBackground;
 
     private TerminalPalette(
         GuiAttribute terminalDefault,
         bool isDark,
         bool usesTrueColor,
         IReadOnlyDictionary<TimelineRole, Color> trueColorForegrounds,
-        IReadOnlyDictionary<TimelineRole, ColorName16> fallbackForegrounds)
+        IReadOnlyDictionary<TimelineRole, ColorName16> fallbackForegrounds,
+        Color codeBackground)
     {
         _terminalDefault = terminalDefault;
         IsDark = isDark;
         UsesTrueColor = usesTrueColor;
         _trueColorForegrounds = trueColorForegrounds;
         _fallbackForegrounds = fallbackForegrounds;
+        _codeBackground = codeBackground;
     }
 
     internal bool IsDark { get; }
@@ -110,7 +117,10 @@ internal sealed class TerminalPalette
             isDark,
             usesTrueColor,
             isDark ? DarkTrueColorForegrounds : LightTrueColorForegrounds,
-            isDark ? DarkFallbackForegrounds : LightFallbackForegrounds);
+            isDark ? DarkFallbackForegrounds : LightFallbackForegrounds,
+            usesTrueColor
+                ? isDark ? DarkTrueColorCodeBackground : LightTrueColorCodeBackground
+                : isDark ? ColorName16.DarkGray : ColorName16.Gray);
     }
 
     internal GuiAttribute Get(
@@ -118,12 +128,15 @@ internal sealed class TerminalPalette
         TimelineTextStyle style = TimelineTextStyle.None)
     {
         TextStyle textStyle = ToTerminalTextStyle(style);
+        Color background = role == TimelineRole.Code
+            ? _codeBackground
+            : _terminalDefault.Background;
         if (UsesTrueColor)
         {
-            return new GuiAttribute(_trueColorForegrounds[role], _terminalDefault.Background, textStyle);
+            return new GuiAttribute(_trueColorForegrounds[role], background, textStyle);
         }
 
-        return new GuiAttribute(_fallbackForegrounds[role], _terminalDefault.Background, textStyle);
+        return new GuiAttribute(_fallbackForegrounds[role], background, textStyle);
     }
 
     internal Scheme CreateControlScheme()

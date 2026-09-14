@@ -233,6 +233,32 @@ public sealed class TerminalTimelineLayoutTests
     }
 
     [Fact]
+    public void Build_ProjectsOnlySafeMarkdownLinksWithEntryIdentity()
+    {
+        TimelineLayoutResult result = TerminalTimelineLayout.Build(
+            [
+                Entry(
+                    "safe-entry",
+                    ChatEntryKind.Agent,
+                    "Agent",
+                    "[Docs](https://example.com/docs)"),
+                Entry(
+                    "unsafe-entry",
+                    ChatEntryKind.Agent,
+                    "Agent",
+                    "[Local](file:///C:/secret.txt)")
+            ],
+            width: 80,
+            TimelineGlyphSet.Unicode,
+            collapseCompletedThoughts: true);
+
+        TimelineLink link = Assert.Single(result.Links);
+        Assert.Equal("safe-entry", link.EntryKey);
+        Assert.Equal("Docs", link.Text);
+        Assert.Equal("https://example.com/docs", link.Target.AbsoluteUri);
+    }
+
+    [Fact]
     public void Build_UsesAsciiGlyphSetWhenRequested()
     {
         TimelineLayoutResult result = TerminalTimelineLayout.Build(
