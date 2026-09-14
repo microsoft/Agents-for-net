@@ -180,6 +180,21 @@ public sealed class ActivityInterpreterTests
     }
 
     [Fact]
+    public void Process_ToolOnlyMessage_DoesNotAddBlankAgentRow()
+    {
+        Activity activity = ToolCallActivity(
+            ToolCallEntity(
+                "started",
+                JsonSerializer.SerializeToElement(new { Location = "Seattle" }),
+                JsonSerializer.SerializeToElement(Array.Empty<string>())));
+
+        IReadOnlyList<ChatChange> changes = new ActivityInterpreter().Process(activity, ActivityDirection.Inbound);
+
+        Assert.DoesNotContain(changes, change => change.Entry?.Kind == ChatEntryKind.Agent);
+        Assert.Single(changes, change => change.Entry?.Kind == ChatEntryKind.ToolCall);
+    }
+
+    [Fact]
     public void Process_CompletedToolCallWithoutStart_StillCreatesCompletedEntry()
     {
         ChatEntry completed = SingleToolEntry(

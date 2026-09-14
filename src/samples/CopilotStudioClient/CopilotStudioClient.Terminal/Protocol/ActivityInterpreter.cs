@@ -305,6 +305,12 @@ internal sealed class ActivityInterpreter
             return;
         }
 
+        if (kind is ChatEntryKind.User or ChatEntryKind.Agent
+            && IsToolCallOnlyMessage(activity))
+        {
+            return;
+        }
+
         string key = $"activity:{activityIdentity}:entry";
         changes.Add(CreateEntryChange(
             key,
@@ -482,6 +488,15 @@ internal sealed class ActivityInterpreter
         return activity.Text
             ?? activity.Summary
             ?? string.Empty;
+    }
+
+    private static bool IsToolCallOnlyMessage(Activity activity)
+    {
+        return string.Equals(activity.Type, ActivityTypes.Message, StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(activity.Text)
+            && string.IsNullOrWhiteSpace(activity.Summary)
+            && activity.Entities is { Count: > 0 }
+            && activity.Entities.All(IsToolCallEntity);
     }
 
     private static string GetStatusOrEventText(Activity activity)
