@@ -645,6 +645,34 @@ public class SlackChannelDataTests
         Assert.Equal("C456ABC", cd.Channel);
     }
 
+    [Theory]
+    [InlineData("{\"channel\":{\"id\":\"C_OBJECT\",\"name\":\"directmessage\"},\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_OBJECT")]
+    [InlineData("{\"channel\":\"C_STRING\",\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_STRING")]
+    [InlineData("{\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_CONTAINER")]
+    [InlineData("{\"channel\":null,\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_CONTAINER")]
+    [InlineData("{\"channel\":{},\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_CONTAINER")]
+    [InlineData("{\"type\":\"shortcut\"}", null)]
+    [InlineData("{\"channel\":null}", null)]
+    [InlineData("{\"channel\":{}}", null)]
+    public void Channel_FromPayload_ResolvesChannelShapes(string payload, string expectedChannel)
+    {
+        var channelData = Deserialize("{\"Payload\":" + payload + "}");
+
+        Assert.NotNull(channelData.Payload);
+        Assert.Equal(expectedChannel, channelData.Channel);
+    }
+
+    [Theory]
+    [InlineData("123")]
+    [InlineData("false")]
+    [InlineData("[]")]
+    [InlineData("{\"id\":123}")]
+    [InlineData("{\"id\":[]}")]
+    public void ActionPayload_Deserialize_InvalidChannel_Throws(string channel)
+    {
+        Assert.Throws<JsonException>(() => Deserialize("{\"Payload\":{\"channel\":" + channel + "}}"));
+    }
+
     [Fact]
     public void ThreadTs_FromPayload_PrefersMessageThreadTs()
     {
