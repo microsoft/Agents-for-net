@@ -17,7 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Storage;
 
 /// <summary>
 /// Implements <see cref="ITaskStore"/> using Azure Blob Storage.

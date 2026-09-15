@@ -3,7 +3,7 @@
 
 using A2A;
 using Azure.Storage.Blobs;
-using Microsoft.Agents.Extensions.A2A;
+using Microsoft.Agents.Extensions.A2A.Storage;
 using System;
 using System.Reflection;
 using System.Threading;

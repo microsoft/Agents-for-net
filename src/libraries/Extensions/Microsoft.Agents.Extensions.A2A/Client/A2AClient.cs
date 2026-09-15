@@ -5,7 +5,7 @@ using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Client;
 
 /// <summary>
 /// Provides direct access to the A2A primitives for the current turn: the outgoing

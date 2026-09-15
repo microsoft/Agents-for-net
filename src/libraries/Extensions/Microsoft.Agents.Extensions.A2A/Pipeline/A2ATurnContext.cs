@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.A2A;
+using Microsoft.Agents.Extensions.A2A.Client;
 
 namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 

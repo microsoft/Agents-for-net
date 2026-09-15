@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Extensions.A2A.Client;
 
 namespace Microsoft.Agents.Extensions.A2A;
 

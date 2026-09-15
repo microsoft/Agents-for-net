@@ -24,6 +24,8 @@ public class A2ANamespaceOrganizationTests
     [InlineData("A2AUserAuthorizationSettings", RootNamespace + ".Authorization")]
     [InlineData("A2AAgentCardOptions", RootNamespace + ".AgentCard")]
     [InlineData("IAgentCardHandler", RootNamespace + ".AgentCard")]
+    [InlineData("A2AClient", RootNamespace + ".Client")]
+    [InlineData("BlobTaskStore", RootNamespace + ".Storage")]
     public void Type_UsesExpectedNamespace(string typeName, string expectedNamespace)
     {
         Type type = typeof(A2AAgentExtension).Assembly
@@ -48,5 +50,33 @@ public class A2ANamespaceOrganizationTests
     public void AuthoringType_RemainsInRootNamespace(Type type)
     {
         Assert.Equal(RootNamespace, type.Namespace);
+    }
+
+    [Fact]
+    public void ExportedRootTypes_AreTheApprovedAuthoringSurface()
+    {
+        string[] expected =
+        [
+            "A2AAgentExtension",
+            "A2AAgentTransportProtocol",
+            "A2AExtensionAttribute",
+            "A2AExtensions",
+            "A2AMessageRouteAttribute",
+            "A2ARouteHandler",
+            "A2AServiceExtensions",
+            "A2ASkillAttribute",
+            "A2ASkillBuilder",
+            "IA2AActivity",
+            "IA2ATurnContext",
+        ];
+
+        string[] actual = typeof(A2AAgentExtension).Assembly
+            .GetExportedTypes()
+            .Where(type => type.Namespace == RootNamespace)
+            .Select(type => type.Name)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expected.OrderBy(name => name, StringComparer.Ordinal), actual);
     }
 }
