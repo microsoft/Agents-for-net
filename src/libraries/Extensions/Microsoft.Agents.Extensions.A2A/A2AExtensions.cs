@@ -32,7 +32,6 @@ public static class A2AExtensions
     /// <param name="data">The value whose runtime type is described.</param>
     /// <param name="contentType">The media type of the value.</param>
     /// <returns>A metadata dictionary containing the content type and generated JSON schema.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="data"/> is <see langword="null"/>.</exception>
     public static Dictionary<string, JsonElement> ToA2AMetadata(this object data, string contentType)
     {
         if (!_schemas.TryGetValue(data.GetType().FullName, out JsonNode schema))

@@ -79,17 +79,30 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
         return _settings;
     }
 
-    /// <inheritdoc/>
-    /// <remarks>
-    /// The A2A request token is used as the source token. OBO exchange is performed only when
-    /// the caller supplies an exchange connection or scopes.
-    /// </remarks>
+    /// <summary>
+    /// Gets the registration name for this authorization handler.
+    /// </summary>
     public string Name { get; private set; }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets the current A2A request token and optionally exchanges it on behalf of the user.
+    /// </summary>
+    /// <param name="turnContext">The current turn context containing the A2A request authentication.</param>
+    /// <param name="exchangeConnection">The OBO connection to use instead of the configured connection.</param>
+    /// <param name="exchangeScopes">The OBO scopes to use instead of the configured scopes.</param>
+    /// <param name="cancellationToken">A token used to cancel the operation.</param>
+    /// <returns>
+    /// The request token unchanged when neither caller-supplied nor configured OBO scopes are present;
+    /// otherwise, the token obtained through the requested or configured OBO exchange.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// The A2A request token is expired, no usable request or claims-identity token is available,
+    /// or a requested OBO exchange cannot be completed.
+    /// </exception>
     /// <remarks>
-    /// A2A requests already carry their request token, so this method obtains that token rather
-    /// than starting an interactive sign-in flow. Any configured OBO exchange remains separate.
+    /// Caller-supplied <paramref name="exchangeScopes"/> take precedence over configured
+    /// <see cref="OBOSettings.OBOScopes"/>. When no scopes are supplied by the caller, configured
+    /// scopes direct the OBO exchange; otherwise, the request token is returned without exchange.
     /// </remarks>
     public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
     {
@@ -115,7 +128,25 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
         }
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Returns the current A2A request token without starting an interactive sign-in flow.
+    /// </summary>
+    /// <param name="turnContext">The current turn context containing the A2A request authentication.</param>
+    /// <param name="forceSignIn">Ignored because A2A request-token authorization cannot initiate interactive sign-in.</param>
+    /// <param name="exchangeConnection">The OBO connection to use instead of the configured connection.</param>
+    /// <param name="exchangeScopes">The OBO scopes to use instead of the configured scopes.</param>
+    /// <param name="cancellationToken">A token used to cancel the operation.</param>
+    /// <returns>
+    /// The request token unchanged when neither caller-supplied nor configured OBO scopes are present;
+    /// otherwise, the token obtained through the requested or configured OBO exchange.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// The A2A request token is expired, no usable request or claims-identity token is available,
+    /// or a requested OBO exchange cannot be completed.
+    /// </exception>
+    /// <remarks>
+    /// <paramref name="forceSignIn"/> does not alter this method's behavior.
+    /// </remarks>
     public async Task<TokenResponse> SignInUserAsync(ITurnContext turnContext, bool forceSignIn = false, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
     {
         // There is no "sign in" or external token retrieval in this handler.  A single impl is sufficient.
