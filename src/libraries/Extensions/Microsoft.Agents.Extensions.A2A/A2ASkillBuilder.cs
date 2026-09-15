@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Agents.Extensions.A2A.Routing;
 using System;
 using System.Collections.Generic;
@@ -175,7 +176,10 @@ public sealed class A2ASkillBuilder
     {
         if (_routeSelector == null || _handler == null)
         {
-            throw new InvalidOperationException("An A2A skill must define a message route.");
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.SkillRouteMissing,
+                null,
+                _id);
         }
 
         return new A2ASkillRegistration(
@@ -203,7 +207,10 @@ public sealed class A2ASkillBuilder
         ArgumentNullException.ThrowIfNull(handler);
         if (_routeSelector != null)
         {
-            throw new InvalidOperationException("An A2A skill can define only one message route.");
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.SkillRouteAlreadyDefined,
+                null,
+                _id);
         }
 
         var route = builder

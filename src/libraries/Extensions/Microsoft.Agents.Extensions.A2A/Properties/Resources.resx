@@ -125,4 +125,19 @@
     <value>The token for handler '{0}' has expired.</value>
     <comment>Raised when an authorization token from a A2A request has expired.</comment>
   </data>
+  <data name="ConflictingSkillMetadata" xml:space="preserve">
+    <value>A2A skill '{0}' has conflicting metadata.</value>
+  </data>
+  <data name="SkillRouteMissing" xml:space="preserve">
+    <value>A2A skill '{0}' must define a message route.</value>
+  </data>
+  <data name="SkillRouteAlreadyDefined" xml:space="preserve">
+    <value>A2A skill '{0}' can define only one message route.</value>
+  </data>
+  <data name="AgentApplicationNotFound" xml:space="preserve">
+    <value>No AgentApplication was found. Define an AgentApplication in the calling assembly or register one as IAgent.</value>
+  </data>
+  <data name="AgentInterfaceMissing" xml:space="preserve">
+    <value>Agent '{0}' must declare an AgentInterfaceAttribute when multiple AgentApplications are present.</value>
+  </data>
 </root>

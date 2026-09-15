@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Builder;
@@ -74,33 +75,11 @@ public static class A2AServiceExtensions
             a2aGroup.AllowAnonymous();
         }
 
-        var allAgents = Assembly.GetCallingAssembly().GetTypes().Where(t => typeof(AgentApplication).IsAssignableFrom(t)).ToList();
-        if (allAgents.Count == 0)
-        {
-            // This is to handle declaring an AgentApplication in an AddTransient lambda.
-            var inlineAgent = endpoints.ServiceProvider.GetService<IAgent>()
-                ?? throw new InvalidOperationException("No AgentApplications were found in the calling assembly. Ensure that at least one AgentApplication is defined.");
-            allAgents.Add(inlineAgent.GetType());
-        }
+        var allAgents = ResolveAgentTypes(Assembly.GetCallingAssembly(), endpoints.ServiceProvider);
 
         foreach (var agent in allAgents)
         {
-            var interfaces = agent.GetCustomAttributes<AgentInterfaceAttribute>(true)?.ToList();
-            if (interfaces?.Count == 0)
-            {
-                if (allAgents.Count == 1)
-                {
-                    // If there is only one AgentApplication, we can default
-                    interfaces = new List<AgentInterfaceAttribute>()
-                        {
-                            new(A2AAgentTransportProtocol.JsonRpc, defaultPath)
-                        };
-                }
-                else
-                {
-                    throw new InvalidOperationException($"No AgentInterfaceAttribute was found on Agent '{agent.FullName}'. When multiple AgentApplications are defined, each must have at least one AgentInterfaceAttribute.");
-                }
-            }
+            var interfaces = ResolveAgentInterfaces(agent, allAgents.Count, defaultPath);
 
             foreach (var agentInterface in interfaces)
             {
@@ -130,6 +109,46 @@ public static class A2AServiceExtensions
         }
 
         return a2aGroup;
+    }
+
+    internal static List<Type> ResolveAgentTypes(Assembly callingAssembly, IServiceProvider serviceProvider)
+    {
+        var agents = callingAssembly.GetTypes()
+            .Where(type => typeof(AgentApplication).IsAssignableFrom(type))
+            .ToList();
+
+        if (agents.Count == 0)
+        {
+            // This is to handle declaring an AgentApplication in an AddTransient lambda.
+            var inlineAgent = serviceProvider.GetService<IAgent>()
+                ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgentApplicationNotFound,
+                    null);
+            agents.Add(inlineAgent.GetType());
+        }
+
+        return agents;
+    }
+
+    internal static List<AgentInterfaceAttribute> ResolveAgentInterfaces(
+        Type agent,
+        int agentCount,
+        string defaultPath)
+    {
+        var interfaces = agent.GetCustomAttributes<AgentInterfaceAttribute>(true).ToList();
+        if (interfaces.Count == 0 && agentCount == 1)
+        {
+            interfaces.Add(new AgentInterfaceAttribute(A2AAgentTransportProtocol.JsonRpc, defaultPath));
+        }
+        else if (interfaces.Count == 0)
+        {
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AgentInterfaceMissing,
+                null,
+                agent.FullName);
+        }
+
+        return interfaces;
     }
 
 
