@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// so both the base and typed views stay in sync.
 /// </remarks>
 [ActivityType(ChannelId = Channels.A2A)]
-public class A2AMessageActivity : Activity, IA2AActivity
+internal class A2AMessageActivity : Activity, IA2AActivity
 {
     /// <summary>
     /// The A2A message payload carried on the Activity.

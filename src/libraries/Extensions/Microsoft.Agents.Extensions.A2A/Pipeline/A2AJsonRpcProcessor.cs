@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// Static processor class for handling A2A JSON-RPC requests in ASP.NET Core applications.
 /// </summary>
 /// <remarks>This is a copy of the a2a-dotnet version since those are internal and can't be used directly.</remarks>
-public static class A2AJsonRpcProcessor
+internal static class A2AJsonRpcProcessor
 {
     internal static async Task<IResult> ProcessRequestAsync(IA2ARequestHandler requestHandler, HttpRequest request, CancellationToken cancellationToken)
     {

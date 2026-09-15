@@ -82,4 +82,51 @@ public class A2ANamespaceOrganizationTests
 
         Assert.Equal(expected.OrderBy(name => name, StringComparer.Ordinal), actual);
     }
+
+    [Fact]
+    public void ExportedTypes_AreTheApprovedPublicSurface()
+    {
+        string[] expected =
+        [
+            "Microsoft.Agents.Extensions.A2A.A2AAgentExtension",
+            "Microsoft.Agents.Extensions.A2A.A2AAgentTransportProtocol",
+            "Microsoft.Agents.Extensions.A2A.A2AClient",
+            "Microsoft.Agents.Extensions.A2A.A2AExtensionAttribute",
+            "Microsoft.Agents.Extensions.A2A.A2AExtensions",
+            "Microsoft.Agents.Extensions.A2A.A2AMessageRouteAttribute",
+            "Microsoft.Agents.Extensions.A2A.A2ARouteHandler",
+            "Microsoft.Agents.Extensions.A2A.A2AServiceExtensions",
+            "Microsoft.Agents.Extensions.A2A.A2ASkillAttribute",
+            "Microsoft.Agents.Extensions.A2A.A2ASkillBuilder",
+            "Microsoft.Agents.Extensions.A2A.IA2AActivity",
+            "Microsoft.Agents.Extensions.A2A.IA2ATurnContext",
+            "Microsoft.Agents.Extensions.A2A.AgentCard.IAgentCardHandler",
+            "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorization",
+            "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationSettings",
+            "Microsoft.Agents.Extensions.A2A.Integration.A2AServiceRegistrar",
+            "Microsoft.Agents.Extensions.A2A.Storage.BlobTaskStore",
+        ];
+
+        string[] actual = typeof(A2AAgentExtension).Assembly
+            .GetExportedTypes()
+            .Select(type => type.FullName!)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expected.OrderBy(name => name, StringComparer.Ordinal), actual);
+    }
+
+    [Theory]
+    [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.A2AAdapter")]
+    [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.IA2AHttpAdapter")]
+    [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.A2AJsonRpcProcessor")]
+    [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.A2AMessageActivity")]
+    [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.A2ATurnContext")]
+    [InlineData("Microsoft.Agents.Extensions.A2A.AgentCard.A2AAgentCardOptions")]
+    public void ImplementationType_IsNotExported(string fullName)
+    {
+        Assert.DoesNotContain(
+            typeof(A2AAgentExtension).Assembly.GetExportedTypes(),
+            type => type.FullName == fullName);
+    }
 }

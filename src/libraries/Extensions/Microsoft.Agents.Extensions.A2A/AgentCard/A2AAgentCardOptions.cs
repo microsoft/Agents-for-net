@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.A2A.AgentCard;
 /// <summary>
 /// Application-owned descriptive values used to compose an A2A Agent Card.
 /// </summary>
-public sealed class A2AAgentCardOptions
+internal sealed class A2AAgentCardOptions
 {
     /// <summary>
     /// Gets or sets the agent name.

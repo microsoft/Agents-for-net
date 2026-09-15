@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// </code>
 /// </remarks>
 [ChannelAdapter(Channels.A2A)]
-public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
+internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 {
     private readonly ITaskStore _taskStore;
     private readonly ChannelEventNotifier _a2aNotifier;

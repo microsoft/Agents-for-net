@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// An A2A-specific <see cref="ITurnContext"/> wrapper that surfaces the current activity as a
 /// strongly-typed <see cref="IA2AActivity"/> and exposes A2A-specific helpers.
 /// </summary>
-public class A2ATurnContext : TurnContextWrapper, IA2ATurnContext
+internal class A2ATurnContext : TurnContextWrapper, IA2ATurnContext
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="A2ATurnContext"/> class.

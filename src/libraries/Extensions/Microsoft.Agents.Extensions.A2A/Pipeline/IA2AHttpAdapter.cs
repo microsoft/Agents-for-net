@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// <summary>
 /// Defines HTTP endpoint handlers for the A2A protocol.
 /// </summary>
-public interface IA2AHttpAdapter : IAgentHttpAdapter
+internal interface IA2AHttpAdapter : IAgentHttpAdapter
 {
     /// <summary>
     /// Processes an A2A JSON-RPC request.
