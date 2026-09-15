@@ -30,8 +30,9 @@ The root `Microsoft.Agents.Extensions.A2A` namespace contains:
 - `A2AMessageRouteAttribute`
 - `A2AAgentTransportProtocol`
 - `A2AServiceExtensions`
+- `A2AExtensions`
 
-These types are used directly in agent classes, attributed route methods, fluent route registration, `AgentInterface` declarations, or application startup. Keeping them together allows the typical application to use one `using Microsoft.Agents.Extensions.A2A;`.
+These types are used directly in agent classes, attributed route methods, fluent route registration, message and metadata helpers, `AgentInterface` declarations, or application startup. Keeping them together allows the typical application to use one `using Microsoft.Agents.Extensions.A2A;`.
 
 `A2ARouteHandler` remains at root for API coherence even though most consumers pass method groups or lambdas rather than declaring variables of that delegate type.
 
@@ -94,7 +95,7 @@ Contains `BlobTaskStore` and future A2A task-store implementations.
 
 Folder and namespace: `Serialization` / `Microsoft.Agents.Extensions.A2A.Serialization`
 
-Contains serialization initialization and protocol conversion helpers that are not part of the normal authoring surface.
+Contains serialization initialization helpers that are not part of the normal authoring surface. The public `A2AExtensions` class remains at root because `NewAgentMessage` is used directly in normal A2A handlers; the class will not be split solely to relocate its lower-level metadata helper.
 
 ### Routing internals
 
