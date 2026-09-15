@@ -56,7 +56,7 @@ internal static class A2AAgentStartup
 
         // Map A2A endpoints.  By default A2A will respond on '/a2a'.
         // The A2A transport itself stays anonymous even when token validation is enabled: the
-        // '-delegated', '-me', and '-app' routes opt in individually through autoSignInHandlers,
+        // '-me' route opts in through autoSignInHandlers,
         // and the echo, multi-turn, streaming, and direct A2A routes remain anonymous.
         app.MapA2AApplicationEndpoints(requireAuth: false);
     }

@@ -8,8 +8,6 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.A2A;
 using System;
-using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,9 +21,7 @@ namespace A2AAgent;
 public partial class MyAgent : AgentApplication
 {
     private const string MultiTurnCountKey = "MultiTurnCount";
-    private const string DelegatedHandlerName = "delegated";
     private const string GraphHandlerName = "graph";
-    private const string ApplicationHandlerName = "app";
     private readonly IGraphProfileClient _graphClient;
 
     public MyAgent(AgentApplicationOptions options, IGraphProfileClient graphClient) : base(options)
@@ -56,16 +52,6 @@ public partial class MyAgent : AgentApplication
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
     }
 
-    [A2ASkill(name: "Delegated identity", description: "Displays the delegated caller identity.", tags: "a2a, sample, authentication", text: "-delegated", autoSigninHandlers: DelegatedHandlerName)]
-    private async Task OnDelegatedAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        var _ = await UserAuthorization.GetTurnTokenAsync(turnContext, DelegatedHandlerName, cancellationToken).ConfigureAwait(false);
-        var identity = turnContext.Identity;
-        A2ATokenIdentity.RequireDelegated(identity);
-        var summary = BuildIdentitySummary(identity, includeApplicationId: false);
-        await CompleteTaskAsync(turnContext, summary, cancellationToken).ConfigureAwait(false);
-    }
-
     [A2ASkill(name: "Microsoft Graph profile", description: "Reads the delegated caller profile from Microsoft Graph.", tags: "a2a, sample, authentication, graph", text: "-me", autoSigninHandlers: GraphHandlerName)]
     private async Task OnGraphAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
@@ -76,16 +62,6 @@ public partial class MyAgent : AgentApplication
             turnContext,
             $"Name: {profile.DisplayName}{Environment.NewLine}User principal name: {profile.UserPrincipalName}",
             cancellationToken).ConfigureAwait(false);
-    }
-
-    [A2ASkill(name: "Application identity", description: "Displays the calling application identity.", tags: "a2a, sample, authentication", text: "-app", autoSigninHandlers: ApplicationHandlerName)]
-    private async Task OnApplicationAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        var _ = await UserAuthorization.GetTurnTokenAsync(turnContext, ApplicationHandlerName, cancellationToken).ConfigureAwait(false);
-        var identity = turnContext.Identity;
-        A2ATokenIdentity.RequireApplication(identity);
-        var summary = BuildIdentitySummary(identity, includeApplicationId: true);
-        await CompleteTaskAsync(turnContext, summary, cancellationToken).ConfigureAwait(false);
     }
 
     // Received an A2A Message
@@ -161,31 +137,6 @@ public partial class MyAgent : AgentApplication
             // Hosting.A2A requires ExpectingInput for multi-turn. 
             var activity = MessageFactory.Text($"You said: {turnContext.Activity.Text} (turn {turnCount})", inputHint: InputHints.ExpectingInput);
             await turnContext.SendActivityAsync(activity, cancellationToken: cancellationToken);
-        }
-    }
-
-    private static string BuildIdentitySummary(ClaimsIdentity identity, bool includeApplicationId)
-    {
-        ArgumentNullException.ThrowIfNull(identity);
-
-        var lines = new List<string>();
-        AddClaimLine(lines, "Tenant", A2ATokenIdentity.FindTenantId(identity));
-        AddClaimLine(lines, "Object ID", A2ATokenIdentity.FindObjectId(identity));
-        AddClaimLine(lines, "Subject", A2ATokenIdentity.FindSubject(identity));
-        if (includeApplicationId)
-        {
-            AddClaimLine(lines, "Application ID", A2ATokenIdentity.FindApplicationId(identity));
-        }
-
-        lines.Add($"Authentication type: {identity.AuthenticationType ?? string.Empty}");
-        return string.Join(Environment.NewLine, lines);
-    }
-
-    private static void AddClaimLine(List<string> lines, string label, string? value)
-    {
-        if (!string.IsNullOrEmpty(value))
-        {
-            lines.Add($"{label}: {value}");
         }
     }
 

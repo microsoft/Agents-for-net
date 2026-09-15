@@ -1,8 +1,8 @@
 # A2AAgent Sample
 
 This sample shows how to add A2A support to an `AgentApplication`, including
-anonymous routes plus route-scoped delegated, OBO, and application-token
-authorization.
+anonymous routes and one route-scoped delegated OAuth flow that reads the
+signed-in user's Microsoft Graph profile.
 
 > Note that this is a preview version of A2A support and is likely to change.
 
@@ -64,13 +64,11 @@ Send any normal message to verify the anonymous echo flow.
 }
 ```
 
-The sample opts into authentication per route:
+The sample opts into authentication for one route:
 
 | Route | Handler | What it validates |
 | --- | --- | --- |
-| `-delegated` | `delegated` | Validates an inbound delegated Agent API token and echoes identity claims. |
-| `-me` | `graph` | Validates an inbound delegated Agent API token, then performs OBO to Microsoft Graph `User.Read`. |
-| `-app` | `app` | Validates an inbound application token. Application identities are not users, so this route does not use `ITurnState.User`. |
+| `-me` | `graph` | Validates an inbound delegated Agent API token, exchanges it for Microsoft Graph `User.Read`, and returns the user's profile. |
 
 ### How token validation is enabled
 
@@ -91,7 +89,7 @@ Two consequences are worth knowing:
   registered and every route is anonymous.
 - Once the placeholders are replaced, inbound bearer tokens are validated. The A2A endpoints are still
   mapped with `requireAuth: false`, so echo, `-multi`, `-stream`, and `-a2a` stay anonymous while
-  `-delegated`, `-me`, and `-app` obtain the validated token through their route handlers. The Activity
+  `-me` obtains the validated token through its route handler. The Activity
   Protocol endpoint mapped by `MapDefaultAgentEndpoints` does require authorization.
 
 ### 1. Register the Agent API application
@@ -99,87 +97,190 @@ Two consequences are worth knowing:
 1. Create a **single-tenant** Microsoft Entra app registration for the agent API.
 1. In the app registration **Manifest** or **API settings**, set `requestedAccessTokenVersion` to `2` so the delegated scope issues a v2 access token whose `aud` is the API's GUID, which matches `TokenValidation:Audiences`.
 1. In **Expose an API**, publish the delegated scope `api://<agent-client-id>/access_as_user`.
-1. Add an app role named `A2A.Access` and allow the `Applications` member type.
 1. Add the delegated Microsoft Graph permission `User.Read`.
 1. Grant the tenant consent required by your environment.
-1. Create the client secret or other credential used by `Connections:ServiceConnection`.
+1. Enable public client flows so the sample A2A client can use Device Code authentication.
+1. Create the client secret or other credential used by `Connections:ServiceConnection` for OBO.
 1. Update `src\samples\A2A\A2AAgent\appsettings.json` so `TokenValidation:Audiences` contains the Agent API client ID and `TokenValidation:TenantId` contains the tenant ID.
-1. Update `Connections:ServiceConnection:Settings:AuthorityEndpoint`, `ClientId`, and the credential values for the same Agent API registration.
+1. Update `Connections:ServiceConnection:Settings:AuthorityEndpoint`, `ClientId`, and the local credential values for the same app registration.
 
-For the current sample, the relevant keys are:
+The `graph` handler owns the delegated OAuth scheme that it contributes to the Agent Card and
+configures the downstream Graph exchange:
 
 ```json
-"TokenValidation": {
-  "Audiences": [
-    "<agent-client-id>"
-  ],
-  "TenantId": "<tenant-id>"
-},
-"Connections": {
-  "ServiceConnection": {
-    "Settings": {
-      "AuthType": "ClientSecret",
-      "AuthorityEndpoint": "https://login.microsoftonline.com/<tenant-id>",
-      "ClientId": "<agent-client-id>",
-      "ClientSecret": "<local-secret>",
-      "Scopes": [
-        "https://api.botframework.com/.default"
-      ]
-    }
+"graph": {
+  "Type": "A2AUserAuthorization",
+  "Settings": {
+    "SecuritySchemeName": "delegated",
+    "OAuthFlows": {
+      "DeviceCode": {
+        "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+        "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+        "Scopes": {
+          "api://<agent-client-id>/access_as_user":
+            "Access the A2A Agent API as the signed-in user."
+        }
+      }
+    },
+    "RequiredScopes": [
+      "api://<agent-client-id>/access_as_user"
+    ],
+    "OBOConnectionName": "ServiceConnection",
+    "OBOScopes": [
+      "User.Read"
+    ]
   }
 }
 ```
 
-Do not commit a real secret or token. Keep placeholders in the repo and store the live value locally.
+`OAuthFlows.DeviceCode.Scopes` and `RequiredScopes` are intentionally separate:
 
-The `A2AUserAuthorization` handlers also use these placeholders in their inline `OAuthFlows`
-and `RequiredScopes`. Replace `{{ClientId}}` in the advertised Agent API scopes and replace
-`{{TenantId}}` in the application handler's token URL:
-`https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token`.
-Client Credentials metadata must name a tenant; Entra does not support `/organizations/`
-for that flow. The delegated Device Code endpoints keep `/organizations/`. These are
-manual configuration replacements, not a runtime templating feature.
+- `Scopes` is the OAuth scheme's catalog of scopes available from the authorization server.
+- `RequiredScopes` is the subset required by the handler or generated skill.
+- `OBOScopes`, when used, identifies scopes for a downstream service and is not advertised as
+  an inbound Agent Card requirement.
 
-The `[A2ASkill]` attributes in `MyAgent` associate each protected route with an
-`A2AUserAuthorization` handler through `autoSigninHandlers`. Agent Card composition merges the
-skill metadata from code with the handler's configured security scheme and `RequiredScopes`.
-This keeps environment-specific OAuth endpoints and scopes out of the route implementation
-without requiring a separate `AgentApplication:A2A:AgentCard` section.
+Available scopes are not automatically treated as required scopes. If `RequiredScopes` is omitted,
+the generated security requirement contains an empty scope list, and the SDK does not automatically
+enforce a scope claim at runtime.
 
-### 2. Registration requirement for the OBO route
+The route associates its generated skill with the handler:
 
-`-me` exchanges the inbound token on behalf of the caller. The SDK only exchanges a token that
-`AgentClaims.IsExchangeableToken` accepts, which requires the token's `aud` claim to contain the
-application ID that requested it (`azp` for v2 tokens, `appid` for v1). A delegated token acquired by a
-*separate* public-client registration has `aud` = Agent API and `azp` = console client, so it is not
-exchangeable and `-me` fails with "token is not exchangeable".
+```csharp
+[A2ASkill(
+    name: "Microsoft Graph profile",
+    description: "Reads the delegated caller profile from Microsoft Graph.",
+    tags: "a2a, sample, authentication, graph",
+    text: "-me",
+    autoSigninHandlers: "graph")]
+private async Task OnGraphAsync(
+    IA2ATurnContext turnContext,
+    ITurnState turnState,
+    CancellationToken cancellationToken)
+{
+    var graphToken = await UserAuthorization.GetTurnTokenAsync(
+        turnContext,
+        "graph",
+        cancellationToken);
 
-For `-me` to work:
+    A2ATokenIdentity.RequireDelegated(turnContext.Identity);
+    var profile = await _graphClient.GetMeAsync(graphToken, cancellationToken);
+}
+```
 
-- acquire the delegated token with the **Agent API registration itself** — enable public client flows on
-  that registration and set the client's `Authentication:PublicClientId` to the Agent API client ID; and
-- do not add the optional `idtyp` claim to delegated tokens for that registration, because a token with
-  `idtyp` of `user` is also treated as non-exchangeable.
+Agent Card composition merges the skill metadata from `[A2ASkill]` with the handler's configured
+scheme and `RequiredScopes`. OAuth endpoints and scopes therefore remain in configuration instead
+of being hard-coded in route code. At the beginning of the turn, the handler exchanges the inbound
+Agent API token for a Graph token because `OBOScopes` contains `User.Read`;
+`GetTurnTokenAsync` returns that Graph token to the route.
 
-`-delegated` and `-app` do not perform OBO, so they work with a separate console client registration.
+The OBO exchange requires the inbound token to be exchangeable. The sample client must acquire its
+delegated token using the Agent API registration itself, so the token's audience and authorized-party
+claims satisfy the SDK's exchange checks. Configure the client's `Authentication:PublicClientId` with
+the Agent API client ID.
 
-### 3. Manual route checks
+### Optional authorization policy
 
-After the Agent API app registration is in place and the client is configured:
+`AuthorizationPolicy` is the optional name of an ASP.NET Core authorization policy associated with
+the handler:
 
-- `:auth delegated` + `-delegated` proves the agent accepts a delegated token whose audience is the Agent API.
-- `:auth delegated` + `-me` proves the agent can exchange that inbound user token on behalf of the caller for Microsoft Graph `User.Read`.
-- `:auth app` + `-app` proves the agent can validate an application token without treating the caller as a user.
+```json
+"AuthorizationPolicy": "EmployeesOnly"
+```
 
-The inbound token must target the Agent API, never Microsoft Graph directly. `-me` relies on the agent's `graph` authorization handler to do the OBO exchange after token validation.
+It defaults to `null`. This preview records the name as handler metadata but does not automatically
+evaluate the policy. Adding the setting does not secure a route by itself; apply and evaluate the
+policy in the ASP.NET Core host or route code.
 
-### 4. Expected failures
+### Other OAuth variations
 
-- `-delegated`, `-me`, or `-app` with `:auth none` fails because the route requires a validated token.
+The introductory sample intentionally does not configure these variations.
+
+#### Delegated token without OBO
+
+A handler without `OBOConnectionName` or `OBOScopes` returns the validated inbound Agent API token
+unchanged. This is useful when route code needs the caller's token or identity but does not call a
+downstream service:
+
+```json
+"delegated": {
+  "Type": "A2AUserAuthorization",
+  "Settings": {
+    "SecuritySchemeName": "delegated",
+    "OAuthFlows": {
+      "DeviceCode": {
+        "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+        "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+        "Scopes": {
+          "api://<agent-client-id>/access_as_user":
+            "Access the A2A Agent API as the signed-in user."
+        }
+      }
+    },
+    "RequiredScopes": [
+      "api://<agent-client-id>/access_as_user"
+    ]
+  }
+}
+```
+
+#### Application token
+
+An application token is used when a service or another agent calls the A2A agent without a signed-in
+user:
+
+```json
+"application": {
+  "Type": "A2AUserAuthorization",
+  "Settings": {
+    "SecuritySchemeName": "application",
+    "OAuthFlows": {
+      "ClientCredentials": {
+        "TokenUrl": "https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/token",
+        "Scopes": {
+          "api://<agent-client-id>/.default":
+            "Access the A2A Agent API with assigned application permissions."
+        }
+      }
+    },
+    "RequiredScopes": [
+      "api://<agent-client-id>/.default"
+    ]
+  }
+}
+```
+
+For Microsoft Entra, `.default` is sent to the token endpoint. The resulting token normally contains
+application permissions in its `roles` claim rather than a delegated `scp` claim. Route code must
+validate the required application role. Because the token represents an application rather than a
+person, it does not provide a user identity for `ITurnState.User`.
+
+#### Shared Agent Card schemes
+
+Larger applications can define reusable schemes under
+`AgentApplication:A2A:AgentCard:SecuritySchemes` and set a handler's `SecurityScheme` to the shared
+name. This avoids repeating OAuth endpoint metadata when several handlers use the same inbound
+scheme. It is an advanced alternative to the self-contained handler used by this sample.
+
+### Manual route check
+
+After replacing `{{ClientId}}` and `{{TenantId}}` in `appsettings.json`, configure the sample client
+for delegated authentication:
+
+```text
+:auth delegated
+```
+
+Send `-me`. The request proves that the agent accepts a delegated token whose audience is the Agent
+API, exchanges it for a Graph token with `User.Read`, and returns the signed-in user's profile.
+
+Expected failures:
+
+- `-me` with `:auth none` fails because the route requires a validated token.
 - `-me` with `:auth app` fails because OBO requires a delegated user token.
-- `-me` with a delegated token from a separate public-client registration fails because that token is not exchangeable (see the registration requirement above).
-- `-app` with `:auth delegated` is rejected because the route requires an application token.
-- A Microsoft Graph token must not be pasted or sent directly to the Agent API.
+- `-me` with a delegated token acquired by a different public-client registration fails because the
+  token is not exchangeable by this sample's OBO connection.
+- A Microsoft Graph token must not be sent directly to the Agent API; its audience is incorrect.
 
 ## Adding A2A support to an existing SDK agent
 

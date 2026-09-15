@@ -78,6 +78,36 @@ public class A2AUserAuthorizationConfigurationTests
     }
 
     [Fact]
+    public void Configuration_WithoutRequiredScopesOrAuthorizationPolicy_LeavesOptionalMetadataUnset()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecuritySchemeName": "deviceCode",
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token",
+                      "Scopes": {
+                        "agent.read": "Access the agent"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """);
+
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+
+        Assert.Null(metadata.RequiredScopes);
+        Assert.Null(metadata.AuthorizationPolicy);
+    }
+
+    [Fact]
     public void Configuration_WithWhitespaceSecuritySchemeAndInlineFlow_UsesInlineMetadata()
     {
         var configuration = CreateAgentApplicationConfiguration(

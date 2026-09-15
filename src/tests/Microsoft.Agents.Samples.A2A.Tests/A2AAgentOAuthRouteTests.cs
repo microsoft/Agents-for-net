@@ -31,20 +31,17 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using A2AAgentSample::A2AAgent;
-using Microsoft.Agents.Samples.A2AClient;
 
 namespace Microsoft.Agents.Samples.A2A.Tests;
 
 public class A2AAgentOAuthRouteTests
 {
-    private const string DelegatedHandlerName = "delegated";
     private const string GraphHandlerName = "graph";
-    private const string AppHandlerName = "app";
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task AgentCard_FromSampleConfiguration_MergesHandlerOAuthMetadataIntoSkills(bool protectedSkills)
+    public async Task AgentCard_FromSampleConfiguration_AdvertisesDelegatedOAuthForProtectedSkill(bool protectedSkills)
     {
         const string tenantId = "11111111-1111-1111-1111-111111111111";
         const string clientId = "22222222-2222-2222-2222-222222222222";
@@ -54,6 +51,12 @@ public class A2AAgentOAuthRouteTests
         using var settingsStream = new MemoryStream(Encoding.UTF8.GetBytes(settings));
         var configuration = new ConfigurationBuilder().AddJsonStream(settingsStream).Build();
         Assert.False(configuration.GetSection("AgentApplication:A2A:AgentCard").Exists());
+        var handler = Assert.Single(configuration.GetSection("AgentApplication:UserAuthorization:Handlers").GetChildren());
+        Assert.Equal(GraphHandlerName, handler.Key);
+        Assert.Equal(GraphHandlerName, configuration["AgentApplication:UserAuthorization:DefaultHandlerName"]);
+        Assert.Equal("ServiceConnection", handler["Settings:OBOConnectionName"]);
+        Assert.Equal("User.Read", handler["Settings:OBOScopes:0"]);
+        Assert.Null(handler["Settings:AuthorizationPolicy"]);
 
         var storage = new MemoryStorage();
         var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance, configuration: configuration);
@@ -69,34 +72,20 @@ public class A2AAgentOAuthRouteTests
         await adapter.ProcessAgentCardAsync(context.Request, context.Response, agent, "/a2a", CancellationToken.None);
         responseBody.Position = 0;
         var card = (await JsonSerializer.DeserializeAsync<AgentCard>(responseBody, A2AJsonUtilities.DefaultOptions))!;
+        Assert.DoesNotContain("User.Read", Encoding.UTF8.GetString(responseBody.ToArray()), StringComparison.Ordinal);
         Assert.NotNull(card.SecuritySchemes);
         Assert.Null(card.SecurityRequirements);
-        var application = card.SecuritySchemes["application"].OAuth2SecurityScheme!.Flows!.ClientCredentials!;
         var delegated = card.SecuritySchemes["delegated"].OAuth2SecurityScheme!.Flows!.DeviceCode!;
 
-        Assert.Equal("https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/oauth2/v2.0/token", application.TokenUrl);
         Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", delegated.TokenUrl);
         Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode", delegated.DeviceAuthorizationUrl);
         if (protectedSkills)
         {
-            Assert.Equal(
-                ["api://22222222-2222-2222-2222-222222222222/.default"],
-                A2AAgentCardAuthentication.Select(card, A2AAuthMode.App).Scopes);
-            AssertSkillRequirement(
-                card,
-                "Delegated identity",
-                "delegated",
-                "api://22222222-2222-2222-2222-222222222222/access_as_user");
             AssertSkillRequirement(
                 card,
                 "Microsoft Graph profile",
                 "delegated",
                 "api://22222222-2222-2222-2222-222222222222/access_as_user");
-            AssertSkillRequirement(
-                card,
-                "Application identity",
-                "application",
-                "api://22222222-2222-2222-2222-222222222222/.default");
         }
     }
 
@@ -127,67 +116,30 @@ public class A2AAgentOAuthRouteTests
         _ = provider.GetRequiredService<MyAgent>();
     }
 
-    [Theory]
-    [InlineData("OnDelegatedAsync", DelegatedHandlerName)]
-    [InlineData("OnGraphAsync", GraphHandlerName)]
-    [InlineData("OnApplicationAsync", AppHandlerName)]
-    public void AuthenticatedSkills_DeclareTheirOwnAutoSignInHandlerAndNoDuplicateRoute(string methodName, string handlerName)
+    [Fact]
+    public void GraphSkill_DeclaresAutoSignInHandlerAndNoDuplicateRoute()
     {
-        MethodInfo method = typeof(MyAgent).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)!;
+        MethodInfo method = typeof(MyAgent).GetMethod("OnGraphAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
         A2ASkillAttribute skill = Assert.Single(method.GetCustomAttributes<A2ASkillAttribute>());
 
-        Assert.Equal([handlerName], skill.AutoSignInHandlers);
+        Assert.Equal([GraphHandlerName], skill.AutoSignInHandlers);
         Assert.Empty(method.GetCustomAttributes<A2AMessageRouteAttribute>());
     }
 
     [Fact]
-    public async Task DelegatedRoute_UsesDelegatedHandlerOnly()
+    public async Task GraphRoute_UsesDelegatedTokenToReturnProfile()
     {
-        var delegated = CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token");
-        var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-request-token");
-        var app = CreateAuthorizationHandler(AppHandlerName, "app-request-token");
-        var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
-        var record = CreateRecord(delegated, graph, app, graphClient);
-
-        var context = await ExecuteMessageAsync(record, "-delegated", CreateDelegatedIdentity());
-        var task = ReadTaskResponse(context);
-
-        delegated.Verify(handler => handler.SignInUserAsync(
-            It.IsAny<ITurnContext>(),
-            true,
-            It.IsAny<string>(),
-            It.IsAny<System.Collections.Generic.IList<string>>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-        delegated.Verify(handler => handler.GetRefreshedUserTokenAsync(
-            It.IsAny<ITurnContext>(),
-            It.IsAny<string>(),
-            It.IsAny<System.Collections.Generic.IList<string>>(),
-            It.IsAny<CancellationToken>()), Times.Never);
-        VerifyHandlerNotInvoked(graph);
-        VerifyHandlerNotInvoked(app);
-        Assert.Contains("tenant-123", task.Status.Message!.Parts[0].Text);
-        Assert.Contains("user-456", task.Status.Message.Parts[0].Text);
-        Assert.Contains("subject-789", task.Status.Message.Parts[0].Text);
-        Assert.Contains("Bearer", task.Status.Message.Parts[0].Text);
-    }
-
-    [Fact]
-    public async Task GraphRoute_UsesGraphHandlerOnly_AndReturnsProfile()
-    {
-        var delegated = CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token");
         var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-token");
-        var app = CreateAuthorizationHandler(AppHandlerName, "app-request-token");
         var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
         graphClient
             .Setup(client => client.GetMeAsync("graph-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GraphProfile("Ada Lovelace", "ada@example.com"));
-        var record = CreateRecord(delegated, graph, app, graphClient);
+        var record = CreateRecord(graph, graphClient);
 
         var context = await ExecuteMessageAsync(record, "-me", CreateDelegatedIdentity());
         var task = ReadTaskResponse(context);
 
-        VerifyHandlerNotInvoked(delegated);
         graph.Verify(handler => handler.SignInUserAsync(
             It.IsAny<ITurnContext>(),
             true,
@@ -199,133 +151,54 @@ public class A2AAgentOAuthRouteTests
             It.IsAny<string>(),
             It.IsAny<System.Collections.Generic.IList<string>>(),
             It.IsAny<CancellationToken>()), Times.Never);
-        VerifyHandlerNotInvoked(app);
         graphClient.Verify(client => client.GetMeAsync("graph-token", It.IsAny<CancellationToken>()), Times.Once);
         Assert.Contains("Ada Lovelace", task.Status.Message!.Parts[0].Text);
         Assert.Contains("ada@example.com", task.Status.Message.Parts[0].Text);
     }
 
     [Fact]
-    public async Task ApplicationRoute_UsesAppHandlerOnly()
-    {
-        var delegated = CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token");
-        var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-request-token");
-        var app = CreateAuthorizationHandler(AppHandlerName, "app-request-token");
-        var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
-        var record = CreateRecord(delegated, graph, app, graphClient);
-
-        var context = await ExecuteMessageAsync(record, "-app", CreateApplicationIdentity());
-        var task = ReadTaskResponse(context);
-
-        VerifyHandlerNotInvoked(delegated);
-        VerifyHandlerNotInvoked(graph);
-        app.Verify(handler => handler.SignInUserAsync(
-            It.IsAny<ITurnContext>(),
-            true,
-            It.IsAny<string>(),
-            It.IsAny<System.Collections.Generic.IList<string>>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-        app.Verify(handler => handler.GetRefreshedUserTokenAsync(
-            It.IsAny<ITurnContext>(),
-            It.IsAny<string>(),
-            It.IsAny<System.Collections.Generic.IList<string>>(),
-            It.IsAny<CancellationToken>()), Times.Never);
-        Assert.Contains("tenant-123", task.Status.Message!.Parts[0].Text);
-        Assert.Contains("subject-789", task.Status.Message.Parts[0].Text);
-        Assert.Contains("client-app-id", task.Status.Message.Parts[0].Text);
-        Assert.Contains("Bearer", task.Status.Message.Parts[0].Text);
-    }
-
-    [Fact]
     public async Task EchoRoute_DoesNotInvokeAuthorizationHandlers()
     {
-        var delegated = CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token");
-        var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-request-token");
-        var app = CreateAuthorizationHandler(AppHandlerName, "app-request-token");
-        var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
-        var record = CreateRecord(delegated, graph, app, graphClient);
+        var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-token");
+        var record = CreateRecord(graph, new Mock<IGraphProfileClient>(MockBehavior.Strict));
 
         var context = await ExecuteMessageAsync(record, "hello", CreateDelegatedIdentity());
         var task = ReadTaskResponse(context);
 
-        VerifyHandlerNotInvoked(delegated);
         VerifyHandlerNotInvoked(graph);
-        VerifyHandlerNotInvoked(app);
         Assert.Equal("You said: hello", task.Status.Message!.Parts[0].Text);
     }
 
     [Fact]
-    public async Task ApplicationRoute_RejectsDelegatedIdentity()
+    public async Task GraphRoute_RejectsApplicationIdentity()
     {
         var context = await ExecuteMessageAsync(
             CreateRecord(
-                CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token"),
-                CreateAuthorizationHandler(GraphHandlerName, "graph-request-token"),
-                CreateAuthorizationHandler(AppHandlerName, "app-request-token"),
+                CreateAuthorizationHandler(GraphHandlerName, "graph-token"),
                 new Mock<IGraphProfileClient>(MockBehavior.Strict)),
-            "-app",
-            CreateDelegatedIdentity());
-
-        using var response = await ReadJsonResponseAsync(context);
-        Assert.Contains("This route requires an application token.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData("-delegated")]
-    [InlineData("-me")]
-    public async Task DelegatedRoutes_RejectApplicationIdentity(string message)
-    {
-        var context = await ExecuteMessageAsync(
-            CreateRecord(
-                CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token"),
-                CreateAuthorizationHandler(GraphHandlerName, "graph-request-token"),
-                CreateAuthorizationHandler(AppHandlerName, "app-request-token"),
-                new Mock<IGraphProfileClient>(MockBehavior.Strict)),
-            message,
+            "-me",
             CreateApplicationIdentity());
 
         using var response = await ReadJsonResponseAsync(context);
         Assert.Contains("This route requires a delegated user token.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("-delegated")]
-    [InlineData("-me")]
-    public async Task DelegatedRoutes_RejectUnrelatedDelegatedScope(string message)
+    [Fact]
+    public async Task GraphRoute_RejectsUnrelatedDelegatedScope()
     {
         var context = await ExecuteMessageAsync(
             CreateRecord(
-                CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token"),
-                CreateAuthorizationHandler(GraphHandlerName, "graph-request-token"),
-                CreateAuthorizationHandler(AppHandlerName, "app-request-token"),
+                CreateAuthorizationHandler(GraphHandlerName, "graph-token"),
                 new Mock<IGraphProfileClient>(MockBehavior.Strict)),
-            message,
+            "-me",
             CreateDelegatedIdentity("Other.Scope"));
 
         using var response = await ReadJsonResponseAsync(context);
         Assert.Contains("This route requires the access_as_user delegated scope.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task ApplicationRoute_RejectsUnrelatedApplicationRole()
-    {
-        var context = await ExecuteMessageAsync(
-            CreateRecord(
-                CreateAuthorizationHandler(DelegatedHandlerName, "delegated-request-token"),
-                CreateAuthorizationHandler(GraphHandlerName, "graph-request-token"),
-                CreateAuthorizationHandler(AppHandlerName, "app-request-token"),
-                new Mock<IGraphProfileClient>(MockBehavior.Strict)),
-            "-app",
-            CreateApplicationIdentity("Other.Access"));
-
-        using var response = await ReadJsonResponseAsync(context);
-        Assert.Contains("This route requires the A2A.Access application role.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
-    }
-
     private static Record CreateRecord(
-        Mock<IUserAuthorization> delegated,
         Mock<IUserAuthorization> graph,
-        Mock<IUserAuthorization> app,
         Mock<IGraphProfileClient> graphClient)
     {
         var storage = new MemoryStorage();
@@ -336,11 +209,9 @@ public class A2AAgentOAuthRouteTests
                 NullLoggerFactory.Instance,
                 storage,
                 connections,
-                delegated.Object,
-                graph.Object,
-                app.Object)
+                graph.Object)
             {
-                DefaultHandlerName = DelegatedHandlerName,
+                DefaultHandlerName = GraphHandlerName,
                 AutoSignIn = UserAuthorizationOptions.AutoSignInOff
             }
         };
@@ -457,15 +328,13 @@ public class A2AAgentOAuthRouteTests
         authenticationType: "Bearer");
     }
 
-    private static ClaimsIdentity CreateApplicationIdentity(string role = "A2A.Access")
+    private static ClaimsIdentity CreateApplicationIdentity()
     {
         return new ClaimsIdentity(
         [
             new Claim("tid", "tenant-123"),
             new Claim("sub", "subject-789"),
-            new Claim("idtyp", "app"),
-            new Claim("roles", role),
-            new Claim("azp", "client-app-id")
+            new Claim("idtyp", "app")
         ],
         authenticationType: "Bearer");
     }

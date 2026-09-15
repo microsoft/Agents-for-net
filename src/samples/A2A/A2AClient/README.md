@@ -70,18 +70,14 @@ the Agent API scopes, while the selected OAuth scheme provides the token endpoin
 authorization endpoint where applicable. The client rejects any other flow, missing scheme, empty
 acquisition scope list, or endpoint that is not absolute HTTPS.
 
-The agent sample advertises a tenanted Client Credentials token endpoint:
-`https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token`. Replace `{{TenantId}}`
-with the agent's tenant ID using the same manual replacement convention as its existing
-`TokenValidation` and connection settings. Entra client credentials cannot use `/organizations/`.
-The Device Code token and device authorization endpoints intentionally keep `/organizations/`.
+The current `A2AAgent` sample advertises only a delegated Device Code flow. Application mode remains
+available so the client can test other agents whose cards advertise a Client Credentials flow.
 
 `PublicClientId` and `ConfidentialClientId` identify the client that calls the Agent API:
 
 - `PublicClientId` is used for delegated user authentication (`:auth delegated`) through the
-  device-code flow. It does not use a client secret. For `-delegated` testing, this can be a
-  separate public-client registration. For `-me`, it must be the App ID of the Agent API
-  registration itself so the agent can perform the on-behalf-of exchange.
+  device-code flow. It does not use a client secret. For the sample's `-me` route, it must be the
+  App ID of the Agent API registration itself so the agent can perform the on-behalf-of exchange.
 - `ConfidentialClientId` is used for application-only authentication (`:auth app`) through the
   client-credentials flow. It identifies the confidential client registration whose secret is
   configured in `ConfidentialClientSecret`.
@@ -93,12 +89,11 @@ Keep real secrets out of source control. The committed file should stay on place
 
 ## Public client setup for delegated testing
 
-Use this flow for `-delegated` and `-me`.
+Use this flow for the sample agent's `-me` route.
 
 1. Enable **public client flows** in **Authentication** on a Microsoft Entra app registration in the
    same tenant as the agent.
-   - For `-delegated` only, this may be a separate public-client registration.
-   - For `-me`, it **must be the Agent API registration itself**. The agent exchanges the inbound token
+   - It **must be the Agent API registration itself**. The agent exchanges the inbound token
      on behalf of the caller, and the SDK only exchanges a token whose `aud` claim contains the
      application ID that requested it (`azp` for v2 tokens, `appid` for v1). A token acquired by a
      separate registration has `aud` = Agent API and `azp` = console client, so the exchange is refused.
@@ -112,14 +107,14 @@ Use this flow for `-delegated` and `-me`.
 1. Set `Authentication:PublicClientId` to that registration's client ID (the Agent API client ID when testing `-me`).
 1. Set `Authentication:TenantId` to the tenant ID.
 1. Start the client, then run `:auth delegated`.
-1. Send `-delegated` to validate delegated passthrough.
 1. Send `-me` to validate delegated on-behalf-of exchange to Microsoft Graph `User.Read`.
 
 `-me` requires a user-delegated token for the Agent API. Do not acquire a Microsoft Graph token in the client and send it directly to the agent; the agent performs the OBO exchange itself.
 
 ## Confidential client setup for application-token testing
 
-Use this flow for `-app`.
+The client can also test an agent that advertises a Client Credentials flow. The current
+`A2AAgent` sample does not expose an application-protected route.
 
 1. Create a **confidential client** Microsoft Entra app registration.
 1. In **API permissions**, add the Agent API application permission `A2A.Access`.
@@ -134,16 +129,15 @@ Use this flow for `-app`.
 1. Set `Authentication:ConfidentialClientId` to the confidential client's client ID.
 1. Set `Authentication:TenantId` to the tenant ID.
 1. Start the client, then run `:auth app`.
-1. Send `-app`.
+1. Send a request for a skill whose Agent Card requirement references the Client Credentials scheme.
 
 Do not commit the secret. The secret belongs in user secrets or another local secret store, not in `appsettings.json`.
 
 ## Expected failures and how to interpret them
 
-- `-delegated`, `-me`, or `-app` with `:auth none` fails because the route requires a validated inbound token.
+- `-me` with `:auth none` fails because the route requires a validated inbound token.
 - `-me` with `:auth app` fails because Microsoft Graph OBO requires a delegated user token, not an application token.
 - `-me` with a delegated token acquired by a separate public-client registration fails because that token is not exchangeable; see the public client setup above.
-- `-app` with `:auth delegated` is rejected by the agent because that route requires an application token.
 - A Microsoft Graph token must not be pasted or sent directly to the Agent API. The inbound token must target the Agent API audience.
 - An Agent Card whose interface URL is not on the configured agent origin fails at startup, before a token is sent.
 

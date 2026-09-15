@@ -129,36 +129,6 @@ public class A2AAgentStartupTests
         ClaimsIdentity identity = await CreateValidatedIdentityAsync(DelegatedClaims());
 
         A2ATokenIdentity.RequireDelegated(identity);
-        Assert.Throws<InvalidOperationException>(() => A2ATokenIdentity.RequireApplication(identity));
-
-        Assert.Equal(TestTenantId, A2ATokenIdentity.FindTenantId(identity));
-        Assert.Equal("user-object-id", A2ATokenIdentity.FindObjectId(identity));
-        Assert.Equal("user-subject", A2ATokenIdentity.FindSubject(identity));
-    }
-
-    [Fact]
-    public async Task ApplicationIdentity_FromJwtBearer_IsAcceptedAndSummarized()
-    {
-        ClaimsIdentity identity = await CreateValidatedIdentityAsync(ApplicationClaims());
-
-        A2ATokenIdentity.RequireApplication(identity);
-        Assert.Throws<InvalidOperationException>(() => A2ATokenIdentity.RequireDelegated(identity));
-
-        Assert.Equal(TestTenantId, A2ATokenIdentity.FindTenantId(identity));
-        Assert.Equal("app-subject", A2ATokenIdentity.FindSubject(identity));
-        Assert.Equal(TestClientId, A2ATokenIdentity.FindApplicationId(identity));
-        Assert.True(A2ATokenIdentity.HasRoles(identity));
-    }
-
-    [Fact]
-    public async Task ApplicationRolesIdentity_WithoutIdentityTypeClaim_IsStillApplication()
-    {
-        Dictionary<string, object> claims = ApplicationClaims();
-        claims.Remove(A2ATokenIdentity.IdentityTypeClaim);
-
-        ClaimsIdentity identity = await CreateValidatedIdentityAsync(claims);
-
-        A2ATokenIdentity.RequireApplication(identity);
     }
 
     private static Dictionary<string, object> DelegatedClaims() => new()
@@ -175,15 +145,6 @@ public class A2AAgentStartupTests
 
     [AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/second")]
     private sealed class SecondTestAgent(AgentApplicationOptions options) : AgentApplication(options);
-
-    private static Dictionary<string, object> ApplicationClaims() => new()
-    {
-        ["tid"] = TestTenantId,
-        ["sub"] = "app-subject",
-        [A2ATokenIdentity.IdentityTypeClaim] = "app",
-        ["roles"] = new[] { "A2A.Access" },
-        ["azp"] = TestClientId,
-    };
 
     private static async Task<ClaimsIdentity> CreateValidatedIdentityAsync(Dictionary<string, object> claims)
     {
