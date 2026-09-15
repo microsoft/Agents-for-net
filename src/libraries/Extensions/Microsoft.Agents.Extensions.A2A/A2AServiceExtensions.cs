@@ -25,6 +25,9 @@ using System.Threading;
 
 namespace Microsoft.Agents.Extensions.A2A;
 
+/// <summary>
+/// Provides service-registration and endpoint-mapping extensions for A2A agents.
+/// </summary>
 public static class A2AServiceExtensions
 {
     /// <summary>
@@ -34,7 +37,7 @@ public static class A2AServiceExtensions
     /// <c>AddAgentCore</c> registers these services automatically. Custom hosts that do not call
     /// <c>AddAgentCore</c> can call this method directly.
     /// </remarks>
-    /// <param name="services"></param>
+    /// <param name="services">The service collection to receive the A2A adapter services.</param>
     public static void AddA2AAdapter(this IServiceCollection services)
     {
         services.TryAddSingleton(sp => ActivatorUtilities.CreateInstance<A2AAdapter>(sp));
@@ -42,12 +45,14 @@ public static class A2AServiceExtensions
     }
 
     /// <summary>
-    /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>.
+    /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly. Each
+    /// AgentApplication must have been registered with <c>AddAgent&lt;TAgent&gt;</c>.
     /// </summary>
-    /// <param name="endpoints"></param>
-    /// <param name="requireAuth"></param>
-    /// <param name="defaultPath"></param>
-    /// <exception cref="InvalidOperationException"/>
+    /// <param name="endpoints">The endpoint route builder to configure.</param>
+    /// <param name="requireAuth">Whether mapped endpoints require authorization. When <see langword="null"/>, uses the configured agent authorization policy.</param>
+    /// <param name="defaultPath">The default A2A endpoint path for a single agent without an interface attribute.</param>
+    /// <returns>The mapped endpoint group for additional configuration.</returns>
+    /// <exception cref="InvalidOperationException">No agent is available, or multiple agents have no interface attribute.</exception>
     public static IEndpointConventionBuilder MapA2AApplicationEndpoints(
         this IEndpointRouteBuilder endpoints,
         bool? requireAuth = null,
@@ -131,10 +136,12 @@ public static class A2AServiceExtensions
     /// <summary>
     /// Maps A2A endpoints for TAgent type.
     /// </summary>
-    /// <param name="endpoints"></param>
-    /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
-    /// <param name="path">Indicate the route patter, defaults to "/a2a"</param>
+    /// <param name="endpoints">The endpoint route builder to configure.</param>
+    /// <param name="requireAuth">Whether endpoints require authorization. Defaults to <see langword="true"/>.</param>
+    /// <param name="path">The route pattern. Defaults to <c>/a2a</c>.</param>
     /// <returns>An endpoint convention builder for further configuration.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="endpoints"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="path"/> is empty.</exception>
     public static IEndpointConventionBuilder MapA2AJsonRpc(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string path = "/a2a")
     {
         ArgumentNullException.ThrowIfNull(endpoints);
@@ -172,9 +179,11 @@ public static class A2AServiceExtensions
     /// Enables HTTP A2A endpoints for the specified path.
     /// </summary>
     /// <param name="endpoints">The endpoint route builder to configure.</param>
-    /// <param name="requireAuth"></param>
+    /// <param name="requireAuth">Whether endpoints require authorization. Defaults to <see langword="false"/>.</param>
     /// <param name="path">The base path for the HTTP A2A endpoints.</param>
     /// <returns>An endpoint convention builder for further configuration.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="endpoints"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="path"/> is empty.</exception>
     public static IEndpointConventionBuilder MapA2AHttp(this IEndpointRouteBuilder endpoints, bool requireAuth = false, [StringSyntax("Route")] string path = "/a2a")
     {
         ArgumentNullException.ThrowIfNull(endpoints);

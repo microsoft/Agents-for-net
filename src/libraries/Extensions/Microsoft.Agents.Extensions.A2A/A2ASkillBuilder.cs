@@ -39,6 +39,9 @@ public sealed class A2ASkillBuilder
     /// <summary>
     /// Sets the human-readable skill name.
     /// </summary>
+    /// <param name="name">The name advertised for the skill.</param>
+    /// <returns>The current builder.</returns>
+    /// <exception cref="ArgumentException"><paramref name="name"/> is empty or whitespace.</exception>
     public A2ASkillBuilder WithName(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -49,6 +52,9 @@ public sealed class A2ASkillBuilder
     /// <summary>
     /// Sets the skill description.
     /// </summary>
+    /// <param name="description">The description advertised for the skill.</param>
+    /// <returns>The current builder.</returns>
+    /// <exception cref="ArgumentException"><paramref name="description"/> is empty or whitespace.</exception>
     public A2ASkillBuilder WithDescription(string description)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
@@ -59,6 +65,8 @@ public sealed class A2ASkillBuilder
     /// <summary>
     /// Sets the skill tags.
     /// </summary>
+    /// <param name="tags">The tags that categorize the skill.</param>
+    /// <returns>The current builder.</returns>
     public A2ASkillBuilder WithTags(params string[] tags)
     {
         _tags = tags ?? [];
@@ -68,6 +76,8 @@ public sealed class A2ASkillBuilder
     /// <summary>
     /// Sets example skill requests.
     /// </summary>
+    /// <param name="examples">The example requests advertised for the skill.</param>
+    /// <returns>The current builder.</returns>
     public A2ASkillBuilder WithExamples(params string[] examples)
     {
         _examples = examples ?? [];
@@ -77,6 +87,8 @@ public sealed class A2ASkillBuilder
     /// <summary>
     /// Sets supported input modes.
     /// </summary>
+    /// <param name="inputModes">The supported input media types.</param>
+    /// <returns>The current builder.</returns>
     public A2ASkillBuilder WithInputModes(params string[] inputModes)
     {
         _inputModes = inputModes ?? [];
@@ -86,6 +98,8 @@ public sealed class A2ASkillBuilder
     /// <summary>
     /// Sets supported output modes.
     /// </summary>
+    /// <param name="outputModes">The supported output media types.</param>
+    /// <returns>The current builder.</returns>
     public A2ASkillBuilder WithOutputModes(params string[] outputModes)
     {
         _outputModes = outputModes ?? [];
@@ -95,6 +109,13 @@ public sealed class A2ASkillBuilder
     /// <summary>
     /// Configures a route for all A2A message activities.
     /// </summary>
+    /// <param name="handler">The handler for matching messages.</param>
+    /// <param name="autoSigninHandlers">The optional automatic sign-in handler names.</param>
+    /// <param name="rank">The route evaluation order.</param>
+    /// <param name="isAgenticOnly">Whether the route accepts only agentic requests.</param>
+    /// <returns>The current builder.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">A message route was already configured.</exception>
     public A2ASkillBuilder OnMessage(A2ARouteHandler handler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified, bool isAgenticOnly = false)
     {
         return SetRoute(
@@ -108,6 +129,15 @@ public sealed class A2ASkillBuilder
     /// <summary>
     /// Configures a route for A2A message activities with matching text.
     /// </summary>
+    /// <param name="text">The exact message text to match.</param>
+    /// <param name="handler">The handler for matching messages.</param>
+    /// <param name="autoSigninHandlers">The optional automatic sign-in handler names.</param>
+    /// <param name="rank">The route evaluation order.</param>
+    /// <param name="isAgenticOnly">Whether the route accepts only agentic requests.</param>
+    /// <returns>The current builder.</returns>
+    /// <exception cref="ArgumentException"><paramref name="text"/> is empty or whitespace.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">A message route was already configured.</exception>
     public A2ASkillBuilder OnMessage(string text, A2ARouteHandler handler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified, bool isAgenticOnly = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
@@ -120,8 +150,16 @@ public sealed class A2ASkillBuilder
     }
 
     /// <summary>
-    /// Configures a route for A2A message activities with matching text.
+    /// Configures a route for A2A message activities with text matching a regular expression.
     /// </summary>
+    /// <param name="textPattern">The regular expression used to match message text.</param>
+    /// <param name="handler">The handler for matching messages.</param>
+    /// <param name="autoSigninHandlers">The optional automatic sign-in handler names.</param>
+    /// <param name="rank">The route evaluation order.</param>
+    /// <param name="isAgenticOnly">Whether the route accepts only agentic requests.</param>
+    /// <returns>The current builder.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="textPattern"/> or <paramref name="handler"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">A message route was already configured.</exception>
     public A2ASkillBuilder OnMessage(Regex textPattern, A2ARouteHandler handler, string[] autoSigninHandlers = null, ushort rank = RouteRank.Unspecified, bool isAgenticOnly = false)
     {
         ArgumentNullException.ThrowIfNull(textPattern);

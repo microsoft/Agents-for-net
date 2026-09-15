@@ -12,11 +12,18 @@ using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Extensions.A2A;
 
+/// <summary>
+/// Provides A2A skill and message-route registration for an <see cref="AgentApplication"/>.
+/// </summary>
 public class A2AAgentExtension : Builder.AgentExtension
 {
     private readonly AgentApplication _agentApplication;
     private readonly List<A2ASkillRegistration> _skillRegistrations = [];
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="A2AAgentExtension"/> class.
+    /// </summary>
+    /// <param name="agentApplication">The agent application to configure for the A2A channel.</param>
     public A2AAgentExtension(AgentApplication agentApplication)
     {
         _agentApplication = agentApplication;
@@ -35,6 +42,7 @@ public class A2AAgentExtension : Builder.AgentExtension
     /// <param name="id">The unique skill identifier.</param>
     /// <param name="configure">Configures the skill metadata and message route.</param>
     /// <returns>The current extension instance.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="configure"/> is <see langword="null"/>.</exception>
     public A2AAgentExtension Skill(string id, Action<A2ASkillBuilder> configure)
     {
         ArgumentNullException.ThrowIfNull(configure);

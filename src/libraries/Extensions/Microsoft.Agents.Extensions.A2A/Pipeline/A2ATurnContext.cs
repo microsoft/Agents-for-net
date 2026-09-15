@@ -14,6 +14,10 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// </summary>
 public class A2ATurnContext : TurnContextWrapper, IA2ATurnContext
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="A2ATurnContext"/> class.
+    /// </summary>
+    /// <param name="turnContext">The underlying turn context to wrap.</param>
     public A2ATurnContext(ITurnContext turnContext) : base(turnContext)
     {
     }
@@ -23,5 +27,9 @@ public class A2ATurnContext : TurnContextWrapper, IA2ATurnContext
         _turnContext.Activity as IA2AActivity ?? ProtocolJsonSerializer.ToObject<A2AMessageActivity>(_turnContext.Activity);
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// The client is available only during the current A2A turn because it uses services attached
+    /// to that turn's context.
+    /// </remarks>
     public A2AClient Client => new(_turnContext);
 }

@@ -18,21 +18,26 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// <summary>
-/// User Authorization handling for A2A requests.
+/// Supplies the A2A request token to the agent authorization pipeline.
 /// </summary>
+/// <remarks>
+/// This authorization handler consumes the token supplied with the A2A request for the current
+/// turn. It does not perform interactive sign-in; OBO exchange, when configured, is a separate
+/// operation performed by the base <see cref="OBOExchange"/> implementation.
+/// </remarks>
 public class A2AUserAuthorization : OBOExchange, IUserAuthorization
 {
     private readonly A2AUserAuthorizationSettings _settings;
 
     /// <summary>
-    /// Required constructor for the UserAuthorizationModuleLoader (when using IConfiguration)
+    /// Initializes a handler loaded from configuration.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="storage">The storage provider used for user authorization data.</param>
-    /// <param name="connections"></param>
-    /// <param name="configurationSection"></param>
-    /// <param name="logger"></param>
-    /// <exception cref="ArgumentNullException"></exception>
+    /// <param name="name">The authorization handler name.</param>
+    /// <param name="storage">The storage provider required by the module loader.</param>
+    /// <param name="connections">The configured authorization connections.</param>
+    /// <param name="configurationSection">The configuration section containing A2A authorization settings.</param>
+    /// <param name="logger">The optional logger for authorization operations.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
     public A2AUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null)
         : this(name, connections, A2AUserAuthorizationSettings.FromConfiguration(configurationSection), logger)
     {
@@ -41,11 +46,11 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     /// <summary>
     /// Code-first constructor.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="connections"></param>
-    /// <param name="settings"></param>
-    /// <param name="logger"></param>
-    /// <exception cref="ArgumentNullException"></exception>
+    /// <param name="name">The authorization handler name.</param>
+    /// <param name="connections">The configured authorization connections.</param>
+    /// <param name="settings">The OBO exchange settings to adapt for A2A.</param>
+    /// <param name="logger">The optional logger for authorization operations.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
     public A2AUserAuthorization(string name, IConnections connections, OBOSettings settings, ILogger logger = null)
         : this(name, connections, A2AUserAuthorizationSettings.FromOBOSettings(settings), logger)
     {
@@ -54,25 +59,38 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     /// <summary>
     /// Code-first constructor that accepts Agent Card authorization metadata.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="connections"></param>
-    /// <param name="settings"></param>
-    /// <param name="logger"></param>
+    /// <param name="name">The authorization handler name.</param>
+    /// <param name="connections">The configured authorization connections.</param>
+    /// <param name="settings">The A2A authorization and Agent Card settings.</param>
+    /// <param name="logger">The optional logger for authorization operations.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
     public A2AUserAuthorization(string name, IConnections connections, A2AUserAuthorizationSettings settings, ILogger logger = null) : base(connections)
     {
         _settings = settings ?? new A2AUserAuthorizationSettings();
         Name = name ?? throw new ArgumentNullException(nameof(name));
     }
 
+    /// <summary>
+    /// Gets the OBO settings used only when an exchange is requested.
+    /// </summary>
+    /// <returns>The configured A2A OBO settings.</returns>
     protected override OBOSettings GetOBOSettings()
     {
         return _settings;
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// The A2A request token is used as the source token. OBO exchange is performed only when
+    /// the caller supplies an exchange connection or scopes.
+    /// </remarks>
     public string Name { get; private set; }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// A2A requests already carry their request token, so this method obtains that token rather
+    /// than starting an interactive sign-in flow. Any configured OBO exchange remains separate.
+    /// </remarks>
     public async Task<TokenResponse> GetRefreshedUserTokenAsync(ITurnContext turnContext, string exchangeConnection = null, IList<string> exchangeScopes = null, CancellationToken cancellationToken = default)
     {
         var tokenResponse = CreateTokenResponse(turnContext);
@@ -105,10 +123,10 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     }
 
     /// <summary>
-    /// This is a no-op for this handler.
+    /// Resets no state because A2A request-token authorization is stateless.
     /// </summary>
-    /// <param name="turnContext"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="turnContext">The current turn context.</param>
+    /// <param name="cancellationToken">A token used to cancel the operation.</param>
     public Task ResetStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
     {
         // No concept of reset with ConnectorAuth
@@ -116,10 +134,10 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     }
 
     /// <summary>
-    /// This is a no-op for this handler.
+    /// Signs out no user because A2A request-token authorization does not retain a user session.
     /// </summary>
-    /// <param name="turnContext"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="turnContext">The current turn context.</param>
+    /// <param name="cancellationToken">A token used to cancel the operation.</param>
     public Task SignOutUserAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
     {
         // No concept of sign-out with ConnectorAuth

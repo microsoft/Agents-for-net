@@ -11,6 +11,9 @@ using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Extensions.A2A;
 
+/// <summary>
+/// Declares an A2A skill and the method that handles messages for the skill.
+/// </summary>
 [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
 [RouteHandlerType(typeof(A2ARouteHandler))]
 public class A2ASkillAttribute : Attribute
@@ -83,10 +86,10 @@ public class A2ASkillAttribute : Attribute
     /// <summary>
     /// An A2A Skill definition.
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="name"></param>
+    /// <param name="id">The unique skill identifier. When omitted, <paramref name="name"/> is used.</param>
+    /// <param name="name">The human-readable skill name.</param>
     /// <param name="tags">Delimited with space, comma, semi-colon</param>
-    /// <param name="description"></param>
+    /// <param name="description">The description advertised for the skill. When omitted, <paramref name="name"/> is used.</param>
     /// <param name="examples">Semicolon delimited list of examples.</param>
     /// <param name="inputModes">Supported media types for input. Delimited with space, comma, semi-colon</param>
     /// <param name="outputModes">Supported media types for output. Delimited with space, comma, semi-colon</param>
@@ -95,6 +98,7 @@ public class A2ASkillAttribute : Attribute
     /// <param name="isAgenticOnly">Whether the skill route accepts only agentic requests.</param>
     /// <param name="rank">The route evaluation order.</param>
     /// <param name="autoSigninHandlers">Delimited static authorization handler names.</param>
+    /// <exception cref="ArgumentException"><paramref name="name"/> or <paramref name="tags"/> is empty, or both <paramref name="text"/> and <paramref name="textRegex"/> are specified.</exception>
     public A2ASkillAttribute(
         string name,
         string tags,

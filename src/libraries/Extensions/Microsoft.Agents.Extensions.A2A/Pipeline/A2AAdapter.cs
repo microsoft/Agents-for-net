@@ -51,10 +51,25 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private readonly ILogger<A2AServer> _a2aServerLogger;
     private readonly IConfiguration _configuration;
 
+    /// <summary>
+    /// Initializes an adapter with an in-memory A2A task store.
+    /// </summary>
+    /// <param name="storage">The storage provider retained for compatibility with agent host registration.</param>
+    /// <param name="loggerFactory">The factory used to create adapter loggers.</param>
+    /// <param name="a2aNotifier">The optional notifier for A2A channel events.</param>
+    /// <param name="configuration">The optional configuration used to compose Agent Cards.</param>
     public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null, IConfiguration configuration = null) : this(new InMemoryTaskStore(), loggerFactory, a2aNotifier, configuration)
     {
     }
 
+    /// <summary>
+    /// Initializes an adapter with the specified A2A task store.
+    /// </summary>
+    /// <param name="taskStore">The store used to persist A2A tasks.</param>
+    /// <param name="loggerFactory">The factory used to create adapter loggers.</param>
+    /// <param name="a2aNotifier">The optional notifier for A2A channel events.</param>
+    /// <param name="configuration">The optional configuration used to compose Agent Cards.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="taskStore"/> is <see langword="null"/>.</exception>
     public A2AAdapter(ITaskStore taskStore, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null, IConfiguration configuration = null) : base(loggerFactory.CreateLogger<A2AAdapter>())
     {
         AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
@@ -321,6 +336,20 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         return ProcessActivityWithA2AAsync(claimsIdentity, activity, callback, null, null, cancellationToken);
     }
 
+    /// <summary>
+    /// Processes an activity while attaching A2A request services to its turn context.
+    /// </summary>
+    /// <remarks>
+    /// The request context and event queue are attached only for this turn, making
+    /// <see cref="Client.A2AClient"/> available to A2A route handlers during same-turn processing.
+    /// </remarks>
+    /// <param name="claimsIdentity">The identity associated with the incoming activity.</param>
+    /// <param name="activity">The activity to process.</param>
+    /// <param name="callback">The callback that invokes the agent pipeline.</param>
+    /// <param name="a2aContext">The A2A request context to attach to the turn.</param>
+    /// <param name="a2aEventQueue">The A2A event queue to attach to the turn.</param>
+    /// <param name="cancellationToken">A token used to cancel processing.</param>
+    /// <returns>A task that resolves to the invoke response after the agent pipeline completes.</returns>
     public Task<InvokeResponse> ProcessActivityWithA2AAsync(ClaimsIdentity claimsIdentity, IActivity activity, AgentCallbackHandler callback, RequestContext a2aContext, AgentEventQueue a2aEventQueue, CancellationToken cancellationToken)
     {
         return ProcessActivityWithA2AAuthenticationAsync(claimsIdentity, null, activity, callback, a2aContext, a2aEventQueue, cancellationToken);

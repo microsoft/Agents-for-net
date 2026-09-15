@@ -53,6 +53,11 @@ namespace Microsoft.Agents.Extensions.A2A;
 [RouteHandlerType(typeof(A2ARouteHandler))]
 public class A2AMessageRouteAttribute(string text = null, string textRegex = null, bool isAgenticOnly = false, ushort rank = RouteRank.Unspecified, string autoSignInHandlers = null) : Attribute, IRouteAttribute
 {
+    /// <summary>
+    /// Adds the route represented by this attribute to an agent application.
+    /// </summary>
+    /// <param name="app">The agent application that owns the attributed method.</param>
+    /// <param name="method">The attributed method to register as a route handler.</param>
     public void AddRoute(AgentApplication app, MethodInfo method)
     {
         var a2aHandler = (A2ARouteHandler)RouteAttributeHelper.CreateMatchingHandlerDelegate(app, method, GetType());

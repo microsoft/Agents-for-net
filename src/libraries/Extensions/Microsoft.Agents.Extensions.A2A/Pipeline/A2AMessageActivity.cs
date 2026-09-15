@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
 /// <summary>
 /// An A2A-specific <see cref="Activity"/> that surfaces the A2A channel payload as a
-/// strongly-typed <see cref="A2A.Message"/>. This is the concrete <see cref="IA2AActivity"/>
+/// strongly-typed <c>Message</c>. This is the concrete <see cref="IA2AActivity"/>
 /// produced when an incoming A2A message is converted to an Activity.
 /// </summary>
 /// <remarks>
