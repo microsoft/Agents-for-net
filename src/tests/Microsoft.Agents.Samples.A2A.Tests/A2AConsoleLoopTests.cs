@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Identity.Client;
 using Moq;
 using Xunit;
 
@@ -61,6 +62,24 @@ public class A2AConsoleLoopTests
         Assert.Equal(0, exitCode);
         Assert.Contains("Request failed", output.ToString(), StringComparison.Ordinal);
         Assert.Contains("History display: off", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RunAsync_TokenAcquisitionFailure_DoesNotEndTheSession()
+    {
+        var client = new Mock<IA2AClient>(MockBehavior.Strict);
+        client.Setup(value => value.SendMessageAsync(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new MsalClientException("authentication_canceled", "device code authentication was denied"));
+
+        var output = new StringWriter();
+        A2AConsole console = CreateConsole(client.Object, new A2AAuthenticationSession(), output, "hello", "", ":auth none", ":q");
+
+        int exitCode = await console.RunAsync(CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Request failed: MsalClientException", output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("Authentication mode: none", output.ToString(), StringComparison.Ordinal);
+        Assert.False(console.IsRunning);
     }
 
     [Fact]

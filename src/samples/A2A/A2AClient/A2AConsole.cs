@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using A2A;
+using Microsoft.Identity.Client;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 
@@ -132,6 +133,7 @@ internal sealed class A2AConsole
         }
 
         return exception is A2AException
+            or MsalException
             or HttpRequestException
             or HttpIOException
             or JsonException
