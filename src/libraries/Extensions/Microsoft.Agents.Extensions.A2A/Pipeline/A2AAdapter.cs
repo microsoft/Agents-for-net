@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using A2A;
+using A2AProtocolAgentCard = A2A.AgentCard;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Adapters;
@@ -10,6 +11,8 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Extensions.A2A;
+using Microsoft.Agents.Extensions.A2A.AgentCard;
+using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
@@ -88,7 +91,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     /// <inheritdoc/>
     public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string pathPrefix, CancellationToken cancellationToken = default)
     {
-        var agentCard = new AgentCard()
+        var agentCard = new A2AProtocolAgentCard()
         {
             Name = nameof(A2AAdapter),
             Description = "Agents SDK A2A",
@@ -241,7 +244,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         A2AServerOptions options)
         : A2AServer(handler, taskStore, notifier, logger, options)
     {
-        public override Task<AgentCard> GetExtendedAgentCardAsync(
+        public override Task<A2AProtocolAgentCard> GetExtendedAgentCardAsync(
             GetExtendedAgentCardRequest request,
             CancellationToken cancellationToken = default)
         {

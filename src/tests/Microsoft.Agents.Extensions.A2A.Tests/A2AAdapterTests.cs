@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using A2A;
+using A2AProtocolAgentCard = A2A.AgentCard;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
@@ -10,6 +11,8 @@ using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A.AgentCard;
+using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Authentication;
@@ -553,7 +556,7 @@ public class A2AAdapterTests
         // Assert
         mockHttpResponse.VerifySet(r => r.ContentType = "application/json", Times.Once);
         mockHttpResponse.Object.Body.Position = 0;
-        var agentCard = await JsonSerializer.DeserializeAsync<AgentCard>(
+        var agentCard = await JsonSerializer.DeserializeAsync<A2AProtocolAgentCard>(
             mockHttpResponse.Object.Body, A2AJsonUtilities.DefaultOptions);
         Assert.False(agentCard!.Capabilities.ExtendedAgentCard);
         Assert.Null(agentCard.SecurityRequirements);
@@ -786,7 +789,7 @@ public class A2AAdapterTests
         return agent;
     }
 
-    private async Task<AgentCard> ProcessAgentCardAsync(A2AAdapter adapter, IAgent agent)
+    private async Task<A2AProtocolAgentCard> ProcessAgentCardAsync(A2AAdapter adapter, IAgent agent)
     {
         var request = CreateMockHttpRequest("https", "localhost:3978");
         var response = CreateMockHttpResponse();
@@ -794,7 +797,7 @@ public class A2AAdapterTests
         await adapter.ProcessAgentCardAsync(request.Object, response.Object, agent, "/a2a", CancellationToken.None);
 
         response.Object.Body.Position = 0;
-        return (await JsonSerializer.DeserializeAsync<AgentCard>(response.Object.Body, A2AJsonUtilities.DefaultOptions))!;
+        return (await JsonSerializer.DeserializeAsync<A2AProtocolAgentCard>(response.Object.Body, A2AJsonUtilities.DefaultOptions))!;
     }
 
     private Mock<HttpRequest> CreateMockHttpRequest(string scheme = "https", string host = "localhost:3978")
@@ -847,7 +850,7 @@ public class A2AAdapterTests
             return Task.CompletedTask;
         }
 
-        public Task<AgentCard> GetAgentCard(AgentCard defaultCard)
+        public Task<A2AProtocolAgentCard> GetAgentCard(A2AProtocolAgentCard defaultCard)
         {
             CardHandlerCalled = true;
             defaultCard.Name = "Custom Agent";
@@ -864,7 +867,7 @@ public class A2AAdapterTests
 
         public bool CardHandlerCalled { get; private set; }
 
-        public Task<AgentCard> GetAgentCard(AgentCard defaultCard)
+        public Task<A2AProtocolAgentCard> GetAgentCard(A2AProtocolAgentCard defaultCard)
         {
             CardHandlerCalled = true;
             defaultCard.Name = "Customized agent";

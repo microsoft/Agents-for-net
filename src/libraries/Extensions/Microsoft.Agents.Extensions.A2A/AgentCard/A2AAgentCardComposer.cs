@@ -2,9 +2,11 @@
 // Licensed under the MIT License.
 
 using A2A;
+using A2AProtocolAgentCard = A2A.AgentCard;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.Agents.Extensions.A2A.Routing;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -12,7 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.AgentCard;
 
 internal sealed class A2AAgentCardComposer
 {
@@ -23,7 +25,7 @@ internal sealed class A2AAgentCardComposer
         _configuration = configuration;
     }
 
-    public async Task<AgentCard> ComposeAsync(AgentCard hostDefaults, IAgent agent)
+    public async Task<A2AProtocolAgentCard> ComposeAsync(A2AProtocolAgentCard hostDefaults, IAgent agent)
     {
         ArgumentNullException.ThrowIfNull(hostDefaults);
         ArgumentNullException.ThrowIfNull(agent);
@@ -62,7 +64,7 @@ internal sealed class A2AAgentCardComposer
         return hostDefaults;
     }
 
-    private static void ApplySafeOptions(AgentCard agentCard, A2AAgentCardOptions options)
+    private static void ApplySafeOptions(A2AProtocolAgentCard agentCard, A2AAgentCardOptions options)
     {
         if (!string.IsNullOrWhiteSpace(options.Name))
         {
@@ -100,7 +102,7 @@ internal sealed class A2AAgentCardComposer
         }
     }
 
-    private static void AddInlineSchemes(AgentCard agentCard, IReadOnlyList<A2AAuthorizationMetadata> authorizations)
+    private static void AddInlineSchemes(A2AProtocolAgentCard agentCard, IReadOnlyList<A2AAuthorizationMetadata> authorizations)
     {
         foreach (var authorization in authorizations.Where(metadata => metadata.SecurityScheme != null))
         {
@@ -113,7 +115,7 @@ internal sealed class A2AAgentCardComposer
         }
     }
 
-    private void AddGlobalRequirement(AgentCard agentCard, Dictionary<string, A2AAuthorizationMetadata> authorizations)
+    private void AddGlobalRequirement(A2AProtocolAgentCard agentCard, Dictionary<string, A2AAuthorizationMetadata> authorizations)
     {
         var userAuthorization = _configuration.GetSection("AgentApplication:UserAuthorization");
         if (!userAuthorization.GetValue(nameof(UserAuthorizationOptions.AutoSignIn), true))
@@ -136,7 +138,7 @@ internal sealed class A2AAgentCardComposer
     }
 
     private static void AddSkills(
-        AgentCard agentCard,
+        A2AProtocolAgentCard agentCard,
         IAgent agent,
         Dictionary<string, A2AAuthorizationMetadata> authorizations)
     {
@@ -262,7 +264,7 @@ internal sealed class A2AAgentCardComposer
         }
     }
 
-    private static void ValidateCard(AgentCard agentCard)
+    private static void ValidateCard(A2AProtocolAgentCard agentCard)
     {
         ArgumentNullException.ThrowIfNull(agentCard);
         ValidateRequirements(agentCard.SecurityRequirements, agentCard.SecuritySchemes);

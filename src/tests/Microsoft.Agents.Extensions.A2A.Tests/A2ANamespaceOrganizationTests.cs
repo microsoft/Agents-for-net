@@ -20,6 +20,10 @@ public class A2ANamespaceOrganizationTests
     [InlineData("A2AJsonRpcProcessor", RootNamespace + ".Pipeline")]
     [InlineData("A2AMessageActivity", RootNamespace + ".Pipeline")]
     [InlineData("A2ATurnContext", RootNamespace + ".Pipeline")]
+    [InlineData("A2AUserAuthorization", RootNamespace + ".Authorization")]
+    [InlineData("A2AUserAuthorizationSettings", RootNamespace + ".Authorization")]
+    [InlineData("A2AAgentCardOptions", RootNamespace + ".AgentCard")]
+    [InlineData("IAgentCardHandler", RootNamespace + ".AgentCard")]
     public void Type_UsesExpectedNamespace(string typeName, string expectedNamespace)
     {
         Type type = typeof(A2AAgentExtension).Assembly

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Security.Claims;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Authorization;
 
 /// <summary>
 /// Authentication information validated by the ASP.NET Core authentication pipeline.

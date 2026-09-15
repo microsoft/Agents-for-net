@@ -4,7 +4,7 @@
 using A2A;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.AgentCard;
 
 /// <summary>
 /// Application-owned descriptive values used to compose an A2A Agent Card.

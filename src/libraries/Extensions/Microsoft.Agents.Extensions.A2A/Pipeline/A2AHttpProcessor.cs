@@ -1,4 +1,5 @@
 using A2A;
+using A2AProtocolAgentCard = A2A.AgentCard;
 using A2A.AspNetCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -119,7 +120,7 @@ internal static class A2AHttpProcessor
 
     // REST handler: Get agent card
     internal static Task<IResult> GetAgentCardRestAsync(
-        IA2ARequestHandler requestHandler, ILogger logger, AgentCard agentCard, CancellationToken cancellationToken)
+        IA2ARequestHandler requestHandler, ILogger logger, A2AProtocolAgentCard agentCard, CancellationToken cancellationToken)
         => WithExceptionHandlingAsync(logger, "REST.GetAgentCard", ct =>
             Task.FromResult<IResult>(new A2AResponseResult(agentCard)), cancellationToken: cancellationToken);
 
@@ -271,7 +272,7 @@ internal sealed class A2AResponseResult : IResult
     internal A2AResponseResult(SendMessageResponse response) { _response = response; _responseType = typeof(SendMessageResponse); }
     internal A2AResponseResult(AgentTask task) { _response = task; _responseType = typeof(AgentTask); }
     internal A2AResponseResult(ListTasksResponse response) { _response = response; _responseType = typeof(ListTasksResponse); }
-    internal A2AResponseResult(AgentCard card) { _response = card; _responseType = typeof(AgentCard); }
+    internal A2AResponseResult(A2AProtocolAgentCard card) { _response = card; _responseType = typeof(A2AProtocolAgentCard); }
     internal A2AResponseResult(TaskPushNotificationConfig config) { _response = config; _responseType = typeof(TaskPushNotificationConfig); }
     internal A2AResponseResult(ListTaskPushNotificationConfigResponse response) { _response = response; _responseType = typeof(ListTaskPushNotificationConfigResponse); }
 

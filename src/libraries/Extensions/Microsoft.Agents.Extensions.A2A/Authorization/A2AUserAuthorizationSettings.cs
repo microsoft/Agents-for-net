@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Authorization;
 
 /// <summary>
 /// Settings for an <see cref="A2AUserAuthorization"/> handler.

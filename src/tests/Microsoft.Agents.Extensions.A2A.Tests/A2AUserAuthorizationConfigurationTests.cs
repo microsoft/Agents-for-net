@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -112,7 +113,7 @@ public class A2AUserAuthorizationConfigurationTests
             """
             {
               "request": {
-                "Type": "mIcRoSoFt.aGeNtS.eXtEnSiOnS.A2A.A2AuSeRaUtHoRiZaTiOn",
+                "Type": "mIcRoSoFt.aGeNtS.eXtEnSiOnS.A2A.aUtHoRiZaTiOn.A2AuSeRaUtHoRiZaTiOn",
                 "Assembly": "mIcRoSoFt.aGeNtS.eXtEnSiOnS.A2A",
                 "Settings": {
                   "SecurityScheme": "agentBearer"

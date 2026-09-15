@@ -2,9 +2,10 @@
 // Licensed under the MIT License.
 
 using A2A;
+using A2AProtocolAgentCard = A2A.AgentCard;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.AgentCard;
 
 /// <summary>
 /// Implement to handle setting agent specific <see cref="Microsoft.Agents.Hosting.A2A.Protocol.AgentCard"/> properties.
@@ -20,5 +21,5 @@ public interface IAgentCardHandler
     /// <para>Changing other properties, specifically around auth and capabilities, should be avoided without guidance
     /// on supported values.</para>
     /// </param>
-    Task<AgentCard> GetAgentCard(AgentCard hostAgentCard);
+    Task<A2AProtocolAgentCard> GetAgentCard(A2AProtocolAgentCard hostAgentCard);
 }
