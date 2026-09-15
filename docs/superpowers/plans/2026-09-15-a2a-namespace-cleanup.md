@@ -548,7 +548,7 @@ Run:
 ```powershell
 Get-ChildItem src\libraries\Extensions\Microsoft.Agents.Extensions.A2A -Recurse -Filter *.cs |
   Where-Object { $_.FullName -notlike '*\Properties\Resources.Designer.cs' } |
-  Select-String -Pattern '^namespace\s+[^;]+$|^namespace\s+[^{]+\{' 
+  Select-String -Pattern '^namespace\s+[^;]+$|^namespace\s+[^{]+\{'
 ```
 
 Expected: no output.

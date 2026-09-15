@@ -178,6 +178,15 @@ The inbound token must target the Agent API, never Microsoft Graph directly. `-m
 
 ## Adding A2A support to an existing SDK agent
 
+For normal A2A agent authoring, import the root A2A namespace:
+
+```csharp
+using Microsoft.Agents.Extensions.A2A;
+```
+
+Add a responsibility-specific A2A namespace only when the agent directly uses an
+API from that area.
+
 1. Add a package dependency for `Microsoft.Agents.Extensions.A2A`.
 
 The A2A adapter is registered automatically when the application calls `AddAgent`.
@@ -262,7 +271,7 @@ The A2A adapter is registered automatically when the application calls `AddAgent
    1. Multi-turn continues while `Task.Status.State == "input-required"`.
    1. Once a task is terminal (`TaskState.Completed`, `TaskState.Failed`, or `TaskState.Canceled`), it is immutable and can no longer be acted on.
 
-### Current handling in `Microsoft.Agents.Hosting.A2A`
+### Current handling in `Microsoft.Agents.Extensions.A2A`
 
 1. Everything is in the context of an A2A `Task`. Agents SDK does not currently support the notion of a message interaction that later transitions to a task.
 1. The SDK uses `taskId` as its conversation ID (`Activity.Conversation.Id`).
