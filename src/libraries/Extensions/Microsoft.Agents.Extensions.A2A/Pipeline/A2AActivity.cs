@@ -37,9 +37,13 @@ internal static class A2AActivity
         return activity;
     }
 
-    public static Message MessageFromActivity(string contextId, string taskId, IActivity activity, bool includeEntities = true)
+    public static Message? MessageFromActivity(string contextId, string taskId, IActivity? activity, bool includeEntities = true)
     {
-        var artifact = CreateArtifact(activity, includeEntities: includeEntities) ?? throw new ArgumentException("Invalid activity to convert to payload");
+        var artifact = CreateArtifact(activity, includeEntities: includeEntities);
+        if (artifact == null)
+        {
+            return null;
+        }
 
         return new Message()
         {

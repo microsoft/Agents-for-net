@@ -102,11 +102,12 @@ public static class A2AServiceExtensions
                 }
             }
 
-            a2aGroup.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-            {
-                return adapter.ProcessAgentCardAsync(request, response, agent, defaultPath, cancellationToken);
-            });
         }
+
+        a2aGroup.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+        {
+            return adapter.ProcessAgentCardAsync(request, response, agent, defaultPath, cancellationToken);
+        });
 
         return a2aGroup;
     }

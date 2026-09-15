@@ -4,6 +4,8 @@ extern alias A2AAgentSample;
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Hosting.AspNetCore;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.A2A;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -86,6 +88,26 @@ public class A2AAgentStartupTests
     }
 
     [Fact]
+    public void MultipleAgents_MapOneDefaultAgentCardEndpoint()
+    {
+        using WebApplication app = BuildApp(Environments.Development, configureTokenValidation: false);
+
+        app.MapA2AApplicationEndpoints(requireAuth: false);
+
+        var defaultAgentCardEndpoints = ((IEndpointRouteBuilder)app).DataSources
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .ToList();
+
+        Assert.Single(defaultAgentCardEndpoints, endpoint =>
+            endpoint.RoutePattern.RawText == "/.well-known/agent-card.json");
+        Assert.Single(defaultAgentCardEndpoints, endpoint =>
+            endpoint.RoutePattern.RawText == "/first/.well-known/agent-card.json");
+        Assert.Single(defaultAgentCardEndpoints, endpoint =>
+            endpoint.RoutePattern.RawText == "/second/.well-known/agent-card.json");
+    }
+
+    [Fact]
     public async Task JwtBearerConfiguration_MapsInboundClaims()
     {
         JsonWebTokenHandler handler = GetConfiguredTokenHandler(out _);
@@ -147,6 +169,12 @@ public class A2AAgentStartupTests
         ["scp"] = "access_as_user",
         ["azp"] = TestClientId,
     };
+
+    [AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/first")]
+    private sealed class FirstTestAgent(AgentApplicationOptions options) : AgentApplication(options);
+
+    [AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/second")]
+    private sealed class SecondTestAgent(AgentApplicationOptions options) : AgentApplication(options);
 
     private static Dictionary<string, object> ApplicationClaims() => new()
     {

@@ -755,6 +755,33 @@ public class A2AAdapterTests
     }
 
     [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync_WithContentFreeEndOfConversation_CompletesTask()
+    {
+        var record = UseRecord(record =>
+        {
+            var options = new TestApplicationOptions(record.Storage);
+            var agent = new TestApplication(options);
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                await context.SendActivityAsync(
+                    new Activity { Type = ActivityTypes.EndOfConversation },
+                    cancellationToken: ct);
+            });
+            return agent;
+        });
+
+        var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-eoc")));
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+        var task = ReadTaskResponse(context);
+        Assert.Equal(TaskState.Completed, task.Status.State);
+        Assert.Null(task.Status.Message);
+    }
+
+    [Fact]
     public async Task ProcessJsonRpcMessageSendAsync_WithAutoSignIn_ExposesRequestToken()
     {
         var connections = Mock.Of<IConnections>();
