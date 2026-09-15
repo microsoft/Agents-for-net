@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Extensions.A2A;
 public static class A2AServiceExtensions
 {
     /// <summary>
-    /// Registers the A2A adapter services explicitly.
+    /// Registers the internal A2A endpoint-processing services explicitly.
     /// </summary>
     /// <remarks>
     /// <c>AddAgentCore</c> registers these services automatically. Custom hosts that do not call
@@ -53,7 +53,7 @@ public static class A2AServiceExtensions
     /// <param name="requireAuth">Whether mapped endpoints require authorization. When <see langword="null"/>, uses the configured agent authorization policy.</param>
     /// <param name="defaultPath">The default A2A endpoint path for a single agent without an interface attribute.</param>
     /// <returns>The mapped endpoint group for additional configuration.</returns>
-    /// <exception cref="InvalidOperationException">No agent is available, or multiple agents have no interface attribute.</exception>
+    /// <exception cref="InvalidOperationException">The calling assembly and service provider contain no <see cref="AgentApplication"/>, or an agent in a multi-agent application lacks an <see cref="AgentInterfaceAttribute"/>.</exception>
     public static IEndpointConventionBuilder MapA2AApplicationEndpoints(
         this IEndpointRouteBuilder endpoints,
         bool? requireAuth = null,

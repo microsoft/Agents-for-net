@@ -32,13 +32,11 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
 /// <summary>
-/// Adapter for handling A2A requests.
+/// Implements A2A request processing for the extension's registered endpoints.
 /// </summary>
 /// <remarks>
-/// The adapter is registered automatically by <c>AddAgentCore</c>. Map endpoints in startup using:
-/// <code>
-///    app.MapA2AApplicationEndpoints();
-/// </code>
+/// The extension creates this adapter through its service registration. It is not a consumer
+/// customization or replacement point.
 /// </remarks>
 [ChannelAdapter(Channels.A2A)]
 internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
