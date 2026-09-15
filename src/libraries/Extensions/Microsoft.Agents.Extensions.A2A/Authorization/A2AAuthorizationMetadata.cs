@@ -17,10 +17,12 @@ internal sealed class A2AAuthorizationMetadata
     private A2AAuthorizationMetadata(string handlerName, A2AUserAuthorizationSettings settings)
     {
         HandlerName = handlerName;
-        ReferencedSecurityScheme = string.IsNullOrWhiteSpace(settings.SecurityScheme)
+        SecuritySchemeName = string.IsNullOrWhiteSpace(settings.SecuritySchemeName)
             ? null
-            : settings.SecurityScheme;
-        SecuritySchemeName = ReferencedSecurityScheme ?? settings.SecuritySchemeName;
+            : settings.SecuritySchemeName;
+        ReferencedSecurityScheme = settings.OAuthFlows == null
+            ? SecuritySchemeName
+            : null;
         SecurityScheme = settings.OAuthFlows == null
             ? null
             : new SecurityScheme

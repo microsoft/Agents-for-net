@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Extensions.A2A.Tests;
 public class A2AUserAuthorizationConfigurationTests
 {
     [Fact]
-    public void Configuration_WithSecuritySchemeReference_BindsRequiredScopesAndPolicy()
+    public void Configuration_WithSecuritySchemeNameAndNoOAuthFlows_ReferencesExistingScheme()
     {
         var configuration = CreateAgentApplicationConfiguration(
             """
@@ -29,7 +29,7 @@ public class A2AUserAuthorizationConfigurationTests
               "request": {
                 "Type": "A2AUserAuthorization",
                 "Settings": {
-                  "SecurityScheme": "agentBearer",
+                  "SecuritySchemeName": "agentBearer",
                   "RequiredScopes": [ "api://agent/access_as_user" ],
                   "AuthorizationPolicy": "AgentAccess"
                 }
@@ -41,6 +41,7 @@ public class A2AUserAuthorizationConfigurationTests
 
         Assert.Equal("request", metadata.HandlerName);
         Assert.Equal("agentBearer", metadata.SecuritySchemeName);
+        Assert.Equal("agentBearer", metadata.ReferencedSecurityScheme);
         Assert.Null(metadata.SecurityScheme);
         Assert.Equal(["api://agent/access_as_user"], metadata.RequiredScopes);
         Assert.Equal("AgentAccess", metadata.AuthorizationPolicy);
@@ -108,7 +109,7 @@ public class A2AUserAuthorizationConfigurationTests
     }
 
     [Fact]
-    public void Configuration_WithWhitespaceSecuritySchemeAndInlineFlow_UsesInlineMetadata()
+    public void Configuration_WithSecuritySchemeNameAndInlineFlow_DefinesInlineScheme()
     {
         var configuration = CreateAgentApplicationConfiguration(
             """
@@ -116,7 +117,6 @@ public class A2AUserAuthorizationConfigurationTests
               "request": {
                 "Type": "A2AUserAuthorization",
                 "Settings": {
-                  "SecurityScheme": "   ",
                   "SecuritySchemeName": "deviceCode",
                   "OAuthFlows": {
                     "DeviceCode": {
@@ -146,7 +146,7 @@ public class A2AUserAuthorizationConfigurationTests
                 "Type": "mIcRoSoFt.aGeNtS.eXtEnSiOnS.A2A.aUtHoRiZaTiOn.A2AuSeRaUtHoRiZaTiOn",
                 "Assembly": "mIcRoSoFt.aGeNtS.eXtEnSiOnS.A2A",
                 "Settings": {
-                  "SecurityScheme": "agentBearer"
+                  "SecuritySchemeName": "agentBearer"
                 }
               }
             }
@@ -155,34 +155,6 @@ public class A2AUserAuthorizationConfigurationTests
         var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
 
         Assert.Equal("agentBearer", metadata.SecuritySchemeName);
-    }
-
-    [Fact]
-    public void Configuration_WithInlineAndReferencedScheme_Throws()
-    {
-        var configuration = CreateAgentApplicationConfiguration(
-            """
-            {
-              "request": {
-                "Type": "A2AUserAuthorization",
-                "Settings": {
-                  "SecurityScheme": "agentBearer",
-                  "SecuritySchemeName": "deviceCode",
-                  "OAuthFlows": {
-                    "DeviceCode": {
-                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
-                      "TokenUrl": "https://login.example.com/token"
-                    }
-                  }
-                }
-              }
-            }
-            """);
-
-        var exception = Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
-
-        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100009);
-        Assert.Equal("SecurityScheme and OAuthFlows cannot both be configured.", exception.Message);
     }
 
     [Fact]
@@ -250,7 +222,7 @@ public class A2AUserAuthorizationConfigurationTests
               "request": {
                 "Type": "A2AUserAuthorization",
                 "Settings": {
-                  "SecurityScheme": "agentBearer",
+                  "SecuritySchemeName": "agentBearer",
                   "RequiredScopes": [ "api://agent/access_as_user" ],
                   "OBOScopes": [ "User.Read" ]
                 }

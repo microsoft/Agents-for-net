@@ -132,7 +132,7 @@ public class A2AAdapterTests
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
             ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
         }));
 
@@ -153,7 +153,6 @@ public class A2AAdapterTests
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
             ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "legacy-request",
             ["AgentApplication:UserAuthorization:Handlers:legacy-request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:legacy-request:Settings:SecurityScheme"] = schemeName,
             ["AgentApplication:UserAuthorization:Handlers:legacy-request:Settings:SecuritySchemeName"] = schemeName,
         }));
         var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
@@ -176,7 +175,6 @@ public class A2AAdapterTests
         {
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
             ["AgentApplication:UserAuthorization:Handlers:legacy-request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:legacy-request:Settings:SecurityScheme"] = schemeName,
             ["AgentApplication:UserAuthorization:Handlers:legacy-request:Settings:SecuritySchemeName"] = schemeName,
         }));
         var agent = CreateSkillAgent("legacy-request");
@@ -200,7 +198,7 @@ public class A2AAdapterTests
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
             ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:unused:Type"] = handlerType,
         }));
 
@@ -232,7 +230,7 @@ public class A2AAdapterTests
         }
         else
         {
-            values["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "delegated";
+            values["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "delegated";
             flowsPath = "AgentApplication:A2A:AgentCard:SecuritySchemes:delegated:OAuth2SecurityScheme:Flows";
         }
         values[$"{flowsPath}:DeviceCode:TokenUrl"] = "https://login.example.com/token";
@@ -297,7 +295,7 @@ public class A2AAdapterTests
             ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
         };
         if (handlerType != null)
         {
@@ -325,7 +323,7 @@ public class A2AAdapterTests
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
             ["AgentApplication:UserAuthorization:DefaultHandlerName"] = handlerName,
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
         }));
 
@@ -344,7 +342,7 @@ public class A2AAdapterTests
             ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
         }));
 
@@ -362,7 +360,7 @@ public class A2AAdapterTests
             ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
         }));
 
@@ -381,7 +379,7 @@ public class A2AAdapterTests
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
             ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
             ["AgentApplication:UserAuthorization:Handlers:Request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:Request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:Request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:Request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
         }));
 
@@ -399,7 +397,7 @@ public class A2AAdapterTests
             ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
             ["AgentApplication:UserAuthorization:Handlers:Request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:Request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:Request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:Request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
         }));
         var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
@@ -424,7 +422,7 @@ public class A2AAdapterTests
         {
             ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
         }));
         var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
@@ -452,10 +450,10 @@ public class A2AAdapterTests
             ["AgentApplication:A2A:AgentCard:SecuritySchemes:profileBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
             ["AgentApplication:UserAuthorization:Handlers:profile:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:profile:Settings:SecurityScheme"] = "profileBearer",
+            ["AgentApplication:UserAuthorization:Handlers:profile:Settings:SecuritySchemeName"] = "profileBearer",
             ["AgentApplication:UserAuthorization:Handlers:profile:Settings:RequiredScopes:0"] = "api://agent/profile",
         }));
         var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
@@ -482,10 +480,10 @@ public class A2AAdapterTests
             ["AgentApplication:A2A:AgentCard:SecuritySchemes:agentBearer:HttpAuthSecurityScheme:Scheme"] = "bearer",
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
             ["AgentApplication:UserAuthorization:Handlers:profile:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:profile:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:profile:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:profile:Settings:RequiredScopes:0"] = "api://agent/profile",
         }));
         var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
@@ -512,7 +510,7 @@ public class A2AAdapterTests
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
             ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "agentBearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "agentBearer",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "api://agent/access_as_user",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:OBOConnectionName"] = "graphConnection",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:OBOScopes:0"] = "User.Read",
@@ -533,7 +531,7 @@ public class A2AAdapterTests
             ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
             ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecurityScheme"] = "missing",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "missing",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "agent.read",
         }));
         var request = CreateMockHttpRequest("https", "localhost:3978");

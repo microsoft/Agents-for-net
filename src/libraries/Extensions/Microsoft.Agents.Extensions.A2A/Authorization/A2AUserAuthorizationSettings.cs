@@ -17,9 +17,9 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Agent Card security metadata requires either <see cref="SecurityScheme"/> to reference an
-/// existing scheme, or <see cref="SecuritySchemeName"/> together with <see cref="OAuthFlows"/>
-/// to define an inline scheme. These alternatives cannot be combined.
+/// <see cref="SecuritySchemeName"/> identifies the Agent Card security scheme used by the handler.
+/// When <see cref="OAuthFlows"/> is configured, the handler defines that named scheme inline.
+/// Otherwise, the handler references an existing scheme with that name.
 /// </para>
 /// <para>
 /// <see cref="RequiredScopes"/> identifies the scopes required by a generated Agent Card
@@ -45,23 +45,13 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 public sealed class A2AUserAuthorizationSettings : OBOSettings
 {
     /// <summary>
-    /// Gets or sets the name of an existing security scheme on the Agent Card.
+    /// Gets or sets the Agent Card security scheme name used by this handler.
     /// </summary>
     /// <remarks>
-    /// Use this property when multiple handlers or skills share a centrally configured scheme.
-    /// Do not set it together with <see cref="OAuthFlows"/>. When neither this property nor
-    /// <see cref="OAuthFlows"/> is configured, the handler contributes no Agent Card security
-    /// metadata and cannot be used to generate a protected skill requirement.
-    /// </remarks>
-    public string SecurityScheme { get; set; }
-
-    /// <summary>
-    /// Gets or sets the Agent Card name assigned to the inline scheme defined by
-    /// <see cref="OAuthFlows"/>.
-    /// </summary>
-    /// <remarks>
-    /// This value is required when <see cref="OAuthFlows"/> is configured and is ignored when
-    /// the handler references an existing <see cref="SecurityScheme"/>.
+    /// When <see cref="OAuthFlows"/> is configured, the handler defines an inline OAuth scheme
+    /// with this name. Without <see cref="OAuthFlows"/>, the handler references an existing
+    /// Agent Card scheme with this name. When this property is omitted, the handler contributes
+    /// no Agent Card security metadata and cannot be used to generate a protected requirement.
     /// </remarks>
     public string SecuritySchemeName { get; set; }
 
@@ -79,7 +69,7 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
 
     /// <summary>
     /// Gets or sets the scopes that generated Agent Card security requirements request from
-    /// <see cref="SecurityScheme"/> or the inline scheme named by <see cref="SecuritySchemeName"/>.
+    /// the scheme named by <see cref="SecuritySchemeName"/>.
     /// </summary>
     /// <remarks>
     /// These values should be a subset of the scopes advertised by the resolved OAuth flow.
@@ -130,43 +120,31 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
 
     private static void ValidateSecurityScheme(A2AUserAuthorizationSettings settings)
     {
-        if (string.IsNullOrWhiteSpace(settings.SecurityScheme))
+        if (settings.OAuthFlows == null)
         {
-            if (settings.OAuthFlows == null)
-            {
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(settings.SecuritySchemeName))
-            {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                    ErrorHelper.AuthorizationSecuritySchemeNameRequired,
-                    null);
-            }
-
-            var flowCount = 0;
-            flowCount += settings.OAuthFlows.AuthorizationCode == null ? 0 : 1;
-            flowCount += settings.OAuthFlows.ClientCredentials == null ? 0 : 1;
-            flowCount += settings.OAuthFlows.DeviceCode == null ? 0 : 1;
-#pragma warning disable CS0618 // Deprecated flows must still be rejected when present in configuration.
-            flowCount += settings.OAuthFlows.Implicit == null ? 0 : 1;
-            flowCount += settings.OAuthFlows.Password == null ? 0 : 1;
-#pragma warning restore CS0618
-
-            if (flowCount != 1)
-            {
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                    ErrorHelper.AuthorizationExactlyOneOAuthFlowRequired,
-                    null);
-            }
-
             return;
         }
 
-        if (settings.OAuthFlows != null)
+        if (string.IsNullOrWhiteSpace(settings.SecuritySchemeName))
         {
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                ErrorHelper.AuthorizationSecuritySchemeConflict,
+                ErrorHelper.AuthorizationSecuritySchemeNameRequired,
+                null);
+        }
+
+        var flowCount = 0;
+        flowCount += settings.OAuthFlows.AuthorizationCode == null ? 0 : 1;
+        flowCount += settings.OAuthFlows.ClientCredentials == null ? 0 : 1;
+        flowCount += settings.OAuthFlows.DeviceCode == null ? 0 : 1;
+#pragma warning disable CS0618 // Deprecated flows must still be rejected when present in configuration.
+        flowCount += settings.OAuthFlows.Implicit == null ? 0 : 1;
+        flowCount += settings.OAuthFlows.Password == null ? 0 : 1;
+#pragma warning restore CS0618
+
+        if (flowCount != 1)
+        {
+            throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AuthorizationExactlyOneOAuthFlowRequired,
                 null);
         }
     }

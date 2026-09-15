@@ -258,9 +258,11 @@ person, it does not provide a user identity for `ITurnState.User`.
 #### Shared Agent Card schemes
 
 Larger applications can define reusable schemes under
-`AgentApplication:A2A:AgentCard:SecuritySchemes` and set a handler's `SecurityScheme` to the shared
-name. This avoids repeating OAuth endpoint metadata when several handlers use the same inbound
-scheme. It is an advanced alternative to the self-contained handler used by this sample.
+`AgentApplication:A2A:AgentCard:SecuritySchemes` and set a handler's `SecuritySchemeName` to the
+shared name without configuring `OAuthFlows`. With `OAuthFlows`, `SecuritySchemeName` names the
+inline scheme defined by the handler; without flows, it references the existing Agent Card scheme.
+This avoids repeating OAuth endpoint metadata when several handlers use the same inbound scheme.
+It is an advanced alternative to the self-contained handler used by this sample.
 
 ### Manual route check
 

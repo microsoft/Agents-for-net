@@ -33,8 +33,6 @@ internal static partial class ErrorHelper
         new(-100007, Resource(nameof(AuthorizationSecuritySchemeNameRequired)), $"{HelpLinkBase}-100007");
     internal static readonly AgentErrorDefinition AuthorizationExactlyOneOAuthFlowRequired =
         new(-100008, Resource(nameof(AuthorizationExactlyOneOAuthFlowRequired)), $"{HelpLinkBase}-100008");
-    internal static readonly AgentErrorDefinition AuthorizationSecuritySchemeConflict =
-        new(-100009, Resource(nameof(AuthorizationSecuritySchemeConflict)), $"{HelpLinkBase}-100009");
     internal static readonly AgentErrorDefinition AgentCardNullSecurityScheme =
         new(-100010, Resource(nameof(AgentCardNullSecurityScheme)), $"{HelpLinkBase}-100010");
     internal static readonly AgentErrorDefinition AgentCardDuplicateSecurityScheme =
