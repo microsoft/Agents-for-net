@@ -4,7 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Microsoft.Agents.Extensions.A2A.Hosting;
+namespace Microsoft.Agents.Extensions.A2A.Integration;
 
 /// <summary>
 /// Registers the A2A adapter when an agent application loads extension service registrars.

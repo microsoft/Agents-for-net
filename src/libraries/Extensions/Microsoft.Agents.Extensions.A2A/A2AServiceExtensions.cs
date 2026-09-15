@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Threading;
 
 [assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
-    typeof(Microsoft.Agents.Extensions.A2A.Hosting.A2AServiceRegistrar))]
+    typeof(Microsoft.Agents.Extensions.A2A.Integration.A2AServiceRegistrar))]
 
 namespace Microsoft.Agents.Extensions.A2A;
 

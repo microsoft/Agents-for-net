@@ -4,7 +4,7 @@
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Extensions.AI;
 
-namespace Microsoft.Agents.Extensions.A2A.Serialization;
+namespace Microsoft.Agents.Extensions.A2A.Integration;
 
 [SerializationInit]
 internal class SerializationInit

@@ -14,7 +14,7 @@ public class A2ANamespaceOrganizationTests
     [Theory]
     [InlineData("A2ASkillRegistration", RootNamespace + ".Routing")]
     [InlineData("HandlerUtils", RootNamespace + ".Routing")]
-    [InlineData("A2AServiceRegistrar", RootNamespace + ".Hosting")]
+    [InlineData("A2AServiceRegistrar", RootNamespace + ".Integration")]
     [InlineData("A2AAdapter", RootNamespace + ".Pipeline")]
     [InlineData("IA2AHttpAdapter", RootNamespace + ".Pipeline")]
     [InlineData("A2AJsonRpcProcessor", RootNamespace + ".Pipeline")]
@@ -24,7 +24,8 @@ public class A2ANamespaceOrganizationTests
     [InlineData("A2AUserAuthorizationSettings", RootNamespace + ".Authorization")]
     [InlineData("A2AAgentCardOptions", RootNamespace + ".AgentCard")]
     [InlineData("IAgentCardHandler", RootNamespace + ".AgentCard")]
-    [InlineData("A2AClient", RootNamespace + ".Client")]
+    [InlineData("SerializationInit", RootNamespace + ".Integration")]
+    [InlineData("A2AClient", RootNamespace)]
     [InlineData("BlobTaskStore", RootNamespace + ".Storage")]
     public void Type_UsesExpectedNamespace(string typeName, string expectedNamespace)
     {
@@ -45,6 +46,7 @@ public class A2ANamespaceOrganizationTests
     [InlineData(typeof(A2ASkillBuilder))]
     [InlineData(typeof(A2AMessageRouteAttribute))]
     [InlineData(typeof(A2AAgentTransportProtocol))]
+    [InlineData(typeof(A2AClient))]
     [InlineData(typeof(A2AServiceExtensions))]
     [InlineData(typeof(A2AExtensions))]
     public void AuthoringType_RemainsInRootNamespace(Type type)
@@ -59,6 +61,7 @@ public class A2ANamespaceOrganizationTests
         [
             "A2AAgentExtension",
             "A2AAgentTransportProtocol",
+            "A2AClient",
             "A2AExtensionAttribute",
             "A2AExtensions",
             "A2AMessageRouteAttribute",

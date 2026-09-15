@@ -341,7 +341,7 @@ public class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     /// </summary>
     /// <remarks>
     /// The request context and event queue are attached only for this turn, making
-    /// <see cref="Client.A2AClient"/> available to A2A route handlers during same-turn processing.
+    /// <see cref="A2AClient"/> available to A2A route handlers during same-turn processing.
     /// </remarks>
     /// <param name="claimsIdentity">The identity associated with the incoming activity.</param>
     /// <param name="activity">The activity to process.</param>
