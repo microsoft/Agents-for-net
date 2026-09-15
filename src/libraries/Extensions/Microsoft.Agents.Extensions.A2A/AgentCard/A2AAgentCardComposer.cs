@@ -6,7 +6,9 @@ using A2AProtocolAgentCard = A2A.AgentCard;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Extensions.A2A.Authorization;
+using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Agents.Extensions.A2A.Routing;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -95,7 +97,10 @@ internal sealed class A2AAgentCardComposer
         {
             if (scheme.Value == null)
             {
-                throw new InvalidOperationException($"A2A Agent Card security scheme '{scheme.Key}' cannot be null.");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgentCardNullSecurityScheme,
+                    null,
+                    scheme.Key);
             }
 
             agentCard.SecuritySchemes[scheme.Key] = scheme.Value;
@@ -108,7 +113,10 @@ internal sealed class A2AAgentCardComposer
         {
             if (agentCard.SecuritySchemes.ContainsKey(authorization.SecuritySchemeName))
             {
-                throw new InvalidOperationException($"A2A Agent Card security scheme '{authorization.SecuritySchemeName}' is configured more than once.");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgentCardDuplicateSecurityScheme,
+                    null,
+                    authorization.SecuritySchemeName);
             }
 
             agentCard.SecuritySchemes.Add(authorization.SecuritySchemeName, authorization.SecurityScheme);
@@ -157,7 +165,10 @@ internal sealed class A2AAgentCardComposer
             var registration = registrationsForSkill.First();
             if (registrationsForSkill.Any(candidate => !HasCompatibleMetadata(registration, candidate)))
             {
-                throw new InvalidOperationException($"A2A skill '{registration.Id}' has conflicting registrations.");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgentCardConflictingSkillRegistration,
+                    null,
+                    registration.Id);
             }
 
             var skill = new AgentSkill
@@ -213,14 +224,20 @@ internal sealed class A2AAgentCardComposer
         var normalizedName = handlerName?.Trim();
         if (string.IsNullOrEmpty(normalizedName) || !authorizations.TryGetValue(normalizedName, out var authorization))
         {
-            throw new InvalidOperationException(
-                $"A2A {context} references authorization handler '{normalizedName ?? "<null>"}', which must be configured as an {nameof(A2AUserAuthorization)} handler.");
+            throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AgentCardUnknownAuthorizationHandler,
+                null,
+                context,
+                normalizedName ?? "<null>");
         }
 
         if (string.IsNullOrWhiteSpace(authorization.SecuritySchemeName))
         {
-            throw new InvalidOperationException(
-                $"A2A authorization handler '{authorization.HandlerName}' used by {context} requires Agent Card metadata: configure {nameof(A2AUserAuthorizationSettings.SecurityScheme)} or {nameof(A2AUserAuthorizationSettings.SecuritySchemeName)} together with {nameof(A2AUserAuthorizationSettings.OAuthFlows)}.");
+            throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AgentCardAuthorizationMetadataRequired,
+                null,
+                authorization.HandlerName,
+                context);
         }
 
         return authorization;
@@ -259,7 +276,10 @@ internal sealed class A2AAgentCardComposer
         {
             if (section.GetSection(property).Exists())
             {
-                throw new InvalidOperationException($"A2A Agent Card configuration cannot set '{property}'.");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgentCardProtectedProperty,
+                    null,
+                    property);
             }
         }
     }
@@ -285,14 +305,20 @@ internal sealed class A2AAgentCardComposer
             {
                 if (!securitySchemes.TryGetValue(schemeRequirement.Key, out var scheme))
                 {
-                    throw new InvalidOperationException($"A2A Agent Card requirement references missing security scheme '{schemeRequirement.Key}'.");
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                        ErrorHelper.AgentCardMissingSecurityScheme,
+                        null,
+                        schemeRequirement.Key);
                 }
 
                 var requiredScopes = schemeRequirement.Value?.List ?? [];
                 var availableScopes = GetOAuthScopes(scheme);
                 if (availableScopes != null && requiredScopes.Any(scope => !availableScopes.Contains(scope)))
                 {
-                    throw new InvalidOperationException($"A2A Agent Card requirement for scheme '{schemeRequirement.Key}' includes a scope that the scheme does not define.");
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                        ErrorHelper.AgentCardUndefinedScope,
+                        null,
+                        schemeRequirement.Key);
                 }
             }
         }

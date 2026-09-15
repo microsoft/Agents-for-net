@@ -17,7 +17,7 @@ public class A2AErrorMetadataTests
         var exception = Assert.Throws<InvalidOperationException>(
             () => new A2AAgentExtension(new ConflictingSkillAttributeApp(new AgentApplicationOptions((IStorage)null))));
 
-        AssertErrorMetadata(exception, -100002);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100002);
         Assert.Contains("shared-skill", exception.Message);
     }
 
@@ -26,7 +26,7 @@ public class A2AErrorMetadataTests
     {
         var exception = Assert.Throws<InvalidOperationException>(() => new A2ASkillBuilder("missing-route").Build());
 
-        AssertErrorMetadata(exception, -100003);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100003);
         Assert.Contains("missing-route", exception.Message);
     }
 
@@ -39,7 +39,7 @@ public class A2AErrorMetadataTests
         var exception = Assert.Throws<InvalidOperationException>(
             () => skill.OnMessage((_, _, _) => Task.CompletedTask));
 
-        AssertErrorMetadata(exception, -100004);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100004);
         Assert.Contains("one-route", exception.Message);
     }
 
@@ -51,7 +51,7 @@ public class A2AErrorMetadataTests
         var exception = Assert.Throws<InvalidOperationException>(
             () => A2AServiceExtensions.ResolveAgentTypes(typeof(string).Assembly, services));
 
-        AssertErrorMetadata(exception, -100005);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100005);
         Assert.Contains("No AgentApplication was found", exception.Message);
     }
 
@@ -61,14 +61,8 @@ public class A2AErrorMetadataTests
         var exception = Assert.Throws<InvalidOperationException>(
             () => A2AServiceExtensions.ResolveAgentInterfaces(typeof(UnattributedAgent), 2, "/a2a"));
 
-        AssertErrorMetadata(exception, -100006);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100006);
         Assert.Contains(typeof(UnattributedAgent).FullName, exception.Message);
-    }
-
-    private static void AssertErrorMetadata(Exception exception, int code)
-    {
-        Assert.Equal(code, exception.HResult);
-        Assert.Equal($"https://aka.ms/M365AgentsErrorCodes/#{code}", exception.HelpLink);
     }
 
     private sealed class UnattributedAgent : AgentApplication
@@ -77,5 +71,15 @@ public class A2AErrorMetadataTests
             : base(new AgentApplicationOptions((IStorage)null))
         {
         }
+    }
+
+}
+
+internal static class A2AErrorMetadataAssertions
+{
+    internal static void AssertErrorMetadata(Exception exception, int code)
+    {
+        Assert.Equal(code, exception.HResult);
+        Assert.Equal($"https://aka.ms/M365AgentsErrorCodes/#{code}", exception.HelpLink);
     }
 }

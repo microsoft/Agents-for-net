@@ -149,7 +149,10 @@ public class A2AUserAuthorizationConfigurationTests
             }
             """);
 
-        Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
+        var exception = Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100009);
+        Assert.Equal("SecurityScheme and OAuthFlows cannot both be configured.", exception.Message);
     }
 
     [Fact]
@@ -176,7 +179,36 @@ public class A2AUserAuthorizationConfigurationTests
             }
             """);
 
-        Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
+        var exception = Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100008);
+        Assert.Equal("OAuthFlows must specify exactly one OAuth flow.", exception.Message);
+    }
+
+    [Fact]
+    public void Configuration_WithInlineOAuthFlowAndNoSchemeName_Throws()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token"
+                    }
+                  }
+                }
+              }
+            }
+            """);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100007);
+        Assert.Equal("SecuritySchemeName is required when OAuthFlows is configured.", exception.Message);
     }
 
     [Fact]

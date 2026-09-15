@@ -3,6 +3,8 @@
 
 using A2A;
 using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -12,6 +14,10 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// <summary>
 /// Settings for an <see cref="A2AUserAuthorization"/> handler.
 /// </summary>
+/// <remarks>
+/// Agent Card security metadata requires either <see cref="SecurityScheme"/> or
+/// <see cref="SecuritySchemeName"/> together with <see cref="OAuthFlows"/>.
+/// </remarks>
 public sealed class A2AUserAuthorizationSettings : OBOSettings
 {
     /// <summary>
@@ -75,7 +81,9 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
 
             if (string.IsNullOrWhiteSpace(settings.SecuritySchemeName))
             {
-                throw new InvalidOperationException($"{nameof(SecuritySchemeName)} is required when {nameof(OAuthFlows)} is configured.");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AuthorizationSecuritySchemeNameRequired,
+                    null);
             }
 
             var flowCount = 0;
@@ -89,7 +97,9 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
 
             if (flowCount != 1)
             {
-                throw new InvalidOperationException($"{nameof(OAuthFlows)} must specify exactly one OAuth flow.");
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AuthorizationExactlyOneOAuthFlowRequired,
+                    null);
             }
 
             return;
@@ -97,7 +107,9 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
 
         if (settings.OAuthFlows != null)
         {
-            throw new InvalidOperationException($"{nameof(SecurityScheme)} and {nameof(OAuthFlows)} cannot both be configured.");
+            throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AuthorizationSecuritySchemeConflict,
+                null);
         }
     }
 }

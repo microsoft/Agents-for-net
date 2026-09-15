@@ -29,4 +29,26 @@ internal static partial class ErrorHelper
         new(-100005, Resource(nameof(AgentApplicationNotFound)), $"{HelpLinkBase}-100005");
     internal static readonly AgentErrorDefinition AgentInterfaceMissing =
         new(-100006, Resource(nameof(AgentInterfaceMissing)), $"{HelpLinkBase}-100006");
+    internal static readonly AgentErrorDefinition AuthorizationSecuritySchemeNameRequired =
+        new(-100007, Resource(nameof(AuthorizationSecuritySchemeNameRequired)), $"{HelpLinkBase}-100007");
+    internal static readonly AgentErrorDefinition AuthorizationExactlyOneOAuthFlowRequired =
+        new(-100008, Resource(nameof(AuthorizationExactlyOneOAuthFlowRequired)), $"{HelpLinkBase}-100008");
+    internal static readonly AgentErrorDefinition AuthorizationSecuritySchemeConflict =
+        new(-100009, Resource(nameof(AuthorizationSecuritySchemeConflict)), $"{HelpLinkBase}-100009");
+    internal static readonly AgentErrorDefinition AgentCardNullSecurityScheme =
+        new(-100010, Resource(nameof(AgentCardNullSecurityScheme)), $"{HelpLinkBase}-100010");
+    internal static readonly AgentErrorDefinition AgentCardDuplicateSecurityScheme =
+        new(-100011, Resource(nameof(AgentCardDuplicateSecurityScheme)), $"{HelpLinkBase}-100011");
+    internal static readonly AgentErrorDefinition AgentCardConflictingSkillRegistration =
+        new(-100012, Resource(nameof(AgentCardConflictingSkillRegistration)), $"{HelpLinkBase}-100012");
+    internal static readonly AgentErrorDefinition AgentCardUnknownAuthorizationHandler =
+        new(-100013, Resource(nameof(AgentCardUnknownAuthorizationHandler)), $"{HelpLinkBase}-100013");
+    internal static readonly AgentErrorDefinition AgentCardAuthorizationMetadataRequired =
+        new(-100014, Resource(nameof(AgentCardAuthorizationMetadataRequired)), $"{HelpLinkBase}-100014");
+    internal static readonly AgentErrorDefinition AgentCardProtectedProperty =
+        new(-100015, Resource(nameof(AgentCardProtectedProperty)), $"{HelpLinkBase}-100015");
+    internal static readonly AgentErrorDefinition AgentCardMissingSecurityScheme =
+        new(-100016, Resource(nameof(AgentCardMissingSecurityScheme)), $"{HelpLinkBase}-100016");
+    internal static readonly AgentErrorDefinition AgentCardUndefinedScope =
+        new(-100017, Resource(nameof(AgentCardUndefinedScope)), $"{HelpLinkBase}-100017");
 }

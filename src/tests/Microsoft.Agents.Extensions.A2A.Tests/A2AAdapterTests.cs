@@ -24,6 +24,8 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -137,11 +139,10 @@ public class A2AAdapterTests
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ProcessAgentCardAsync(adapter, agent));
 
-        Assert.Contains("legacy-request", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("global", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("SecurityScheme", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("SecuritySchemeName", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("OAuthFlows", exception.Message, StringComparison.Ordinal);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100014);
+        Assert.Equal(
+            "A2A authorization handler 'legacy-request' used by global AutoSignIn requires Agent Card security metadata.",
+            exception.Message);
     }
 
     [Theory]
@@ -161,11 +162,10 @@ public class A2AAdapterTests
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ProcessAgentCardAsync(adapter, agent));
 
-        Assert.Contains("legacy-request", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("weather", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("SecurityScheme", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("SecuritySchemeName", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("OAuthFlows", exception.Message, StringComparison.Ordinal);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100014);
+        Assert.Equal(
+            "A2A authorization handler 'legacy-request' used by skill 'weather' autoSignInHandlers requires Agent Card security metadata.",
+            exception.Message);
     }
 
     [Theory]
@@ -259,9 +259,10 @@ public class A2AAdapterTests
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ProcessAgentCardAsync(adapter, agent));
 
-        Assert.Contains(handlerName, exception.Message, StringComparison.Ordinal);
-        Assert.Contains("global", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("A2AUserAuthorization", exception.Message, StringComparison.Ordinal);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100013);
+        Assert.Equal(
+            $"A2A global AutoSignIn references authorization handler '{handlerName}', which must be configured as an A2AUserAuthorization handler.",
+            exception.Message);
     }
 
     [Theory]
@@ -286,9 +287,10 @@ public class A2AAdapterTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => ProcessAgentCardAsync(adapter, CreateSkillAgent("request", handlerName)));
 
-        Assert.Contains(handlerName, exception.Message, StringComparison.Ordinal);
-        Assert.Contains("weather", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("A2AUserAuthorization", exception.Message, StringComparison.Ordinal);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100013);
+        Assert.Equal(
+            $"A2A skill 'weather' autoSignInHandlers references authorization handler '{handlerName}', which must be configured as an A2AUserAuthorization handler.",
+            exception.Message);
     }
 
     [Theory]
@@ -503,7 +505,7 @@ public class A2AAdapterTests
     }
 
     [Fact]
-    public async Task ProcessAgentCard_WithMissingSchemeReference_Throws()
+    public async Task ProcessAgentCard_WithMissingSchemeReference_ThrowsMetadataError()
     {
         var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
         {
@@ -516,12 +518,100 @@ public class A2AAdapterTests
         var request = CreateMockHttpRequest("https", "localhost:3978");
         var response = CreateMockHttpResponse();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => adapter.ProcessAgentCardAsync(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => adapter.ProcessAgentCardAsync(
             request.Object,
             response.Object,
             new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)),
             "/a2a",
             CancellationToken.None));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100016);
+        Assert.Equal("A2A Agent Card requirement references missing security scheme 'missing'.", exception.Message);
+    }
+
+    [Fact]
+    public void ApplySafeOptions_WithNullSecurityScheme_ThrowsMetadataError()
+    {
+        var options = new A2AAgentCardOptions();
+        options.SecuritySchemes["empty"] = null;
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => ApplySafeOptions(new A2AProtocolAgentCard(), options));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100010);
+        Assert.Equal("A2A Agent Card security scheme 'empty' cannot be null.", exception.Message);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithDuplicateConfiguredAndInlineScheme_ThrowsMetadataError()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:SecuritySchemes:deviceCode:HttpAuthSecurityScheme:Scheme"] = "bearer",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "deviceCode",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:DeviceAuthorizationUrl"] = "https://login.example.com/devicecode",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:TokenUrl"] = "https://login.example.com/token",
+        }));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object))));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100011);
+        Assert.Equal("A2A Agent Card security scheme 'deviceCode' is configured more than once.", exception.Message);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithConflictingSkillRegistrations_ThrowsMetadataError()
+    {
+        var agent = new AgentApplication(new AgentApplicationOptions(_mockStorage.Object));
+        var firstExtension = new A2AAgentExtension(agent);
+        var secondExtension = new A2AAgentExtension(agent);
+        agent.RegisteredExtensions.Add(firstExtension);
+        agent.RegisteredExtensions.Add(secondExtension);
+        firstExtension.Skill("weather", skill => skill
+            .WithName("Weather")
+            .WithDescription("Gets weather.")
+            .OnMessage((_, _, _) => Task.CompletedTask));
+        secondExtension.Skill("weather", skill => skill
+            .WithName("Weather")
+            .WithDescription("Gets different weather.")
+            .OnMessage((_, _, _) => Task.CompletedTask));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ProcessAgentCardAsync(CreateAdapter(CreateConfiguration(new Dictionary<string, string>())), agent));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100012);
+        Assert.Equal("A2A skill 'weather' has conflicting registrations.", exception.Message);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithProtectedConfiguredProperty_ThrowsMetadataError()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:A2A:AgentCard:Version"] = "1.0.0",
+        }));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object))));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100015);
+        Assert.Equal("A2A Agent Card configuration cannot set protected property 'Version'.", exception.Message);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithUndefinedOAuthScope_ThrowsMetadataError()
+    {
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ProcessAgentCardAsync(
+                CreateAdapter(CreateConfiguration(new Dictionary<string, string>())),
+                new TestAgentApplicationWithInvalidSecurityRequirement(new AgentApplicationOptions(_mockStorage.Object))));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100017);
+        Assert.Equal(
+            "A2A Agent Card requirement for scheme 'deviceCode' includes a scope that the scheme does not define.",
+            exception.Message);
     }
 
     [Fact]
@@ -789,6 +879,22 @@ public class A2AAdapterTests
         return agent;
     }
 
+    private static void ApplySafeOptions(A2AProtocolAgentCard agentCard, A2AAgentCardOptions options)
+    {
+        var method = typeof(A2AAgentCardComposer).GetMethod(
+            "ApplySafeOptions",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        try
+        {
+            method.Invoke(null, [agentCard, options]);
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException != null)
+        {
+            ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+        }
+    }
+
     private async Task<A2AProtocolAgentCard> ProcessAgentCardAsync(A2AAdapter adapter, IAgent agent)
     {
         var request = CreateMockHttpRequest("https", "localhost:3978");
@@ -875,6 +981,47 @@ public class A2AAdapterTests
             {
                 HttpAuthSecurityScheme = new HttpAuthSecurityScheme { Scheme = "bearer" },
             };
+            return Task.FromResult(defaultCard);
+        }
+    }
+
+    private sealed class TestAgentApplicationWithInvalidSecurityRequirement : AgentApplication, IAgentCardHandler
+    {
+        public TestAgentApplicationWithInvalidSecurityRequirement(AgentApplicationOptions options)
+            : base(options)
+        {
+        }
+
+        public Task<A2AProtocolAgentCard> GetAgentCard(A2AProtocolAgentCard defaultCard)
+        {
+            defaultCard.SecuritySchemes["deviceCode"] = new SecurityScheme
+            {
+                OAuth2SecurityScheme = new OAuth2SecurityScheme
+                {
+                    Flows = new OAuthFlows
+                    {
+                        DeviceCode = new DeviceCodeOAuthFlow
+                        {
+                            DeviceAuthorizationUrl = "https://login.example.com/devicecode",
+                            TokenUrl = "https://login.example.com/token",
+                            Scopes = new Dictionary<string, string>
+                            {
+                                ["agent.read"] = "Read the agent",
+                            },
+                        },
+                    },
+                },
+            };
+            defaultCard.SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        ["deviceCode"] = new StringList { List = ["agent.write"] },
+                    },
+                },
+            ];
             return Task.FromResult(defaultCard);
         }
     }

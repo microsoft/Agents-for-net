@@ -140,4 +140,37 @@
   <data name="AgentInterfaceMissing" xml:space="preserve">
     <value>Agent '{0}' must declare an AgentInterfaceAttribute when multiple AgentApplications are present.</value>
   </data>
+  <data name="AuthorizationSecuritySchemeNameRequired" xml:space="preserve">
+    <value>SecuritySchemeName is required when OAuthFlows is configured.</value>
+  </data>
+  <data name="AuthorizationExactlyOneOAuthFlowRequired" xml:space="preserve">
+    <value>OAuthFlows must specify exactly one OAuth flow.</value>
+  </data>
+  <data name="AuthorizationSecuritySchemeConflict" xml:space="preserve">
+    <value>SecurityScheme and OAuthFlows cannot both be configured.</value>
+  </data>
+  <data name="AgentCardNullSecurityScheme" xml:space="preserve">
+    <value>A2A Agent Card security scheme '{0}' cannot be null.</value>
+  </data>
+  <data name="AgentCardDuplicateSecurityScheme" xml:space="preserve">
+    <value>A2A Agent Card security scheme '{0}' is configured more than once.</value>
+  </data>
+  <data name="AgentCardConflictingSkillRegistration" xml:space="preserve">
+    <value>A2A skill '{0}' has conflicting registrations.</value>
+  </data>
+  <data name="AgentCardUnknownAuthorizationHandler" xml:space="preserve">
+    <value>A2A {0} references authorization handler '{1}', which must be configured as an A2AUserAuthorization handler.</value>
+  </data>
+  <data name="AgentCardAuthorizationMetadataRequired" xml:space="preserve">
+    <value>A2A authorization handler '{0}' used by {1} requires Agent Card security metadata.</value>
+  </data>
+  <data name="AgentCardProtectedProperty" xml:space="preserve">
+    <value>A2A Agent Card configuration cannot set protected property '{0}'.</value>
+  </data>
+  <data name="AgentCardMissingSecurityScheme" xml:space="preserve">
+    <value>A2A Agent Card requirement references missing security scheme '{0}'.</value>
+  </data>
+  <data name="AgentCardUndefinedScope" xml:space="preserve">
+    <value>A2A Agent Card requirement for scheme '{0}' includes a scope that the scheme does not define.</value>
+  </data>
 </root>
