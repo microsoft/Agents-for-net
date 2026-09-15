@@ -13,6 +13,7 @@ using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Extensions.A2A.AgentCard;
 using Microsoft.Agents.Extensions.A2A.Authorization;
+using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
@@ -380,7 +381,10 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     {
         if (!_a2aAgentContext.TryGetValue(turnContext.Activity.RequestId, out var agentContext))
         {
-            throw new InvalidOperationException("AgentContext not found");
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AgentRequestContextMissing,
+                null,
+                turnContext.Activity.RequestId);
         }
 
         return agentContext.SendActivitiesAsync(turnContext, activities, cancellationToken);

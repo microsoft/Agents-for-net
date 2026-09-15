@@ -80,6 +80,27 @@ public class A2AAdapterTests
 
     #endregion
 
+    #region SendActivitiesAsync Tests
+
+    [Fact]
+    public async Task SendActivitiesAsync_WithoutRequestContext_UsesA2AErrorMetadata()
+    {
+        var adapter = new A2AAdapter(new InMemoryTaskStore(), NullLoggerFactory.Instance);
+        var activity = new Activity { RequestId = Guid.NewGuid().ToString("N") };
+        var turnContext = new TurnContext(adapter, activity);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => adapter.SendActivitiesAsync(turnContext, [], CancellationToken.None));
+
+        Assert.IsType<InvalidOperationException>(exception);
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100018);
+        Assert.Equal(
+            $"No A2A request context was found for request '{activity.RequestId}'.",
+            exception.Message);
+    }
+
+    #endregion
+
     #region ProcessAgentCardAsync Tests
 
     [Fact]

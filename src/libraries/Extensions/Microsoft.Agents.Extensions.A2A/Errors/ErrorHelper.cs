@@ -51,4 +51,8 @@ internal static partial class ErrorHelper
         new(-100016, Resource(nameof(AgentCardMissingSecurityScheme)), $"{HelpLinkBase}-100016");
     internal static readonly AgentErrorDefinition AgentCardUndefinedScope =
         new(-100017, Resource(nameof(AgentCardUndefinedScope)), $"{HelpLinkBase}-100017");
+    internal static readonly AgentErrorDefinition AgentRequestContextMissing =
+        new(-100018, Resource(nameof(AgentRequestContextMissing)), $"{HelpLinkBase}-100018");
+    internal static readonly AgentErrorDefinition BlobTaskWriteConflict =
+        new(-100019, Resource(nameof(BlobTaskWriteConflict)), $"{HelpLinkBase}-100019");
 }

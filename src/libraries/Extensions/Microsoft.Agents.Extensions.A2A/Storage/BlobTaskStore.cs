@@ -7,6 +7,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A.Errors;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -126,10 +127,15 @@ public class BlobTaskStore : ITaskStore
         }
         catch (RequestFailedException ex) when (ex.Status == (int)HttpStatusCode.BadRequest && ex.ErrorCode == BlobErrorCode.InvalidBlockList)
         {
-            throw new InvalidOperationException(
-                $"An error occurred while trying to write a task. The underlying '{BlobErrorCode.InvalidBlockList}' error is commonly caused due to concurrently uploading an object larger than 128MB in size.",
-                ex);
+            throw CreateBlobTaskWriteException(ex);
         }
+    }
+
+    internal static InvalidOperationException CreateBlobTaskWriteException(RequestFailedException exception)
+    {
+        return Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+            ErrorHelper.BlobTaskWriteConflict,
+            exception);
     }
 
     /// <inheritdoc />

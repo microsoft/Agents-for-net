@@ -173,4 +173,10 @@
   <data name="AgentCardUndefinedScope" xml:space="preserve">
     <value>A2A Agent Card requirement for scheme '{0}' includes a scope that the scheme does not define.</value>
   </data>
+  <data name="AgentRequestContextMissing" xml:space="preserve">
+    <value>No A2A request context was found for request '{0}'.</value>
+  </data>
+  <data name="BlobTaskWriteConflict" xml:space="preserve">
+    <value>The A2A task could not be written because Azure Blob Storage rejected the block list. Concurrent uploads larger than 128 MB can cause this failure.</value>
+  </data>
 </root>

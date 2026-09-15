@@ -2,9 +2,12 @@
 // Licensed under the MIT License.
 
 using A2A;
+using Azure;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.Agents.Extensions.A2A.Storage;
 using System;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -129,6 +132,24 @@ namespace Microsoft.Agents.Extensions.A2A.Tests
         }
 
         #endregion
+
+        [Fact]
+        public void CreateBlobTaskWriteException_InvalidBlockList_UsesA2AErrorMetadata()
+        {
+            var storageException = new RequestFailedException(
+                (int)HttpStatusCode.BadRequest,
+                "invalid block list",
+                BlobErrorCode.InvalidBlockList.ToString(),
+                null);
+            var exception = Assert.IsType<InvalidOperationException>(
+                BlobTaskStore.CreateBlobTaskWriteException(storageException));
+
+            A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100019);
+            Assert.Equal(
+                "The A2A task could not be written because Azure Blob Storage rejected the block list. Concurrent uploads larger than 128 MB can cause this failure.",
+                exception.Message);
+            Assert.Same(storageException, exception.InnerException);
+        }
 
         #region GetTaskAsync Tests
 
