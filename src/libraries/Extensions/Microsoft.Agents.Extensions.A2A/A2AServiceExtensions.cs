@@ -20,17 +20,9 @@ using System.Reflection;
 using System.Threading;
 
 [assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
-    typeof(Microsoft.Agents.Extensions.A2A.A2AServiceRegistrar))]
+    typeof(Microsoft.Agents.Extensions.A2A.Hosting.A2AServiceRegistrar))]
 
 namespace Microsoft.Agents.Extensions.A2A;
-
-public sealed class A2AServiceRegistrar : IAgentServiceRegistrar
-{
-    public void ConfigureServices(IServiceCollection services)
-    {
-        services.AddA2AAdapter();
-    }
-}
 
 public static class A2AServiceExtensions
 {

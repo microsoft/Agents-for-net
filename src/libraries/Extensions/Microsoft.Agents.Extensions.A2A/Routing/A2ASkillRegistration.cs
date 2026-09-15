@@ -2,12 +2,13 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.A2A;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Routing;
 
 /// <summary>
 /// An immutable A2A skill definition and the route that implements it.

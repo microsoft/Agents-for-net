@@ -2,8 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.A2A;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Routing;
 
 internal static class HandlerUtils
 {

@@ -5,6 +5,7 @@ using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
+using Microsoft.Agents.Extensions.A2A.Routing;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
