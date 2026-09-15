@@ -3,8 +3,9 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
 /// <summary>
 /// An A2A-specific <see cref="Activity"/> that surfaces the A2A channel payload as a

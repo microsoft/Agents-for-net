@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
 /// <summary>
 /// Static processor class for handling A2A HTTP requests in ASP.NET Core applications.

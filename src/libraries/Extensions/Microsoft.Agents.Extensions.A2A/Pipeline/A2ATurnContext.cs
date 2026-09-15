@@ -3,8 +3,9 @@
 
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
 /// <summary>
 /// An A2A-specific <see cref="ITurnContext"/> wrapper that surfaces the current activity as a

@@ -10,6 +10,7 @@ using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;

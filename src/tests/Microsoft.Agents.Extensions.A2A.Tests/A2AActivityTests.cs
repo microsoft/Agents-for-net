@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;

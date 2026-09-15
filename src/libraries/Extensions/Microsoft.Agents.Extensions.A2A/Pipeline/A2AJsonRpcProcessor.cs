@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
 /// <summary>
 /// Static processor class for handling A2A JSON-RPC requests in ASP.NET Core applications.

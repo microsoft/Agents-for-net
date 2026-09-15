@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
 /// <summary>
 /// An A2A Adapter using Http.

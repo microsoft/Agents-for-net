@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Extensions.A2A;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
 
 namespace Microsoft.Agents.Extensions.A2A.Routing;
 

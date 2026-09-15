@@ -5,12 +5,13 @@ using A2A;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace Microsoft.Agents.Extensions.A2A;
+namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
 /// <summary>
 /// A2A to/from Activity

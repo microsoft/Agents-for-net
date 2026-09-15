@@ -15,6 +15,11 @@ public class A2ANamespaceOrganizationTests
     [InlineData("A2ASkillRegistration", RootNamespace + ".Routing")]
     [InlineData("HandlerUtils", RootNamespace + ".Routing")]
     [InlineData("A2AServiceRegistrar", RootNamespace + ".Hosting")]
+    [InlineData("A2AAdapter", RootNamespace + ".Pipeline")]
+    [InlineData("IA2AHttpAdapter", RootNamespace + ".Pipeline")]
+    [InlineData("A2AJsonRpcProcessor", RootNamespace + ".Pipeline")]
+    [InlineData("A2AMessageActivity", RootNamespace + ".Pipeline")]
+    [InlineData("A2ATurnContext", RootNamespace + ".Pipeline")]
     public void Type_UsesExpectedNamespace(string typeName, string expectedNamespace)
     {
         Type type = typeof(A2AAgentExtension).Assembly
