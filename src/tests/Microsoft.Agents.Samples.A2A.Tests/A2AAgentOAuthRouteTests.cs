@@ -44,7 +44,7 @@ public class A2AAgentOAuthRouteTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task AgentCard_FromSampleConfiguration_AdvertisesTenantedClientCredentials(bool protectedSkills)
+    public async Task AgentCard_FromSampleConfiguration_MergesHandlerOAuthMetadataIntoSkills(bool protectedSkills)
     {
         const string tenantId = "11111111-1111-1111-1111-111111111111";
         const string clientId = "22222222-2222-2222-2222-222222222222";
@@ -53,6 +53,8 @@ public class A2AAgentOAuthRouteTests
             .Replace("{{ClientId}}", clientId, StringComparison.Ordinal);
         using var settingsStream = new MemoryStream(Encoding.UTF8.GetBytes(settings));
         var configuration = new ConfigurationBuilder().AddJsonStream(settingsStream).Build();
+        Assert.False(configuration.GetSection("AgentApplication:A2A:AgentCard").Exists());
+
         var storage = new MemoryStorage();
         var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance, configuration: configuration);
         IAgent agent = protectedSkills
@@ -68,6 +70,7 @@ public class A2AAgentOAuthRouteTests
         responseBody.Position = 0;
         var card = (await JsonSerializer.DeserializeAsync<AgentCard>(responseBody, A2AJsonUtilities.DefaultOptions))!;
         Assert.NotNull(card.SecuritySchemes);
+        Assert.Null(card.SecurityRequirements);
         var application = card.SecuritySchemes["application"].OAuth2SecurityScheme!.Flows!.ClientCredentials!;
         var delegated = card.SecuritySchemes["delegated"].OAuth2SecurityScheme!.Flows!.DeviceCode!;
 
@@ -79,7 +82,31 @@ public class A2AAgentOAuthRouteTests
             Assert.Equal(
                 ["api://22222222-2222-2222-2222-222222222222/.default"],
                 A2AAgentCardAuthentication.Select(card, A2AAuthMode.App).Scopes);
+            AssertSkillRequirement(
+                card,
+                "Delegated identity",
+                "delegated",
+                "api://22222222-2222-2222-2222-222222222222/access_as_user");
+            AssertSkillRequirement(
+                card,
+                "Microsoft Graph profile",
+                "delegated",
+                "api://22222222-2222-2222-2222-222222222222/access_as_user");
+            AssertSkillRequirement(
+                card,
+                "Application identity",
+                "application",
+                "api://22222222-2222-2222-2222-222222222222/.default");
         }
+    }
+
+    private static void AssertSkillRequirement(AgentCard card, string skillId, string schemeName, string scope)
+    {
+        AgentSkill skill = Assert.Single(card.Skills, candidate => candidate.Id == skillId);
+        Assert.NotNull(skill.SecurityRequirements);
+        SecurityRequirement requirement = Assert.Single(skill.SecurityRequirements);
+        Assert.NotNull(requirement.Schemes);
+        Assert.Equal([scope], requirement.Schemes[schemeName].List);
     }
 
     [Fact]

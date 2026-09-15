@@ -132,14 +132,19 @@ For the current sample, the relevant keys are:
 
 Do not commit a real secret or token. Keep placeholders in the repo and store the live value locally.
 
-The Agent Card also uses these existing placeholders under
-`AgentApplication:A2A:AgentCard:SecuritySchemes`. Replace `{{ClientId}}` in the advertised
-Agent API scopes and the handlers' `RequiredScopes`, and replace `{{TenantId}}` in the
-application scheme's token URL:
+The `A2AUserAuthorization` handlers also use these placeholders in their inline `OAuthFlows`
+and `RequiredScopes`. Replace `{{ClientId}}` in the advertised Agent API scopes and replace
+`{{TenantId}}` in the application handler's token URL:
 `https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token`.
 Client Credentials metadata must name a tenant; Entra does not support `/organizations/`
 for that flow. The delegated Device Code endpoints keep `/organizations/`. These are
 manual configuration replacements, not a runtime templating feature.
+
+The `[A2ASkill]` attributes in `MyAgent` associate each protected route with an
+`A2AUserAuthorization` handler through `autoSigninHandlers`. Agent Card composition merges the
+skill metadata from code with the handler's configured security scheme and `RequiredScopes`.
+This keeps environment-specific OAuth endpoints and scopes out of the route implementation
+without requiring a separate `AgentApplication:A2A:AgentCard` section.
 
 ### 2. Registration requirement for the OBO route
 
