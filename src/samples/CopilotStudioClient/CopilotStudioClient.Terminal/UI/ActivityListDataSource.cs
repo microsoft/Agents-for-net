@@ -3,6 +3,8 @@
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Text;
+using Terminal.Gui.Drawing;
 using Terminal.Gui.Text;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
@@ -91,19 +93,18 @@ internal sealed class ActivityListDataSource : IListDataSource
             return;
         }
 
-        string text = _rows[item];
-        if (string.IsNullOrEmpty(text) || viewportX >= text.GetColumns())
-        {
-            listView.AddStr(new string(' ', width));
-            return;
-        }
+        string text = SliceByDisplayColumns(_rows[item], viewportX);
+        string rendered = TextFormatter.ClipAndJustify(
+            text,
+            width,
+            Alignment.Start);
+        listView.AddStr(rendered);
 
-        int startIndex = Math.Min(viewportX, Math.Max(0, text.Length - 1));
-        listView.AddStr(
-            TextFormatter.ClipAndJustify(
-                text[startIndex..],
-                width,
-                Alignment.Start));
+        int remainingWidth = width - rendered.GetColumns();
+        if (remainingWidth > 0)
+        {
+            listView.AddStr(new string(' ', remainingWidth));
+        }
     }
 
     public void Dispose()
@@ -157,5 +158,41 @@ internal sealed class ActivityListDataSource : IListDataSource
         {
             AddRow(record);
         }
+    }
+
+    private static string SliceByDisplayColumns(string text, int viewportX)
+    {
+        if (viewportX <= 0)
+        {
+            return text;
+        }
+
+        int columnsToSkip = viewportX;
+        StringBuilder visible = new(text.Length);
+        foreach (string grapheme in GraphemeHelper.GetGraphemes(text))
+        {
+            int graphemeWidth = Math.Max(0, grapheme.GetColumns());
+            if (columnsToSkip <= 0)
+            {
+                visible.Append(grapheme);
+                continue;
+            }
+
+            if (graphemeWidth == 0)
+            {
+                continue;
+            }
+
+            if (columnsToSkip >= graphemeWidth)
+            {
+                columnsToSkip -= graphemeWidth;
+                continue;
+            }
+
+            visible.Append(' ', graphemeWidth - columnsToSkip);
+            columnsToSkip = 0;
+        }
+
+        return visible.ToString();
     }
 }

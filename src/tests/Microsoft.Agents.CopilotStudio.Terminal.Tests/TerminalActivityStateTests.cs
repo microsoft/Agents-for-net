@@ -70,13 +70,31 @@ public sealed class TerminalActivityStateTests
     [Fact]
     public void Select_ResolvesTheJournalRecordBySequence()
     {
-        TerminalActivityState state = new();
+        int sequenceLookups = 0;
+        TerminalActivityState state = new(sequenceLookup: () => sequenceLookups++);
         ActivityRecord canonical = Record(7, "canonical");
         state.Add(canonical);
 
         state.Select(7);
 
         Assert.Same(canonical, state.Selected);
+        Assert.Equal(1, sequenceLookups);
+    }
+
+    [Fact]
+    public void SelectRecord_UsesTheResolvedRecordWithoutSequenceLookup()
+    {
+        int sequenceLookups = 0;
+        TerminalActivityState state = new(sequenceLookup: () => sequenceLookups++);
+        ActivityRecord first = Record(7, "first");
+        ActivityRecord resolved = Record(7, "resolved");
+        state.Add(first);
+        state.Add(resolved);
+
+        state.SelectRecord(resolved);
+
+        Assert.Same(resolved, state.Selected);
+        Assert.Equal(0, sequenceLookups);
     }
 
     private static ActivityRecord Record(long sequence, string summary, string? json = null)

@@ -133,12 +133,16 @@ internal sealed class TerminalChatState
 internal sealed class TerminalActivityState
 {
     private readonly Func<string, string> _formatter;
+    private readonly Action _sequenceLookup;
     private ActivityRecord? _detailRecord;
     private string? _selectedText;
 
-    internal TerminalActivityState(Func<string, string>? formatter = null)
+    internal TerminalActivityState(
+        Func<string, string>? formatter = null,
+        Action? sequenceLookup = null)
     {
         _formatter = formatter ?? ActivityJsonFormatter.Format;
+        _sequenceLookup = sequenceLookup ?? (() => { });
     }
 
     internal ObservableCollection<ActivityRecord> Records { get; } = [];
@@ -183,9 +187,19 @@ internal sealed class TerminalActivityState
 
     internal void Select(long? sequence)
     {
-        SetSelected(sequence is null
-            ? null
-            : Records.FirstOrDefault(record => record.Sequence == sequence));
+        if (sequence is null)
+        {
+            SetSelected(null);
+            return;
+        }
+
+        _sequenceLookup();
+        SetSelected(Records.FirstOrDefault(record => record.Sequence == sequence));
+    }
+
+    internal void SelectRecord(ActivityRecord? record)
+    {
+        SetSelected(record);
     }
 
     private void SetSelected(ActivityRecord? record)
@@ -388,7 +402,7 @@ internal sealed class TerminalChatApplication : ITerminalView
     private View? _actionBar;
     private bool _isBusy;
     private bool _startupSucceeded;
-    private bool _activitiesActive;
+    private bool _activityInspectorVisible;
 
     public TerminalChatApplication(TerminalOptions options)
         : this(
@@ -405,14 +419,17 @@ internal sealed class TerminalChatApplication : ITerminalView
         Action<ProcessStartInfo> startProcess,
         Encoding? outputEncoding = null,
         Func<Encoding>? outputEncodingResolver = null,
-        Func<string, string>? activityJsonFormatter = null)
+        Func<string, string>? activityJsonFormatter = null,
+        Action? activitySequenceLookup = null)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _confirmOpen = confirmOpen;
         _startProcess = startProcess ?? throw new ArgumentNullException(nameof(startProcess));
         _outputEncodingOverride = outputEncoding;
         _outputEncodingResolver = outputEncodingResolver ?? (() => Console.OutputEncoding);
-        _activityState = new TerminalActivityState(activityJsonFormatter);
+        _activityState = new TerminalActivityState(
+            activityJsonFormatter,
+            activitySequenceLookup);
     }
 
     internal async Task RunAsync(
@@ -587,7 +604,7 @@ internal sealed class TerminalChatApplication : ITerminalView
                 _activityList.Value = _activityState.Records.Count - 1;
             }
 
-            if (_activitiesActive)
+            if (_activityInspectorVisible)
             {
                 UpdateJsonView();
             }
@@ -783,8 +800,8 @@ internal sealed class TerminalChatApplication : ITerminalView
                 && selectedIndex < _activityState.Records.Count
                     ? _activityState.Records[selectedIndex.Value]
                     : null;
-            _activityState.Select(selected?.Sequence);
-            if (_activitiesActive)
+            _activityState.SelectRecord(selected);
+            if (_activityInspectorVisible)
             {
                 UpdateJsonView();
             }
@@ -1232,8 +1249,10 @@ internal sealed class TerminalChatApplication : ITerminalView
 
     private void OnActiveSurfaceChanged(TerminalSurface surface)
     {
-        _activitiesActive = surface == TerminalSurface.Activities;
-        if (_activitiesActive)
+        _activityInspectorVisible = surface == TerminalSurface.Activities
+            || (_options.Layout == TerminalLayout.Split
+                && surface is TerminalSurface.Chat or TerminalSurface.Thoughts);
+        if (_activityInspectorVisible)
         {
             UpdateJsonView();
         }

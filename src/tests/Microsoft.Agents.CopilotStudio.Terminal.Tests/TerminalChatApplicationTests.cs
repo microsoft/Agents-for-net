@@ -366,6 +366,131 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
+    public void Activities_SplitInspectorUpdatesWhileChatAndThoughtsAreActive()
+    {
+        int formatCalls = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = CreateTerminal(
+            json =>
+            {
+                formatCalls++;
+                return $"pretty:{json}";
+            },
+            TerminalLayout.Split);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        ListView list = Assert.Single(Descendants(shell).OfType<ListView>());
+#pragma warning disable CS0618 // The Activities inspector intentionally uses TextView.
+        TextView detail = Assert.Single(Descendants(shell).OfType<TextView>());
+#pragma warning restore CS0618
+        ActivityRecord first = ActivityRecordWithJson(1, "one");
+        ActivityRecord second = ActivityRecordWithJson(2, "two");
+
+        terminal.AddActivity(first);
+        RunOneIteration(application, shell);
+
+        Assert.Equal(1, formatCalls);
+        Assert.Equal($"pretty:{first.Json}", detail.Text);
+
+        shell.Show(TerminalSurface.Thoughts);
+        terminal.AddActivity(second);
+        RunOneIteration(application, shell);
+
+        Assert.Equal(2, formatCalls);
+        Assert.Equal($"pretty:{second.Json}", detail.Text);
+
+        list.Value = 0;
+
+        Assert.Equal(3, formatCalls);
+        Assert.Equal($"pretty:{first.Json}", detail.Text);
+
+        shell.Show(TerminalSurface.Activities);
+        shell.Show(TerminalSurface.Chat);
+        shell.Show(TerminalSurface.Thoughts);
+
+        Assert.Equal(3, formatCalls);
+        Assert.Equal($"pretty:{first.Json}", detail.Text);
+    }
+
+    [Fact]
+    public void Activities_SplitInspectorDefersFormattingOnlyWhileHelpIsShown()
+    {
+        int formatCalls = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = CreateTerminal(
+            json =>
+            {
+                formatCalls++;
+                return $"pretty:{json}";
+            },
+            TerminalLayout.Split);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+#pragma warning disable CS0618 // The Activities inspector intentionally uses TextView.
+        TextView detail = Assert.Single(Descendants(shell).OfType<TextView>());
+#pragma warning restore CS0618
+        ActivityRecord first = ActivityRecordWithJson(1, "one");
+        ActivityRecord second = ActivityRecordWithJson(2, "two");
+
+        terminal.AddActivity(first);
+        RunOneIteration(application, shell);
+        Assert.Equal(1, formatCalls);
+
+        shell.Show(TerminalSurface.Help);
+        terminal.AddActivity(second);
+        RunOneIteration(application, shell);
+
+        Assert.Equal(1, formatCalls);
+        Assert.Equal($"pretty:{first.Json}", detail.Text);
+
+        shell.Show(TerminalSurface.Chat);
+
+        Assert.Equal(2, formatCalls);
+        Assert.Equal($"pretty:{second.Json}", detail.Text);
+
+        shell.Show(TerminalSurface.Thoughts);
+        shell.Show(TerminalSurface.Activities);
+
+        Assert.Equal(2, formatCalls);
+    }
+
+    [Fact]
+    public void Activities_LargeFollowLatestAppendDoesNotScanSequences()
+    {
+        int sequenceLookups = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(
+            new TerminalOptions(TerminalLayout.Tabs, false),
+            confirmOpen: null,
+            startProcess: _ => { },
+            outputEncoding: Encoding.UTF8,
+            activitySequenceLookup: () => sequenceLookups++);
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        ListView list = Assert.Single(Descendants(shell).OfType<ListView>());
+
+        foreach (int sequence in Enumerable.Range(1, 1_000))
+        {
+            terminal.AddActivity(ActivityRecordWithJson(sequence, $"activity {sequence}"));
+        }
+
+        RunOneIteration(application, shell);
+
+        Assert.Equal(1_000, list.Source?.Count);
+        Assert.Equal(999, list.Value);
+        Assert.Equal(0, sequenceLookups);
+    }
+
+    [Fact]
     public void Activities_CtrlCCopiesCachedPrettySelectedJson()
     {
         int formatCalls = 0;
@@ -1810,10 +1935,12 @@ public sealed class TerminalChatApplicationTests
             null);
     }
 
-    private static TerminalChatApplication CreateTerminal(Func<string, string> formatter)
+    private static TerminalChatApplication CreateTerminal(
+        Func<string, string> formatter,
+        TerminalLayout layout = TerminalLayout.Tabs)
     {
         return new TerminalChatApplication(
-            new TerminalOptions(TerminalLayout.Tabs, false),
+            new TerminalOptions(layout, false),
             confirmOpen: null,
             startProcess: _ => { },
             outputEncoding: Encoding.UTF8,
