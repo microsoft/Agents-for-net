@@ -19,6 +19,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
     public class ServiceCollectionExtensionsTests
     {
+        private sealed class CustomCloudAdapter(
+            IChannelServiceClientFactory channelServiceClientFactory,
+            IActivityTaskQueue activityTaskQueue)
+            : CloudAdapter(channelServiceClientFactory, activityTaskQueue)
+        {
+        }
+
         [Fact]
         public void AddCloudAdapter_ShouldSetServices()
         {
@@ -107,6 +114,104 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             };
 
             Assert.Equal(expected, services);
+        }
+
+        [Fact]
+        public void AddAgentCore_WithCustomConfigurationSections_UsesConfiguredConnectionsAndMap()
+        {
+            const string connectionsKey = "Agent:Authentication:Connections";
+            const string mapKey = "Agent:Authentication:ConnectionsMap";
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    [$"{connectionsKey}:FirstConnection:Type"] = "MsalAuth",
+                    [$"{connectionsKey}:FirstConnection:Assembly"] = "Microsoft.Agents.Authentication.Msal",
+                    [$"{connectionsKey}:FirstConnection:Settings:ClientId"] = "first-client-id",
+                    [$"{connectionsKey}:FirstConnection:Settings:ClientSecret"] = "first-client-secret",
+                    [$"{connectionsKey}:FirstConnection:Settings:TenantId"] = "first-tenant-id",
+                    [$"{connectionsKey}:SecondConnection:Type"] = "MsalAuth",
+                    [$"{connectionsKey}:SecondConnection:Assembly"] = "Microsoft.Agents.Authentication.Msal",
+                    [$"{connectionsKey}:SecondConnection:Settings:ClientId"] = "second-client-id",
+                    [$"{connectionsKey}:SecondConnection:Settings:ClientSecret"] = "second-client-secret",
+                    [$"{connectionsKey}:SecondConnection:Settings:TenantId"] = "second-tenant-id",
+                    [$"{mapKey}:0:ServiceUrl"] = "*",
+                    [$"{mapKey}:0:Connection"] = "SecondConnection",
+                })
+                .Build();
+            var services = new ServiceCollection();
+            services.AddSingleton<IConfiguration>(configuration);
+            services.AddLogging();
+
+            services.AddAgentCore<CloudAdapter>(connectionsKey, mapKey);
+            services.AddAgent<ActivityHandler, CloudAdapter>();
+
+            using var provider = services.BuildServiceProvider();
+            var connections = provider.GetRequiredService<IConnections>();
+
+            Assert.Equal("first-client-id", connections.GetConnection("FirstConnection").ConnectionSettings.ClientId);
+            Assert.Equal("second-client-id", connections.GetDefaultConnection().ConnectionSettings.ClientId);
+            Assert.Same(connections, provider.GetRequiredService<IConnections>());
+            Assert.Single(services, service => service.ServiceType == typeof(IConnections));
+        }
+
+        [Fact]
+        public void AddAgentCore_WithCustomConfigurationSections_PreservesExistingConnections()
+        {
+            var expected = new Mock<IConnections>().Object;
+            var services = new ServiceCollection();
+            services.AddSingleton(expected);
+
+            services.AddAgentCore<CloudAdapter>("Agent:Connections", "Agent:ConnectionsMap");
+
+            using var provider = services.BuildServiceProvider();
+            Assert.Same(expected, provider.GetRequiredService<IConnections>());
+            Assert.Single(services, service => service.ServiceType == typeof(IConnections));
+        }
+
+        [Fact]
+        public void AddAgentCore_WithCustomConfigurationSections_ReturnsHostBuilder()
+        {
+            var builder = new Mock<IHostApplicationBuilder>();
+            builder.SetupGet(instance => instance.Services).Returns(new ServiceCollection());
+
+            var result = AgentHostExtensions.AddAgentCore(
+                builder.Object,
+                "Agent:Connections",
+                "Agent:ConnectionsMap");
+
+            Assert.Same(builder.Object, result);
+            Assert.Single(builder.Object.Services, service => service.ServiceType == typeof(IConnections));
+        }
+
+        [Fact]
+        public void AddAgentCore_WithCustomAdapterAndConfigurationSections_ReturnsHostBuilder()
+        {
+            var builder = new Mock<IHostApplicationBuilder>();
+            builder.SetupGet(instance => instance.Services).Returns(new ServiceCollection());
+
+            var result = AgentHostExtensions.AddAgentCore<CustomCloudAdapter>(
+                builder.Object,
+                "Agent:Connections",
+                "Agent:ConnectionsMap");
+
+            Assert.Same(builder.Object, result);
+            Assert.Single(builder.Object.Services, service => service.ServiceType == typeof(IConnections));
+            Assert.Single(builder.Object.Services, service => service.ServiceType == typeof(CustomCloudAdapter));
+        }
+
+        [Theory]
+        [InlineData(null, "Agent:ConnectionsMap")]
+        [InlineData("", "Agent:ConnectionsMap")]
+        [InlineData(" ", "Agent:ConnectionsMap")]
+        [InlineData("Agent:Connections", null)]
+        [InlineData("Agent:Connections", "")]
+        [InlineData("Agent:Connections", " ")]
+        public void AddAgentCore_WithInvalidConfigurationSection_Throws(string connectionsKey, string mapKey)
+        {
+            var services = new ServiceCollection();
+
+            Assert.ThrowsAny<ArgumentException>(() =>
+                services.AddAgentCore<CloudAdapter>(connectionsKey, mapKey));
         }
     }
 }

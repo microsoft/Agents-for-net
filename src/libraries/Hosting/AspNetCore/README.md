@@ -6,10 +6,34 @@ ASP.NET Core hosting for agents built with the Microsoft 365 Agents SDK. This pa
 
 ## Main APIs
 
-- **Host setup:** `AddAgentDefaults()`, `AddAgent<T>()`, and `AddAgentAuthorization()` register the common ASP.NET Core services, an agent with its `CloudAdapter`, and an application-selected authentication scheme.
+- **Host setup:** `AddAgentDefaults()`, `AddAgentCore()`, `AddAgent<T>()`, and `AddAgentAuthorization()` register the common ASP.NET Core services, configured connections, an agent with its `CloudAdapter`, and an application-selected authentication scheme.
 - **Request pipeline:** `UseAgents()` adds authentication, authorization, and header propagation middleware.
 - **Endpoint mapping:** `MapDefaultAgentEndpoints()` provides conventional root and Activity Protocol endpoints. `MapAgentApplicationEndpoints()`, `MapAgentEndpoints()`, and `MapAgentProactiveEndpoints<TAgent>()` support custom and proactive routing.
 - **Adapters:** `CloudAdapter` and `IAgentHttpAdapter` translate ASP.NET Core HTTP requests and responses to the SDK activity-processing pipeline, including invoke, expect-replies, and streaming responses.
 - **Optional integrations:** Host extensions register agent middleware, HTTP or Microsoft 365 attachment downloaders, background activity processing, and request-header propagation.
 
 Authentication enforcement integrates with ASP.NET Core, but this package does not provide a concrete authentication scheme.
+
+## Custom connection configuration sections
+
+By default, configured token providers and their routing map are read from the top-level
+`Connections` and `ConnectionsMap` sections. To use nested or differently named sections, register
+the custom paths before adding the agent:
+
+```csharp
+builder
+    .AddAgentCore(
+        connectionsKey: "Agent:Authentication:Connections",
+        mapKey: "Agent:Authentication:ConnectionsMap")
+    .AddAgent<MyAgent>();
+```
+
+When using a custom `CloudAdapter`, specify the same adapter type in both calls:
+
+```csharp
+builder
+    .AddAgentCore<MyAdapter>(
+        connectionsKey: "Agent:Authentication:Connections",
+        mapKey: "Agent:Authentication:ConnectionsMap")
+    .AddAgent<MyAgent, MyAdapter>();
+```
