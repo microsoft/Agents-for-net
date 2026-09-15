@@ -15,6 +15,7 @@ internal sealed class TerminalShellView : Runnable
     private readonly Func<TerminalSurface, View?> _resolveFocusTarget;
     private readonly Action _requestFullRefresh;
     private readonly Action<Exception> _reportNavigationFailure;
+    private readonly Action<TerminalSurface> _activeSurfaceChanged;
 
     internal TerminalShellView(
         TerminalNavigationView navigation,
@@ -23,7 +24,8 @@ internal sealed class TerminalShellView : Runnable
         Action copy,
         Action quit,
         Action requestFullRefresh,
-        Action<Exception> reportNavigationFailure)
+        Action<Exception> reportNavigationFailure,
+        Action<TerminalSurface>? activeSurfaceChanged = null)
     {
         Navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
         _surfaces = surfaces ?? throw new ArgumentNullException(nameof(surfaces));
@@ -34,6 +36,7 @@ internal sealed class TerminalShellView : Runnable
             ?? throw new ArgumentNullException(nameof(requestFullRefresh));
         _reportNavigationFailure = reportNavigationFailure
             ?? throw new ArgumentNullException(nameof(reportNavigationFailure));
+        _activeSurfaceChanged = activeSurfaceChanged ?? (_ => { });
 
         foreach (TerminalSurface surface in Enum.GetValues<TerminalSurface>())
         {
@@ -165,6 +168,7 @@ internal sealed class TerminalShellView : Runnable
         ActiveSurface = surface;
         Navigation.ActiveSurface = surface;
         Navigation.SetNeedsDraw();
+        _activeSurfaceChanged(surface);
         _requestFullRefresh();
     }
 }

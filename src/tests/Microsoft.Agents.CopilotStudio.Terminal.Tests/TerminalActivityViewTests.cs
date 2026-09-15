@@ -20,7 +20,7 @@ public sealed class TerminalActivityViewTests
         int expectedJsonWidth)
     {
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
-        using TerminalActivityView inspector = CreateInspector(width, height, out ListView<ActivityRecord> list, out TextView json);
+        using TerminalActivityView inspector = CreateInspector(width, height, out ListView list, out TextView json);
 #pragma warning restore CS0618
 
         Assert.Same(list, inspector.ActivityList);
@@ -40,7 +40,7 @@ public sealed class TerminalActivityViewTests
         int expectedJsonHeight)
     {
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
-        using TerminalActivityView inspector = CreateInspector(width, height, out ListView<ActivityRecord> list, out TextView json);
+        using TerminalActivityView inspector = CreateInspector(width, height, out ListView list, out TextView json);
 #pragma warning restore CS0618
 
         Assert.Equal(new System.Drawing.Rectangle(0, 0, width, expectedListHeight), list.Frame);
@@ -51,10 +51,10 @@ public sealed class TerminalActivityViewTests
     public void Inspector_PreservesReadOnlyScrollableJsonConfiguration()
     {
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
-        using TerminalActivityView inspector = CreateInspector(60, 24, out ListView<ActivityRecord> list, out TextView json);
+        using TerminalActivityView inspector = CreateInspector(60, 24, out ListView list, out TextView json);
 #pragma warning restore CS0618
 
-        Assert.Same(list, Assert.Single(inspector.SubViews.OfType<ListView<ActivityRecord>>()));
+        Assert.Same(list, Assert.Single(inspector.SubViews.OfType<ListView>()));
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
         Assert.Same(json, Assert.Single(inspector.SubViews.OfType<TextView>()));
 #pragma warning restore CS0618
@@ -80,7 +80,7 @@ public sealed class TerminalActivityViewTests
         using TerminalActivityView inspector = CreateInspector(
             60,
             24,
-            out ListView<ActivityRecord> list,
+            out ListView list,
             out _,
             palette);
 #pragma warning restore CS0618
@@ -103,7 +103,7 @@ public sealed class TerminalActivityViewTests
         using TerminalActivityView inspector = CreateInspector(
             60,
             24,
-            out ListView<ActivityRecord> list,
+            out ListView list,
             out _,
             palette);
 #pragma warning restore CS0618
@@ -123,16 +123,16 @@ public sealed class TerminalActivityViewTests
         using TerminalActivityView inspector = CreateInspector(
             60,
             24,
-            out ListView<ActivityRecord> list,
+            out ListView list,
             out _,
             requestFullRefresh: () => refreshRequests++);
 #pragma warning restore CS0618
         ActivityRecord second = CreateActivity(2);
-        list.SetSource([CreateActivity(1), second]);
+        list.Source = new ActivityListDataSource([CreateActivity(1), second]);
         ClearNeedsDraw(inspector);
         int requestsBeforeSelection = refreshRequests;
 
-        list.Value = second;
+        list.Value = 1;
 
         Assert.True(inspector.NeedsDraw);
         Assert.True(refreshRequests > requestsBeforeSelection);
@@ -146,21 +146,21 @@ public sealed class TerminalActivityViewTests
         using TerminalActivityView inspector = CreateInspector(
             60,
             24,
-            out ListView<ActivityRecord> list,
+            out ListView list,
             out _,
             requestFullRefresh: () => refreshRequests++);
 #pragma warning restore CS0618
         ActivityRecord[] activities = Enumerable.Range(1, 20)
             .Select(sequence => CreateActivity(sequence))
             .ToArray();
-        list.SetSource([.. activities]);
-        list.Value = activities[0];
-        ActivityRecord? selected = list.Value;
+        list.Source = new ActivityListDataSource([.. activities]);
+        list.Value = 0;
+        int? selected = list.Value;
         int requestsBeforeScroll = refreshRequests;
 
         Assert.True(list.ScrollVertical(1));
 
-        Assert.Same(selected, list.Value);
+        Assert.Equal(selected, list.Value);
         Assert.Equal(requestsBeforeScroll + 1, refreshRequests);
     }
 
@@ -168,16 +168,15 @@ public sealed class TerminalActivityViewTests
     private static TerminalActivityView CreateInspector(
         int width,
         int height,
-        out ListView<ActivityRecord> list,
+        out ListView list,
         out TextView json,
         TerminalPalette? palette = null,
         Action? requestFullRefresh = null)
     {
-        list = new ListView<ActivityRecord>();
-        list.SetSource(
-        [
-            CreateActivity(1)
-        ]);
+        list = new ListView
+        {
+            Source = new ActivityListDataSource([CreateActivity(1)])
+        };
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
         json = new TextView
         {
@@ -206,7 +205,6 @@ public sealed class TerminalActivityViewTests
             DateTimeOffset.Parse("2026-09-13T12:00:00Z"),
             ActivityTypes.Message,
             "A long activity summary that should clip at the viewport edge instead of collapsing.",
-            null,
             """{"type":"message"}""",
             null);
     }

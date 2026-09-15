@@ -12,7 +12,6 @@ public sealed class ActivityRecordTests
             DateTimeOffset.Parse("2026-09-11T12:00:00Z"),
             ActivityTypes.Message,
             "Hello",
-            new Activity { Type = ActivityTypes.Message, Text = "secret activity body" },
             """{"text":"secret JSON body"}""",
             null);
 
@@ -22,7 +21,6 @@ public sealed class ActivityRecordTests
         Assert.Contains("Inbound", display);
         Assert.Contains("message", display, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Hello", display);
-        Assert.DoesNotContain("secret activity body", display);
         Assert.DoesNotContain("secret JSON body", display);
     }
 }

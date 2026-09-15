@@ -289,6 +289,139 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
+    public void Activities_HiddenIngestionFormatsOnlySelectionWhenOpenedOrChanged()
+    {
+        int formatCalls = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = CreateTerminal(json =>
+        {
+            formatCalls++;
+            return $"pretty:{json}";
+        });
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View activities = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Activities");
+        ListView list = Assert.Single(Descendants(activities).OfType<ListView>());
+#pragma warning disable CS0618 // The Activities inspector intentionally uses TextView.
+        TextView json = Assert.Single(Descendants(activities).OfType<TextView>());
+#pragma warning restore CS0618
+        ActivityRecord first = ActivityRecordWithJson(1, "one");
+        ActivityRecord second = ActivityRecordWithJson(2, "two");
+
+        terminal.AddActivity(first);
+        terminal.AddActivity(second);
+        RunOneIteration(application, shell);
+
+        Assert.Equal(0, formatCalls);
+        Assert.Equal(string.Empty, json.Text);
+
+        shell.Show(TerminalSurface.Activities);
+
+        Assert.Equal(1, formatCalls);
+        Assert.Equal($"pretty:{second.Json}", json.Text);
+
+        list.Value = 0;
+
+        Assert.Equal(2, formatCalls);
+        Assert.Equal($"pretty:{first.Json}", json.Text);
+
+        shell.Show(TerminalSurface.Chat);
+        shell.Show(TerminalSurface.Activities);
+
+        Assert.Equal(2, formatCalls);
+    }
+
+    [Fact]
+    public void Activities_ActiveFollowLatestUpdatesJsonOncePerNewRecord()
+    {
+        int formatCalls = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = CreateTerminal(json =>
+        {
+            formatCalls++;
+            return $"pretty:{json}";
+        });
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View activities = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Activities");
+#pragma warning disable CS0618 // The Activities inspector intentionally uses TextView.
+        TextView json = Assert.Single(Descendants(activities).OfType<TextView>());
+#pragma warning restore CS0618
+        ActivityRecord first = ActivityRecordWithJson(1, "one");
+        ActivityRecord second = ActivityRecordWithJson(2, "two");
+
+        shell.Show(TerminalSurface.Activities);
+        terminal.AddActivity(first);
+        terminal.AddActivity(second);
+        RunOneIteration(application, shell);
+
+        Assert.Equal(2, formatCalls);
+        Assert.Equal($"pretty:{second.Json}", json.Text);
+    }
+
+    [Fact]
+    public void Activities_CtrlCCopiesCachedPrettySelectedJson()
+    {
+        int formatCalls = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        FakeClipboard clipboard = new(
+            fakeClipboardThrowsNotSupportedException: false,
+            isSupportedAlwaysFalse: false);
+        application.Driver!.Clipboard = clipboard;
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = CreateTerminal(json =>
+        {
+            formatCalls++;
+            return $"pretty:{json}";
+        });
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View activities = Assert.Single(
+            shell.ContentRegion.SubViews,
+            view => view.Title == "_Activities");
+        ListView list = Assert.Single(Descendants(activities).OfType<ListView>());
+#pragma warning disable CS0618 // The Activities inspector intentionally uses TextView.
+        TextView detail = Assert.Single(Descendants(activities).OfType<TextView>());
+#pragma warning restore CS0618
+        ActivityRecord record = ActivityRecordWithJson(1, "one");
+        terminal.AddActivity(record);
+        int attempts = 0;
+        application.Iteration += (_, _) =>
+        {
+            if (list.Source?.Count != 1 && ++attempts < 5)
+            {
+                return;
+            }
+
+            try
+            {
+                Assert.Equal(1, list.Source?.Count);
+                shell.Show(TerminalSurface.Activities);
+                Assert.Equal($"pretty:{record.Json}", detail.Text);
+                Assert.Equal(1, formatCalls);
+                RaiseTerminalKey(application, Key.C.WithCtrl);
+
+                Assert.Equal($"pretty:{record.Json}", clipboard.GetClipboardData());
+                Assert.Equal(1, formatCalls);
+            }
+            finally
+            {
+                application.RequestStop();
+            }
+        };
+
+        application.Run(shell);
+    }
+
+    [Fact]
     public void CreateShell_DefaultLayoutIsBorderlessAndKeepsNavigationVisible()
     {
         using IApplication application = Application.Create();
@@ -386,8 +519,8 @@ public sealed class TerminalChatApplicationTests
             Descendants(chat).OfType<TerminalTimelineView>());
         TerminalTimelineView thoughtTimeline = Assert.Single(
             Descendants(thoughts).OfType<TerminalTimelineView>());
-        ListView<ActivityRecord> activityList = Assert.Single(
-            Descendants(activities).OfType<ListView<ActivityRecord>>());
+        ListView activityList = Assert.Single(
+            Descendants(activities).OfType<ListView>());
         TextField composer = Assert.Single(Descendants(surfaces).OfType<TextField>());
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
         TextView json = Assert.Single(Descendants(activities).OfType<TextView>());
@@ -561,8 +694,8 @@ public sealed class TerminalChatApplicationTests
             Descendants(chat).OfType<TerminalTimelineView>());
         TerminalTimelineView thoughtTimeline = Assert.Single(
             Descendants(thoughts).OfType<TerminalTimelineView>());
-        ListView<ActivityRecord> activityList = Assert.Single(
-            Descendants(activities).OfType<ListView<ActivityRecord>>());
+        ListView activityList = Assert.Single(
+            Descendants(activities).OfType<ListView>());
         View help = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Help");
 
         application.Iteration += (_, _) =>
@@ -647,8 +780,8 @@ public sealed class TerminalChatApplicationTests
         TextField composer = Assert.Single(Descendants(chat).OfType<TextField>());
         TerminalTimelineView thoughtTimeline = Assert.Single(
             Descendants(thoughts).OfType<TerminalTimelineView>());
-        ListView<ActivityRecord> activityList = Assert.Single(
-            Descendants(activities).OfType<ListView<ActivityRecord>>());
+        ListView activityList = Assert.Single(
+            Descendants(activities).OfType<ListView>());
         View help = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Help");
 
         await terminal.MonitorStartupAsync(
@@ -709,8 +842,8 @@ public sealed class TerminalChatApplicationTests
 #pragma warning disable CS0618 // Task 7 requires Terminal.Gui's TextView for the JSON inspector.
         TextView json = Assert.Single(Descendants(activities).OfType<TextView>());
 #pragma warning restore CS0618
-        ListView<ActivityRecord> activityList = Assert.Single(
-            Descendants(activities).OfType<ListView<ActivityRecord>>());
+        ListView activityList = Assert.Single(
+            Descendants(activities).OfType<ListView>());
 
         terminal.ApplyChatChanges(
         [
@@ -745,7 +878,6 @@ public sealed class TerminalChatApplicationTests
             DateTimeOffset.Parse("2026-09-13T12:00:00Z"),
             ActivityTypes.Message,
             "message activity",
-            new Activity { Type = ActivityTypes.Message, Text = "hello" },
             """{"type":"message","text":"hello"}""",
             null));
 
@@ -1390,7 +1522,7 @@ public sealed class TerminalChatApplicationTests
         Assert.Equal(2, descendants.OfType<TerminalTimelineView>().Count());
         Assert.DoesNotContain(descendants, view => view is Markdown);
         Assert.Single(descendants.OfType<TextField>());
-        Assert.Single(descendants.OfType<ListView<ActivityRecord>>());
+        Assert.Single(descendants.OfType<ListView>());
         Assert.Single(descendants.OfType<TerminalComposerView>());
         Assert.Single(descendants.OfType<TerminalFooterView>());
 
@@ -1664,5 +1796,27 @@ public sealed class TerminalChatApplicationTests
     private static string PlainText(TimelineLine line)
     {
         return string.Concat(line.Spans.Select(span => span.Text));
+    }
+
+    private static ActivityRecord ActivityRecordWithJson(long sequence, string text)
+    {
+        return new ActivityRecord(
+            sequence,
+            ActivityDirection.Inbound,
+            DateTimeOffset.Parse("2026-09-13T12:00:00Z"),
+            ActivityTypes.Message,
+            text,
+            $$"""{"type":"message","text":"{{text}}"}""",
+            null);
+    }
+
+    private static TerminalChatApplication CreateTerminal(Func<string, string> formatter)
+    {
+        return new TerminalChatApplication(
+            new TerminalOptions(TerminalLayout.Tabs, false),
+            confirmOpen: null,
+            startProcess: _ => { },
+            outputEncoding: Encoding.UTF8,
+            activityJsonFormatter: formatter);
     }
 }

@@ -132,11 +132,40 @@ internal sealed class TerminalChatState
 
 internal sealed class TerminalActivityState
 {
+    private readonly Func<string, string> _formatter;
+    private ActivityRecord? _detailRecord;
+    private string? _selectedText;
+
+    internal TerminalActivityState(Func<string, string>? formatter = null)
+    {
+        _formatter = formatter ?? ActivityJsonFormatter.Format;
+    }
+
     internal ObservableCollection<ActivityRecord> Records { get; } = [];
 
     internal ActivityRecord? Selected { get; private set; }
 
-    internal string SelectedText => Selected?.Json ?? Selected?.Summary ?? string.Empty;
+    internal string SelectedText
+    {
+        get
+        {
+            if (Selected is null)
+            {
+                return string.Empty;
+            }
+
+            if (ReferenceEquals(Selected, _detailRecord))
+            {
+                return _selectedText!;
+            }
+
+            _detailRecord = Selected;
+            _selectedText = Selected.Json is null
+                ? Selected.Summary
+                : _formatter(Selected.Json);
+            return _selectedText;
+        }
+    }
 
     internal void Add(ActivityRecord record)
     {
@@ -148,15 +177,27 @@ internal sealed class TerminalActivityState
         Records.Add(record);
         if (followsLatest)
         {
-            Selected = record;
+            SetSelected(record);
         }
     }
 
     internal void Select(long? sequence)
     {
-        Selected = sequence is null
+        SetSelected(sequence is null
             ? null
-            : Records.FirstOrDefault(record => record.Sequence == sequence);
+            : Records.FirstOrDefault(record => record.Sequence == sequence));
+    }
+
+    private void SetSelected(ActivityRecord? record)
+    {
+        if (ReferenceEquals(Selected, record))
+        {
+            return;
+        }
+
+        Selected = record;
+        _detailRecord = null;
+        _selectedText = null;
     }
 }
 
@@ -324,7 +365,7 @@ internal sealed class TerminalChatApplication : ITerminalView
     private readonly TerminalChatState _thoughtState =
         new(entry => entry.Kind is ChatEntryKind.Thought or ChatEntryKind.ToolCall);
     private readonly TerminalChatState _actionState = new();
-    private readonly TerminalActivityState _activityState = new();
+    private readonly TerminalActivityState _activityState;
     private readonly List<ReceivedLink> _linkViews = [];
     private readonly HashSet<Task> _sendTasks = [];
     private readonly object _sendTasksGate = new();
@@ -340,13 +381,14 @@ internal sealed class TerminalChatApplication : ITerminalView
     private TerminalTimelineView? _thoughtTranscript;
     private TimelineRoleLabel? _status;
     private TextField? _composer;
-    private ListView<ActivityRecord>? _activityList;
+    private ListView? _activityList;
 #pragma warning disable CS0618 // Task 7 explicitly requires TextView for the JSON inspector.
     private TextView? _json;
 #pragma warning restore CS0618
     private View? _actionBar;
     private bool _isBusy;
     private bool _startupSucceeded;
+    private bool _activitiesActive;
 
     public TerminalChatApplication(TerminalOptions options)
         : this(
@@ -362,13 +404,15 @@ internal sealed class TerminalChatApplication : ITerminalView
         Func<Uri, bool>? confirmOpen,
         Action<ProcessStartInfo> startProcess,
         Encoding? outputEncoding = null,
-        Func<Encoding>? outputEncodingResolver = null)
+        Func<Encoding>? outputEncodingResolver = null,
+        Func<string, string>? activityJsonFormatter = null)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _confirmOpen = confirmOpen;
         _startProcess = startProcess ?? throw new ArgumentNullException(nameof(startProcess));
         _outputEncodingOverride = outputEncoding;
         _outputEncodingResolver = outputEncodingResolver ?? (() => Console.OutputEncoding);
+        _activityState = new TerminalActivityState(activityJsonFormatter);
     }
 
     internal async Task RunAsync(
@@ -522,7 +566,8 @@ internal sealed class TerminalChatApplication : ITerminalView
             () => application.ClearScreenNextIteration = true,
             exception => SetStatus(
                 $"Navigation failed: {exception.Message}",
-                DiagnosticSeverity.Error));
+                DiagnosticSeverity.Error),
+            OnActiveSurfaceChanged);
         shell.SetScheme(GetControlScheme());
         shell.ContentRegion.SetScheme(GetControlScheme());
         shell.RegisterApplicationBindings(application);
@@ -536,12 +581,16 @@ internal sealed class TerminalChatApplication : ITerminalView
         Invoke(() =>
         {
             _activityState.Add(record);
-            if (_activityList is not null)
+            if (_activityList is not null
+                && ReferenceEquals(_activityState.Selected, record))
             {
-                _activityList.Value = _activityState.Selected;
+                _activityList.Value = _activityState.Records.Count - 1;
             }
 
-            UpdateJsonView();
+            if (_activitiesActive)
+            {
+                UpdateJsonView();
+            }
         });
     }
 
@@ -723,14 +772,22 @@ internal sealed class TerminalChatApplication : ITerminalView
         };
         activities.SetScheme(GetControlScheme());
 
-        _activityList = new ListView<ActivityRecord>
+        _activityList = new ListView
         {
+            Source = new ActivityListDataSource(_activityState.Records)
         };
-        _activityList.SetSource(_activityState.Records);
         _activityList.ValueChanged += (_, eventArgs) =>
         {
-            _activityState.Select(eventArgs.NewValue?.Sequence);
-            UpdateJsonView();
+            int? selectedIndex = eventArgs.NewValue;
+            ActivityRecord? selected = selectedIndex is >= 0
+                && selectedIndex < _activityState.Records.Count
+                    ? _activityState.Records[selectedIndex.Value]
+                    : null;
+            _activityState.Select(selected?.Sequence);
+            if (_activitiesActive)
+            {
+                UpdateJsonView();
+            }
         };
 
 #pragma warning disable CS0618 // Task 7 explicitly requires TextView for the JSON inspector.
@@ -1170,6 +1227,15 @@ internal sealed class TerminalChatApplication : ITerminalView
         if (_json is not null)
         {
             _json.Text = _activityState.SelectedText;
+        }
+    }
+
+    private void OnActiveSurfaceChanged(TerminalSurface surface)
+    {
+        _activitiesActive = surface == TerminalSurface.Activities;
+        if (_activitiesActive)
+        {
+            UpdateJsonView();
         }
     }
 

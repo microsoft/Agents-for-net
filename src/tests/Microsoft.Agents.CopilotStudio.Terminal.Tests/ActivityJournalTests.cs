@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 
 public sealed class ActivityJournalTests
 {
@@ -51,14 +53,43 @@ public sealed class ActivityJournalTests
 
         ActivityRecord snapshot = journal.Snapshot()[0];
 
-        Assert.NotSame(activity, record.Activity);
-        Assert.Equal("hello", record.Activity!.Text);
-        Assert.Equal(42, record.Activity.Entities[0].Properties["answer"].GetInt32());
         Assert.Equal("hello", record.Summary);
-        Assert.Equal("hello", added[0].Activity!.Text);
-        Assert.Equal(42, added[0].Activity.Entities[0].Properties["answer"].GetInt32());
-        Assert.Equal("hello", snapshot.Activity!.Text);
-        Assert.Equal(42, snapshot.Activity.Entities[0].Properties["answer"].GetInt32());
+        Assert.Equal(record.Json, added[0].Json);
+        Assert.Equal(record.Json, snapshot.Json);
+        Assert.DoesNotContain("\r", record.Json);
+        Assert.DoesNotContain("\n", record.Json);
+
+        using JsonDocument document = JsonDocument.Parse(record.Json!);
+        Assert.Equal("hello", document.RootElement.GetProperty("text").GetString());
+        Assert.Equal(
+            42,
+            document.RootElement
+                .GetProperty("entities")[0]
+                .GetProperty("answer")
+                .GetInt32());
+    }
+
+    [Fact]
+    public void Append_SerializesProtocolPayloadExactlyOnce()
+    {
+        int serializerCalls = 0;
+        Activity activity = new()
+        {
+            Type = ActivityTypes.Event,
+            Value = new { Content = "value" }
+        };
+        ActivityJournal journal = new(value =>
+        {
+            serializerCalls++;
+            return ProtocolJsonSerializer.ToJson(value);
+        });
+
+        ActivityRecord record = journal.Append(activity, ActivityDirection.Inbound);
+
+        Assert.Equal(1, serializerCalls);
+        Assert.NotNull(record.Json);
+        Assert.DoesNotContain("\r", record.Json);
+        Assert.DoesNotContain("\n", record.Json);
     }
 
     [Fact]
@@ -80,7 +111,7 @@ public sealed class ActivityJournalTests
     }
 
     [Fact]
-    public void Append_UnsupportedSnapshotPayload_EmitsActivityAndDiagnosticWithoutThrowing()
+    public void Append_UnsupportedProtocolPayload_EmitsActivityAndDiagnosticWithoutThrowing()
     {
         Activity activity = new()
         {
@@ -88,7 +119,7 @@ public sealed class ActivityJournalTests
             Text = "hello"
         };
 
-        ActivityJournal journal = new(cloner: _ => throw new JsonException("bad payload"));
+        ActivityJournal journal = new(_ => throw new NotSupportedException("bad payload"));
         List<ActivityRecord> added = [];
         journal.RecordAdded += (_, record) => added.Add(record);
 
@@ -98,12 +129,10 @@ public sealed class ActivityJournalTests
 
         Assert.Equal("message", record.Type);
         Assert.Equal("hello", record.Summary);
-        Assert.Null(record.Activity);
         Assert.Equal(2, added.Count);
         Assert.Equal("hello", added[0].Summary);
-        Assert.Null(added[0].Activity);
         Assert.Equal(ActivityDirection.Diagnostic, added[1].Direction);
-        Assert.Contains("Unable to snapshot activity JSON", added[1].Summary);
+        Assert.Contains("Unable to serialize activity JSON", added[1].Summary);
         Assert.Single(journal.Snapshot(), item => item.Direction == ActivityDirection.Inbound);
     }
 }

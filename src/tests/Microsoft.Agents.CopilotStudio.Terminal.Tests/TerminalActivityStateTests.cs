@@ -24,17 +24,47 @@ public sealed class TerminalActivityStateTests
     }
 
     [Fact]
-    public void Select_UsesJsonAndFallsBackToSummary()
+    public void SelectedText_FormatsOnlyCurrentSelectionAndCachesIt()
     {
-        TerminalActivityState state = new();
+        int formatCalls = 0;
+        TerminalActivityState state = CreateState(json =>
+        {
+            formatCalls++;
+            return $"pretty:{json}";
+        });
         ActivityRecord withJson = Record(1, "one", """{"type":"message"}""");
-        ActivityRecord summaryOnly = Record(2, "diagnostic");
+        ActivityRecord second = Record(2, "two", """{"type":"event"}""");
 
         state.Add(withJson);
-        Assert.Equal("""{"type":"message"}""", state.SelectedText);
+        state.Add(second);
 
-        state.Add(summaryOnly);
+        Assert.Equal(0, formatCalls);
+        Assert.Equal("""pretty:{"type":"event"}""", state.SelectedText);
+        Assert.Equal("""pretty:{"type":"event"}""", state.SelectedText);
+        Assert.Equal(1, formatCalls);
+
+        state.Select(withJson.Sequence);
+
+        Assert.Equal(1, formatCalls);
+        Assert.Equal("""pretty:{"type":"message"}""", state.SelectedText);
+        Assert.Equal(2, formatCalls);
+    }
+
+    [Fact]
+    public void SelectedText_UsesSummaryWithoutCallingFormatterWhenJsonIsUnavailable()
+    {
+        int formatCalls = 0;
+        TerminalActivityState state = CreateState(_ =>
+        {
+            formatCalls++;
+            return "unexpected";
+        });
+        ActivityRecord diagnostic = Record(1, "diagnostic");
+
+        state.Add(diagnostic);
+
         Assert.Equal("diagnostic", state.SelectedText);
+        Assert.Equal(0, formatCalls);
     }
 
     [Fact]
@@ -57,8 +87,12 @@ public sealed class TerminalActivityStateTests
             DateTimeOffset.Parse("2026-09-11T12:00:00Z"),
             ActivityTypes.Message,
             summary,
-            null,
             json,
             null);
+    }
+
+    private static TerminalActivityState CreateState(Func<string, string> formatter)
+    {
+        return new TerminalActivityState(formatter);
     }
 }

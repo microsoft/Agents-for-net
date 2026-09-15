@@ -75,6 +75,20 @@ public sealed class TerminalShellViewTests
     }
 
     [Fact]
+    public void Navigation_NotifiesActiveSurfaceWithoutInspectingViewHierarchy()
+    {
+        List<TerminalSurface> changes = [];
+        using TerminalShellView shell = CreateShell(
+            activeSurfaceChanged: changes.Add);
+        changes.Clear();
+
+        shell.Show(TerminalSurface.Activities);
+        shell.Show(TerminalSurface.Chat);
+
+        Assert.Equal([TerminalSurface.Activities, TerminalSurface.Chat], changes);
+    }
+
+    [Fact]
     public void Navigation_UnexpectedFocusTransitionFailurePropagates()
     {
         NotSupportedException failure = new("unexpected");
@@ -191,7 +205,8 @@ public sealed class TerminalShellViewTests
         Action<Exception>? reportNavigationFailure = null,
         Action? copy = null,
         Action? quit = null,
-        Action? requestFullRefresh = null)
+        Action? requestFullRefresh = null,
+        Action<TerminalSurface>? activeSurfaceChanged = null)
     {
         Dictionary<TerminalSurface, View> surfaces = new()
         {
@@ -208,7 +223,8 @@ public sealed class TerminalShellViewTests
             copy ?? (() => { }),
             quit ?? (() => { }),
             requestFullRefresh ?? (() => { }),
-            reportNavigationFailure ?? (_ => { }));
+            reportNavigationFailure ?? (_ => { }),
+            activeSurfaceChanged);
     }
 
     private static View CreateSurface()

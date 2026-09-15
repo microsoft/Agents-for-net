@@ -1,6 +1,4 @@
 using System.Text.Json;
-using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 
 internal static class ActivityJsonFormatter
 {
@@ -9,11 +7,10 @@ internal static class ActivityJsonFormatter
         WriteIndented = true
     };
 
-    public static string Format(Activity activity)
+    public static string Format(string protocolJson)
     {
-        ArgumentNullException.ThrowIfNull(activity);
+        ArgumentNullException.ThrowIfNull(protocolJson);
 
-        string protocolJson = ProtocolJsonSerializer.ToJson(activity);
         using JsonDocument document = JsonDocument.Parse(protocolJson);
         return JsonSerializer.Serialize(document.RootElement, IndentedOptions);
     }

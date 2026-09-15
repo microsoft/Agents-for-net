@@ -1,5 +1,3 @@
-using Microsoft.Agents.Core.Models;
-
 internal enum ActivityDirection
 {
     Inbound,
@@ -20,7 +18,6 @@ internal sealed record ActivityRecord(
     DateTimeOffset Timestamp,
     string Type,
     string Summary,
-    Activity? Activity,
     string? Json,
     DiagnosticSeverity? Severity)
 {

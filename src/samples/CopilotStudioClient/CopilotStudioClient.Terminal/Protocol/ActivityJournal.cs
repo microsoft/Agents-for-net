@@ -8,16 +8,12 @@ internal sealed class ActivityJournal
 {
     private readonly object _gate = new();
     private readonly List<ActivityRecord> _records = [];
-    private readonly Func<Activity, Activity> _cloner;
-    private readonly Func<Activity, string> _formatter;
+    private readonly Func<Activity, string> _serializer;
     private long _nextSequence;
 
-    public ActivityJournal(
-        Func<Activity, string>? formatter = null,
-        Func<Activity, Activity>? cloner = null)
+    public ActivityJournal(Func<Activity, string>? serializer = null)
     {
-        _formatter = formatter ?? ActivityJsonFormatter.Format;
-        _cloner = cloner ?? SnapshotActivity;
+        _serializer = serializer ?? ProtocolJsonSerializer.ToJson;
     }
 
     internal event ActivityRecordAddedHandler? RecordAdded;
@@ -26,13 +22,11 @@ internal sealed class ActivityJournal
     {
         ArgumentNullException.ThrowIfNull(activity);
 
-        Activity? frozenActivity = null;
         string? json = null;
         Exception? serializationError = null;
         try
         {
-            frozenActivity = _cloner(activity);
-            json = _formatter(frozenActivity);
+            json = _serializer(activity);
         }
         catch (Exception exception) when (
             exception is JsonException
@@ -42,12 +36,10 @@ internal sealed class ActivityJournal
             serializationError = exception;
         }
 
-        Activity sourceActivity = frozenActivity ?? activity;
         ActivityRecord record = AddRecord(
             direction,
-            sourceActivity.Type ?? "unknown",
-            GetSummary(sourceActivity),
-            frozenActivity,
+            activity.Type ?? "unknown",
+            GetSummary(activity),
             json,
             null);
         RecordAdded?.Invoke(this, record);
@@ -55,7 +47,7 @@ internal sealed class ActivityJournal
         if (serializationError is not null)
         {
             AppendDiagnostic(
-                $"{(frozenActivity is null ? "Unable to snapshot" : "Unable to format")} activity JSON: {serializationError.Message}",
+                $"Unable to serialize activity JSON: {serializationError.Message}",
                 DiagnosticSeverity.Error);
         }
 
@@ -70,7 +62,6 @@ internal sealed class ActivityJournal
             ActivityDirection.Diagnostic,
             "diagnostic",
             message,
-            null,
             null,
             severity);
         RecordAdded?.Invoke(this, record);
@@ -89,7 +80,6 @@ internal sealed class ActivityJournal
         ActivityDirection direction,
         string type,
         string summary,
-        Activity? activity,
         string? json,
         DiagnosticSeverity? severity)
     {
@@ -101,7 +91,6 @@ internal sealed class ActivityJournal
                 DateTimeOffset.UtcNow,
                 type,
                 summary,
-                activity,
                 json,
                 severity);
 
@@ -133,10 +122,5 @@ internal sealed class ActivityJournal
         }
 
         return "activity";
-    }
-
-    private static Activity SnapshotActivity(Activity activity)
-    {
-        return ProtocolJsonSerializer.CloneTo<Activity>(activity);
     }
 }

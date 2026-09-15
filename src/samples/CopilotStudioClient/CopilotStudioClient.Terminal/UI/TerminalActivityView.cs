@@ -13,7 +13,7 @@ internal sealed class TerminalActivityView : View
     private const int MinimumStackedListHeight = 3;
 
     internal TerminalActivityView(
-        ListView<ActivityRecord> activityList,
+        ListView activityList,
         TextView json,
         TerminalPalette palette,
         Action requestFullRefresh)
@@ -44,7 +44,7 @@ internal sealed class TerminalActivityView : View
         };
     }
 
-    internal ListView<ActivityRecord> ActivityList { get; }
+    internal ListView ActivityList { get; }
 
     internal TextView Json { get; }
 
