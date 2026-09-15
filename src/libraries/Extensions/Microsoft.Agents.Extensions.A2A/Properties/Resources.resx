@@ -125,4 +125,55 @@
     <value>The token for handler '{0}' has expired.</value>
     <comment>Raised when an authorization token from a A2A request has expired.</comment>
   </data>
+  <data name="ConflictingSkillMetadata" xml:space="preserve">
+    <value>A2A skill '{0}' has conflicting metadata.</value>
+  </data>
+  <data name="SkillRouteMissing" xml:space="preserve">
+    <value>A2A skill '{0}' must define a message route.</value>
+  </data>
+  <data name="SkillRouteAlreadyDefined" xml:space="preserve">
+    <value>A2A skill '{0}' can define only one message route.</value>
+  </data>
+  <data name="AgentApplicationNotFound" xml:space="preserve">
+    <value>No AgentApplication was found. Define an AgentApplication in the calling assembly or register one as IAgent.</value>
+  </data>
+  <data name="AgentInterfaceMissing" xml:space="preserve">
+    <value>Agent '{0}' must declare an AgentInterfaceAttribute when multiple AgentApplications are present.</value>
+  </data>
+  <data name="AuthorizationSecuritySchemeNameRequired" xml:space="preserve">
+    <value>SecuritySchemeName is required when OAuthFlows is configured.</value>
+  </data>
+  <data name="AuthorizationExactlyOneOAuthFlowRequired" xml:space="preserve">
+    <value>OAuthFlows must specify exactly one OAuth flow.</value>
+  </data>
+  <data name="AgentCardNullSecurityScheme" xml:space="preserve">
+    <value>A2A Agent Card security scheme '{0}' cannot be null.</value>
+  </data>
+  <data name="AgentCardDuplicateSecurityScheme" xml:space="preserve">
+    <value>A2A Agent Card security scheme '{0}' is configured more than once.</value>
+  </data>
+  <data name="AgentCardConflictingSkillRegistration" xml:space="preserve">
+    <value>A2A skill '{0}' has conflicting registrations.</value>
+  </data>
+  <data name="AgentCardUnknownAuthorizationHandler" xml:space="preserve">
+    <value>A2A {0} references authorization handler '{1}', which must be configured as an A2AUserAuthorization handler.</value>
+  </data>
+  <data name="AgentCardAuthorizationMetadataRequired" xml:space="preserve">
+    <value>A2A authorization handler '{0}' used by {1} requires Agent Card security metadata.</value>
+  </data>
+  <data name="AgentCardProtectedProperty" xml:space="preserve">
+    <value>A2A Agent Card configuration cannot set protected property '{0}'.</value>
+  </data>
+  <data name="AgentCardMissingSecurityScheme" xml:space="preserve">
+    <value>A2A Agent Card requirement references missing security scheme '{0}'.</value>
+  </data>
+  <data name="AgentCardUndefinedScope" xml:space="preserve">
+    <value>A2A Agent Card requirement for scheme '{0}' includes a scope that the scheme does not define.</value>
+  </data>
+  <data name="AgentRequestContextMissing" xml:space="preserve">
+    <value>No A2A request context was found for request '{0}'.</value>
+  </data>
+  <data name="BlobTaskWriteConflict" xml:space="preserve">
+    <value>The A2A task could not be written because Azure Blob Storage rejected the block list. Concurrent uploads larger than 128 MB can cause this failure.</value>
+  </data>
 </root>

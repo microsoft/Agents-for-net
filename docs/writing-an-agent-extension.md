@@ -34,6 +34,12 @@ An extension can use any combination of these extensibility points:
 | Custom access-token providers | Acquire application/service tokens for named connections | `IAccessTokenProvider` selected by `Connections` configuration |
 | Custom user authorization | Implement end-user sign-in, refresh, sign-out, and flow state | `IUserAuthorization` selected by `AgentApplication:UserAuthorization` configuration |
 
+## AgentExtension boundaries
+
+Keep protocol-, channel-, and feature-specific implementation inside the extension project that owns it. Shared SDK changes are only appropriate when they add a general-purpose extensibility capability that any extension can use, such as a route builder base, registration hook, or discovery contract. A2A-, Teams-, Slack-, or other protocol-specific branching should remain in the extension package, not in Agents SDK Core, Builder, or Hosting.
+
+If a pull request changes code outside the extension project, it must explain why the extension cannot use existing extensibility points and identify the related Core documentation updates needed to describe the new shared capability.
+
 ### In this guide
 
 - [Design the extension-facing API](#design-the-extension-facing-api)
@@ -77,11 +83,19 @@ The relevant subsystem then reads the manifests:
 The SDK initialization entry points ensure referenced extension assemblies are loaded before each
 subsystem performs its feature-specific discovery.
 
-Types that must be referenced from a consuming assembly, especially adapter and registrar types,
-should be public. Keep generated-manifest types concrete and externally accessible.
+The consuming preload registry references only public manifest and derived types.
+It excludes internal types so that consuming compilations never emit inaccessible
+`typeof(...)` references. Keep generated-manifest types concrete and public
+when they must act as preload anchors.
+
+After an extension assembly is loaded, feature-specific discovery can still find internal
+`[ActivityType]` types, `Entity`-derived types, and channel adapters in that assembly. Therefore,
+an extension whose implementation types are internal must provide another public preload anchor,
+such as its required public `IAgentServiceRegistrar`. This is a general extension requirement,
+not a protocol-specific behavior.
 
 Remember that a CLR does not load an otherwise unused assembly merely because it appears in the
-dependency graph. Give the package a recognized preload anchor: a public entity, activity,
+dependency graph. Give the package a recognized public preload anchor: an entity, activity,
 channel adapter, or service registrar. Applying the package's AgentExtension attribute also creates
 a direct runtime type reference. A service registrar is the most reliable anchor for an extension
 that otherwise contains only serialization customization.

@@ -20,6 +20,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Reject tracked local agent artifacts
+      shell: pwsh
+      run: ./.github/scripts/verify-no-local-agent-artifacts.ps1
     - name: Get Azure DevOps Access Token
       id: getToken
       uses: "./.github/actions/get-ado-token"

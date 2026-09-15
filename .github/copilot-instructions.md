@@ -84,6 +84,13 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 - Feedback is the FeedbackLoop feature in `AgentApplication`; use `AgentApplication.OnFeedbackLoop()` or `[FeedbackLoopRoute]` rather than treating it as an MSTeams-specific feature.
 - Adaptive Cards support is handled by AgentApplication.AdaptiveCards
 
+### AgentExtension boundaries
+
+- Keep protocol-, channel-, and feature-specific implementation inside its AgentExtension project.
+- Do not add AgentExtension-specific behavior to Agents SDK Core, Builder, or Hosting.
+- Changes outside the extension project must provide a general-purpose extensibility capability.
+- Pull requests making such changes must explain why the extension cannot use existing extensibility points and identify the related Core documentation updates.
+
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
 - This is the older Teams Extension and should not be used.
 

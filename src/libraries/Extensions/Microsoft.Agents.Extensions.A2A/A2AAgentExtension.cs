@@ -3,18 +3,57 @@
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.A2A.Errors;
+using Microsoft.Agents.Extensions.A2A.Routing;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.Agents.Extensions.A2A;
 
+/// <summary>
+/// Provides A2A skill and message-route registration for an <see cref="AgentApplication"/>.
+/// </summary>
 public class A2AAgentExtension : Builder.AgentExtension
 {
     private readonly AgentApplication _agentApplication;
+    private readonly List<A2ASkillRegistration> _skillRegistrations = [];
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="A2AAgentExtension"/> class.
+    /// </summary>
+    /// <param name="agentApplication">The agent application to configure for the A2A channel.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Multiple attributed routes declare conflicting metadata for the same A2A skill identifier.
+    /// </exception>
     public A2AAgentExtension(AgentApplication agentApplication)
     {
         _agentApplication = agentApplication;
         ChannelId = Channels.A2A;
+        DiscoverSkillAttributes();
+    }
+
+    /// <summary>
+    /// Gets the normalized A2A skill registrations configured for this agent.
+    /// </summary>
+    internal IReadOnlyList<A2ASkillRegistration> SkillRegistrations => _skillRegistrations;
+
+    /// <summary>
+    /// Registers an A2A skill and the message route that implements it.
+    /// </summary>
+    /// <param name="id">The unique skill identifier.</param>
+    /// <param name="configure">Configures the skill metadata and message route.</param>
+    /// <returns>The current extension instance.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="configure"/> is <see langword="null"/>.</exception>
+    public A2AAgentExtension Skill(string id, Action<A2ASkillBuilder> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        var builder = new A2ASkillBuilder(id);
+        configure(builder);
+        RegisterSkill(builder.Build());
+        return this;
     }
 
     /// <summary>
@@ -85,5 +124,55 @@ public class A2AAgentExtension : Builder.AgentExtension
             .WithOAuthHandlers(autoSigninHandlers)
             .Build());
         return this;
+    }
+
+    private void DiscoverSkillAttributes()
+    {
+        var attributedSkills = _agentApplication.GetType()
+            .GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+            .SelectMany(method => method
+                .GetCustomAttributes<A2ASkillAttribute>(inherit: true)
+                .Select(attribute => (Method: method, Attribute: attribute)))
+            .ToList();
+
+        foreach (var group in attributedSkills.GroupBy(skill => skill.Attribute.Id, StringComparer.Ordinal))
+        {
+            var first = group.First().Attribute;
+            if (group.Any(skill => !HasCompatibleMetadata(first, skill.Attribute)))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.ConflictingSkillMetadata,
+                    null,
+                    group.Key);
+            }
+
+            foreach (var skill in group)
+            {
+                RegisterSkill(skill.Attribute.CreateBuilder(skill.Method, _agentApplication).Build());
+            }
+        }
+    }
+
+    private void RegisterSkill(A2ASkillRegistration registration)
+    {
+        _skillRegistrations.Add(registration);
+        AddRoute(
+            _agentApplication,
+            registration.RouteSelector,
+            HandlerUtils.WrapHandler(registration.Handler),
+            isAgenticOnly: registration.IsAgenticOnly,
+            rank: registration.Rank,
+            autoSignInHandlers: registration.AutoSignInHandlers.ToArray());
+    }
+
+    private static bool HasCompatibleMetadata(A2ASkillAttribute left, A2ASkillAttribute right)
+    {
+        return string.Equals(left.Name, right.Name, StringComparison.Ordinal)
+            && string.Equals(left.Description, right.Description, StringComparison.Ordinal)
+            && left.Tags.SequenceEqual(right.Tags, StringComparer.Ordinal)
+            && (left.Examples ?? []).SequenceEqual(right.Examples ?? [], StringComparer.Ordinal)
+            && (left.InputModes ?? []).SequenceEqual(right.InputModes ?? [], StringComparer.Ordinal)
+            && (left.OutputModes ?? []).SequenceEqual(right.OutputModes ?? [], StringComparer.Ordinal)
+            && left.AutoSignInHandlers.SequenceEqual(right.AutoSignInHandlers, StringComparer.Ordinal);
     }
 }

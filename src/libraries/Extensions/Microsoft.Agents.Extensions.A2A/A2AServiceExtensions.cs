@@ -4,6 +4,8 @@
 using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Extensions.A2A.Errors;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -20,41 +22,38 @@ using System.Reflection;
 using System.Threading;
 
 [assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
-    typeof(Microsoft.Agents.Extensions.A2A.A2AServiceRegistrar))]
+    typeof(Microsoft.Agents.Extensions.A2A.Integration.A2AServiceRegistrar))]
 
 namespace Microsoft.Agents.Extensions.A2A;
 
-public sealed class A2AServiceRegistrar : IAgentServiceRegistrar
-{
-    public void ConfigureServices(IServiceCollection services)
-    {
-        services.AddA2AAdapter();
-    }
-}
-
+/// <summary>
+/// Provides service-registration and endpoint-mapping extensions for A2A agents.
+/// </summary>
 public static class A2AServiceExtensions
 {
     /// <summary>
-    /// Registers the A2A adapter services explicitly.
+    /// Registers the internal A2A endpoint-processing services explicitly.
     /// </summary>
     /// <remarks>
     /// <c>AddAgentCore</c> registers these services automatically. Custom hosts that do not call
     /// <c>AddAgentCore</c> can call this method directly.
     /// </remarks>
-    /// <param name="services"></param>
+    /// <param name="services">The service collection to receive the A2A adapter services.</param>
     public static void AddA2AAdapter(this IServiceCollection services)
     {
-        services.TryAddSingleton<A2AAdapter>();
+        services.TryAddSingleton(sp => ActivatorUtilities.CreateInstance<A2AAdapter>(sp));
         services.TryAddSingleton<IA2AHttpAdapter>(sp => sp.GetRequiredService<A2AAdapter>());
     }
 
     /// <summary>
-    /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>.
+    /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly. Each
+    /// AgentApplication must have been registered with <c>AddAgent&lt;TAgent&gt;</c>.
     /// </summary>
-    /// <param name="endpoints"></param>
-    /// <param name="requireAuth"></param>
-    /// <param name="defaultPath"></param>
-    /// <exception cref="InvalidOperationException"/>
+    /// <param name="endpoints">The endpoint route builder to configure.</param>
+    /// <param name="requireAuth">Whether mapped endpoints require authorization. When <see langword="null"/>, uses the configured agent authorization policy.</param>
+    /// <param name="defaultPath">The default A2A endpoint path for a single agent without an interface attribute.</param>
+    /// <returns>The mapped endpoint group for additional configuration.</returns>
+    /// <exception cref="InvalidOperationException">The calling assembly and service provider contain no <see cref="AgentApplication"/>, or an agent in a multi-agent application lacks an <see cref="AgentInterfaceAttribute"/>.</exception>
     public static IEndpointConventionBuilder MapA2AApplicationEndpoints(
         this IEndpointRouteBuilder endpoints,
         bool? requireAuth = null,
@@ -76,33 +75,11 @@ public static class A2AServiceExtensions
             a2aGroup.AllowAnonymous();
         }
 
-        var allAgents = Assembly.GetCallingAssembly().GetTypes().Where(t => typeof(AgentApplication).IsAssignableFrom(t)).ToList();
-        if (allAgents.Count == 0)
-        {
-            // This is to handle declaring an AgentApplication in an AddTransient lambda.
-            var inlineAgent = endpoints.ServiceProvider.GetService<IAgent>()
-                ?? throw new InvalidOperationException("No AgentApplications were found in the calling assembly. Ensure that at least one AgentApplication is defined.");
-            allAgents.Add(inlineAgent.GetType());
-        }
+        var allAgents = ResolveAgentTypes(Assembly.GetCallingAssembly(), endpoints.ServiceProvider);
 
         foreach (var agent in allAgents)
         {
-            var interfaces = agent.GetCustomAttributes<AgentInterfaceAttribute>(true)?.ToList();
-            if (interfaces?.Count == 0)
-            {
-                if (allAgents.Count == 1)
-                {
-                    // If there is only one AgentApplication, we can default
-                    interfaces = new List<AgentInterfaceAttribute>()
-                        {
-                            new(A2AAgentTransportProtocol.JsonRpc, defaultPath)
-                        };
-                }
-                else
-                {
-                    throw new InvalidOperationException($"No AgentInterfaceAttribute was found on Agent '{agent.FullName}'. When multiple AgentApplications are defined, each must have at least one AgentInterfaceAttribute.");
-                }
-            }
+            var interfaces = ResolveAgentInterfaces(agent, allAgents.Count, defaultPath);
 
             foreach (var agentInterface in interfaces)
             {
@@ -125,23 +102,66 @@ public static class A2AServiceExtensions
                 }
             }
 
-            a2aGroup.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
-            {
-                return adapter.ProcessAgentCardAsync(request, response, agent, defaultPath, cancellationToken);
-            });
         }
 
+        a2aGroup.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, CancellationToken cancellationToken) =>
+        {
+            return adapter.ProcessAgentCardAsync(request, response, agent, defaultPath, cancellationToken);
+        });
+
         return a2aGroup;
+    }
+
+    internal static List<Type> ResolveAgentTypes(Assembly callingAssembly, IServiceProvider serviceProvider)
+    {
+        var agents = callingAssembly.GetTypes()
+            .Where(type => typeof(AgentApplication).IsAssignableFrom(type))
+            .ToList();
+
+        if (agents.Count == 0)
+        {
+            // This is to handle declaring an AgentApplication in an AddTransient lambda.
+            var inlineAgent = serviceProvider.GetService<IAgent>()
+                ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AgentApplicationNotFound,
+                    null);
+            agents.Add(inlineAgent.GetType());
+        }
+
+        return agents;
+    }
+
+    internal static List<AgentInterfaceAttribute> ResolveAgentInterfaces(
+        Type agent,
+        int agentCount,
+        string defaultPath)
+    {
+        var interfaces = agent.GetCustomAttributes<AgentInterfaceAttribute>(true).ToList();
+        if (interfaces.Count == 0 && agentCount == 1)
+        {
+            interfaces.Add(new AgentInterfaceAttribute(A2AAgentTransportProtocol.JsonRpc, defaultPath));
+        }
+        else if (interfaces.Count == 0)
+        {
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AgentInterfaceMissing,
+                null,
+                agent.FullName);
+        }
+
+        return interfaces;
     }
 
 
     /// <summary>
     /// Maps A2A endpoints for TAgent type.
     /// </summary>
-    /// <param name="endpoints"></param>
-    /// <param name="requireAuth">Defaults to true.  Use false to allow anonymous requests (recommended for Development only)</param>
-    /// <param name="path">Indicate the route patter, defaults to "/a2a"</param>
+    /// <param name="endpoints">The endpoint route builder to configure.</param>
+    /// <param name="requireAuth">Whether endpoints require authorization. Defaults to <see langword="true"/>.</param>
+    /// <param name="path">The route pattern. Defaults to <c>/a2a</c>.</param>
     /// <returns>An endpoint convention builder for further configuration.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="endpoints"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="path"/> is empty.</exception>
     public static IEndpointConventionBuilder MapA2AJsonRpc(this IEndpointRouteBuilder endpoints, bool requireAuth = true, [StringSyntax("Route")] string path = "/a2a")
     {
         ArgumentNullException.ThrowIfNull(endpoints);
@@ -179,9 +199,11 @@ public static class A2AServiceExtensions
     /// Enables HTTP A2A endpoints for the specified path.
     /// </summary>
     /// <param name="endpoints">The endpoint route builder to configure.</param>
-    /// <param name="requireAuth"></param>
+    /// <param name="requireAuth">Whether endpoints require authorization. Defaults to <see langword="false"/>.</param>
     /// <param name="path">The base path for the HTTP A2A endpoints.</param>
     /// <returns>An endpoint convention builder for further configuration.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="endpoints"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="path"/> is empty.</exception>
     public static IEndpointConventionBuilder MapA2AHttp(this IEndpointRouteBuilder endpoints, bool requireAuth = false, [StringSyntax("Route")] string path = "/a2a")
     {
         ArgumentNullException.ThrowIfNull(endpoints);

@@ -9,9 +9,13 @@ namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
 /// Provides direct access to the A2A primitives for the current turn: the outgoing
-/// <see cref="AgentEventQueue"/>, the incoming <see cref="A2A.RequestContext"/>, and the
+/// <see cref="AgentEventQueue"/>, the incoming <c>RequestContext</c>, and the
 /// <see cref="ITaskStore"/>.
 /// </summary>
+/// <remarks>
+/// This client is scoped to the current turn. Its event queue and request context must not be
+/// retained for use after the turn completes.
+/// </remarks>
 public class A2AClient
 {
     internal A2AClient(ITurnContext turnContext)

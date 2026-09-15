@@ -22,11 +22,14 @@ namespace Microsoft.Agents.Builder.Adapters
     /// </para>
     /// <para>
     /// The annotated type must implement <see cref="IChannelAdapter"/> (so it can be resolved through
-    /// <see cref="IChannelAdapterRegistry"/>) and should be public so consuming applications can preload
-    /// its assembly; to also serve shared-endpoint HTTP dispatch it must
+    /// <see cref="IChannelAdapterRegistry"/>). A public annotated adapter can preload its assembly in a
+    /// consuming application. An internal adapter is discovered after its assembly is loaded, so its
+    /// extension must provide another public preload anchor. To also serve shared-endpoint HTTP dispatch
+    /// the adapter must
     /// implement the host's HTTP adapter contract (<c>IAgentHttpAdapter</c> in
-    /// <c>Microsoft.Agents.Hosting.AspNetCore</c>). Both hold for adapters deriving from
-    /// <c>CloudAdapter</c> or <c>ChannelAdapter</c>. It does <b>not</b> need to derive from
+    /// <c>Microsoft.Agents.Hosting.AspNetCore</c>). <c>CloudAdapter</c> implements both contracts;
+    /// a type deriving directly from <c>ChannelAdapter</c> must implement the host contract separately
+    /// when it participates in HTTP dispatch. It does <b>not</b> need to derive from
     /// <c>CloudAdapter</c> — the default Activity Protocol adapter (CloudAdapter) remains the registry
     /// default and is not annotated.
     /// </para>
@@ -38,7 +41,7 @@ namespace Microsoft.Agents.Builder.Adapters
     ///
     /// // A dedicated-protocol adapter that also participates in the registry:
     /// [ChannelAdapter("a2a")]
-    /// public class A2AAdapter : ChannelAdapter, IAgentHttpAdapter { }
+    /// internal class DedicatedProtocolAdapter : ChannelAdapter, IAgentHttpAdapter { }
     /// </code>
     /// </example>
     /// </remarks>
