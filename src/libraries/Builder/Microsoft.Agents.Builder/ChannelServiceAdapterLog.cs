@@ -11,7 +11,8 @@ namespace Microsoft.Agents.Builder
     //   3 = ProcessActivity called (LogProcessActivity)
     //   4 = Anonymous access warning (LogAnonymousAccess)
     //   5 = Anonymous access from trusted local transport (LogAnonymousAccessTrustedTransport)
-    //   Future messages: start from 6
+    //   6 = Streaming response factory instantiation failed (LogStreamingResponseFactoryError)
+    //   Future messages: start from 7
     internal static partial class ChannelServiceAdapterLog
     {
 #if !NETSTANDARD
@@ -34,6 +35,10 @@ namespace Microsoft.Agents.Builder
         [LoggerMessage(EventId = 5, Level = LogLevel.Information,
             Message = "Anonymous access is enabled for channel: {ChannelId} via trusted local transport.")]
         internal static partial void LogAnonymousAccessTrustedTransport(ILogger logger, string channelId);
+
+        [LoggerMessage(EventId = 6, Level = LogLevel.Warning,
+            Message = "Failed to create the streaming response factory for channel: {ChannelId}. Falling back to the default streaming response.")]
+        internal static partial void LogStreamingResponseFactoryError(ILogger logger, System.Exception exception, string channelId);
 #else
         internal static void LogTurnResponse(ILogger logger, string requestId, string activity)
         {
@@ -58,6 +63,11 @@ namespace Microsoft.Agents.Builder
         internal static void LogAnonymousAccessTrustedTransport(ILogger logger, string channelId)
         {
             logger.LogInformation("Anonymous access is enabled for channel: {ChannelId} via trusted local transport.", channelId);
+        }
+
+        internal static void LogStreamingResponseFactoryError(ILogger logger, System.Exception exception, string channelId)
+        {
+            logger.LogWarning(exception, "Failed to create the streaming response factory for channel: {ChannelId}. Falling back to the default streaming response.", channelId);
         }
 #endif
     }

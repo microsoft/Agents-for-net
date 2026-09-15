@@ -18,6 +18,15 @@ namespace Microsoft.Agents.Builder.Tests
     {
         bool _callbackInvoked = false;
 
+        [Fact]
+        public void PreservesExistingConstructorSignature()
+        {
+            var constructor = typeof(ChannelServiceAdapterBase).GetConstructor(
+                [typeof(IChannelServiceClientFactory), typeof(Microsoft.Extensions.Logging.ILogger)]);
+
+            Assert.NotNull(constructor);
+        }
+
         private readonly ConversationReference _reference = new ConversationReference
         {
             Conversation = new ConversationAccount(id: "conversation-id"),
