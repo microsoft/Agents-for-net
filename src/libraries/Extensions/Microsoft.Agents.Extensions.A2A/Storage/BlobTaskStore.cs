@@ -88,6 +88,9 @@ public class BlobTaskStore : ITaskStore
     }
 
     /// <inheritdoc />
+    /// <exception cref="InvalidOperationException">
+    /// Azure Blob Storage rejects the task write because the blob has a conflicting block list.
+    /// </exception>
     public async Task SaveTaskAsync(string taskId, AgentTask task, CancellationToken cancellationToken = default)
     {
         AssertionHelpers.ThrowIfNull(task, nameof(task));

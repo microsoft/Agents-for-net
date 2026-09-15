@@ -83,16 +83,16 @@ The relevant subsystem then reads the manifests:
 The SDK initialization entry points ensure referenced extension assemblies are loaded before each
 subsystem performs its feature-specific discovery.
 
-The consuming preload registry references only externally accessible manifest and derived types.
+The consuming preload registry references only public manifest and derived types.
 It excludes internal types so that consuming compilations never emit inaccessible
-<c>typeof(...)</c> references. Keep generated-manifest types concrete and externally accessible
+`typeof(...)` references. Keep generated-manifest types concrete and public
 when they must act as preload anchors.
 
 After an extension assembly is loaded, feature-specific discovery can still find internal
-<c>[ActivityType]</c> and <c>Entity</c>-derived types in that assembly. Therefore, an extension
-whose implementation types are internal must provide another public preload anchor, such as its
-required public <c>IAgentServiceRegistrar</c>. This is a general extension requirement, not a
-protocol-specific behavior.
+`[ActivityType]` types, `Entity`-derived types, and channel adapters in that assembly. Therefore,
+an extension whose implementation types are internal must provide another public preload anchor,
+such as its required public `IAgentServiceRegistrar`. This is a general extension requirement,
+not a protocol-specific behavior.
 
 Remember that a CLR does not load an otherwise unused assembly merely because it appears in the
 dependency graph. Give the package a recognized public preload anchor: an entity, activity,

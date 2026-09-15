@@ -25,6 +25,9 @@ public class A2AAgentExtension : Builder.AgentExtension
     /// Initializes a new instance of the <see cref="A2AAgentExtension"/> class.
     /// </summary>
     /// <param name="agentApplication">The agent application to configure for the A2A channel.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Multiple attributed routes declare conflicting metadata for the same A2A skill identifier.
+    /// </exception>
     public A2AAgentExtension(AgentApplication agentApplication)
     {
         _agentApplication = agentApplication;
