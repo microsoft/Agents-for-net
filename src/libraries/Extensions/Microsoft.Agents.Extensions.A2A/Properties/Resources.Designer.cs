@@ -61,6 +61,15 @@ namespace Microsoft.Agents.Extensions.A2A.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to EnforceRequiredScopes requires at least one non-empty RequiredScopes value..
+        /// </summary>
+        internal static string AuthorizationRequiredScopesMissing {
+            get {
+                return ResourceManager.GetString("AuthorizationRequiredScopesMissing", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Unexpected request token for handler &apos;{0}&apos;..
         /// </summary>
         internal static string UnexpectedRequestToken {

@@ -53,4 +53,6 @@ internal static partial class ErrorHelper
         new(-100018, Resource(nameof(AgentRequestContextMissing)), $"{HelpLinkBase}-100018");
     internal static readonly AgentErrorDefinition BlobTaskWriteConflict =
         new(-100019, Resource(nameof(BlobTaskWriteConflict)), $"{HelpLinkBase}-100019");
+    internal static readonly AgentErrorDefinition AuthorizationRequiredScopesMissing =
+        new(-100020, Resource(nameof(AuthorizationRequiredScopesMissing)), $"{HelpLinkBase}-100020");
 }

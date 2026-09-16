@@ -8,6 +8,7 @@ using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Agents.Extensions.A2A.Authorization;
 
@@ -37,9 +38,10 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// </para>
 /// <para>
 /// The handler supplies the validated inbound request token to the AgentApplication authorization
-/// pipeline. In this preview, <see cref="RequiredScopes"/> contributes Agent Card metadata but is
-/// not automatically evaluated as a runtime authorization rule. Applications must enforce their
-/// required claims, scopes, roles, or ASP.NET Core policies.
+/// pipeline. In this preview, <see cref="RequiredScopes"/> contributes Agent Card metadata and can
+/// optionally be enabled for built-in delegated JWT scope validation with
+/// <see cref="EnforceRequiredScopes"/>. Applications that need additional claim checks, application
+/// token authorization, or opaque-token validation must enforce those requirements separately.
 /// </para>
 /// </remarks>
 public sealed class A2AUserAuthorizationSettings : OBOSettings
@@ -81,6 +83,16 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
     /// </remarks>
     public IList<string> RequiredScopes { get; set; }
 
+    /// <summary>
+    /// Gets or sets whether the handler enforces <see cref="RequiredScopes"/> on the inbound token.
+    /// </summary>
+    /// <remarks>
+    /// When enabled, the handler requires a delegated JWT with an <c>scp</c> claim containing every
+    /// configured required scope. Opaque tokens and application tokens require application-specific
+    /// authorization and are not supported by this built-in check. The default is <see langword="false"/>.
+    /// </remarks>
+    public bool EnforceRequiredScopes { get; set; }
+
     internal static A2AUserAuthorizationSettings FromConfiguration(IConfigurationSection configurationSection)
     {
         var settings = configurationSection?.Get<A2AUserAuthorizationSettings>() ?? new A2AUserAuthorizationSettings();
@@ -96,6 +108,7 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
         }
 
         ValidateSecurityScheme(settings);
+        ValidateRuntimeEnforcement(settings);
         return settings;
     }
 
@@ -133,6 +146,19 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
         {
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
                 ErrorHelper.AuthorizationExactlyOneOAuthFlowRequired,
+                null);
+        }
+    }
+
+    internal static void ValidateRuntimeEnforcement(A2AUserAuthorizationSettings settings)
+    {
+        if (settings.EnforceRequiredScopes
+            && (settings.RequiredScopes == null
+                || settings.RequiredScopes.Count == 0
+                || settings.RequiredScopes.Any(string.IsNullOrWhiteSpace)))
+        {
+            throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AuthorizationRequiredScopesMissing,
                 null);
         }
     }

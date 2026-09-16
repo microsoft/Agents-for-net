@@ -24,7 +24,7 @@ public class A2AUserAuthorizationConfigurationTests
     public void AuthorizationTypes_ExposeOnlySupportedMetadata()
     {
         Assert.Equal(
-            ["OAuthFlows", "RequiredScopes", "SecuritySchemeName"],
+            ["EnforceRequiredScopes", "OAuthFlows", "RequiredScopes", "SecuritySchemeName"],
             typeof(A2AUserAuthorizationSettings)
                 .GetProperties()
                 .Where(property => property.DeclaringType == typeof(A2AUserAuthorizationSettings))
@@ -231,6 +231,37 @@ public class A2AUserAuthorizationConfigurationTests
 
         A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100007);
         Assert.Equal("SecuritySchemeName is required when OAuthFlows is configured.", exception.Message);
+    }
+
+    [Fact]
+    public void Configuration_WithEnforcementAndNoRequiredScopes_Throws()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecuritySchemeName": "delegated",
+                  "EnforceRequiredScopes": true
+                }
+              }
+            }
+            """);
+
+        IConfigurationSection settings = configuration.GetSection(
+            "AgentApplication:UserAuthorization:Handlers:request:Settings");
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => new A2AUserAuthorization(
+                "request",
+                new MemoryStorage(),
+                Mock.Of<IConnections>(),
+                settings,
+                NullLogger.Instance));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100020);
     }
 
     [Fact]

@@ -146,6 +146,9 @@
   <data name="AuthorizationExactlyOneOAuthFlowRequired" xml:space="preserve">
     <value>OAuthFlows must specify exactly one OAuth flow.</value>
   </data>
+  <data name="AuthorizationRequiredScopesMissing" xml:space="preserve">
+    <value>EnforceRequiredScopes requires at least one non-empty RequiredScopes value.</value>
+  </data>
   <data name="AgentCardNullSecurityScheme" xml:space="preserve">
     <value>A2A Agent Card security scheme '{0}' cannot be null.</value>
   </data>
