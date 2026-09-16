@@ -118,6 +118,14 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             }
         }
 
+        if (_settings.EnforceRequiredScopes)
+        {
+            A2ARequiredScopesValidator.Validate(
+                Name,
+                tokenResponse.Token,
+                _settings.RequiredScopes);
+        }
+
         try
         {
             return await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);

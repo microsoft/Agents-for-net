@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -38,6 +39,73 @@ public class A2AUserAuthorizationTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => authorization.SignInUserAsync(turnContext));
+    }
+
+    [Fact]
+    public async Task SignInUserAsync_WithEnforcedResourceQualifiedScope_AcceptsScopeClaimSuffix()
+    {
+        string token = CreateScopeToken("access_as_user");
+        var authorization = CreateAuthorization(new A2AUserAuthorizationSettings
+        {
+            EnforceRequiredScopes = true,
+            RequiredScopes = ["api://agent/access_as_user"],
+        });
+
+        var response = await authorization.SignInUserAsync(
+            CreateTurnContext(CreateAuthentication(token)));
+
+        Assert.Equal(token, response.Token);
+    }
+
+    [Fact]
+    public async Task SignInUserAsync_WithEnforcedMultipleScopes_RequiresEveryScope()
+    {
+        string token = CreateScopeToken("agent.read");
+        var authorization = CreateAuthorization(new A2AUserAuthorizationSettings
+        {
+            EnforceRequiredScopes = true,
+            RequiredScopes = ["agent.read", "agent.write"],
+        });
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => authorization.SignInUserAsync(CreateTurnContext(CreateAuthentication(token))));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100022);
+        Assert.Contains("agent.write", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("opaque-token")]
+    [InlineData(null)]
+    public async Task SignInUserAsync_WithEnforcementAndUnsupportedToken_Throws(string token)
+    {
+        token ??= CreateScopeToken(scopes: null);
+        var authorization = CreateAuthorization(new A2AUserAuthorizationSettings
+        {
+            EnforceRequiredScopes = true,
+            RequiredScopes = ["agent.read"],
+        });
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => authorization.SignInUserAsync(CreateTurnContext(CreateAuthentication(token))));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100021);
+    }
+
+    [Fact]
+    public async Task SignInUserAsync_WithEnforcementAndApplicationIdentity_Throws()
+    {
+        string token = CreateScopeToken("agent.read", identityType: "app");
+        var authorization = CreateAuthorization(new A2AUserAuthorizationSettings
+        {
+            EnforceRequiredScopes = true,
+            RequiredScopes = ["agent.read"],
+        });
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => authorization.SignInUserAsync(CreateTurnContext(CreateAuthentication(token))));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100021);
     }
 
     [Fact]
@@ -116,8 +184,29 @@ public class A2AUserAuthorizationTests
         return new JwtSecurityTokenHandler().WriteToken(jwt);
     }
 
+    private static string CreateScopeToken(string scopes, string identityType = null)
+    {
+        var claims = new List<Claim>();
+        if (scopes != null)
+        {
+            claims.Add(new Claim("scp", scopes));
+        }
+
+        if (identityType != null)
+        {
+            claims.Add(new Claim("idtyp", identityType));
+        }
+
+        return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(30)));
+    }
+
     private static A2AUserAuthorization CreateAuthorization()
         => new("a2a", Mock.Of<IConnections>(), new OBOSettings());
+
+    private static A2AUserAuthorization CreateAuthorization(A2AUserAuthorizationSettings settings)
+        => new("a2a", Mock.Of<IConnections>(), settings);
 
     private static ITurnContext CreateTurnContext(A2ARequestAuthentication authentication)
     {

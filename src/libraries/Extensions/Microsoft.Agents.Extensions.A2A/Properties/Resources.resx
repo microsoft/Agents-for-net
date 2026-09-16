@@ -149,6 +149,12 @@
   <data name="AuthorizationRequiredScopesMissing" xml:space="preserve">
     <value>EnforceRequiredScopes requires at least one non-empty RequiredScopes value.</value>
   </data>
+  <data name="AuthorizationDelegatedJwtRequired" xml:space="preserve">
+    <value>RequiredScopes enforcement for handler '{0}' requires a delegated JWT with an scp claim.</value>
+  </data>
+  <data name="AuthorizationRequiredScopesNotGranted" xml:space="preserve">
+    <value>The token for handler '{0}' is missing required scope(s): {1}.</value>
+  </data>
   <data name="AgentCardNullSecurityScheme" xml:space="preserve">
     <value>A2A Agent Card security scheme '{0}' cannot be null.</value>
   </data>
