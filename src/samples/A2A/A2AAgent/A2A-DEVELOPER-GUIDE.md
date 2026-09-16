@@ -50,10 +50,115 @@ app.MapA2AApplicationEndpoints();
 `MapA2AApplicationEndpoints` maps the well-known Agent Card and the configured
 JSON-RPC and HTTP+JSON interfaces. The default path is `/a2a`.
 
+## Generate the Agent Card
+
+The extension composes the Agent Card from several sources:
+
+1. the A2A host supplies protocol-required values, including the endpoint,
+   supported interfaces, capabilities, and protocol version;
+1. `AgentApplication:A2A:AgentCard` supplies application-owned descriptive
+   metadata and reusable security schemes;
+1. `AgentApplication:UserAuthorization:Handlers` contributes OAuth schemes and
+   security requirements;
+1. `A2ASkill` registrations contribute skills and their route-level security
+   requirements;
+1. `IAgentCardHandler`, when implemented, receives the composed card for final
+   customization; and
+1. the extension validates the final card before returning it to the client.
+
+For normal development:
+
+- use `A2ASkill` attributes or the equivalent fluent API to define skills;
+- use `AgentApplication:UserAuthorization:Handlers` to define OAuth behavior and
+  associate security requirements with routes; and
+- use `AgentApplication:A2A:AgentCard` for descriptive metadata and for a shared
+  security-scheme catalog.
+
+These mechanisms keep the advertised Agent Card aligned with the routes and
+authorization handlers that the application actually uses.
+
+### Define Agent Card metadata in appsettings
+
+The application can configure the application-owned portions of the Agent Card
+under `AgentApplication:A2A:AgentCard`:
+
+```json
+{
+  "AgentApplication": {
+    "A2A": {
+      "AgentCard": {
+        "Name": "Weather agent",
+        "Description": "Provides current conditions and forecasts.",
+        "DocumentationUrl": "https://example.com/weather-agent",
+        "IconUrl": "https://example.com/weather-agent/icon.png",
+        "SecuritySchemes": {
+          "delegated": {
+            "OAuth2SecurityScheme": {
+              "Flows": {
+                "DeviceCode": {
+                  "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                  "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                  "Scopes": {
+                    "api://<agent-app-id>/weather.read": "Read weather data."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+The supported application-owned settings are `Name`, `Description`,
+`DocumentationUrl`, `IconUrl`, `Provider`, and `SecuritySchemes`. The OAuth
+section later in this guide shows how authorization handlers reference a
+configured security scheme and add agent-level or skill-level requirements.
+
+Do not configure host-owned properties such as `Version`, `SupportedInterfaces`,
+`Endpoint`, `Endpoints`, `Url`, or `ProtocolVersion`. The extension rejects
+these settings because the host must generate values that match the endpoints
+and protocol surface it serves.
+
+### Use `IAgentCardHandler` as a failsafe
+
+Implement `Microsoft.Agents.Extensions.A2A.AgentCard.IAgentCardHandler` only when
+the required final customization cannot be expressed through attributes, the
+fluent skill API, authorization handlers, or appsettings:
+
+```csharp
+using Microsoft.Agents.Extensions.A2A.AgentCard;
+
+public partial class MyAgent : AgentApplication, IAgentCardHandler
+{
+    public Task<A2A.AgentCard> GetAgentCard(A2A.AgentCard agentCard)
+    {
+        agentCard.Version =
+            typeof(MyAgent).Assembly.GetName().Version?.ToString() ?? "1.0.0";
+
+        return Task.FromResult(agentCard);
+    }
+}
+```
+
+The handler runs after the host, appsettings, authorization handlers, and
+`A2ASkill` registrations have contributed their values. Mutate and return the
+provided card rather than constructing a replacement that loses generated
+endpoints, capabilities, skills, or security metadata. The extension validates
+the returned card, including security-scheme references and required OAuth
+scopes.
+
+Treat this interface as an escape hatch, not the standard Agent Card authoring
+model. In particular, prefer `A2ASkill` for skills and
+`UserAuthorization.Handlers` for OAuth so runtime behavior and advertised
+metadata remain correlated.
+
 ## Advertise and implement skills
 
-`A2ASkill` combines Agent Card skill metadata with the route that implements the
-skill:
+`A2ASkill` is the recommended way to define skills. It combines Agent Card skill
+metadata with the route that implements the skill:
 
 ```csharp
 [A2ASkill(
