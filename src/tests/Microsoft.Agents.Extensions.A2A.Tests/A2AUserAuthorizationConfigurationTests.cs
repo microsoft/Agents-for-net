@@ -45,6 +45,7 @@ public class A2AUserAuthorizationConfigurationTests
             """
             {
               "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
                 "Type": "A2AUserAuthorization",
                 "Settings": {
                   "SecuritySchemeName": "agentBearer",
@@ -70,6 +71,7 @@ public class A2AUserAuthorizationConfigurationTests
             """
             {
               "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
                 "Type": "A2AUserAuthorization",
                 "Settings": {
                   "SecuritySchemeName": "deviceCode",
@@ -101,6 +103,7 @@ public class A2AUserAuthorizationConfigurationTests
             """
             {
               "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
                 "Type": "A2AUserAuthorization",
                 "Settings": {
                   "SecuritySchemeName": "deviceCode",
@@ -129,6 +132,7 @@ public class A2AUserAuthorizationConfigurationTests
             """
             {
               "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
                 "Type": "A2AUserAuthorization",
                 "Settings": {
                   "SecuritySchemeName": "deviceCode",
@@ -178,6 +182,7 @@ public class A2AUserAuthorizationConfigurationTests
             """
             {
               "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
                 "Type": "A2AUserAuthorization",
                 "Settings": {
                   "SecuritySchemeName": "agentOAuth",
@@ -208,6 +213,7 @@ public class A2AUserAuthorizationConfigurationTests
             """
             {
               "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
                 "Type": "A2AUserAuthorization",
                 "Settings": {
                   "OAuthFlows": {
@@ -234,6 +240,7 @@ public class A2AUserAuthorizationConfigurationTests
             """
             {
               "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
                 "Type": "A2AUserAuthorization",
                 "Settings": {
                   "SecuritySchemeName": "agentBearer",
@@ -251,13 +258,43 @@ public class A2AUserAuthorizationConfigurationTests
     }
 
     [Fact]
-    public void Constructor_WithExplicitA2ATypeAndNoAssembly_LoadsHandler()
+    public void Constructor_WithExplicitA2ATypeAndNoAssembly_Throws()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string>
             {
                 ["UserAuthorization:DefaultHandlerName"] = "request",
                 ["UserAuthorization:AutoSignIn"] = "true",
+                ["UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+                ["UserAuthorization:Handlers:request:Settings:OBOScopes:0"] = "scope"
+            })
+            .Build();
+        var storage = new MemoryStorage();
+        var services = new ServiceCollection()
+            .AddSingleton<IStorage>(storage)
+            .AddSingleton(Mock.Of<IConnections>())
+            .BuildServiceProvider();
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => new UserAuthorizationOptions(
+                services,
+                NullLoggerFactory.Instance,
+                configuration,
+                storage));
+
+        Assert.Contains("Assembly", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("request", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Constructor_WithExplicitA2ATypeAndAssembly_LoadsHandler()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+                ["UserAuthorization:DefaultHandlerName"] = "request",
+                ["UserAuthorization:AutoSignIn"] = "true",
+                ["UserAuthorization:Handlers:request:Assembly"] = "Microsoft.Agents.Extensions.A2A",
                 ["UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
                 ["UserAuthorization:Handlers:request:Settings:OBOScopes:0"] = "scope"
             })
@@ -292,6 +329,7 @@ public class A2AUserAuthorizationConfigurationTests
                     "AutoSignIn": false,
                     "Handlers": {
                       "delegated": {
+                        "Assembly": "Microsoft.Agents.Extensions.A2A",
                         "Type": "A2AUserAuthorization",
                         "Settings": {}
                       }

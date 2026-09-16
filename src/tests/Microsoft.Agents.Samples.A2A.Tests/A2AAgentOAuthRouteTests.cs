@@ -53,6 +53,7 @@ public class A2AAgentOAuthRouteTests
         Assert.False(configuration.GetSection("AgentApplication:A2A:AgentCard").Exists());
         var handler = Assert.Single(configuration.GetSection("AgentApplication:UserAuthorization:Handlers").GetChildren());
         Assert.Equal(GraphHandlerName, handler.Key);
+        Assert.Equal("Microsoft.Agents.Extensions.A2A", handler["Assembly"]);
         Assert.Equal(GraphHandlerName, configuration["AgentApplication:UserAuthorization:DefaultHandlerName"]);
         Assert.Equal("ServiceConnection", handler["Settings:OBOConnectionName"]);
         Assert.Equal("User.Read", handler["Settings:OBOScopes:0"]);

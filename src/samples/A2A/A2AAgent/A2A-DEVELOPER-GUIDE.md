@@ -247,6 +247,9 @@ An A2A client uses the Agent Card to discover how to acquire an Agent API token.
 ASP.NET Core validates the incoming token. `A2AUserAuthorization` then makes the
 validated request token available through the same `AgentApplication.UserAuthorization`
 API used by other channels and can perform an OBO exchange for a downstream API.
+Because `A2AUserAuthorization` is defined by an extension assembly, each handler
+configuration must set `Assembly` to `Microsoft.Agents.Extensions.A2A`. Only
+handlers defined by `Microsoft.Agents.Builder` can omit `Assembly`.
 
 These responsibilities are separate:
 
@@ -274,6 +277,7 @@ settings and the OAuth metadata contributed to the Agent Card:
       "AutoSignin": false,
       "Handlers": {
         "graph": {
+          "Assembly": "Microsoft.Agents.Extensions.A2A",
           "Type": "A2AUserAuthorization",
           "Settings": {
             "SecuritySchemeName": "delegated",
@@ -348,6 +352,7 @@ already contributed by `agent-read`:
       "AutoSignin": false,
       "Handlers": {
         "agent-read": {
+          "Assembly": "Microsoft.Agents.Extensions.A2A",
           "Type": "A2AUserAuthorization",
           "Settings": {
             "SecuritySchemeName": "delegated",
@@ -367,6 +372,7 @@ already contributed by `agent-read`:
           }
         },
         "profile-read": {
+          "Assembly": "Microsoft.Agents.Extensions.A2A",
           "Type": "A2AUserAuthorization",
           "Settings": {
             "SecuritySchemeName": "delegated",
@@ -442,6 +448,7 @@ Define the scheme under `AgentApplication:A2A:AgentCard:SecuritySchemes`:
       "AutoSignin": false,
       "Handlers": {
         "agent-read": {
+          "Assembly": "Microsoft.Agents.Extensions.A2A",
           "Type": "A2AUserAuthorization",
           "Settings": {
             "SecuritySchemeName": "delegated",
@@ -451,6 +458,7 @@ Define the scheme under `AgentApplication:A2A:AgentCard:SecuritySchemes`:
           }
         },
         "profile-read": {
+          "Assembly": "Microsoft.Agents.Extensions.A2A",
           "Type": "A2AUserAuthorization",
           "Settings": {
             "SecuritySchemeName": "delegated",

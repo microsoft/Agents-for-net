@@ -90,6 +90,7 @@ The relevant authorization configuration is:
     "AutoSignin": false,
     "Handlers": {
       "graph": {
+        "Assembly": "Microsoft.Agents.Extensions.A2A",
         "Type": "A2AUserAuthorization",
         "Settings": {
           "SecuritySchemeName": "delegated",

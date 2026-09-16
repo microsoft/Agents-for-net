@@ -13,8 +13,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 #if !NETSTANDARD
 using System.Runtime.Loader;
@@ -36,46 +34,32 @@ namespace Microsoft.Agents.Builder.UserAuth
         {
             AssertionHelpers.ThrowIfNullOrEmpty(name, nameof(name));
 
-            if (string.Equals(nameof(AzureBotUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(AzureBotUserAuthorization).FullName;
-            }
-            else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(AgenticUserAuthorization).FullName;
-            }
-            else if (string.Equals(nameof(ConnectorUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(ConnectorUserAuthorization).FullName;
-            }
-
-            if (string.IsNullOrEmpty(assemblyName) && !string.IsNullOrEmpty(typeName))
-            {
-                var loadedType = FindLoadedProviderType(typeName, name);
-                if (loadedType != null)
-                {
-                    return GetConstructor(loadedType) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                        ErrorHelper.FailedToCreateUserAuthorizationHandler,
-                        null,
-                        loadedType.FullName,
-                        loadedType.Assembly.GetName().Name);
-                }
-            }
-
-            if (string.IsNullOrEmpty(assemblyName))
-            {
-                // A Assembly Lib name wasn't given in config.  Set to the default assembly lib
-                assemblyName = typeof(AzureBotUserAuthorization).Assembly.GetName().Name;
-                logger.LogInformation("No assembly name given in config for connection `{name}`.  Using default assembly lib: `{assemblyName}`", name, assemblyName);
-            }
-
             if (string.IsNullOrEmpty(typeName))
             {
-                // A Type name wasn't given in config.  Set to the default type name
-                typeName = typeof(AzureBotUserAuthorization).FullName;
-                logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
+                logger.LogInformation(
+                    "No type name given in config for connection `{name}`. Using default type name: `{typeName}`",
+                    name,
+                    typeof(AzureBotUserAuthorization).FullName);
             }
-            
+
+            var builtInType = ResolveBuiltInProviderType(typeName);
+            if (builtInType != null)
+            {
+                typeName = builtInType.FullName;
+                if (string.IsNullOrEmpty(assemblyName))
+                {
+                    assemblyName = builtInType.Assembly.GetName().Name;
+                }
+            }
+            else if (string.IsNullOrEmpty(assemblyName))
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.UserAuthorizationAssemblyRequired,
+                    null,
+                    name,
+                    typeName);
+            }
+
             // This throws for invalid assembly name.
 #if !NETSTANDARD
                 Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
@@ -83,90 +67,65 @@ namespace Microsoft.Agents.Builder.UserAuth
             // This throws for invalid assembly name.
             Assembly assembly = _loadContext.Load(assemblyName);
 #endif
-            Type type = assembly.GetType(typeName);
-            if (!IsValidProviderType(type))
+            Type type = ResolveProviderType(assembly, typeName);
+            if (type == null)
             {
-                // Perhaps config left off the full type name?
-                type = assembly.GetType($"{assemblyName}.{typeName}");
-                if (!IsValidProviderType(type))
-                {
-                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationTypeNotFound, null, typeName, assemblyName, name);
-                }
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationTypeNotFound, null, typeName, assemblyName, name);
             }
+
             return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, null, typeName, assemblyName); 
         }
 
-        private Type FindLoadedProviderType(string typeName, string handlerName)
+        private static Type ResolveProviderType(Assembly assembly, string typeName)
         {
-#if !NETSTANDARD
-            var assemblies = _loadContext.Assemblies;
-#else
-            var assemblies = _loadContext.GetAssemblies();
-#endif
-            var candidates = assemblies
-                .Where(assembly => !assembly.IsDynamic)
-                .OrderBy(assembly => assembly.FullName, StringComparer.Ordinal)
-                .SelectMany(GetLoadableTypes)
-                .Where(IsValidProviderType)
-                .ToArray();
-
-            // A fully qualified name is unambiguous, so it wins over a bare type name that happens to
-            // match in another assembly. This keeps resolution independent of assembly load order.
-            var matches = candidates
-                .Where(type => string.Equals(type.FullName, typeName, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-
-            if (matches.Length == 0)
+            Type type = assembly.GetType(typeName);
+            if (IsValidProviderType(type))
             {
-                matches = candidates
-                    .Where(type => string.Equals(type.Name, typeName, StringComparison.OrdinalIgnoreCase))
-                    .ToArray();
+                return type;
             }
 
-            if (matches.Length > 1)
+            Type simpleNameMatch = null;
+            foreach (Type candidate in assembly.GetTypes())
             {
-                var ambiguity = new AmbiguousMatchException(
-                    $"Multiple IUserAuthorization types matched '{typeName}': {string.Join(", ", matches.Select(type => type.AssemblyQualifiedName))}");
-                throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                    ErrorHelper.UserAuthorizationTypeNotFound,
-                    ambiguity,
-                    typeName,
-                    "loaded assemblies",
-                    handlerName);
+                if (!IsValidProviderType(candidate)
+                    || !string.Equals(candidate.Name, typeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (simpleNameMatch != null)
+                {
+                    return null;
+                }
+
+                simpleNameMatch = candidate;
             }
 
-            return matches.SingleOrDefault();
+            return simpleNameMatch;
         }
 
-        /// <summary>
-        /// Returns the types an assembly can supply for provider discovery.
-        /// </summary>
-        /// <remarks>
-        /// Scanning every loaded assembly means an unrelated assembly whose dependencies cannot be
-        /// resolved must not prevent user-authorization handlers from being created. Only the documented
-        /// <see cref="Assembly.GetTypes"/> failures are handled, and each one is logged; any other
-        /// exception propagates.
-        /// </remarks>
-        internal IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+        private static Type ResolveBuiltInProviderType(string typeName)
         {
-            try
+            if (string.IsNullOrEmpty(typeName))
             {
-                return assembly.GetTypes();
+                return typeof(AzureBotUserAuthorization);
             }
-            catch (ReflectionTypeLoadException exception)
+
+            foreach (var type in new[]
             {
-                logger.LogDebug(exception, "Some types in assembly `{assembly}` could not be loaded while resolving user authorization handlers.", assembly.FullName);
-                return exception.Types.Where(type => type != null);
-            }
-            catch (Exception exception) when (
-                exception is TypeLoadException
-                || exception is FileNotFoundException
-                || exception is FileLoadException
-                || exception is BadImageFormatException)
+                typeof(AzureBotUserAuthorization),
+                typeof(AgenticUserAuthorization),
+                typeof(ConnectorUserAuthorization),
+            })
             {
-                logger.LogDebug(exception, "Assembly `{assembly}` could not be inspected while resolving user authorization handlers.", assembly.FullName);
-                return [];
+                if (string.Equals(type.Name, typeName, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(type.FullName, typeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return type;
+                }
             }
+
+            return null;
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)

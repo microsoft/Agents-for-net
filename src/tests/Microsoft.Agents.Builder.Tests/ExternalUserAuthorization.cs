@@ -11,15 +11,15 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Builder.Tests.Collisions;
+namespace Microsoft.Agents.Builder.Tests;
 
 /// <summary>
-/// Declares the same simple name as an SDK handler, in another namespace, so the loaded-assembly scan
-/// used by <c>UserAuthorizationModuleLoader</c> is exercised against a name collision.
+/// External user authorization handler used to verify that non-Builder handlers require an
+/// explicit assembly name.
 /// </summary>
-public sealed class ConnectorUserAuthorization : IUserAuthorization
+public sealed class ExternalUserAuthorization : IUserAuthorization
 {
-    public ConnectorUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null)
+    public ExternalUserAuthorization(string name, IStorage storage, IConnections connections, IConfigurationSection configurationSection, ILogger logger = null)
     {
         Name = name;
     }
