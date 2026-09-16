@@ -293,6 +293,7 @@ settings and the OAuth metadata contributed to the Agent Card:
             "RequiredScopes": [
               "api://<agent-app-id>/access_as_user"
             ],
+            "EnforceRequiredScopes": true,
             "OBOConnectionName": "ServiceConnection",
             "OBOScopes": [
               "User.Read"
@@ -333,7 +334,12 @@ private async Task OnGraphAsync(
 
 Because the handler defines `OAuthFlows`, `SecuritySchemeName` names the inline
 Agent Card scheme. `RequiredScopes` is added to the generated security
-requirement for the skill. `OBOScopes` is not advertised to the client;
+requirement for the skill. `EnforceRequiredScopes` is optional and defaults to
+`false`; when enabled, `A2AUserAuthorization` validates the original trusted
+saved inbound delegated JWT before OBO and requires every configured
+`RequiredScopes` value to appear in the token's `scp` claim. For Microsoft
+Entra resource-qualified scope URIs, the handler compares the final permission
+value such as `access_as_user`. `OBOScopes` is not advertised to the client;
 `GetTurnTokenAsync` returns the downstream Graph token after the exchange.
 
 ### Scenario 2: One handler defines a scheme and another references it
@@ -483,7 +489,8 @@ requirement references a scheme that the card does not define.
 | --- | --- | --- |
 | `SecuritySchemeName` | Identifies the Agent Card scheme used by the handler. With `OAuthFlows`, the handler defines that scheme inline. Without `OAuthFlows`, it references an existing scheme. | A handler with no name contributes no Agent Card security metadata and cannot generate a protected requirement. |
 | `OAuthFlows` | Defines one inline OAuth flow. Device Code and Authorization Code represent delegated authentication; Client Credentials represents application authentication. | `SecuritySchemeName` is treated as a reference to an existing scheme. |
-| `RequiredScopes` | Scopes placed in the security requirement generated for an agent or skill. | The requirement contains an empty scope list. Scopes are not inferred or enforced automatically. |
+| `RequiredScopes` | Scopes placed in the security requirement generated for an agent or skill. When `EnforceRequiredScopes` is enabled, the same list is validated against the trusted saved inbound delegated JWT's `scp` claim before OBO. | The requirement contains an empty scope list. `EnforceRequiredScopes` cannot be enabled until at least one non-empty value is configured. |
+| `EnforceRequiredScopes` | Enables built-in delegated JWT runtime enforcement. Every configured `RequiredScopes` value must appear in the original validated inbound token's `scp` claim before OBO; Microsoft Entra resource-qualified scopes also match by final permission segment such as `access_as_user`. | Defaults to `false`, so `RequiredScopes` remains Agent Card metadata only. Application tokens (`roles`) and opaque tokens require provider-specific or application-specific authorization. |
 | `OBOConnectionName` | Connection used for an OBO exchange. | The default connection selected for the turn is used when an exchange is requested. |
 | `OBOScopes` | Downstream scopes requested during OBO. | No OBO exchange occurs and the validated inbound request token is returned unchanged. |
 
@@ -495,13 +502,21 @@ These settings describe different stages:
   authorization server.
 - `RequiredScopes` is the subset placed in the Agent Card requirement for the
   agent or skill.
+- `EnforceRequiredScopes` optionally validates that subset against the original
+  trusted saved inbound delegated JWT before OBO. Every configured
+  `RequiredScopes` value must appear in the token's `scp` claim, and Microsoft
+  Entra resource-qualified scope URIs may match by their final permission value
+  such as `access_as_user`.
 - `OBOScopes` is requested from a downstream service after the request reaches
   the agent.
 
 Available scopes are not automatically required. Inferring all advertised
 scopes could cause clients to request excessive permissions. The SDK also does
-not automatically enforce the inbound token's `scp` or `roles` claims; enforce
-those requirements in ASP.NET Core authorization or route code.
+not infer `RequiredScopes` from that catalog. `EnforceRequiredScopes` defaults
+to `false`, preserving compatibility for metadata-only handlers. When enabled,
+the built-in check supports delegated JWT `scp` claims only; Microsoft Entra
+Client Credentials `roles` claims and opaque-token authorization remain
+provider-specific or application-specific concerns.
 
 ### Delegated and application tokens
 
@@ -514,6 +529,10 @@ Microsoft Entra Client Credentials, the acquisition scope is commonly
 `api://<agent-app-id>/.default`, and the resulting token carries application
 permissions in `roles` rather than delegated permissions in `scp`. It does not
 naturally provide a person identity for `ITurnState.User`.
+
+`EnforceRequiredScopes` does not authorize these application tokens because it
+checks delegated JWT `scp` values only. Applications using opaque tokens
+likewise need provider-specific or application-specific authorization.
 
 Inbound application authentication is different from an agent using
 `MsalAuth` for an outbound call:

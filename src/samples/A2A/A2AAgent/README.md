@@ -54,9 +54,11 @@ without Microsoft Entra configuration.
 The `-me` skill uses a single `graph` `A2AUserAuthorization` handler. The handler:
 
 1. advertises a delegated Device Code flow and Agent API scope in the Agent Card;
-2. requires that scope for the `-me` skill;
-3. exchanges the validated inbound token through `ServiceConnection`; and
-4. requests Microsoft Graph `User.Read`.
+2. lists that Agent API scope in `RequiredScopes` for the `-me` skill;
+3. can validate the trusted saved inbound delegated JWT against every configured
+   `RequiredScopes` value before OBO; and
+4. exchanges the validated inbound token through `ServiceConnection` for
+   Microsoft Graph `User.Read`.
 
 ### Register the Agent API application
 
@@ -109,6 +111,7 @@ The relevant authorization configuration is:
           "RequiredScopes": [
             "api://{{ClientId}}/access_as_user"
           ],
+          "EnforceRequiredScopes": true,
           "OBOConnectionName": "ServiceConnection",
           "OBOScopes": [
             "User.Read"
@@ -129,9 +132,14 @@ the resulting Agent API scope URI:
 `api://<A2AAgent-client-id>/access_as_user`.
 
 `A2AAgentStartup` enables token validation in Development only after
-`TokenValidation:Audiences` contains real GUIDs. The A2A transport remains
-anonymous; the `-me` route opts into the `graph` handler through
-`autoSigninHandlers`.
+`TokenValidation:Audiences` contains real GUIDs.
+
+`EnforceRequiredScopes` makes `A2AUserAuthorization` validate the original
+inbound delegated JWT before OBO. Every configured `RequiredScopes` value must
+appear in the token's `scp` claim; for Microsoft Entra resource-qualified scope
+URIs, the handler compares the final permission value such as
+`access_as_user`. The option is disabled by default and does not support opaque
+tokens or application-role validation.
 
 ### Configure and run the client
 
