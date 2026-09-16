@@ -93,6 +93,22 @@ public class A2AUserAuthorizationTests
     }
 
     [Fact]
+    public async Task SignInUserAsync_WithEnforcedResourceQualifiedScopeEndingInSlash_AcceptsFinalNonEmptyScopeSegment()
+    {
+        string token = CreateScopeToken("read");
+        var authorization = CreateAuthorization(new A2AUserAuthorizationSettings
+        {
+            EnforceRequiredScopes = true,
+            RequiredScopes = ["api://agent/read/"],
+        });
+
+        var response = await authorization.SignInUserAsync(
+            CreateTurnContext(CreateAuthentication(token)));
+
+        Assert.Equal(token, response.Token);
+    }
+
+    [Fact]
     public async Task SignInUserAsync_WithEnforcedMultipleScopes_RequiresEveryScope()
     {
         string token = CreateScopeToken("agent.read");

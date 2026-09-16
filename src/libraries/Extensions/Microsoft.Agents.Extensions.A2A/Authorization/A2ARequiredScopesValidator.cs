@@ -70,10 +70,12 @@ internal static class A2ARequiredScopesValidator
             return true;
         }
 
-        int separator = requiredScope.LastIndexOf('/');
-        string scopeValue = separator >= 0 && separator < requiredScope.Length - 1
-            ? requiredScope[(separator + 1)..]
-            : requiredScope;
-        return grantedScopes.Contains(scopeValue, StringComparer.Ordinal);
+        string normalizedScope = requiredScope.TrimEnd('/');
+        int separator = normalizedScope.LastIndexOf('/');
+        string scopeValue = separator >= 0
+            ? normalizedScope[(separator + 1)..]
+            : normalizedScope;
+        return scopeValue.Length > 0
+            && grantedScopes.Contains(scopeValue, StringComparer.Ordinal);
     }
 }
