@@ -33,7 +33,6 @@ internal sealed class A2AAuthorizationMetadata
                 },
             };
         RequiredScopes = settings.RequiredScopes;
-        AuthorizationPolicy = settings.AuthorizationPolicy;
         OBOSettings = settings;
     }
 
@@ -61,11 +60,6 @@ internal sealed class A2AAuthorizationMetadata
     /// Gets the Agent Card scopes required by this handler.
     /// </summary>
     public IList<string> RequiredScopes { get; }
-
-    /// <summary>
-    /// Gets the authorization policy associated with this handler.
-    /// </summary>
-    public string AuthorizationPolicy { get; }
 
     /// <summary>
     /// Gets the OBO settings used when retrieving a request token.

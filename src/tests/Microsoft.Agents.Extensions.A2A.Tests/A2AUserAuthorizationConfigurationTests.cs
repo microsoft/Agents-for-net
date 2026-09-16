@@ -21,6 +21,24 @@ namespace Microsoft.Agents.Extensions.A2A.Tests;
 public class A2AUserAuthorizationConfigurationTests
 {
     [Fact]
+    public void AuthorizationTypes_ExposeOnlySupportedMetadata()
+    {
+        Assert.Equal(
+            ["OAuthFlows", "RequiredScopes", "SecuritySchemeName"],
+            typeof(A2AUserAuthorizationSettings)
+                .GetProperties()
+                .Where(property => property.DeclaringType == typeof(A2AUserAuthorizationSettings))
+                .Select(property => property.Name)
+                .OrderBy(name => name));
+        Assert.Equal(
+            ["HandlerName", "OBOSettings", "ReferencedSecurityScheme", "RequiredScopes", "SecurityScheme", "SecuritySchemeName"],
+            typeof(A2AAuthorizationMetadata)
+                .GetProperties()
+                .Select(property => property.Name)
+                .OrderBy(name => name));
+    }
+
+    [Fact]
     public void Configuration_WithSecuritySchemeNameAndNoOAuthFlows_ReferencesExistingScheme()
     {
         var configuration = CreateAgentApplicationConfiguration(
@@ -30,8 +48,7 @@ public class A2AUserAuthorizationConfigurationTests
                 "Type": "A2AUserAuthorization",
                 "Settings": {
                   "SecuritySchemeName": "agentBearer",
-                  "RequiredScopes": [ "api://agent/access_as_user" ],
-                  "AuthorizationPolicy": "AgentAccess"
+                  "RequiredScopes": [ "api://agent/access_as_user" ]
                 }
               }
             }
@@ -44,7 +61,6 @@ public class A2AUserAuthorizationConfigurationTests
         Assert.Equal("agentBearer", metadata.ReferencedSecurityScheme);
         Assert.Null(metadata.SecurityScheme);
         Assert.Equal(["api://agent/access_as_user"], metadata.RequiredScopes);
-        Assert.Equal("AgentAccess", metadata.AuthorizationPolicy);
     }
 
     [Fact]
@@ -79,7 +95,7 @@ public class A2AUserAuthorizationConfigurationTests
     }
 
     [Fact]
-    public void Configuration_WithoutRequiredScopesOrAuthorizationPolicy_LeavesOptionalMetadataUnset()
+    public void Configuration_WithoutRequiredScopes_LeavesOptionalMetadataUnset()
     {
         var configuration = CreateAgentApplicationConfiguration(
             """
@@ -101,11 +117,9 @@ public class A2AUserAuthorizationConfigurationTests
               }
             }
             """);
-
         var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
-
         Assert.Null(metadata.RequiredScopes);
-        Assert.Null(metadata.AuthorizationPolicy);
+        Assert.Null(metadata.RequiredScopes);
     }
 
     [Fact]

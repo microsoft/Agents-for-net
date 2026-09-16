@@ -476,7 +476,6 @@ requirement references a scheme that the card does not define.
 | `SecuritySchemeName` | Identifies the Agent Card scheme used by the handler. With `OAuthFlows`, the handler defines that scheme inline. Without `OAuthFlows`, it references an existing scheme. | A handler with no name contributes no Agent Card security metadata and cannot generate a protected requirement. |
 | `OAuthFlows` | Defines one inline OAuth flow. Device Code and Authorization Code represent delegated authentication; Client Credentials represents application authentication. | `SecuritySchemeName` is treated as a reference to an existing scheme. |
 | `RequiredScopes` | Scopes placed in the security requirement generated for an agent or skill. | The requirement contains an empty scope list. Scopes are not inferred or enforced automatically. |
-| `AuthorizationPolicy` | Optional ASP.NET Core authorization policy name associated with the handler. | Defaults to `null`. The preview records it as metadata but does not evaluate it automatically. |
 | `OBOConnectionName` | Connection used for an OBO exchange. | The default connection selected for the turn is used when an exchange is requested. |
 | `OBOScopes` | Downstream scopes requested during OBO. | No OBO exchange occurs and the validated inbound request token is returned unchanged. |
 

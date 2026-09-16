@@ -56,7 +56,6 @@ public class A2AAgentOAuthRouteTests
         Assert.Equal(GraphHandlerName, configuration["AgentApplication:UserAuthorization:DefaultHandlerName"]);
         Assert.Equal("ServiceConnection", handler["Settings:OBOConnectionName"]);
         Assert.Equal("User.Read", handler["Settings:OBOScopes:0"]);
-        Assert.Null(handler["Settings:AuthorizationPolicy"]);
 
         var storage = new MemoryStorage();
         var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance, configuration: configuration);

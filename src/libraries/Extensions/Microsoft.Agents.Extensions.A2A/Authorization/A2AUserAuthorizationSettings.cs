@@ -37,9 +37,9 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// </para>
 /// <para>
 /// The handler supplies the validated inbound request token to the AgentApplication authorization
-/// pipeline. In this preview, <see cref="AuthorizationPolicy"/> and <see cref="RequiredScopes"/>
-/// contribute metadata but are not automatically evaluated as runtime authorization rules.
-/// Applications must enforce their required claims, scopes, roles, or ASP.NET Core policies.
+/// pipeline. In this preview, <see cref="RequiredScopes"/> contributes Agent Card metadata but is
+/// not automatically evaluated as a runtime authorization rule. Applications must enforce their
+/// required claims, scopes, roles, or ASP.NET Core policies.
 /// </para>
 /// </remarks>
 public sealed class A2AUserAuthorizationSettings : OBOSettings
@@ -80,18 +80,6 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
     /// application permissions in its <c>roles</c> claim rather than its <c>scp</c> claim.
     /// </remarks>
     public IList<string> RequiredScopes { get; set; }
-
-    /// <summary>
-    /// Gets or sets the optional name of an ASP.NET Core authorization policy associated with
-    /// this handler.
-    /// </summary>
-    /// <remarks>
-    /// The default is <see langword="null"/>. This preview records the value as handler metadata
-    /// but does not evaluate the named policy. Omitting it has no effect on token acquisition or
-    /// OBO exchange; applications must currently apply and evaluate authorization policies in
-    /// their host or route code.
-    /// </remarks>
-    public string AuthorizationPolicy { get; set; }
 
     internal static A2AUserAuthorizationSettings FromConfiguration(IConfigurationSection configurationSection)
     {
