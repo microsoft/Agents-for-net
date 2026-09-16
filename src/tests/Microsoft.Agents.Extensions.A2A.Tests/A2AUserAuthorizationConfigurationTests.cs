@@ -265,6 +265,23 @@ public class A2AUserAuthorizationConfigurationTests
     }
 
     [Fact]
+    public void CodeFirstConstructor_WithEnforcementAndNoRequiredScopes_Throws()
+    {
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => new A2AUserAuthorization(
+                "request",
+                Mock.Of<IConnections>(),
+                new A2AUserAuthorizationSettings
+                {
+                    SecuritySchemeName = "delegated",
+                    EnforceRequiredScopes = true,
+                },
+                NullLogger.Instance));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100020);
+    }
+
+    [Fact]
     public void Configuration_KeepsOBOScopesSeparateFromAgentCardScopes()
     {
         var configuration = CreateAgentApplicationConfiguration(

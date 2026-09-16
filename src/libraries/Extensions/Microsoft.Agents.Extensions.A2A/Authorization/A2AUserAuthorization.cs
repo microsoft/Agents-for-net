@@ -67,6 +67,7 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     public A2AUserAuthorization(string name, IConnections connections, A2AUserAuthorizationSettings settings, ILogger logger = null) : base(connections)
     {
         _settings = settings ?? new A2AUserAuthorizationSettings();
+        A2AUserAuthorizationSettings.ValidateRuntimeEnforcement(_settings);
         Name = name ?? throw new ArgumentNullException(nameof(name));
     }
 
