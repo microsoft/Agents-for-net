@@ -1,0 +1,451 @@
+# Develop A2A agents with the Microsoft 365 Agents SDK
+
+`Microsoft.Agents.Extensions.A2A` lets an existing Agents SDK application expose
+Agent2Agent (A2A) endpoints while continuing to use `AgentApplication` routing,
+middleware, state, storage, and user authorization.
+
+> [!IMPORTANT]
+> The A2A extension is in preview. This guide is the repository source for
+> developer guidance that is expected to move to Microsoft Learn before the
+> extension exits preview.
+
+The extension uses `a2a-dotnet` for the native protocol surface. It is intended
+for developers who want one Agents SDK application to participate in A2A
+scenarios, not as a replacement for using `a2a-dotnet` directly to build a
+standalone A2A server.
+
+## Add A2A to an existing agent
+
+Add a package reference to `Microsoft.Agents.Extensions.A2A`, import the root
+namespace, and annotate the agent:
+
+```csharp
+using Microsoft.Agents.Extensions.A2A;
+
+[Agent(name: "MyAgent", description: "Agent with A2A support")]
+[A2AExtension]
+[AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/a2a")]
+[AgentInterface(A2AAgentTransportProtocol.HttpJson, "/a2a")]
+public partial class MyAgent : AgentApplication
+{
+}
+```
+
+`[A2AExtension]` generates the `A2AExtension` property used by the fluent routing
+API. The `Agent` and `AgentInterface` attributes provide metadata used to compose
+the Agent Card.
+
+Register the agent normally and map the A2A endpoints:
+
+```csharp
+builder.AddAgentDefaults()
+    .AddAgent<MyAgent>();
+
+WebApplication app = builder.Build();
+app.UseAgents();
+app.MapDefaultAgentEndpoints();
+app.MapA2AApplicationEndpoints();
+```
+
+`MapA2AApplicationEndpoints` maps the well-known Agent Card and the configured
+JSON-RPC and HTTP+JSON interfaces. The default path is `/a2a`.
+
+## Advertise and implement skills
+
+`A2ASkill` combines Agent Card skill metadata with the route that implements the
+skill:
+
+```csharp
+[A2ASkill(
+    name: "Weather",
+    description: "Gets the weather for a city.",
+    tags: "weather,forecast",
+    examples: "What is the weather in Seattle?",
+    textRegex: "(?i)weather")]
+private Task OnWeatherAsync(
+    IA2ATurnContext turnContext,
+    ITurnState turnState,
+    CancellationToken cancellationToken)
+{
+    // Handle the request.
+}
+```
+
+The equivalent fluent API is available through the generated extension:
+
+```csharp
+A2AExtension.Skill("Weather", skill => skill
+    .WithName("Weather")
+    .WithDescription("Gets the weather for a city.")
+    .WithTags("weather", "forecast")
+    .WithExamples("What is the weather in Seattle?")
+    .OnMessage(new Regex("(?i)weather"), OnWeatherAsync));
+```
+
+Skill names, descriptions, tags, and examples help A2A clients decide which
+remote agent and skill may satisfy a request. They do not force the server to use
+that skill. The server still evaluates its registered routes when it receives the
+message.
+
+Use `A2AMessageRoute` or ordinary `AgentApplication` routing for A2A routes that
+should not be advertised as Agent Card skills.
+
+## How A2A maps to AgentApplication
+
+An inbound A2A message is converted to an Activity Protocol activity and passed
+through the normal `AgentApplication` pipeline:
+
+- the activity type is `ActivityTypes.Message`;
+- `Activity.ChannelId` is `a2a`;
+- text parts are appended to `Activity.Text`;
+- other parts become attachments; and
+- `Activity.ChannelData` contains the A2A task.
+
+The extension maps outbound activities back to A2A:
+
+- `ActivityTypes.Message` becomes A2A message or task-status content;
+- attachments, entities, and `Activity.Value` become A2A parts;
+- `ActivityTypes.EndOfConversation` completes, fails, or cancels the task; and
+- `ITurnContext.StreamingResponse` produces streaming task updates and artifacts.
+
+All current Agents SDK interactions occur in the context of an A2A task. The
+task ID is used as `Activity.Conversation.Id`, so conversation state is scoped to
+the task.
+
+For multi-turn behavior, send a response with
+`Activity.InputHint == InputHints.ExpectingInput`. This moves the A2A task to
+`input-required`. Send `ActivityTypes.EndOfConversation` when the task is
+complete:
+
+```csharp
+await turnContext.SendActivityAsync(
+    new Activity
+    {
+        Type = ActivityTypes.EndOfConversation,
+        Code = EndOfConversationCodes.CompletedSuccessfully,
+        Text = "Completed.",
+        Value = result,
+    },
+    cancellationToken: cancellationToken);
+```
+
+`EndOfConversationCodes.Error` maps to a failed task,
+`EndOfConversationCodes.UserCancelled` maps to a canceled task, and other codes
+map to a completed task.
+
+Use `IA2ATurnContext.Client` when a route needs the native A2A request context,
+event queue, or task store.
+
+## OAuth and Agent Card security
+
+An A2A client uses the Agent Card to discover how to acquire an Agent API token.
+ASP.NET Core validates the incoming token. `A2AUserAuthorization` then makes the
+validated request token available through the same `AgentApplication.UserAuthorization`
+API used by other channels and can perform an OBO exchange for a downstream API.
+
+These responsibilities are separate:
+
+1. **Agent Card metadata** tells a client which scheme and scopes to use.
+1. **ASP.NET Core authentication** validates the inbound credential.
+1. **Route authorization** enforces the claims, scopes, roles, or policies
+   required by the application.
+1. **User authorization handlers** provide the request token or exchange it for
+   a downstream token.
+
+The following scenarios progress from the simplest configuration to a centrally
+managed Agent Card.
+
+### Scenario 1: Define the scheme in one handler
+
+This is the recommended starting point and the pattern used by the `A2AAgent`
+sample. A single `A2AUserAuthorization` handler contains both its runtime token
+settings and the OAuth metadata contributed to the Agent Card:
+
+```json
+{
+  "AgentApplication": {
+    "UserAuthorization": {
+      "DefaultHandlerName": "graph",
+      "AutoSignin": false,
+      "Handlers": {
+        "graph": {
+          "Type": "A2AUserAuthorization",
+          "Settings": {
+            "SecuritySchemeName": "delegated",
+            "OAuthFlows": {
+              "DeviceCode": {
+                "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                "Scopes": {
+                  "api://<agent-app-id>/access_as_user": "Access the agent as the signed-in user."
+                }
+              }
+            },
+            "RequiredScopes": [
+              "api://<agent-app-id>/access_as_user"
+            ],
+            "OBOConnectionName": "ServiceConnection",
+            "OBOScopes": [
+              "User.Read"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Attach the handler to a route through `autoSigninHandlers`:
+
+```csharp
+[A2ASkill(
+    name: "Microsoft Graph profile",
+    description: "Reads the signed-in user's profile.",
+    tags: "a2a,profile,graph",
+    examples: "-me",
+    text: "-me",
+    autoSigninHandlers: "graph")]
+private async Task OnGraphAsync(
+    IA2ATurnContext turnContext,
+    ITurnState turnState,
+    CancellationToken cancellationToken)
+{
+    string graphToken = await UserAuthorization.GetTurnTokenAsync(
+        turnContext,
+        "graph",
+        cancellationToken);
+
+    GraphProfile profile = await _graphClient.GetMeAsync(
+        graphToken,
+        cancellationToken);
+}
+```
+
+Because the handler defines `OAuthFlows`, `SecuritySchemeName` names the inline
+Agent Card scheme. `RequiredScopes` is added to the generated security
+requirement for the skill. `OBOScopes` is not advertised to the client;
+`GetTurnTokenAsync` returns the downstream Graph token after the exchange.
+
+### Scenario 2: One handler defines a scheme and another references it
+
+Use this pattern when handlers accept the same inbound credential but require
+different scopes or use different runtime token settings.
+
+Handler `agent-read` defines the shared scheme. Handler `profile-read` uses the
+same `SecuritySchemeName` without `OAuthFlows`, so it references the scheme
+already contributed by `agent-read`:
+
+```json
+{
+  "AgentApplication": {
+    "UserAuthorization": {
+      "AutoSignin": false,
+      "Handlers": {
+        "agent-read": {
+          "Type": "A2AUserAuthorization",
+          "Settings": {
+            "SecuritySchemeName": "delegated",
+            "OAuthFlows": {
+              "DeviceCode": {
+                "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                "Scopes": {
+                  "api://<agent-app-id>/agent.read": "Read agent data.",
+                  "api://<agent-app-id>/profile.read": "Read profile data."
+                }
+              }
+            },
+            "RequiredScopes": [
+              "api://<agent-app-id>/agent.read"
+            ]
+          }
+        },
+        "profile-read": {
+          "Type": "A2AUserAuthorization",
+          "Settings": {
+            "SecuritySchemeName": "delegated",
+            "RequiredScopes": [
+              "api://<agent-app-id>/profile.read"
+            ],
+            "OBOConnectionName": "ServiceConnection",
+            "OBOScopes": [
+              "User.Read"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Routes can reference either handler:
+
+```csharp
+[A2ASkill(
+    name: "Agent data",
+    tags: "a2a,data",
+    text: "-data",
+    autoSigninHandlers: "agent-read")]
+private Task OnAgentDataAsync(...) { }
+
+[A2ASkill(
+    name: "Profile",
+    tags: "a2a,profile",
+    text: "-profile",
+    autoSigninHandlers: "profile-read")]
+private Task OnProfileAsync(...) { }
+```
+
+The Agent Card contains one `delegated` security scheme. Each generated skill
+requirement contains the scopes from its referenced handler. The handler names
+remain distinct runtime authorization configurations even though both
+requirements point to the same Agent Card scheme.
+
+### Scenario 3: Define the Agent Card scheme catalog separately
+
+Use this pattern when the application centrally manages its Agent Card and
+multiple handlers only need to reference published schemes.
+
+Define the scheme under `AgentApplication:A2A:AgentCard:SecuritySchemes`:
+
+```json
+{
+  "AgentApplication": {
+    "A2A": {
+      "AgentCard": {
+        "SecuritySchemes": {
+          "delegated": {
+            "OAuth2SecurityScheme": {
+              "Flows": {
+                "DeviceCode": {
+                  "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                  "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                  "Scopes": {
+                    "api://<agent-app-id>/agent.read": "Read agent data.",
+                    "api://<agent-app-id>/profile.read": "Read profile data."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "UserAuthorization": {
+      "AutoSignin": false,
+      "Handlers": {
+        "agent-read": {
+          "Type": "A2AUserAuthorization",
+          "Settings": {
+            "SecuritySchemeName": "delegated",
+            "RequiredScopes": [
+              "api://<agent-app-id>/agent.read"
+            ]
+          }
+        },
+        "profile-read": {
+          "Type": "A2AUserAuthorization",
+          "Settings": {
+            "SecuritySchemeName": "delegated",
+            "RequiredScopes": [
+              "api://<agent-app-id>/profile.read"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Neither handler defines `OAuthFlows`; `SecuritySchemeName` references the
+existing Agent Card scheme. Agent Card composition fails if a generated
+requirement references a scheme that the card does not define.
+
+## Authorization setting reference
+
+| Setting | Meaning | When omitted |
+| --- | --- | --- |
+| `SecuritySchemeName` | Identifies the Agent Card scheme used by the handler. With `OAuthFlows`, the handler defines that scheme inline. Without `OAuthFlows`, it references an existing scheme. | A handler with no name contributes no Agent Card security metadata and cannot generate a protected requirement. |
+| `OAuthFlows` | Defines one inline OAuth flow. Device Code and Authorization Code represent delegated authentication; Client Credentials represents application authentication. | `SecuritySchemeName` is treated as a reference to an existing scheme. |
+| `RequiredScopes` | Scopes placed in the security requirement generated for an agent or skill. | The requirement contains an empty scope list. Scopes are not inferred or enforced automatically. |
+| `AuthorizationPolicy` | Optional ASP.NET Core authorization policy name associated with the handler. | Defaults to `null`. The preview records it as metadata but does not evaluate it automatically. |
+| `OBOConnectionName` | Connection used for an OBO exchange. | The default connection selected for the turn is used when an exchange is requested. |
+| `OBOScopes` | Downstream scopes requested during OBO. | No OBO exchange occurs and the validated inbound request token is returned unchanged. |
+
+### `Scopes`, `RequiredScopes`, and `OBOScopes`
+
+These settings describe different stages:
+
+- `OAuthFlows.<flow>.Scopes` is the catalog of scopes available from the
+  authorization server.
+- `RequiredScopes` is the subset placed in the Agent Card requirement for the
+  agent or skill.
+- `OBOScopes` is requested from a downstream service after the request reaches
+  the agent.
+
+Available scopes are not automatically required. Inferring all advertised
+scopes could cause clients to request excessive permissions. The SDK also does
+not automatically enforce the inbound token's `scp` or `roles` claims; enforce
+those requirements in ASP.NET Core authorization or route code.
+
+### Delegated and application tokens
+
+A delegated token represents a signed-in user. It can provide the user identity
+needed by user-scoped state and can be exchanged through OBO for a downstream
+API.
+
+An application token represents a service, workload, or another agent. For
+Microsoft Entra Client Credentials, the acquisition scope is commonly
+`api://<agent-app-id>/.default`, and the resulting token carries application
+permissions in `roles` rather than delegated permissions in `scp`. It does not
+naturally provide a person identity for `ITurnState.User`.
+
+Inbound application authentication is different from an agent using
+`MsalAuth` for an outbound call:
+
+- inbound A2A application token: caller to A2A agent;
+- outbound client credentials: agent to downstream service; and
+- outbound OBO: agent acting for an inbound user to downstream service.
+
+## How clients use skill security
+
+An A2A client can compare a user's request with the skills advertised by known
+Agent Cards. Once it predicts a server and skill, it can inspect that skill's
+security requirements before sending the request.
+
+The sample client uses a lightweight deterministic matcher:
+
+1. exact comparison with advertised skill examples;
+1. weighted term overlap across the skill name, description, tags, and examples;
+1. agent-level plus selected-skill security requirements; and
+1. Device Code or Client Credentials selection from the referenced scheme.
+
+The client sends the original input unchanged. Skill selection is a client-side
+prediction and does not constrain server routing. Tied matches are not guessed,
+and task continuations retain the selection made when the task began.
+
+## Current preview limitations
+
+- In-task authorization through `TASK_STATE_AUTH_REQUIRED` is not implemented.
+- A2A push notifications and protocol extensions are not implemented by the
+  server extension.
+- `Adapter.ContinueConversation`, `Adapter.CreateConversation`,
+  `Adapter.UpdateActivity`, and `Adapter.DeleteActivity` are not implemented for
+  A2A.
+- Message-only interactions are not supported; all current interactions use an
+  A2A task.
+- `ITurnState.User` requires a usable user identity. Application tokens and
+  anonymous requests do not provide one.
+- Multiple A2A agents in one host are not supported; requests are routed to the
+  registered `IAgent`.
+
+## Design history and further reading
+
+- [A2AAgent sample](README.md)
+- [A2AClient sample](../A2AClient/README.md)
+- [Request-token OAuth and OBO design](https://github.com/microsoft/Agents-for-net/issues/981)
+- [Agent Card generation and skill correlation design](https://github.com/microsoft/Agents-for-net/issues/1010)
+- [A2A protocol specification](https://a2a-protocol.org/latest/specification/)

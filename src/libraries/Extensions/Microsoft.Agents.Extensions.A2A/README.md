@@ -12,6 +12,10 @@ Normal agent authoring and application startup require only the root namespace:
 using Microsoft.Agents.Extensions.A2A;
 ```
 
+For setup, Agent Card generation, skills, protocol mapping, and OAuth
+configuration patterns, see the
+[A2A developer guide](../../../samples/A2A/A2AAgent/A2A-DEVELOPER-GUIDE.md).
+
 ## API organization
 
 | Area | Namespace | Use |
