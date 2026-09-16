@@ -12,9 +12,11 @@ using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.A2A;
+using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -23,6 +25,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.IO;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
@@ -55,6 +58,7 @@ public class A2AAgentOAuthRouteTests
         Assert.Equal(GraphHandlerName, handler.Key);
         Assert.Equal("Microsoft.Agents.Extensions.A2A", handler["Assembly"]);
         Assert.Equal(GraphHandlerName, configuration["AgentApplication:UserAuthorization:DefaultHandlerName"]);
+        Assert.Equal("true", handler["Settings:EnforceRequiredScopes"]?.ToLowerInvariant());
         Assert.Equal("ServiceConnection", handler["Settings:OBOConnectionName"]);
         Assert.Equal("User.Read", handler["Settings:OBOScopes:0"]);
 
@@ -172,46 +176,77 @@ public class A2AAgentOAuthRouteTests
     }
 
     [Fact]
-    public async Task GraphRoute_RejectsApplicationIdentity()
+    public void GraphRoute_DoesNotDependOnSampleTokenIdentityHelper()
     {
-        var context = await ExecuteMessageAsync(
-            CreateRecord(
-                CreateAuthorizationHandler(GraphHandlerName, "graph-token"),
-                new Mock<IGraphProfileClient>(MockBehavior.Strict)),
-            "-me",
-            CreateApplicationIdentity());
-
-        using var response = await ReadJsonResponseAsync(context);
-        Assert.Contains("This route requires a delegated user token.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Null(typeof(MyAgent).Assembly.GetType("A2AAgent.A2ATokenIdentity"));
     }
 
     [Fact]
-    public async Task GraphRoute_RejectsUnrelatedDelegatedScope()
+    public async Task GraphRoute_UsesHandlerConfiguredScopeWithoutRouteSpecificClaimCode()
     {
-        var context = await ExecuteMessageAsync(
-            CreateRecord(
-                CreateAuthorizationHandler(GraphHandlerName, "graph-token"),
-                new Mock<IGraphProfileClient>(MockBehavior.Strict)),
-            "-me",
-            CreateDelegatedIdentity("Other.Scope"));
+        string delegatedToken = CreateDelegatedToken("custom_scope");
+        var authorization = new A2AUserAuthorization(
+            GraphHandlerName,
+            Mock.Of<IConnections>(),
+            new A2AUserAuthorizationSettings
+            {
+                EnforceRequiredScopes = true,
+                RequiredScopes = ["api://agent/custom_scope"],
+            });
+        var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
+        graphClient
+            .Setup(client => client.GetMeAsync(
+                delegatedToken,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GraphProfile("Ada Lovelace", "ada@example.com"));
 
-        using var response = await ReadJsonResponseAsync(context);
-        Assert.Contains("This route requires the access_as_user delegated scope.", response.RootElement.GetProperty("error").GetProperty("message").GetString(), StringComparison.Ordinal);
+        DefaultHttpContext context = await ExecuteAuthenticatedMessageAsync(
+            CreateRecord(authorization, graphClient),
+            "-me",
+            delegatedToken);
+
+        AgentTask task = ReadTaskResponse(context);
+        Assert.Contains("Ada Lovelace", task.Status.Message!.Parts[0].Text);
+    }
+
+    [Fact]
+    public async Task GraphRoute_HandlerRejectsMissingConfiguredScopeBeforeCallingGraph()
+    {
+        string delegatedToken = CreateDelegatedToken("other_scope");
+        var authorization = new A2AUserAuthorization(
+            GraphHandlerName,
+            Mock.Of<IConnections>(),
+            new A2AUserAuthorizationSettings
+            {
+                EnforceRequiredScopes = true,
+                RequiredScopes = ["api://agent/custom_scope"],
+            });
+        var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
+
+        DefaultHttpContext context = await ExecuteAuthenticatedMessageAsync(
+            CreateRecord(authorization, graphClient),
+            "-me",
+            delegatedToken);
+
+        Assert.Contains(
+            "custom_scope",
+            ReadResponseText(context),
+            StringComparison.Ordinal);
+        graphClient.VerifyNoOtherCalls();
     }
 
     private static Record CreateRecord(
-        Mock<IUserAuthorization> graph,
+        IUserAuthorization graph,
         Mock<IGraphProfileClient> graphClient)
     {
         var storage = new MemoryStorage();
-        var connections = Mock.Of<IConnections>();
         var options = new AgentApplicationOptions(storage)
         {
             UserAuthorization = new UserAuthorizationOptions(
                 NullLoggerFactory.Instance,
                 storage,
-                connections,
-                graph.Object)
+                Mock.Of<IConnections>(),
+                graph)
             {
                 DefaultHandlerName = GraphHandlerName,
                 AutoSignIn = UserAuthorizationOptions.AutoSignInOff
@@ -222,6 +257,11 @@ public class A2AAgentOAuthRouteTests
             new A2AAdapter(storage, NullLoggerFactory.Instance),
             new MyAgent(options, graphClient.Object));
     }
+
+    private static Record CreateRecord(
+        Mock<IUserAuthorization> graph,
+        Mock<IGraphProfileClient> graphClient)
+        => CreateRecord(graph.Object, graphClient);
 
     private static Mock<IUserAuthorization> CreateAuthorizationHandler(string name, string token)
     {
@@ -277,14 +317,58 @@ public class A2AAgentOAuthRouteTests
         return context;
     }
 
-    private static DefaultHttpContext CreateHttpContext(string text, ClaimsIdentity identity)
+    private static async Task<DefaultHttpContext> ExecuteAuthenticatedMessageAsync(
+        Record record,
+        string text,
+        string token)
+    {
+        ClaimsIdentity identity = new(
+            new JwtSecurityTokenHandler().ReadJwtToken(token).Claims,
+            authenticationType: "Bearer");
+        var context = CreateHttpContext(text, identity, token);
+        var result = await record.Adapter.ProcessJsonRpcAsync(
+            context.Request,
+            context.Response,
+            record.Agent,
+            CancellationToken.None);
+        await result.ExecuteAsync(context);
+        return context;
+    }
+
+    private static DefaultHttpContext CreateHttpContext(
+        string text,
+        ClaimsIdentity identity,
+        string? validatedToken = null)
     {
         var context = new DefaultHttpContext();
-        context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(CreateSendMessageRequest(text))));
+        context.Request.Body = new MemoryStream(
+            Encoding.UTF8.GetBytes(JsonSerializer.Serialize(CreateSendMessageRequest(text))));
         context.Request.Method = HttpMethods.Post;
-        context.Request.Headers.Authorization = "Bearer request-access-token";
         context.User = new ClaimsPrincipal(identity);
         context.Response.Body = new MemoryStream();
+
+        if (validatedToken != null)
+        {
+            var properties = new AuthenticationProperties();
+            properties.StoreTokens(
+            [
+                new AuthenticationToken
+                {
+                    Name = "access_token",
+                    Value = validatedToken,
+                },
+            ]);
+            context.Features.Set<IAuthenticateResultFeature>(
+                new StubAuthenticateResultFeature
+                {
+                    AuthenticateResult = AuthenticateResult.Success(
+                        new AuthenticationTicket(
+                            context.User,
+                            properties,
+                            "Test")),
+                });
+        }
+
         return context;
     }
 
@@ -312,10 +396,10 @@ public class A2AAgentOAuthRouteTests
         return ProtocolJsonSerializer.ToObject<AgentTask>(response.Result!.AsObject().GetAt(0).Value!);
     }
 
-    private static async Task<JsonDocument> ReadJsonResponseAsync(DefaultHttpContext context)
+    private static string ReadResponseText(DefaultHttpContext context)
     {
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        return await JsonDocument.ParseAsync(context.Response.Body);
+        return new StreamReader(context.Response.Body).ReadToEnd();
     }
 
     private static ClaimsIdentity CreateDelegatedIdentity(string scope = "access_as_user")
@@ -330,15 +414,16 @@ public class A2AAgentOAuthRouteTests
         authenticationType: "Bearer");
     }
 
-    private static ClaimsIdentity CreateApplicationIdentity()
+    private static string CreateDelegatedToken(string scope)
     {
-        return new ClaimsIdentity(
-        [
-            new Claim("tid", "tenant-123"),
-            new Claim("sub", "subject-789"),
-            new Claim("idtyp", "app")
-        ],
-        authenticationType: "Bearer");
+        return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            claims: [new Claim("scp", scope)],
+            expires: DateTime.UtcNow.AddMinutes(30)));
+    }
+
+    private sealed class StubAuthenticateResultFeature : IAuthenticateResultFeature
+    {
+        public AuthenticateResult? AuthenticateResult { get; set; }
     }
 
     private sealed record Record(A2AAdapter Adapter, IAgent Agent);

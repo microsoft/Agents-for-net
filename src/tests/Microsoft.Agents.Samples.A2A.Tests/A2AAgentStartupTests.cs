@@ -39,6 +39,8 @@ public class A2AAgentStartupTests
     private const string TestAudience = "22222222-2222-2222-2222-222222222222";
     private const string TestClientId = "33333333-3333-3333-3333-333333333333";
     private const string TestIssuer = "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0";
+    private const string MappedTenantIdClaim = "http://schemas.microsoft.com/identity/claims/tenantid";
+    private const string MappedScopeClaim = "http://schemas.microsoft.com/identity/claims/scope";
 
     [Fact]
     public async Task Development_WithConfiguredTokenValidation_RegistersJwtBearer()
@@ -118,17 +120,17 @@ public class A2AAgentStartupTests
 
         // Documents the mapping the sample must tolerate: short Entra names are renamed on the identity.
         Assert.Null(identity.FindFirst("tid"));
-        Assert.Equal(TestTenantId, identity.FindFirst(A2ATokenIdentity.MappedTenantIdClaim)?.Value);
+        Assert.Equal(TestTenantId, identity.FindFirst(MappedTenantIdClaim)?.Value);
         Assert.Null(identity.FindFirst("scp"));
-        Assert.NotNull(identity.FindFirst(A2ATokenIdentity.MappedScopeClaim));
+        Assert.NotNull(identity.FindFirst(MappedScopeClaim));
     }
 
     [Fact]
-    public async Task DelegatedIdentity_FromJwtBearer_IsAcceptedAndSummarized()
+    public async Task DelegatedIdentity_FromJwtBearer_ContainsMappedDelegatedScope()
     {
         ClaimsIdentity identity = await CreateValidatedIdentityAsync(DelegatedClaims());
 
-        A2ATokenIdentity.RequireDelegated(identity);
+        Assert.Equal("access_as_user", identity.FindFirst(MappedScopeClaim)?.Value);
     }
 
     private static Dictionary<string, object> DelegatedClaims() => new()

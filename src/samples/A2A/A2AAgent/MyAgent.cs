@@ -56,7 +56,6 @@ public partial class MyAgent : AgentApplication
     private async Task OnGraphAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var token = await UserAuthorization.GetTurnTokenAsync(turnContext, GraphHandlerName, cancellationToken).ConfigureAwait(false);
-        A2ATokenIdentity.RequireDelegated(turnContext.Identity);
         var profile = await _graphClient.GetMeAsync(token, cancellationToken).ConfigureAwait(false);
         await CompleteTaskAsync(
             turnContext,
