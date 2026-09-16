@@ -117,6 +117,14 @@ The relevant authorization configuration is:
 }
 ```
 
+In both `OAuthFlows.DeviceCode.Scopes` and `RequiredScopes`, `{{ClientId}}` is
+the application (client) ID of the **A2AAgent's Entra app registration**. It is
+the same app registration where `access_as_user` is defined under **Expose an
+API**, and the same ID used by `TokenValidation:Audiences`. It is not the
+A2AClient's client ID or a Microsoft Graph application ID. Both settings use
+the resulting Agent API scope URI:
+`api://<A2AAgent-client-id>/access_as_user`.
+
 `A2AAgentStartup` enables token validation in Development only after
 `TokenValidation:Audiences` contains real GUIDs. The A2A transport remains
 anonymous; the `-me` route opts into the `graph` handler through
