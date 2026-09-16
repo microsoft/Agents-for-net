@@ -66,8 +66,11 @@ The `-me` skill uses a single `graph` `A2AUserAuthorization` handler. The handle
    `api://<agent-client-id>/access_as_user`.
 1. Add the delegated Microsoft Graph permission `User.Read`.
 1. Grant the consent required by your tenant.
-1. Enable public client flows so the sample client can use Device Code
-   authentication.
+1. Under **Authentication** > **Advanced settings**, set **Allow public client
+   flows** to **Yes** so the sample client can use Device Code authentication.
+   This sets `isFallbackPublicClient` to `true` in the app manifest. If it
+   remains disabled, Entra returns `AADSTS7000218` asking for a
+   `client_assertion` or `client_secret`.
 1. Create the client secret or other credential used by
    `Connections:ServiceConnection` for OBO.
 
