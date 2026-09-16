@@ -41,7 +41,7 @@ public class SlackChannelData
 
     public string Channel => Envelope != null 
         ? Envelope.Get<string>("event.channel") 
-        : Payload?.Get<string>("channel");
+        : (Payload?.Get<string>("channel") ?? Payload?.Get<string>("container.channel_id"));
 
     public string ThreadTs => Envelope != null 
         ? (Envelope.Get<string>("event.thread_ts") ?? Envelope.Get<string>("event.ts")) 

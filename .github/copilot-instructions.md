@@ -54,7 +54,7 @@ public class MyAgent : AgentApplication
 ```csharp
 builder.AddAgent<MyAgent>();
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
-builder.Services.AddAgentAspNetAuthentication(builder.Configuration);
+builder.AddAgentAuthorization(ConfigureAuthentication);
 app.MapAgentApplicationEndpoints(requireAuth: !app.Environment.IsDevelopment());
 ```
 
@@ -132,7 +132,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
 
 ### Authentication
 - MSAL-based auth (`Authentication.Msal`) supports ClientSecret, Federated Credentials, and Managed Identity.
-- `AddAgentAspNetAuthentication` is defined in sample-local `AspNetExtensions.cs` files, not in the hosting library.
+- ASP.NET Core authentication schemes are application-defined; the hosting package only integrates their registration and enforcement.
 - Local dev port: `http://localhost:3978`.
 
 ### Terminology
@@ -143,7 +143,6 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
 
 ### Authentication (appsettings.json)
 - See [Configure authentication in a .NET agent](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/microsoft-authentication-library-configuration-options)
-- See [Configure AspNet JWT authentication](src/samples/A2AAgent/AspNetExtensions.cs)
 - **ClientSecret/Certificate**: Works with dev tunnels for local debugging.
 - **Federated Credentials/Managed Identity**: Requires deployment to App Service or container (cannot use dev tunnel).
 

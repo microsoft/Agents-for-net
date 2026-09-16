@@ -14,6 +14,8 @@ namespace Microsoft.Agents.Builder
     {
         private bool _disposed;
 
+        internal bool HasBeenDisposed => _disposed;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TurnContextStateCollection"/> class.
         /// </summary>
