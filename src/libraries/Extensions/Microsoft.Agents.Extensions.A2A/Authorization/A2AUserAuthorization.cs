@@ -192,6 +192,14 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             return CreateTokenResponse(requestToken);
         }
 
+        if (_settings.EnforceRequiredScopes)
+        {
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AuthorizationDelegatedJwtRequired,
+                null,
+                Name);
+        }
+
         if (turnContext.Identity is CaseSensitiveClaimsIdentity identity)
         {
             return CreateTokenResponse(identity.SecurityToken.UnsafeToString());

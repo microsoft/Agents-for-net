@@ -7,10 +7,12 @@ using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -39,6 +41,39 @@ public class A2AUserAuthorizationTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => authorization.SignInUserAsync(turnContext));
+    }
+
+    [Fact]
+    public async Task SignInUserAsync_WithoutValidatedTokenAndWithIdentitySecurityToken_ReturnsFallbackTokenWhenEnforcementDisabled()
+    {
+        string fallbackToken = CreateScopeToken("agent.read");
+        var turnContext = CreateTurnContext(
+            CreateAuthentication(null),
+            CreateIdentityWithSecurityToken(fallbackToken));
+        var authorization = CreateAuthorization();
+
+        var response = await authorization.SignInUserAsync(turnContext);
+
+        Assert.Equal(fallbackToken, response.Token);
+    }
+
+    [Fact]
+    public async Task SignInUserAsync_WithEnforcementAndIdentitySecurityTokenFallback_Throws()
+    {
+        string fallbackToken = CreateScopeToken("agent.read");
+        var turnContext = CreateTurnContext(
+            CreateAuthentication(null),
+            CreateIdentityWithSecurityToken(fallbackToken));
+        var authorization = CreateAuthorization(new A2AUserAuthorizationSettings
+        {
+            EnforceRequiredScopes = true,
+            RequiredScopes = ["agent.read"],
+        });
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => authorization.SignInUserAsync(turnContext));
+
+        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100021);
     }
 
     [Fact]
@@ -208,13 +243,25 @@ public class A2AUserAuthorizationTests
     private static A2AUserAuthorization CreateAuthorization(A2AUserAuthorizationSettings settings)
         => new("a2a", Mock.Of<IConnections>(), settings);
 
-    private static ITurnContext CreateTurnContext(A2ARequestAuthentication authentication)
+    private static ITurnContext CreateTurnContext(
+        A2ARequestAuthentication authentication,
+        ClaimsIdentity identity = null)
     {
         var context = new Mock<ITurnContext>();
         var services = new TurnContextStateCollection();
         services.Set(authentication);
         context.SetupGet(c => c.Services).Returns(services);
+        context.SetupGet(c => c.Identity).Returns(identity);
         return context.Object;
+    }
+
+    private static ClaimsIdentity CreateIdentityWithSecurityToken(string token)
+    {
+        var identity = new CaseSensitiveClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "caller")], "Test");
+        typeof(CaseSensitiveClaimsIdentity)
+            .GetProperty(nameof(CaseSensitiveClaimsIdentity.SecurityToken), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .SetValue(identity, new JwtSecurityToken(token));
+        return identity;
     }
 
     /// <summary>
