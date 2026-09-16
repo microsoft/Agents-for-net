@@ -148,6 +148,138 @@ public class A2AAgentCardAuthenticationTests
     }
 
     [Fact]
+    public void Select_ForSkill_IgnoresRequirementsFromOtherSkills()
+    {
+        SecurityRequirement delegatedRequirement = CreateRequirement(
+            "delegated",
+            "api://agent/access_as_user");
+        AgentSkill selectedSkill = new()
+        {
+            Id = "profile",
+            SecurityRequirements = [delegatedRequirement],
+        };
+        var card = new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme { Flows = CreateDeviceCodeFlows() },
+                },
+                ["application"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            ClientCredentials = new()
+                            {
+                                TokenUrl = "https://login.example.com/token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "application-only",
+                    SecurityRequirements = [CreateRequirement("application", "api://agent/.default")],
+                },
+                selectedSkill,
+            ],
+        };
+
+        A2AAgentCardAuthentication selection = A2AAgentCardAuthentication.Select(
+            card,
+            selectedSkill,
+            A2AAuthMode.Delegated);
+
+        Assert.Equal("delegated", selection.SecuritySchemeName);
+        Assert.Equal(["api://agent/access_as_user"], selection.Scopes);
+    }
+
+    [Fact]
+    public void Select_ForSkill_CombinesAgentAndSkillScopesForSameScheme()
+    {
+        AgentSkill skill = new()
+        {
+            Id = "profile",
+            SecurityRequirements = [CreateRequirement("delegated", "profile.read")],
+        };
+        var card = new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme { Flows = CreateDeviceCodeFlows() },
+                },
+            },
+            SecurityRequirements = [CreateRequirement("delegated", "agent.read")],
+            Skills = [skill],
+        };
+
+        A2AAgentCardAuthentication selection = A2AAgentCardAuthentication.Select(
+            card,
+            skill,
+            A2AAuthMode.Delegated);
+
+        Assert.Equal(["agent.read", "profile.read"], selection.Scopes);
+    }
+
+    [Fact]
+    public void Select_AutomaticMode_IgnoresUnsupportedCompoundAlternative()
+    {
+        AgentSkill skill = new()
+        {
+            Id = "profile",
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        ["delegated"] = new() { List = ["agent.read"] },
+                        ["application"] = new() { List = ["api://agent/.default"] },
+                    },
+                },
+                CreateRequirement("delegated", "agent.read"),
+            ],
+        };
+        var card = new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme { Flows = CreateDeviceCodeFlows() },
+                },
+                ["application"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            ClientCredentials = new()
+                            {
+                                TokenUrl = "https://login.example.com/token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills = [skill],
+        };
+
+        A2AAgentCardAuthentication? selection = A2AAgentCardAuthentication.Select(card, skill, modeOverride: null);
+
+        Assert.NotNull(selection);
+        Assert.Equal(A2AAuthMode.Delegated, selection.Mode);
+    }
+
+    [Fact]
     public void Select_EmptyAcquisitionScopes_ThrowsAfterRejectingAlternative()
     {
         AgentCard card = CreateCard("delegated", CreateDeviceCodeFlows(), []);
@@ -194,6 +326,15 @@ public class A2AAgentCardAuthenticationTests
             },
         };
     }
+
+    private static SecurityRequirement CreateRequirement(string schemeName, string requiredScope)
+        => new()
+        {
+            Schemes = new Dictionary<string, StringList>
+            {
+                [schemeName] = new() { List = [requiredScope] },
+            },
+        };
 
     private static AgentCard CreateCard(string schemeName, OAuthFlows flows, string requiredScope, bool skillRequirement = false)
     {

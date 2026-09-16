@@ -63,7 +63,7 @@ internal sealed class StartupOptions
 {
     public Uri? AgentUrl { get; init; }
 
-    public A2AAuthMode AuthMode { get; init; } = A2AAuthMode.None;
+    public A2AAuthMode? AuthMode { get; init; }
 
     public bool ShowHistory { get; init; }
 

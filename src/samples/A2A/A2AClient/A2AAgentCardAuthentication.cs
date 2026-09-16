@@ -38,6 +38,60 @@ internal sealed class A2AAgentCardAuthentication
     public IReadOnlyList<string> Scopes { get; }
 
     public static A2AAgentCardAuthentication Select(AgentCard card, A2AAuthMode mode)
+        => Select(card, GetRequirements(card), mode);
+
+    public static A2AAgentCardAuthentication Select(AgentCard card, AgentSkill? skill, A2AAuthMode mode)
+        => Select(card, GetEffectiveRequirements(card, skill), mode);
+
+    public static A2AAgentCardAuthentication? Select(
+        AgentCard card,
+        AgentSkill? skill,
+        A2AAuthMode? modeOverride)
+    {
+        if (modeOverride == A2AAuthMode.None)
+        {
+            return null;
+        }
+
+        if (modeOverride is A2AAuthMode.Delegated or A2AAuthMode.App)
+        {
+            return Select(card, skill, modeOverride.Value);
+        }
+
+        SecurityRequirement[] requirements = GetEffectiveRequirements(card, skill).ToArray();
+        if (requirements.Length == 0)
+        {
+            return null;
+        }
+
+        A2AAuthMode[] advertisedModes = requirements
+            .Where(requirement => requirement.Schemes?.Count == 1)
+            .SelectMany(requirement => requirement.Schemes is null
+                ? Enumerable.Empty<string>()
+                : requirement.Schemes.Keys)
+            .Select(schemeName => card.SecuritySchemes is not null
+                && card.SecuritySchemes.TryGetValue(schemeName, out SecurityScheme? scheme)
+                    ? scheme?.OAuth2SecurityScheme?.Flows
+                    : null)
+            .SelectMany(flows => GetSupportedModes(flows))
+            .Distinct()
+            .ToArray();
+
+        return advertisedModes.Length switch
+        {
+            1 => Select(card, requirements, advertisedModes[0]),
+            > 1 => throw new InvalidOperationException(
+                "The selected Agent Card requirements advertise both delegated and application authentication. "
+                + "Choose one with --auth-mode or :auth."),
+            _ => throw new InvalidOperationException(
+                "The selected Agent Card requirements do not advertise a supported Device Code or Client Credentials OAuth flow."),
+        };
+    }
+
+    private static A2AAgentCardAuthentication Select(
+        AgentCard card,
+        IEnumerable<SecurityRequirement> requirements,
+        A2AAuthMode mode)
     {
         ArgumentNullException.ThrowIfNull(card);
 
@@ -48,7 +102,7 @@ internal sealed class A2AAgentCardAuthentication
         }
 
         var rejectedAlternatives = new List<string>();
-        foreach (SecurityRequirement requirement in GetRequirements(card))
+        foreach (SecurityRequirement requirement in requirements)
         {
             if (requirement.Schemes is null || requirement.Schemes.Count == 0)
             {
@@ -145,6 +199,76 @@ internal sealed class A2AAgentCardAuthentication
             {
                 yield return requirement;
             }
+        }
+    }
+
+    private static IEnumerable<SecurityRequirement> GetEffectiveRequirements(AgentCard card, AgentSkill? skill)
+    {
+        SecurityRequirement[] agentRequirements = (card.SecurityRequirements ?? []).ToArray();
+        SecurityRequirement[] skillRequirements = (skill?.SecurityRequirements ?? []).ToArray();
+
+        if (agentRequirements.Length == 0)
+        {
+            return skillRequirements;
+        }
+
+        if (skillRequirements.Length == 0)
+        {
+            return agentRequirements;
+        }
+
+        return agentRequirements.SelectMany(
+            agentRequirement => skillRequirements,
+            CombineRequirements);
+    }
+
+    private static SecurityRequirement CombineRequirements(
+        SecurityRequirement agentRequirement,
+        SecurityRequirement skillRequirement)
+    {
+        var schemes = new Dictionary<string, StringList>(StringComparer.Ordinal);
+        AddSchemes(schemes, agentRequirement.Schemes);
+        AddSchemes(schemes, skillRequirement.Schemes);
+        return new SecurityRequirement { Schemes = schemes };
+    }
+
+    private static void AddSchemes(
+        Dictionary<string, StringList> destination,
+        IDictionary<string, StringList>? source)
+    {
+        if (source is null)
+        {
+            return;
+        }
+
+        foreach (KeyValuePair<string, StringList> scheme in source)
+        {
+            if (!destination.TryGetValue(scheme.Key, out StringList? scopes))
+            {
+                scopes = new StringList { List = [] };
+                destination.Add(scheme.Key, scopes);
+            }
+
+            foreach (string scope in scheme.Value?.List ?? [])
+            {
+                if (!string.IsNullOrWhiteSpace(scope) && !scopes.List.Contains(scope, StringComparer.Ordinal))
+                {
+                    scopes.List.Add(scope);
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<A2AAuthMode> GetSupportedModes(OAuthFlows? flows)
+    {
+        if (flows?.DeviceCode is not null)
+        {
+            yield return A2AAuthMode.Delegated;
+        }
+
+        if (flows?.ClientCredentials is not null)
+        {
+            yield return A2AAuthMode.App;
         }
     }
 

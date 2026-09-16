@@ -149,6 +149,71 @@ public class A2AConsoleLoopTests
         Assert.DoesNotContain("Cleared the continuing task", output.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task RunAsync_NewTask_SelectsSkillAndConfiguresItsAuthentication()
+    {
+        var client = new Mock<IA2AClient>(MockBehavior.Strict);
+        client.Setup(value => value.SendMessageAsync(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateResponse(TaskState.Completed));
+        var profile = new AgentSkill
+        {
+            Id = "profile",
+            Name = "Microsoft Graph profile",
+            Examples = ["-me"],
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                    },
+                },
+            ],
+        };
+        var card = new AgentCard
+        {
+            Capabilities = new AgentCapabilities { Streaming = false },
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills = [profile],
+        };
+        var session = new A2AAuthenticationSession();
+        A2AAgentCardAuthentication? configuredAuthentication = null;
+        var output = new StringWriter();
+        var console = new A2AConsole(
+            client.Object,
+            card,
+            session,
+            authentication => configuredAuthentication = authentication,
+            new StringReader("-me" + Environment.NewLine + Environment.NewLine + ":q" + Environment.NewLine),
+            output,
+            showHistory: false,
+            usePushNotifications: false,
+            pushNotificationReceiver: new Uri("http://localhost:5000"));
+
+        await console.RunAsync(CancellationToken.None);
+
+        Assert.Equal(A2AAuthMode.Delegated, session.Mode);
+        Assert.Equal("delegated", configuredAuthentication!.SecuritySchemeName);
+        Assert.Contains("Selected skill: Microsoft Graph profile (profile)", output.ToString(), StringComparison.Ordinal);
+    }
+
     private static SendMessageResponse CreateResponse(TaskState state) => new()
     {
         Task = new AgentTask

@@ -31,6 +31,14 @@ public class A2AClientOptionsTests
     }
 
     [Fact]
+    public void ParseStartupOptions_WithoutAuthMode_LeavesAutomaticSelectionEnabled()
+    {
+        StartupOptions options = Program.ParseStartupOptions([]);
+
+        Assert.Null(options.AuthMode);
+    }
+
+    [Fact]
     public void FromConfiguration_MissingAgentUrl_NamesMissingKey()
     {
         IConfiguration configuration = new ConfigurationBuilder().Build();

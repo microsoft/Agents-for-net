@@ -27,6 +27,19 @@ public class A2AConsoleTests
         Assert.Equal((A2AAuthMode)expectedValue, session.Mode);
     }
 
+    [Fact]
+    public void TryHandleCommand_AuthAuto_ClearsModeOverride()
+    {
+        var session = new A2AAuthenticationSession();
+        session.SetMode(A2AAuthMode.Delegated);
+        var console = CreateConsole(session);
+
+        bool handled = console.TryHandleCommand(":auth auto");
+
+        Assert.True(handled);
+        Assert.Null(session.ModeOverride);
+    }
+
     [Theory]
     [InlineData(":q")]
     [InlineData("quit")]

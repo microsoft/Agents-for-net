@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
@@ -22,6 +23,7 @@ internal sealed class A2AConsole
     private readonly IA2AClient _client;
     private readonly AgentCard _agentCard;
     private readonly A2AAuthenticationSession _authenticationSession;
+    private readonly A2ARequestPlanner? _requestPlanner;
     private readonly TextReader _input;
     private readonly TextWriter _output;
     private readonly bool _usePushNotifications;
@@ -43,6 +45,31 @@ internal sealed class A2AConsole
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _agentCard = agentCard ?? throw new ArgumentNullException(nameof(agentCard));
         _authenticationSession = authenticationSession ?? throw new ArgumentNullException(nameof(authenticationSession));
+        _input = input ?? throw new ArgumentNullException(nameof(input));
+        _output = output ?? throw new ArgumentNullException(nameof(output));
+        _usePushNotifications = usePushNotifications;
+        _pushNotificationReceiver = pushNotificationReceiver ?? throw new ArgumentNullException(nameof(pushNotificationReceiver));
+        ShowHistory = showHistory;
+    }
+
+    public A2AConsole(
+        IA2AClient client,
+        AgentCard agentCard,
+        A2AAuthenticationSession authenticationSession,
+        Action<A2AAgentCardAuthentication> configureAuthentication,
+        TextReader input,
+        TextWriter output,
+        bool showHistory,
+        bool usePushNotifications,
+        Uri pushNotificationReceiver)
+    {
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+        _agentCard = agentCard ?? throw new ArgumentNullException(nameof(agentCard));
+        _authenticationSession = authenticationSession ?? throw new ArgumentNullException(nameof(authenticationSession));
+        _requestPlanner = new A2ARequestPlanner(
+            agentCard,
+            authenticationSession,
+            configureAuthentication ?? throw new ArgumentNullException(nameof(configureAuthentication)));
         _input = input ?? throw new ArgumentNullException(nameof(input));
         _output = output ?? throw new ArgumentNullException(nameof(output));
         _usePushNotifications = usePushNotifications;
@@ -89,6 +116,23 @@ internal sealed class A2AConsole
 
             try
             {
+                if (_taskId is null && _requestPlanner is not null)
+                {
+                    A2AAgentCardSkillSelection selection = _requestPlanner.Plan(prompt);
+                    if (selection.IsAmbiguous)
+                    {
+                        _output.WriteLine(
+                            $"Multiple skills match this request: {string.Join(", ", selection.AmbiguousSkills.Select(DescribeSkill))}. "
+                            + "Use a more specific request.");
+                        continue;
+                    }
+
+                    if (selection.Skill is not null)
+                    {
+                        _output.WriteLine($"Selected skill: {DescribeSkill(selection.Skill)}");
+                    }
+                }
+
                 SendMessageRequest request = await CreateRequestAsync(prompt, cancellationToken).ConfigureAwait(false);
                 AgentTask? task = _useStreaming
                     ? await SendStreamingAsync(request, cancellationToken).ConfigureAwait(false)
@@ -117,6 +161,9 @@ internal sealed class A2AConsole
 
         return 0;
     }
+
+    private static string DescribeSkill(AgentSkill skill)
+        => $"{skill.Name ?? skill.Id} ({skill.Id})";
 
     /// <summary>
     /// Identifies per-request failures the console can report and continue from. Cancellation requested
@@ -158,28 +205,36 @@ internal sealed class A2AConsole
         if (command.StartsWith(":auth", StringComparison.OrdinalIgnoreCase))
         {
             string modeName = command[":auth".Length..].Trim();
-            if (Enum.TryParse(modeName, ignoreCase: true, out A2AAuthMode mode)
+            bool modeChanged;
+            if (string.Equals(modeName, "auto", StringComparison.OrdinalIgnoreCase))
+            {
+                modeChanged = _authenticationSession.ModeOverride is not null;
+                _authenticationSession.ClearModeOverride();
+                _output.WriteLine("Authentication mode: auto");
+            }
+            else if (Enum.TryParse(modeName, ignoreCase: true, out A2AAuthMode mode)
                 && Enum.IsDefined(mode))
             {
-                bool modeChanged = mode != _authenticationSession.Mode;
+                modeChanged = _authenticationSession.Mode != mode;
                 _authenticationSession.SetMode(mode);
                 _output.WriteLine($"Authentication mode: {mode.ToString().ToLowerInvariant()}");
-
-                if (modeChanged && _taskId is not null)
-                {
-                    // The pending task belongs to the previous credential. Continuing it under another
-                    // principal would send that principal's input into the earlier caller's task.
-                    ClearContinuation();
-                    _output.WriteLine("Cleared the continuing task because the authentication mode changed.");
-                }
-                else if (modeChanged)
-                {
-                    ClearContinuation();
-                }
             }
             else
             {
-                _output.WriteLine("Usage: :auth none|delegated|app");
+                _output.WriteLine("Usage: :auth auto|none|delegated|app");
+                return true;
+            }
+
+            if (modeChanged && _taskId is not null)
+            {
+                // The pending task belongs to the previous credential. Continuing it under another
+                // principal would send that principal's input into the earlier caller's task.
+                ClearContinuation();
+                _output.WriteLine("Cleared the continuing task because the authentication mode changed.");
+            }
+            else if (modeChanged)
+            {
+                ClearContinuation();
             }
 
             return true;

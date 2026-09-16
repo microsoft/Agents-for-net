@@ -29,7 +29,7 @@ public partial class MyAgent : AgentApplication
         _graphClient = graphClient;
     }
 
-    [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response", text: "-stream")]
+    [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response", examples: "-stream", text: "-stream")]
     private async Task OnStreamAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         turnContext.StreamingResponse.EnableGeneratedByAILabel = true;
@@ -52,7 +52,7 @@ public partial class MyAgent : AgentApplication
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
     }
 
-    [A2ASkill(name: "Microsoft Graph profile", description: "Reads the delegated caller profile from Microsoft Graph.", tags: "a2a, sample, authentication, graph", text: "-me", autoSigninHandlers: GraphHandlerName)]
+    [A2ASkill(name: "Microsoft Graph profile", description: "Reads the delegated caller profile from Microsoft Graph.", tags: "a2a, sample, authentication, graph", examples: "-me", text: "-me", autoSigninHandlers: GraphHandlerName)]
     private async Task OnGraphAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var token = await UserAuthorization.GetTurnTokenAsync(turnContext, GraphHandlerName, cancellationToken).ConfigureAwait(false);
@@ -65,7 +65,7 @@ public partial class MyAgent : AgentApplication
     }
 
     // Received an A2A Message
-    [A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo")]
+    [A2ASkill(name: "Echo", description: "Echos messages back", tags: "a2a, sample, echo", examples: "Echo this message")]
     private async Task OnMessageAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // ConversationState is associated with the A2A Task.
@@ -110,7 +110,7 @@ public partial class MyAgent : AgentApplication
         return Task.CompletedTask;
     }
 
-    [A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn", text: "-multi")]
+    [A2ASkill(name: "MultiTurn", description: "Simulate a multi-turn conversation.  Send -multi to start, end to stop", tags: "a2a, sample, multi-turn", examples: "-multi", text: "-multi")]
     private async Task OnMultiTurnAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var turnCount = turnState.Conversation.GetValue<int>(MultiTurnCountKey) + 1;

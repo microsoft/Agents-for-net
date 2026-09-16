@@ -92,6 +92,8 @@ public class A2AAgentOAuthRouteTests
     private static void AssertSkillRequirement(AgentCard card, string skillId, string schemeName, string scope)
     {
         AgentSkill skill = Assert.Single(card.Skills, candidate => candidate.Id == skillId);
+        Assert.NotNull(skill.Examples);
+        Assert.Contains("-me", skill.Examples);
         Assert.NotNull(skill.SecurityRequirements);
         SecurityRequirement requirement = Assert.Single(skill.SecurityRequirements);
         Assert.NotNull(requirement.Schemes);

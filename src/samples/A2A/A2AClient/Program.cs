@@ -53,14 +53,17 @@ internal sealed class Program
 
             var resolver = new A2ACardResolver(options.AgentUrl, httpClient);
             AgentCard card = await resolver.GetAgentCardAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-            msalTokenClient.Configure(card);
-            authenticationSession.SetMode(startupOptions.AuthMode);
+            if (startupOptions.AuthMode is A2AAuthMode authMode)
+            {
+                authenticationSession.SetMode(authMode);
+            }
             IA2AClient client = CreateClient(card, httpClient, options.AgentUrl);
 
             var console = new A2AConsole(
                 client,
                 card,
                 authenticationSession,
+                msalTokenClient.Configure,
                 Console.In,
                 Console.Out,
                 options.ShowHistory,
@@ -91,7 +94,7 @@ internal sealed class Program
 
         Uri? agentUrl = null;
         Uri? pushNotificationReceiver = null;
-        A2AAuthMode authMode = A2AAuthMode.None;
+        A2AAuthMode? authMode = null;
         bool showHistory = false;
         bool usePushNotifications = false;
         bool showHelp = false;
@@ -124,12 +127,15 @@ internal sealed class Program
             else if (string.Equals(argument, "--auth-mode", StringComparison.OrdinalIgnoreCase))
             {
                 string mode = ReadValue(args, ref index, "--auth-mode");
-                if (!Enum.TryParse(mode, ignoreCase: true, out authMode) || !Enum.IsDefined(authMode))
+                if (!Enum.TryParse(mode, ignoreCase: true, out A2AAuthMode parsedMode)
+                    || !Enum.IsDefined(parsedMode))
                 {
                     throw new ArgumentException(
                         $"Unsupported auth mode '{mode}'. Expected none, delegated, or app.",
                         nameof(args));
                 }
+
+                authMode = parsedMode;
             }
             else
             {

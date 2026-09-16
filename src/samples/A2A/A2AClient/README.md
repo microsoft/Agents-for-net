@@ -2,7 +2,9 @@
 
 `A2AClient` is an interactive console client for an A2A agent. It resolves the
 public Agent Card anonymously, selects a JSON-RPC or HTTP+JSON interface, and
-uses the same `HttpClient` for task operations in the selected authentication mode.
+uses the same `HttpClient` for task operations. Before starting a task, it uses
+the advertised skill metadata to predict the intended skill and select that skill's
+authentication requirements.
 
 The Agent Card is data returned by the agent, so its advertised interface URLs are
 not trusted blindly. The client only uses an interface on the configured agent
@@ -31,7 +33,8 @@ The current startup options are:
 
 While the client is running, use these interactive commands:
 
-- `:auth none|delegated|app` switches the authentication mode for future requests.
+- `:auth auto|none|delegated|app` switches the authentication mode for future requests.
+  `auto` restores Agent Card-driven selection.
   Changing the mode also drops any task the agent is waiting on, so one caller's
   continuing task is never resumed with another caller's credential.
 - `:history on|off` turns task history display on or off.
@@ -58,12 +61,20 @@ the prompt instead of ending the session. Ctrl+C still exits.
 }
 ```
 
-The client selects and configures the Device Code flow lazily on the first request in
-`:auth delegated` mode, or the Client Credentials flow on the first request in `:auth app` mode.
-Cards can advertise neither flow, either flow, or both. Startup and `:auth none` do not require
-OAuth metadata or local authentication values. Startup `--auth-mode delegated|app` also resolves
-the public card anonymously before attempting acquisition on the first request in that mode.
-An unavailable or invalid flow is reported only when a token is requested for it.
+When `--auth-mode` is omitted, the client predicts a skill for each new task and selects
+authentication from the Agent Card requirements for that skill. It first compares the input
+with advertised skill examples, then uses a deterministic term score over the skill name,
+description, tags, and examples. This is a lightweight sample heuristic, not an AI orchestrator,
+and it does not instruct or constrain the server's internal routing.
+
+If no skill matches, only agent-level requirements apply. If multiple skills tie, the client
+reports the candidates and asks for a more specific request. A task continuation keeps the skill
+and authentication selected when that task began.
+
+The client configures Device Code or Client Credentials acquisition lazily after selecting the
+effective requirements. If those requirements advertise both supported token types, use
+`--auth-mode` or `:auth` to choose one. `--auth-mode none|delegated|app` is an explicit testing
+override; `:auth auto` returns to Agent Card-driven selection. Discovery is always anonymous.
 
 The selected card security requirement provides
 the Agent API scopes, while the selected OAuth scheme provides the token endpoint and the device
@@ -106,8 +117,9 @@ Use this flow for the sample agent's `-me` route.
 1. Grant consent if your tenant requires it.
 1. Set `Authentication:PublicClientId` to that registration's client ID (the Agent API client ID when testing `-me`).
 1. Set `Authentication:TenantId` to the tenant ID.
-1. Start the client, then run `:auth delegated`.
-1. Send `-me` to validate delegated on-behalf-of exchange to Microsoft Graph `User.Read`.
+1. Start the client without `--auth-mode`.
+1. Send `-me`. The client matches the advertised `-me` example, selects the profile skill's
+   delegated Device Code requirement, and validates OBO to Microsoft Graph `User.Read`.
 
 `-me` requires a user-delegated token for the Agent API. Do not acquire a Microsoft Graph token in the client and send it directly to the agent; the agent performs the OBO exchange itself.
 
@@ -128,7 +140,8 @@ The client can also test an agent that advertises a Client Credentials flow. The
 
 1. Set `Authentication:ConfidentialClientId` to the confidential client's client ID.
 1. Set `Authentication:TenantId` to the tenant ID.
-1. Start the client, then run `:auth app`.
+1. Start the client. If the selected skill advertises only Client Credentials, automatic mode
+   selects it; otherwise run `:auth app`.
 1. Send a request for a skill whose Agent Card requirement references the Client Credentials scheme.
 
 Do not commit the secret. The secret belongs in user secrets or another local secret store, not in `appsettings.json`.
