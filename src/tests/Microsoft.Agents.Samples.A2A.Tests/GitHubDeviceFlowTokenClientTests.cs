@@ -44,9 +44,10 @@ public class GitHubDeviceFlowTokenClientTests
                 return Task.CompletedTask;
             });
 
-        string token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo"), CancellationToken.None);
+        GitHubDeviceFlowAccessToken token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo"), CancellationToken.None);
 
-        Assert.Equal("github-token", token);
+        Assert.Equal("github-token", token.AccessToken);
+        Assert.Null(token.ExpiresIn);
         Assert.Equal([TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5)], delays);
         Assert.Equal(
             ["/login/device/code", "delay:5", "/login/oauth/access_token", "delay:5", "/login/oauth/access_token"],
@@ -73,10 +74,31 @@ public class GitHubDeviceFlowTokenClientTests
                 return Task.CompletedTask;
             });
 
-        string token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo"), CancellationToken.None);
+        GitHubDeviceFlowAccessToken token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo"), CancellationToken.None);
 
-        Assert.Equal("github-token", token);
+        Assert.Equal("github-token", token.AccessToken);
+        Assert.Null(token.ExpiresIn);
         Assert.Equal([TimeSpan.FromSeconds(5)], delays);
+    }
+
+    [Fact]
+    public async Task AcquireTokenAsync_TokenExpiration_IsReturnedToTheCache()
+    {
+        using var client = new HttpClient(new SequenceJsonHandler(
+            """{ "device_code": "device-code", "user_code": "ABCD-EFGH", "verification_uri": "https://github.com/login/device", "expires_in": 900 }""",
+            [""" { "access_token": "github-token", "token_type": "bearer", "scope": "repo", "expires_in": 28800 } """]));
+        var sut = new GitHubDeviceFlowTokenClient(
+            client,
+            new A2AClientAuthenticationOptions { GitHubClientId = "Iv1.1234567890abcdef" },
+            TextWriter.Null,
+            static (_, _) => Task.CompletedTask);
+
+        GitHubDeviceFlowAccessToken token = await sut.AcquireTokenAsync(
+            CreateGitHubAuthentication("repo"),
+            CancellationToken.None);
+
+        Assert.Equal("github-token", token.AccessToken);
+        Assert.Equal(TimeSpan.FromHours(8), token.ExpiresIn);
     }
 
     [Theory]
@@ -119,9 +141,10 @@ public class GitHubDeviceFlowTokenClientTests
             TextWriter.Null,
             static (_, _) => Task.CompletedTask);
 
-        string token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo", "read:org"), CancellationToken.None);
+        GitHubDeviceFlowAccessToken token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo", "read:org"), CancellationToken.None);
 
-        Assert.Equal("github-token", token);
+        Assert.Equal("github-token", token.AccessToken);
+        Assert.Null(token.ExpiresIn);
         Assert.Collection(
             handler.Requests,
             deviceRequest =>
@@ -168,9 +191,10 @@ public class GitHubDeviceFlowTokenClientTests
                 return Task.CompletedTask;
             });
 
-        string token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo"), CancellationToken.None);
+        GitHubDeviceFlowAccessToken token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo"), CancellationToken.None);
 
-        Assert.Equal("github-token", token);
+        Assert.Equal("github-token", token.AccessToken);
+        Assert.Null(token.ExpiresIn);
         Assert.Equal(
             [TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10)],
             delays);
@@ -200,9 +224,10 @@ public class GitHubDeviceFlowTokenClientTests
                 return Task.CompletedTask;
             });
 
-        string token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo"), CancellationToken.None);
+        GitHubDeviceFlowAccessToken token = await sut.AcquireTokenAsync(CreateGitHubAuthentication("repo"), CancellationToken.None);
 
-        Assert.Equal("github-token", token);
+        Assert.Equal("github-token", token.AccessToken);
+        Assert.Null(token.ExpiresIn);
         Assert.Equal(
             [TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5)],
             delays);

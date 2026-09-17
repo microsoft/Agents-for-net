@@ -51,18 +51,74 @@ public class A2AAccessTokenProviderTests
     }
 
     [Fact]
-    public async Task GetAccessTokenAsync_GitHubSelection_CachesTokenBySecurityScheme()
+    public async Task GetAccessTokenAsync_DelegatedSelection_ReentersMsalAndReturnsRenewedToken()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(A2AAuthMode.Delegated);
+        var msal = new Mock<IMsalTokenClient>(MockBehavior.Strict);
+        var github = new Mock<IGitHubDeviceFlowTokenClient>(MockBehavior.Strict);
+        msal.SetupSequence(client => client.AcquireDelegatedTokenAsync(
+                authentication,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("initial-token")
+            .ReturnsAsync("renewed-token");
+        var provider = new A2AAccessTokenProvider(msal.Object, github.Object);
+
+        Assert.Equal("initial-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        Assert.Equal("renewed-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_GitHubSelection_ReusesNonExpiringToken()
     {
         var msal = new Mock<IMsalTokenClient>(MockBehavior.Strict);
         var github = new Mock<IGitHubDeviceFlowTokenClient>(MockBehavior.Strict);
         A2AAgentCardAuthentication auth = CreateGitHubAuthentication();
-        github.Setup(client => client.AcquireTokenAsync(auth, It.IsAny<CancellationToken>())).ReturnsAsync("github-token");
-        var provider = new A2AAccessTokenProvider(msal.Object, github.Object);
+        github.Setup(client => client.AcquireTokenAsync(auth, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GitHubDeviceFlowAccessToken("github-token", ExpiresIn: null));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(msal.Object, github.Object, timeProvider);
 
         Assert.Equal("github-token", await provider.GetAccessTokenAsync(auth, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromDays(365));
         Assert.Equal("github-token", await provider.GetAccessTokenAsync(auth, CancellationToken.None));
 
         github.Verify(client => client.AcquireTokenAsync(auth, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_GitHubSelection_ReusesUnexpiredToken()
+    {
+        var msal = new Mock<IMsalTokenClient>(MockBehavior.Strict);
+        var github = new Mock<IGitHubDeviceFlowTokenClient>(MockBehavior.Strict);
+        A2AAgentCardAuthentication auth = CreateGitHubAuthentication();
+        github.Setup(client => client.AcquireTokenAsync(auth, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GitHubDeviceFlowAccessToken("github-token", TimeSpan.FromMinutes(10)));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(msal.Object, github.Object, timeProvider);
+
+        Assert.Equal("github-token", await provider.GetAccessTokenAsync(auth, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+        Assert.Equal("github-token", await provider.GetAccessTokenAsync(auth, CancellationToken.None));
+
+        github.Verify(client => client.AcquireTokenAsync(auth, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_GitHubSelection_ReacquiresExpiredToken()
+    {
+        var msal = new Mock<IMsalTokenClient>(MockBehavior.Strict);
+        var github = new Mock<IGitHubDeviceFlowTokenClient>(MockBehavior.Strict);
+        A2AAgentCardAuthentication auth = CreateGitHubAuthentication();
+        github.SetupSequence(client => client.AcquireTokenAsync(auth, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GitHubDeviceFlowAccessToken("initial-token", TimeSpan.FromMinutes(5)))
+            .ReturnsAsync(new GitHubDeviceFlowAccessToken("renewed-token", ExpiresIn: null));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(msal.Object, github.Object, timeProvider);
+
+        Assert.Equal("initial-token", await provider.GetAccessTokenAsync(auth, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+
+        Assert.Equal("renewed-token", await provider.GetAccessTokenAsync(auth, CancellationToken.None));
     }
 
     private static A2AAgentCardAuthentication CreateAuthentication(A2AAuthMode mode)
@@ -189,6 +245,18 @@ public class A2AAccessTokenProviderTests
         AgentCard card = CreateTwoProviderCard();
         AgentSkill skill = card.Skills![1];
         return A2AAgentCardAuthentication.Select(card, skill, A2AAuthMode.Delegated)!;
+    }
+
+    private sealed class TestTimeProvider : TimeProvider
+    {
+        private DateTimeOffset _utcNow = DateTimeOffset.UnixEpoch;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void Advance(TimeSpan duration)
+        {
+            _utcNow += duration;
+        }
     }
 }
 

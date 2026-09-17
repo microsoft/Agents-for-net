@@ -13,12 +13,13 @@ using Microsoft.Extensions.Hosting;
 using System;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+bool tokenValidationEnabled = ShouldEnableTokenValidation(builder.Configuration, builder.Environment);
 
 builder.AddAgentDefaults()
     .AddAgent<MyAgent>()
     .AddAgentAuthorization(
-        ConfigureAuthentication,
-        forceEnable: ShouldEnableTokenValidation(builder.Configuration, builder.Environment));
+        Program.ConfigureAuthentication,
+        forceEnable: tokenValidationEnabled);
 
 builder.Services.AddHttpClient<IGraphProfileClient, GraphProfileClient>(client =>
 {
@@ -32,32 +33,28 @@ builder.Services.AddSingleton<IStorage, MemoryStorage>();
 WebApplication app = builder.Build();
 
 app.UseAuthentication();
+if (tokenValidationEnabled)
+{
+    app.Use(async (context, next) =>
+    {
+        string authorizationHeader = context.Request.Headers.Authorization.ToString();
+        if (IsBearerHeader(authorizationHeader)
+            && context.User.Identity?.IsAuthenticated != true)
+        {
+            await context.ChallengeAsync().ConfigureAwait(false);
+            return;
+        }
+
+        await next(context).ConfigureAwait(false);
+    });
+}
+
 app.UseAuthorization();
 app.UseAgents();
 app.MapDefaultAgentEndpoints();
 app.MapA2AApplicationEndpoints(requireAuth: false);
 
 app.Run();
-
-static void ConfigureAuthentication(IHostApplicationBuilder builder)
-{
-    builder.AddAgentAspNetAuthentication(A2AAgentAuthenticationDefaults.TokenValidationSectionName);
-    builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
-        })
-        .AddPolicyScheme(
-            A2AAgentAuthenticationDefaults.PolicyScheme,
-            displayName: null,
-            options =>
-            {
-                options.ForwardDefaultSelector = context =>
-                    BearerTokenSchemeSelector.Select(context.Request.Headers.Authorization);
-            })
-        .AddScheme<AuthenticationSchemeOptions, GitHubAuthenticationHandler>(
-            A2AAgentAuthenticationDefaults.GitHubScheme,
-            _ => { });
-}
 
 static bool ShouldEnableTokenValidation(IConfiguration configuration, IHostEnvironment environment) =>
     !environment.IsDevelopment() || IsTokenValidationConfigured(configuration);
@@ -95,4 +92,37 @@ static bool IsTokenValidationConfigured(IConfiguration configuration)
     }
 
     return hasAudience;
+}
+
+static bool IsBearerHeader(string authorizationHeader)
+{
+    const string BearerScheme = "Bearer";
+    return authorizationHeader.StartsWith(BearerScheme, StringComparison.OrdinalIgnoreCase)
+        && (authorizationHeader.Length == BearerScheme.Length
+            || char.IsWhiteSpace(authorizationHeader[BearerScheme.Length]));
+}
+
+internal partial class Program
+{
+    internal static void ConfigureAuthentication(IHostApplicationBuilder builder)
+    {
+        builder.AddAgentAspNetAuthentication(A2AAgentAuthenticationDefaults.TokenValidationSectionName);
+        builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
+                options.DefaultAuthenticateScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
+                options.DefaultChallengeScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
+            })
+            .AddPolicyScheme(
+                A2AAgentAuthenticationDefaults.PolicyScheme,
+                displayName: null,
+                options =>
+                {
+                    options.ForwardDefaultSelector = context =>
+                        BearerTokenSchemeSelector.Select(context.Request.Headers.Authorization);
+                })
+            .AddScheme<AuthenticationSchemeOptions, GitHubAuthenticationHandler>(
+                A2AAgentAuthenticationDefaults.GitHubScheme,
+                _ => { });
+    }
 }

@@ -33,7 +33,9 @@ internal sealed class GitHubDeviceFlowTokenClient : IGitHubDeviceFlowTokenClient
         _delayAsync = delayAsync ?? Task.Delay;
     }
 
-    public async Task<string> AcquireTokenAsync(A2AAgentCardAuthentication authentication, CancellationToken cancellationToken)
+    public async Task<GitHubDeviceFlowAccessToken> AcquireTokenAsync(
+        A2AAgentCardAuthentication authentication,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(authentication);
         ValidateRequiredConfiguration();
@@ -73,7 +75,10 @@ internal sealed class GitHubDeviceFlowTokenClient : IGitHubDeviceFlowTokenClient
 
             if (!string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
             {
-                return tokenResponse.AccessToken;
+                ValidateOptionalPositiveNumber(tokenResponse.ExpiresIn, "expires_in");
+                return new GitHubDeviceFlowAccessToken(
+                    tokenResponse.AccessToken,
+                    tokenResponse.ExpiresIn is int expiresIn ? TimeSpan.FromSeconds(expiresIn) : null);
             }
 
             string? error = string.IsNullOrWhiteSpace(tokenResponse.Error) ? null : tokenResponse.Error;

@@ -8,6 +8,7 @@ using Microsoft.Agents.Extensions.A2A;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -96,7 +97,7 @@ public class A2AAgentProgramTests
     }
 
     [Fact]
-    public async Task Development_GuidTenantAndAllGuidAudiences_RegisterJwtBearer()
+    public async Task Development_GuidTenantAndAllGuidAudiences_RejectMalformedJwtShapedBearer()
     {
         await using var host = await A2AAgentProcessHost.StartAsync(
             CreateProcessEnvironment(
@@ -108,11 +109,11 @@ public class A2AAgentProgramTests
         using var client = new HttpClient { BaseAddress = host.BaseAddress };
         using HttpResponseMessage response = await PostA2ARequestWithJwtShapedBearerAsync(client);
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task Production_GuidTenantAndAudience_RegisterJwtBearer()
+    public async Task Production_GuidTenantAndAudience_RejectMalformedJwtShapedBearer()
     {
         await using var host = await A2AAgentProcessHost.StartAsync(
             CreateProcessEnvironment(
@@ -123,7 +124,7 @@ public class A2AAgentProgramTests
         using var client = new HttpClient { BaseAddress = host.BaseAddress };
         using HttpResponseMessage response = await PostA2ARequestWithJwtShapedBearerAsync(client);
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -214,6 +215,42 @@ public class A2AAgentProgramTests
         Assert.Equal(A2AAgentAuthenticationDefaults.GitHubScheme, result.Ticket!.AuthenticationScheme);
         Assert.Equal(0, harness.JwtAuthenticateCount);
         Assert.Equal(1, harness.GitHubValidationCount);
+    }
+
+    [Fact]
+    public async Task ConfigureAuthentication_DefaultAuthenticatePath_UsesMixedPolicyForOpaqueBearer()
+    {
+        var gitHubClients = new CountingGitHubClientFactory();
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+        {
+            DisableDefaults = true,
+            EnvironmentName = Environments.Production,
+        });
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["TokenValidation:TenantId"] = TestTenantId,
+            ["TokenValidation:Audiences:0"] = TestAudience,
+        });
+        builder.Services.AddLogging();
+        builder.Services.AddSingleton<IGitHubClientFactory>(gitHubClients);
+        A2AAgentSample::Program.ConfigureAuthentication(builder);
+        await using ServiceProvider services = builder.Services.BuildServiceProvider();
+        AuthenticationOptions authenticationOptions = services
+            .GetRequiredService<IOptions<AuthenticationOptions>>()
+            .Value;
+        var context = new DefaultHttpContext { RequestServices = services };
+        context.Request.Headers.Authorization = "Bearer opaque-github-token";
+
+        AuthenticateResult result = await services
+            .GetRequiredService<IAuthenticationService>()
+            .AuthenticateAsync(context, scheme: null);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(A2AAgentAuthenticationDefaults.GitHubScheme, result.Ticket!.AuthenticationScheme);
+        Assert.Equal(1, gitHubClients.UserCurrentCount);
+        Assert.Equal(A2AAgentAuthenticationDefaults.PolicyScheme, authenticationOptions.DefaultScheme);
+        Assert.Equal(A2AAgentAuthenticationDefaults.PolicyScheme, authenticationOptions.DefaultAuthenticateScheme);
+        Assert.Equal(A2AAgentAuthenticationDefaults.PolicyScheme, authenticationOptions.DefaultChallengeScheme);
     }
 
     [Fact]

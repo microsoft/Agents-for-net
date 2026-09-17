@@ -62,6 +62,8 @@ A selected requirement must advertise a supported OAuth flow with absolute HTTPS
 
 The selected card security requirement provides the Agent API acquisition scopes, while the selected OAuth scheme provides the token endpoint and device authorization endpoint.
 
+Entra acquisition re-enters MSAL for every protected request so MSAL can use its account cache and silently renew tokens when needed. GitHub tokens are cached separately by Agent Card security scheme: a token with `expires_in` is reused only until one minute before expiration, while a token whose response omits `expires_in` is treated as non-expiring and retained.
+
 ## Provider-specific delegated setup
 
 ### `-me`

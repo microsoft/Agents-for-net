@@ -31,6 +31,24 @@ public static class AspNetExtensions
             || AuthenticationConstants.ChinaBotFrameworkTokenIssuer.Equals(issuer, StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool TryReadIssuer(string encodedToken, out string issuer)
+    {
+        try
+        {
+            issuer = new JsonWebToken(encodedToken).Issuer;
+            return true;
+        }
+        catch (SecurityTokenException)
+        {
+        }
+        catch (ArgumentException)
+        {
+        }
+
+        issuer = string.Empty;
+        return false;
+    }
+
     /// <summary>
     /// Adds JWT bearer token validation for Azure Bot Service and agent-to-agent requests.
     /// This overload is designed for use with <c>AddAgentAuthorization</c>.
@@ -232,9 +250,12 @@ public static class AspNetExtensions
                         return Task.CompletedTask;
                     }
 
-                    // Use JsonWebToken for lightweight issuer extraction without full token parsing
-                    JsonWebToken token = new(parts[1]);
-                    string issuer = token.Issuer;
+                    // Use JsonWebToken for lightweight issuer extraction without full token validation.
+                    if (!TryReadIssuer(parts[1], out string issuer))
+                    {
+                        context.Options.TokenValidationParameters.ConfigurationManager ??= options.ConfigurationManager as BaseConfigurationManager;
+                        return Task.CompletedTask;
+                    }
 
                     if (validationOptions.AzureBotServiceTokenHandling 
                         && IsBotFrameworkIssuer(issuer))
