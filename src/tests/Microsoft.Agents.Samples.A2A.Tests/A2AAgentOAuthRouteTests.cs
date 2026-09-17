@@ -21,6 +21,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -65,12 +66,65 @@ public class A2AAgentOAuthRouteTests
     public async Task SampleConfiguration_UsesOnlyRedactedTwoProviderPlaceholders()
     {
         string settings = await LoadSampleConfigurationTextAsync();
+        using JsonDocument document = JsonDocument.Parse(
+            settings,
+            new JsonDocumentOptions
+            {
+                AllowTrailingCommas = true,
+                CommentHandling = JsonCommentHandling.Skip,
+            });
+        JsonElement root = document.RootElement;
+        JsonElement handlers = root
+            .GetProperty("AgentApplication")
+            .GetProperty("UserAuthorization")
+            .GetProperty("Handlers");
 
-        Assert.Contains("\"TenantId\": \"<tenant-id>\"", settings, StringComparison.Ordinal);
-        Assert.Contains("\"api://<agent-client-id>/access_as_user\"", settings, StringComparison.Ordinal);
-        Assert.Contains("A2A Agent API app registration client ID", settings, StringComparison.Ordinal);
-        Assert.DoesNotContain("{{TenantId}}", settings, StringComparison.Ordinal);
-        Assert.DoesNotContain("{{ClientId}}", settings, StringComparison.Ordinal);
+        Assert.Equal(
+            ["github", "graph"],
+            handlers.EnumerateObject().Select(property => property.Name).OrderBy(name => name, StringComparer.Ordinal).ToArray());
+        AssertHandler(handlers.GetProperty("graph"));
+        AssertHandler(handlers.GetProperty("github"));
+
+        JsonElement graphSettings = handlers.GetProperty("graph").GetProperty("Settings");
+        JsonProperty graphScope = Assert.Single(graphSettings
+            .GetProperty("OAuthFlows")
+            .GetProperty("DeviceCode")
+            .GetProperty("Scopes")
+            .EnumerateObject());
+        Assert.Equal("delegated", graphSettings.GetProperty("SecuritySchemeName").GetString());
+        Assert.Equal("api://<agent-client-id>/access_as_user", graphScope.Name);
+        Assert.Equal(
+            "api://<agent-client-id>/access_as_user",
+            Assert.Single(graphSettings.GetProperty("RequiredScopes").EnumerateArray()).GetString());
+        Assert.Equal("User.Read", Assert.Single(graphSettings.GetProperty("OBOScopes").EnumerateArray()).GetString());
+
+        JsonElement githubSettings = handlers.GetProperty("github").GetProperty("Settings");
+        JsonProperty githubScope = Assert.Single(githubSettings
+            .GetProperty("OAuthFlows")
+            .GetProperty("DeviceCode")
+            .GetProperty("Scopes")
+            .EnumerateObject());
+        Assert.Equal("github", githubSettings.GetProperty("SecuritySchemeName").GetString());
+        Assert.Equal("repo", githubScope.Name);
+        Assert.Equal("repo", Assert.Single(githubSettings.GetProperty("RequiredScopes").EnumerateArray()).GetString());
+
+        JsonElement tokenValidation = root.GetProperty("TokenValidation");
+        Assert.Equal("<tenant-id>", tokenValidation.GetProperty("TenantId").GetString());
+        Assert.Equal("<agent-client-id>", Assert.Single(tokenValidation.GetProperty("Audiences").EnumerateArray()).GetString());
+
+        JsonElement serviceConnection = root
+            .GetProperty("Connections")
+            .GetProperty("ServiceConnection")
+            .GetProperty("Settings");
+        Assert.Equal("https://login.microsoftonline.com/<tenant-id>", serviceConnection.GetProperty("AuthorityEndpoint").GetString());
+        Assert.Equal("<agent-client-id>", serviceConnection.GetProperty("ClientId").GetString());
+        Assert.Equal("<agent-client-secret-value>", serviceConnection.GetProperty("ClientSecret").GetString());
+
+        Assert.DoesNotContain(
+            EnumerateStringValues(root),
+            value => value.Contains("{{", StringComparison.Ordinal)
+                || value.Contains("}}", StringComparison.Ordinal)
+                || value.Contains("localhost", StringComparison.OrdinalIgnoreCase));
     }
 
     private static void AssertSkillRequirement(AgentCard card, string skillId, string schemeName, string scope)
@@ -80,6 +134,42 @@ public class A2AAgentOAuthRouteTests
         SecurityRequirement requirement = Assert.Single(skill.SecurityRequirements);
         Assert.NotNull(requirement.Schemes);
         Assert.Equal([scope], requirement.Schemes[schemeName].List);
+    }
+
+    private static void AssertHandler(JsonElement handler)
+    {
+        Assert.Equal("Microsoft.Agents.Extensions.A2A", handler.GetProperty("Assembly").GetString());
+        Assert.Equal("A2AUserAuthorization", handler.GetProperty("Type").GetString());
+    }
+
+    private static IEnumerable<string> EnumerateStringValues(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (JsonProperty property in element.EnumerateObject())
+                {
+                    foreach (string value in EnumerateStringValues(property.Value))
+                    {
+                        yield return value;
+                    }
+                }
+                break;
+
+            case JsonValueKind.Array:
+                foreach (JsonElement item in element.EnumerateArray())
+                {
+                    foreach (string value in EnumerateStringValues(item))
+                    {
+                        yield return value;
+                    }
+                }
+                break;
+
+            case JsonValueKind.String:
+                yield return element.GetString()!;
+                break;
+        }
     }
 
     [Fact]

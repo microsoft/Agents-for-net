@@ -66,18 +66,36 @@ public class A2ARequestPlannerTests
     [Fact]
     public void Plan_ExplicitModeOverride_ForcesMatchingCardAuthentication()
     {
-        AgentCard card = CreateTwoProviderCard();
-        var session = new A2AAuthenticationSession();
-        session.SetMode(A2AAuthMode.Delegated);
+        AgentCard card = CreateCardWithPublicSkillAndSingleProtectedFallback();
+        AgentSkill publicSkill = Assert.Single(card.Skills!, skill => skill.Id == "Public echo");
+        const string input = "-echo";
+
+        var automaticSession = new A2AAuthenticationSession();
+        var automaticPlanner = new A2ARequestPlanner(card, automaticSession);
+
+        A2AAgentCardSkillSelection automaticSelection = automaticPlanner.Plan(input);
+
+        Assert.Same(publicSkill, automaticSelection.Skill);
+        Assert.False(automaticSelection.IsAmbiguous);
+        Assert.Equal(A2AAuthMode.None, automaticSession.Mode);
+        Assert.Null(automaticSession.SelectedAuthentication);
+
+        var overrideSession = new A2AAuthenticationSession();
+        overrideSession.SetMode(A2AAuthMode.Delegated);
         A2AAgentCardAuthentication? configuredAuthentication = null;
-        var planner = new A2ARequestPlanner(card, session, authentication => configuredAuthentication = authentication);
+        var overridePlanner = new A2ARequestPlanner(card, overrideSession, authentication => configuredAuthentication = authentication);
 
-        A2AAgentCardSkillSelection selection = planner.Plan("-issues");
+        A2AAgentCardSkillSelection overrideSelection = overridePlanner.Plan(input);
 
-        Assert.Equal("GitHub assigned issues", selection.Skill!.Id);
-        Assert.Equal(A2AAuthMode.Delegated, session.Mode);
-        Assert.Null(configuredAuthentication);
-        Assert.Equal("github", session.SelectedAuthentication!.SecuritySchemeName);
+        Assert.Same(publicSkill, overrideSelection.Skill);
+        Assert.False(overrideSelection.IsAmbiguous);
+        Assert.Equal(A2AAuthMode.Delegated, overrideSession.Mode);
+        A2AAgentCardAuthentication authentication = Assert.IsType<A2AAgentCardAuthentication>(overrideSession.SelectedAuthentication);
+        Assert.Same(authentication, configuredAuthentication);
+        Assert.Equal("delegated", authentication.SecuritySchemeName);
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode", authentication.DeviceAuthorizationUrl);
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", authentication.TokenUrl);
+        Assert.Equal(["api://agent/access_as_user"], authentication.Scopes);
     }
 
     private static SecurityRequirement CreateRequirement(string schemeName, string scope)
@@ -154,6 +172,56 @@ public class A2ARequestPlannerTests
                             Schemes = new Dictionary<string, StringList>
                             {
                                 ["github"] = new() { List = ["repo"] },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
+    private static AgentCard CreateCardWithPublicSkillAndSingleProtectedFallback()
+    {
+        return new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "Public echo",
+                    Name = "Public echo",
+                    Description = "Echoes public text without authentication.",
+                    Examples = ["-echo"],
+                },
+                new AgentSkill
+                {
+                    Id = "Microsoft Graph profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
                             },
                         },
                     ],
