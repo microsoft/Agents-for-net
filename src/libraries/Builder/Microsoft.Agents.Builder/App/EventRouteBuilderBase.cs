@@ -13,13 +13,13 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Provides the generic base builder for routing event activities in an <see cref="AgentApplication"/>.
+    /// Provides the generic base builder for routing event activities in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Derive from <see cref="EventRouteBuilderBase{TBuilder}"/> to create specialized event route builders while
+    /// Derive from <see cref="Microsoft.Agents.Builder.App.EventRouteBuilderBase{TBuilder}"/> to create specialized event route builders while
     /// preserving fluent chaining on the concrete builder type. This base class supplies the shared event matching
     /// behavior, including event-name filters, custom selectors, channel constraints, and agentic routing support.
-    /// If neither <see cref="WithName(string)"/> nor <see cref="WithName(Regex)"/> is called, the route matches any
+    /// If neither <see cref="Microsoft.Agents.Builder.App.EventRouteBuilderBase{TBuilder}.WithName(System.String)"/> nor <see cref="Microsoft.Agents.Builder.App.EventRouteBuilderBase{TBuilder}.WithName(System.Text.RegularExpressions.Regex)"/> is called, the route matches any
     /// event activity regardless of name.
     /// </remarks>
     /// <typeparam name="TBuilder">The concrete builder type returned from fluent members.</typeparam>
@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder.App
         /// the specified value. If the route is marked as agentic, only agentic requests will be considered for
         /// matching.</remarks>
         /// <param name="name">The name of the event activity to match. Comparison is case-insensitive. Cannot be null.</param>
-        /// <returns>The current builder instance with the added selector for matching <see cref="IActivity.Name"/>.</returns>
+        /// <returns>The current builder instance with the added selector for matching <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/>.</returns>
         public TBuilder WithName(string name)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(name, nameof(name));
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>This method restricts the route to event activities whose name matches the provided
         /// pattern. If the route is marked as agentic, only agentic requests will be considered for matching.</remarks>
         /// <param name="namePattern">The regular expression used to match the name of incoming event activities. Cannot be null.</param>
-        /// <returns>The current builder instance configured with the specified <see cref="IActivity.Name"/> pattern selector.</returns>
+        /// <returns>The current builder instance configured with the specified <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/> pattern selector.</returns>
         public TBuilder WithName(Regex namePattern)
         {
             AssertionHelpers.ThrowIfNull(namePattern, nameof(namePattern));

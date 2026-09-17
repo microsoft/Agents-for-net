@@ -16,13 +16,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
     public class TextPrompt : Prompt<string>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TextPrompt"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.TextPrompt"/> class.
         /// </summary>
         /// <param name="dialogId">The ID to assign to this prompt.</param>
-        /// <param name="validator">Optional, a <see cref="PromptValidator{FoundChoice}"/> that contains additional,
+        /// <param name="validator">Optional, a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptValidator{FoundChoice}"/> that contains additional,
         /// custom validation for this prompt.</param>
         /// <remarks>The value of <paramref name="dialogId"/> must be unique within the
-        /// <see cref="DialogSet"/> or <see cref="ComponentDialog"/> to which the prompt is added.
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> or <see cref="Microsoft.Agents.Builder.Dialogs.ComponentDialog"/> to which the prompt is added.
         /// </remarks>
         public TextPrompt(string dialogId, PromptValidator<string> validator = null)
             : base(dialogId, validator)
@@ -35,12 +35,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         /// <param name="state">Contains state for the current instance of the prompt on the dialog stack.</param>
         /// <param name="options">A prompt options object constructed from the options initially provided
-        /// in the call to <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>.</param>
+        /// in the call to <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>.</param>
         /// <param name="isRetry">true if this is the first time this prompt dialog instance
         /// on the stack is prompting the user for input; otherwise, false.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         protected override async Task OnPromptAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, bool isRetry, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
@@ -62,10 +62,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         /// <param name="state">Contains state for the current instance of the prompt on the dialog stack.</param>
         /// <param name="options">A prompt options object constructed from the options initially provided
-        /// in the call to <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>.</param>
+        /// in the call to <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result describes the result of the recognition attempt.</remarks>
         protected override Task<PromptRecognizerResult<string>> OnRecognizeAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, CancellationToken cancellationToken = default)
         {

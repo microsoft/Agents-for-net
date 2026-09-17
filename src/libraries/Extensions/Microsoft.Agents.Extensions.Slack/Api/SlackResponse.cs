@@ -13,9 +13,9 @@ namespace Microsoft.Agents.Extensions.Slack.Api;
 /// <remarks>
 /// <para>
 /// Named properties cover the fields common to every Slack API response. Any additional
-/// fields returned by a specific method are accessible via the <see cref="AdditionalProperties"/>
-/// dictionary or via dot-notation path using <see cref="SlackModel.Get{T}"/> and
-/// <see cref="SlackModel.TryGet{T}"/>.
+/// fields returned by a specific method are accessible via the <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackResponse.AdditionalProperties"/>
+/// dictionary or via dot-notation path using <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.Get{T}(System.String)"/> and
+/// <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.TryGet{T}(System.String, out T)"/>.
 /// </para>
 /// <para>
 /// <code>
@@ -30,7 +30,7 @@ public class SlackResponse : SlackModel
     /// <summary>Whether the API call succeeded.</summary>
     public bool ok { get; set; }
 
-    /// <summary>Error code returned by Slack when <see cref="ok"/> is <see langword="false"/>.</summary>
+    /// <summary>Error code returned by Slack when <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackResponse.ok"/> is <see langword="false"/>.</summary>
     public string? error { get; set; }
 
     /// <summary>Warning code returned alongside a successful response.</summary>

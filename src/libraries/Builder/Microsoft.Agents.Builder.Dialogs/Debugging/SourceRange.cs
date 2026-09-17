@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
     public class SourceRange : IEquatable<SourceRange>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SourceRange"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/> class.
         /// </summary>
         public SourceRange()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SourceRange"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/> class.
         /// </summary>
         /// <param name="path">path.</param>
         /// <param name="startLine">start line index.</param>
@@ -58,15 +58,15 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         public SourcePoint EndPoint { get; set; }
 
         /// <summary>
-        /// Returns a string that represents the current <see cref="SourceRange"/>.
+        /// Returns a string that represents the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/>.
         /// </summary>
-        /// <returns>A string that represents the current <see cref="SourceRange"/>.</returns>
+        /// <returns>A string that represents the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/>.</returns>
         public override string ToString() => $"{System.IO.Path.GetFileName(Path)}:{StartPoint}->{EndPoint}";
 
         /// <summary>
-        /// Creates a new instance of the <see cref="SourceRange"/>. All properties are recursively cloned.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/>. All properties are recursively cloned.
         /// </summary>
-        /// <returns>A new instance of the <see cref="SourceRange"/>.</returns>
+        /// <returns>A new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/>.</returns>
         public SourceRange DeepClone()
             => new SourceRange()
             {
@@ -76,10 +76,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
             };
 
         /// <summary>
-        /// Indicates whether the current <see cref="SourceRange"/> is equal to another object.
+        /// Indicates whether the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/> is equal to another object.
         /// </summary>
-        /// <param name="obj">An object to compare with this <see cref="SourceRange"/>.</param>
-        /// <returns><c>true</c> if the current <see cref="SourceRange"/> is equal to the object parameter; otherwise, <c>false</c>.</returns>
+        /// <param name="obj">An object to compare with this <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/>.</param>
+        /// <returns><c>true</c> if the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/> is equal to the object parameter; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
         {
             // Auto-generated
@@ -87,10 +87,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         }
 
         /// <summary>
-        /// Indicates whether the current <see cref="SourceRange"/> is equal to another object of the same type.
+        /// Indicates whether the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/> is equal to another object of the same type.
         /// </summary>
-        /// <param name="other">An object to compare with this <see cref="SourceRange"/>.</param>
-        /// <returns><c>true</c> if the current <see cref="SourceRange"/> is equal to the other parameter; otherwise, <c>false</c>.</returns>
+        /// <param name="other">An object to compare with this <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/>.</param>
+        /// <returns><c>true</c> if the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/> is equal to the other parameter; otherwise, <c>false</c>.</returns>
         public bool Equals(SourceRange other)
         {
             // Auto-generated
@@ -101,9 +101,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         }
 
         /// <summary>
-        /// Creates a hash code for the current <see cref="SourceRange"/>.
+        /// Creates a hash code for the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/>.
         /// </summary>
-        /// <returns>A hash code for the current <see cref="SourceRange"/>.</returns>
+        /// <returns>A hash code for the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceRange"/>.</returns>
         public override int GetHashCode()
         {
             // Auto-generated

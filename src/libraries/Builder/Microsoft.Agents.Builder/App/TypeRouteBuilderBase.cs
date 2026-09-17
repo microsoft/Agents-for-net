@@ -12,15 +12,15 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Provides the generic base builder for routing activities by activity type in an <see cref="AgentApplication"/>.
+    /// Provides the generic base builder for routing activities by activity type in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Derive from <see cref="TypeRouteBuilderBase{TBuilder}"/> to create specialized type-based route builders
+    /// Derive from <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilderBase{TBuilder}"/> to create specialized type-based route builders
     /// while preserving fluent chaining on the concrete builder type. This base class supplies the shared activity
     /// type matching behavior, including string and regular expression filters, custom selectors, channel
-    /// constraints, and agentic routing support. If neither <see cref="WithType(string)"/> nor
-    /// <see cref="WithType(Regex)"/> is called, the route matches any activity type. Because this builder only
-    /// filters on activity type, call <see cref="RouteBuilderBase{TBuilder}.AsInvoke(bool)"/> when the route should
+    /// constraints, and agentic routing support. If neither <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilderBase{TBuilder}.WithType(System.String)"/> nor
+    /// <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilderBase{TBuilder}.WithType(System.Text.RegularExpressions.Regex)"/> is called, the route matches any activity type. Because this builder only
+    /// filters on activity type, call <see cref="Microsoft.Agents.Builder.App.RouteBuilderBase{TBuilder}.AsInvoke(System.Boolean)"/> when the route should
     /// be treated as an invoke route.
     /// </remarks>
     /// <typeparam name="TBuilder">The concrete builder type returned from fluent members.</typeparam>
@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder.App
         /// <remarks>This method updates the route selector to filter activities based on the provided
         /// type. If the route is marked as agentic, only agentic requests will be considered for matching.</remarks>
         /// <param name="type">The activity type to match. Cannot be null or empty.</param>
-        /// <returns>The current builder instance with the added selector for matching <see cref="IActivity.Type"/>.</returns>
+        /// <returns>The current builder instance with the added selector for matching <see cref="Microsoft.Agents.Core.Models.IActivity.Type"/>.</returns>
         public TBuilder WithType(string type)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(type, nameof(type));
@@ -65,7 +65,7 @@ namespace Microsoft.Agents.Builder.App
         /// the selector to return <see langword="true"/>.</remarks>
         /// <param name="typePattern">A regular expression used to determine whether the activity type should be matched by the route. Cannot be
         /// null.</param>
-        /// <returns>The current builder instance configured with the specified <see cref="IActivity.Type"/> pattern selector.</returns>
+        /// <returns>The current builder instance configured with the specified <see cref="Microsoft.Agents.Core.Models.IActivity.Type"/> pattern selector.</returns>
         public TBuilder WithType(Regex typePattern)
         {
             AssertionHelpers.ThrowIfNull(typePattern, nameof(typePattern));

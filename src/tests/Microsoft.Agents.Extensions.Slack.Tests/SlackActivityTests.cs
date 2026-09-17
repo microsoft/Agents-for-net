@@ -10,13 +10,13 @@ using Xunit;
 namespace Microsoft.Agents.Extensions.Slack.Tests;
 
 /// <summary>
-/// Tests for the polymorphic resolution of inbound Activities to <see cref="SlackActivity"/>.
+/// Tests for the polymorphic resolution of inbound Activities to <see cref="Microsoft.Agents.Extensions.Slack.SlackActivity"/>.
 /// Resolution is driven by the <c>[ActivityType(ChannelId = "slack")]</c> annotation on
-/// <see cref="SlackActivity"/>, which the source generator turns into an assembly-level
-/// <see cref="ActivityTypeInitAssemblyAttribute"/> that auto-registers the type at load time.
-/// Any Activity whose channelId is "slack" therefore deserializes to <see cref="SlackActivity"/>,
-/// exposing a strongly-typed <see cref="Api.SlackChannelData"/> via the
-/// <see cref="SlackActivity.ChannelData"/> shadow.
+/// <see cref="Microsoft.Agents.Extensions.Slack.SlackActivity"/>, which the source generator turns into an assembly-level
+/// <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeInitAssemblyAttribute"/> that auto-registers the type at load time.
+/// Any Activity whose channelId is "slack" therefore deserializes to <see cref="Microsoft.Agents.Extensions.Slack.SlackActivity"/>,
+/// exposing a strongly-typed <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackChannelData"/> via the
+/// <see cref="Microsoft.Agents.Extensions.Slack.SlackActivity.ChannelData"/> shadow.
 /// </summary>
 public class SlackActivityTests
 {

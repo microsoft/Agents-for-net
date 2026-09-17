@@ -68,16 +68,16 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <code>
         /// "UserAuthorization": {
         ///   "graph": {
-        ///     "Assembly": null,  // Optional, defaults to OAuthAuthentication Assembly
-        ///     "Type": null,      // Optional, defaults to OAuthAuthentication Type
-        ///     "Settings": {      // Settings are Type specific, for OAuthAuthentication, any OAuthSettings property.
+        ///     "Assembly": null,  // Optional, defaults to AzureBotUserAuthorization Assembly
+        ///     "Type": null,      // Optional, defaults to AzureBotUserAuthorization Type
+        ///     "Settings": {      // Settings are Type specific, for AzureBotUserAuthorization, any OAuthSettings property.
         ///     }
         ///   }
         /// }
         /// </code>
         /// <remarks>
-        /// <see cref="OAuthAuthentication"/> is the default <see cref="IUserAuthorization"/> unless type loading is specified.  The `Settings`
-        /// node for the defaults is properties in <see cref="OAuthSettings"/>.  This User Authentication is performed with
+        /// <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.AzureBotUserAuthorization"/> is the default <see cref="Microsoft.Agents.Builder.UserAuth.IUserAuthorization"/> unless type loading is specified.  The `Settings`
+        /// node for the defaults is properties in <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthSettings"/>.  This User Authentication is performed with
         /// the Azure Bot Token Service using `OAuth Connections` defined on the Azure Bot.
         /// </remarks>
         /// <param name="sp"></param>

@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.Tests
         ///  ECHO:Hello
         ///  AFTER.
         ///  </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task Middlware_BracketingValidation()
         {
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Builder.Tests
         /// This tests verifies that, and makes sure the order of messages
         /// coming back is correct.
         /// </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous unit test.</returns>
         [Fact]
         public async Task Middlware_ThrowException()
         {

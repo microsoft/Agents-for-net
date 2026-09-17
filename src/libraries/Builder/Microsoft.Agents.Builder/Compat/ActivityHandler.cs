@@ -41,13 +41,13 @@ namespace Microsoft.Agents.Builder.Compat
         /// Add logic to apply after the type-specific logic after the call to the base class
         /// <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/> method.
         /// </remarks>
-        /// <seealso cref="OnMessageActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnMessageUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageUpdateActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnMessageDeleteActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageDeleteActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnEventActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnUnrecognizedActivityTypeAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageUpdateActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageDeleteActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageDeleteActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnEventActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnUnrecognizedActivityTypeAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.Activity.Type"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.ActivityTypes"/>
         public virtual async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// When the <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// method receives a message activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -181,7 +181,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// When the <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// method receives a message update activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual Task OnMessageUpdateActivityAsync(ITurnContext<IMessageUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// When the <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// method receives a message delete activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual Task OnMessageDeleteActivityAsync(ITurnContext<IMessageDeleteActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -232,9 +232,9 @@ namespace Microsoft.Agents.Builder.Compat
         /// Add logic to apply after the member added or removed logic after the call to the base class
         /// <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/> method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnMembersAddedAsync(System.Collections.Generic.IList{Microsoft.Agents.Core.Models.ChannelAccount}, Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnMembersRemovedAsync(System.Collections.Generic.IList{Microsoft.Agents.Core.Models.ChannelAccount}, Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMembersAddedAsync(System.Collections.Generic.IList{Microsoft.Agents.Core.Models.ChannelAccount}, Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMembersRemovedAsync(System.Collections.Generic.IList{Microsoft.Agents.Core.Models.ChannelAccount}, Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnConversationUpdateActivityAsync(ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             if (turnContext.Activity.MembersAdded != null && turnContext.Activity.MembersAdded.Count > 0)
@@ -270,7 +270,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// method receives a conversation update activity that indicates one or more users other than the Agent
         /// are joining the conversation, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// method receives a conversation update activity that indicates one or more users other than the Agent
         /// are leaving the conversation, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnMembersRemovedAsync(IList<ChannelAccount> membersRemoved, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -325,9 +325,9 @@ namespace Microsoft.Agents.Builder.Compat
         /// <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/> method.
         ///
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnReactionsAddedAsync(System.Collections.Generic.IList{Microsoft.Agents.Core.Models.MessageReaction}, Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnReactionsRemovedAsync(System.Collections.Generic.IList{Microsoft.Agents.Core.Models.MessageReaction}, Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnReactionsAddedAsync(System.Collections.Generic.IList{Microsoft.Agents.Core.Models.MessageReaction}, Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnReactionsRemovedAsync(System.Collections.Generic.IList{Microsoft.Agents.Core.Models.MessageReaction}, Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
         protected virtual async Task OnMessageReactionActivityAsync(ITurnContext<IMessageReactionActivity> turnContext, CancellationToken cancellationToken)
         {
             if (turnContext.Activity.ReactionsAdded != null && turnContext.Activity.ReactionsAdded.Count > 0)
@@ -358,7 +358,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// of a previously sent activity. When the Agent sends an activity, the channel assigns an ID to it,
         /// which is available in the <see cref="Microsoft.Agents.Core.Models.ResourceResponse.Id"/> of the result.
         /// </remarks>
-        /// <seealso cref="OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.Activity.Id"/>
         /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.ResourceResponse.Id"/>
@@ -384,7 +384,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// of a previously sent activity. When the Agent sends an activity, the channel assigns an ID to it,
         /// which is available in the <see cref="Microsoft.Agents.Core.Models.ResourceResponse.Id"/> of the result.
         /// </remarks>
-        /// <seealso cref="OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.Activity.Id"/>
         /// <seealso cref="Microsoft.Agents.Builder.ITurnContext.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.ResourceResponse.Id"/>
@@ -423,9 +423,9 @@ namespace Microsoft.Agents.Builder.Compat
         /// which is meaningful within the scope of a channel.
         /// A `tokens/response` event can be triggered by an <see cref="Microsoft.Agents.Core.Models.OAuthCard"/> or an OAuth prompt.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnTokenResponseEventAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnEventAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTokenResponseEventAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnEventAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnEventActivityAsync(ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
         {
             if (turnContext.Activity.Name == SignInConstants.TokenResponseEventName)
@@ -445,8 +445,8 @@ namespace Microsoft.Agents.Builder.Compat
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="OnEventActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnEventAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnEventActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnEventAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnTokenResponseEventAsync(ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -467,8 +467,8 @@ namespace Microsoft.Agents.Builder.Compat
         /// method receives an event with a  other than `tokens/response`,
         /// it calls this method.
         /// </remarks>
-        /// <seealso cref="OnEventActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnTokenResponseEventAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnEventActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTokenResponseEventAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnEventAsync(ITurnContext<IEventActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -496,7 +496,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// which is meaningful within the scope of a channel.
         /// A `signin/verifyState` or `signin/tokenExchange` invoke can be triggered by an <see cref="Microsoft.Agents.Core.Models.OAuthCard"/> or an OAuth prompt.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual async Task<InvokeResponse> OnInvokeActivityAsync(ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
         {
             try
@@ -544,7 +544,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// If your Agent uses the <c>OAuthPrompt</c>, forward the incoming <see cref="Microsoft.Agents.Core.Models.Activity"/> to
         /// the current dialog.
         /// </remarks>
-        /// <seealso cref="OnInvokeActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IInvokeActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnInvokeActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IInvokeActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnSignInInvokeAsync(ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
         {
             throw new InvokeResponseException(HttpStatusCode.NotImplemented);
@@ -563,7 +563,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// method receives an Invoke with a of `adaptiveCard/action`,
         /// it calls this method.
         /// </remarks>
-        /// <seealso cref="OnInvokeActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IInvokeActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnInvokeActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IInvokeActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task<AdaptiveCardInvokeResponse> OnAdaptiveCardInvokeAsync(ITurnContext<IInvokeActivity> turnContext, AdaptiveCardInvokeValue invokeValue, CancellationToken cancellationToken)
         {
             throw new InvokeResponseException(HttpStatusCode.NotImplemented);
@@ -582,7 +582,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// method receives an Invoke with a of `application/search`,
         /// it calls this method. The Activity.Value must be a well formed <see cref="Microsoft.Agents.Core.Models.SearchInvokeValue"/>.
         /// </remarks>
-        /// <seealso cref="OnInvokeActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IInvokeActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnInvokeActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IInvokeActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task<SearchInvokeResponse> OnSearchInvokeAsync(ITurnContext<IInvokeActivity> turnContext, SearchInvokeValue invokeValue, CancellationToken cancellationToken)
         {
             throw new InvokeResponseException(HttpStatusCode.NotImplemented);
@@ -600,7 +600,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// When the <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// method receives a message activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual Task OnEndOfConversationActivityAsync(ITurnContext<IEndOfConversationActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -618,7 +618,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// When the <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// method receives a message activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual Task OnTypingActivityAsync(ITurnContext<ITypingActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -636,7 +636,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// When the <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// method receives a installation update activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual Task OnInstallationUpdateActivityAsync(ITurnContext<IInstallationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             switch (turnContext.Activity.Action)
@@ -664,7 +664,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// When the <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// method receives a installation update activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual Task OnInstallationUpdateAddAsync(ITurnContext<IInstallationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -682,7 +682,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// When the <see cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         /// method receives a installation update activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
         protected virtual Task OnInstallationUpdateRemoveAsync(ITurnContext<IInstallationUpdateActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -713,8 +713,8 @@ namespace Microsoft.Agents.Builder.Compat
         /// The meaning of an command activity is defined by the ICommandActivity.Name property,
         /// which is meaningful within the scope of a channel.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnCommandActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.ICommandActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnCommandActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.ICommandActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnCommandActivityAsync(ITurnContext<ICommandActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -743,8 +743,8 @@ namespace Microsoft.Agents.Builder.Compat
         /// The meaning of an CommandResult activity is defined by the property,
         /// which is meaningful within the scope of a channel.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnCommandResultActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.ICommandResultActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnCommandResultActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.ICommandResultActivity}, System.Threading.CancellationToken)"/>
         protected virtual Task OnCommandResultActivityAsync(ITurnContext<ICommandResultActivity> turnContext, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
@@ -766,11 +766,11 @@ namespace Microsoft.Agents.Builder.Compat
         /// method receives an activity that is not a message, conversation update, message reaction,
         /// or event activity, it calls this method.
         /// </remarks>
-        /// <seealso cref="OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnMessageActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
-        /// <seealso cref="OnEventActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnConversationUpdateActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IConversationUpdateActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnMessageReactionActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IMessageReactionActivity}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Compat.ActivityHandler.OnEventActivityAsync(Microsoft.Agents.Builder.ITurnContext{Microsoft.Agents.Core.Models.IEventActivity}, System.Threading.CancellationToken)"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.Activity.Type"/>
         /// <seealso cref="Microsoft.Agents.Core.Models.ActivityTypes"/>
         protected virtual Task OnUnrecognizedActivityTypeAsync(ITurnContext turnContext, CancellationToken cancellationToken)

@@ -164,7 +164,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public AutoSignInSelector? AutoSignIn { get; set; }
 
         /// <summary>
-        /// Optional sign in failure message.  This is only used if the <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure"/> is not set.
+        /// Optional sign in failure message.  This is only used if the <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(Microsoft.Agents.Builder.App.UserAuth.AuthorizationFailure)"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
             (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}/{2}", flowName, response.Cause, response.Error?.Message))];

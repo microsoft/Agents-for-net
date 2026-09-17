@@ -123,6 +123,11 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
 ### Nullability
 - Libraries use `<Nullable>annotations</Nullable>` (annotations only, warnings not enforced).
 
+### XML Documentation
+- When adding or editing XML documentation comments, use fully qualified symbol names, including namespaces and containing types, in every `<see cref="...">` and `<seealso cref="...">` reference.
+- Verify that each referenced type or member still exists at that location and that member references use the current signature.
+- If a symbol cannot be referenced from the documenting project because of assembly or target-framework constraints, use fully qualified `<c>` text instead of an unresolved `cref`.
+
 ### Testing
 - **xUnit** (v2.9.3 and v3.0.1), **Moq** for mocking.
 - Test projects are under `src/tests/` and may target both .NET 8.0 and .NET Framework 4.8.

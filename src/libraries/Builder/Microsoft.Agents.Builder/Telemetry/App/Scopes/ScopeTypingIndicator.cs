@@ -8,14 +8,14 @@ using System;
 namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces an automatic typing indicator send.
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces an automatic typing indicator send.
     /// </summary>
     internal class ScopeTypingIndicator : TelemetryScope
     {
         private readonly ITurnContext _turnContext;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeTypingIndicator"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.App.Scopes.ScopeTypingIndicator"/> class.
         /// </summary>
         /// <param name="turnContext">The turn for which the typing indicator is being sent.</param>
         public ScopeTypingIndicator(ITurnContext turnContext) : base(Constants.ScopeTypingIndicator)

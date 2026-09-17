@@ -18,21 +18,21 @@ namespace Microsoft.Agents.Builder
     public interface IChannelServiceClientFactory
     {
         /// <summary>
-        /// Creates a <see cref="IConnectorClient"/> that can be used to create <see cref="IConnectorClient"/>.
+        /// Creates a <see cref="Microsoft.Agents.Connector.IConnectorClient"/> that can be used to create <see cref="Microsoft.Agents.Connector.IConnectorClient"/>.
         /// </summary>
-        /// <param name="claimsIdentity">The inbound <see cref="Activity"/>'s <see cref="ClaimsIdentity"/>.</param>
+        /// <param name="claimsIdentity">The inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>'s <see cref="System.Security.Claims.ClaimsIdentity"/>.</param>
         /// <param name="serviceUrl">The service URL.</param>
         /// <param name="audience">An optional audience identifier for which the connector client is created. If null, the default audience is
         /// used.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <param name="scopes">The scopes to request.</param>
         /// <param name="useAnonymous">Whether to use anonymous credentials.</param>
-        /// <returns>A <see cref="IConnectorClient"/>.</returns>
+        /// <returns>A <see cref="Microsoft.Agents.Connector.IConnectorClient"/>.</returns>
         [Obsolete("This method is deprecated. Please use CreateConnectorClientAsync(ITurnContext, string, IList<string>, bool, CancellationToken) instead.")]
         Task<IConnectorClient> CreateConnectorClientAsync(ClaimsIdentity claimsIdentity, string serviceUrl, string audience, CancellationToken cancellationToken, IList<string> scopes = null, bool useAnonymous = false);
 
         /// <summary>
-        /// Creates an instance of a <see cref="IConnectorClient"/> for the turn.
+        /// Creates an instance of a <see cref="Microsoft.Agents.Connector.IConnectorClient"/> for the turn.
         /// </summary>
         /// <remarks>
         /// This normally wouldn't be called directly by an Agent developer, but rather is used internally by a IChannelAdapter to create the 
@@ -48,21 +48,21 @@ namespace Microsoft.Agents.Builder
         /// langword="true"/>, the client is created without user credentials.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains an instance of <see
-        /// cref="IConnectorClient"/> for interacting with the specified audience and scopes.</returns>
+        /// cref="Microsoft.Agents.Connector.IConnectorClient"/> for interacting with the specified audience and scopes.</returns>
         Task<IConnectorClient> CreateConnectorClientAsync(ITurnContext turnContext, string audience = null, IList<string> scopes = null, bool useAnonymous = false, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Creates the appropriate <see cref="IUserTokenClient"/> instance.
+        /// Creates the appropriate <see cref="Microsoft.Agents.Connector.IUserTokenClient"/> instance.
         /// </summary>
         /// <remarks>
         /// This normally wouldn't be called directly by an Agent developer, but rather is used internally by a IChannelAdapter to create the 
         /// client needed to communicate with the Azure Bot Token Service.  This is called at the beginning of each turn.  The Agent developer 
         /// can get a turn appropriate IUserTokenClient by calling <c>turnContext.Services.Get&lt;IUserTokenClient&gt;()</c>.
         /// </remarks>
-        /// <param name="claimsIdentity">The inbound <see cref="Activity"/>'s <see cref="ClaimsIdentity"/>.</param>
+        /// <param name="claimsIdentity">The inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>'s <see cref="System.Security.Claims.ClaimsIdentity"/>.</param>
         /// <param name="useAnonymous">Whether to use anonymous credentials.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>Asynchronous Task with <see cref="IUserTokenClient" /> instance.</returns>
+        /// <returns>Asynchronous Task with <see cref="Microsoft.Agents.Connector.IUserTokenClient" /> instance.</returns>
         Task<IUserTokenClient> CreateUserTokenClientAsync(ClaimsIdentity claimsIdentity, bool? useAnonymous = false, CancellationToken cancellationToken = default);
     }
 }

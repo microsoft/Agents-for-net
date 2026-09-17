@@ -267,7 +267,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <summary>
         /// Gets a list of the supported culture models.
         /// </summary>
-        /// <returns>Array of <see cref="PromptCultureModel"/> with the supported cultures.</returns>
+        /// <returns>Array of <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModel"/> with the supported cultures.</returns>
         public static PromptCultureModel[] GetSupportedCultures() => new PromptCultureModel[]
         {
             Bulgarian,

@@ -16,9 +16,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.App;
 public class TeamsReactionsRemovedRouteBuilder : RouteBuilderBase<TeamsReactionsRemovedRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the <see cref="TeamsReactionsRemovedRouteBuilder"/> class.
+    /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsReactionsRemovedRouteBuilder"/> class.
     /// </summary>
-    /// <returns>A new <see cref="TeamsReactionsRemovedRouteBuilder"/>.</returns>
+    /// <returns>A new <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsReactionsRemovedRouteBuilder"/>.</returns>
     public static TeamsReactionsRemovedRouteBuilder Create()
     {
         return new TeamsReactionsRemovedRouteBuilder();
