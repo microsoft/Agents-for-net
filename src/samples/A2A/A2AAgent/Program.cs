@@ -72,13 +72,34 @@ static bool ShouldEnableTokenValidation(IConfiguration configuration, IHostEnvir
 static bool IsTokenValidationConfigured(IConfiguration configuration)
 {
     IConfigurationSection tokenValidation = configuration.GetSection(A2AAgentAuthenticationDefaults.TokenValidationSectionName);
-    string? tenantId = tokenValidation["TenantId"];
-    string? firstAudience = tokenValidation.GetSection("Audiences")["0"];
+    if (!tokenValidation.Exists())
+    {
+        return false;
+    }
 
-    return !string.IsNullOrWhiteSpace(tenantId)
-        && !string.Equals(tenantId, "{{TenantId}}", StringComparison.Ordinal)
-        && !string.Equals(tenantId, "<tenant-id>", StringComparison.Ordinal)
-        && !string.IsNullOrWhiteSpace(firstAudience)
-        && !string.Equals(firstAudience, "{{ClientId}}", StringComparison.Ordinal)
-        && !string.Equals(firstAudience, "<client-id>", StringComparison.Ordinal);
+    string? tenantId = tokenValidation["TenantId"];
+
+    if (string.IsNullOrWhiteSpace(tenantId)
+        || string.Equals(tenantId, "{{TenantId}}", StringComparison.Ordinal)
+        || string.Equals(tenantId, "<tenant-id>", StringComparison.Ordinal)
+        || !Guid.TryParse(tenantId, out _))
+    {
+        return false;
+    }
+
+    bool hasAudience = false;
+    foreach (IConfigurationSection audience in tokenValidation.GetSection("Audiences").GetChildren())
+    {
+        hasAudience = true;
+
+        if (string.IsNullOrWhiteSpace(audience.Value)
+            || string.Equals(audience.Value, "{{ClientId}}", StringComparison.Ordinal)
+            || string.Equals(audience.Value, "<client-id>", StringComparison.Ordinal)
+            || !Guid.TryParse(audience.Value, out _))
+        {
+            return false;
+        }
+    }
+
+    return hasAudience;
 }

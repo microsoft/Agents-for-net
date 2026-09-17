@@ -132,7 +132,8 @@ the resulting Agent API scope URI:
 `api://<A2AAgent-client-id>/access_as_user`.
 
 `Program.cs` enables token validation in Development only after
-`TokenValidation:Audiences` contains real GUIDs.
+`TokenValidation:TenantId` and every configured `TokenValidation:Audiences` value
+contain real GUIDs.
 
 `EnforceRequiredScopes` makes `A2AUserAuthorization` validate the original
 inbound delegated JWT before OBO. Every configured `RequiredScopes` value must

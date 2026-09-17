@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -31,6 +32,16 @@ namespace Microsoft.Agents.Samples.A2A.Tests;
 
 public class A2AAgentProgramTests
 {
+    private const string TestTenantId = "11111111-1111-1111-1111-111111111111";
+    private const string TestAudience = "22222222-2222-2222-2222-222222222222";
+
+    public static TheoryData<string, string, string, string?> DevelopmentConfigurationsWithoutJwtRegistration => new()
+    {
+        { "placeholder configuration", "{{TenantId}}", "{{ClientId}}", null },
+        { "non-guid tenant", "not-a-guid", TestAudience, null },
+        { "non-guid secondary audience", TestTenantId, TestAudience, "not-a-guid" },
+    };
+
     [Fact]
     public void MyAgent_DeclaresOnlyGraphAndGitHubSkills()
     {
@@ -53,17 +64,49 @@ public class A2AAgentProgramTests
     [Fact]
     public async Task AnonymousAgentCardRequest_FromProgram_ReturnsAgentCard()
     {
-        await using var host = await A2AAgentProcessHost.StartAsync(new Dictionary<string, string?>
-        {
-            ["ASPNETCORE_URLS"] = "http://127.0.0.1:0",
-            ["TokenValidation__Audiences__0"] = "22222222-2222-2222-2222-222222222222",
-            ["TokenValidation__TenantId"] = "11111111-1111-1111-1111-111111111111",
-        });
+        await using var host = await A2AAgentProcessHost.StartAsync(CreateProcessEnvironment(TestTenantId, TestAudience));
 
         using var client = new HttpClient { BaseAddress = host.BaseAddress };
         using HttpResponseMessage response = await client.GetAsync("/.well-known/agent-card.json");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [MemberData(nameof(DevelopmentConfigurationsWithoutJwtRegistration))]
+    public async Task Development_PlaceholderOrMalformedTokenValidation_DoesNotRegisterJwtBearer(
+        string _,
+        string tenantId,
+        string firstAudience,
+        string? secondAudience)
+    {
+        await using var host = await A2AAgentProcessHost.StartAsync(
+            CreateProcessEnvironment(
+                tenantId,
+                firstAudience,
+                secondAudience,
+                environmentName: Environments.Development));
+
+        using var client = new HttpClient { BaseAddress = host.BaseAddress };
+        using HttpResponseMessage response = await PostA2ARequestWithJwtShapedBearerAsync(client);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Development_GuidTenantAndAllGuidAudiences_RegisterJwtBearer()
+    {
+        await using var host = await A2AAgentProcessHost.StartAsync(
+            CreateProcessEnvironment(
+                TestTenantId,
+                TestAudience,
+                secondAudience: "33333333-3333-3333-3333-333333333333",
+                environmentName: Environments.Development));
+
+        using var client = new HttpClient { BaseAddress = host.BaseAddress };
+        using HttpResponseMessage response = await PostA2ARequestWithJwtShapedBearerAsync(client);
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
     [Theory]
@@ -137,6 +180,59 @@ public class A2AAgentProgramTests
         Assert.Equal(A2AAgentAuthenticationDefaults.GitHubScheme, result.Ticket!.AuthenticationScheme);
         Assert.Equal(0, harness.JwtAuthenticateCount);
         Assert.Equal(1, harness.GitHubRequestCount);
+    }
+
+    private static Dictionary<string, string?> CreateProcessEnvironment(
+        string tenantId,
+        string firstAudience,
+        string? secondAudience = null,
+        string? environmentName = null)
+    {
+        var environment = new Dictionary<string, string?>
+        {
+            ["TokenValidation__TenantId"] = tenantId,
+            ["TokenValidation__Audiences__0"] = firstAudience,
+        };
+
+        if (environmentName != null)
+        {
+            environment["ASPNETCORE_ENVIRONMENT"] = environmentName;
+        }
+
+        if (secondAudience != null)
+        {
+            environment["TokenValidation__Audiences__1"] = secondAudience;
+        }
+
+        return environment;
+    }
+
+    private static Task<HttpResponseMessage> PostA2ARequestWithJwtShapedBearerAsync(HttpClient client)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/a2a")
+        {
+            Content = new StringContent(
+                """
+                {
+                  "jsonrpc": "2.0",
+                  "id": "1",
+                  "method": "message/send",
+                  "params": {
+                    "message": {
+                      "contextId": "context-1",
+                      "parts": [
+                        { "text": "-me" }
+                      ]
+                    }
+                  }
+                }
+                """,
+                Encoding.UTF8,
+                "application/json"),
+        };
+        request.Headers.Authorization = new("Bearer", "a.b.c");
+
+        return client.SendAsync(request);
     }
 
     private sealed class A2AAgentProcessHost : IAsyncDisposable
