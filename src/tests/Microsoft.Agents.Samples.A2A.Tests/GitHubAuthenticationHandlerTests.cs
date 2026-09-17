@@ -10,6 +10,7 @@ using Moq;
 using Octokit;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using A2AAgentSample::A2AAgent;
@@ -49,13 +50,39 @@ public class GitHubAuthenticationHandlerTests
     }
 
     [Fact]
-    public async Task HandleAuthenticateAsync_GitHubApiFailure_ReturnsFailWithoutLeakingToken()
+    public async Task HandleAuthenticateAsync_GitHubApiException_ReturnsFailWithoutLeakingToken()
+    {
+        await using var harness = GitHubAuthenticationHarness.Create(
+            currentException: new ApiException("Bad gateway", HttpStatusCode.BadGateway));
+
+        AuthenticateResult result = await harness.AuthenticateAsync($"Bearer {TestAccessToken}");
+
+        AssertExplicitValidationFailure(result);
+    }
+
+    [Fact]
+    public async Task HandleAuthenticateAsync_GitHubTransportFailure_ReturnsFailWithoutLeakingToken()
     {
         await using var harness = GitHubAuthenticationHarness.Create(
             currentException: new HttpRequestException("Bad gateway"));
 
         AuthenticateResult result = await harness.AuthenticateAsync($"Bearer {TestAccessToken}");
 
+        AssertExplicitValidationFailure(result);
+    }
+
+    [Fact]
+    public async Task HandleAuthenticateAsync_GitHubValidationCancellation_Propagates()
+    {
+        await using var harness = GitHubAuthenticationHarness.Create(
+            currentException: new OperationCanceledException("Cancelled by caller"));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => harness.AuthenticateAsync($"Bearer {TestAccessToken}"));
+    }
+
+    private static void AssertExplicitValidationFailure(AuthenticateResult result)
+    {
         Assert.False(result.Succeeded);
         Assert.Contains("GitHub token validation failed", result.Failure!.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(TestAccessToken, result.Failure.Message, StringComparison.Ordinal);

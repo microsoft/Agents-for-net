@@ -48,10 +48,6 @@ internal sealed class GitHubAuthenticationHandler(
         {
             user = await client.User.Current().ConfigureAwait(false);
         }
-        catch (AuthorizationException)
-        {
-            return AuthenticateResult.Fail("GitHub token validation failed.");
-        }
         catch (ApiException)
         {
             return AuthenticateResult.Fail("GitHub token validation failed.");
