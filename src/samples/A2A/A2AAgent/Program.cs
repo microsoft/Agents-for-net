@@ -24,15 +24,11 @@ builder.Services.AddHttpClient<IGraphProfileClient, GraphProfileClient>(client =
 {
     client.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
 });
-builder.Services.AddHttpClient(A2AAgentAuthenticationDefaults.GitHubHttpClientName, client =>
+builder.Services.AddHttpClient<IGitHubIssuesClient, GitHubIssuesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.github.com/");
-    client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
-    client.DefaultRequestHeaders.UserAgent.ParseAdd("agents-sdk-net-a2a-sample");
-    client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
 });
-builder.Services.AddHttpClient<IGitHubIssuesClient, GitHubIssuesClient>(
-    A2AAgentAuthenticationDefaults.GitHubHttpClientName);
+builder.Services.AddSingleton<IGitHubClientFactory, GitHubClientFactory>();
 
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 

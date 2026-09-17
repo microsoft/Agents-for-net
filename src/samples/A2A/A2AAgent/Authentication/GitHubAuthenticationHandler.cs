@@ -4,14 +4,14 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Octokit;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
-using System.Net;
+using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace A2AAgent;
@@ -20,7 +20,7 @@ internal sealed class GitHubAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    IHttpClientFactory httpClientFactory)
+    IGitHubClientFactory gitHubClients)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     private const string AccessTokenName = "access_token";
@@ -41,26 +41,31 @@ internal sealed class GitHubAuthenticationHandler(
             return AuthenticateResult.NoResult();
         }
 
-        HttpClient client = httpClientFactory.CreateClient(A2AAgentAuthenticationDefaults.GitHubHttpClientName);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "user");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        IGitHubClient client = gitHubClients.Create(token);
 
-        using HttpResponseMessage response = await client.SendAsync(request, Context.RequestAborted).ConfigureAwait(false);
-        if (response.StatusCode == HttpStatusCode.Unauthorized || !response.IsSuccessStatusCode)
+        User user;
+        try
+        {
+            user = await client.User.Current().ConfigureAwait(false);
+        }
+        catch (AuthorizationException)
+        {
+            return AuthenticateResult.Fail("GitHub token validation failed.");
+        }
+        catch (ApiException)
+        {
+            return AuthenticateResult.Fail("GitHub token validation failed.");
+        }
+        catch (HttpRequestException)
         {
             return AuthenticateResult.Fail("GitHub token validation failed.");
         }
 
-        if (!HasRequiredScope(response.Headers))
+        IReadOnlyList<string> oauthScopes = client.GetLastApiInfo()?.OauthScopes ?? [];
+        if (!oauthScopes.Contains("repo", StringComparer.OrdinalIgnoreCase))
         {
             return AuthenticateResult.Fail("GitHub token is missing the required repo scope.");
         }
-
-        await using var responseStream = await response.Content.ReadAsStreamAsync(Context.RequestAborted).ConfigureAwait(false);
-        GitHubUserDto user = await JsonSerializer.DeserializeAsync<GitHubUserDto>(
-            responseStream,
-            cancellationToken: Context.RequestAborted).ConfigureAwait(false)
-            ?? throw new InvalidOperationException("GitHub user response was empty.");
 
         var identity = new ClaimsIdentity(Scheme.Name);
         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString(CultureInfo.InvariantCulture)));
@@ -82,32 +87,5 @@ internal sealed class GitHubAuthenticationHandler(
                 new ClaimsPrincipal(identity),
                 properties,
                 Scheme.Name));
-    }
-
-    private static bool HasRequiredScope(HttpResponseHeaders headers)
-    {
-        if (!headers.TryGetValues("X-OAuth-Scopes", out var scopeValues))
-        {
-            return false;
-        }
-
-        foreach (string? headerValue in scopeValues)
-        {
-            if (string.IsNullOrWhiteSpace(headerValue))
-            {
-                continue;
-            }
-
-            string[] scopes = headerValue.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            foreach (string scope in scopes)
-            {
-                if (string.Equals(scope, "repo", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }

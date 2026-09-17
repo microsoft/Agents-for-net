@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Moq;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -169,7 +171,7 @@ public class A2AAgentProgramTests
 
         Assert.True(result.None);
         Assert.Equal(0, harness.JwtAuthenticateCount);
-        Assert.Equal(0, harness.GitHubRequestCount);
+        Assert.Equal(0, harness.GitHubValidationCount);
     }
 
     [Fact]
@@ -183,7 +185,7 @@ public class A2AAgentProgramTests
         Assert.True(result.Succeeded);
         Assert.Equal(JwtBearerDefaults.AuthenticationScheme, result.Ticket!.AuthenticationScheme);
         Assert.Equal(1, harness.JwtAuthenticateCount);
-        Assert.Equal(0, harness.GitHubRequestCount);
+        Assert.Equal(0, harness.GitHubValidationCount);
     }
 
     [Theory]
@@ -198,7 +200,7 @@ public class A2AAgentProgramTests
         Assert.True(result.Succeeded);
         Assert.Equal(A2AAgentAuthenticationDefaults.GitHubScheme, result.Ticket!.AuthenticationScheme);
         Assert.Equal(0, harness.JwtAuthenticateCount);
-        Assert.Equal(1, harness.GitHubRequestCount);
+        Assert.Equal(1, harness.GitHubValidationCount);
     }
 
     [Fact]
@@ -211,7 +213,22 @@ public class A2AAgentProgramTests
         Assert.True(result.Succeeded);
         Assert.Equal(A2AAgentAuthenticationDefaults.GitHubScheme, result.Ticket!.AuthenticationScheme);
         Assert.Equal(0, harness.JwtAuthenticateCount);
-        Assert.Equal(1, harness.GitHubRequestCount);
+        Assert.Equal(1, harness.GitHubValidationCount);
+    }
+
+    [Fact]
+    public void GitHubClientFactory_Create_ReturnsFreshClientPerAccessToken()
+    {
+        var factory = new GitHubClientFactory();
+
+        GitHubClient first = Assert.IsType<GitHubClient>(factory.Create("first-token"));
+        GitHubClient second = Assert.IsType<GitHubClient>(factory.Create("second-token"));
+
+        Assert.NotSame(first, second);
+        Assert.Equal(AuthenticationType.Oauth, first.Credentials.AuthenticationType);
+        Assert.Equal(AuthenticationType.Oauth, second.Credentials.AuthenticationType);
+        Assert.Equal("first-token", first.Credentials.Password);
+        Assert.Equal("second-token", second.Credentials.Password);
     }
 
     private static Dictionary<string, string?> CreateProcessEnvironment(
@@ -431,34 +448,32 @@ public class A2AAgentProgramTests
 
     private sealed class MixedBearerAuthenticationHarness : IAsyncDisposable
     {
-        private readonly CountingGitHubApiHandler _gitHubApiHandler;
+        private readonly CountingGitHubClientFactory _gitHubClients;
         private readonly JwtInvocationCounter _jwtCounter;
         private readonly ServiceProvider _services;
 
         private MixedBearerAuthenticationHarness(
             ServiceProvider services,
-            CountingGitHubApiHandler gitHubApiHandler,
+            CountingGitHubClientFactory gitHubClients,
             JwtInvocationCounter jwtCounter)
         {
             _services = services;
-            _gitHubApiHandler = gitHubApiHandler;
+            _gitHubClients = gitHubClients;
             _jwtCounter = jwtCounter;
         }
 
-        public int GitHubRequestCount => _gitHubApiHandler.RequestCount;
+        public int GitHubValidationCount => _gitHubClients.UserCurrentCount;
 
         public int JwtAuthenticateCount => _jwtCounter.AuthenticateCount;
 
         public static MixedBearerAuthenticationHarness Create()
         {
-            var gitHubApiHandler = new CountingGitHubApiHandler();
+            var gitHubClients = new CountingGitHubClientFactory();
             var jwtCounter = new JwtInvocationCounter();
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddSingleton(jwtCounter);
-            services.AddHttpClient(A2AAgentAuthenticationDefaults.GitHubHttpClientName)
-                .ConfigureHttpClient(client => client.BaseAddress = new Uri("https://api.github.com/"))
-                .ConfigurePrimaryHttpMessageHandler(() => gitHubApiHandler);
+            services.AddSingleton<IGitHubClientFactory>(gitHubClients);
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
@@ -475,7 +490,7 @@ public class A2AAgentProgramTests
                 JwtBearerDefaults.AuthenticationScheme,
                 _ => { });
 
-            return new MixedBearerAuthenticationHarness(services.BuildServiceProvider(), gitHubApiHandler, jwtCounter);
+            return new MixedBearerAuthenticationHarness(services.BuildServiceProvider(), gitHubClients, jwtCounter);
         }
 
         public async Task<AuthenticateResult> AuthenticateAsync(string? authorizationHeader)
@@ -517,19 +532,67 @@ public class A2AAgentProgramTests
         }
     }
 
-    private sealed class CountingGitHubApiHandler : HttpMessageHandler
+    private sealed class CountingGitHubClientFactory : IGitHubClientFactory
     {
-        public int RequestCount { get; private set; }
+        public int UserCurrentCount { get; private set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        public IGitHubClient Create(string accessToken)
         {
-            RequestCount++;
-            var response = new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{ "id": 42, "login": "octocat", "name": "The Octocat" }""", Encoding.UTF8, "application/json"),
-            };
-            response.Headers.Add("X-OAuth-Scopes", "repo");
-            return Task.FromResult(response);
+            var users = new Mock<IUsersClient>(MockBehavior.Strict);
+            users.Setup(client => client.Current())
+                .Returns(() =>
+                {
+                    UserCurrentCount++;
+                    return Task.FromResult(CreateGitHubUser());
+                });
+
+            var client = new Mock<IGitHubClient>(MockBehavior.Strict);
+            client.SetupGet(mock => mock.User)
+                .Returns(users.Object);
+            client.Setup(mock => mock.GetLastApiInfo())
+                .Returns(CreateApiInfo(["repo"]));
+
+            return client.Object;
         }
     }
+
+    private static ApiInfo CreateApiInfo(IReadOnlyList<string> oauthScopes)
+        => new(
+            new Dictionary<string, Uri>(),
+            new List<string>(oauthScopes),
+            new List<string>(),
+            string.Empty,
+            rateLimit: null);
+
+    private static User CreateGitHubUser()
+        => new(
+            avatarUrl: "https://avatars.githubusercontent.com/u/42?v=4",
+            bio: string.Empty,
+            blog: string.Empty,
+            collaborators: 0,
+            company: string.Empty,
+            createdAt: DateTimeOffset.UnixEpoch,
+            updatedAt: DateTimeOffset.UnixEpoch,
+            diskUsage: 0,
+            email: string.Empty,
+            followers: 0,
+            following: 0,
+            hireable: null,
+            htmlUrl: "https://github.com/octocat",
+            totalPrivateRepos: 0,
+            id: 42,
+            location: string.Empty,
+            login: "octocat",
+            name: "The Octocat",
+            nodeId: "MDQ6VXNlcjQy",
+            ownedPrivateRepos: 0,
+            plan: null,
+            privateGists: 0,
+            publicGists: 0,
+            publicRepos: 0,
+            url: "https://api.github.com/users/octocat",
+            permissions: null,
+            siteAdmin: false,
+            ldapDistinguishedName: string.Empty,
+            suspendedAt: null);
 }

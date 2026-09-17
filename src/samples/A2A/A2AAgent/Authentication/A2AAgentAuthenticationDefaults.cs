@@ -8,5 +8,4 @@ internal static class A2AAgentAuthenticationDefaults
     public const string TokenValidationSectionName = "TokenValidation";
     public const string PolicyScheme = "A2AMixedBearer";
     public const string GitHubScheme = "GitHub";
-    public const string GitHubHttpClientName = "GitHubApi";
 }
