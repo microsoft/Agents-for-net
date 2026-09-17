@@ -1335,7 +1335,7 @@ namespace Microsoft.Agents.Builder.Tests
 
         /// <summary>
         /// Polls until <paramref name="condition"/> returns true or the timeout elapses.
-        /// Avoids fixed <see cref="Task.Delay"/> calls that are unreliable under CI load.
+        /// Avoids fixed <see cref="System.Threading.Tasks.Task.Delay(System.Int32)"/> calls that are unreliable under CI load.
         /// </summary>
         private static async Task WaitForAsync(Func<bool> condition, int timeoutMs = 5000)
         {

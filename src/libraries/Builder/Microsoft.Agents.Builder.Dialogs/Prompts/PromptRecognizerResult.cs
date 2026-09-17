@@ -4,13 +4,13 @@
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
-    /// Contains the result returned by the recognition method of a <see cref="Prompt{T}"/>.
+    /// Contains the result returned by the recognition method of a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.Prompt{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type of value the prompt returns.</typeparam>
     public class PromptRecognizerResult<T>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="PromptRecognizerResult{T}"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptRecognizerResult{T}"/> class.
         /// </summary>
         public PromptRecognizerResult()
         {
@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <summary>
         /// Gets or sets the recognition value.
         /// </summary>
-        /// <value>If <see cref="Succeeded"/> is true, the recognition result from the prompt.</value>
+        /// <value>If <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptRecognizerResult{T}.Succeeded"/> is true, the recognition result from the prompt.</value>
         public T Value { get; set; }
 
         /// <summary>

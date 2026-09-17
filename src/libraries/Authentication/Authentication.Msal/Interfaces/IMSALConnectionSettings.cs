@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Authentication.Msal.Interfaces
         /// <remarks>
         /// Set this to the appropriate resource identifier when the application is running in an environment, such as a Foundry container,
         /// that exposes Managed Identity through a container-specific IMDS endpoint. This setting is only meaningful when
-        /// <see cref="AuthType"/> is <see cref="AuthTypes.IdentityProxyManager"/>.
+        /// <see cref="Microsoft.Agents.Authentication.Msal.Interfaces.IMSALConnectionSettings.AuthType"/> is <see cref="Microsoft.Agents.Authentication.Msal.Model.AuthTypes.IdentityProxyManager"/>.
         /// </remarks>
         public string IdpmResource { get; set; }
         

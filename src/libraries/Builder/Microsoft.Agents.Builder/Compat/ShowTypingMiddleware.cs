@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.Compat
         private readonly ConcurrentDictionary<string, (Task, CancellationTokenSource)> _tasks = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ShowTypingMiddleware"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Compat.ShowTypingMiddleware"/> class.
         /// </summary>
         /// <param name="delay">Initial delay before sending first typing indicator. Defaults to 500ms.</param>
         /// <param name="period">Rate at which additional typing indicators will be sent. Defaults to every 2000ms.</param>

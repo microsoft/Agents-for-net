@@ -10,7 +10,7 @@ namespace Microsoft.Agents.TestSupport
 {
     /// <summary>
     /// Base class for telemetry scope tests. Registers an <see cref="System.Diagnostics.ActivityListener"/>
-    /// scoped to <see cref="AgentsTelemetry.SourceName"/> for the duration of each test and exposes
+    /// scoped to <see cref="Microsoft.Agents.Core.Telemetry.AgentsTelemetry.SourceName"/> for the duration of each test and exposes
     /// the collected started/stopped <see cref="System.Diagnostics.Activity"/> instances.
     /// </summary>
     public abstract class TelemetryScopeTestBase : IDisposable

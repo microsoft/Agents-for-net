@@ -8,7 +8,7 @@ namespace Microsoft.Agents.Core.Models
         public TokenOrSignInResourceResponse() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TokenOrSignInResourceResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.TokenOrSignInResourceResponse"/> class.
         /// </summary>
         /// <param name="tokenResponse">Token response.</param>
         /// <param name="signInResource">SignIn resource.</param>

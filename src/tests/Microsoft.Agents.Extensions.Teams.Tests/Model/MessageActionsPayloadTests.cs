@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
         private readonly Uri _linkToMessage = new Uri("https://teams.microsoft.com/l/message/testing-id");
 
         /// <summary>
-        /// Ensures the constructor of the <see cref="MessageActionsPayload"/> class works as expected.
+        /// Ensures the constructor of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayload"/> class works as expected.
         /// </summary>
         [Fact]
         public void TestMessageActionsPayloadConstructor()
@@ -59,7 +59,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
         }
 
         /// <summary>
-        /// Ensures the constructor of the <see cref="MessageActionsPayload"/> class works as expected with arguments.
+        /// Ensures the constructor of the <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayload"/> class works as expected with arguments.
         /// </summary>
         [Fact]
         public void TestMessageActionsPayloadConstructorWithArguments()
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
         }
 
         /// <summary>
-        /// Ensures that <see cref="MessageActionsPayload"/> class can be serialized and deserialized properly.
+        /// Ensures that <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayload"/> class can be serialized and deserialized properly.
         /// </summary>
         [Fact]
         public void TestSerializationDeserialization()
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Extensions.Teams.Tests.Model
         }
 
         /// <summary>
-        /// Creates a <see cref="MessageActionsPayload"/> to be used in the tests.
+        /// Creates a <see cref="Microsoft.Agents.Extensions.Teams.Models.MessageActionsPayload"/> to be used in the tests.
         /// </summary>
         /// <returns>A MessageActionsPayload set with testing values.</returns>
         private MessageActionsPayload CreateActionPayload()

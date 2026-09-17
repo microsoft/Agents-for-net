@@ -18,8 +18,8 @@ namespace Microsoft.Agents.Extensions.A2A;
 /// This differs from <c>AgentApplication.OnMessage</c> in that it only matches for the A2A channel.
 /// Provide <paramref name="text"/> for an exact match, <paramref name="textRegex"/> for a pattern match, or neither to match any message.
 /// <paramref name="text"/> and <paramref name="textRegex"/> are mutually exclusive.
-/// The method must match the <see cref="A2ARouteHandler"/> delegate signature, which delivers a
-/// strongly-typed <see cref="IA2ATurnContext"/> for the current turn.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.A2A.A2ARouteHandler"/> delegate signature, which delivers a
+/// strongly-typed <see cref="Microsoft.Agents.Extensions.A2A.IA2ATurnContext"/> for the current turn.
 /// <code>
 /// // Match any A2A message
 /// [A2AMessageRoute]
@@ -44,9 +44,9 @@ namespace Microsoft.Agents.Extensions.A2A;
 /// </code>
 /// </remarks>
 /// <param name="text">The exact message text to match. Mutually exclusive with <paramref name="textRegex"/>. When both are omitted, all messages are matched.</param>
-/// <param name="textRegex">A regular expression pattern matched against <see cref="IActivity.Text"/>. Mutually exclusive with <paramref name="text"/>.</param>
+/// <param name="textRegex">A regular expression pattern matched against <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/>. Mutually exclusive with <paramref name="text"/>.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. When no text filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-text routes take priority.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. When no text filter is specified, defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/> so specific-text routes take priority.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(A2ARouteHandler))]

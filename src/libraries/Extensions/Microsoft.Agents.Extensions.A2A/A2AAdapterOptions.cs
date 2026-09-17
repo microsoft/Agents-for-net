@@ -6,7 +6,7 @@ using System;
 namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
-/// Configuration options for <see cref="A2AAdapter"/> runtime behavior.
+/// Configuration options for <see cref="Microsoft.Agents.Extensions.A2A.A2AAdapter"/> runtime behavior.
 /// </summary>
 public sealed class A2AAdapterOptions
 {

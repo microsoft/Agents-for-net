@@ -11,13 +11,13 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Builder.Telemetry.Authorization.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces an authorization-token request and records
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces an authorization-token request and records
     /// the auth handler identifier, optional OAuth connection name, and optional scopes on the
     /// <see cref="System.Diagnostics.Activity"/>.
     /// </summary>
     /// <remarks>
     /// Derived classes pass a specific activity name and may add further tags by overriding
-    /// <see cref="TelemetryScope.Callback"/> and calling <c>base.Callback</c>.
+    /// <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.Callback(System.Diagnostics.Activity, System.Double, System.Exception)"/> and calling <c>base.Callback</c>.
     /// </remarks>
     internal class ScopeAuthorizationRequest : TelemetryScope
     {

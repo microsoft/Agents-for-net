@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// Provides a builder for configuring settings routes in an AgentApplication.
 /// </summary>
 /// <remarks>
-/// Use <see cref="SettingRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionSetting"/>.
 /// </remarks>
@@ -61,7 +61,7 @@ public class SettingRouteBuilder : RouteBuilderBase<SettingRouteBuilder>
     /// maintaining consistency with the route's initial setup.</remarks>
     /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
     /// route is always configured for Invoke routing.</param>
-    /// <returns>The current instance of <see cref="SettingRouteBuilder"/> with Invoke routing enabled.</returns>
+    /// <returns>The current instance of <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingRouteBuilder"/> with Invoke routing enabled.</returns>
     public override SettingRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;

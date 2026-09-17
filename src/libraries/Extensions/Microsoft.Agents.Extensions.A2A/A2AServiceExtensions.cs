@@ -49,7 +49,7 @@ public static class A2AServiceExtensions
     }
 
     /// <summary>
-    /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/>.
+    /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly.  Each AgentApplication must have been added using <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/>.
     /// </summary>
     /// <param name="endpoints"></param>
     /// <param name="requireAuth"></param>

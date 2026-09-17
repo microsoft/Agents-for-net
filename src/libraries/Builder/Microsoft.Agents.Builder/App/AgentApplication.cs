@@ -85,10 +85,10 @@ namespace Microsoft.Agents.Builder.App
         /// infrastructure are registered before the first turn arrives.
         /// </summary>
         /// <remarks>
-        /// This method is called from the <see cref="AgentApplication"/> constructor via virtual
+        /// This method is called from the <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> constructor via virtual
         /// dispatch, so derived-class constructor bodies have not yet run when it executes.
-        /// Overrides must only depend on state initialized by <see cref="AgentApplication"/> itself
-        /// (e.g., <see cref="Options"/>, storage, and routing infrastructure) and must not access
+        /// Overrides must only depend on state initialized by <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> itself
+        /// (e.g., <see cref="Microsoft.Agents.Builder.App.AgentApplication.Options"/>, storage, and routing infrastructure) and must not access
         /// fields or properties set in a derived constructor body.
         /// </remarks>
         protected virtual void ConfigureExtensions() { }
@@ -735,7 +735,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Reset the typing timer's interval countdown for the current turn, restarting the wait before the
         /// next periodic "typing" activity is sent — equivalent to what happens automatically when the agent
-        /// sends an activity through the normal <see cref="ITurnContext.SendActivityAsync(IActivity, System.Threading.CancellationToken)"/>
+        /// sends an activity through the normal <see cref="Microsoft.Agents.Builder.ITurnContext.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         /// pipeline.
         /// </summary>
         /// <remarks>
@@ -772,9 +772,9 @@ namespace Microsoft.Agents.Builder.App
         /// Registers the application-scoped services needed for the current turn.
         /// </summary>
         /// <remarks>
-        /// This stores the current <see cref="ITurnState"/>, <see cref="AdaptiveCard"/>, and
-        /// <see cref="Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
-        /// When user authorization is configured, the current <see cref="UserAuthorization"/>
+        /// This stores the current <see cref="Microsoft.Agents.Builder.State.ITurnState"/>, <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCard"/>, and
+        /// <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
+        /// When user authorization is configured, the current <see cref="Microsoft.Agents.Builder.App.AgentApplication.UserAuthorization"/>
         /// instance is also registered.
         /// </remarks>
         /// <param name="turnContext">The turn context to populate with services.</param>
@@ -800,7 +800,7 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Called by the adapter (for example, a <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/>)
+        /// Called by an adapter that implements <see cref="Microsoft.Agents.Builder.IChannelAdapter"/>
         /// at runtime in order to process an inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>

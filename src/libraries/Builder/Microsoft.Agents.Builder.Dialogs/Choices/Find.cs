@@ -90,8 +90,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         }
 
         /// <summary>This method is internal and should not be used.</summary>
-        /// <remarks>Please use <see cref="FindChoices(string, IList{Choice}, FindChoicesOptions)"/> or
-        /// <see cref="FindChoices(string, IList{string}, FindChoicesOptions)"/> instead.</remarks>
+        /// <remarks>Please use <see cref="Microsoft.Agents.Builder.Dialogs.Choices.Find.FindChoices(System.String, System.Collections.Generic.IList{Microsoft.Agents.Builder.Dialogs.Choices.Choice}, Microsoft.Agents.Builder.Dialogs.Choices.FindChoicesOptions)"/> or
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.Choices.Find.FindChoices(System.String, System.Collections.Generic.IList{System.String}, Microsoft.Agents.Builder.Dialogs.Choices.FindChoicesOptions)"/> instead.</remarks>
         /// <param name="utterance">The input.</param>
         /// <param name="values">The values.</param>
         /// <param name="options">The options for the search.</param>

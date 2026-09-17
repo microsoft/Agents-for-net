@@ -10,11 +10,11 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// Provides a builder for configuring message preview edit routes in an AgentApplication.
 /// </summary>
 /// <remarks>
-/// Use <see cref="MessagePreviewEditRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewEditRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionSubmitAction"/>
 /// with <see cref="Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction.BotMessagePreviewAction"/> of <c>"edit"</c>,
-/// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
+/// optionally filtered by command ID via <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CommandRouteBuilderBase{TBuilder}.WithCommand(System.String)"/>.
 /// </remarks>
 public class MessagePreviewEditRouteBuilder : CommandRouteBuilderBase<MessagePreviewEditRouteBuilder>
 {
@@ -38,7 +38,7 @@ public class MessagePreviewEditRouteBuilder : CommandRouteBuilderBase<MessagePre
     /// Configures the route to use the specified handler for processing message preview edit actions.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the message preview edit action.</param>
-    /// <returns>The current instance of <see cref="MessagePreviewEditRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewEditRouteBuilder"/>, enabling method chaining.</returns>
     public MessagePreviewEditRouteBuilder WithHandler(MessagePreviewEditHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>

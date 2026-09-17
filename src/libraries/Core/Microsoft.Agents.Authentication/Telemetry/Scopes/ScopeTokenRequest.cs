@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Authentication.Telemetry.Scopes
     /// the <see cref="System.Diagnostics.Activity"/> with the authentication method used.
     /// </summary>
     /// <remarks>
-    /// Derived classes can override <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.Callback"/> to add further
+    /// Derived classes can override <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.Callback(System.Diagnostics.Activity, System.Double, System.Exception)"/> to add further
     /// tags (e.g., scopes or instance identifiers) after calling <c>base.Callback</c>.
     /// </remarks>
     internal class ScopeTokenRequest : TelemetryScope

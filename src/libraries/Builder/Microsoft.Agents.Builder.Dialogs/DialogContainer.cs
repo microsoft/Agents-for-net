@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder.Dialogs
     public abstract class DialogContainer : Dialog
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogContainer"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogContainer"/> class.
         /// </summary>
         /// <param name="dialogId">The ID to assign to the dialog.</param>
         protected DialogContainer(string dialogId = null)
@@ -22,10 +22,10 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogContainer"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogContainer"/> class.
         /// </summary>
         /// <param name="dialogId">The ID to assign to the dialog.</param>
-        /// <param name="ignoreMemoryScopeBinding">False if this <see cref="DialogContainer"/> should interact with MemoryScopes.</param>
+        /// <param name="ignoreMemoryScopeBinding">False if this <see cref="Microsoft.Agents.Builder.Dialogs.DialogContainer"/> should interact with MemoryScopes.</param>
         protected DialogContainer(bool ignoreMemoryScopeBinding, string dialogId = null)
             : base(dialogId)
         {
@@ -33,14 +33,14 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether or not this <see cref="DialogContainer"/> should interact with Memory Scopes.
+        /// Gets or sets a value indicating whether or not this <see cref="Microsoft.Agents.Builder.Dialogs.DialogContainer"/> should interact with Memory Scopes.
         /// </summary>
-        /// <value>The setting for whether or not this <see cref="DialogContainer"/> should ignore scope binding.</value>
+        /// <value>The setting for whether or not this <see cref="Microsoft.Agents.Builder.Dialogs.DialogContainer"/> should ignore scope binding.</value>
         [JsonPropertyName("ignoreMemoryScopeBinding")]
         public bool IgnoreMemoryScopeBinding { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets the containers <see cref="DialogSet"/>.
+        /// Gets or sets the containers <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/>.
         /// </summary>
         /// <value>The containers Dialog Set.</value>
         [JsonPropertyName("dialogs")]

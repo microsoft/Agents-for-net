@@ -7,12 +7,12 @@ using System;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Provides a concrete builder for routing activities by activity type in an <see cref="AgentApplication"/>.
+    /// Provides a concrete builder for routing activities by activity type in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="TypeRouteBuilder"/> when you need a type-based route that uses the standard
-    /// <see cref="RouteHandler"/> delegate. This type inherits the shared activity-type matching behavior from
-    /// <see cref="TypeRouteBuilderBase{TBuilder}"/>, including activity type filters, custom selectors, channel
+    /// Use <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder"/> when you need a type-based route that uses the standard
+    /// <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate. This type inherits the shared activity-type matching behavior from
+    /// <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilderBase{TBuilder}"/>, including activity type filters, custom selectors, channel
     /// constraints, and agentic routing support.
     /// </remarks>
     public class TypeRouteBuilder : TypeRouteBuilderBase<TypeRouteBuilder>
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.App
         /// Assigns the specified route handler to the current route and returns the updated builder instance.
         /// </summary>
         /// <param name="handler">The route handler to associate with the route. Cannot be null.</param>
-        /// <returns>The current <see cref="TypeRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.TypeRouteBuilder"/> instance for method chaining.</returns>
         public TypeRouteBuilder WithHandler(RouteHandler handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));

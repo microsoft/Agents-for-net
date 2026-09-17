@@ -19,23 +19,23 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
     public class ChoicePrompt : Prompt<FoundChoice>
     {
         /// <summary>
-        /// A dictionary of Default Choices based on <seealso cref="GetSupportedCultures"/>.
+        /// A dictionary of Default Choices based on <seealso cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptCultureModels.GetSupportedCultures()"/>.
         /// Can be replaced by user using the constructor that contains choiceDefaults.
         /// </summary>
         private readonly Dictionary<string, ChoiceFactoryOptions> _choiceDefaults;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChoicePrompt"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.ChoicePrompt"/> class.
         /// </summary>
         /// <param name="dialogId">The ID to assign to this prompt.</param>
-        /// <param name="validator">Optional, a <see cref="PromptValidator{FoundChoice}"/> that contains additional,
+        /// <param name="validator">Optional, a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptValidator{FoundChoice}"/> that contains additional,
         /// custom validation for this prompt.</param>
         /// <param name="defaultLocale">Optional, the default locale used to determine language-specific behavior of the prompt.
         /// The locale is a 2, 3, or 4 character ISO 639 code that represents a language or language family.</param>
         /// <remarks>The value of <paramref name="dialogId"/> must be unique within the
-        /// <see cref="DialogSet"/> or <see cref="ComponentDialog"/> to which the prompt is added.
-        /// <para>If the <see cref="Activity.Locale"/>
-        /// of the <see cref="DialogContext"/>.<see cref="DialogContext.Context"/>.<see cref="ITurnContext.Activity"/>
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> or <see cref="Microsoft.Agents.Builder.Dialogs.ComponentDialog"/> to which the prompt is added.
+        /// <para>If the <see cref="Microsoft.Agents.Core.Models.Activity.Locale"/>
+        /// of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/>.<see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.Context"/>.<see cref="Microsoft.Agents.Builder.ITurnContext.Activity"/>
         /// is specified, then that local is used to determine language specific behavior; otherwise
         /// the <paramref name="defaultLocale"/> is used. US-English is the used if no language or
         /// default locale is available, or if the language or locale is not otherwise supported.</para></remarks>
@@ -52,19 +52,19 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChoicePrompt"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.ChoicePrompt"/> class.
         /// </summary>
         /// <param name="dialogId">The ID to assign to this prompt.</param>
-        /// <param name="validator">Optional, a <see cref="PromptValidator{FoundChoice}"/> that contains additional,
+        /// <param name="validator">Optional, a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptValidator{FoundChoice}"/> that contains additional,
         /// custom validation for this prompt.</param>
         /// <param name="defaultLocale">Optional, the default locale used to determine language-specific behavior of the prompt.
         /// The locale is a 2, 3, or 4 character ISO 639 code that represents a language or language family.</param>
         /// <param name="choiceDefaults">Overrides the dictionary of SDK-supported choiceDefaults (for prompt localization).
         /// Must be passed in to each ConfirmPrompt that needs the custom choice defaults.</param>
         /// <remarks>The value of <paramref name="dialogId"/> must be unique within the
-        /// <see cref="DialogSet"/> or <see cref="ComponentDialog"/> to which the prompt is added.
-        /// <para>If the <see cref="Activity.Locale"/>
-        /// of the <see cref="DialogContext"/>.<see cref="DialogContext.Context"/>.<see cref="ITurnContext.Activity"/>
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> or <see cref="Microsoft.Agents.Builder.Dialogs.ComponentDialog"/> to which the prompt is added.
+        /// <para>If the <see cref="Microsoft.Agents.Core.Models.Activity.Locale"/>
+        /// of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/>.<see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.Context"/>.<see cref="Microsoft.Agents.Builder.ITurnContext.Activity"/>
         /// is specified, then that local is used to determine language specific behavior; otherwise
         /// the <paramref name="defaultLocale"/> is used. US-English is the used if no language or
         /// default locale is available, or if the language or locale is not otherwise supported.</para></remarks>
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         public string DefaultLocale { get; set; }
 
         /// <summary>
-        /// Gets or sets additional options passed to the <see cref="ChoiceFactory"/> and used to tweak
+        /// Gets or sets additional options passed to the <see cref="Microsoft.Agents.Builder.Dialogs.Choices.ChoiceFactory"/> and used to tweak
         /// the style of choices rendered to the user.
         /// </summary>
         /// <value>Additional options for presenting the set of choices.</value>
@@ -97,7 +97,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
 
         /// <summary>
         /// Gets or sets additional options passed to the underlying
-        /// <see cref="ChoiceRecognizers.RecognizeChoices(string, IList{Choice}, FindChoicesOptions)"/> method.
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.Choices.ChoiceRecognizers.RecognizeChoices(System.String, System.Collections.Generic.IList{Microsoft.Agents.Builder.Dialogs.Choices.Choice}, Microsoft.Agents.Builder.Dialogs.Choices.FindChoicesOptions)"/> method.
         /// </summary>
         /// <value>Options to control the recognition strategy.</value>
         public FindChoicesOptions RecognizerOptions { get; set; }
@@ -108,12 +108,12 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         /// <param name="state">Contains state for the current instance of the prompt on the dialog stack.</param>
         /// <param name="options">A prompt options object constructed from the options initially provided
-        /// in the call to <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>.</param>
+        /// in the call to <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>.</param>
         /// <param name="isRetry">true  if this is the first time this prompt dialog instance
         /// on the stack is prompting the user for input; otherwise, false.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         protected override async Task OnPromptAsync(
             ITurnContext turnContext,
             IDictionary<string, object> state,
@@ -154,10 +154,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         /// <param name="state">Contains state for the current instance of the prompt on the dialog stack.</param>
         /// <param name="options">A prompt options object constructed from the options initially provided
-        /// in the call to <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>.</param>
+        /// in the call to <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result describes the result of the recognition attempt.</remarks>
         protected override Task<PromptRecognizerResult<FoundChoice>> OnRecognizeAsync(
             ITurnContext turnContext,

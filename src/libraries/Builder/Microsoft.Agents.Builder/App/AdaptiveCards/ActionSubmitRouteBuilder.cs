@@ -16,14 +16,14 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
 {
     /// <summary>
     /// Provides a concrete builder for routing Adaptive Card <c>Action.Submit</c> message activities in an
-    /// <see cref="AgentApplication"/>.
+    /// <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
     /// Routes built from this builder match message activities with no text and a value object whose configured
     /// filter field (defaults to <c>verb</c>) matches the configured verb or verb pattern. When neither
-    /// <see cref="WithVerb(string)"/> nor <see cref="WithVerb(Regex)"/> is called the route matches any Action.Submit
+    /// <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder.WithVerb(System.String)"/> nor <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder.WithVerb(System.Text.RegularExpressions.Regex)"/> is called the route matches any Action.Submit
     /// message (a message with no text and a non-null value). A custom selector supplied via
-    /// <see cref="WithSelector(RouteSelector)"/> is additive to the basic route matching (channel, activity type,
+    /// <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/> is additive to the basic route matching (channel, activity type,
     /// and verb).
     /// </remarks>
     public class ActionSubmitRouteBuilder : RouteBuilderBase<ActionSubmitRouteBuilder>
@@ -35,9 +35,9 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         private string _filter = DefaultActionSubmitFilter;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="ActionSubmitRouteBuilder"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder"/> class.
         /// </summary>
-        /// <returns>A new <see cref="ActionSubmitRouteBuilder"/>.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder"/>.</returns>
         public static ActionSubmitRouteBuilder Create()
         {
             return new ActionSubmitRouteBuilder();
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to match only Action.Submit activities whose filter field equals the specified value.
         /// </summary>
         /// <param name="verb">The verb to match. Comparison is exact.</param>
-        /// <returns>The current <see cref="ActionSubmitRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder"/> instance for method chaining.</returns>
         public ActionSubmitRouteBuilder WithVerb(string verb)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to match Action.Submit activities whose filter field matches the specified pattern.
         /// </summary>
         /// <param name="verbPattern">A regular expression used to match the value of the filter field.</param>
-        /// <returns>The current <see cref="ActionSubmitRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder"/> instance for method chaining.</returns>
         public ActionSubmitRouteBuilder WithVerb(Regex verbPattern)
         {
             AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Sets the name of the value field used to filter Action.Submit activities. Defaults to <c>verb</c>.
         /// </summary>
         /// <param name="filter">The value field name to match the verb against.</param>
-        /// <returns>The current <see cref="ActionSubmitRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder"/> instance for method chaining.</returns>
         public ActionSubmitRouteBuilder WithFilter(string filter)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(filter, nameof(filter));
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="selector">The route selector that defines additional criteria for matching requests to the route. The supplied
         /// selector does not need to validate base route properties like ChannelId, Agentic, activity type, or
         /// verb.</param>
-        /// <returns>The current <see cref="ActionSubmitRouteBuilder"/> instance with the specified selector applied.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder"/> instance with the specified selector applied.</returns>
         public override ActionSubmitRouteBuilder WithSelector(RouteSelector selector)
         {
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to handle Action.Submit events using the specified handler.
         /// </summary>
         /// <param name="handler">The handler to invoke when a matching Action.Submit activity is received. Cannot be null.</param>
-        /// <returns>The current <see cref="ActionSubmitRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitRouteBuilder"/> instance for method chaining.</returns>
         public ActionSubmitRouteBuilder WithHandler(ActionSubmitHandler handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));

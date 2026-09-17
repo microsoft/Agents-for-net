@@ -36,31 +36,31 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         /// Creates a 200 OK response with an optional body.
         /// </summary>
         /// <param name="body">The response body, or null.</param>
-        /// <returns>A new <see cref="NamedPipeResponse"/>.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeResponse"/>.</returns>
         public static NamedPipeResponse OK(byte[] body = null) => new() { StatusCode = 200, Body = body };
 
         /// <summary>
         /// Creates a 202 Accepted response.
         /// </summary>
-        /// <returns>A new <see cref="NamedPipeResponse"/>.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeResponse"/>.</returns>
         public static NamedPipeResponse Accepted() => new() { StatusCode = 202 };
 
         /// <summary>
         /// Creates a 404 Not Found response.
         /// </summary>
-        /// <returns>A new <see cref="NamedPipeResponse"/>.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeResponse"/>.</returns>
         public static NamedPipeResponse NotFound() => new() { StatusCode = 404 };
 
         /// <summary>
         /// Creates a 415 Unsupported Media Type response.
         /// </summary>
-        /// <returns>A new <see cref="NamedPipeResponse"/>.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeResponse"/>.</returns>
         public static NamedPipeResponse UnsupportedMediaType() => new() { StatusCode = 415 };
 
         /// <summary>
         /// Creates a 500 Internal Server Error response.
         /// </summary>
-        /// <returns>A new <see cref="NamedPipeResponse"/>.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeResponse"/>.</returns>
         public static NamedPipeResponse InternalServerError() => new() { StatusCode = 500 };
     }
 }
