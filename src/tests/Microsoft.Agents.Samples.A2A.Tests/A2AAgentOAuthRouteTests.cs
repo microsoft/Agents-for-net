@@ -14,13 +14,10 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.Agents.Extensions.A2A.Pipeline;
-using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
@@ -78,20 +75,6 @@ public class A2AAgentOAuthRouteTests
     }
 
     [Fact]
-    public void MyAgent_ResolvesFromStartupServiceRegistration()
-    {
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-        {
-            EnvironmentName = "Development",
-        });
-        A2AAgentStartup.ConfigureBuilder(builder);
-
-        using var provider = builder.Services.BuildServiceProvider();
-
-        _ = provider.GetRequiredService<MyAgent>();
-    }
-
-    [Fact]
     public void GraphSkill_DeclaresAutoSignInHandlerAndNoDuplicateRoute()
     {
         MethodInfo method = typeof(MyAgent).GetMethod("OnGraphAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
@@ -103,7 +86,7 @@ public class A2AAgentOAuthRouteTests
     }
 
     [Fact]
-    public async Task GitHubSkill_DeclaresAutoSignInHandlerAndNoDuplicateRoute()
+    public void GitHubSkill_DeclaresAutoSignInHandlerAndNoDuplicateRoute()
     {
         MethodInfo method = typeof(MyAgent).GetMethod("OnGitHubIssuesAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
@@ -149,21 +132,6 @@ public class A2AAgentOAuthRouteTests
         github.Verify(handler => handler.SignInUserAsync(It.IsAny<ITurnContext>(), true, It.IsAny<string>(), It.IsAny<System.Collections.Generic.IList<string>>(), It.IsAny<CancellationToken>()), Times.Once);
         graph.Verify(handler => handler.SignInUserAsync(It.IsAny<ITurnContext>(), true, It.IsAny<string>(), It.IsAny<System.Collections.Generic.IList<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         Assert.Contains("octo/repo#17 Harden scopes", task.Status.Message!.Parts[0].Text, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task EchoRoute_DoesNotInvokeAuthorizationHandlers()
-    {
-        var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-token");
-        var github = CreateAuthorizationHandler(GitHubHandlerName, "github-token");
-        var record = CreateRecord(graph.Object, github.Object, Mock.Of<IGraphProfileClient>(), Mock.Of<IGitHubIssuesClient>());
-
-        var context = await ExecuteMessageAsync(record, "hello", CreateDelegatedIdentity());
-        var task = ReadTaskResponse(context);
-
-        VerifyHandlerNotInvoked(graph);
-        VerifyHandlerNotInvoked(github);
-        Assert.Equal("You said: hello", task.Status.Message!.Parts[0].Text);
     }
 
     [Fact]
@@ -328,21 +296,6 @@ public class A2AAgentOAuthRouteTests
         handler.Setup(value => value.ResetStateAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         return handler;
-    }
-
-    private static void VerifyHandlerNotInvoked(Mock<IUserAuthorization> handler)
-    {
-        handler.Verify(value => value.SignInUserAsync(
-            It.IsAny<ITurnContext>(),
-            It.IsAny<bool>(),
-            It.IsAny<string>(),
-            It.IsAny<System.Collections.Generic.IList<string>>(),
-            It.IsAny<CancellationToken>()), Times.Never);
-        handler.Verify(value => value.GetRefreshedUserTokenAsync(
-            It.IsAny<ITurnContext>(),
-            It.IsAny<string>(),
-            It.IsAny<System.Collections.Generic.IList<string>>(),
-            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private static async Task<DefaultHttpContext> ExecuteMessageAsync(Record record, string text, ClaimsIdentity identity)

@@ -131,7 +131,7 @@ A2AClient's client ID or a Microsoft Graph application ID. Both settings use
 the resulting Agent API scope URI:
 `api://<A2AAgent-client-id>/access_as_user`.
 
-`A2AAgentStartup` enables token validation in Development only after
+`Program.cs` enables token validation in Development only after
 `TokenValidation:Audiences` contains real GUIDs.
 
 `EnforceRequiredScopes` makes `A2AUserAuthorization` validate the original
