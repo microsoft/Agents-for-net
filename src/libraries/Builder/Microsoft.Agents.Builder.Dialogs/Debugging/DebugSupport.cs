@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         /// <summary>
         /// Gets or sets the source map instance.
         /// </summary>
-        /// <value>The <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.DebugSupport.SourceMap"/> instance.</value>
+        /// <value>The <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceMap"/> instance.</value>
         public static ISourceMap SourceMap { get; set; } = Debugging.NullSourceMap.Instance;
 
         /// <summary>

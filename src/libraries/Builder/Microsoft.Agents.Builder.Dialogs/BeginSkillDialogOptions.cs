@@ -11,10 +11,10 @@ namespace Microsoft.Agents.Builder.Dialogs
     public class BeginSkillDialogOptions
     {
         /// <summary>
-        /// Gets or sets the <see cref="Microsoft.Agents.Builder.Dialogs.BeginSkillDialogOptions.Activity"/> to send to the skill.
+        /// Gets or sets the <see cref="Microsoft.Agents.Core.Models.IActivity"/> to send to the skill.
         /// </summary>
         /// <value>
-        /// The <see cref="Microsoft.Agents.Builder.Dialogs.BeginSkillDialogOptions.Activity"/> to send to the skill.
+        /// The <see cref="Microsoft.Agents.Core.Models.IActivity"/> to send to the skill.
         /// </value>
         public IActivity Activity { get; set; }
     }

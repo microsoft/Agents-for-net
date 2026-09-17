@@ -45,10 +45,10 @@ namespace Microsoft.Agents.Builder.Dialogs
         public IAgentClient SkillClient => AgentHost?.GetClient(Skill);
 
         /// <summary>
-        /// Gets or sets the <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialogOptions.ConversationState"/> to be used by the dialog.
+        /// Gets or sets the <see cref="Microsoft.Agents.Builder.State.ConversationState"/> to be used by the dialog.
         /// </summary>
         /// <value>
-        /// The <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialogOptions.ConversationState"/> to be used by the dialog.
+        /// The <see cref="Microsoft.Agents.Builder.State.ConversationState"/> to be used by the dialog.
         /// </value>
         [JsonIgnore]
         public ConversationState ConversationState { get; set; }
