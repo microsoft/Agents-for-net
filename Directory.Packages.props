@@ -113,6 +113,7 @@
     <PackageVersion Include="AdaptiveCards.Rendering.Html" Version="2.7.3" />
     <PackageVersion Include="Microsoft.Graph" Version="6.5.0" />
     <PackageVersion Include="Microsoft.Graph.Core" Version="4.0.1" />
+    <PackageVersion Include="Octokit" Version="14.0.0" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <!-- To override older version in AdaptiveCards -->
