@@ -109,6 +109,21 @@ public class A2AAgentProgramTests
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Production_GuidTenantAndAudience_RegisterJwtBearer()
+    {
+        await using var host = await A2AAgentProcessHost.StartAsync(
+            CreateProcessEnvironment(
+                TestTenantId,
+                TestAudience,
+                environmentName: Environments.Production));
+
+        using var client = new HttpClient { BaseAddress = host.BaseAddress };
+        using HttpResponseMessage response = await PostA2ARequestWithJwtShapedBearerAsync(client);
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
     [Theory]
     [InlineData(null, A2AAgentAuthenticationDefaults.GitHubScheme)]
     [InlineData("", A2AAgentAuthenticationDefaults.GitHubScheme)]
