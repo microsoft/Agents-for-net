@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder
     /// </summary>
     /// <remarks>
     /// Context provides information needed to process an incoming activity.
-    /// The context object is created by a <see cref="IChannelAdapter"/> and persists for the
+    /// The context object is created by a <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> and persists for the
     /// length of the turn.  TurnContext cannot be used after the turn is complete.
     /// </remarks>
     /// <seealso cref="Microsoft.Agents.Builder.IAgent"/>
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder
         private readonly IStreamingResponse _streamingResponse;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TurnContext"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.TurnContext"/> class.
         /// </summary>
         /// <param name="adapter">The adapter creating the context.</param>
         /// <param name="activity">The incoming activity for the turn;
@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ITurnContext"/> class from another TurnContext class to target an alternate Activity.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.ITurnContext"/> class from another TurnContext class to target an alternate Activity.
         /// </summary>
         /// <remarks>
         /// For supporting calling legacy systems that always assume ITurnContext.Activity is the activity should be processed.

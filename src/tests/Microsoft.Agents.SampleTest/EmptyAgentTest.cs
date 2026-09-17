@@ -16,12 +16,12 @@ using Xunit;
 namespace Microsoft.Agents.SampleTest
 {
     /// <summary>
-    /// Demonstrates how to test a simple agent using <see cref="AgentTestHost"/> and
-    /// <see cref="TestFlow"/> from <c>Microsoft.Agents.Builder.Testing</c>.
+    /// Demonstrates how to test a simple agent using <see cref="Microsoft.Agents.Builder.Testing.AgentTestHost"/> and
+    /// <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> from <c>Microsoft.Agents.Builder.Testing</c>.
     ///
     /// <para>
-    /// <see cref="AgentTestHost"/> spins up a lightweight DI host that pre-wires a
-    /// <see cref="TestAdapter"/> as the channel adapter, so tests exercise real agent
+    /// <see cref="Microsoft.Agents.Builder.Testing.AgentTestHost"/> spins up a lightweight DI host that pre-wires a
+    /// <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> as the channel adapter, so tests exercise real agent
     /// routing logic without an HTTP server or Azure Bot Service connection.
     /// </para>
     /// </summary>
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.SampleTest
         /// </list>
         ///
         /// <para>
-        /// The test also attaches <see cref="TranscriptLoggerMiddleware"/> to the adapter before
+        /// The test also attaches <see cref="Microsoft.Agents.Builder.TranscriptLoggerMiddleware"/> to the adapter before
         /// creating the flow, demonstrating how to capture a full conversation transcript for
         /// post-hoc assertions.
         /// </para>
@@ -118,7 +118,7 @@ namespace Microsoft.Agents.SampleTest
         // ---------------------------------------------------------------------------------
 
         /// <summary>
-        /// Reads all activities from a <see cref="ITranscriptStore"/>, following
+        /// Reads all activities from a <see cref="Microsoft.Agents.Storage.Transcript.ITranscriptStore"/>, following
         /// continuation tokens until the full page set is exhausted.
         /// </summary>
         private static async Task<IList<IActivity>> GetTranscriptAsync(

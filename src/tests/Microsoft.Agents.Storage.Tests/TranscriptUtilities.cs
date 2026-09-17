@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Storage.Tests
 
         /// <summary>
         /// Get a conversation reference.
-        /// This method can be used to set the conversation reference needed to create a <see cref="Adapters.TestAdapter"/>.
+        /// This method can be used to set the conversation reference needed to create a <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/>.
         /// </summary>
         /// <param name="activity">IActivity.</param>
         /// <returns>A valid conversation reference to the activity provides.</returns>

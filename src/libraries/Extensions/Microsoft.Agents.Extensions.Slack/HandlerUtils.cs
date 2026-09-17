@@ -36,10 +36,10 @@ internal static class HandlerUtils
     }
 
     /// <summary>
-    /// Resolves a delegate created from a decorated method to a <see cref="RouteHandler"/>. A
-    /// <see cref="SlackRouteHandler"/> (Slack-specific context) or a
-    /// <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> is wrapped; a native
-    /// <see cref="RouteHandler"/> is used as-is.
+    /// Resolves a delegate created from a decorated method to a <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>. A
+    /// <see cref="Microsoft.Agents.Extensions.Slack.SlackRouteHandler"/> (Slack-specific context) or a
+    /// <see cref="Microsoft.Agents.Builder.App.TypedRouteHandler{T}"/> of <see cref="Microsoft.Agents.Extensions.Slack.ISlackActivity"/> is wrapped; a native
+    /// <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> is used as-is.
     /// </summary>
     public static RouteHandler ResolveRouteHandler(Delegate handler)
     {
@@ -52,9 +52,9 @@ internal static class HandlerUtils
     }
 
     /// <summary>
-    /// Resolves a delegate created from a decorated method to a <see cref="FeedbackLoopHandler"/>. A
-    /// <see cref="SlackFeedbackLoopHandler"/> (Slack-specific context) is wrapped; a native
-    /// <see cref="FeedbackLoopHandler"/> is used as-is.
+    /// Resolves a delegate created from a decorated method to a <see cref="Microsoft.Agents.Builder.App.FeedbackLoopHandler"/>. A
+    /// <see cref="Microsoft.Agents.Extensions.Slack.SlackFeedbackLoopHandler"/> (Slack-specific context) is wrapped; a native
+    /// <see cref="Microsoft.Agents.Builder.App.FeedbackLoopHandler"/> is used as-is.
     /// </summary>
     public static FeedbackLoopHandler ResolveFeedbackLoopHandler(Delegate handler)
     {

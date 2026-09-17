@@ -13,7 +13,7 @@ using Microsoft.Agents.Core;
 namespace Microsoft.Agents.Builder.Dialogs
 {
     /// <summary>
-    /// A collection of <see cref="Dialog"/> objects that can all call each other.
+    /// A collection of <see cref="Microsoft.Agents.Builder.Dialogs.Dialog"/> objects that can all call each other.
     /// </summary>
     public class DialogSet
     {
@@ -23,13 +23,13 @@ namespace Microsoft.Agents.Builder.Dialogs
         private string _version;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogSet"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> class.
         /// </summary>
         /// <param name="dialogState">The state property accessor with which to manage the stack for
         /// this dialog set.</param>
-        /// <remarks>To start and control the dialogs in this dialog set, create a <see cref="DialogContext"/>
+        /// <remarks>To start and control the dialogs in this dialog set, create a <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/>
         /// and use its methods to start, continue, or end dialogs. To create a dialog context,
-        /// call <see cref="CreateContextAsync(ITurnContext, CancellationToken)"/>.
+        /// call <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet.CreateContextAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>.
         /// </remarks>
         public DialogSet(DialogState dialogState)
         {
@@ -43,7 +43,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogSet"/> class with null <see cref="DialogState"/>.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> class with null <see cref="Microsoft.Agents.Builder.Dialogs.DialogState"/>.
         /// </summary>
         public DialogSet()
         {
@@ -83,8 +83,6 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// </summary>
         /// <param name="dialog">The dialog to add.</param>
         /// <returns>The dialog set after the operation is complete.</returns>
-        /// <remarks>The added dialog's <see cref="Dialog.TelemetryClient"/> is set to the
-        /// <see cref="TelemetryClient"/> of the dialog set.</remarks>
         public DialogSet Add(Dialog dialog)
         {
             // Ensure new version hash is computed
@@ -125,14 +123,14 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Creates a <see cref="DialogContext"/> which can be used to work with the dialogs in the
-        /// <see cref="DialogSet"/>.
+        /// Creates a <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> which can be used to work with the dialogs in the
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/>.
         /// </summary>
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <remarks>If the task is successful, the result contains the created <see cref="DialogContext"/>.
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
+        /// <remarks>If the task is successful, the result contains the created <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/>.
         /// </remarks>
         public async Task<DialogContext> CreateContextAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
@@ -157,7 +155,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Searches the current <see cref="DialogSet"/> for a <see cref="Dialog"/> by its ID.
+        /// Searches the current <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> for a <see cref="Microsoft.Agents.Builder.Dialogs.Dialog"/> by its ID.
         /// </summary>
         /// <param name="dialogId">ID of the dialog to search for.</param>
         /// <returns>The dialog if found; otherwise <c>null</c>.</returns>
@@ -179,7 +177,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// Gets the Dialogs of the set.
         /// </summary>
-        /// <returns>A collection of <see cref="Dialog"/>.</returns>
+        /// <returns>A collection of <see cref="Microsoft.Agents.Builder.Dialogs.Dialog"/>.</returns>
         public IEnumerable<Dialog> GetDialogs()
         {
             return _dialogs.Values;

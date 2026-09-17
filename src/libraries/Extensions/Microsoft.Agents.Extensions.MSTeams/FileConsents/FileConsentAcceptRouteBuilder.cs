@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 /// Provides a builder for configuring routes that handle Teams file consent accept invocations.
 /// </summary>
 /// <remarks>
-/// Use <see cref="FileConsentAcceptRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentAcceptRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Apps.InvokeNames.FileConsent"/>
 /// and <see cref="Microsoft.Teams.Apps.Files.FileConsentValue.Action"/> of <c>"accept"</c>.
@@ -28,7 +28,7 @@ public class FileConsentAcceptRouteBuilder : FileConsentRouteBuilderBase<FileCon
     }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="FileConsentAcceptRouteBuilder"/>,
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentAcceptRouteBuilder"/>,
     /// pre-configured to match file consent accept invocations.
     /// </summary>
     public FileConsentAcceptRouteBuilder() : base()
@@ -42,7 +42,7 @@ public class FileConsentAcceptRouteBuilder : FileConsentRouteBuilderBase<FileCon
     /// <param name="handler">An asynchronous delegate invoked when the user accepts the file consent card.
     /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Apps.Files.FileConsentValue"/>,
     /// and a cancellation token.</param>
-    /// <returns>The current <see cref="FileConsentAcceptRouteBuilder"/> instance for method chaining.</returns>
+    /// <returns>The current <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentAcceptRouteBuilder"/> instance for method chaining.</returns>
     public FileConsentAcceptRouteBuilder WithHandler(FileConsentHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>

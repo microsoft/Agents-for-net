@@ -12,9 +12,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.App;
 public class TeamsHandoffRouteBuilder : HandoffRouteBuilderBase<TeamsHandoffRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the <see cref="TeamsHandoffRouteBuilder"/> class.
+    /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsHandoffRouteBuilder"/> class.
     /// </summary>
-    /// <returns>A new <see cref="TeamsHandoffRouteBuilder"/>.</returns>
+    /// <returns>A new <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsHandoffRouteBuilder"/>.</returns>
     public static TeamsHandoffRouteBuilder Create()
     {
         return new TeamsHandoffRouteBuilder();

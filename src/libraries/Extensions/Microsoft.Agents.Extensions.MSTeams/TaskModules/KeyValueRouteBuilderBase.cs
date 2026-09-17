@@ -30,7 +30,7 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
     protected string InvokeName { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="KeyValueRouteBuilderBase{TBuilder}"/>,
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.KeyValueRouteBuilderBase{TBuilder}"/>,
     /// pre-configured as an Invoke route.
     /// </summary>
     protected KeyValueRouteBuilderBase() : base()
@@ -41,7 +41,7 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
     /// <summary>
     /// Match a specific task data value.
     /// </summary>
-    /// <remarks>The default key name is "task" unless changed with <see cref="WithKey(string)"/></remarks>
+    /// <remarks>The default key name is "task" unless changed with <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.KeyValueRouteBuilderBase{TBuilder}.WithKey(System.String)"/></remarks>
     /// <param name="value">The key value to be matched.</param>
     /// <returns>The current instance of the builder, allowing for method chaining.</returns>
     /// <exception cref="InvalidOperationException">Command has already been defined for this builder
@@ -60,7 +60,7 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
     /// <summary>
     /// Match a specific task data value pattern.
     /// </summary>
-    /// <remarks>The default key name is "task" unless changed with <see cref="WithKey(string)"/></remarks>
+    /// <remarks>The default key name is "task" unless changed with <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.KeyValueRouteBuilderBase{TBuilder}.WithKey(System.String)"/></remarks>
     /// <param name="valuePattern">The key value matching the Regex pattern.</param>
     /// <returns>The current instance of the builder, allowing for method chaining.</returns>
     /// <exception cref="InvalidOperationException">Key has already been defined for this builder
@@ -96,7 +96,7 @@ public class KeyValueRouteBuilderBase<TBuilder> : RouteBuilderBase<TBuilder> whe
     /// maintaining consistency with the route's initial setup.</remarks>
     /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
     /// route is always configured for Invoke routing.</param>
-    /// <returns>The current instance of <see cref="KeyValueRouteBuilderBase{TBuilder}"/> with Invoke routing enabled.</returns>
+    /// <returns>The current instance of <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.KeyValueRouteBuilderBase{TBuilder}"/> with Invoke routing enabled.</returns>
     public override TBuilder AsInvoke(bool isInvoke = true)
     {
         return (TBuilder)this;

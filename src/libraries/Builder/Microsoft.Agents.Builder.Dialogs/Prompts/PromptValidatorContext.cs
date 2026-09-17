@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
-    /// Contains context information for a <see cref="PromptValidator{T}"/>.
+    /// Contains context information for a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptValidator{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type of value the prompt returns.</typeparam>
     public class PromptValidatorContext<T>
@@ -20,19 +20,19 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         }
 
         /// <summary>
-        /// Gets the <see cref="TurnContext"/> for the current turn of conversation with the user.
+        /// Gets the <see cref="Microsoft.Agents.Builder.TurnContext"/> for the current turn of conversation with the user.
         /// </summary>
         /// <value>Context for the current turn of conversation with the user.</value>
         public ITurnContext Context { get; }
 
         /// <summary>
-        /// Gets the <see cref="PromptRecognizerResult{T}"/> returned from the prompt's recognition attempt.
+        /// Gets the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptRecognizerResult{T}"/> returned from the prompt's recognition attempt.
         /// </summary>
         /// <value>The recognition results from the prompt's recognition attempt.</value>
         public PromptRecognizerResult<T> Recognized { get; }
 
         /// <summary>
-        /// Gets the <see cref="PromptOptions"/> used for this recognition attempt.
+        /// Gets the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions"/> used for this recognition attempt.
         /// </summary>
         /// <value>The prompt options used for this recognition attempt.</value>
         public PromptOptions Options { get; }

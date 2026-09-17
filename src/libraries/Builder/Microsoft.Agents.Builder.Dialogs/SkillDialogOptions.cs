@@ -9,7 +9,7 @@ using Microsoft.Agents.Client;
 namespace Microsoft.Agents.Builder.Dialogs
 {
     /// <summary>
-    /// Defines the options that will be used to execute a <see cref="SkillDialog"/>.
+    /// Defines the options that will be used to execute a <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialog"/>.
     /// </summary>
     public class SkillDialogOptions
     {
@@ -36,19 +36,19 @@ namespace Microsoft.Agents.Builder.Dialogs
         public string ClientId => AgentHost?.HostClientId;
 
         /// <summary>
-        /// Gets or sets the <see cref="IAgentClient"/> used to call the remote Agent.
+        /// Gets or sets the <see cref="Microsoft.Agents.Client.IAgentClient"/> used to call the remote Agent.
         /// </summary>
         /// <value>
-        /// The <see cref="IAgentClient"/> used to call the remote Agent.
+        /// The <see cref="Microsoft.Agents.Client.IAgentClient"/> used to call the remote Agent.
         /// </value>
         [JsonIgnore]
         public IAgentClient SkillClient => AgentHost?.GetClient(Skill);
 
         /// <summary>
-        /// Gets or sets the <see cref="ConversationState"/> to be used by the dialog.
+        /// Gets or sets the <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialogOptions.ConversationState"/> to be used by the dialog.
         /// </summary>
         /// <value>
-        /// The <see cref="ConversationState"/> to be used by the dialog.
+        /// The <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialogOptions.ConversationState"/> to be used by the dialog.
         /// </value>
         [JsonIgnore]
         public ConversationState ConversationState { get; set; }

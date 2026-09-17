@@ -7,8 +7,8 @@ using Microsoft.Agents.Core.Serialization;
 namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
-/// An A2A-specific <see cref="ITurnContext"/> wrapper that surfaces the current activity as a
-/// strongly-typed <see cref="IA2AActivity"/> and exposes A2A-specific helpers.
+/// An A2A-specific <see cref="Microsoft.Agents.Builder.ITurnContext"/> wrapper that surfaces the current activity as a
+/// strongly-typed <see cref="Microsoft.Agents.Extensions.A2A.IA2AActivity"/> and exposes A2A-specific helpers.
 /// </summary>
 public class A2ATurnContext : TurnContextWrapper, IA2ATurnContext
 {

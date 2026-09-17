@@ -26,7 +26,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// 
     /// Auto Sign In:
     /// If enabled in <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions"/>, sign in starts automatically after the first Message the user sends.  When
-    /// the sign in is complete, the turn continues with the original message. On failure, <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(System.Func{Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.State.ITurnState, string, Microsoft.Agents.Builder.UserAuth.SignInResponse, System.Threading.CancellationToken, System.Threading.Tasks.Task})"/>
+    /// the sign in is complete, the turn continues with the original message. On failure, <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(Microsoft.Agents.Builder.App.UserAuth.AuthorizationFailure)"/>
     /// is called.
     /// 
     /// </summary>
@@ -240,8 +240,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// </summary>
         /// <remarks>
         /// This should be called to start or continue the user auth until true is returned, which indicates sign in is complete.
-        /// When complete, the token is cached and can be access via <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.GetTurnTokenAsync"/>.
-        /// <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(System.Func{Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.State.ITurnState, string, Microsoft.Agents.Builder.UserAuth.SignInResponse, System.Threading.CancellationToken, System.Threading.Tasks.Task})"/> is called on an error completion.
+        /// When complete, the token is cached and can be access via <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.GetTurnTokenAsync(Microsoft.Agents.Builder.ITurnContext, System.String, System.Threading.CancellationToken)"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(Microsoft.Agents.Builder.App.UserAuth.AuthorizationFailure)"/> is called on an error completion.
         /// </remarks>
         /// <param name="turnContext"></param>
         /// <param name="turnState"></param>

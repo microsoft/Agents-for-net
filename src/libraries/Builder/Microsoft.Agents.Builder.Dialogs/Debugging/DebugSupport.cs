@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.Dialogs.Debugging
 {
     /// <summary>
-    /// Debugger support for <see cref="ITurnContext"/>, <see cref="DialogContext"/>. 
+    /// Debugger support for <see cref="Microsoft.Agents.Builder.ITurnContext"/>, <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/>.
     /// </summary>
     public static class DebugSupport
     {
         /// <summary>
         /// Gets or sets the source map instance.
         /// </summary>
-        /// <value>The <see cref="SourceMap"/> instance.</value>
+        /// <value>The <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.DebugSupport.SourceMap"/> instance.</value>
         public static ISourceMap SourceMap { get; set; } = Debugging.NullSourceMap.Instance;
 
         /// <summary>

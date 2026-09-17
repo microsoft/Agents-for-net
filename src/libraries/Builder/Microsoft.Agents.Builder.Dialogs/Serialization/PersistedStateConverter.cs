@@ -196,7 +196,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Serialization
         /// into a plain Dictionary&lt;string, object&gt;, resolving nested typed objects,
         /// untyped objects, arrays and primitive leaves along the way. This handles state
         /// persisted without type discriminators (e.g. an older SDK version, or storage
-        /// populated/migrated outside of <see cref="Write"/>).
+        /// populated/migrated outside of <see cref="Microsoft.Agents.Builder.Dialogs.Serialization.PersistedStateConverter.Write(System.Text.Json.Utf8JsonWriter, Microsoft.Agents.Builder.Dialogs.PersistedState, System.Text.Json.JsonSerializerOptions)"/>).
         /// </summary>
         private static Dictionary<string, object> DeserializeUntypedJsonObject(JsonObject jObj, JsonSerializerOptions options)
         {
