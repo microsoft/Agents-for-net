@@ -55,7 +55,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.ITurnContext"/> class from another TurnContext class to target an alternate Activity.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.TurnContext"/> class from another TurnContext class to target an alternate Activity.
         /// </summary>
         /// <remarks>
         /// For supporting calling legacy systems that always assume ITurnContext.Activity is the activity should be processed.

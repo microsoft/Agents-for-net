@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         }
 
         /// <summary>
-        /// Gets the <see cref="Microsoft.Agents.Builder.TurnContext"/> for the current turn of conversation with the user.
+        /// Gets the <see cref="Microsoft.Agents.Builder.ITurnContext"/> for the current turn of conversation with the user.
         /// </summary>
         /// <value>Context for the current turn of conversation with the user.</value>
         public ITurnContext Context { get; }
