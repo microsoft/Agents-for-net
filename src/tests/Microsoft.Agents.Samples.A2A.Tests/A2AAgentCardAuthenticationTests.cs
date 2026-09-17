@@ -58,7 +58,7 @@ public class A2AAgentCardAuthenticationTests
     }
 
     [Fact]
-    public void Select_RequirementUsesUnsupportedFlow_Throws()
+    public void Select_DelegatedMode_UsesAuthorizationCodeFlowAndRequirementScopes()
     {
         AgentCard card = CreateCard(
             "authorizationCode",
@@ -72,10 +72,14 @@ public class A2AAgentCardAuthenticationTests
             },
             "api://agent/access_as_user");
 
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-            () => A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated));
+        A2AAgentCardAuthentication selection = A2AAgentCardAuthentication.Select(
+            card,
+            A2AAuthMode.Delegated);
 
-        Assert.Contains("Device Code", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(A2AOAuthFlowType.AuthorizationCode, selection.FlowType);
+        Assert.Equal("https://login.example.com/authorize", selection.AuthorizationUrl);
+        Assert.Equal("https://login.example.com/token", selection.TokenUrl);
+        Assert.Equal(["api://agent/access_as_user"], selection.Scopes);
     }
 
     [Fact]

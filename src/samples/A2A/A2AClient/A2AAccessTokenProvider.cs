@@ -11,29 +11,26 @@ namespace Microsoft.Agents.Samples.A2AClient;
 internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
 {
     private static readonly TimeSpan s_expirationSafetySkew = TimeSpan.FromMinutes(1);
-    private static readonly IGitHubDeviceFlowTokenClient s_unsupportedGitHubDeviceFlow = new UnsupportedGitHubDeviceFlowTokenClient();
-    private readonly IMsalTokenClient _msal;
-    private readonly IGitHubDeviceFlowTokenClient _gitHub;
+    private readonly A2AClientAuthenticationOptions _options;
+    private readonly IOAuthTokenClient _oauth;
     private readonly TimeProvider _timeProvider;
-    private readonly Dictionary<string, GitHubTokenCacheEntry> _gitHubTokenCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, OAuthTokenCacheEntry> _oauthTokenCache = new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _oauthTokenCacheLock = new(1, 1);
 
-    public A2AAccessTokenProvider(IMsalTokenClient msal)
-        : this(msal, s_unsupportedGitHubDeviceFlow, TimeProvider.System)
-    {
-    }
-
-    public A2AAccessTokenProvider(IMsalTokenClient msal, IGitHubDeviceFlowTokenClient gitHub)
-        : this(msal, gitHub, TimeProvider.System)
+    public A2AAccessTokenProvider(
+        A2AClientAuthenticationOptions options,
+        IOAuthTokenClient oauth)
+        : this(options, oauth, TimeProvider.System)
     {
     }
 
     internal A2AAccessTokenProvider(
-        IMsalTokenClient msal,
-        IGitHubDeviceFlowTokenClient gitHub,
+        A2AClientAuthenticationOptions options,
+        IOAuthTokenClient oauth,
         TimeProvider timeProvider)
     {
-        _msal = msal ?? throw new ArgumentNullException(nameof(msal));
-        _gitHub = gitHub ?? throw new ArgumentNullException(nameof(gitHub));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _oauth = oauth ?? throw new ArgumentNullException(nameof(oauth));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
@@ -46,48 +43,45 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
             return null;
         }
 
-        bool isGitHubDeviceCode = IsGitHubDeviceCode(authentication);
-        if (isGitHubDeviceCode
-            && _gitHubTokenCache.TryGetValue(authentication.SecuritySchemeName, out GitHubTokenCacheEntry? cachedToken)
-            && cachedToken.CanReuse(_timeProvider.GetUtcNow()))
+        await _oauthTokenCacheLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            return cachedToken.AccessToken;
-        }
+            string cacheKey = CreateCacheKey(authentication);
+            if (_oauthTokenCache.TryGetValue(cacheKey, out OAuthTokenCacheEntry? cachedToken)
+                && cachedToken.CanReuse(_timeProvider.GetUtcNow()))
+            {
+                return cachedToken.AccessToken;
+            }
 
-        if (isGitHubDeviceCode)
-        {
-            GitHubDeviceFlowAccessToken token = await _gitHub
-                .AcquireTokenAsync(authentication, cancellationToken)
-                .ConfigureAwait(false);
-            _gitHubTokenCache[authentication.SecuritySchemeName] = new GitHubTokenCacheEntry(
+            OAuthConnectionOptions connection = _options.GetRequiredConnection(authentication.SecuritySchemeName);
+            OAuthAccessToken token = cachedToken?.RefreshToken is string refreshToken
+                ? await _oauth
+                    .RefreshTokenAsync(authentication, connection, refreshToken, cancellationToken)
+                    .ConfigureAwait(false)
+                : await _oauth
+                    .AcquireTokenAsync(authentication, connection, cancellationToken)
+                    .ConfigureAwait(false);
+            _oauthTokenCache[cacheKey] = new OAuthTokenCacheEntry(
                 token.AccessToken,
                 token.ExpiresIn is TimeSpan expiresIn
                     ? _timeProvider.GetUtcNow().Add(expiresIn).Subtract(s_expirationSafetySkew)
-                    : null);
+                    : null,
+                token.RefreshToken ?? cachedToken?.RefreshToken);
             return token.AccessToken;
         }
-
-        return authentication.Mode switch
+        finally
         {
-            A2AAuthMode.Delegated => await _msal.AcquireDelegatedTokenAsync(authentication, cancellationToken).ConfigureAwait(false),
-            A2AAuthMode.App => await _msal.AcquireApplicationTokenAsync(authentication, cancellationToken).ConfigureAwait(false),
-            _ => throw new ArgumentOutOfRangeException(nameof(authentication), authentication.Mode, "Unsupported authentication mode."),
-        };
+            _oauthTokenCacheLock.Release();
+        }
     }
 
-    private static bool IsGitHubDeviceCode(A2AAgentCardAuthentication authentication)
-        => GitHubDeviceFlowAuthentication.IsSupported(authentication);
+    private static string CreateCacheKey(A2AAgentCardAuthentication authentication)
+        => $"{authentication.SecuritySchemeName}|{authentication.FlowType}|{string.Join("\u001f", authentication.Scopes)}";
 
-    private sealed class UnsupportedGitHubDeviceFlowTokenClient : IGitHubDeviceFlowTokenClient
-    {
-        public Task<GitHubDeviceFlowAccessToken> AcquireTokenAsync(
-            A2AAgentCardAuthentication authentication,
-            CancellationToken cancellationToken)
-            => throw new InvalidOperationException(
-                $"Security scheme '{authentication.SecuritySchemeName}' requires GitHub device-code authentication, which is not configured in this client yet.");
-    }
-
-    private sealed record GitHubTokenCacheEntry(string AccessToken, DateTimeOffset? ReuseUntil)
+    private sealed record OAuthTokenCacheEntry(
+        string AccessToken,
+        DateTimeOffset? ReuseUntil,
+        string? RefreshToken)
     {
         public bool CanReuse(DateTimeOffset now) => ReuseUntil is null || now < ReuseUntil;
     }

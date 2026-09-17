@@ -46,13 +46,17 @@ internal sealed class Program
 
             A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
             var authenticationSession = new A2AAuthenticationSession();
-            var msalTokenClient = new MsalTokenClient(options.Authentication);
-            using var gitHubDeviceFlowHttpClient = new HttpClient();
-            var gitHubTokenClient = new GitHubDeviceFlowTokenClient(
-                gitHubDeviceFlowHttpClient,
+            using var oauthHttpClient = new HttpClient();
+            var oauthTokenClient = new OAuthTokenClient(
+                new OAuthDeviceCodeTokenClient(oauthHttpClient, Console.Out),
+                new OAuthAuthorizationCodeTokenClient(
+                    oauthHttpClient,
+                    new LoopbackOAuthAuthorizationCodeReceiver()),
+                new OAuthClientCredentialsTokenClient(oauthHttpClient),
+                new OAuthTokenEndpointClient(oauthHttpClient));
+            var accessTokenProvider = new A2AAccessTokenProvider(
                 options.Authentication,
-                Console.Out);
-            var accessTokenProvider = new A2AAccessTokenProvider(msalTokenClient, gitHubTokenClient);
+                oauthTokenClient);
             using var httpClient = new HttpClient(
                 new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider, options.AgentUrl));
 
@@ -68,7 +72,6 @@ internal sealed class Program
                 client,
                 card,
                 authenticationSession,
-                msalTokenClient.Configure,
                 Console.In,
                 Console.Out,
                 options.ShowHistory,

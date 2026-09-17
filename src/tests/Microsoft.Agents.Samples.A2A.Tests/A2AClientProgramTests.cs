@@ -295,11 +295,6 @@ public class A2AClientProgramTests
         startInfo.ArgumentList.Add($"{agentUrl}/a2a");
         startInfo.ArgumentList.Add("--auth-mode");
         startInfo.ArgumentList.Add(mode);
-        foreach (string key in new[] { "TenantId", "PublicClientId", "ConfidentialClientId", "ConfidentialClientSecret", "GitHubClientId" })
-        {
-            startInfo.Environment[$"A2ACLIENT_Authentication__{key}"] = "";
-        }
-
         using var process = Process.Start(startInfo)!;
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         try

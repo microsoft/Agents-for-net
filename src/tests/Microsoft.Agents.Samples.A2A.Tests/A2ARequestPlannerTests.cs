@@ -15,15 +15,14 @@ public class A2ARequestPlannerTests
     {
         AgentCard card = CreateTwoProviderCard();
         var session = new A2AAuthenticationSession();
-        A2AAgentCardAuthentication? configuredAuthentication = null;
-        var planner = new A2ARequestPlanner(card, session, authentication => configuredAuthentication = authentication);
+        var planner = new A2ARequestPlanner(card, session);
 
         A2AAgentCardSkillSelection selection = planner.Plan("-me");
 
         Assert.Equal("Microsoft Graph profile", selection.Skill!.Id);
         Assert.Equal(A2AAuthMode.Delegated, session.Mode);
-        Assert.Equal("delegated", configuredAuthentication!.SecuritySchemeName);
-        Assert.Equal(["api://agent/access_as_user"], configuredAuthentication.Scopes);
+        Assert.Equal("delegated", session.SelectedAuthentication!.SecuritySchemeName);
+        Assert.Equal(["api://agent/access_as_user"], session.SelectedAuthentication.Scopes);
     }
 
     [Theory]
@@ -51,8 +50,7 @@ public class A2ARequestPlannerTests
     {
         AgentCard card = CreateTwoProviderCard();
         var session = new A2AAuthenticationSession();
-        A2AAgentCardAuthentication? configuredAuthentication = null;
-        var planner = new A2ARequestPlanner(card, session, authentication => configuredAuthentication = authentication);
+        var planner = new A2ARequestPlanner(card, session);
 
         A2AAgentCardSkillSelection selection = planner.Plan("Tell me a joke.");
 
@@ -60,7 +58,6 @@ public class A2ARequestPlannerTests
         Assert.False(selection.IsAmbiguous);
         Assert.Equal(A2AAuthMode.None, session.Mode);
         Assert.Null(session.SelectedAuthentication);
-        Assert.Null(configuredAuthentication);
     }
 
     [Fact]
@@ -82,8 +79,7 @@ public class A2ARequestPlannerTests
 
         var overrideSession = new A2AAuthenticationSession();
         overrideSession.SetMode(A2AAuthMode.Delegated);
-        A2AAgentCardAuthentication? configuredAuthentication = null;
-        var overridePlanner = new A2ARequestPlanner(card, overrideSession, authentication => configuredAuthentication = authentication);
+        var overridePlanner = new A2ARequestPlanner(card, overrideSession);
 
         A2AAgentCardSkillSelection overrideSelection = overridePlanner.Plan(input);
 
@@ -91,7 +87,6 @@ public class A2ARequestPlannerTests
         Assert.False(overrideSelection.IsAmbiguous);
         Assert.Equal(A2AAuthMode.Delegated, overrideSession.Mode);
         A2AAgentCardAuthentication authentication = Assert.IsType<A2AAgentCardAuthentication>(overrideSession.SelectedAuthentication);
-        Assert.Same(authentication, configuredAuthentication);
         Assert.Equal("delegated", authentication.SecuritySchemeName);
         Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode", authentication.DeviceAuthorizationUrl);
         Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", authentication.TokenUrl);

@@ -1,11 +1,17 @@
 # A2AClient
 
-`A2AClient` is an interactive console client for an A2A agent. It resolves the public Agent Card anonymously, selects a JSON-RPC or HTTP+JSON interface on the configured origin, predicts the intended skill, and chooses the matching authentication requirement from the Agent Card before starting a task.
+`A2AClient` is an interactive console client for an A2A agent. It resolves the public Agent Card anonymously, selects a JSON-RPC or HTTP+JSON interface on the configured origin, predicts the intended skill, and chooses the matching authentication requirement before starting a task.
 
-For the current `A2AAgent` sample, automatic mode recognizes two delegated device-code schemes:
+OAuth acquisition is driven by the selected Agent Card security scheme. The client supports these A2A OAuth flows without provider-specific token clients:
 
-- `-me` -> Microsoft Entra Device Code for `api://<agent-client-id>/access_as_user`
-- `-issues` -> GitHub Device Flow for `repo`
+- Device Code
+- Authorization Code, with a loopback callback and optional PKCE
+- Client Credentials
+
+For the current `A2AAgent` sample, automatic mode recognizes:
+
+- `-me` -> Device Code for `api://<agent-client-id>/access_as_user`
+- `-issues` -> Device Code for `repo`
 
 `--auth-mode` and `:auth` remain explicit testing overrides. Discovery is always anonymous.
 
@@ -26,17 +32,19 @@ The current startup options are:
 --help
 ```
 
-While the client is running, use these interactive commands:
+While the client is running:
 
-- `:auth auto|none|delegated|app` switches the authentication mode for future requests. `auto` restores Agent Card-driven selection.
-- `:history on|off` turns task history display on or off.
-- `:q` or `quit` exits the console.
+- `:auth auto|none|delegated|app` changes authentication mode for future requests.
+- `:history on|off` changes task history display.
+- `:q` or `quit` exits.
 
-Changing the mode drops any task the agent is waiting on so one caller's continuation is never resumed with another caller's credential.
+Changing authentication mode drops any task awaiting continuation so one caller's task is never resumed with another credential.
 
-## Configuration keys
+## OAuth connection profiles
 
-`src\samples\A2A\A2AClient\appsettings.json` contains placeholders for these local client keys:
+The Agent Card supplies the OAuth flow, endpoints, and required scopes. Local connection profiles supply the registered OAuth client and restrict which endpoint origins may receive that client's credentials.
+
+Connection names match Agent Card security-scheme names:
 
 ```json
 {
@@ -44,52 +52,93 @@ Changing the mode drops any task the agent is waiting on so one caller's continu
     "AgentUrl": "http://localhost:3978/a2a"
   },
   "Authentication": {
-    "TenantId": "<tenant-id>",
-    "PublicClientId": "<agent-client-id>",
-    "GitHubClientId": "<github-client-id>",
-    "ConfidentialClientId": "<confidential-client-id>",
-    "ConfidentialClientSecret": ""
+    "Connections": {
+      "delegated": {
+        "ClientId": "<agent-api-public-client-id>",
+        "AllowedOrigins": [
+          "https://login.microsoftonline.com"
+        ],
+        "AdditionalScopes": [
+          "offline_access"
+        ]
+      },
+      "github": {
+        "ClientId": "<github-client-id>",
+        "AllowedOrigins": [
+          "https://github.com"
+        ]
+      }
+    }
   }
 }
 ```
 
-When `--auth-mode` is omitted, the client matches the input against advertised skill examples first, then falls back to a deterministic term score over the skill name, description, tags, and examples. That heuristic only chooses which Agent Card requirement to use; it does not constrain the server's own routing.
+Supported connection properties:
 
-A selected requirement must advertise a supported OAuth flow with absolute HTTPS endpoints and non-empty acquisition scopes. The client then chooses the provider-specific device-code implementation:
+| Property | Purpose |
+|---|---|
+| `ClientId` | OAuth client registration identifier. Required for all supported flows. |
+| `ClientSecret` | Confidential client credential. Keep it in user secrets or environment configuration. |
+| `RedirectUri` | HTTP loopback callback registered for Authorization Code. The path must end in `/`. |
+| `AllowedOrigins` | HTTPS origins allowed for Agent Card authorization, device authorization, and token endpoints. |
+| `AdditionalScopes` | Local protocol scopes added to Agent Card acquisition scopes, such as `offline_access`. |
+| `TokenEndpointAuthenticationMethod` | `None`, `ClientSecretBasic`, or `ClientSecretPost`. |
+| `UsePkce` | Enables Authorization Code PKCE. Defaults to `true`. |
 
-- Microsoft Entra -> uses `Authentication:TenantId` and `Authentication:PublicClientId`
-- GitHub -> uses `Authentication:GitHubClientId`
+The client rejects an advertised OAuth endpoint unless its origin appears in the selected connection's `AllowedOrigins`. This prevents an untrusted Agent Card from directing a configured client secret to another host.
 
-The selected card security requirement provides the Agent API acquisition scopes, while the selected OAuth scheme provides the token endpoint and device authorization endpoint.
+## Generic provider examples
 
-Entra acquisition re-enters MSAL for every protected request so MSAL can use its account cache and silently renew tokens when needed. GitHub tokens are cached separately by Agent Card security scheme: a token with `expires_in` is reused only until one minute before expiration, while a token whose response omits `expires_in` is treated as non-expiring and retained.
+### Microsoft Entra Device Code
 
-## Provider-specific delegated setup
+The `delegated` connection's `ClientId` must be the A2A Agent API public-client registration. The Agent Card supplies the `api://<agent-client-id>/access_as_user` scope and Entra endpoints. `offline_access` is configured locally so an expiring access token can be refreshed without repeating device sign-in.
 
-### `-me`
+Do not acquire a Microsoft Graph token and send it directly to the agent. The agent expects an Agent API token and performs the Graph `User.Read` exchange itself.
 
-`PublicClientId` is used for delegated Microsoft Entra device-code authentication. For the sample's `-me` route, it must be the **A2A Agent API app registration client ID** so the inbound token is exchangeable through OBO. That is the same ID used in the sample agent's `TokenValidation:Audiences` setting and in the advertised scope `api://<agent-client-id>/access_as_user`.
+### GitHub Device Code
 
-Do not acquire a Microsoft Graph token in the client and send it directly to the agent. The agent expects an Agent API token and performs the Graph `User.Read` exchange itself.
+The `github` connection contains only the GitHub OAuth App client ID and trusted GitHub origin. The same generic Device Code executor handles GitHub; there is no GitHub-specific token acquisition implementation.
 
-### `-issues`
+The acquired opaque token is sent to the agent. The sample agent validates it, requires `repo`, and reuses the validated token for the assigned-issues request.
 
-`GitHubClientId` is used for delegated GitHub device-flow authentication when the selected Agent Card scheme points at `https://github.com/login/device/code` and `https://github.com/login/oauth/access_token`.
+### LinkedIn Authorization Code
 
-The client acquires the opaque GitHub bearer token, sends it to the agent, and the agent validates and reuses that same token for the assigned-issues call.
+An Agent Card can advertise LinkedIn's Authorization Code endpoints and scopes. A matching local connection can be configured without adding LinkedIn source code:
 
-## Application mode remains a client capability
+```json
+{
+  "Authentication": {
+    "Connections": {
+      "linkedin": {
+        "ClientId": "<linkedin-client-id>",
+        "ClientSecret": "<linkedin-client-secret>",
+        "RedirectUri": "http://localhost:8400/callback/",
+        "AllowedOrigins": [
+          "https://www.linkedin.com"
+        ],
+        "TokenEndpointAuthenticationMethod": "ClientSecretPost",
+        "UsePkce": true
+      }
+    }
+  }
+}
+```
 
-`ConfidentialClientId` and `ConfidentialClientSecret` still support application-token testing for other agents whose cards advertise a Client Credentials flow. The current `A2AAgent` sample does not expose an application-protected route, so app mode is a client capability rather than current sample behavior.
+Register the same redirect URI with the provider. When the flow starts, the client opens the authorization URL in the default browser, validates the callback state, exchanges the code, and caches or refreshes the resulting token.
 
-Keep real secrets out of source control. The committed `appsettings.json` should stay on placeholders only.
+## Token lifetime
 
-## Expected failures and how to interpret them
+Tokens are cached by security scheme, flow, and acquisition scopes. A token with `expires_in` is reused until one minute before expiration. If the response includes a refresh token, the client uses it at expiration; otherwise it runs the advertised flow again. A token without `expires_in` is retained as non-expiring.
 
-- `-me` with `:auth none` fails because the route requires a validated inbound Agent API token.
-- `-me` with `:auth app` fails because Microsoft Graph OBO requires a delegated user token.
+Keep real secrets out of source control. The committed `appsettings.json` contains placeholders only.
+
+## Expected failures
+
+- A protected request fails when no connection matches the selected Agent Card security scheme.
+- An endpoint outside `AllowedOrigins` is rejected before credentials are sent.
+- Authorization Code fails when `RedirectUri` is absent or is not an HTTP loopback URI.
+- A connection using `ClientSecretBasic` or `ClientSecretPost` fails when `ClientSecret` is absent.
+- `-me` with `:auth app` fails because the current Agent Card does not advertise Client Credentials for that skill.
 - `-issues` with `:auth none` fails because the route requires a validated GitHub token.
-- `-issues` with a GitHub token that lacks the exact `repo` scope fails during authentication.
-- An Agent Card whose interface URL is not on the configured agent origin fails before any credential is sent.
 
-Access tokens are attached to requests but are never printed by the sample, including in the error text shown after a failed request.
+Access tokens are attached to requests but are never printed, including in failed-request output.

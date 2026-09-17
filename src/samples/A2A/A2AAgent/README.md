@@ -53,7 +53,7 @@ Use one Microsoft Entra app registration for both the Agent API resource and the
 6. Under **Authentication** > **Advanced settings**, set **Allow public client flows** to **Yes** so the client can use Device Code.
 7. Create the client secret or other credential used by `Connections:ServiceConnection` for OBO.
 
-In this sample, `<agent-client-id>` means the **A2A Agent API app registration client ID**. It is the same ID used by `TokenValidation:Audiences`, the same ID that owns `access_as_user`, and the same ID the client must use as `Authentication:PublicClientId` for `-me`. It is not a Microsoft Graph app ID and it is not a separate A2AClient app registration ID.
+In this sample, `<agent-client-id>` means the **A2A Agent API app registration client ID**. It is the same ID used by `TokenValidation:Audiences`, the same ID that owns `access_as_user`, and the same ID configured as `Authentication:Connections:delegated:ClientId` in `A2AClient`. It is not a Microsoft Graph app ID and it is not a separate A2AClient app registration ID.
 
 The committed `appsettings.json` stays on placeholders only:
 
@@ -113,14 +113,14 @@ The committed `appsettings.json` stays on placeholders only:
 
 1. Create a GitHub OAuth App.
 2. Enable Device Flow for that OAuth App.
-3. Configure `Authentication:GitHubClientId` in `A2AClient` with the OAuth App client ID.
+3. Configure `Authentication:Connections:github:ClientId` in `A2AClient` with the OAuth App client ID and allow `https://github.com`.
 4. Sign in through the client by sending `-issues`.
 
 The agent-side sample does not start GitHub OAuth itself. The client acquires the device-flow token, the server validates the incoming bearer token, and the route uses the original validated token for the GitHub API call.
 
-## Why the sample defaults to Agent Card device code
+## Why the sample uses Agent Card OAuth flows
 
-The sample intentionally exercises the OAuth metadata advertised in the Agent Card. It does not default to Azure Bot Service Generic OAuth or a browser broker because that would require Azure Bot-specific resource setup, connection names, user identity state, and callback/sign-in handling that are not represented in the Agent Card this sample publishes.
+The client runs generic OAuth flow executors from the metadata advertised in the Agent Card. Local connection profiles provide the registered client ID, optional secret and redirect URI, and the endpoint-origin trust policy. GitHub and Microsoft Entra use the same Device Code implementation; providers advertising Authorization Code or Client Credentials use the corresponding generic executor.
 
 ## Expected failures
 

@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 
-internal interface IGitHubDeviceFlowTokenClient
+internal interface IOAuthAuthorizationCodeReceiver
 {
-    Task<GitHubDeviceFlowAccessToken> AcquireTokenAsync(
-        A2AAgentCardAuthentication authentication,
+    Task<string> ReceiveCodeAsync(
+        Uri authorizationUri,
+        Uri redirectUri,
+        string expectedState,
         CancellationToken cancellationToken);
 }
-
-internal sealed record GitHubDeviceFlowAccessToken(string AccessToken, TimeSpan? ExpiresIn);

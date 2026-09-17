@@ -8,8 +8,7 @@ namespace Microsoft.Agents.Samples.A2AClient;
 
 internal sealed class A2ARequestPlanner(
     AgentCard card,
-    A2AAuthenticationSession authenticationSession,
-    Action<A2AAgentCardAuthentication>? configureAuthentication = null)
+    A2AAuthenticationSession authenticationSession)
 {
     public A2AAgentCardSkillSelection Plan(string input)
     {
@@ -26,16 +25,7 @@ internal sealed class A2ARequestPlanner(
                 A2AAgentCardAuthentication.Select(card, selection.Skill, authenticationSession.ModeOverride),
             _ => A2AAgentCardAuthentication.Select(card, selection.Skill, modeOverride: null),
         };
-        if (authentication is not null && ShouldConfigureWithMsal(authentication))
-        {
-            configureAuthentication?.Invoke(authentication);
-        }
-
         authenticationSession.SetAutomaticAuthentication(authentication);
         return selection;
     }
-
-    private static bool ShouldConfigureWithMsal(A2AAgentCardAuthentication authentication)
-        => authentication.Mode != A2AAuthMode.None
-            && !GitHubDeviceFlowAuthentication.IsSupported(authentication);
 }

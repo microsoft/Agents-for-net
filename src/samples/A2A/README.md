@@ -37,6 +37,6 @@ The A2A samples live under `src\samples\A2A`.
 | `-me` | Exchanges the delegated Agent API token for Microsoft Graph `User.Read` and returns the caller's profile. | Delegated Entra Device Code |
 | `-issues` | Validates the caller's opaque GitHub token and returns assigned open issues. | Delegated GitHub Device Flow |
 
-The sample agent keeps the Agent Card and transport anonymous. Only the `-me` and `-issues` routes opt into `autoSigninHandlers`, so the client discovers the card without credentials and then acquires the provider-specific token required by the selected skill.
+The sample agent keeps the Agent Card and transport anonymous. Only the `-me` and `-issues` routes opt into `autoSigninHandlers`, so the client discovers the card without credentials and then runs the OAuth flow advertised for the selected skill.
 
 The inbound access token for `-me` must target the Agent API scope `api://<agent-client-id>/access_as_user`. Do not send a Microsoft Graph token directly to the A2A endpoint.

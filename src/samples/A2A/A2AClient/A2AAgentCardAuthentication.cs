@@ -15,13 +15,17 @@ internal sealed class A2AAgentCardAuthentication
 {
     private A2AAgentCardAuthentication(
         A2AAuthMode mode,
+        A2AOAuthFlowType flowType,
         string securitySchemeName,
+        string? authorizationUrl,
         string tokenUrl,
         string? deviceAuthorizationUrl,
         IReadOnlyList<string> scopes)
     {
         Mode = mode;
+        FlowType = flowType;
         SecuritySchemeName = securitySchemeName;
+        AuthorizationUrl = authorizationUrl;
         TokenUrl = tokenUrl;
         DeviceAuthorizationUrl = deviceAuthorizationUrl;
         Scopes = scopes;
@@ -29,7 +33,11 @@ internal sealed class A2AAgentCardAuthentication
 
     public A2AAuthMode Mode { get; }
 
+    public A2AOAuthFlowType FlowType { get; }
+
     public string SecuritySchemeName { get; }
+
+    public string? AuthorizationUrl { get; }
 
     public string TokenUrl { get; }
 
@@ -97,7 +105,7 @@ internal sealed class A2AAgentCardAuthentication
                 "The selected Agent Card requirements advertise both delegated and application authentication. "
                 + "Choose one with --auth-mode or :auth."),
             _ => throw new InvalidOperationException(
-                "The selected Agent Card requirements do not advertise a supported Device Code or Client Credentials OAuth flow."),
+                "The selected Agent Card requirements do not advertise a supported Authorization Code, Device Code, or Client Credentials OAuth flow."),
         };
     }
 
@@ -173,9 +181,34 @@ internal sealed class A2AAgentCardAuthentication
                     distinctCandidates,
                     new A2AAgentCardAuthentication(
                         mode,
+                        A2AOAuthFlowType.DeviceCode,
                         schemeRequirement.Key,
+                        authorizationUrl: null,
                         tokenUrl,
                         deviceAuthorizationUrl,
+                        scopes));
+                continue;
+            }
+
+            if (mode == A2AAuthMode.Delegated && flows.AuthorizationCode is not null)
+            {
+                if (!TryGetRequiredEndpoint(schemeRequirement.Key, "authorization", flows.AuthorizationCode.AuthorizationUrl, out string? authorizationUrl, out string? failure)
+                    || !TryGetRequiredEndpoint(schemeRequirement.Key, "token", flows.AuthorizationCode.TokenUrl, out string? tokenUrl, out failure))
+                {
+                    rejectedAlternatives.Add(failure!);
+                    continue;
+                }
+
+                AddCandidate(
+                    candidates,
+                    distinctCandidates,
+                    new A2AAgentCardAuthentication(
+                        mode,
+                        A2AOAuthFlowType.AuthorizationCode,
+                        schemeRequirement.Key,
+                        authorizationUrl,
+                        tokenUrl,
+                        deviceAuthorizationUrl: null,
                         scopes));
                 continue;
             }
@@ -193,7 +226,9 @@ internal sealed class A2AAgentCardAuthentication
                     distinctCandidates,
                     new A2AAgentCardAuthentication(
                         mode,
+                        A2AOAuthFlowType.ClientCredentials,
                         schemeRequirement.Key,
+                        authorizationUrl: null,
                         tokenUrl,
                         deviceAuthorizationUrl: null,
                         scopes));
@@ -201,7 +236,7 @@ internal sealed class A2AAgentCardAuthentication
             }
 
             rejectedAlternatives.Add(
-                $"scheme '{schemeRequirement.Key}' does not advertise a supported {(mode == A2AAuthMode.Delegated ? "Device Code" : "Client Credentials")} OAuth flow");
+                $"scheme '{schemeRequirement.Key}' does not advertise a supported {(mode == A2AAuthMode.Delegated ? "Authorization Code or Device Code" : "Client Credentials")} OAuth flow");
         }
 
         return new SelectionAttempt(requirementCount, candidates, rejectedAlternatives);
@@ -221,12 +256,12 @@ internal sealed class A2AAgentCardAuthentication
                 $"The Agent Card exposes multiple {modeName} security schemes for this request. Select a skill or security requirement that disambiguates the provider.");
         }
 
-        string expectedFlow = mode == A2AAuthMode.Delegated ? "Device Code" : "Client Credentials";
+        string expectedFlow = mode == A2AAuthMode.Delegated ? "Authorization Code or Device Code" : "Client Credentials";
         string reason = attempt.RequirementCount == 0
             ? "does not declare security requirements"
             : $"has no satisfiable alternative: {string.Join("; ", attempt.RejectedAlternatives.Distinct(StringComparer.Ordinal))}";
         throw new InvalidOperationException(
-            $"The Agent Card {reason} for {expectedFlow} authentication. This client POC supports only Device Code and Client Credentials flows.");
+            $"The Agent Card {reason} for {expectedFlow} authentication.");
     }
 
     private static void AddCandidate(
@@ -234,7 +269,7 @@ internal sealed class A2AAgentCardAuthentication
         HashSet<string> distinctCandidates,
         A2AAgentCardAuthentication candidate)
     {
-        string key = $"{candidate.SecuritySchemeName}|{string.Join("\u001f", candidate.Scopes)}";
+        string key = $"{candidate.SecuritySchemeName}|{candidate.FlowType}|{string.Join("\u001f", candidate.Scopes)}";
         if (distinctCandidates.Add(key))
         {
             candidates.Add(candidate);
@@ -322,6 +357,11 @@ internal sealed class A2AAgentCardAuthentication
     private static IEnumerable<A2AAuthMode> GetSupportedModes(OAuthFlows? flows)
     {
         if (flows?.DeviceCode is not null)
+        {
+            yield return A2AAuthMode.Delegated;
+        }
+
+        if (flows?.AuthorizationCode is not null)
         {
             yield return A2AAuthMode.Delegated;
         }
