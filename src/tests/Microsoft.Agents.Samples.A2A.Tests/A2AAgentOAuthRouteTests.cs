@@ -40,6 +40,16 @@ public class A2AAgentOAuthRouteTests
     private const string GitHubHandlerName = "github";
 
     [Fact]
+    public async Task AgentCard_FromSampleConfiguration_AdvertisesOnlyMeAndIssuesSkills()
+    {
+        AgentCard card = await LoadCardFromSampleConfigurationAsync();
+
+        Assert.Equal(
+            ["GitHub assigned issues", "Microsoft Graph profile"],
+            card.Skills!.Select(skill => skill.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray());
+    }
+
+    [Fact]
     public async Task AgentCard_FromSampleConfiguration_AdvertisesTwoSchemes_AndEachSkillUsesOnlyItsOwnScope()
     {
         AgentCard card = await LoadCardFromSampleConfigurationAsync();
@@ -52,17 +62,15 @@ public class A2AAgentOAuthRouteTests
     }
 
     [Fact]
-    public async Task AgentCard_FromBaseAndDevelopmentConfiguration_UsesAccessAsUserForGraphRequirement()
+    public async Task SampleConfiguration_UsesOnlyRedactedTwoProviderPlaceholders()
     {
-        AgentCard card = await LoadCardFromSampleConfigurationAsync(includeDevelopmentSettings: true);
+        string settings = await LoadSampleConfigurationTextAsync();
 
-        AgentSkill graphSkill = Assert.Single(card.Skills, candidate => candidate.Id == "Microsoft Graph profile");
-        SecurityRequirement requirement = Assert.Single(graphSkill.SecurityRequirements!);
-        Assert.NotNull(requirement.Schemes);
-        Assert.NotNull(requirement.Schemes["delegated"].List);
-        string configuredScope = Assert.Single(requirement.Schemes["delegated"].List);
-
-        Assert.EndsWith("/access_as_user", configuredScope, StringComparison.Ordinal);
+        Assert.Contains("\"TenantId\": \"<tenant-id>\"", settings, StringComparison.Ordinal);
+        Assert.Contains("\"api://<agent-client-id>/access_as_user\"", settings, StringComparison.Ordinal);
+        Assert.Contains("A2A Agent API app registration client ID", settings, StringComparison.Ordinal);
+        Assert.DoesNotContain("{{TenantId}}", settings, StringComparison.Ordinal);
+        Assert.DoesNotContain("{{ClientId}}", settings, StringComparison.Ordinal);
     }
 
     private static void AssertSkillRequirement(AgentCard card, string skillId, string schemeName, string scope)
@@ -222,22 +230,20 @@ public class A2AAgentOAuthRouteTests
             new MyAgent(options, graphClient, gitHubIssuesClient));
     }
 
-    private static async Task<AgentCard> LoadCardFromSampleConfigurationAsync(bool includeDevelopmentSettings = false)
+    private static async Task<AgentCard> LoadCardFromSampleConfigurationAsync()
     {
         const string tenantId = "11111111-1111-1111-1111-111111111111";
         const string clientId = "22222222-2222-2222-2222-222222222222";
-        string settings = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "A2AAgent.appsettings.json"));
+        string settings = await LoadSampleConfigurationTextAsync();
         settings = settings.Replace("{{TenantId}}", tenantId, StringComparison.Ordinal)
-            .Replace("{{ClientId}}", clientId, StringComparison.Ordinal);
+            .Replace("{{ClientId}}", clientId, StringComparison.Ordinal)
+            .Replace("<tenant-id>", tenantId, StringComparison.Ordinal)
+            .Replace("<agent-client-id>", clientId, StringComparison.Ordinal);
 
         using var settingsStream = new MemoryStream(Encoding.UTF8.GetBytes(settings));
-        var configurationBuilder = new ConfigurationBuilder().AddJsonStream(settingsStream);
-        if (includeDevelopmentSettings)
-        {
-            configurationBuilder.AddJsonFile(GetSampleConfigurationPath("appsettings.Development.json"));
-        }
-
-        IConfiguration configuration = configurationBuilder.Build();
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddJsonStream(settingsStream)
+            .Build();
         var storage = new MemoryStorage();
         var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance, configuration: configuration);
         var context = new DefaultHttpContext();
@@ -250,23 +256,8 @@ public class A2AAgentOAuthRouteTests
         return (await JsonSerializer.DeserializeAsync<AgentCard>(context.Response.Body, A2AJsonUtilities.DefaultOptions))!;
     }
 
-    private static string GetSampleConfigurationPath(string fileName)
-    {
-        DirectoryInfo? directory = new(AppContext.BaseDirectory);
-        while (directory != null)
-        {
-            string candidate = Path.Combine(directory.FullName, "src", "samples", "A2A", "A2AAgent", fileName);
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new FileNotFoundException($"Could not locate sample configuration file '{fileName}'.");
-    }
-
+    private static Task<string> LoadSampleConfigurationTextAsync()
+        => File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "A2AAgent.appsettings.json"));
     private static Mock<IUserAuthorization> CreateAuthorizationHandler(string name, string token)
     {
         var response = new TokenResponse
