@@ -24,11 +24,8 @@ builder.Services.AddHttpClient<IGraphProfileClient, GraphProfileClient>(client =
 {
     client.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
 });
-builder.Services.AddHttpClient<IGitHubIssuesClient, GitHubIssuesClient>(client =>
-{
-    client.BaseAddress = new Uri("https://api.github.com/");
-});
 builder.Services.AddSingleton<IGitHubClientFactory, GitHubClientFactory>();
+builder.Services.AddSingleton<IGitHubIssuesClient, GitHubIssuesClient>();
 
 builder.Services.AddSingleton<IStorage, MemoryStorage>();
 

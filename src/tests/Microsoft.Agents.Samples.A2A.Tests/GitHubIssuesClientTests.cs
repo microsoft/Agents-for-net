@@ -5,238 +5,196 @@ extern alias A2AAgentSample;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using A2AAgentSample::A2AAgent;
+using Moq;
+using Octokit;
 
 namespace Microsoft.Agents.Samples.A2A.Tests;
 
 public class GitHubIssuesClientTests
 {
     [Fact]
-    public async Task GetAssignedIssuesSummaryAsync_UsesAssignedOpenIssuesEndpoint_Headers_AndFiltersPullRequests()
+    public async Task GetAssignedIssuesSummaryAsync_UsesAssignedOpenIssueQuery_AndFiltersPullRequests()
     {
-        var handler = new SequenceJsonHandler([
-            new ResponsePage(
-                """
-                [
-                  { "html_url": "https://github.com/octo/repo/issues/17", "number": 17, "repository_url": "https://api.github.com/repos/octo/repo", "title": "Harden scopes" },
-                  { "html_url": "https://github.com/octo/repo/pull/18", "number": 18, "repository_url": "https://api.github.com/repos/octo/repo", "title": "PR should disappear", "pull_request": { "url": "https://api.github.com/repos/octo/repo/pulls/18" } }
-                ]
-                """)
-        ]);
-        using var client = CreateClient(handler);
+        var issues = new Mock<IIssuesClient>(MockBehavior.Strict);
+        IssueRequest? capturedRequest = null;
+        ApiOptions? capturedOptions = null;
+        issues
+            .Setup(client => client.GetAllForCurrent(It.IsAny<IssueRequest>(), It.IsAny<ApiOptions>()))
+            .Callback<IssueRequest, ApiOptions>((request, options) =>
+            {
+                capturedRequest = request;
+                capturedOptions = options;
+            })
+            .ReturnsAsync([
+                CreateIssue(17, "Harden scopes", "https://github.com/octo/repo/issues/17"),
+                CreatePullRequest(18, "PR should disappear", "https://github.com/octo/repo/pull/18"),
+            ]);
+        CapturingGitHubClientFactory factory = CreateFactory(issues.Object);
 
-        var sut = new GitHubIssuesClient(client);
-        string summary = await sut.GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
+        string summary = await new GitHubIssuesClient(factory)
+            .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
 
-        RequestRecord request = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Get, request.Method);
-        Assert.Equal("/issues?filter=assigned&state=open&per_page=20", request.PathAndQuery);
-        Assert.Equal("Bearer", request.AuthorizationScheme);
-        Assert.Equal("github-token", request.AuthorizationParameter);
-        Assert.Equal("application/vnd.github+json", request.Accept);
-        Assert.Equal("2022-11-28", request.ApiVersion);
-        Assert.Equal("MicrosoftAgentsA2ASample/1.0", request.UserAgent);
+        Assert.Equal(1, factory.CreateCount);
+        Assert.Equal("github-token", factory.AccessToken);
+        Assert.NotNull(capturedRequest);
+        Assert.Equal(IssueFilter.Assigned, capturedRequest!.Filter);
+        Assert.Equal(ItemStateFilter.Open, capturedRequest.State);
+        Assert.NotNull(capturedOptions);
+        Assert.Equal(20, capturedOptions!.PageSize);
+        Assert.Equal(3, capturedOptions.PageCount);
+        Assert.Equal(1, capturedOptions.StartPage);
         Assert.Contains("octo/repo#17 Harden scopes", summary, StringComparison.Ordinal);
         Assert.DoesNotContain("PR should disappear", summary, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task GetAssignedIssuesSummaryAsync_FirstPageContainsOnlyPullRequests_FollowsNextPageForIssue()
+    public async Task GetAssignedIssuesSummaryAsync_StopsAfterFiveRenderedIssues()
     {
-        var handler = new SequenceJsonHandler([
-            new ResponsePage(
-                """[{ "number": 1, "repository_url": "https://api.github.com/repos/octo/repo", "title": "First PR", "pull_request": { "url": "https://api.github.com/repos/octo/repo/pulls/1" } }]""",
-                "https://api.github.com/issues?filter=assigned&state=open&per_page=20&page=2"),
-            new ResponsePage(
-                """[{ "number": 2, "repository_url": "https://api.github.com/repos/octo/repo", "title": "Second-page issue" }]"""),
-        ]);
-        using var client = CreateClient(handler, new Uri("https://API.GITHUB.COM/"));
+        var issues = new Mock<IIssuesClient>(MockBehavior.Strict);
+        issues
+            .Setup(client => client.GetAllForCurrent(It.IsAny<IssueRequest>(), It.IsAny<ApiOptions>()))
+            .ReturnsAsync([
+                CreateIssue(1, "Issue 1", "https://github.com/octo/repo/issues/1"),
+                CreateIssue(2, "Issue 2", "https://github.com/octo/repo/issues/2"),
+                CreateIssue(3, "Issue 3", "https://github.com/octo/repo/issues/3"),
+                CreateIssue(4, "Issue 4", "https://github.com/octo/repo/issues/4"),
+                CreateIssue(5, "Issue 5", "https://github.com/octo/repo/issues/5"),
+                CreateIssue(6, "Issue 6", "https://github.com/octo/repo/issues/6"),
+            ]);
 
-        string summary = await new GitHubIssuesClient(client)
+        string summary = await new GitHubIssuesClient(CreateFactory(issues.Object))
             .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
 
-        Assert.Equal(
-            [
-                "/issues?filter=assigned&state=open&per_page=20",
-                "/issues?filter=assigned&state=open&per_page=20&page=2",
-            ],
-            handler.Requests.Select(request => request.PathAndQuery));
-        Assert.All(handler.Requests, request =>
-        {
-            Assert.Equal("api.github.com", request.RequestUri.Host);
-            Assert.Equal("Bearer", request.AuthorizationScheme);
-        });
-        Assert.Contains("octo/repo#2 Second-page issue", summary, StringComparison.Ordinal);
-        Assert.DoesNotContain("First PR", summary, StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData("https://example.com/issues?page=2")]
-    [InlineData("http://api.github.com/issues?page=2")]
-    [InlineData("https://api.github.com:444/issues?page=2")]
-    [InlineData("https://user@api.github.com/issues?page=2")]
-    public async Task GetAssignedIssuesSummaryAsync_UnsafeNextLink_DoesNotSendBearerRequest(string nextLink)
-    {
-        var handler = new SequenceJsonHandler([
-            new ResponsePage(CreatePullRequestsJson(1), nextLink),
-            new ResponsePage(CreateIssuesJson(2, 1)),
-        ]);
-        using var client = CreateClient(handler);
-
-        string summary = await new GitHubIssuesClient(client)
-            .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
-
-        Assert.DoesNotContain(handler.Requests, request =>
-            request.AuthorizationScheme is not null
-            && !string.Equals(
-                "https://api.github.com",
-                request.RequestUri.GetLeftPart(UriPartial.Authority),
-                StringComparison.OrdinalIgnoreCase));
-        RequestRecord request = Assert.Single(handler.Requests);
-        Assert.Equal("api.github.com", request.RequestUri.Host);
-        Assert.Equal("Bearer", request.AuthorizationScheme);
-        Assert.Equal("No open GitHub issues are currently assigned to you.", summary);
-    }
-
-    [Fact]
-    public async Task GetAssignedIssuesSummaryAsync_MalformedNextLink_DoesNotRequestAnotherPage()
-    {
-        var handler = new SequenceJsonHandler([
-            new ResponsePage(CreatePullRequestsJson(1), "https://[api.github.com/issues?page=2"),
-            new ResponsePage(CreateIssuesJson(2, 1)),
-        ]);
-        using var client = CreateClient(handler);
-
-        string summary = await new GitHubIssuesClient(client)
-            .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
-
-        Assert.Single(handler.Requests);
-        Assert.Equal("No open GitHub issues are currently assigned to you.", summary);
-    }
-
-    [Fact]
-    public async Task GetAssignedIssuesSummaryAsync_StopsAfterCollectingFiveIssues()
-    {
-        var handler = new SequenceJsonHandler([
-            new ResponsePage(
-                CreateIssuesJson(1, 4),
-                "https://api.github.com/issues?filter=assigned&state=open&per_page=20&page=2"),
-            new ResponsePage(
-                CreateIssuesJson(5, 2),
-                "https://api.github.com/issues?filter=assigned&state=open&per_page=20&page=3"),
-        ]);
-        using var client = CreateClient(handler);
-
-        string summary = await new GitHubIssuesClient(client)
-            .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
-
-        Assert.Equal(2, handler.Requests.Count);
         Assert.Contains("octo/repo#5 Issue 5", summary, StringComparison.Ordinal);
         Assert.DoesNotContain("octo/repo#6 Issue 6", summary, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task GetAssignedIssuesSummaryAsync_NoNextLink_DoesNotRequestAnotherPage()
+    public async Task GetAssignedIssuesSummaryAsync_NoIssuesAfterFiltering_ReturnsExistingEmptyMessage()
     {
-        var handler = new SequenceJsonHandler([
-            new ResponsePage(
-                """[{ "number": 1, "repository_url": "https://api.github.com/repos/octo/repo", "title": "Only PR", "pull_request": { "url": "https://api.github.com/repos/octo/repo/pulls/1" } }]"""),
-        ]);
-        using var client = CreateClient(handler);
+        var issues = new Mock<IIssuesClient>(MockBehavior.Strict);
+        issues
+            .Setup(client => client.GetAllForCurrent(It.IsAny<IssueRequest>(), It.IsAny<ApiOptions>()))
+            .ReturnsAsync([
+                CreatePullRequest(18, "PR should disappear", "https://github.com/octo/repo/pull/18"),
+            ]);
 
-        string summary = await new GitHubIssuesClient(client)
+        string summary = await new GitHubIssuesClient(CreateFactory(issues.Object))
             .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
 
-        Assert.Single(handler.Requests);
         Assert.Equal("No open GitHub issues are currently assigned to you.", summary);
     }
 
     [Fact]
-    public async Task GetAssignedIssuesSummaryAsync_StopsAtThreePageCap()
+    public async Task GetAssignedIssuesSummaryAsync_PreCanceledToken_ThrowsWithoutCallingGitHub()
     {
-        var handler = new SequenceJsonHandler([
-            new ResponsePage(
-                CreatePullRequestsJson(1),
-                "https://api.github.com/issues?filter=assigned&state=open&per_page=20&page=2"),
-            new ResponsePage(
-                CreatePullRequestsJson(2),
-                "https://api.github.com/issues?filter=assigned&state=open&per_page=20&page=3"),
-            new ResponsePage(
-                CreatePullRequestsJson(3),
-                "https://api.github.com/issues?filter=assigned&state=open&per_page=20&page=4"),
-        ]);
-        using var client = CreateClient(handler);
+        var issues = new Mock<IIssuesClient>(MockBehavior.Strict);
+        CapturingGitHubClientFactory factory = CreateFactory(issues.Object);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
 
-        string summary = await new GitHubIssuesClient(client)
-            .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            new GitHubIssuesClient(factory).GetAssignedIssuesSummaryAsync("github-token", cancellation.Token));
 
-        Assert.Equal(3, handler.Requests.Count);
-        Assert.Equal("No open GitHub issues are currently assigned to you.", summary);
+        Assert.Equal(0, factory.CreateCount);
     }
 
-    private static HttpClient CreateClient(HttpMessageHandler handler, Uri? baseAddress = null)
-        => new(handler) { BaseAddress = baseAddress ?? new Uri("https://api.github.com/") };
-
-    private static string CreateIssuesJson(int firstNumber, int count)
-        => "["
-            + string.Join(
-                ",",
-                Enumerable.Range(firstNumber, count).Select(number =>
-                    $$"""{ "number": {{number}}, "repository_url": "https://api.github.com/repos/octo/repo", "title": "Issue {{number}}" }"""))
-            + "]";
-
-    private static string CreatePullRequestsJson(int number)
-        => $$"""[{ "number": {{number}}, "repository_url": "https://api.github.com/repos/octo/repo", "title": "PR {{number}}", "pull_request": { "url": "https://api.github.com/repos/octo/repo/pulls/{{number}}" } }]""";
-
-    private sealed class SequenceJsonHandler(IReadOnlyList<ResponsePage> pages) : HttpMessageHandler
+    [Fact]
+    public async Task GetAssignedIssuesSummaryAsync_ProviderFailure_IsNotSwallowed()
     {
-        private int _pageIndex;
+        var issues = new Mock<IIssuesClient>(MockBehavior.Strict);
+        issues
+            .Setup(client => client.GetAllForCurrent(It.IsAny<IssueRequest>(), It.IsAny<ApiOptions>()))
+            .ThrowsAsync(new InvalidOperationException("boom"));
 
-        public List<RequestRecord> Requests { get; } = [];
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new GitHubIssuesClient(CreateFactory(issues.Object))
+                .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None));
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        Assert.Equal("boom", exception.Message);
+    }
+
+    private static CapturingGitHubClientFactory CreateFactory(IIssuesClient issues)
+    {
+        var client = new Mock<IGitHubClient>(MockBehavior.Strict);
+        client.SetupGet(mock => mock.Issue)
+            .Returns(issues);
+
+        return new CapturingGitHubClientFactory(client.Object);
+    }
+
+    private static Issue CreateIssue(int number, string title, string htmlUrl)
+        => new(
+            url: $"https://api.github.com/repos/octo/repo/issues/{number}",
+            htmlUrl: htmlUrl,
+            commentsUrl: $"https://api.github.com/repos/octo/repo/issues/{number}/comments",
+            eventsUrl: $"https://api.github.com/repos/octo/repo/issues/{number}/events",
+            number: number,
+            state: ItemState.Open,
+            title: title,
+            body: string.Empty,
+            closedBy: null!,
+            user: null!,
+            labels: [],
+            assignee: null!,
+            assignees: [],
+            milestone: null!,
+            comments: 0,
+            pullRequest: null,
+            closedAt: null,
+            createdAt: DateTimeOffset.UnixEpoch,
+            updatedAt: DateTimeOffset.UnixEpoch,
+            id: number,
+            nodeId: $"ISSUE_{number}",
+            locked: false,
+            repository: new Repository(),
+            reactions: new ReactionSummary(),
+            activeLockReason: null,
+            stateReason: null);
+
+    private static Issue CreatePullRequest(int number, string title, string htmlUrl)
+        => new(
+            url: $"https://api.github.com/repos/octo/repo/issues/{number}",
+            htmlUrl: htmlUrl,
+            commentsUrl: $"https://api.github.com/repos/octo/repo/issues/{number}/comments",
+            eventsUrl: $"https://api.github.com/repos/octo/repo/issues/{number}/events",
+            number: number,
+            state: ItemState.Open,
+            title: title,
+            body: string.Empty,
+            closedBy: null!,
+            user: null!,
+            labels: [],
+            assignee: null!,
+            assignees: [],
+            milestone: null!,
+            comments: 0,
+            pullRequest: new PullRequest(number),
+            closedAt: null,
+            createdAt: DateTimeOffset.UnixEpoch,
+            updatedAt: DateTimeOffset.UnixEpoch,
+            id: number,
+            nodeId: $"ISSUE_{number}",
+            locked: false,
+            repository: new Repository(),
+            reactions: new ReactionSummary(),
+            activeLockReason: null,
+            stateReason: null);
+
+    private sealed class CapturingGitHubClientFactory(IGitHubClient client) : IGitHubClientFactory
+    {
+        public string? AccessToken { get; private set; }
+
+        public int CreateCount { get; private set; }
+
+        public IGitHubClient Create(string accessToken)
         {
-            Requests.Add(new RequestRecord(
-                request.Method,
-                request.RequestUri!,
-                request.RequestUri!.PathAndQuery,
-                request.Headers.Authorization?.Scheme,
-                request.Headers.Authorization?.Parameter,
-                request.Headers.Accept.SingleOrDefault()?.MediaType,
-                request.Headers.UserAgent.ToString(),
-                request.Headers.TryGetValues("X-GitHub-Api-Version", out IEnumerable<string>? versions)
-                    ? versions.Single()
-                    : null));
-
-            ResponsePage page = pages[_pageIndex++];
-            var response = new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(page.Json, Encoding.UTF8, "application/json")
-            };
-            if (page.NextLink is not null)
-            {
-                response.Headers.TryAddWithoutValidation("Link", $"<{page.NextLink}>; rel=\"next\"");
-            }
-
-            return Task.FromResult(response);
+            CreateCount++;
+            AccessToken = accessToken;
+            return client;
         }
     }
-
-    private sealed record ResponsePage(string Json, string? NextLink = null);
-
-    private sealed record RequestRecord(
-        HttpMethod Method,
-        Uri RequestUri,
-        string PathAndQuery,
-        string? AuthorizationScheme,
-        string? AuthorizationParameter,
-        string? Accept,
-        string UserAgent,
-        string? ApiVersion);
 }
