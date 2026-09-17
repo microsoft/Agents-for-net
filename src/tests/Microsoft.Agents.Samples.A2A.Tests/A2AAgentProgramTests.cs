@@ -124,6 +124,23 @@ public class A2AAgentProgramTests
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Production_PlaceholderAudience_FailsStartupInsteadOfDisablingJwtBearer()
+    {
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => A2AAgentProcessHost.StartAsync(
+                CreateProcessEnvironment(
+                    TestTenantId,
+                    "{{ClientId}}",
+                    environmentName: Environments.Production)));
+
+        Assert.StartsWith(
+            $"A2AAgent exited before serving the agent card.{Environment.NewLine}",
+            exception.Message,
+            StringComparison.Ordinal);
+        Assert.Contains("values must be a GUID", exception.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(null, A2AAgentAuthenticationDefaults.GitHubScheme)]
     [InlineData("", A2AAgentAuthenticationDefaults.GitHubScheme)]
