@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,7 +41,7 @@ internal sealed class GitHubIssuesClient(IGitHubClientFactory gitHubClients) : I
         string[] lines = issues
             .Where(issue => issue.PullRequest is null)
             .Take(MaxRenderedIssues)
-            .Select(issue => $"- {GetRepositorySlug(issue.HtmlUrl)}#{issue.Number} {issue.Title}")
+            .Select(issue => $"- {GetRepositorySlug(issue.HtmlUrl, issue.Number)}#{issue.Number} {issue.Title}")
             .ToArray();
 
         return lines.Length == 0
@@ -48,30 +49,28 @@ internal sealed class GitHubIssuesClient(IGitHubClientFactory gitHubClients) : I
             : string.Join(Environment.NewLine, lines);
     }
 
-    private static string GetRepositorySlug(string repositoryUrl)
+    private static string GetRepositorySlug(string issueHtmlUrl, int issueNumber)
     {
-        if (!Uri.TryCreate(repositoryUrl, UriKind.Absolute, out Uri? uri))
+        if (!Uri.TryCreate(issueHtmlUrl, UriKind.Absolute, out Uri? uri)
+            || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase))
         {
-            return repositoryUrl;
+            return string.Empty;
         }
 
-        string[] segments = uri.AbsolutePath
+        string[] segments = uri.GetComponents(UriComponents.Path, UriFormat.UriEscaped)
             .Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        if (segments.Length >= 3
-            && string.Equals(segments[0], "repos", StringComparison.OrdinalIgnoreCase))
+        if (segments.Length != 4
+            || string.IsNullOrEmpty(segments[0])
+            || string.IsNullOrEmpty(segments[1])
+            || !string.Equals(segments[2], "issues", StringComparison.OrdinalIgnoreCase)
+            || !int.TryParse(segments[3], NumberStyles.None, CultureInfo.InvariantCulture, out int parsedIssueNumber)
+            || parsedIssueNumber != issueNumber)
         {
-            return $"{segments[1]}/{segments[2]}";
+            return string.Empty;
         }
 
-        if (segments.Length >= 2)
-        {
-            return $"{segments[0]}/{segments[1]}";
-        }
-
-        string path = uri.AbsolutePath.Trim('/');
-        return path.StartsWith("repos/", StringComparison.OrdinalIgnoreCase)
-            ? path.Substring("repos/".Length)
-            : path;
+        return $"{segments[0]}/{segments[1]}";
     }
 }

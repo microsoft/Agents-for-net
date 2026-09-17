@@ -72,6 +72,41 @@ public class GitHubIssuesClientTests
         Assert.DoesNotContain("octo/repo#6 Issue 6", summary, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("https://example.com/octo/repo/issues/17")]
+    [InlineData("https://github.com/octo/repo/discussions/17")]
+    [InlineData("https://github.com/octo/repo/issues/18")]
+    public async Task GetAssignedIssuesSummaryAsync_InvalidHtmlUrl_UsesSafeFallback(string htmlUrl)
+    {
+        var issues = new Mock<IIssuesClient>(MockBehavior.Strict);
+        issues
+            .Setup(client => client.GetAllForCurrent(It.IsAny<IssueRequest>(), It.IsAny<ApiOptions>()))
+            .ReturnsAsync([
+                CreateIssue(17, "Harden scopes", htmlUrl),
+            ]);
+
+        string summary = await new GitHubIssuesClient(CreateFactory(issues.Object))
+            .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
+
+        Assert.Equal("- #17 Harden scopes", summary);
+    }
+
+    [Fact]
+    public async Task GetAssignedIssuesSummaryAsync_GitHubHostMatch_IsCaseInsensitive()
+    {
+        var issues = new Mock<IIssuesClient>(MockBehavior.Strict);
+        issues
+            .Setup(client => client.GetAllForCurrent(It.IsAny<IssueRequest>(), It.IsAny<ApiOptions>()))
+            .ReturnsAsync([
+                CreateIssue(17, "Harden scopes", "https://GitHub.com/octo/repo/issues/17"),
+            ]);
+
+        string summary = await new GitHubIssuesClient(CreateFactory(issues.Object))
+            .GetAssignedIssuesSummaryAsync("github-token", CancellationToken.None);
+
+        Assert.Equal("- octo/repo#17 Harden scopes", summary);
+    }
+
     [Fact]
     public async Task GetAssignedIssuesSummaryAsync_NoIssuesAfterFiltering_ReturnsExistingEmptyMessage()
     {
