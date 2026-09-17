@@ -10,67 +10,55 @@ namespace Microsoft.Agents.Samples.A2A.Tests;
 public class A2AAgentCardSkillSelectorTests
 {
     [Fact]
-    public void Select_ExactAdvertisedExample_SelectsMatchingSkill()
+    public void Select_ExactAdvertisedProtectedSkillExample_SelectsMatchingSkill()
     {
-        var profile = new AgentSkill
+        var issues = new AgentSkill
         {
-            Id = "profile",
-            Name = "Microsoft Graph profile",
-            Description = "Reads the delegated caller profile.",
-            Examples = ["-me"],
+            Id = "issues",
+            Name = "GitHub assigned issues",
+            Description = "Reads the signed-in GitHub user's open assigned issues.",
+            Examples = ["-issues"],
         };
-        var card = new AgentCard
-        {
-            Skills =
-            [
-                new AgentSkill
-                {
-                    Id = "stream",
-                    Name = "Streaming response",
-                    Description = "Streams a response.",
-                    Examples = ["-stream"],
-                },
-                profile,
-            ],
-        };
+        var card = new AgentCard { Skills = [issues] };
 
-        A2AAgentCardSkillSelection selection = A2AAgentCardSkillSelector.Select(card, "  -ME ");
+        A2AAgentCardSkillSelection selection = A2AAgentCardSkillSelector.Select(card, "  -ISSUES ");
 
-        Assert.Same(profile, selection.Skill);
+        Assert.Same(issues, selection.Skill);
         Assert.False(selection.IsAmbiguous);
     }
 
     [Fact]
     public void Select_TermsMatchOneSkill_SelectsHighestScoringSkill()
     {
-        var weather = new AgentSkill
+        var issues = new AgentSkill
         {
-            Id = "weather",
-            Name = "Weather forecast",
-            Description = "Gets the weather for a city.",
-            Tags = ["weather", "forecast"],
-            Examples = ["What is the weather in Seattle?"],
+            Id = "issues",
+            Name = "GitHub assigned issues",
+            Description = "Reads the signed-in GitHub user's open assigned issues.",
+            Tags = ["github", "issues"],
+            Examples = ["-issues"],
         };
         var card = new AgentCard
         {
             Skills =
             [
-                weather,
+                issues,
                 new AgentSkill
                 {
                     Id = "profile",
-                    Name = "User profile",
-                    Description = "Reads the signed-in user's profile.",
-                    Tags = ["profile"],
+                    Name = "Microsoft Graph profile",
+                    Description = "Reads the signed-in user's Microsoft Graph profile.",
+                    Tags = ["graph", "profile"],
+                    Examples = ["-me"],
                 },
             ],
         };
 
         A2AAgentCardSkillSelection selection = A2AAgentCardSkillSelector.Select(
             card,
-            "Could you give me the Seattle weather forecast?");
+            "Show my assigned GitHub issues.");
 
-        Assert.Same(weather, selection.Skill);
+        Assert.Same(issues, selection.Skill);
         Assert.False(selection.IsAmbiguous);
     }
 

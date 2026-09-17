@@ -8,8 +8,7 @@ namespace Microsoft.Agents.Samples.A2AClient;
 
 internal sealed class A2ARequestPlanner(
     AgentCard card,
-    A2AAuthenticationSession authenticationSession,
-    Action<A2AAgentCardAuthentication> configureAuthentication)
+    A2AAuthenticationSession authenticationSession)
 {
     public A2AAgentCardSkillSelection Plan(string input)
     {
@@ -23,17 +22,10 @@ internal sealed class A2ARequestPlanner(
         {
             A2AAuthMode.None => null,
             A2AAuthMode.Delegated or A2AAuthMode.App =>
-                A2AAgentCardAuthentication.Select(card, authenticationSession.ModeOverride.Value),
+                A2AAgentCardAuthentication.Select(card, selection.Skill, authenticationSession.ModeOverride),
             _ => A2AAgentCardAuthentication.Select(card, selection.Skill, modeOverride: null),
         };
-        if (authentication is null)
-        {
-            authenticationSession.SetAutomaticMode(A2AAuthMode.None);
-            return selection;
-        }
-
-        configureAuthentication(authentication);
-        authenticationSession.SetAutomaticMode(authentication.Mode);
+        authenticationSession.SetAutomaticAuthentication(authentication);
         return selection;
     }
 }

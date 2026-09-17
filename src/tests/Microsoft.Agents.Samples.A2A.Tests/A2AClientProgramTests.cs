@@ -51,6 +51,22 @@ public class A2AClientProgramTests
             request => Assert.Equal(("POST", ""), request));
     }
 
+    [Fact]
+    public async Task Main_DiscoversAnonymously_WithTwoProtectedSkills_AndStillSendsNoBearerHeaderForAnonymousTraffic()
+    {
+        var requests = new ConcurrentQueue<(string Method, string Authorization)>();
+        AgentCard card = CreateTwoProviderCard();
+        await using WebApplication server = await StartAgentAsync(card, requests);
+
+        var result = await RunClientAsync(server.Urls.Single(), "none", "hello\n\n:q\n");
+
+        Assert.True(result.ExitCode == 0, $"Client exited {result.ExitCode}: {result.Error}");
+        Assert.Collection(
+            requests,
+            request => Assert.Equal(("GET", ""), request),
+            request => Assert.Equal(("POST", ""), request));
+    }
+
     [Theory]
     [InlineData("none", "delegated", "Device Code")]
     [InlineData("none", "app", "Client Credentials")]
@@ -136,6 +152,81 @@ public class A2AClientProgramTests
         return card;
     }
 
+    internal static AgentCard CreateTwoProviderCard()
+    {
+        return new AgentCard
+        {
+            Name = "Two-provider startup test agent",
+            Capabilities = new AgentCapabilities { Streaming = false },
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                            },
+                        },
+                    },
+                },
+                ["github"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                TokenUrl = "https://github.com/login/oauth/access_token",
+                                DeviceAuthorizationUrl = "https://github.com/login/device/code",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                            },
+                        },
+                    ],
+                },
+                new AgentSkill
+                {
+                    Id = "issues",
+                    Name = "GitHub assigned issues",
+                    Examples = ["-issues"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["github"] = new() { List = ["repo"] },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
     private static async Task<WebApplication> StartAgentAsync(
         AgentCard card,
         ConcurrentQueue<(string Method, string Authorization)> requests)
@@ -204,11 +295,6 @@ public class A2AClientProgramTests
         startInfo.ArgumentList.Add($"{agentUrl}/a2a");
         startInfo.ArgumentList.Add("--auth-mode");
         startInfo.ArgumentList.Add(mode);
-        foreach (string key in new[] { "TenantId", "PublicClientId", "ConfidentialClientId", "ConfidentialClientSecret" })
-        {
-            startInfo.Environment[$"A2ACLIENT_Authentication__{key}"] = "";
-        }
-
         using var process = Process.Start(startInfo)!;
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         try

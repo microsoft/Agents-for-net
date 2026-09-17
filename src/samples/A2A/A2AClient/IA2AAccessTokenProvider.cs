@@ -8,5 +8,5 @@ namespace Microsoft.Agents.Samples.A2AClient;
 
 internal interface IA2AAccessTokenProvider
 {
-    Task<string?> GetAccessTokenAsync(A2AAuthMode mode, CancellationToken cancellationToken);
+    Task<string?> GetAccessTokenAsync(A2AAgentCardAuthentication? authentication, CancellationToken cancellationToken);
 }

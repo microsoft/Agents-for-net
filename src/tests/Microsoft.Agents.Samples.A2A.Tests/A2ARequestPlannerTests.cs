@@ -13,117 +13,84 @@ public class A2ARequestPlannerTests
     [Fact]
     public void Plan_NoModeOverride_UsesSelectedSkillsAdvertisedOAuthFlow()
     {
-        AgentSkill profile = new()
-        {
-            Id = "profile",
-            Name = "Microsoft Graph profile",
-            Examples = ["-me"],
-            SecurityRequirements = [CreateRequirement("delegated", "api://agent/access_as_user")],
-        };
-        var card = new AgentCard
-        {
-            SecuritySchemes = new Dictionary<string, SecurityScheme>
-            {
-                ["delegated"] = new()
-                {
-                    OAuth2SecurityScheme = new OAuth2SecurityScheme
-                    {
-                        Flows = new OAuthFlows
-                        {
-                            DeviceCode = new()
-                            {
-                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
-                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-                            },
-                        },
-                    },
-                },
-                ["application"] = new()
-                {
-                    OAuth2SecurityScheme = new OAuth2SecurityScheme
-                    {
-                        Flows = new OAuthFlows
-                        {
-                            ClientCredentials = new()
-                            {
-                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-                            },
-                        },
-                    },
-                },
-            },
-            Skills =
-            [
-                new AgentSkill
-                {
-                    Id = "background-job",
-                    Name = "Background job",
-                    Examples = ["-job"],
-                    SecurityRequirements = [CreateRequirement("application", "api://agent/.default")],
-                },
-                profile,
-            ],
-        };
+        AgentCard card = CreateTwoProviderCard();
         var session = new A2AAuthenticationSession();
-        A2AAgentCardAuthentication? configuredAuthentication = null;
-        var planner = new A2ARequestPlanner(card, session, authentication => configuredAuthentication = authentication);
+        var planner = new A2ARequestPlanner(card, session);
 
         A2AAgentCardSkillSelection selection = planner.Plan("-me");
 
-        Assert.Same(profile, selection.Skill);
+        Assert.Equal("Microsoft Graph profile", selection.Skill!.Id);
         Assert.Equal(A2AAuthMode.Delegated, session.Mode);
-        Assert.Equal("delegated", configuredAuthentication!.SecuritySchemeName);
-        Assert.Equal(["api://agent/access_as_user"], configuredAuthentication.Scopes);
+        Assert.Equal("delegated", session.SelectedAuthentication!.SecuritySchemeName);
+        Assert.Equal(["api://agent/access_as_user"], session.SelectedAuthentication.Scopes);
+    }
+
+    [Theory]
+    [InlineData("-me", "delegated", "api://agent/access_as_user")]
+    [InlineData("-issues", "github", "repo")]
+    public void Plan_NoModeOverride_MatchedSkillOnTwoProviderCard_SelectsItsScheme(
+        string input,
+        string expectedScheme,
+        string expectedScope)
+    {
+        AgentCard card = CreateTwoProviderCard();
+        var session = new A2AAuthenticationSession();
+        var planner = new A2ARequestPlanner(card, session);
+
+        A2AAgentCardSkillSelection selection = planner.Plan(input);
+
+        Assert.Equal(A2AAuthMode.Delegated, session.Mode);
+        Assert.NotNull(selection.Skill);
+        Assert.Equal(expectedScheme, session.SelectedAuthentication!.SecuritySchemeName);
+        Assert.Equal([expectedScope], session.SelectedAuthentication.Scopes);
+    }
+
+    [Fact]
+    public void Plan_NoModeOverride_UnmatchedInputOnTwoProviderCard_RemainsAnonymous()
+    {
+        AgentCard card = CreateTwoProviderCard();
+        var session = new A2AAuthenticationSession();
+        var planner = new A2ARequestPlanner(card, session);
+
+        A2AAgentCardSkillSelection selection = planner.Plan("Tell me a joke.");
+
+        Assert.Null(selection.Skill);
+        Assert.False(selection.IsAmbiguous);
+        Assert.Equal(A2AAuthMode.None, session.Mode);
+        Assert.Null(session.SelectedAuthentication);
     }
 
     [Fact]
     public void Plan_ExplicitModeOverride_ForcesMatchingCardAuthentication()
     {
-        AgentSkill anonymousSkill = new()
-        {
-            Id = "echo",
-            Name = "Echo",
-            Examples = ["hello"],
-        };
-        var card = new AgentCard
-        {
-            SecuritySchemes = new Dictionary<string, SecurityScheme>
-            {
-                ["delegated"] = new()
-                {
-                    OAuth2SecurityScheme = new OAuth2SecurityScheme
-                    {
-                        Flows = new OAuthFlows
-                        {
-                            DeviceCode = new()
-                            {
-                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
-                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-                            },
-                        },
-                    },
-                },
-            },
-            Skills =
-            [
-                anonymousSkill,
-                new AgentSkill
-                {
-                    Id = "profile",
-                    SecurityRequirements = [CreateRequirement("delegated", "api://agent/access_as_user")],
-                },
-            ],
-        };
-        var session = new A2AAuthenticationSession();
-        session.SetMode(A2AAuthMode.Delegated);
-        A2AAgentCardAuthentication? configuredAuthentication = null;
-        var planner = new A2ARequestPlanner(card, session, authentication => configuredAuthentication = authentication);
+        AgentCard card = CreateCardWithPublicSkillAndSingleProtectedFallback();
+        AgentSkill publicSkill = Assert.Single(card.Skills!, skill => skill.Id == "Public echo");
+        const string input = "-echo";
 
-        A2AAgentCardSkillSelection selection = planner.Plan("hello");
+        var automaticSession = new A2AAuthenticationSession();
+        var automaticPlanner = new A2ARequestPlanner(card, automaticSession);
 
-        Assert.Same(anonymousSkill, selection.Skill);
-        Assert.Equal(A2AAuthMode.Delegated, session.Mode);
-        Assert.Equal("delegated", configuredAuthentication!.SecuritySchemeName);
+        A2AAgentCardSkillSelection automaticSelection = automaticPlanner.Plan(input);
+
+        Assert.Same(publicSkill, automaticSelection.Skill);
+        Assert.False(automaticSelection.IsAmbiguous);
+        Assert.Equal(A2AAuthMode.None, automaticSession.Mode);
+        Assert.Null(automaticSession.SelectedAuthentication);
+
+        var overrideSession = new A2AAuthenticationSession();
+        overrideSession.SetMode(A2AAuthMode.Delegated);
+        var overridePlanner = new A2ARequestPlanner(card, overrideSession);
+
+        A2AAgentCardSkillSelection overrideSelection = overridePlanner.Plan(input);
+
+        Assert.Same(publicSkill, overrideSelection.Skill);
+        Assert.False(overrideSelection.IsAmbiguous);
+        Assert.Equal(A2AAuthMode.Delegated, overrideSession.Mode);
+        A2AAgentCardAuthentication authentication = Assert.IsType<A2AAgentCardAuthentication>(overrideSession.SelectedAuthentication);
+        Assert.Equal("delegated", authentication.SecuritySchemeName);
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode", authentication.DeviceAuthorizationUrl);
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", authentication.TokenUrl);
+        Assert.Equal(["api://agent/access_as_user"], authentication.Scopes);
     }
 
     private static SecurityRequirement CreateRequirement(string schemeName, string scope)
@@ -134,4 +101,127 @@ public class A2ARequestPlannerTests
                 [schemeName] = new() { List = [scope] },
             },
         };
+
+    private static AgentCard CreateTwoProviderCard()
+    {
+        return new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+                ["github"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://github.com/login/device/code",
+                                TokenUrl = "https://github.com/login/oauth/access_token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "Microsoft Graph profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                            },
+                        },
+                    ],
+                },
+                new AgentSkill
+                {
+                    Id = "GitHub assigned issues",
+                    Name = "GitHub assigned issues",
+                    Examples = ["-issues"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["github"] = new() { List = ["repo"] },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
+    private static AgentCard CreateCardWithPublicSkillAndSingleProtectedFallback()
+    {
+        return new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "Public echo",
+                    Name = "Public echo",
+                    Description = "Echoes public text without authentication.",
+                    Examples = ["-echo"],
+                },
+                new AgentSkill
+                {
+                    Id = "Microsoft Graph profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
 }

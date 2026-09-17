@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient;
-using Microsoft.Identity.Client;
 using Moq;
 using Xunit;
 
@@ -69,7 +68,7 @@ public class A2AConsoleLoopTests
     {
         var client = new Mock<IA2AClient>(MockBehavior.Strict);
         client.Setup(value => value.SendMessageAsync(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new MsalClientException("authentication_canceled", "device code authentication was denied"));
+            .ThrowsAsync(new InvalidOperationException("device code authentication was denied"));
 
         var output = new StringWriter();
         A2AConsole console = CreateConsole(client.Object, new A2AAuthenticationSession(), output, "hello", "", ":auth none", ":q");
@@ -77,7 +76,7 @@ public class A2AConsoleLoopTests
         int exitCode = await console.RunAsync(CancellationToken.None);
 
         Assert.Equal(0, exitCode);
-        Assert.Contains("Request failed: MsalClientException", output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("Request failed: InvalidOperationException", output.ToString(), StringComparison.Ordinal);
         Assert.Contains("Authentication mode: none", output.ToString(), StringComparison.Ordinal);
         Assert.False(console.IsRunning);
     }
@@ -114,7 +113,12 @@ public class A2AConsoleLoopTests
 
         var session = new A2AAuthenticationSession();
         var output = new StringWriter();
-        A2AConsole console = CreateConsole(client.Object, session, output, "first", "", ":auth delegated", "second", "", ":q");
+        A2AConsole console = CreateConsole(
+            client.Object,
+            CreateDelegatedCard(),
+            session,
+            output,
+            "first", "", ":auth delegated", "second", "", ":q");
 
         await console.RunAsync(CancellationToken.None);
 
@@ -126,7 +130,7 @@ public class A2AConsoleLoopTests
     }
 
     [Fact]
-    public async Task RunAsync_SameAuthMode_KeepsContinuationTask()
+    public async Task RunAsync_ExplicitAuthModeAfterAutomaticSelection_ClearsContinuationAndReselectsAuthentication()
     {
         var requests = new List<SendMessageRequest>();
         var client = new Mock<IA2AClient>(MockBehavior.Strict);
@@ -134,19 +138,24 @@ public class A2AConsoleLoopTests
             .Callback<SendMessageRequest, CancellationToken>((request, _) => requests.Add(request))
             .ReturnsAsync(CreateResponse(TaskState.InputRequired));
 
+        A2AAgentCardAuthentication authentication = CreateDelegatedAuthentication();
+        var session = new A2AAuthenticationSession();
+        session.SetAutomaticAuthentication(authentication);
         var output = new StringWriter();
         A2AConsole console = CreateConsole(
             client.Object,
-            new A2AAuthenticationSession { Mode = A2AAuthMode.Delegated },
+            CreateDelegatedCard(),
+            session,
             output,
             "first", "", ":auth delegated", "second", "", ":q");
 
         await console.RunAsync(CancellationToken.None);
 
         Assert.Equal(2, requests.Count);
-        Assert.Equal("task-1", requests[1].Message.TaskId);
-        Assert.Equal("context-1", requests[1].Message.ContextId);
-        Assert.DoesNotContain("Cleared the continuing task", output.ToString(), StringComparison.Ordinal);
+        Assert.Null(requests[1].Message.TaskId);
+        Assert.Null(requests[1].Message.ContextId);
+        Assert.Equal("delegated", session.SelectedAuthentication!.SecuritySchemeName);
+        Assert.Contains("Cleared the continuing task", output.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -194,13 +203,11 @@ public class A2AConsoleLoopTests
             Skills = [profile],
         };
         var session = new A2AAuthenticationSession();
-        A2AAgentCardAuthentication? configuredAuthentication = null;
         var output = new StringWriter();
         var console = new A2AConsole(
             client.Object,
             card,
             session,
-            authentication => configuredAuthentication = authentication,
             new StringReader("-me" + Environment.NewLine + Environment.NewLine + ":q" + Environment.NewLine),
             output,
             showHistory: false,
@@ -210,8 +217,34 @@ public class A2AConsoleLoopTests
         await console.RunAsync(CancellationToken.None);
 
         Assert.Equal(A2AAuthMode.Delegated, session.Mode);
-        Assert.Equal("delegated", configuredAuthentication!.SecuritySchemeName);
+        Assert.Equal("delegated", session.SelectedAuthentication!.SecuritySchemeName);
         Assert.Contains("Selected skill: Microsoft Graph profile (profile)", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RunAsync_NewIssuesTask_SelectsGitHubSkillAndStoresGitHubAuthentication()
+    {
+        var client = new Mock<IA2AClient>(MockBehavior.Strict);
+        client.Setup(value => value.SendMessageAsync(It.IsAny<SendMessageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateResponse(TaskState.Completed));
+
+        AgentCard card = CreateTwoProviderCard();
+        var session = new A2AAuthenticationSession();
+        var output = new StringWriter();
+        var console = new A2AConsole(
+            client.Object,
+            card,
+            session,
+            new StringReader("-issues" + Environment.NewLine + Environment.NewLine + ":q" + Environment.NewLine),
+            output,
+            showHistory: false,
+            usePushNotifications: false,
+            pushNotificationReceiver: new Uri("http://localhost:5000"));
+
+        await console.RunAsync(CancellationToken.None);
+
+        Assert.Equal("github", session.SelectedAuthentication!.SecuritySchemeName);
+        Assert.Contains("Selected skill: GitHub assigned issues", output.ToString(), StringComparison.Ordinal);
     }
 
     private static SendMessageResponse CreateResponse(TaskState state) => new()
@@ -233,6 +266,120 @@ public class A2AConsoleLoopTests
         },
     };
 
+    private static A2AAgentCardAuthentication CreateDelegatedAuthentication()
+    {
+        return A2AAgentCardAuthentication.Select(CreateDelegatedCard(), A2AAuthMode.Delegated);
+    }
+
+    private static AgentCard CreateDelegatedCard()
+    {
+        return new AgentCard
+        {
+            Capabilities = new AgentCapabilities { Streaming = false },
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+            },
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                    },
+                },
+            ],
+        };
+    }
+
+    private static AgentCard CreateTwoProviderCard()
+    {
+        return new AgentCard
+        {
+            Capabilities = new AgentCapabilities { Streaming = false },
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+                ["github"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://github.com/login/device/code",
+                                TokenUrl = "https://github.com/login/oauth/access_token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                            },
+                        },
+                    ],
+                },
+                new AgentSkill
+                {
+                    Id = "issues",
+                    Name = "GitHub assigned issues",
+                    Examples = ["-issues"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["github"] = new() { List = ["repo"] },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
     private static A2AConsole CreateConsole(
         IA2AClient client,
         A2AAuthenticationSession session,
@@ -246,9 +393,32 @@ public class A2AConsoleLoopTests
         TextWriter output,
         bool showHistory,
         params string[] input)
-        => new(
+        => CreateConsole(
             client,
             new AgentCard { Capabilities = new AgentCapabilities { Streaming = false } },
+            session,
+            output,
+            showHistory,
+            input);
+
+    private static A2AConsole CreateConsole(
+        IA2AClient client,
+        AgentCard card,
+        A2AAuthenticationSession session,
+        TextWriter output,
+        params string[] input)
+        => CreateConsole(client, card, session, output, showHistory: false, input);
+
+    private static A2AConsole CreateConsole(
+        IA2AClient client,
+        AgentCard card,
+        A2AAuthenticationSession session,
+        TextWriter output,
+        bool showHistory,
+        params string[] input)
+        => new(
+            client,
+            card,
             session,
             new StringReader(string.Join(Environment.NewLine, input) + Environment.NewLine),
             output,

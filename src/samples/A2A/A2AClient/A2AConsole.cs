@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using A2A;
-using Microsoft.Identity.Client;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 
@@ -45,31 +44,7 @@ internal sealed class A2AConsole
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _agentCard = agentCard ?? throw new ArgumentNullException(nameof(agentCard));
         _authenticationSession = authenticationSession ?? throw new ArgumentNullException(nameof(authenticationSession));
-        _input = input ?? throw new ArgumentNullException(nameof(input));
-        _output = output ?? throw new ArgumentNullException(nameof(output));
-        _usePushNotifications = usePushNotifications;
-        _pushNotificationReceiver = pushNotificationReceiver ?? throw new ArgumentNullException(nameof(pushNotificationReceiver));
-        ShowHistory = showHistory;
-    }
-
-    public A2AConsole(
-        IA2AClient client,
-        AgentCard agentCard,
-        A2AAuthenticationSession authenticationSession,
-        Action<A2AAgentCardAuthentication> configureAuthentication,
-        TextReader input,
-        TextWriter output,
-        bool showHistory,
-        bool usePushNotifications,
-        Uri pushNotificationReceiver)
-    {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-        _agentCard = agentCard ?? throw new ArgumentNullException(nameof(agentCard));
-        _authenticationSession = authenticationSession ?? throw new ArgumentNullException(nameof(authenticationSession));
-        _requestPlanner = new A2ARequestPlanner(
-            agentCard,
-            authenticationSession,
-            configureAuthentication ?? throw new ArgumentNullException(nameof(configureAuthentication)));
+        _requestPlanner = new A2ARequestPlanner(agentCard, authenticationSession);
         _input = input ?? throw new ArgumentNullException(nameof(input));
         _output = output ?? throw new ArgumentNullException(nameof(output));
         _usePushNotifications = usePushNotifications;
@@ -180,7 +155,6 @@ internal sealed class A2AConsole
         }
 
         return exception is A2AException
-            or MsalException
             or HttpRequestException
             or HttpIOException
             or JsonException
@@ -205,17 +179,18 @@ internal sealed class A2AConsole
         if (command.StartsWith(":auth", StringComparison.OrdinalIgnoreCase))
         {
             string modeName = command[":auth".Length..].Trim();
+            A2AAuthMode? previousModeOverride = _authenticationSession.ModeOverride;
             bool modeChanged;
             if (string.Equals(modeName, "auto", StringComparison.OrdinalIgnoreCase))
             {
-                modeChanged = _authenticationSession.ModeOverride is not null;
+                modeChanged = previousModeOverride is not null;
                 _authenticationSession.ClearModeOverride();
                 _output.WriteLine("Authentication mode: auto");
             }
             else if (Enum.TryParse(modeName, ignoreCase: true, out A2AAuthMode mode)
                 && Enum.IsDefined(mode))
             {
-                modeChanged = _authenticationSession.Mode != mode;
+                modeChanged = previousModeOverride != mode;
                 _authenticationSession.SetMode(mode);
                 _output.WriteLine($"Authentication mode: {mode.ToString().ToLowerInvariant()}");
             }
@@ -235,6 +210,16 @@ internal sealed class A2AConsole
             else if (modeChanged)
             {
                 ClearContinuation();
+            }
+
+            if (modeChanged)
+            {
+                A2AAuthMode? activeOverride = _authenticationSession.ModeOverride;
+                _authenticationSession.SetAutomaticAuthentication(null);
+                if (activeOverride is A2AAuthMode overrideMode)
+                {
+                    _authenticationSession.SetMode(overrideMode);
+                }
             }
 
             return true;

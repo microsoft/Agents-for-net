@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient;
 using Moq;
@@ -17,318 +17,173 @@ public class A2AAccessTokenProviderTests
     [Fact]
     public async Task GetAccessTokenAsync_None_ReturnsNull()
     {
-        var msal = new Mock<IMsalTokenClient>(MockBehavior.Strict);
-        var provider = new A2AAccessTokenProvider(msal.Object);
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        var provider = new A2AAccessTokenProvider(new A2AClientAuthenticationOptions(), oauth.Object);
 
-        string? token = await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None);
+        string? token = await provider.GetAccessTokenAsync(authentication: null, CancellationToken.None);
 
         Assert.Null(token);
     }
 
-    [Theory]
-    [InlineData("Delegated", "delegated-token")]
-    [InlineData("App", "app-token")]
-    public async Task GetAccessTokenAsync_UsesSelectedFlow(string modeName, string expected)
+    [Fact]
+    public async Task GetAccessTokenAsync_UsesConnectionMatchingSelectedSecurityScheme()
     {
-        var msal = new Mock<IMsalTokenClient>();
-        msal.Setup(client => client.AcquireDelegatedTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync("delegated-token");
-        msal.Setup(client => client.AcquireApplicationTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync("app-token");
-        var provider = new A2AAccessTokenProvider(msal.Object);
-        A2AAuthMode mode = Enum.Parse<A2AAuthMode>(modeName);
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthConnectionOptions connection = CreateConnection();
+        var options = CreateOptions(connection);
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                authentication,
+                connection,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("generic-token", ExpiresIn: null));
+        var provider = new A2AAccessTokenProvider(options, oauth.Object);
 
-        string? token = await provider.GetAccessTokenAsync(mode, CancellationToken.None);
+        string? token = await provider.GetAccessTokenAsync(authentication, CancellationToken.None);
 
-        Assert.Equal(expected, token);
+        Assert.Equal("generic-token", token);
     }
 
-    [Theory]
-    [InlineData("Delegated", "Device Code")]
-    [InlineData("App", "Client Credentials")]
-    public async Task GetAccessTokenAsync_CardWithoutOAuth_DefersFailureUntilTokenRequested(string modeName, string expectedFlow)
+    [Fact]
+    public async Task GetAccessTokenAsync_ReusesUnexpiredToken()
     {
-        var msal = new MsalTokenClient(new A2AClientAuthenticationOptions());
-        msal.Configure(A2AClientProgramTests.CreateCard("none"));
-        var provider = new A2AAccessTokenProvider(msal);
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthConnectionOptions connection = CreateConnection();
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                authentication,
+                connection,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("generic-token", TimeSpan.FromMinutes(10)));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object, timeProvider);
 
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None));
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetAccessTokenAsync(Enum.Parse<A2AAuthMode>(modeName), CancellationToken.None));
+        Assert.Equal("generic-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+        Assert.Equal("generic-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
 
-        Assert.Contains($"{expectedFlow} authentication", exception.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("Missing required", exception.Message, StringComparison.Ordinal);
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None));
+        oauth.Verify(
+            client => client.AcquireTokenAsync(authentication, connection, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
-    [Theory]
-    [InlineData("delegated", "Delegated", "api://agent/access_as_user", "https://login.microsoftonline.com/organizations")]
-    [InlineData("app", "App", "api://agent/.default", "https://login.microsoftonline.com/tenant-id")]
-    [InlineData("both", "Delegated", "api://agent/access_as_user", "https://login.microsoftonline.com/organizations")]
-    [InlineData("both", "App", "api://agent/.default", "https://login.microsoftonline.com/tenant-id")]
-    public async Task GetAccessTokenAsync_ConfiguresOnlyRequestedCardFlow(
-        string cardFlows,
-        string modeName,
-        string expectedScope,
-        string expectedAuthority)
+    [Fact]
+    public async Task GetAccessTokenAsync_ReusesTokenWithoutExpiration()
     {
-        A2AAuthMode mode = Enum.Parse<A2AAuthMode>(modeName);
-        var options = new A2AClientAuthenticationOptions
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthConnectionOptions connection = CreateConnection();
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                authentication,
+                connection,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("generic-token", ExpiresIn: null));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object, timeProvider);
+
+        Assert.Equal("generic-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromDays(365));
+        Assert.Equal("generic-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+
+        oauth.Verify(
+            client => client.AcquireTokenAsync(authentication, connection, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_ConcurrentRequestsShareTokenAcquisition()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthConnectionOptions connection = CreateConnection();
+        var tokenSource = new TaskCompletionSource<OAuthAccessToken>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                authentication,
+                connection,
+                It.IsAny<CancellationToken>()))
+            .Returns(tokenSource.Task);
+        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object);
+
+        Task<string?> firstRequest = provider.GetAccessTokenAsync(authentication, CancellationToken.None);
+        Task<string?> secondRequest = provider.GetAccessTokenAsync(authentication, CancellationToken.None);
+        tokenSource.SetResult(new OAuthAccessToken("generic-token", TimeSpan.FromMinutes(10)));
+
+        string?[] tokens = await Task.WhenAll(firstRequest, secondRequest);
+        Assert.All(tokens, token => Assert.Equal("generic-token", token));
+        oauth.Verify(
+            client => client.AcquireTokenAsync(authentication, connection, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_ExpiredToken_UsesRefreshToken()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthConnectionOptions connection = CreateConnection();
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                authentication,
+                connection,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("initial-token", TimeSpan.FromMinutes(5), "refresh-token"));
+        oauth.Setup(client => client.RefreshTokenAsync(
+                authentication,
+                connection,
+                "refresh-token",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("renewed-token", TimeSpan.FromMinutes(5), "new-refresh-token"));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object, timeProvider);
+
+        Assert.Equal("initial-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+        Assert.Equal("renewed-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_ExpiredTokenWithoutRefreshToken_Reacquires()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthConnectionOptions connection = CreateConnection();
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.SetupSequence(client => client.AcquireTokenAsync(
+                authentication,
+                connection,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("initial-token", TimeSpan.FromMinutes(5)))
+            .ReturnsAsync(new OAuthAccessToken("renewed-token", TimeSpan.FromMinutes(5)));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object, timeProvider);
+
+        Assert.Equal("initial-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+        Assert.Equal("renewed-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+    }
+
+    private static A2AClientAuthenticationOptions CreateOptions(OAuthConnectionOptions connection)
+        => new()
         {
-            TenantId = "tenant-id",
-            PublicClientId = mode == A2AAuthMode.Delegated ? "public-client-id" : null,
-            ConfidentialClientId = mode == A2AAuthMode.App ? "confidential-client-id" : null,
-            ConfidentialClientSecret = mode == A2AAuthMode.App ? "test-secret" : null,
-        };
-        var acquiredModes = new List<A2AAuthMode>();
-        MsalTokenAcquisitionRequest? acquisition = null;
-        CancellationToken acquiredCancellation = default;
-        var msal = new MsalTokenClient(
-            options,
-            delegatedTokenFactory: (_, request, cancellationToken) =>
+            Connections = new Dictionary<string, OAuthConnectionOptions>
             {
-                acquiredModes.Add(A2AAuthMode.Delegated);
-                acquisition = request;
-                acquiredCancellation = cancellationToken;
-                return Task.FromResult("delegated-token");
+                ["provider"] = connection,
             },
-            applicationTokenFactory: (_, request, cancellationToken) =>
-            {
-                acquiredModes.Add(A2AAuthMode.App);
-                acquisition = request;
-                acquiredCancellation = cancellationToken;
-                return Task.FromResult("app-token");
-            });
-        msal.Configure(A2AClientProgramTests.CreateCard(cardFlows));
-        var provider = new A2AAccessTokenProvider(msal);
-        using var cancellation = new CancellationTokenSource();
-
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, cancellation.Token));
-        Assert.Empty(acquiredModes);
-        string? token = await provider.GetAccessTokenAsync(mode, cancellation.Token);
-
-        Assert.Equal(mode == A2AAuthMode.Delegated ? "delegated-token" : "app-token", token);
-        Assert.Equal([mode], acquiredModes);
-        Assert.Equal(cancellation.Token, acquiredCancellation);
-        Assert.NotNull(acquisition);
-        Assert.Equal([expectedScope], acquisition.Scopes);
-        Assert.Equal(new Uri(expectedAuthority), acquisition.Authority);
-    }
-
-    [Theory]
-    [InlineData("Delegated", "App", "absolute HTTPS token endpoint")]
-    [InlineData("App", "Delegated", "device authorization endpoint")]
-    public async Task GetAccessTokenAsync_InvalidOtherFlow_DoesNotBlockSupportedMode(
-        string supportedModeName,
-        string invalidModeName,
-        string expectedFailure)
-    {
-        var card = A2AClientProgramTests.CreateCard("both");
-        if (invalidModeName == "App")
-        {
-            card.SecuritySchemes!["application"].OAuth2SecurityScheme!.Flows!.ClientCredentials!.TokenUrl = "http://login.example/token";
-        }
-        else
-        {
-            card.SecuritySchemes!["delegated"].OAuth2SecurityScheme!.Flows!.DeviceCode!.DeviceAuthorizationUrl =
-                "https://other.example/organizations/oauth2/v2.0/devicecode";
-        }
-        var msal = new MsalTokenClient(
-            new A2AClientAuthenticationOptions
-            {
-                TenantId = "tenant-id",
-                PublicClientId = "public-client-id",
-                ConfidentialClientId = "confidential-client-id",
-                ConfidentialClientSecret = "test-secret",
-            },
-            delegatedTokenFactory: (_, _, _) => Task.FromResult("delegated-token"),
-            applicationTokenFactory: (_, _, _) => Task.FromResult("app-token"));
-        msal.Configure(card);
-        var provider = new A2AAccessTokenProvider(msal);
-        A2AAuthMode supportedMode = Enum.Parse<A2AAuthMode>(supportedModeName);
-        string expectedToken = supportedMode == A2AAuthMode.Delegated ? "delegated-token" : "app-token";
-
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None));
-        Assert.Equal(expectedToken, await provider.GetAccessTokenAsync(supportedMode, CancellationToken.None));
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetAccessTokenAsync(Enum.Parse<A2AAuthMode>(invalidModeName), CancellationToken.None));
-
-        Assert.Contains(expectedFailure, exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(expectedToken, await provider.GetAccessTokenAsync(supportedMode, CancellationToken.None));
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None));
-    }
-}
-
-public class A2AClientAuthenticationOptionsTests
-{
-    [Theory]
-    [InlineData("Delegated", "delegated-token")]
-    [InlineData("App", "app-token")]
-    public async Task AcquireTokenAsync_DoesNotRequireOtherModeConfiguration(string modeName, string expectedToken)
-    {
-        A2AAuthMode mode = Enum.Parse<A2AAuthMode>(modeName);
-        var options = new A2AClientAuthenticationOptions
-        {
-            TenantId = "tenant-id",
-            PublicClientId = mode == A2AAuthMode.Delegated ? "public-client-id" : null,
-            ConfidentialClientId = mode == A2AAuthMode.App ? "confidential-client-id" : null,
-            ConfidentialClientSecret = mode == A2AAuthMode.App ? "secret" : null,
-        };
-        var client = new MsalTokenClient(
-            options,
-            delegatedTokenFactory: static (_, _, _) => Task.FromResult("delegated-token"),
-            applicationTokenFactory: static (_, _, _) => Task.FromResult("app-token"));
-        client.Configure(CreateAuthentication(mode));
-
-        string token = mode switch
-        {
-            A2AAuthMode.Delegated => await client.AcquireDelegatedTokenAsync(CancellationToken.None),
-            A2AAuthMode.App => await client.AcquireApplicationTokenAsync(CancellationToken.None),
-            _ => throw new InvalidOperationException("Only delegated and app modes are valid for this test."),
         };
 
-        Assert.Equal(expectedToken, token);
-    }
-
-    [Theory]
-    [InlineData("Delegated", "TenantId", "PublicClientId")]
-    [InlineData("App", "TenantId", "ConfidentialClientId", "ConfidentialClientSecret")]
-    public async Task AcquireTokenAsync_MissingConfiguration_ThrowsInvalidOperationExceptionNamingEachMissingKey(
-        string modeName,
-        params string[] expectedKeys)
-    {
-        A2AAuthMode mode = Enum.Parse<A2AAuthMode>(modeName);
-        var options = new A2AClientAuthenticationOptions();
-        bool factoryInvoked = false;
-        var client = new MsalTokenClient(
-            options,
-            delegatedTokenFactory: (_, _, _) =>
-            {
-                factoryInvoked = true;
-                return Task.FromResult("delegated-token");
-            },
-            applicationTokenFactory: (_, _, _) =>
-            {
-                factoryInvoked = true;
-                return Task.FromResult("app-token");
-            });
-        client.Configure(CreateAuthentication(mode));
-
-        InvalidOperationException exception = mode switch
+    private static OAuthConnectionOptions CreateConnection()
+        => new()
         {
-            A2AAuthMode.Delegated => await Assert.ThrowsAsync<InvalidOperationException>(() => client.AcquireDelegatedTokenAsync(CancellationToken.None)),
-            A2AAuthMode.App => await Assert.ThrowsAsync<InvalidOperationException>(() => client.AcquireApplicationTokenAsync(CancellationToken.None)),
-            _ => throw new InvalidOperationException("Only delegated and app modes are valid for this test."),
+            ClientId = "generic-client-id",
+            AllowedOrigins = [new Uri("https://identity.example.com")],
         };
 
-        Assert.False(factoryInvoked);
-
-        foreach (string expectedKey in expectedKeys)
-        {
-            Assert.Contains(expectedKey, exception.Message);
-        }
-
-        if (mode == A2AAuthMode.Delegated)
-        {
-            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.ConfidentialClientId), exception.Message);
-            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.ConfidentialClientSecret), exception.Message);
-        }
-        else
-        {
-            Assert.DoesNotContain(nameof(A2AClientAuthenticationOptions.PublicClientId), exception.Message);
-        }
-    }
-
-    private static A2AAgentCardAuthentication CreateAuthentication(A2AAuthMode mode)
+    private static A2AAgentCardAuthentication CreateAuthentication()
     {
-        string schemeName = mode == A2AAuthMode.Delegated ? "delegated" : "application";
-        var flows = new OAuthFlows
-        {
-            DeviceCode = mode == A2AAuthMode.Delegated
-                ? new()
-                {
-                    DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
-                    TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-                }
-                : null,
-            ClientCredentials = mode == A2AAuthMode.App
-                ? new()
-                {
-                    TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-                }
-                : null,
-        };
         var card = new AgentCard
         {
             SecuritySchemes = new Dictionary<string, SecurityScheme>
             {
-                [schemeName] = new()
-                {
-                    OAuth2SecurityScheme = new OAuth2SecurityScheme { Flows = flows },
-                },
-            },
-            SecurityRequirements =
-            [
-                new SecurityRequirement
-                {
-                    Schemes = new Dictionary<string, StringList>
-                    {
-                        [schemeName] = new()
-                        {
-                            List = [mode == A2AAuthMode.Delegated ? "api://agent/access_as_user" : "api://agent/.default"],
-                        },
-                    },
-                },
-            ],
-        };
-
-        return A2AAgentCardAuthentication.Select(card, mode);
-    }
-
-    [Fact]
-    public async Task AcquireDelegatedTokenAsync_PassesCardScopesAndAuthorityToAcquisitionPath()
-    {
-        MsalTokenAcquisitionRequest? request = null;
-        var client = new MsalTokenClient(
-            new A2AClientAuthenticationOptions
-            {
-                TenantId = "tenant-id",
-                PublicClientId = "public-client-id",
-            },
-            delegatedTokenFactory: (_, acquisitionRequest, _) =>
-            {
-                request = acquisitionRequest;
-                return Task.FromResult("delegated-token");
-            },
-            applicationTokenFactory: null);
-        client.Configure(CreateAuthentication(A2AAuthMode.Delegated));
-
-        string token = await client.AcquireDelegatedTokenAsync(CancellationToken.None);
-
-        Assert.Equal("delegated-token", token);
-        Assert.NotNull(request);
-        Assert.Equal(["api://agent/access_as_user"], request.Scopes);
-        Assert.Equal(
-            new Uri("https://login.microsoftonline.com/organizations"),
-            request.Authority);
-        Assert.Equal(
-            new Uri("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode"),
-            request.DeviceAuthorizationUrl);
-    }
-
-    [Theory]
-    [InlineData("https://login.microsoftonline.com/organizations/devicecode", "path")]
-    [InlineData("https://login.microsoftonline.com/common/oauth2/v2.0/devicecode", "tenant path")]
-    [InlineData("https://attacker.example/organizations/oauth2/v2.0/devicecode", "authority")]
-    [InlineData("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode?ignored=true", "path")]
-    public void Configure_DelegatedDeviceEndpointIncompatibleWithTokenAuthority_Throws(string deviceAuthorizationUrl, string? expectedReason)
-    {
-        var client = new MsalTokenClient(new A2AClientAuthenticationOptions());
-        AgentCard card = new()
-        {
-            SecuritySchemes = new Dictionary<string, SecurityScheme>
-            {
-                ["delegated"] = new()
+                ["provider"] = new()
                 {
                     OAuth2SecurityScheme = new OAuth2SecurityScheme
                     {
@@ -336,8 +191,8 @@ public class A2AClientAuthenticationOptionsTests
                         {
                             DeviceCode = new()
                             {
-                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-                                DeviceAuthorizationUrl = deviceAuthorizationUrl,
+                                DeviceAuthorizationUrl = "https://identity.example.com/oauth/device",
+                                TokenUrl = "https://identity.example.com/oauth/token",
                             },
                         },
                     },
@@ -349,20 +204,22 @@ public class A2AClientAuthenticationOptionsTests
                 {
                     Schemes = new Dictionary<string, StringList>
                     {
-                        ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                        ["provider"] = new() { List = ["agent.read"] },
                     },
                 },
             ],
         };
 
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-            () => client.Configure(A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated)));
+        return A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated);
+    }
 
-        Assert.Contains("device authorization endpoint", exception.Message, StringComparison.OrdinalIgnoreCase);
-        if (expectedReason is not null)
-        {
-            Assert.Contains(expectedReason, exception.Message, StringComparison.OrdinalIgnoreCase);
-        }
+    private sealed class TestTimeProvider : TimeProvider
+    {
+        private DateTimeOffset _utcNow = DateTimeOffset.UnixEpoch;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void Advance(TimeSpan duration) => _utcNow += duration;
     }
 }
 
@@ -376,5 +233,68 @@ public class A2AAuthenticationSessionTests
         session.SetMode(A2AAuthMode.App);
 
         Assert.Equal(A2AAuthMode.App, session.Mode);
+    }
+
+    [Fact]
+    public void SetMode_SameMode_PreservesSelectedAuthentication()
+    {
+        var session = new A2AAuthenticationSession();
+        A2AAgentCardAuthentication authentication = CreateDelegatedAuthentication();
+        session.SetAutomaticAuthentication(authentication);
+
+        session.SetMode(A2AAuthMode.Delegated);
+
+        Assert.Equal(A2AAuthMode.Delegated, session.Mode);
+        Assert.Equal(A2AAuthMode.Delegated, session.ModeOverride);
+        Assert.Same(authentication, session.SelectedAuthentication);
+    }
+
+    [Fact]
+    public void SetMode_ModeChange_ClearsSelectedAuthentication()
+    {
+        var session = new A2AAuthenticationSession();
+        session.SetAutomaticAuthentication(CreateDelegatedAuthentication());
+
+        session.SetMode(A2AAuthMode.App);
+
+        Assert.Equal(A2AAuthMode.App, session.Mode);
+        Assert.Equal(A2AAuthMode.App, session.ModeOverride);
+        Assert.Null(session.SelectedAuthentication);
+    }
+
+    private static A2AAgentCardAuthentication CreateDelegatedAuthentication()
+    {
+        var card = new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://identity.example.com/oauth/device",
+                                TokenUrl = "https://identity.example.com/oauth/token",
+                            },
+                        },
+                    },
+                },
+            },
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        ["delegated"] = new() { List = ["agent.read"] },
+                    },
+                },
+            ],
+        };
+
+        return A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated);
     }
 }

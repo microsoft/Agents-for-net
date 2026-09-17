@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <PackageReference Include="A2A" />
-    <PackageReference Include="Microsoft.Identity.Client" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />

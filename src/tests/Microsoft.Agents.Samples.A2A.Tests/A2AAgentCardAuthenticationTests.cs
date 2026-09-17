@@ -58,7 +58,7 @@ public class A2AAgentCardAuthenticationTests
     }
 
     [Fact]
-    public void Select_RequirementUsesUnsupportedFlow_Throws()
+    public void Select_DelegatedMode_UsesAuthorizationCodeFlowAndRequirementScopes()
     {
         AgentCard card = CreateCard(
             "authorizationCode",
@@ -72,10 +72,14 @@ public class A2AAgentCardAuthenticationTests
             },
             "api://agent/access_as_user");
 
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-            () => A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated));
+        A2AAgentCardAuthentication selection = A2AAgentCardAuthentication.Select(
+            card,
+            A2AAuthMode.Delegated);
 
-        Assert.Contains("Device Code", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(A2AOAuthFlowType.AuthorizationCode, selection.FlowType);
+        Assert.Equal("https://login.example.com/authorize", selection.AuthorizationUrl);
+        Assert.Equal("https://login.example.com/token", selection.TokenUrl);
+        Assert.Equal(["api://agent/access_as_user"], selection.Scopes);
     }
 
     [Fact]
@@ -280,6 +284,17 @@ public class A2AAgentCardAuthenticationTests
     }
 
     [Fact]
+    public void Select_ExplicitDelegatedModeWithTwoProvidersAndNoSkill_ThrowsHelpfulError()
+    {
+        AgentCard card = CreateTwoProviderCard();
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AAgentCardAuthentication.Select(card, skill: null, modeOverride: A2AAuthMode.Delegated));
+
+        Assert.Contains("multiple delegated security schemes", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Select_EmptyAcquisitionScopes_ThrowsAfterRejectingAlternative()
     {
         AgentCard card = CreateCard("delegated", CreateDeviceCodeFlows(), []);
@@ -383,6 +398,79 @@ public class A2AAgentCardAuthenticationTests
             Skills = skillRequirement
                 ? [new AgentSkill { SecurityRequirements = [requirement] }]
                 : [],
+        };
+    }
+
+    private static AgentCard CreateTwoProviderCard()
+    {
+        return new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+                ["github"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://github.com/login/device/code",
+                                TokenUrl = "https://github.com/login/oauth/access_token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "Microsoft Graph profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                            },
+                        },
+                    ],
+                },
+                new AgentSkill
+                {
+                    Id = "GitHub assigned issues",
+                    Name = "GitHub assigned issues",
+                    Examples = ["-issues"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["github"] = new() { List = ["repo"] },
+                            },
+                        },
+                    ],
+                },
+            ],
         };
     }
 }

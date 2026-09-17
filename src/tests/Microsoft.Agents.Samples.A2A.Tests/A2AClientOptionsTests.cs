@@ -56,7 +56,6 @@ public class A2AClientOptionsTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["A2A:AgentUrl"] = "https://configured.example/a2a",
-                ["Authentication:TenantId"] = "tenant-id",
             })
             .Build();
         var startupOptions = new StartupOptions
@@ -67,6 +66,40 @@ public class A2AClientOptionsTests
         A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
 
         Assert.Equal(new Uri("https://command-line.example/a2a"), options.AgentUrl);
-        Assert.Equal("tenant-id", options.Authentication.TenantId);
+        Assert.Empty(options.Authentication.Connections);
+    }
+
+    [Fact]
+    public void FromConfiguration_ReadsOAuthConnectionsBySecuritySchemeName()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["A2A:AgentUrl"] = "https://agent.example/a2a",
+                ["Authentication:Connections:github:ClientId"] = "github-client-id",
+                ["Authentication:Connections:github:AllowedOrigins:0"] = "https://github.com",
+                ["Authentication:Connections:github:AdditionalScopes:0"] = "offline_access",
+                ["Authentication:Connections:linkedin:ClientId"] = "linkedin-client-id",
+                ["Authentication:Connections:linkedin:ClientSecret"] = "linkedin-client-secret",
+                ["Authentication:Connections:linkedin:RedirectUri"] = "http://localhost:8400/callback/",
+                ["Authentication:Connections:linkedin:AllowedOrigins:0"] = "https://www.linkedin.com",
+                ["Authentication:Connections:linkedin:TokenEndpointAuthenticationMethod"] = "ClientSecretPost",
+            })
+            .Build();
+
+        A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, new StartupOptions());
+
+        OAuthConnectionOptions github = options.Authentication.GetRequiredConnection("github");
+        Assert.Equal("github-client-id", github.ClientId);
+        Assert.Equal([new Uri("https://github.com")], github.AllowedOrigins);
+        Assert.Equal(["offline_access"], github.AdditionalScopes);
+        Assert.Equal(OAuthTokenEndpointAuthenticationMethod.None, github.TokenEndpointAuthenticationMethod);
+
+        OAuthConnectionOptions linkedin = options.Authentication.GetRequiredConnection("linkedin");
+        Assert.Equal("linkedin-client-id", linkedin.ClientId);
+        Assert.Equal("linkedin-client-secret", linkedin.ClientSecret);
+        Assert.Equal(new Uri("http://localhost:8400/callback/"), linkedin.RedirectUri);
+        Assert.Equal([new Uri("https://www.linkedin.com")], linkedin.AllowedOrigins);
+        Assert.Equal(OAuthTokenEndpointAuthenticationMethod.ClientSecretPost, linkedin.TokenEndpointAuthenticationMethod);
     }
 }
