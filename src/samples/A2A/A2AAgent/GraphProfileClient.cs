@@ -14,7 +14,7 @@ internal sealed class GraphProfileClient(HttpClient httpClient) : IGraphProfileC
 {
     public async Task<GraphProfile> GetMeAsync(string accessToken, CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "me?$select=displayName,userPrincipalName");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "me?$select=displayName,mail,userPrincipalName");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);

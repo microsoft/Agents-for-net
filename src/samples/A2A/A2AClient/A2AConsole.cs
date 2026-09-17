@@ -205,17 +205,18 @@ internal sealed class A2AConsole
         if (command.StartsWith(":auth", StringComparison.OrdinalIgnoreCase))
         {
             string modeName = command[":auth".Length..].Trim();
+            A2AAuthMode? previousModeOverride = _authenticationSession.ModeOverride;
             bool modeChanged;
             if (string.Equals(modeName, "auto", StringComparison.OrdinalIgnoreCase))
             {
-                modeChanged = _authenticationSession.ModeOverride is not null;
+                modeChanged = previousModeOverride is not null;
                 _authenticationSession.ClearModeOverride();
                 _output.WriteLine("Authentication mode: auto");
             }
             else if (Enum.TryParse(modeName, ignoreCase: true, out A2AAuthMode mode)
                 && Enum.IsDefined(mode))
             {
-                modeChanged = _authenticationSession.Mode != mode;
+                modeChanged = previousModeOverride != mode;
                 _authenticationSession.SetMode(mode);
                 _output.WriteLine($"Authentication mode: {mode.ToString().ToLowerInvariant()}");
             }
@@ -235,6 +236,16 @@ internal sealed class A2AConsole
             else if (modeChanged)
             {
                 ClearContinuation();
+            }
+
+            if (modeChanged)
+            {
+                A2AAuthMode? activeOverride = _authenticationSession.ModeOverride;
+                _authenticationSession.SetAutomaticAuthentication(null);
+                if (activeOverride is A2AAuthMode overrideMode)
+                {
+                    _authenticationSession.SetMode(overrideMode);
+                }
             }
 
             return true;

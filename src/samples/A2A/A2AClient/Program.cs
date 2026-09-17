@@ -47,7 +47,12 @@ internal sealed class Program
             A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
             var authenticationSession = new A2AAuthenticationSession();
             var msalTokenClient = new MsalTokenClient(options.Authentication);
-            var accessTokenProvider = new A2AAccessTokenProvider(msalTokenClient);
+            using var gitHubDeviceFlowHttpClient = new HttpClient();
+            var gitHubTokenClient = new GitHubDeviceFlowTokenClient(
+                gitHubDeviceFlowHttpClient,
+                options.Authentication,
+                Console.Out);
+            var accessTokenProvider = new A2AAccessTokenProvider(msalTokenClient, gitHubTokenClient);
             using var httpClient = new HttpClient(
                 new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider, options.AgentUrl));
 

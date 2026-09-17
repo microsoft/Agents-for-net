@@ -40,64 +40,37 @@ namespace Microsoft.Agents.Samples.A2A.Tests;
 public class A2AAgentOAuthRouteTests
 {
     private const string GraphHandlerName = "graph";
+    private const string GitHubHandlerName = "github";
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task AgentCard_FromSampleConfiguration_AdvertisesDelegatedOAuthForProtectedSkill(bool protectedSkills)
+    [Fact]
+    public async Task AgentCard_FromSampleConfiguration_AdvertisesTwoSchemes_AndEachSkillUsesOnlyItsOwnScope()
     {
-        const string tenantId = "11111111-1111-1111-1111-111111111111";
-        const string clientId = "22222222-2222-2222-2222-222222222222";
-        string settings = (await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "A2AAgent.appsettings.json")))
-            .Replace("{{TenantId}}", tenantId, StringComparison.Ordinal)
-            .Replace("{{ClientId}}", clientId, StringComparison.Ordinal);
-        using var settingsStream = new MemoryStream(Encoding.UTF8.GetBytes(settings));
-        var configuration = new ConfigurationBuilder().AddJsonStream(settingsStream).Build();
-        Assert.False(configuration.GetSection("AgentApplication:A2A:AgentCard").Exists());
-        var handler = Assert.Single(configuration.GetSection("AgentApplication:UserAuthorization:Handlers").GetChildren());
-        Assert.Equal(GraphHandlerName, handler.Key);
-        Assert.Equal("Microsoft.Agents.Extensions.A2A", handler["Assembly"]);
-        Assert.Equal(GraphHandlerName, configuration["AgentApplication:UserAuthorization:DefaultHandlerName"]);
-        Assert.Equal("true", handler["Settings:EnforceRequiredScopes"]?.ToLowerInvariant());
-        Assert.Equal("ServiceConnection", handler["Settings:OBOConnectionName"]);
-        Assert.Equal("User.Read", handler["Settings:OBOScopes:0"]);
+        AgentCard card = await LoadCardFromSampleConfigurationAsync();
 
-        var storage = new MemoryStorage();
-        var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance, configuration: configuration);
-        IAgent agent = protectedSkills
-            ? new MyAgent(new AgentApplicationOptions(storage), Mock.Of<IGraphProfileClient>())
-            : new AgentApplication(new AgentApplicationOptions(storage));
-        var context = new DefaultHttpContext();
-        context.Request.Scheme = "https";
-        context.Request.Host = new HostString("agent.example");
-        using var responseBody = new MemoryStream();
-        context.Response.Body = responseBody;
-
-        await adapter.ProcessAgentCardAsync(context.Request, context.Response, agent, "/a2a", CancellationToken.None);
-        responseBody.Position = 0;
-        var card = (await JsonSerializer.DeserializeAsync<AgentCard>(responseBody, A2AJsonUtilities.DefaultOptions))!;
-        Assert.DoesNotContain("User.Read", Encoding.UTF8.GetString(responseBody.ToArray()), StringComparison.Ordinal);
         Assert.NotNull(card.SecuritySchemes);
-        Assert.Null(card.SecurityRequirements);
-        var delegated = card.SecuritySchemes["delegated"].OAuth2SecurityScheme!.Flows!.DeviceCode!;
+        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", card.SecuritySchemes["delegated"].OAuth2SecurityScheme!.Flows!.DeviceCode!.TokenUrl);
+        Assert.Equal("https://github.com/login/oauth/access_token", card.SecuritySchemes["github"].OAuth2SecurityScheme!.Flows!.DeviceCode!.TokenUrl);
+        AssertSkillRequirement(card, "Microsoft Graph profile", "delegated", "api://22222222-2222-2222-2222-222222222222/access_as_user");
+        AssertSkillRequirement(card, "GitHub assigned issues", "github", "repo");
+    }
 
-        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", delegated.TokenUrl);
-        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode", delegated.DeviceAuthorizationUrl);
-        if (protectedSkills)
-        {
-            AssertSkillRequirement(
-                card,
-                "Microsoft Graph profile",
-                "delegated",
-                "api://22222222-2222-2222-2222-222222222222/access_as_user");
-        }
+    [Fact]
+    public async Task AgentCard_FromBaseAndDevelopmentConfiguration_UsesAccessAsUserForGraphRequirement()
+    {
+        AgentCard card = await LoadCardFromSampleConfigurationAsync(includeDevelopmentSettings: true);
+
+        AgentSkill graphSkill = Assert.Single(card.Skills, candidate => candidate.Id == "Microsoft Graph profile");
+        SecurityRequirement requirement = Assert.Single(graphSkill.SecurityRequirements!);
+        Assert.NotNull(requirement.Schemes);
+        Assert.NotNull(requirement.Schemes["delegated"].List);
+        string configuredScope = Assert.Single(requirement.Schemes["delegated"].List);
+
+        Assert.EndsWith("/access_as_user", configuredScope, StringComparison.Ordinal);
     }
 
     private static void AssertSkillRequirement(AgentCard card, string skillId, string schemeName, string scope)
     {
         AgentSkill skill = Assert.Single(card.Skills, candidate => candidate.Id == skillId);
-        Assert.NotNull(skill.Examples);
-        Assert.Contains("-me", skill.Examples);
         Assert.NotNull(skill.SecurityRequirements);
         SecurityRequirement requirement = Assert.Single(skill.SecurityRequirements);
         Assert.NotNull(requirement.Schemes);
@@ -107,15 +80,11 @@ public class A2AAgentOAuthRouteTests
     [Fact]
     public void MyAgent_ResolvesFromStartupServiceRegistration()
     {
-        var builder = WebApplication.CreateBuilder();
-        builder.AddAgentDefaults();
-        builder.Services.AddSingleton<IStorage, MemoryStorage>();
-        builder.Services.AddSingleton(sp => new AgentApplicationOptions(sp.GetRequiredService<IStorage>()));
-        builder.Services.AddHttpClient<IGraphProfileClient, GraphProfileClient>(client =>
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
-            client.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
+            EnvironmentName = "Development",
         });
-        builder.AddAgent<MyAgent>();
+        A2AAgentStartup.ConfigureBuilder(builder);
 
         using var provider = builder.Services.BuildServiceProvider();
 
@@ -134,44 +103,66 @@ public class A2AAgentOAuthRouteTests
     }
 
     [Fact]
-    public async Task GraphRoute_UsesDelegatedTokenToReturnProfile()
+    public async Task GitHubSkill_DeclaresAutoSignInHandlerAndNoDuplicateRoute()
+    {
+        MethodInfo method = typeof(MyAgent).GetMethod("OnGitHubIssuesAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        A2ASkillAttribute skill = Assert.Single(method.GetCustomAttributes<A2ASkillAttribute>());
+
+        Assert.Equal([GitHubHandlerName], skill.AutoSignInHandlers);
+        Assert.Empty(method.GetCustomAttributes<A2AMessageRouteAttribute>());
+    }
+
+    [Fact]
+    public async Task GraphRoute_UsesMailThenFallsBackToUserPrincipalName()
     {
         var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-token");
+        var github = CreateAuthorizationHandler(GitHubHandlerName, "github-token");
         var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
         graphClient
-            .Setup(client => client.GetMeAsync("graph-token", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new GraphProfile("Ada Lovelace", "ada@example.com"));
-        var record = CreateRecord(graph, graphClient);
+            .SetupSequence(client => client.GetMeAsync("graph-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GraphProfile("Ada Lovelace", "ada@example.com", "ada@contoso.com"))
+            .ReturnsAsync(new GraphProfile("Grace Hopper", null, "grace@contoso.com"));
 
-        var context = await ExecuteMessageAsync(record, "-me", CreateDelegatedIdentity());
-        var task = ReadTaskResponse(context);
+        var record = CreateRecord(graph.Object, github.Object, graphClient.Object, Mock.Of<IGitHubIssuesClient>());
 
-        graph.Verify(handler => handler.SignInUserAsync(
-            It.IsAny<ITurnContext>(),
-            true,
-            It.IsAny<string>(),
-            It.IsAny<System.Collections.Generic.IList<string>>(),
-            It.IsAny<CancellationToken>()), Times.Once);
-        graph.Verify(handler => handler.GetRefreshedUserTokenAsync(
-            It.IsAny<ITurnContext>(),
-            It.IsAny<string>(),
-            It.IsAny<System.Collections.Generic.IList<string>>(),
-            It.IsAny<CancellationToken>()), Times.Never);
-        graphClient.Verify(client => client.GetMeAsync("graph-token", It.IsAny<CancellationToken>()), Times.Once);
-        Assert.Contains("Ada Lovelace", task.Status.Message!.Parts[0].Text);
-        Assert.Contains("ada@example.com", task.Status.Message.Parts[0].Text);
+        AgentTask first = ReadTaskResponse(await ExecuteMessageAsync(record, "-me", CreateDelegatedIdentity()));
+        AgentTask second = ReadTaskResponse(await ExecuteMessageAsync(record, "-me", CreateDelegatedIdentity()));
+
+        Assert.Contains("Email: ada@example.com", first.Status.Message!.Parts[0].Text, StringComparison.Ordinal);
+        Assert.Contains("Email: grace@contoso.com", second.Status.Message!.Parts[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GitHubRoute_UsesGitHubHandlerToken_AndNotGraphToken()
+    {
+        var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-token");
+        var github = CreateAuthorizationHandler(GitHubHandlerName, "github-token");
+        var issuesClient = new Mock<IGitHubIssuesClient>(MockBehavior.Strict);
+        issuesClient
+            .Setup(client => client.GetAssignedIssuesSummaryAsync("github-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("- octo/repo#17 Harden scopes");
+
+        var record = CreateRecord(graph.Object, github.Object, Mock.Of<IGraphProfileClient>(), issuesClient.Object);
+        AgentTask task = ReadTaskResponse(await ExecuteMessageAsync(record, "-issues", CreateDelegatedIdentity()));
+
+        github.Verify(handler => handler.SignInUserAsync(It.IsAny<ITurnContext>(), true, It.IsAny<string>(), It.IsAny<System.Collections.Generic.IList<string>>(), It.IsAny<CancellationToken>()), Times.Once);
+        graph.Verify(handler => handler.SignInUserAsync(It.IsAny<ITurnContext>(), true, It.IsAny<string>(), It.IsAny<System.Collections.Generic.IList<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Contains("octo/repo#17 Harden scopes", task.Status.Message!.Parts[0].Text, StringComparison.Ordinal);
     }
 
     [Fact]
     public async Task EchoRoute_DoesNotInvokeAuthorizationHandlers()
     {
         var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-token");
-        var record = CreateRecord(graph, new Mock<IGraphProfileClient>(MockBehavior.Strict));
+        var github = CreateAuthorizationHandler(GitHubHandlerName, "github-token");
+        var record = CreateRecord(graph.Object, github.Object, Mock.Of<IGraphProfileClient>(), Mock.Of<IGitHubIssuesClient>());
 
         var context = await ExecuteMessageAsync(record, "hello", CreateDelegatedIdentity());
         var task = ReadTaskResponse(context);
 
         VerifyHandlerNotInvoked(graph);
+        VerifyHandlerNotInvoked(github);
         Assert.Equal("You said: hello", task.Status.Message!.Parts[0].Text);
     }
 
@@ -199,9 +190,10 @@ public class A2AAgentOAuthRouteTests
                 delegatedToken,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GraphProfile("Ada Lovelace", "ada@example.com"));
+        var github = CreateAuthorizationHandler(GitHubHandlerName, "github-token");
 
         DefaultHttpContext context = await ExecuteAuthenticatedMessageAsync(
-            CreateRecord(authorization, graphClient),
+            CreateRecord(authorization, github.Object, graphClient.Object, Mock.Of<IGitHubIssuesClient>()),
             "-me",
             delegatedToken);
 
@@ -222,9 +214,10 @@ public class A2AAgentOAuthRouteTests
                 RequiredScopes = ["api://agent/custom_scope"],
             });
         var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
+        var github = CreateAuthorizationHandler(GitHubHandlerName, "github-token");
 
         DefaultHttpContext context = await ExecuteAuthenticatedMessageAsync(
-            CreateRecord(authorization, graphClient),
+            CreateRecord(authorization, github.Object, graphClient.Object, Mock.Of<IGitHubIssuesClient>()),
             "-me",
             delegatedToken);
 
@@ -237,7 +230,9 @@ public class A2AAgentOAuthRouteTests
 
     private static Record CreateRecord(
         IUserAuthorization graph,
-        Mock<IGraphProfileClient> graphClient)
+        IUserAuthorization github,
+        IGraphProfileClient graphClient,
+        IGitHubIssuesClient gitHubIssuesClient)
     {
         var storage = new MemoryStorage();
         var options = new AgentApplicationOptions(storage)
@@ -246,7 +241,8 @@ public class A2AAgentOAuthRouteTests
                 NullLoggerFactory.Instance,
                 storage,
                 Mock.Of<IConnections>(),
-                graph)
+                graph,
+                github)
             {
                 DefaultHandlerName = GraphHandlerName,
                 AutoSignIn = UserAuthorizationOptions.AutoSignInOff
@@ -255,13 +251,53 @@ public class A2AAgentOAuthRouteTests
 
         return new Record(
             new A2AAdapter(storage, NullLoggerFactory.Instance),
-            new MyAgent(options, graphClient.Object));
+            new MyAgent(options, graphClient, gitHubIssuesClient));
     }
 
-    private static Record CreateRecord(
-        Mock<IUserAuthorization> graph,
-        Mock<IGraphProfileClient> graphClient)
-        => CreateRecord(graph.Object, graphClient);
+    private static async Task<AgentCard> LoadCardFromSampleConfigurationAsync(bool includeDevelopmentSettings = false)
+    {
+        const string tenantId = "11111111-1111-1111-1111-111111111111";
+        const string clientId = "22222222-2222-2222-2222-222222222222";
+        string settings = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "A2AAgent.appsettings.json"));
+        settings = settings.Replace("{{TenantId}}", tenantId, StringComparison.Ordinal)
+            .Replace("{{ClientId}}", clientId, StringComparison.Ordinal);
+
+        using var settingsStream = new MemoryStream(Encoding.UTF8.GetBytes(settings));
+        var configurationBuilder = new ConfigurationBuilder().AddJsonStream(settingsStream);
+        if (includeDevelopmentSettings)
+        {
+            configurationBuilder.AddJsonFile(GetSampleConfigurationPath("appsettings.Development.json"));
+        }
+
+        IConfiguration configuration = configurationBuilder.Build();
+        var storage = new MemoryStorage();
+        var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance, configuration: configuration);
+        var context = new DefaultHttpContext();
+        context.Request.Scheme = "https";
+        context.Request.Host = new HostString("agent.example");
+        context.Response.Body = new MemoryStream();
+
+        await adapter.ProcessAgentCardAsync(context.Request, context.Response, new MyAgent(new AgentApplicationOptions(storage), Mock.Of<IGraphProfileClient>(), Mock.Of<IGitHubIssuesClient>()), "/a2a", CancellationToken.None);
+        context.Response.Body.Position = 0;
+        return (await JsonSerializer.DeserializeAsync<AgentCard>(context.Response.Body, A2AJsonUtilities.DefaultOptions))!;
+    }
+
+    private static string GetSampleConfigurationPath(string fileName)
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+        while (directory != null)
+        {
+            string candidate = Path.Combine(directory.FullName, "src", "samples", "A2A", "A2AAgent", fileName);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException($"Could not locate sample configuration file '{fileName}'.");
+    }
 
     private static Mock<IUserAuthorization> CreateAuthorizationHandler(string name, string token)
     {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 
-internal interface IA2AAccessTokenProvider
+internal interface IGitHubDeviceFlowTokenClient
 {
-    Task<string?> GetAccessTokenAsync(A2AAgentCardAuthentication? authentication, CancellationToken cancellationToken);
+    Task<string> AcquireTokenAsync(A2AAgentCardAuthentication authentication, CancellationToken cancellationToken);
 }

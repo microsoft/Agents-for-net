@@ -55,6 +55,7 @@ the prompt instead of ending the session. Ctrl+C still exits.
   "Authentication": {
     "TenantId": "<tenant-id>",
     "PublicClientId": "<public-client-id>",
+    "GitHubClientId": "<github-client-id>",
     "ConfidentialClientId": "<confidential-client-id>",
     "ConfidentialClientSecret": ""
   }
@@ -82,13 +83,18 @@ authorization endpoint where applicable. The client rejects any other flow, miss
 acquisition scope list, or endpoint that is not absolute HTTPS.
 
 The current `A2AAgent` sample advertises only a delegated Device Code flow. Application mode remains
-available so the client can test other agents whose cards advertise a Client Credentials flow.
+available so the client can test other agents whose cards advertise a Client Credentials flow. If the
+selected delegated scheme uses GitHub's device endpoints, the client posts the Agent Card scopes to
+GitHub and requires `Authentication:GitHubClientId` instead of the Entra public-client settings.
 
-`PublicClientId` and `ConfidentialClientId` identify the client that calls the Agent API:
+`PublicClientId`, `GitHubClientId`, and `ConfidentialClientId` identify the client that calls the Agent API:
 
 - `PublicClientId` is used for delegated user authentication (`:auth delegated`) through the
   device-code flow. It does not use a client secret. For the sample's `-me` route, it must be the
   App ID of the Agent API registration itself so the agent can perform the on-behalf-of exchange.
+- `GitHubClientId` is used for delegated GitHub device-code authentication when the selected Agent
+  Card security scheme points at `https://github.com/login/device/code` and
+  `https://github.com/login/oauth/access_token`.
 - `ConfidentialClientId` is used for application-only authentication (`:auth app`) through the
   client-credentials flow. It identifies the confidential client registration whose secret is
   configured in `ConfidentialClientSecret`.

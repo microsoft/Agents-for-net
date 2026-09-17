@@ -18,9 +18,10 @@ public class A2AAccessTokenProviderTests
     public async Task GetAccessTokenAsync_None_ReturnsNull()
     {
         var msal = new Mock<IMsalTokenClient>(MockBehavior.Strict);
-        var provider = new A2AAccessTokenProvider(msal.Object);
+        var github = new Mock<IGitHubDeviceFlowTokenClient>(MockBehavior.Strict);
+        var provider = new A2AAccessTokenProvider(msal.Object, github.Object);
 
-        string? token = await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None);
+        string? token = await provider.GetAccessTokenAsync(authentication: null, CancellationToken.None);
 
         Assert.Null(token);
     }
@@ -30,137 +31,175 @@ public class A2AAccessTokenProviderTests
     [InlineData("App", "app-token")]
     public async Task GetAccessTokenAsync_UsesSelectedFlow(string modeName, string expected)
     {
-        var msal = new Mock<IMsalTokenClient>();
-        msal.Setup(client => client.AcquireDelegatedTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync("delegated-token");
-        msal.Setup(client => client.AcquireApplicationTokenAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync("app-token");
-        var provider = new A2AAccessTokenProvider(msal.Object);
         A2AAuthMode mode = Enum.Parse<A2AAuthMode>(modeName);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(mode);
+        var msal = new Mock<IMsalTokenClient>(MockBehavior.Strict);
+        var github = new Mock<IGitHubDeviceFlowTokenClient>(MockBehavior.Strict);
+        msal.Setup(client => client.AcquireDelegatedTokenAsync(
+                It.Is<A2AAgentCardAuthentication>(candidate => candidate == authentication),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("delegated-token");
+        msal.Setup(client => client.AcquireApplicationTokenAsync(
+                It.Is<A2AAgentCardAuthentication>(candidate => candidate == authentication),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("app-token");
+        var provider = new A2AAccessTokenProvider(msal.Object, github.Object);
 
-        string? token = await provider.GetAccessTokenAsync(mode, CancellationToken.None);
+        string? token = await provider.GetAccessTokenAsync(authentication, CancellationToken.None);
 
         Assert.Equal(expected, token);
     }
 
-    [Theory]
-    [InlineData("Delegated", "Device Code")]
-    [InlineData("App", "Client Credentials")]
-    public async Task GetAccessTokenAsync_CardWithoutOAuth_DefersFailureUntilTokenRequested(string modeName, string expectedFlow)
+    [Fact]
+    public async Task GetAccessTokenAsync_GitHubSelection_CachesTokenBySecurityScheme()
     {
-        var msal = new MsalTokenClient(new A2AClientAuthenticationOptions());
-        msal.Configure(A2AClientProgramTests.CreateCard("none"));
-        var provider = new A2AAccessTokenProvider(msal);
+        var msal = new Mock<IMsalTokenClient>(MockBehavior.Strict);
+        var github = new Mock<IGitHubDeviceFlowTokenClient>(MockBehavior.Strict);
+        A2AAgentCardAuthentication auth = CreateGitHubAuthentication();
+        github.Setup(client => client.AcquireTokenAsync(auth, It.IsAny<CancellationToken>())).ReturnsAsync("github-token");
+        var provider = new A2AAccessTokenProvider(msal.Object, github.Object);
 
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None));
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetAccessTokenAsync(Enum.Parse<A2AAuthMode>(modeName), CancellationToken.None));
+        Assert.Equal("github-token", await provider.GetAccessTokenAsync(auth, CancellationToken.None));
+        Assert.Equal("github-token", await provider.GetAccessTokenAsync(auth, CancellationToken.None));
 
-        Assert.Contains($"{expectedFlow} authentication", exception.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("Missing required", exception.Message, StringComparison.Ordinal);
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None));
+        github.Verify(client => client.AcquireTokenAsync(auth, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Theory]
-    [InlineData("delegated", "Delegated", "api://agent/access_as_user", "https://login.microsoftonline.com/organizations")]
-    [InlineData("app", "App", "api://agent/.default", "https://login.microsoftonline.com/tenant-id")]
-    [InlineData("both", "Delegated", "api://agent/access_as_user", "https://login.microsoftonline.com/organizations")]
-    [InlineData("both", "App", "api://agent/.default", "https://login.microsoftonline.com/tenant-id")]
-    public async Task GetAccessTokenAsync_ConfiguresOnlyRequestedCardFlow(
-        string cardFlows,
-        string modeName,
-        string expectedScope,
-        string expectedAuthority)
+    private static A2AAgentCardAuthentication CreateAuthentication(A2AAuthMode mode)
     {
-        A2AAuthMode mode = Enum.Parse<A2AAuthMode>(modeName);
-        var options = new A2AClientAuthenticationOptions
+        string schemeName = mode == A2AAuthMode.Delegated ? "delegated" : "application";
+        var flows = new OAuthFlows
         {
-            TenantId = "tenant-id",
-            PublicClientId = mode == A2AAuthMode.Delegated ? "public-client-id" : null,
-            ConfidentialClientId = mode == A2AAuthMode.App ? "confidential-client-id" : null,
-            ConfidentialClientSecret = mode == A2AAuthMode.App ? "test-secret" : null,
+            DeviceCode = mode == A2AAuthMode.Delegated
+                ? new()
+                {
+                    DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                    TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                }
+                : null,
+            ClientCredentials = mode == A2AAuthMode.App
+                ? new()
+                {
+                    TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                }
+                : null,
         };
-        var acquiredModes = new List<A2AAuthMode>();
-        MsalTokenAcquisitionRequest? acquisition = null;
-        CancellationToken acquiredCancellation = default;
-        var msal = new MsalTokenClient(
-            options,
-            delegatedTokenFactory: (_, request, cancellationToken) =>
+        var card = new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
             {
-                acquiredModes.Add(A2AAuthMode.Delegated);
-                acquisition = request;
-                acquiredCancellation = cancellationToken;
-                return Task.FromResult("delegated-token");
+                [schemeName] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme { Flows = flows },
+                },
             },
-            applicationTokenFactory: (_, request, cancellationToken) =>
-            {
-                acquiredModes.Add(A2AAuthMode.App);
-                acquisition = request;
-                acquiredCancellation = cancellationToken;
-                return Task.FromResult("app-token");
-            });
-        msal.Configure(A2AClientProgramTests.CreateCard(cardFlows));
-        var provider = new A2AAccessTokenProvider(msal);
-        using var cancellation = new CancellationTokenSource();
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        [schemeName] = new()
+                        {
+                            List = [mode == A2AAuthMode.Delegated ? "api://agent/access_as_user" : "api://agent/.default"],
+                        },
+                    },
+                },
+            ],
+        };
 
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, cancellation.Token));
-        Assert.Empty(acquiredModes);
-        string? token = await provider.GetAccessTokenAsync(mode, cancellation.Token);
-
-        Assert.Equal(mode == A2AAuthMode.Delegated ? "delegated-token" : "app-token", token);
-        Assert.Equal([mode], acquiredModes);
-        Assert.Equal(cancellation.Token, acquiredCancellation);
-        Assert.NotNull(acquisition);
-        Assert.Equal([expectedScope], acquisition.Scopes);
-        Assert.Equal(new Uri(expectedAuthority), acquisition.Authority);
+        return A2AAgentCardAuthentication.Select(card, mode);
     }
 
-    [Theory]
-    [InlineData("Delegated", "App", "absolute HTTPS token endpoint")]
-    [InlineData("App", "Delegated", "device authorization endpoint")]
-    public async Task GetAccessTokenAsync_InvalidOtherFlow_DoesNotBlockSupportedMode(
-        string supportedModeName,
-        string invalidModeName,
-        string expectedFailure)
+    private static AgentCard CreateTwoProviderCard()
     {
-        var card = A2AClientProgramTests.CreateCard("both");
-        if (invalidModeName == "App")
+        return new AgentCard
         {
-            card.SecuritySchemes!["application"].OAuth2SecurityScheme!.Flows!.ClientCredentials!.TokenUrl = "http://login.example/token";
-        }
-        else
-        {
-            card.SecuritySchemes!["delegated"].OAuth2SecurityScheme!.Flows!.DeviceCode!.DeviceAuthorizationUrl =
-                "https://other.example/organizations/oauth2/v2.0/devicecode";
-        }
-        var msal = new MsalTokenClient(
-            new A2AClientAuthenticationOptions
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
             {
-                TenantId = "tenant-id",
-                PublicClientId = "public-client-id",
-                ConfidentialClientId = "confidential-client-id",
-                ConfidentialClientSecret = "test-secret",
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+                ["github"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://github.com/login/device/code",
+                                TokenUrl = "https://github.com/login/oauth/access_token",
+                            },
+                        },
+                    },
+                },
             },
-            delegatedTokenFactory: (_, _, _) => Task.FromResult("delegated-token"),
-            applicationTokenFactory: (_, _, _) => Task.FromResult("app-token"));
-        msal.Configure(card);
-        var provider = new A2AAccessTokenProvider(msal);
-        A2AAuthMode supportedMode = Enum.Parse<A2AAuthMode>(supportedModeName);
-        string expectedToken = supportedMode == A2AAuthMode.Delegated ? "delegated-token" : "app-token";
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "Microsoft Graph profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                            },
+                        },
+                    ],
+                },
+                new AgentSkill
+                {
+                    Id = "GitHub assigned issues",
+                    Name = "GitHub assigned issues",
+                    Examples = ["-issues"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["github"] = new() { List = ["repo"] },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
 
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None));
-        Assert.Equal(expectedToken, await provider.GetAccessTokenAsync(supportedMode, CancellationToken.None));
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => provider.GetAccessTokenAsync(Enum.Parse<A2AAuthMode>(invalidModeName), CancellationToken.None));
-
-        Assert.Contains(expectedFailure, exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(expectedToken, await provider.GetAccessTokenAsync(supportedMode, CancellationToken.None));
-        Assert.Null(await provider.GetAccessTokenAsync(A2AAuthMode.None, CancellationToken.None));
+    private static A2AAgentCardAuthentication CreateGitHubAuthentication()
+    {
+        AgentCard card = CreateTwoProviderCard();
+        AgentSkill skill = card.Skills![1];
+        return A2AAgentCardAuthentication.Select(card, skill, A2AAuthMode.Delegated)!;
     }
 }
 
 public class A2AClientAuthenticationOptionsTests
 {
+    [Fact]
+    public void MsalTokenClient_DoesNotExposeWholeCardConfigureOverload()
+    {
+        Assert.Null(typeof(MsalTokenClient).GetMethod(nameof(MsalTokenClient.Configure), [typeof(AgentCard)]));
+    }
+
     [Theory]
     [InlineData("Delegated", "delegated-token")]
     [InlineData("App", "app-token")]
@@ -285,6 +324,86 @@ public class A2AClientAuthenticationOptionsTests
         return A2AAgentCardAuthentication.Select(card, mode);
     }
 
+    private static AgentCard CreateTwoProviderCard()
+    {
+        return new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+                ["github"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://github.com/login/device/code",
+                                TokenUrl = "https://github.com/login/oauth/access_token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "Microsoft Graph profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                            },
+                        },
+                    ],
+                },
+                new AgentSkill
+                {
+                    Id = "GitHub assigned issues",
+                    Name = "GitHub assigned issues",
+                    Examples = ["-issues"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["github"] = new() { List = ["repo"] },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
+    private static A2AAgentCardAuthentication CreateGitHubAuthentication()
+    {
+        AgentCard card = CreateTwoProviderCard();
+        AgentSkill skill = card.Skills![1];
+        return A2AAgentCardAuthentication.Select(card, skill, A2AAuthMode.Delegated)!;
+    }
+
     [Fact]
     public async Task AcquireDelegatedTokenAsync_PassesCardScopesAndAuthorityToAcquisitionPath()
     {
@@ -302,6 +421,38 @@ public class A2AClientAuthenticationOptionsTests
             },
             applicationTokenFactory: null);
         client.Configure(CreateAuthentication(A2AAuthMode.Delegated));
+
+        string token = await client.AcquireDelegatedTokenAsync(CancellationToken.None);
+
+        Assert.Equal("delegated-token", token);
+        Assert.NotNull(request);
+        Assert.Equal(["api://agent/access_as_user"], request.Scopes);
+        Assert.Equal(
+            new Uri("https://login.microsoftonline.com/organizations"),
+            request.Authority);
+        Assert.Equal(
+            new Uri("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode"),
+            request.DeviceAuthorizationUrl);
+    }
+
+    [Fact]
+    public async Task AcquireDelegatedTokenAsync_TwoProviderSelection_UsesSelectedAuthenticationOnly()
+    {
+        MsalTokenAcquisitionRequest? request = null;
+        var client = new MsalTokenClient(
+            new A2AClientAuthenticationOptions
+            {
+                TenantId = "tenant-id",
+                PublicClientId = "public-client-id",
+            },
+            delegatedTokenFactory: (_, acquisitionRequest, _) =>
+            {
+                request = acquisitionRequest;
+                return Task.FromResult("delegated-token");
+            },
+            applicationTokenFactory: null);
+        AgentCard card = CreateTwoProviderCard();
+        client.Configure(A2AAgentCardAuthentication.Select(card, card.Skills![0], A2AAuthMode.Delegated)!);
 
         string token = await client.AcquireDelegatedTokenAsync(CancellationToken.None);
 
@@ -376,5 +527,68 @@ public class A2AAuthenticationSessionTests
         session.SetMode(A2AAuthMode.App);
 
         Assert.Equal(A2AAuthMode.App, session.Mode);
+    }
+
+    [Fact]
+    public void SetMode_SameMode_PreservesSelectedAuthentication()
+    {
+        var session = new A2AAuthenticationSession();
+        A2AAgentCardAuthentication authentication = CreateDelegatedAuthentication();
+        session.SetAutomaticAuthentication(authentication);
+
+        session.SetMode(A2AAuthMode.Delegated);
+
+        Assert.Equal(A2AAuthMode.Delegated, session.Mode);
+        Assert.Equal(A2AAuthMode.Delegated, session.ModeOverride);
+        Assert.Same(authentication, session.SelectedAuthentication);
+    }
+
+    [Fact]
+    public void SetMode_ModeChange_ClearsSelectedAuthentication()
+    {
+        var session = new A2AAuthenticationSession();
+        session.SetAutomaticAuthentication(CreateDelegatedAuthentication());
+
+        session.SetMode(A2AAuthMode.App);
+
+        Assert.Equal(A2AAuthMode.App, session.Mode);
+        Assert.Equal(A2AAuthMode.App, session.ModeOverride);
+        Assert.Null(session.SelectedAuthentication);
+    }
+
+    private static A2AAgentCardAuthentication CreateDelegatedAuthentication()
+    {
+        AgentCard card = new()
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+            },
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                    },
+                },
+            ],
+        };
+
+        return A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated);
     }
 }

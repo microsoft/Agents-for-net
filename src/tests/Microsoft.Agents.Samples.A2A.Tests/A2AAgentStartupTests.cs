@@ -3,25 +3,35 @@ extern alias A2AAgentSample;
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Extensions.A2A;
+using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Threading;
 using System.Threading.Tasks;
 using A2AAgentSample::A2AAgent;
 
@@ -49,6 +59,11 @@ public class A2AAgentStartupTests
 
         var schemeProvider = app.Services.GetRequiredService<IAuthenticationSchemeProvider>();
 
+        Assert.Equal(
+            A2AAgentAuthenticationDefaults.PolicyScheme,
+            (await schemeProvider.GetDefaultAuthenticateSchemeAsync())?.Name);
+        Assert.NotNull(await schemeProvider.GetSchemeAsync(A2AAgentAuthenticationDefaults.PolicyScheme));
+        Assert.NotNull(await schemeProvider.GetSchemeAsync(A2AAgentAuthenticationDefaults.GitHubScheme));
         Assert.NotNull(await schemeProvider.GetSchemeAsync(JwtBearerDefaults.AuthenticationScheme));
         Assert.True(((IEndpointRouteBuilder)app).IsAgentAuthorizationConfigured());
     }
@@ -62,6 +77,21 @@ public class A2AAgentStartupTests
 
         Assert.Null(await schemeProvider.GetSchemeAsync(JwtBearerDefaults.AuthenticationScheme));
         Assert.False(((IEndpointRouteBuilder)app).IsAgentAuthorizationConfigured());
+    }
+
+    [Fact]
+    public void Development_WithPlaceholderTokenValidation_ConfiguresGitHubApiClient()
+    {
+        using WebApplication app = BuildApp(Environments.Development, configureTokenValidation: false);
+
+        HttpClient client = app.Services
+            .GetRequiredService<IHttpClientFactory>()
+            .CreateClient(A2AAgentAuthenticationDefaults.GitHubHttpClientName);
+
+        Assert.Equal(new Uri("https://api.github.com/"), client.BaseAddress);
+        Assert.Contains(client.DefaultRequestHeaders.Accept, header => header.MediaType == "application/vnd.github+json");
+        Assert.Contains(client.DefaultRequestHeaders.UserAgent, header => string.Equals(header.Product?.Name, "agents-sdk-net-a2a-sample", StringComparison.Ordinal));
+        Assert.Equal("2022-11-28", Assert.Single(client.DefaultRequestHeaders.GetValues("X-GitHub-Api-Version")));
     }
 
     [Fact]
@@ -133,6 +163,91 @@ public class A2AAgentStartupTests
         Assert.Equal("access_as_user", identity.FindFirst(MappedScopeClaim)?.Value);
     }
 
+    [Theory]
+    [InlineData(null, A2AAgentAuthenticationDefaults.GitHubScheme)]
+    [InlineData("", A2AAgentAuthenticationDefaults.GitHubScheme)]
+    [InlineData("   ", A2AAgentAuthenticationDefaults.GitHubScheme)]
+    [InlineData("Basic octocat", A2AAgentAuthenticationDefaults.GitHubScheme)]
+    [InlineData("Bearer ", A2AAgentAuthenticationDefaults.GitHubScheme)]
+    [InlineData("Bearer a.b", A2AAgentAuthenticationDefaults.GitHubScheme)]
+    [InlineData("Bearer a..c", A2AAgentAuthenticationDefaults.GitHubScheme)]
+    [InlineData("Bearer header.payload.signature", JwtBearerDefaults.AuthenticationScheme)]
+    [InlineData("Bearer github_pat_test", A2AAgentAuthenticationDefaults.GitHubScheme)]
+    public void SelectBearerScheme_RoutesEveryInputToAConcreteScheme(string? header, string expectedScheme)
+    {
+        Assert.Equal(expectedScheme, A2AAgentStartup.SelectBearerScheme(header));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("Basic octocat")]
+    [InlineData("Bearer ")]
+    [InlineData("Bearer")]
+    public async Task PolicyScheme_MissingAndNonBearerHeaders_ForwardToGitHubAndReturnNoResult(string? authorizationHeader)
+    {
+        await using var harness = MixedBearerAuthenticationHarness.Create();
+
+        AuthenticateResult result = await harness.AuthenticateAsync(authorizationHeader);
+
+        Assert.True(result.None);
+        Assert.Equal(0, harness.JwtAuthenticateCount);
+        Assert.Equal(0, harness.GitHubRequestCount);
+    }
+
+    [Fact]
+    public async Task PolicyScheme_JwtShapedBearerHeader_ForwardsToJwtBearer()
+    {
+        await using var harness = MixedBearerAuthenticationHarness.Create();
+
+        AuthenticateResult result = await harness.AuthenticateAsync("Bearer header.payload.signature");
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(JwtBearerDefaults.AuthenticationScheme, result.Ticket!.AuthenticationScheme);
+        Assert.Equal(1, harness.JwtAuthenticateCount);
+        Assert.Equal(0, harness.GitHubRequestCount);
+    }
+
+    [Theory]
+    [InlineData("Bearer a.b")]
+    [InlineData("Bearer a..c")]
+    public async Task PolicyScheme_MalformedBearerValues_ForwardToGitHub(string authorizationHeader)
+    {
+        await using var harness = MixedBearerAuthenticationHarness.Create();
+
+        AuthenticateResult result = await harness.AuthenticateAsync(authorizationHeader);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(A2AAgentAuthenticationDefaults.GitHubScheme, result.Ticket!.AuthenticationScheme);
+        Assert.Equal(0, harness.JwtAuthenticateCount);
+        Assert.Equal(1, harness.GitHubRequestCount);
+    }
+
+    [Fact]
+    public async Task PolicyScheme_OpaqueBearerHeader_ForwardsToGitHub()
+    {
+        await using var harness = MixedBearerAuthenticationHarness.Create();
+
+        AuthenticateResult result = await harness.AuthenticateAsync("Bearer github_pat_test");
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(A2AAgentAuthenticationDefaults.GitHubScheme, result.Ticket!.AuthenticationScheme);
+        Assert.Equal(0, harness.JwtAuthenticateCount);
+        Assert.Equal(1, harness.GitHubRequestCount);
+    }
+
+    [Fact]
+    public async Task AnonymousAgentCardRequest_WithConfiguredTokenValidation_ReturnsAgentCard()
+    {
+        await using WebApplication app = await StartAppAsync(Environments.Development, configureTokenValidation: true);
+        using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+
+        using HttpResponseMessage response = await client.GetAsync("/.well-known/agent-card.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private static Dictionary<string, object> DelegatedClaims() => new()
     {
         ["tid"] = TestTenantId,
@@ -200,6 +315,25 @@ public class A2AAgentStartupTests
         return builder.Build();
     }
 
+    private static async Task<WebApplication> StartAppAsync(string environmentName, bool configureTokenValidation)
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            EnvironmentName = environmentName,
+            ContentRootPath = GetSampleContentRoot(),
+        });
+
+        builder.Logging.ClearProviders();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Configuration.AddInMemoryCollection(CreateSettings(configureTokenValidation));
+        A2AAgentStartup.ConfigureBuilder(builder);
+
+        WebApplication app = builder.Build();
+        A2AAgentStartup.ConfigureApplication(app);
+        await app.StartAsync();
+        return app;
+    }
+
     private static IConfiguration CreateConfiguration(bool configureTokenValidation)
         => new ConfigurationBuilder().AddInMemoryCollection(CreateSettings(configureTokenValidation)).Build();
 
@@ -208,6 +342,23 @@ public class A2AAgentStartupTests
         ["TokenValidation:Audiences:0"] = configureTokenValidation ? TestAudience : "{{ClientId}}",
         ["TokenValidation:TenantId"] = configureTokenValidation ? TestTenantId : "{{TenantId}}",
     };
+
+    private static string GetSampleContentRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+        while (directory != null)
+        {
+            string candidate = Path.Combine(directory.FullName, "src", "samples", "A2A", "A2AAgent");
+            if (File.Exists(Path.Combine(candidate, "appsettings.json")))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException("Could not locate the A2AAgent sample content root.");
+    }
 
     private sealed class StubEnvironment(string environmentName) : IHostEnvironment
     {
@@ -219,5 +370,109 @@ public class A2AAgentStartupTests
 
         public global::Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } =
             new global::Microsoft.Extensions.FileProviders.NullFileProvider();
+    }
+
+    private sealed class MixedBearerAuthenticationHarness : IAsyncDisposable
+    {
+        private readonly CountingGitHubApiHandler _gitHubApiHandler;
+        private readonly JwtInvocationCounter _jwtCounter;
+        private readonly ServiceProvider _services;
+
+        private MixedBearerAuthenticationHarness(
+            ServiceProvider services,
+            CountingGitHubApiHandler gitHubApiHandler,
+            JwtInvocationCounter jwtCounter)
+        {
+            _services = services;
+            _gitHubApiHandler = gitHubApiHandler;
+            _jwtCounter = jwtCounter;
+        }
+
+        public int GitHubRequestCount => _gitHubApiHandler.RequestCount;
+
+        public int JwtAuthenticateCount => _jwtCounter.AuthenticateCount;
+
+        public static MixedBearerAuthenticationHarness Create()
+        {
+            var gitHubApiHandler = new CountingGitHubApiHandler();
+            var jwtCounter = new JwtInvocationCounter();
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddSingleton(jwtCounter);
+            services.AddHttpClient(A2AAgentAuthenticationDefaults.GitHubHttpClientName)
+                .ConfigureHttpClient(client => client.BaseAddress = new Uri("https://api.github.com/"))
+                .ConfigurePrimaryHttpMessageHandler(() => gitHubApiHandler);
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
+                options.DefaultChallengeScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
+            })
+            .AddPolicyScheme(
+                A2AAgentAuthenticationDefaults.PolicyScheme,
+                displayName: null,
+                options => options.ForwardDefaultSelector = context => A2AAgentStartup.SelectBearerScheme(context.Request.Headers.Authorization.ToString()))
+            .AddScheme<AuthenticationSchemeOptions, GitHubAuthenticationHandler>(
+                A2AAgentAuthenticationDefaults.GitHubScheme,
+                _ => { })
+            .AddScheme<AuthenticationSchemeOptions, RecordingJwtBearerHandler>(
+                JwtBearerDefaults.AuthenticationScheme,
+                _ => { });
+
+            return new MixedBearerAuthenticationHarness(services.BuildServiceProvider(), gitHubApiHandler, jwtCounter);
+        }
+
+        public async Task<AuthenticateResult> AuthenticateAsync(string? authorizationHeader)
+        {
+            var context = new DefaultHttpContext { RequestServices = _services };
+            if (authorizationHeader != null)
+            {
+                context.Request.Headers.Authorization = authorizationHeader;
+            }
+
+            return await _services
+                .GetRequiredService<IAuthenticationService>()
+                .AuthenticateAsync(context, A2AAgentAuthenticationDefaults.PolicyScheme);
+        }
+
+        public ValueTask DisposeAsync() => _services.DisposeAsync();
+    }
+
+    private sealed class JwtInvocationCounter
+    {
+        public int AuthenticateCount { get; set; }
+    }
+
+    private sealed class RecordingJwtBearerHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        JwtInvocationCounter invocationCounter)
+        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+    {
+        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+        {
+            invocationCounter.AuthenticateCount++;
+            var principal = new ClaimsPrincipal(
+                new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "jwt-caller")], Scheme.Name));
+
+            return Task.FromResult(AuthenticateResult.Success(
+                new AuthenticationTicket(principal, new AuthenticationProperties(), Scheme.Name)));
+        }
+    }
+
+    private sealed class CountingGitHubApiHandler : HttpMessageHandler
+    {
+        public int RequestCount { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestCount++;
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{ "id": 42, "login": "octocat", "name": "The Octocat" }""", Encoding.UTF8, "application/json"),
+            };
+            response.Headers.Add("X-OAuth-Scopes", "repo");
+            return Task.FromResult(response);
+        }
     }
 }

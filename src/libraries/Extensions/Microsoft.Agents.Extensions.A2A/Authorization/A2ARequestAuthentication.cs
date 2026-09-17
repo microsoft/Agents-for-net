@@ -1,10 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 
 namespace Microsoft.Agents.Extensions.A2A.Authorization;
@@ -43,11 +46,46 @@ internal sealed class A2ARequestAuthentication
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        // The identity may come from an unvalidated JWT when no authentication scheme is configured;
-        // that is existing behavior and is only used for turn identity, never as a credential.
-        var identity = HttpHelper.GetClaimsIdentity(request) ?? new ClaimsIdentity();
+        return new A2ARequestAuthentication(
+            GetRequestIdentity(request),
+            GetValidatedAccessToken(request.HttpContext));
+    }
 
-        return new A2ARequestAuthentication(identity, GetValidatedAccessToken(request.HttpContext));
+    private static ClaimsIdentity GetRequestIdentity(HttpRequest request)
+    {
+        ClaimsIdentity authenticatedIdentity = request.HttpContext.User?.Identities
+            .FirstOrDefault(identity => identity.IsAuthenticated);
+        if (authenticatedIdentity is not null)
+        {
+            return authenticatedIdentity;
+        }
+
+        if (!AuthenticationHeaderValue.TryParse(request.Headers.Authorization.ToString(), out AuthenticationHeaderValue header)
+            || !string.Equals(header.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(header.Parameter))
+        {
+            return new ClaimsIdentity();
+        }
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        if (!tokenHandler.CanReadToken(header.Parameter))
+        {
+            return new ClaimsIdentity();
+        }
+
+        try
+        {
+            JwtSecurityToken token = tokenHandler.ReadJwtToken(header.Parameter);
+            return new ClaimsIdentity(token.Claims);
+        }
+        catch (SecurityTokenException)
+        {
+            return new ClaimsIdentity();
+        }
+        catch (ArgumentException)
+        {
+            return new ClaimsIdentity();
+        }
     }
 
     /// <summary>

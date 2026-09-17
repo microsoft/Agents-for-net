@@ -50,7 +50,7 @@ internal sealed class AuthenticatedA2AHttpHandler
 
         request.Headers.Authorization = null;
 
-        string? token = await _accessTokenProvider.GetAccessTokenAsync(_session.Mode, cancellationToken).ConfigureAwait(false);
+        string? token = await _accessTokenProvider.GetAccessTokenAsync(_session.SelectedAuthentication, cancellationToken).ConfigureAwait(false);
         if (!string.IsNullOrWhiteSpace(token))
         {
             // Throws before the request is sent, so a foreign or plaintext destination never sees the token.

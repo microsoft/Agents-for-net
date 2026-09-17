@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using A2A;
 using Microsoft.Identity.Client;
 
 namespace Microsoft.Agents.Samples.A2AClient;
@@ -37,17 +36,6 @@ internal sealed class MsalTokenClient
         _applicationTokenFactory = applicationTokenFactory;
     }
 
-    public void Configure(AgentCard card)
-    {
-        ArgumentNullException.ThrowIfNull(card);
-        _delegatedAcquisitionRequest = new(() =>
-            CreateAcquisitionRequest(A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated)));
-        _applicationAcquisitionRequest = new(() =>
-            CreateAcquisitionRequest(A2AAgentCardAuthentication.Select(card, A2AAuthMode.App)));
-        _publicClientApplication = null;
-        _confidentialClientApplication = null;
-    }
-
     public void Configure(A2AAgentCardAuthentication authentication)
     {
         ArgumentNullException.ThrowIfNull(authentication);
@@ -66,6 +54,20 @@ internal sealed class MsalTokenClient
             default:
                 throw new ArgumentOutOfRangeException(nameof(authentication));
         }
+    }
+
+    public Task<string> AcquireDelegatedTokenAsync(
+        A2AAgentCardAuthentication authentication,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(authentication);
+        if (authentication.Mode != A2AAuthMode.Delegated)
+        {
+            throw new InvalidOperationException("MSAL delegated token acquisition requires delegated authentication metadata.");
+        }
+
+        Configure(authentication);
+        return AcquireDelegatedTokenAsync(cancellationToken);
     }
 
     public async Task<string> AcquireDelegatedTokenAsync(CancellationToken cancellationToken)
@@ -114,6 +116,20 @@ internal sealed class MsalTokenClient
             .ConfigureAwait(false);
 
         return deviceCodeResult.AccessToken;
+    }
+
+    public Task<string> AcquireApplicationTokenAsync(
+        A2AAgentCardAuthentication authentication,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(authentication);
+        if (authentication.Mode != A2AAuthMode.App)
+        {
+            throw new InvalidOperationException("MSAL application token acquisition requires application authentication metadata.");
+        }
+
+        Configure(authentication);
+        return AcquireApplicationTokenAsync(cancellationToken);
     }
 
     public async Task<string> AcquireApplicationTokenAsync(CancellationToken cancellationToken)

@@ -38,10 +38,23 @@ internal sealed class A2AAgentCardAuthentication
     public IReadOnlyList<string> Scopes { get; }
 
     public static A2AAgentCardAuthentication Select(AgentCard card, A2AAuthMode mode)
-        => Select(card, GetRequirements(card), mode);
+        => Select(card, skill: null, mode);
 
     public static A2AAgentCardAuthentication Select(AgentCard card, AgentSkill? skill, A2AAuthMode mode)
-        => Select(card, GetEffectiveRequirements(card, skill), mode);
+    {
+        ArgumentNullException.ThrowIfNull(card);
+
+        IEnumerable<SecurityRequirement> requirements = skill is null
+            ? GetRequirements(card)
+            : GetEffectiveRequirements(card, skill);
+        SelectionAttempt attempt = EvaluateAlternatives(card, requirements, mode);
+        if (skill is not null && attempt.RequirementCount == 0)
+        {
+            attempt = EvaluateAlternatives(card, GetRequirements(card), mode);
+        }
+
+        return ResolveSelection(attempt, mode);
+    }
 
     public static A2AAgentCardAuthentication? Select(
         AgentCard card,
@@ -73,13 +86,13 @@ internal sealed class A2AAgentCardAuthentication
                 && card.SecuritySchemes.TryGetValue(schemeName, out SecurityScheme? scheme)
                     ? scheme?.OAuth2SecurityScheme?.Flows
                     : null)
-            .SelectMany(flows => GetSupportedModes(flows))
+            .SelectMany(GetSupportedModes)
             .Distinct()
             .ToArray();
 
         return advertisedModes.Length switch
         {
-            1 => Select(card, requirements, advertisedModes[0]),
+            1 => ResolveSelection(EvaluateAlternatives(card, requirements, advertisedModes[0]), advertisedModes[0]),
             > 1 => throw new InvalidOperationException(
                 "The selected Agent Card requirements advertise both delegated and application authentication. "
                 + "Choose one with --auth-mode or :auth."),
@@ -88,7 +101,7 @@ internal sealed class A2AAgentCardAuthentication
         };
     }
 
-    private static A2AAgentCardAuthentication Select(
+    private static SelectionAttempt EvaluateAlternatives(
         AgentCard card,
         IEnumerable<SecurityRequirement> requirements,
         A2AAuthMode mode)
@@ -101,9 +114,14 @@ internal sealed class A2AAgentCardAuthentication
                 $"Authentication mode '{mode}' does not acquire an Agent API access token.");
         }
 
+        int requirementCount = 0;
+        var candidates = new List<A2AAgentCardAuthentication>();
+        var distinctCandidates = new HashSet<string>(StringComparer.Ordinal);
         var rejectedAlternatives = new List<string>();
+
         foreach (SecurityRequirement requirement in requirements)
         {
+            requirementCount++;
             if (requirement.Schemes is null || requirement.Schemes.Count == 0)
             {
                 rejectedAlternatives.Add("it does not name a security scheme");
@@ -150,12 +168,16 @@ internal sealed class A2AAgentCardAuthentication
                     continue;
                 }
 
-                return new A2AAgentCardAuthentication(
-                    mode,
-                    schemeRequirement.Key,
-                    tokenUrl,
-                    deviceAuthorizationUrl,
-                    scopes);
+                AddCandidate(
+                    candidates,
+                    distinctCandidates,
+                    new A2AAgentCardAuthentication(
+                        mode,
+                        schemeRequirement.Key,
+                        tokenUrl,
+                        deviceAuthorizationUrl,
+                        scopes));
+                continue;
             }
 
             if (mode == A2AAuthMode.App && flows.ClientCredentials is not null)
@@ -166,24 +188,57 @@ internal sealed class A2AAgentCardAuthentication
                     continue;
                 }
 
-                return new A2AAgentCardAuthentication(
-                    mode,
-                    schemeRequirement.Key,
-                    tokenUrl,
-                    deviceAuthorizationUrl: null,
-                    scopes);
+                AddCandidate(
+                    candidates,
+                    distinctCandidates,
+                    new A2AAgentCardAuthentication(
+                        mode,
+                        schemeRequirement.Key,
+                        tokenUrl,
+                        deviceAuthorizationUrl: null,
+                        scopes));
+                continue;
             }
 
             rejectedAlternatives.Add(
                 $"scheme '{schemeRequirement.Key}' does not advertise a supported {(mode == A2AAuthMode.Delegated ? "Device Code" : "Client Credentials")} OAuth flow");
         }
 
+        return new SelectionAttempt(requirementCount, candidates, rejectedAlternatives);
+    }
+
+    private static A2AAgentCardAuthentication ResolveSelection(SelectionAttempt attempt, A2AAuthMode mode)
+    {
+        if (attempt.Candidates.Count == 1)
+        {
+            return attempt.Candidates[0];
+        }
+
+        if (attempt.Candidates.Count > 1)
+        {
+            string modeName = mode == A2AAuthMode.Delegated ? "delegated" : "application";
+            throw new InvalidOperationException(
+                $"The Agent Card exposes multiple {modeName} security schemes for this request. Select a skill or security requirement that disambiguates the provider.");
+        }
+
         string expectedFlow = mode == A2AAuthMode.Delegated ? "Device Code" : "Client Credentials";
-        string reason = rejectedAlternatives.Count == 0
+        string reason = attempt.RequirementCount == 0
             ? "does not declare security requirements"
-            : $"has no satisfiable alternative: {string.Join("; ", rejectedAlternatives.Distinct(StringComparer.Ordinal))}";
+            : $"has no satisfiable alternative: {string.Join("; ", attempt.RejectedAlternatives.Distinct(StringComparer.Ordinal))}";
         throw new InvalidOperationException(
             $"The Agent Card {reason} for {expectedFlow} authentication. This client POC supports only Device Code and Client Credentials flows.");
+    }
+
+    private static void AddCandidate(
+        List<A2AAgentCardAuthentication> candidates,
+        HashSet<string> distinctCandidates,
+        A2AAgentCardAuthentication candidate)
+    {
+        string key = $"{candidate.SecuritySchemeName}|{string.Join("\u001f", candidate.Scopes)}";
+        if (distinctCandidates.Add(key))
+        {
+            candidates.Add(candidate);
+        }
     }
 
     private static IEnumerable<SecurityRequirement> GetRequirements(AgentCard card)
@@ -204,8 +259,13 @@ internal sealed class A2AAgentCardAuthentication
 
     private static IEnumerable<SecurityRequirement> GetEffectiveRequirements(AgentCard card, AgentSkill? skill)
     {
+        if (skill is null)
+        {
+            return card.SecurityRequirements ?? [];
+        }
+
         SecurityRequirement[] agentRequirements = (card.SecurityRequirements ?? []).ToArray();
-        SecurityRequirement[] skillRequirements = (skill?.SecurityRequirements ?? []).ToArray();
+        SecurityRequirement[] skillRequirements = (skill.SecurityRequirements ?? []).ToArray();
 
         if (agentRequirements.Length == 0)
         {
@@ -279,7 +339,8 @@ internal sealed class A2AAgentCardAuthentication
         out string endpointValue,
         out string? failure)
     {
-        if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? endpoint) || !endpoint.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? endpoint)
+            || !endpoint.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
         {
             endpointValue = string.Empty;
             failure = $"scheme '{schemeName}' must provide an absolute HTTPS {endpointName} endpoint";
@@ -289,5 +350,17 @@ internal sealed class A2AAgentCardAuthentication
         endpointValue = endpoint.AbsoluteUri;
         failure = null;
         return true;
+    }
+
+    private sealed class SelectionAttempt(
+        int requirementCount,
+        IReadOnlyList<A2AAgentCardAuthentication> candidates,
+        IReadOnlyList<string> rejectedAlternatives)
+    {
+        public int RequirementCount { get; } = requirementCount;
+
+        public IReadOnlyList<A2AAgentCardAuthentication> Candidates { get; } = candidates;
+
+        public IReadOnlyList<string> RejectedAlternatives { get; } = rejectedAlternatives;
     }
 }

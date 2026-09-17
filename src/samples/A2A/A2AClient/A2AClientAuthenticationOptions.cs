@@ -9,6 +9,8 @@ internal sealed class A2AClientAuthenticationOptions
 
     public string? PublicClientId { get; init; }
 
+    public string? GitHubClientId { get; init; }
+
     public string? ConfidentialClientId { get; init; }
 
     public string? ConfidentialClientSecret { get; init; }

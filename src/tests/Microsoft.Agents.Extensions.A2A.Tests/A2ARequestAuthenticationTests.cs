@@ -44,7 +44,20 @@ public class A2ARequestAuthenticationTests
 
         var authentication = A2ARequestAuthentication.Create(context.Request);
 
+        Assert.Equal("caller", authentication.Identity.FindFirst(ClaimTypes.NameIdentifier)?.Value);
         Assert.Equal("valid-opaque", authentication.AccessToken);
+    }
+
+    [Fact]
+    public async Task Create_WithRejectedOpaqueBearer_ReturnsEmptyIdentityAndNoToken()
+    {
+        var context = await AuthenticateAsync(BearerScheme, "Bearer rejected-opaque");
+
+        var authentication = A2ARequestAuthentication.Create(context.Request);
+
+        Assert.False(authentication.Identity.IsAuthenticated);
+        Assert.Empty(authentication.Identity.Claims);
+        Assert.Null(authentication.AccessToken);
     }
 
     [Fact]
@@ -73,6 +86,7 @@ public class A2ARequestAuthenticationTests
         var authentication = A2ARequestAuthentication.Create(context.Request);
 
         Assert.False(authentication.Identity.IsAuthenticated);
+        Assert.Equal("rejected-caller", authentication.Identity.FindFirst(ClaimTypes.NameIdentifier)?.Value);
         Assert.Null(authentication.AccessToken);
     }
 

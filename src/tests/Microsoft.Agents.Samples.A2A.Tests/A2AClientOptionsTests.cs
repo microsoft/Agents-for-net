@@ -69,4 +69,24 @@ public class A2AClientOptionsTests
         Assert.Equal(new Uri("https://command-line.example/a2a"), options.AgentUrl);
         Assert.Equal("tenant-id", options.Authentication.TenantId);
     }
+
+    [Fact]
+    public void FromConfiguration_ReadsGitHubClientId_WithoutDisturbingExistingSettings()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["A2A:AgentUrl"] = "https://agent.example/a2a",
+                ["Authentication:TenantId"] = "tenant-id",
+                ["Authentication:PublicClientId"] = "public-client-id",
+                ["Authentication:GitHubClientId"] = "Iv1.1234567890abcdef",
+            })
+            .Build();
+
+        A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, new StartupOptions());
+
+        Assert.Equal("Iv1.1234567890abcdef", options.Authentication.GitHubClientId);
+        Assert.Equal("tenant-id", options.Authentication.TenantId);
+        Assert.Equal("public-client-id", options.Authentication.PublicClientId);
+    }
 }

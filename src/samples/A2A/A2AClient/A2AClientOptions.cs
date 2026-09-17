@@ -33,6 +33,7 @@ internal sealed class A2AClientOptions
             {
                 TenantId = configuration["Authentication:TenantId"],
                 PublicClientId = configuration["Authentication:PublicClientId"],
+                GitHubClientId = configuration["Authentication:GitHubClientId"],
                 ConfidentialClientId = configuration["Authentication:ConfidentialClientId"],
                 ConfidentialClientSecret = configuration["Authentication:ConfidentialClientSecret"],
             },

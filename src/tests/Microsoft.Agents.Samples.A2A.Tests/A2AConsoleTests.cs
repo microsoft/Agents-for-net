@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient;
@@ -38,6 +39,21 @@ public class A2AConsoleTests
 
         Assert.True(handled);
         Assert.Null(session.ModeOverride);
+    }
+
+    [Fact]
+    public void TryHandleCommand_ExplicitAuthModeAfterAutomaticSelection_ClearsSelectedAuthentication()
+    {
+        var session = new A2AAuthenticationSession();
+        session.SetAutomaticAuthentication(CreateDelegatedAuthentication());
+        var console = CreateConsole(session);
+
+        bool handled = console.TryHandleCommand(":auth delegated");
+
+        Assert.True(handled);
+        Assert.Equal(A2AAuthMode.Delegated, session.Mode);
+        Assert.Equal(A2AAuthMode.Delegated, session.ModeOverride);
+        Assert.Null(session.SelectedAuthentication);
     }
 
     [Theory]
@@ -88,5 +104,41 @@ public class A2AConsoleTests
             showHistory: false,
             usePushNotifications: false,
             new Uri("http://localhost:5000"));
+    }
+
+    private static A2AAgentCardAuthentication CreateDelegatedAuthentication()
+    {
+        AgentCard card = new()
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+            },
+            SecurityRequirements =
+            [
+                new SecurityRequirement
+                {
+                    Schemes = new Dictionary<string, StringList>
+                    {
+                        ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                    },
+                },
+            ],
+        };
+
+        return A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated);
     }
 }

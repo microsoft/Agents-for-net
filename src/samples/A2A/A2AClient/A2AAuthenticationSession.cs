@@ -9,15 +9,23 @@ internal sealed class A2AAuthenticationSession
 
     public A2AAuthMode? ModeOverride { get; private set; }
 
+    public A2AAgentCardAuthentication? SelectedAuthentication { get; private set; }
+
     public void SetMode(A2AAuthMode mode)
     {
         ModeOverride = mode;
+        if (Mode != mode)
+        {
+            SelectedAuthentication = null;
+        }
+
         Mode = mode;
     }
 
-    public void SetAutomaticMode(A2AAuthMode mode)
+    public void SetAutomaticAuthentication(A2AAgentCardAuthentication? authentication)
     {
-        Mode = mode;
+        SelectedAuthentication = authentication;
+        Mode = authentication?.Mode ?? A2AAuthMode.None;
     }
 
     public void ClearModeOverride()

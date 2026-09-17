@@ -22,11 +22,14 @@ public partial class MyAgent : AgentApplication
 {
     private const string MultiTurnCountKey = "MultiTurnCount";
     private const string GraphHandlerName = "graph";
+    private const string GitHubHandlerName = "github";
     private readonly IGraphProfileClient _graphClient;
+    private readonly IGitHubIssuesClient _gitHubIssuesClient;
 
-    public MyAgent(AgentApplicationOptions options, IGraphProfileClient graphClient) : base(options)
+    public MyAgent(AgentApplicationOptions options, IGraphProfileClient graphClient, IGitHubIssuesClient gitHubIssuesClient) : base(options)
     {
         _graphClient = graphClient;
+        _gitHubIssuesClient = gitHubIssuesClient;
     }
 
     [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response", examples: "-stream", text: "-stream")]
@@ -59,7 +62,18 @@ public partial class MyAgent : AgentApplication
         var profile = await _graphClient.GetMeAsync(token, cancellationToken).ConfigureAwait(false);
         await CompleteTaskAsync(
             turnContext,
-            $"Name: {profile.DisplayName}{Environment.NewLine}User principal name: {profile.UserPrincipalName}",
+            $"Name: {profile.DisplayName}{Environment.NewLine}Email: {profile.MailOrUserPrincipalName}",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    [A2ASkill(name: "GitHub assigned issues", description: "Reads the signed-in GitHub user's open assigned issues.", tags: "a2a, sample, authentication, github, issues", examples: "-issues", text: "-issues", autoSigninHandlers: GitHubHandlerName)]
+    private async Task OnGitHubIssuesAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    {
+        var token = await UserAuthorization.GetTurnTokenAsync(turnContext, GitHubHandlerName, cancellationToken).ConfigureAwait(false);
+        var summary = await _gitHubIssuesClient.GetAssignedIssuesSummaryAsync(token, cancellationToken).ConfigureAwait(false);
+        await CompleteTaskAsync(
+            turnContext,
+            summary,
             cancellationToken).ConfigureAwait(false);
     }
 

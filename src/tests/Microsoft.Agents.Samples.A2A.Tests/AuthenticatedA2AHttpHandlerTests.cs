@@ -2,10 +2,12 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using A2A;
 using Microsoft.Agents.Samples.A2AClient;
 using Moq;
 using Xunit;
@@ -19,38 +21,40 @@ public class AuthenticatedA2AHttpHandlerTests
     [Fact]
     public async Task SendAsync_AuthenticatedMode_AddsBearerHeader()
     {
-        var tokens = CreateTokenProvider(A2AAuthMode.Delegated, "test-token");
+        A2AAgentCardAuthentication authentication = CreateGitHubAuthentication();
+        var tokens = CreateTokenProvider(authentication, "test-token");
         var recorder = new RecordingHttpMessageHandler();
-        using var client = CreateClient(A2AAuthMode.Delegated, tokens.Object, recorder);
+        using var client = CreateClient(authentication, tokens.Object, recorder);
 
         await client.GetAsync("https://agent.example/.well-known/agent-card.json");
 
         Assert.Equal("Bearer", recorder.Request!.Headers.Authorization!.Scheme);
         Assert.Equal("test-token", recorder.Request.Headers.Authorization.Parameter);
-        tokens.Verify(provider => provider.GetAccessTokenAsync(A2AAuthMode.Delegated, It.IsAny<CancellationToken>()), Times.Once);
+        tokens.Verify(provider => provider.GetAccessTokenAsync(authentication, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task SendAsync_NoneMode_DoesNotAddBearerHeader()
     {
         var tokens = new Mock<IA2AAccessTokenProvider>(MockBehavior.Strict);
-        tokens.Setup(provider => provider.GetAccessTokenAsync(A2AAuthMode.None, It.IsAny<CancellationToken>()))
+        tokens.Setup(provider => provider.GetAccessTokenAsync(null, It.IsAny<CancellationToken>()))
             .ReturnsAsync((string?)null);
         var recorder = new RecordingHttpMessageHandler();
-        using var client = CreateClient(A2AAuthMode.None, tokens.Object, recorder);
+        using var client = CreateClient(authentication: null, tokens.Object, recorder);
 
         await client.GetAsync("https://agent.example/.well-known/agent-card.json");
 
         Assert.Null(recorder.Request!.Headers.Authorization);
-        tokens.Verify(provider => provider.GetAccessTokenAsync(A2AAuthMode.None, It.IsAny<CancellationToken>()), Times.Once);
+        tokens.Verify(provider => provider.GetAccessTokenAsync(null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task SendAsync_WithExistingAuthorization_ReplacesItWithBearerToken()
     {
-        var tokens = CreateTokenProvider(A2AAuthMode.App, "app-token");
+        A2AAgentCardAuthentication authentication = CreateGitHubAuthentication();
+        var tokens = CreateTokenProvider(authentication, "app-token");
         var recorder = new RecordingHttpMessageHandler();
-        using var client = CreateClient(A2AAuthMode.App, tokens.Object, recorder);
+        using var client = CreateClient(authentication, tokens.Object, recorder);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://agent.example/.well-known/agent-card.json");
         request.Headers.TryAddWithoutValidation("Authorization", "Basic stale");
@@ -67,9 +71,10 @@ public class AuthenticatedA2AHttpHandlerTests
     [InlineData("http://agent.example/a2a")]
     public async Task SendAsync_CrossOriginTarget_FailsWithoutSendingToken(string target)
     {
-        var tokens = CreateTokenProvider(A2AAuthMode.Delegated, "test-token");
+        A2AAgentCardAuthentication authentication = CreateGitHubAuthentication();
+        var tokens = CreateTokenProvider(authentication, "test-token");
         var recorder = new RecordingHttpMessageHandler();
-        using var client = CreateClient(A2AAuthMode.Delegated, tokens.Object, recorder);
+        using var client = CreateClient(authentication, tokens.Object, recorder);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetAsync(target));
 
@@ -81,10 +86,10 @@ public class AuthenticatedA2AHttpHandlerTests
     public async Task SendAsync_CrossOriginTargetInNoneMode_IsNotBlocked()
     {
         var tokens = new Mock<IA2AAccessTokenProvider>();
-        tokens.Setup(provider => provider.GetAccessTokenAsync(A2AAuthMode.None, It.IsAny<CancellationToken>()))
+        tokens.Setup(provider => provider.GetAccessTokenAsync(null, It.IsAny<CancellationToken>()))
             .ReturnsAsync((string?)null);
         var recorder = new RecordingHttpMessageHandler();
-        using var client = CreateClient(A2AAuthMode.None, tokens.Object, recorder);
+        using var client = CreateClient(authentication: null, tokens.Object, recorder);
 
         await client.GetAsync("https://attacker.example/a2a");
 
@@ -95,9 +100,11 @@ public class AuthenticatedA2AHttpHandlerTests
     [Fact]
     public async Task SendAsync_PlaintextNonLoopbackAgent_FailsWithoutSendingToken()
     {
-        var tokens = CreateTokenProvider(A2AAuthMode.App, "app-token");
+        A2AAgentCardAuthentication authentication = CreateGitHubAuthentication();
+        var tokens = CreateTokenProvider(authentication, "app-token");
         var recorder = new RecordingHttpMessageHandler();
-        var session = new A2AAuthenticationSession { Mode = A2AAuthMode.App };
+        var session = new A2AAuthenticationSession();
+        session.SetAutomaticAuthentication(authentication);
         using var client = new HttpClient(new AuthenticatedA2AHttpHandler(
             session,
             tokens.Object,
@@ -112,9 +119,11 @@ public class AuthenticatedA2AHttpHandlerTests
     [Fact]
     public async Task SendAsync_LoopbackHttpAgent_AttachesToken()
     {
-        var tokens = CreateTokenProvider(A2AAuthMode.Delegated, "local-token");
+        A2AAgentCardAuthentication authentication = CreateGitHubAuthentication();
+        var tokens = CreateTokenProvider(authentication, "local-token");
         var recorder = new RecordingHttpMessageHandler();
-        var session = new A2AAuthenticationSession { Mode = A2AAuthMode.Delegated };
+        var session = new A2AAuthenticationSession();
+        session.SetAutomaticAuthentication(authentication);
         using var client = new HttpClient(new AuthenticatedA2AHttpHandler(
             session,
             tokens.Object,
@@ -136,18 +145,99 @@ public class AuthenticatedA2AHttpHandlerTests
         Assert.False(handler.AllowAutoRedirect);
     }
 
-    private static Mock<IA2AAccessTokenProvider> CreateTokenProvider(A2AAuthMode mode, string token)
+    private static Mock<IA2AAccessTokenProvider> CreateTokenProvider(A2AAgentCardAuthentication? authentication, string token)
     {
         var tokens = new Mock<IA2AAccessTokenProvider>();
-        tokens.Setup(provider => provider.GetAccessTokenAsync(mode, It.IsAny<CancellationToken>()))
+        tokens.Setup(provider => provider.GetAccessTokenAsync(authentication, It.IsAny<CancellationToken>()))
             .ReturnsAsync(token);
         return tokens;
     }
 
-    private static HttpClient CreateClient(A2AAuthMode mode, IA2AAccessTokenProvider tokens, HttpMessageHandler inner)
+    private static HttpClient CreateClient(A2AAgentCardAuthentication? authentication, IA2AAccessTokenProvider tokens, HttpMessageHandler inner)
     {
-        var session = new A2AAuthenticationSession { Mode = mode };
+        var session = new A2AAuthenticationSession();
+        session.SetAutomaticAuthentication(authentication);
         return new HttpClient(new AuthenticatedA2AHttpHandler(session, tokens, AgentUrl, inner));
+    }
+
+    private static AgentCard CreateTwoProviderCard()
+    {
+        return new AgentCard
+        {
+            SecuritySchemes = new Dictionary<string, SecurityScheme>
+            {
+                ["delegated"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
+                                TokenUrl = "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                            },
+                        },
+                    },
+                },
+                ["github"] = new()
+                {
+                    OAuth2SecurityScheme = new OAuth2SecurityScheme
+                    {
+                        Flows = new OAuthFlows
+                        {
+                            DeviceCode = new()
+                            {
+                                DeviceAuthorizationUrl = "https://github.com/login/device/code",
+                                TokenUrl = "https://github.com/login/oauth/access_token",
+                            },
+                        },
+                    },
+                },
+            },
+            Skills =
+            [
+                new AgentSkill
+                {
+                    Id = "Microsoft Graph profile",
+                    Name = "Microsoft Graph profile",
+                    Examples = ["-me"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["delegated"] = new() { List = ["api://agent/access_as_user"] },
+                            },
+                        },
+                    ],
+                },
+                new AgentSkill
+                {
+                    Id = "GitHub assigned issues",
+                    Name = "GitHub assigned issues",
+                    Examples = ["-issues"],
+                    SecurityRequirements =
+                    [
+                        new SecurityRequirement
+                        {
+                            Schemes = new Dictionary<string, StringList>
+                            {
+                                ["github"] = new() { List = ["repo"] },
+                            },
+                        },
+                    ],
+                },
+            ],
+        };
+    }
+
+    private static A2AAgentCardAuthentication CreateGitHubAuthentication()
+    {
+        AgentCard card = CreateTwoProviderCard();
+        AgentSkill skill = card.Skills![1];
+        return A2AAgentCardAuthentication.Select(card, skill, A2AAuthMode.Delegated)!;
     }
 
     private sealed class RecordingHttpMessageHandler : HttpMessageHandler

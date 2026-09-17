@@ -4,6 +4,8 @@
 using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace A2AAgent;
 
@@ -29,19 +32,47 @@ internal static class A2AAgentStartup
         builder.AddAgentDefaults()
             .AddAgent<MyAgent>()
             .AddAgentAuthorization(
-                b => b.AddAgentAspNetAuthentication(TokenValidationSectionName),
+                ConfigureAuthentication,
                 forceEnable: ShouldEnableTokenValidation(builder.Configuration, builder.Environment));
 
         builder.Services.AddHttpClient<IGraphProfileClient, GraphProfileClient>(client =>
         {
             client.BaseAddress = new Uri("https://graph.microsoft.com/v1.0/");
         });
+        builder.Services.AddHttpClient(A2AAgentAuthenticationDefaults.GitHubHttpClientName, client =>
+        {
+            client.BaseAddress = new Uri("https://api.github.com/");
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("agents-sdk-net-a2a-sample");
+            client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+        });
+        builder.Services.AddHttpClient<IGitHubIssuesClient, GitHubIssuesClient>(
+            A2AAgentAuthenticationDefaults.GitHubHttpClientName);
 
         // Register IStorage.  For development, MemoryStorage is suitable.
         // For production Agents, persisted storage should be used so
         // that state survives Agent restarts, and operate correctly
         // in a cluster of Agent instances.
         builder.Services.AddSingleton<IStorage, MemoryStorage>();
+    }
+
+    private static void ConfigureAuthentication(Microsoft.Extensions.Hosting.IHostApplicationBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.AddAgentAspNetAuthentication(TokenValidationSectionName);
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
+            options.DefaultChallengeScheme = A2AAgentAuthenticationDefaults.PolicyScheme;
+        })
+        .AddPolicyScheme(
+            A2AAgentAuthenticationDefaults.PolicyScheme,
+            displayName: null,
+            options => options.ForwardDefaultSelector = context => SelectBearerScheme(context.Request.Headers.Authorization.ToString()))
+        .AddScheme<AuthenticationSchemeOptions, GitHubAuthenticationHandler>(
+            A2AAgentAuthenticationDefaults.GitHubScheme,
+            _ => { });
     }
 
     internal static void ConfigureApplication(WebApplication app)
@@ -97,5 +128,24 @@ internal static class A2AAgentStartup
 
         List<string?> audiences = section.GetSection("Audiences").GetChildren().Select(child => child.Value).ToList();
         return audiences.Count > 0 && audiences.TrueForAll(audience => Guid.TryParse(audience, out _));
+    }
+
+    internal static string SelectBearerScheme(string? authorizationHeader)
+    {
+        if (string.IsNullOrWhiteSpace(authorizationHeader)
+            || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return A2AAgentAuthenticationDefaults.GitHubScheme;
+        }
+
+        string token = authorizationHeader["Bearer ".Length..].Trim();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return A2AAgentAuthenticationDefaults.GitHubScheme;
+        }
+
+        return Regex.IsMatch(token, "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$")
+            ? JwtBearerDefaults.AuthenticationScheme
+            : A2AAgentAuthenticationDefaults.GitHubScheme;
     }
 }
