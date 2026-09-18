@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
     /// correlates request/response pairs, and dispatches to a handler.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="NamedPipeProtocol"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeProtocol"/> class.
     /// </remarks>
     /// <param name="reader">The transport for reading incoming frames.</param>
     /// <param name="writer">The transport for writing outgoing frames.</param>
@@ -588,7 +588,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Removes and returns <see cref="NamedPipeAttachment"/> instances for Streams[1..N].
+        /// Removes and returns <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeAttachment"/> instances for Streams[1..N].
         /// </summary>
         private List<NamedPipeAttachment> TakeAttachmentStreams(
             List<PayloadDescription> streams,
@@ -920,7 +920,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
         }
 
         /// <summary>
-        /// Sends an outbound <see cref="PayloadTypes.CancelStream"/> frame for the given stream
+        /// Sends an outbound <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.PayloadTypes.CancelStream"/> frame for the given stream
         /// id. The frame carries a zero-length payload with End=true.
         /// </summary>
         /// <param name="streamId">The stream identifier to cancel.</param>
@@ -930,7 +930,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
             => SendSingleFrameAsync(PayloadTypes.CancelStream, streamId, [], end: true, cancellationToken);
 
         /// <summary>
-        /// Sends an outbound <see cref="PayloadTypes.CancelAll"/> frame. The frame carries a
+        /// Sends an outbound <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.PayloadTypes.CancelAll"/> frame. The frame carries a
         /// zero-length payload with End=true; the id field is unused per the wire format.
         /// </summary>
         /// <param name="cancellationToken">A cancellation token observed while writing the frame.</param>

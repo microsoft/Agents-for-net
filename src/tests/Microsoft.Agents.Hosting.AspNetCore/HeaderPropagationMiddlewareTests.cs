@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
     public class HeaderPropagationMiddlewareTests
     {
         /// <summary>
-        /// Ensures that the static <see cref="AsyncLocal{T}"/> property <see cref="HeaderPropagationContext.HeadersFromRequest"/>
+        /// Ensures that the static <see cref="System.Threading.AsyncLocal{T}"/> property <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationContext.HeadersFromRequest"/>
         /// remains isolated and unaffected when accessed by different contexts, such as HTTP requests, threads, or asynchronous flows.
         /// </summary>
         [Fact]
@@ -51,10 +51,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         /// Simulates multiple incoming requests to test the header propagation functionality.
         /// </summary>
         /// <remarks>
-        /// A new <see cref="HttpContext"/> instance is created for each request, simulating the behavior of an ASP.NET Core application.
+        /// A new <see cref="Microsoft.AspNetCore.Http.HttpContext"/> instance is created for each request, simulating the behavior of an ASP.NET Core application.
         /// More information can be found <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/use-http-context">here</a>.
         /// <br/><br/>
-        /// Additionally, the <see cref="HeaderPropagationContext"/> uses a static property alongside the <see cref="AsyncLocal{T}"/> functionality to ensure that each request's headers are stored separately and do not interfere with each other.
+        /// Additionally, the <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationContext"/> uses a static property alongside the <see cref="System.Threading.AsyncLocal{T}"/> functionality to ensure that each request's headers are stored separately and do not interfere with each other.
         /// </remarks>
         /// <param name="count">Number of incoming requests to create.</param>
         /// <returns>A Task collection with header name, value, and headers from the request.</returns>

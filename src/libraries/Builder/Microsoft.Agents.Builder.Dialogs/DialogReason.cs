@@ -13,8 +13,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// A dialog was started.
         /// </summary>
-        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(string, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>
         BeginCalled,
 
         /// <summary>
@@ -26,13 +26,13 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// A dialog was ended normally.
         /// </summary>
-        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(System.Object, System.Threading.CancellationToken)"/>
         EndCalled,
 
         /// <summary>
         /// A dialog was ending because it was replaced.
         /// </summary>
-        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.ReplaceDialogAsync(string, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.ReplaceDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/>
         ReplaceCalled,
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// A preceding step of the dialog was skipped.
         /// </summary>
-        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.WaterfallStepContext.NextAsync(object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.WaterfallStepContext.NextAsync(System.Object, System.Threading.CancellationToken)"/>
         NextCalled,
     }
 }

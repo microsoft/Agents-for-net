@@ -32,12 +32,12 @@ public class MessageExtension
     ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] } });
     /// });
     /// </code>
-    /// Alternatively, the <see cref="TeamsMessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsMessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewEditHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnMessagePreviewEdit(string commandId, MessagePreviewEditHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -49,11 +49,11 @@ public class MessageExtension
     /// Registers a handler to process the 'edit' action of a message that's being previewed by the
     /// user prior to sending.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsMessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewEditHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsMessagePreviewEditRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewEditHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnMessagePreviewEdit(Regex commandIdPattern, MessagePreviewEditHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -73,12 +73,12 @@ public class MessageExtension
     ///     await _channel.PostAsync(content, ct);
     /// });
     /// </code>
-    /// Alternatively, the <see cref="TeamsMessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsMessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewSendHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnMessagePreviewSend(string commandId, MessagePreviewSendHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -90,11 +90,11 @@ public class MessageExtension
     /// Registers a handler to process the 'send' action of a message that's being previewed by the
     /// user prior to sending.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsMessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="MessagePreviewSendHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsMessagePreviewSendRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewSendHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnMessagePreviewSend(Regex commandIdPattern, MessagePreviewSendHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -117,12 +117,12 @@ public class MessageExtension
     ///         }
     ///     }));
     /// </code>
-    /// Alternatively, the <see cref="TeamsFetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsFetchActionRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnFetchAction(string commandId, FetchActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -133,11 +133,11 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler to process the initial fetch task for an Action based message extension.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsFetchActionRouteAttribute"/> can be used to decorate a <see cref="FetchActionHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsFetchActionRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnFetchAction(Regex commandIdPattern, FetchActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -158,12 +158,12 @@ public class MessageExtension
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [task.ToCard()] } };
     /// });
     /// </code>
-    /// Alternatively, the <see cref="TeamsSubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsSubmitActionRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SubmitActionHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSubmitAction(string commandId, SubmitActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -174,11 +174,11 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the submit action for an Action based Message Extension.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsSubmitActionRouteAttribute"/> can be used to decorate a <see cref="SubmitActionHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsSubmitActionRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SubmitActionHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the commands to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSubmitAction(Regex commandIdPattern, SubmitActionHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -199,12 +199,12 @@ public class MessageExtension
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = attachments } };
     /// });
     /// </code>
-    /// Alternatively, the <see cref="TeamsQueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="commandId">ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuery(string commandId, QueryHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -215,11 +215,11 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements a Search based Message Extension.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsQueryRouteAttribute"/> can be used to decorate a <see cref="QueryHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryHandler"/> method for the same purpose.</remarks>
     /// <param name="commandIdPattern">Regular expression to match against the ID of the command to register the handler for.</param>
     /// <param name="handler">Function to call when the command is received.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuery(Regex commandIdPattern, QueryHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -239,12 +239,12 @@ public class MessageExtension
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [details.ToHeroCard().ToMessagingExtensionAttachment()] } };
     /// });
     /// </code>
-    /// Alternatively, the <see cref="TeamsSelectItemRouteAttribute"/> can be used to decorate a <see cref="SelectItemHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsSelectItemRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SelectItemHandler{TData}"/> method for the same purpose.
     /// </remarks>
     /// <typeparam name="TData">The type of the <c>data</c> argument on the handler.</typeparam>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnSelectItem<TData>(SelectItemHandler<TData> handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -263,11 +263,11 @@ public class MessageExtension
     ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [preview.ToCard().ToMessagingExtensionAttachment()] } };
     /// });
     /// </code>
-    /// Alternatively, the <see cref="TeamsQueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQueryLinkRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQueryLink(QueryLinkHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -278,10 +278,10 @@ public class MessageExtension
     /// <summary>
     /// Registers a handler that implements the logic to handle anonymous link unfurling.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsAnonQueryLinkRouteAttribute"/> can be used to decorate a <see cref="QueryLinkHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsAnonQueryLinkRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnAnonymousQueryLink(QueryLinkHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -307,11 +307,11 @@ public class MessageExtension
     ///         }
     ///     }));
     /// </code>
-    /// Alternatively, the <see cref="TeamsQuerySettingUrlRouteAttribute"/> can be used to decorate a <see cref="QuerySettingUrlHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsQuerySettingUrlRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QuerySettingUrlHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">Function to call when the event is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public MessageExtension OnQuerySettingUrl(QuerySettingUrlHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -331,12 +331,12 @@ public class MessageExtension
     ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.Config } });
     /// });
     /// </code>
-    /// Alternatively, the <see cref="TeamsSettingRouteAttribute"/> can be used to decorate a <see cref="SettingHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsSettingRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingHandler"/> method for the same purpose.
     /// </remarks>
     /// <param name="handler">A delegate that processes the settings event. The handler receives the turn context, turn state, deserialized
     /// settings data of type <see cref="Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery"/>, and a cancellation token. Cannot be null.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The current MessageExtension instance for method chaining.</returns>
     public MessageExtension OnSetting(SettingHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -355,14 +355,14 @@ public class MessageExtension
     ///     await ctx.SendActivityAsync($"Decision '{cardData.Decision}' recorded.", cancellationToken: ct);
     /// });
     /// </code>
-    /// Alternatively, the <see cref="TeamsCardButtonClickedRouteAttribute"/> can be used to decorate a <see cref="CardButtonClickedHandler"/> method for the same purpose.
+    /// Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.TeamsCardButtonClickedRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CardButtonClickedHandler{TData}"/> method for the same purpose.
     /// </remarks>
     /// <typeparam name="TData">The type of the <c>cardData</c> argument on the handler.</typeparam>
     /// <param name="handler">A delegate that handles the card button click event. The delegate receives the turn context, turn state,
     /// deserialized value payload of type TData, and a cancellation token. Cannot be null.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
-    /// <returns>The current <see cref="MessageExtension"/> instance for method chaining.</returns>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
+    /// <returns>The current <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension"/> instance for method chaining.</returns>
     public MessageExtension OnCardButtonClicked<TData>(CardButtonClickedHandler<TData> handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
         _app.AddRoute(CardButtonClickedRouteBuilder.Create().WithChannelId(_channelId).WithOrderRank(rank).WithHandler<TData>(handler).WithOAuthHandlers(autoSignInHandlers).Build());

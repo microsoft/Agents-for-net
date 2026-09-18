@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Authentication.EntraAuthSidecar
 {
     /// <summary>
-    /// Azure.Core <see cref="TokenCredential"/> adapter that delegates to the sidecar.
+    /// Azure.Core <see cref="Azure.Core.TokenCredential"/> adapter that delegates to the sidecar.
     /// </summary>
     internal class SidecarTokenCredential(IAccessTokenProvider provider) : TokenCredential
     {

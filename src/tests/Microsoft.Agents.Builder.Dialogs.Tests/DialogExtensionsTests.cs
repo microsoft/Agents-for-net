@@ -291,7 +291,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
             }
 
             /// <summary>
-            /// Gets the <see cref="DialogReason"/> for the dialog termination to help with assertions.
+            /// Gets the <see cref="Microsoft.Agents.Builder.Dialogs.DialogReason"/> for the dialog termination to help with assertions.
             /// </summary>
             /// <remarks>
             /// RunAsync doesn't return dialog turn results so we need to use this to assert how the dialog ended.

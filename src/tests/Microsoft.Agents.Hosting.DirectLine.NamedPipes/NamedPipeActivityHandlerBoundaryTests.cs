@@ -17,7 +17,7 @@ using Moq;
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
-    /// Boundary condition tests for <see cref="NamedPipeActivityHandler"/>:
+    /// Boundary condition tests for <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.NamedPipeActivityHandler"/>:
     /// unsupported verbs, unknown paths, empty bodies, non-JSON content types,
     /// deserialization failures, and attachment merging edge cases.
     /// </summary>

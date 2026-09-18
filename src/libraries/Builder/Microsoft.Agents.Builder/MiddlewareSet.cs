@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// Contains an ordered set of <see cref="IMiddleware"/>.
+    /// Contains an ordered set of <see cref="Microsoft.Agents.Builder.IMiddleware"/>.
     /// </summary>
     internal class MiddlewareSet : IMiddlewareSet, IMiddleware, IEnumerable<IMiddleware>
     {
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Gets an enumerator that iterates over a collection of implementations of <see cref="IMiddleware"/> objects.
+        /// Gets an enumerator that iterates over a collection of implementations of <see cref="Microsoft.Agents.Builder.IMiddleware"/> objects.
         /// </summary>
         /// <returns>An enumerator that can be used to iterate over the collection.</returns>
         public IEnumerator<IMiddleware> GetEnumerator()

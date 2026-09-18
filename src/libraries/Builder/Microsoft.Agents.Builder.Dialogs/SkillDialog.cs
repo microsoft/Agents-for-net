@@ -18,10 +18,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.Dialogs
 {
     /// <summary>
-    /// A specialized <see cref="Dialog"/> that can wrap remote calls to a skill.
+    /// A specialized <see cref="Microsoft.Agents.Builder.Dialogs.Dialog"/> that can wrap remote calls to a skill.
     /// </summary>
     /// <remarks>
-    /// The options parameter in <see cref="BeginDialogAsync"/> must be a <see cref="BeginSkillDialogOptions"/> instance
+    /// The options parameter in <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialog.BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Object, System.Threading.CancellationToken)"/> must be a <see cref="Microsoft.Agents.Builder.Dialogs.BeginSkillDialogOptions"/> instance
     /// with the initial parameters for the dialog.
     /// </remarks>
     public class SkillDialog : Dialog
@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         private const string SkillConversationIdStateKey = "Microsoft.Agents.Builder.Dialogs.SkillDialog.SkillConversationId";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SkillDialog"/> class to wrap remote calls to a skill.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialog"/> class to wrap remote calls to a skill.
         /// </summary>
         /// <param name="dialogOptions">The options to execute the skill dialog.</param>
         /// <param name="dialogId">The id of the dialog.</param>
@@ -49,11 +49,11 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// Called when the skill dialog is started and pushed onto the dialog stack.
         /// </summary>
-        /// <param name="dc">The <see cref="DialogContext"/> for the current turn of conversation.</param>
+        /// <param name="dc">The <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> for the current turn of conversation.</param>
         /// <param name="options">Optional, initial information to pass to the dialog.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default)
@@ -87,10 +87,10 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Called when the skill dialog is _continued_, where it is the active dialog and the
         /// user replies with a new activity.
         /// </summary>
-        /// <param name="dc">The <see cref="DialogContext"/> for the current turn of conversation.</param>
+        /// <param name="dc">The <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> for the current turn of conversation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog. The result may also contain a
         /// return value.</remarks>
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="instance">State information for this dialog.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         public override async Task RepromptDialogAsync(ITurnContext turnContext, DialogInstance instance, CancellationToken cancellationToken = default)
         {
             // Create and send an envent to the skill so it can resume the dialog.
@@ -157,7 +157,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// of the value returned is dependent on the child dialog.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         public override async Task<DialogTurnResult> ResumeDialogAsync(DialogContext dc, DialogReason reason, object result = null, CancellationToken cancellationToken = default)
         {
             await RepromptDialogAsync(dc.Context, dc.ActiveDialog, cancellationToken).ConfigureAwait(false);
@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="reason">Reason why the dialog ended.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         public override async Task EndDialogAsync(ITurnContext turnContext, DialogInstance instance, DialogReason reason, CancellationToken cancellationToken = default)
         {
             // Send of of conversation to the skill if the dialog has been cancelled. 
@@ -195,11 +195,11 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Validates the activity sent during <see cref="ContinueDialogAsync"/>.
+        /// Validates the activity sent during <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialog.ContinueDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Threading.CancellationToken)"/>.
         /// </summary>
-        /// <param name="activity">The <see cref="Activity"/> for the current turn of conversation.</param>
+        /// <param name="activity">The <see cref="Microsoft.Agents.Core.Models.Activity"/> for the current turn of conversation.</param>
         /// <remarks>
-        /// Override this method to implement a custom validator for the activity being sent during the <see cref="ContinueDialogAsync"/>.
+        /// Override this method to implement a custom validator for the activity being sent during the <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialog.ContinueDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Threading.CancellationToken)"/>.
         /// This method can be used to ignore activities of a certain type if needed.
         /// If this method returns false, the dialog will end the turn without processing the activity. 
         /// </remarks>

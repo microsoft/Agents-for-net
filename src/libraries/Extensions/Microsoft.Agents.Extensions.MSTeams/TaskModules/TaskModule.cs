@@ -45,8 +45,8 @@ public class TaskModule
     /// <paramref name="value"/> to determine whether this handler should be triggered.
     /// </summary>
     /// <remarks>
-    /// <para>Alternatively, the <see cref="TeamsTaskFetchRouteAttribute"/> can be used to decorate a
-    /// <see cref="TaskFetchHandler"/> method for the same purpose.</para>
+    /// <para>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TeamsTaskFetchRouteAttribute"/> can be used to decorate a
+    /// <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchHandler"/> method for the same purpose.</para>
     /// <para>The following example opens a simple Adaptive Card form inside a task module dialog.
     /// The card's submit action includes <c>"task": "simple_form"</c> so that the matching submit
     /// handler is triggered when the user submits the form.</para>
@@ -91,7 +91,7 @@ public class TaskModule
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch(string value, TaskFetchHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -104,12 +104,12 @@ public class TaskModule
     /// (or the specified <paramref name="key"/>) in the activity data is matched against
     /// <paramref name="valuePattern"/> to determine whether this handler should be triggered.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsTaskFetchRouteAttribute"/> can be used to decorate a <see cref="TaskFetchHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TeamsTaskFetchRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchHandler"/> method for the same purpose.</remarks>
     /// <param name="valuePattern">Regular expression to match against the key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnFetch(Regex valuePattern, TaskFetchHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -123,8 +123,8 @@ public class TaskModule
     /// <paramref name="value"/> to determine whether this handler should be triggered.
     /// </summary>
     /// <remarks>
-    /// <para>Alternatively, the <see cref="TeamsTaskSubmitRouteAttribute"/> can be used to decorate a
-    /// <see cref="TaskSubmitHandler"/> method for the same purpose.</para>
+    /// <para>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TeamsTaskSubmitRouteAttribute"/> can be used to decorate a
+    /// <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitHandler"/> method for the same purpose.</para>
     /// <para>The following example reads a field from the submitted form data and returns a completion message.</para>
     /// <code>
     /// [TeamsTaskSubmitRoute("simple_form")]
@@ -149,7 +149,7 @@ public class TaskModule
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit(string value, TaskSubmitHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -162,12 +162,12 @@ public class TaskModule
     /// (or the specified <paramref name="key"/>) in the activity data is matched against
     /// <paramref name="valuePattern"/> to determine whether this handler should be triggered.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsTaskSubmitRouteAttribute"/> can be used to decorate a <see cref="TaskSubmitHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TeamsTaskSubmitRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitHandler"/> method for the same purpose.</remarks>
     /// <param name="valuePattern">Regular expression to match against the task data key value.</param>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The application instance for chaining purposes.</returns>
     public TaskModule OnSubmit(Regex valuePattern, TaskSubmitHandler handler, string key = null, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {

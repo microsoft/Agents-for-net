@@ -32,8 +32,8 @@ public class SlackChannelData
     public ActionPayload Payload { get; set; }
 
     /// <summary>
-    /// Gets or sets the API authentication token used to authorize response by the agent using <see cref="SlackAgentExtension.CallAsync(Builder.ITurnContext, string, object?, string, System.Threading.CancellationToken)"/> 
-    /// or <see cref="SlackApi"/>.
+    /// Gets or sets the API authentication token used to authorize response by the agent using <see cref="Microsoft.Agents.Extensions.Slack.SlackAgentExtension.CallAsync(Microsoft.Agents.Builder.ITurnContext, System.String, System.Object, System.String, System.Threading.CancellationToken)"/>
+    /// or <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackApi"/>.
     /// </summary>
     /// <remarks>The API token should be kept secure and not shared publicly. Changing this value may affect
     /// the ability to access protected resources.</remarks>

@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
-    /// Boundary condition tests for <see cref="NamedPipeMessageHandler"/>:
+    /// Boundary condition tests for <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.NamedPipeMessageHandler"/>:
     /// null URI, non-pipe URI, no protocol, missing /v3/ path, protocol
     /// exceptions returning 502, and content-type fallback.
     /// </summary>

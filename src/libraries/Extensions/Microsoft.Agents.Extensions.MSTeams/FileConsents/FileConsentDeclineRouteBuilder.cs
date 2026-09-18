@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 /// Provides a builder for configuring routes that handle Teams file consent decline invocations.
 /// </summary>
 /// <remarks>
-/// Use <see cref="FileConsentDeclineRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentDeclineRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Apps.InvokeNames.FileConsent"/>
 /// and <see cref="Microsoft.Teams.Apps.Files.FileConsentValue.Action"/> of <c>"decline"</c>.
@@ -28,7 +28,7 @@ public class FileConsentDeclineRouteBuilder : FileConsentRouteBuilderBase<FileCo
     }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="FileConsentDeclineRouteBuilder"/>,
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentDeclineRouteBuilder"/>,
     /// pre-configured to match file consent decline invocations.
     /// </summary>
     public FileConsentDeclineRouteBuilder() : base()
@@ -42,7 +42,7 @@ public class FileConsentDeclineRouteBuilder : FileConsentRouteBuilderBase<FileCo
     /// <param name="handler">An asynchronous delegate invoked when the user declines the file consent card.
     /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Apps.Files.FileConsentValue"/>,
     /// and a cancellation token.</param>
-    /// <returns>The current <see cref="FileConsentDeclineRouteBuilder"/> instance for method chaining.</returns>
+    /// <returns>The current <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentDeclineRouteBuilder"/> instance for method chaining.</returns>
     public FileConsentDeclineRouteBuilder WithHandler(FileConsentHandler handler)
     {
         _route.Handler = async (ctx, ts, ct) =>

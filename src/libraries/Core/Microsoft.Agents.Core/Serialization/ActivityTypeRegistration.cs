@@ -7,7 +7,7 @@ namespace Microsoft.Agents.Core.Serialization
 {
     /// <summary>
     /// A single declarative custom-Activity registration: the CLR subclass plus the discriminators
-    /// (type / channelId / name) an inbound Activity must match. Built from <see cref="ActivityTypeAttribute"/>.
+    /// (type / channelId / name) an inbound Activity must match. Built from <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute"/>.
     /// </summary>
     internal sealed class ActivityTypeRegistration
     {

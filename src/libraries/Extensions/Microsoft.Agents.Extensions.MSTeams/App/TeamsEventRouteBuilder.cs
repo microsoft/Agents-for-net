@@ -10,9 +10,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.App;
 public class TeamsEventRouteBuilder : EventRouteBuilderBase<TeamsEventRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the <see cref="TeamsEventRouteBuilder"/> class.
+    /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsEventRouteBuilder"/> class.
     /// </summary>
-    /// <returns>A new <see cref="TeamsEventRouteBuilder"/>.</returns>
+    /// <returns>A new <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsEventRouteBuilder"/>.</returns>
     public static TeamsEventRouteBuilder Create()
     {
         return new TeamsEventRouteBuilder();

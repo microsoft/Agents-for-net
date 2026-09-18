@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Builder
     /// Declares an Agents SDK extension service registrar.
     /// </summary>
     /// <param name="registrarType">
-    /// A type implementing <see cref="IAgentServiceRegistrar"/> with a parameterless constructor.
+    /// A type implementing <see cref="Microsoft.Agents.Builder.IAgentServiceRegistrar"/> with a parameterless constructor.
     /// </param>
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     public sealed class AgentServiceRegistrationAttribute(Type registrarType) : Attribute

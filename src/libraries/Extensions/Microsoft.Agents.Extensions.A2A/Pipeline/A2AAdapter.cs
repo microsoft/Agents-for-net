@@ -22,9 +22,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -72,6 +74,17 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     public A2AAdapter(ITaskStore taskStore, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null, IConfiguration configuration = null) : base(loggerFactory.CreateLogger<A2AAdapter>())
     {
         AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
+
+        var adapterOptions = options
+            ?? configuration?.GetSection(nameof(A2AAdapterOptions)).Get<A2AAdapterOptions>()
+            ?? new A2AAdapterOptions();
+        if (adapterOptions.AgentCardCacheMaxAge < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                adapterOptions.AgentCardCacheMaxAge,
+                "Agent Card cache max-age cannot be negative.");
+        }
 
         _loggerFactory = loggerFactory;
         _taskStore = taskStore;
@@ -183,8 +196,13 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             Logger.LogDebug("AgentCard: {AgentCard}", json);
         }
 
+        var jsonBytes = Encoding.UTF8.GetBytes(json);
+
         httpResponse.ContentType = "application/json";
-        await httpResponse.Body.WriteAsync(Encoding.UTF8.GetBytes(json), cancellationToken).ConfigureAwait(false);
+        httpResponse.Headers.CacheControl = _agentCardCacheControl;
+        httpResponse.Headers.ETag = $"\"{Convert.ToHexString(SHA256.HashData(jsonBytes))}\"";
+        httpResponse.Headers.LastModified = _agentCardLastModified;
+        await httpResponse.Body.WriteAsync(jsonBytes, cancellationToken).ConfigureAwait(false);
         await httpResponse.Body.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
