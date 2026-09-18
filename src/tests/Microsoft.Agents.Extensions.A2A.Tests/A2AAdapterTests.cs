@@ -14,6 +14,8 @@ using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.A2A.AgentCard;
 using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.Agents.Extensions.A2A.Pipeline;
+using Microsoft.Agents.Extensions.A2A.ProtocolExtensions;
+using Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
@@ -526,6 +528,33 @@ public class A2AAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAgentCard_WithInTaskAuthorization_AdvertisesExtensionWithoutSecurityMetadata()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "false",
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:Mode"] = "InTask",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:DeviceAuthorizationUrl"] = "https://login.example.com/devicecode",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:TokenUrl"] = "https://login.example.com/token",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:Scopes:agent.read"] = "Access the agent",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "agent.read",
+        }));
+        var agent = CreateSkillAgent("request");
+
+        var agentCard = await ProcessAgentCardAsync(adapter, agent);
+
+        var extension = Assert.Single(agentCard.Capabilities.Extensions);
+        Assert.Equal(InTaskAuthorizationExtension.Uri, extension.Uri);
+        Assert.False(extension.Required);
+        Assert.Equal("resumeAuth", extension.Params!.Value.GetProperty("operations").GetProperty("jsonRpc").GetString());
+        Assert.Equal("A2A-InTask-Authorization", extension.Params.Value.GetProperty("credentialHeader").GetString());
+        Assert.DoesNotContain(agentCard.SecuritySchemes.Values, scheme => scheme.OAuth2SecurityScheme != null);
+        Assert.Null(agentCard.SecurityRequirements);
+        Assert.Null(Assert.Single(agentCard.Skills).SecurityRequirements);
+    }
+
+    [Fact]
     public async Task ProcessAgentCard_WithMissingSchemeReference_ThrowsMetadataError()
     {
         var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
@@ -913,6 +942,211 @@ public class A2AAdapterTests
     }
 
     [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync_WithInTaskAuthorization_ReturnsAuthRequired()
+    {
+        var connections = Mock.Of<IConnections>();
+        var record = UseRecord(record =>
+        {
+            var authorization = new A2AUserAuthorization(
+                "request",
+                record.Storage,
+                connections,
+                new A2AUserAuthorizationSettings
+                {
+                    Mode = A2AUserAuthorizationMode.InTask,
+                    OAuthFlows = new OAuthFlows
+                    {
+                        DeviceCode = new DeviceCodeOAuthFlow
+                        {
+                            DeviceAuthorizationUrl = "https://login.example.com/devicecode",
+                            TokenUrl = "https://login.example.com/token",
+                            Scopes = new Dictionary<string, string>
+                            {
+                                ["agent.read"] = "Access the agent",
+                            },
+                        },
+                    },
+                    RequiredScopes = ["agent.read"],
+                });
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections,
+                    authorization)
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                },
+            };
+            var agent = new TestApplication(options);
+            var extension = new A2AAgentExtension(agent);
+            agent.RegisteredExtensions.Add(extension);
+            extension.Skill("protected", skill => skill
+                .OnMessage("Hello", (_, _, _) => throw new InvalidOperationException("Protected route must not run before authorization."), autoSigninHandlers: ["request"]));
+            return agent;
+        });
+
+        var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-in-task")));
+        context.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        var task = ReadTaskResponse(context);
+        Assert.Equal(TaskState.AuthRequired, task.Status.State);
+        Assert.Equal(InTaskAuthorizationExtension.Uri, context.Response.Headers[A2AProtocolExtensionRequest.HeaderName]);
+        var request = task.Status.Message.Metadata[InTaskAuthorizationExtension.Uri]
+            .GetProperty("authorizationRequest");
+        Assert.False(string.IsNullOrWhiteSpace(request.GetProperty("id").GetString()));
+        Assert.Equal(
+            "https://login.example.com/devicecode",
+            request.GetProperty("oauth2").GetProperty("flows").GetProperty("deviceCode").GetProperty("deviceAuthorizationUrl").GetString());
+        Assert.Equal("agent.read", request.GetProperty("requiredScopes")[0].GetString());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ResumeAuthAsync_WithMatchingRequest_ReplaysOriginalActivity(bool useHttpJson)
+    {
+        var connections = Mock.Of<IConnections>();
+        var routed = 0;
+        var record = UseRecord(record =>
+        {
+            var authorization = new A2AUserAuthorization(
+                "request",
+                record.Storage,
+                connections,
+                new A2AUserAuthorizationSettings
+                {
+                    Mode = A2AUserAuthorizationMode.InTask,
+                    OAuthFlows = new OAuthFlows
+                    {
+                        DeviceCode = new DeviceCodeOAuthFlow
+                        {
+                            DeviceAuthorizationUrl = "https://login.example.com/devicecode",
+                            TokenUrl = "https://login.example.com/token",
+                            Scopes = new Dictionary<string, string>
+                            {
+                                ["agent.read"] = "Access the agent",
+                            },
+                        },
+                    },
+                    RequiredScopes = ["agent.read"],
+                });
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections,
+                    authorization)
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                },
+            };
+            var agent = new TestApplication(options);
+            var extension = new A2AAgentExtension(agent);
+            agent.RegisteredExtensions.Add(extension);
+            extension.Skill("protected", skill => skill
+                .OnMessage("Hello", async (context, _, cancellationToken) =>
+                {
+                    routed++;
+                    var token = await agent.UserAuthorization.GetTurnTokenAsync(context, "request", cancellationToken);
+                    await context.SendActivityAsync($"Token: {token}", cancellationToken: cancellationToken);
+                }, autoSigninHandlers: ["request"]));
+            return agent;
+        });
+
+        var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-in-task")));
+        initialContext.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+
+        var initialResult = await record.Adapter.ProcessJsonRpcAsync(initialContext.Request, initialContext.Response, record.Agent, CancellationToken.None);
+        await initialResult.ExecuteAsync(initialContext);
+
+        var initialTask = ReadTaskResponse(initialContext);
+        var authorizationRequestId = initialTask.Status.Message.Metadata[InTaskAuthorizationExtension.Uri]
+            .GetProperty("authorizationRequest")
+            .GetProperty("id")
+            .GetString();
+        var signInState = await record.Storage.ReadAsync<object>(
+            [$"oauth/{Channels.A2A}/{initialTask.Id}/userAuthorizationState"],
+            CancellationToken.None);
+        Assert.NotEmpty(signInState);
+        var resumeParameters = new ResumeAuthRequest
+        {
+            TaskId = initialTask.Id,
+            ContextId = initialTask.ContextId,
+            AuthorizationRequestId = authorizationRequestId,
+        };
+
+        async Task<DefaultHttpContext> ResumeAsync(string token, bool validated)
+        {
+            var context = CreateHttpContext(string.Empty);
+            context.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+            context.Request.Headers[InTaskAuthorizationExtension.CredentialHeader] = $"Bearer {token}";
+            if (validated)
+            {
+                AuthenticateContext(context, token);
+            }
+
+            IResult result;
+            if (useHttpJson)
+            {
+                result = await ((IA2AHttpAdapter)record.Adapter).ResumeAuthAsync(
+                    context.Request,
+                    context.Response,
+                    record.Agent,
+                    initialTask.Id,
+                    resumeParameters,
+                    CancellationToken.None);
+            }
+            else
+            {
+                var request = new JsonRpcRequest
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Method = InTaskAuthorizationExtension.ResumeAuthOperation,
+                    Params = JsonSerializer.SerializeToElement(resumeParameters),
+                };
+                context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request)));
+                result = await record.Adapter.ProcessJsonRpcAsync(
+                    context.Request,
+                    context.Response,
+                    record.Agent,
+                    CancellationToken.None);
+            }
+            await result.ExecuteAsync(context);
+            return context;
+        }
+
+        var rejectedContext = await ResumeAsync("unvalidated-token", validated: false);
+        var rejectedTask = ReadTaskResponse(rejectedContext);
+        rejectedContext.Response.Body.Seek(0, SeekOrigin.Begin);
+        var rejectedJson = new StreamReader(rejectedContext.Response.Body, leaveOpen: true).ReadToEnd();
+        Assert.True(rejectedTask.Status.State == TaskState.AuthRequired, rejectedJson);
+        Assert.Equal(0, routed);
+
+        var resumeContext = await ResumeAsync("procured-token", validated: true);
+        resumeContext.Response.Body.Seek(0, SeekOrigin.Begin);
+        var resumeResponseJson = new StreamReader(resumeContext.Response.Body, leaveOpen: true).ReadToEnd();
+        Assert.True(
+            !resumeResponseJson.Contains("\"error\"", StringComparison.Ordinal),
+            $"{resumeResponseJson} Routed: {routed}");
+        var completedTask = ReadTaskResponse(resumeContext);
+        Assert.Equal(TaskState.Completed, completedTask.Status.State);
+        Assert.Equal("Token: procured-token", completedTask.Status.Message.Parts[0].Text);
+        Assert.Equal(1, routed);
+        var state = await record.Storage.ReadAsync<InTaskAuthorizationState>(
+            [InTaskAuthorizationExtension.GetStateKey("request", initialTask.Id)],
+            CancellationToken.None);
+        Assert.Empty(state);
+    }
+
+    [Fact]
     public async Task ProcessJsonRpcMessageStreamAsync()
     {
         // Arrange
@@ -1193,7 +1427,9 @@ public class A2AAdapterTests
     {
         context.Response.Body.Seek(0, SeekOrigin.Begin);
         var response = ProtocolJsonSerializer.ToObject<JsonRpcResponse>(new StreamReader(context.Response.Body).ReadToEnd());
-        return ProtocolJsonSerializer.ToObject<AgentTask>(response.Result.AsObject().GetAt(0).Value);
+        var result = response.Result.AsObject();
+        return ProtocolJsonSerializer.ToObject<AgentTask>(
+            result.TryGetPropertyValue("id", out _) ? result : result.GetAt(0).Value);
     }
 
     private static DefaultHttpContext CreateHttpContext(string requestContent = null)

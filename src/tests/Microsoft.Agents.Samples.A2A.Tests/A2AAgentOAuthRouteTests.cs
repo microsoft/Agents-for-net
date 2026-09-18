@@ -44,7 +44,7 @@ public class A2AAgentOAuthRouteTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task AgentCard_FromSampleConfiguration_AdvertisesDelegatedOAuthForProtectedSkill(bool protectedSkills)
+    public async Task AgentCard_FromSampleConfiguration_AdvertisesInTaskAuthorizationWithoutOAuthSecurity(bool protectedSkills)
     {
         const string tenantId = "11111111-1111-1111-1111-111111111111";
         const string clientId = "22222222-2222-2222-2222-222222222222";
@@ -58,6 +58,7 @@ public class A2AAgentOAuthRouteTests
         Assert.Equal(GraphHandlerName, handler.Key);
         Assert.Equal("Microsoft.Agents.Extensions.A2A", handler["Assembly"]);
         Assert.Equal(GraphHandlerName, configuration["AgentApplication:UserAuthorization:DefaultHandlerName"]);
+        Assert.Equal("intask", handler["Settings:Mode"]?.ToLowerInvariant());
         Assert.Equal("true", handler["Settings:EnforceRequiredScopes"]?.ToLowerInvariant());
         Assert.Equal("ServiceConnection", handler["Settings:OBOConnectionName"]);
         Assert.Equal("User.Read", handler["Settings:OBOScopes:0"]);
@@ -79,29 +80,18 @@ public class A2AAgentOAuthRouteTests
         Assert.DoesNotContain("User.Read", Encoding.UTF8.GetString(responseBody.ToArray()), StringComparison.Ordinal);
         Assert.NotNull(card.SecuritySchemes);
         Assert.Null(card.SecurityRequirements);
-        var delegated = card.SecuritySchemes["delegated"].OAuth2SecurityScheme!.Flows!.DeviceCode!;
-
-        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/token", delegated.TokenUrl);
-        Assert.Equal("https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode", delegated.DeviceAuthorizationUrl);
+        Assert.DoesNotContain("delegated", card.SecuritySchemes.Keys);
+        Assert.NotNull(card.Capabilities.Extensions);
+        Assert.Contains(
+            card.Capabilities.Extensions,
+            extension => extension.Uri == "https://schemas.microsoft.com/agents/a2a/extensions/in-task-authorization/v1");
         if (protectedSkills)
         {
-            AssertSkillRequirement(
-                card,
-                "Microsoft Graph profile",
-                "delegated",
-                "api://22222222-2222-2222-2222-222222222222/access_as_user");
+            AgentSkill skill = Assert.Single(card.Skills, candidate => candidate.Id == "Microsoft Graph profile");
+            Assert.NotNull(skill.Examples);
+            Assert.Contains("-me", skill.Examples);
+            Assert.Null(skill.SecurityRequirements);
         }
-    }
-
-    private static void AssertSkillRequirement(AgentCard card, string skillId, string schemeName, string scope)
-    {
-        AgentSkill skill = Assert.Single(card.Skills, candidate => candidate.Id == skillId);
-        Assert.NotNull(skill.Examples);
-        Assert.Contains("-me", skill.Examples);
-        Assert.NotNull(skill.SecurityRequirements);
-        SecurityRequirement requirement = Assert.Single(skill.SecurityRequirements);
-        Assert.NotNull(requirement.Schemes);
-        Assert.Equal([scope], requirement.Schemes[schemeName].List);
     }
 
     [Fact]

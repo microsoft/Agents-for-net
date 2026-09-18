@@ -24,18 +24,52 @@ public class A2AUserAuthorizationConfigurationTests
     public void AuthorizationTypes_ExposeOnlySupportedMetadata()
     {
         Assert.Equal(
-            ["EnforceRequiredScopes", "OAuthFlows", "RequiredScopes", "SecuritySchemeName"],
+            ["EnforceRequiredScopes", "Mode", "OAuthFlows", "RequiredScopes", "SecuritySchemeName"],
             typeof(A2AUserAuthorizationSettings)
                 .GetProperties()
                 .Where(property => property.DeclaringType == typeof(A2AUserAuthorizationSettings))
                 .Select(property => property.Name)
                 .OrderBy(name => name));
         Assert.Equal(
-            ["HandlerName", "OBOSettings", "ReferencedSecurityScheme", "RequiredScopes", "SecurityScheme", "SecuritySchemeName"],
+            ["HandlerName", "Mode", "OBOSettings", "ReferencedSecurityScheme", "RequiredScopes", "SecurityScheme", "SecuritySchemeName"],
             typeof(A2AAuthorizationMetadata)
                 .GetProperties()
                 .Select(property => property.Name)
                 .OrderBy(name => name));
+    }
+
+    [Fact]
+    public void Configuration_WithInTaskMode_DoesNotRequireAgentCardSchemeName()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "Mode": "InTask",
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token",
+                      "Scopes": {
+                        "agent.read": "Access the agent"
+                      }
+                    }
+                  },
+                  "RequiredScopes": [ "agent.read" ]
+                }
+              }
+            }
+            """);
+
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+
+        Assert.Equal(A2AUserAuthorizationMode.InTask, metadata.Mode);
+        Assert.Null(metadata.SecuritySchemeName);
+        Assert.Null(metadata.SecurityScheme);
+        Assert.Equal(["agent.read"], metadata.RequiredScopes);
     }
 
     [Fact]

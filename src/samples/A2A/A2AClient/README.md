@@ -1,8 +1,8 @@
 # A2AClient
 
-`A2AClient` is an interactive console client for an A2A agent. It resolves the public Agent Card anonymously, selects a JSON-RPC or HTTP+JSON interface on the configured origin, predicts the intended skill, and chooses the matching authentication requirement before starting a task.
+`A2AClient` is an interactive console client for an A2A agent. It resolves the public Agent Card anonymously, selects a JSON-RPC or HTTP+JSON interface on the configured origin, predicts the intended skill, and chooses the matching authentication requirement before starting a task. It also activates the optional Agents SDK in-task authorization extension when advertised and handles `TASK_STATE_AUTH_REQUIRED` by acquiring the requested OAuth credential and calling `resumeAuth`.
 
-OAuth acquisition is driven by the selected Agent Card security scheme. The client supports these A2A OAuth flows without provider-specific token clients:
+OAuth acquisition is driven by either the selected Agent Card security scheme or an in-task authorization request. The client supports these A2A OAuth flows without provider-specific token clients:
 
 - Device Code
 - Authorization Code, with a loopback callback and optional PKCE
@@ -44,7 +44,9 @@ Changing authentication mode drops any task awaiting continuation so one caller'
 
 The Agent Card supplies the OAuth flow, endpoints, and required scopes. Local connection profiles supply the registered OAuth client and restrict which endpoint origins may receive that client's credentials.
 
-Connection names match Agent Card security-scheme names:
+Connection names match Agent Card security-scheme names. In-task authorization
+uses the `delegated` connection because its runtime metadata intentionally does
+not create an Agent Card security scheme:
 
 ```json
 {

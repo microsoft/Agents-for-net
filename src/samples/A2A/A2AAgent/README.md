@@ -53,12 +53,15 @@ without Microsoft Entra configuration.
 
 The `-me` skill uses a single `graph` `A2AUserAuthorization` handler. The handler:
 
-1. advertises a delegated Device Code flow and Agent API scope in the Agent Card;
-2. lists that Agent API scope in `RequiredScopes` for the `-me` skill;
-3. can validate the trusted saved inbound delegated JWT against every configured
+1. returns `TASK_STATE_AUTH_REQUIRED` with a delegated Device Code flow and Agent API scope when the client invokes `-me` without a task credential;
+2. accepts the procured credential through the optional in-task authorization extension's `resumeAuth` operation;
+3. can validate the task-scoped delegated JWT against every configured
    `RequiredScopes` value before OBO; and
 4. exchanges the validated inbound token through `ServiceConnection` for
    Microsoft Graph `User.Read`.
+
+The in-task flow is discovered at runtime. It does not add an OAuth security
+scheme or security requirement to the Agent Card or the `-me` skill.
 
 ### Register the Agent API application
 
@@ -98,7 +101,7 @@ The relevant authorization configuration is:
         "Assembly": "Microsoft.Agents.Extensions.A2A",
         "Type": "A2AUserAuthorization",
         "Settings": {
-          "SecuritySchemeName": "delegated",
+          "Mode": "InTask",
           "OAuthFlows": {
             "DeviceCode": {
               "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
@@ -134,8 +137,8 @@ the resulting Agent API scope URI:
 `A2AAgentStartup` enables token validation in Development only after
 `TokenValidation:Audiences` contains real GUIDs.
 
-`EnforceRequiredScopes` makes `A2AUserAuthorization` validate the original
-inbound delegated JWT before OBO. Every configured `RequiredScopes` value must
+`EnforceRequiredScopes` makes `A2AUserAuthorization` validate the credential
+submitted to `resumeAuth` before OBO. Every configured `RequiredScopes` value must
 appear in the token's `scp` claim; for Microsoft Entra resource-qualified scope
 URIs, the handler compares the final permission value such as
 `access_as_user`. The option is disabled by default and does not support opaque
@@ -157,14 +160,13 @@ Start the client without `--auth-mode` and send:
 -me
 ```
 
-The client matches the advertised skill example and selects its delegated
-requirement automatically. Use `:auth delegated` to force delegated mode during
-manual testing.
+The client matches the advertised skill example, receives the task-scoped OAuth
+flow in the auth-required status, acquires an Agent API token, and calls
+`resumeAuth`. Endpoint authentication remains independent and continues to use
+the normal `Authorization` header.
 
 Expected failures:
 
-- `-me` with `:auth none` does not provide the required token.
-- `-me` with `:auth app` cannot perform a user-delegated Graph OBO exchange.
 - A token acquired by a different public-client registration is not exchangeable
   by this sample.
 - A Microsoft Graph token cannot be sent directly to the Agent API because its

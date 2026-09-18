@@ -17,13 +17,14 @@ internal sealed class A2AAuthorizationMetadata
     private A2AAuthorizationMetadata(string handlerName, A2AUserAuthorizationSettings settings)
     {
         HandlerName = handlerName;
+        Mode = settings.Mode;
         SecuritySchemeName = string.IsNullOrWhiteSpace(settings.SecuritySchemeName)
             ? null
             : settings.SecuritySchemeName;
-        ReferencedSecurityScheme = settings.OAuthFlows == null
+        ReferencedSecurityScheme = settings.Mode == A2AUserAuthorizationMode.RequestToken && settings.OAuthFlows == null
             ? SecuritySchemeName
             : null;
-        SecurityScheme = settings.OAuthFlows == null
+        SecurityScheme = settings.Mode == A2AUserAuthorizationMode.InTask || settings.OAuthFlows == null
             ? null
             : new SecurityScheme
             {
@@ -40,6 +41,11 @@ internal sealed class A2AAuthorizationMetadata
     /// Gets the configured authorization handler name.
     /// </summary>
     public string HandlerName { get; }
+
+    /// <summary>
+    /// Gets how this handler obtains its inbound credential.
+    /// </summary>
+    public A2AUserAuthorizationMode Mode { get; }
 
     /// <summary>
     /// Gets the Agent Card security scheme name.

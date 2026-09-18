@@ -22,6 +22,7 @@ internal sealed class A2AConsole
     private readonly IA2AClient _client;
     private readonly AgentCard _agentCard;
     private readonly A2AAuthenticationSession _authenticationSession;
+    private readonly A2AInTaskAuthorizationClient? _inTaskAuthorizationClient;
     private readonly A2ARequestPlanner? _requestPlanner;
     private readonly TextReader _input;
     private readonly TextWriter _output;
@@ -39,11 +40,13 @@ internal sealed class A2AConsole
         TextWriter output,
         bool showHistory,
         bool usePushNotifications,
-        Uri pushNotificationReceiver)
+        Uri pushNotificationReceiver,
+        A2AInTaskAuthorizationClient? inTaskAuthorizationClient = null)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
         _agentCard = agentCard ?? throw new ArgumentNullException(nameof(agentCard));
         _authenticationSession = authenticationSession ?? throw new ArgumentNullException(nameof(authenticationSession));
+        _inTaskAuthorizationClient = inTaskAuthorizationClient;
         _requestPlanner = new A2ARequestPlanner(agentCard, authenticationSession);
         _input = input ?? throw new ArgumentNullException(nameof(input));
         _output = output ?? throw new ArgumentNullException(nameof(output));
@@ -112,6 +115,11 @@ internal sealed class A2AConsole
                 AgentTask? task = _useStreaming
                     ? await SendStreamingAsync(request, cancellationToken).ConfigureAwait(false)
                     : await SendAsync(request, cancellationToken).ConfigureAwait(false);
+                if (_inTaskAuthorizationClient is not null && task?.Status.State == TaskState.AuthRequired)
+                {
+                    task = await _inTaskAuthorizationClient.ResumeIfRequiredAsync(task, cancellationToken).ConfigureAwait(false);
+                    A2AResponseWriter.Write(_output, task);
+                }
 
                 UpdateContinuation(task);
 

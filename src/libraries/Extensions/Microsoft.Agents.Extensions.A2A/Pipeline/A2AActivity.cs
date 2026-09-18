@@ -10,6 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
+using Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 
 namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
@@ -27,14 +28,24 @@ internal static class A2AActivity
     {
         AssertionHelpers.ThrowIfNull(message, nameof(message));
         taskId ??= message.TaskId ?? throw new ArgumentException("TaskId must be provided either in the parameter or in the message");
+        message.ContextId ??= Guid.NewGuid().ToString("N");
         var activity = CreateActivity(taskId, message.Parts, true, true);
         activity.RequestId = requestId ?? Guid.NewGuid().ToString("N");
         activity.ChannelData = message;
 
-        message.ContextId = message.ContextId ?? Guid.NewGuid().ToString("N");
         message.TaskId = taskId;
 
         return activity;
+    }
+
+    internal static Message GetMessage(IActivity activity)
+    {
+        return activity.ChannelData switch
+        {
+            Message message => message,
+            JsonElement element => element.Deserialize<Message>(A2AJsonUtilities.DefaultOptions),
+            _ => null,
+        };
     }
 
     public static Message? MessageFromActivity(string contextId, string taskId, IActivity? activity, bool includeEntities = true)
@@ -45,7 +56,7 @@ internal static class A2AActivity
             return null;
         }
 
-        return new Message()
+        var message = new Message()
         {
             TaskId = taskId,
             ContextId = contextId,
@@ -53,6 +64,14 @@ internal static class A2AActivity
             Parts = artifact.Parts,
             Role = Role.Agent
         };
+
+        if (activity.ChannelData is InTaskAuthorizationRequest authorizationRequest)
+        {
+            message.Metadata ??= [];
+            message.Metadata[InTaskAuthorizationExtension.Uri] = authorizationRequest.ToJsonElement();
+        }
+
+        return message;
     }
 
     public static Artifact? CreateArtifact(IActivity activity, string artifactId = null, bool includeEntities = true)
@@ -162,6 +181,7 @@ internal static class A2AActivity
         return activity.InputHint switch
         {
             InputHints.ExpectingInput => TaskState.InputRequired,
+            _ when activity.ChannelData is InTaskAuthorizationRequest => TaskState.AuthRequired,
             _ => TaskState.Working,
         };
     }
@@ -180,7 +200,7 @@ internal static class A2AActivity
 
         var user = new ChannelAccount
         {
-            Id = DefaultUserId,
+            Id = conversationId,
             Role = RoleTypes.User,
         };
 

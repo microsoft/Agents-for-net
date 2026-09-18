@@ -1,11 +1,11 @@
 using A2A;
 using A2A.AspNetCore;
 using Microsoft.AspNetCore.Http;
-using System;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
@@ -15,7 +15,11 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// <remarks>This is a copy of the a2a-dotnet version since those are internal and can't be used directly.</remarks>
 internal static class A2AJsonRpcProcessor
 {
-    internal static async Task<IResult> ProcessRequestAsync(IA2ARequestHandler requestHandler, HttpRequest request, CancellationToken cancellationToken)
+    internal static async Task<IResult> ProcessRequestAsync(
+        IA2ARequestHandler requestHandler,
+        HttpRequest request,
+        CancellationToken cancellationToken,
+        Func<JsonRpcId, string, JsonElement?, CancellationToken, Task<JsonRpcResponseResult>> extensionHandler = null)
     {
         // Version negotiation: check A2A-Version header
         var version = request.Headers["A2A-Version"].FirstOrDefault();
@@ -31,10 +35,31 @@ internal static class A2AJsonRpcProcessor
         //using var activity = A2AAspNetCoreDiagnostics.Source.StartActivity("HandleA2ARequest", ActivityKind.Server);
 
         JsonRpcRequest? rpcRequest = null;
+        JsonRpcId? parsedRequestId = null;
 
         try
         {
-            rpcRequest = (JsonRpcRequest?)await JsonSerializer.DeserializeAsync(request.Body, A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(JsonRpcRequest)), cancellationToken).ConfigureAwait(false);
+            using var document = await JsonDocument.ParseAsync(request.Body, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var root = document.RootElement;
+            var requestId = GetRequestId(root);
+            parsedRequestId = requestId;
+            var method = root.TryGetProperty("method", out var methodElement) && methodElement.ValueKind == JsonValueKind.String
+                ? methodElement.GetString()
+                : null;
+            var parameters = root.TryGetProperty("params", out var paramsElement)
+                ? paramsElement
+                : (JsonElement?)null;
+
+            if (extensionHandler != null && !string.IsNullOrEmpty(method))
+            {
+                var extensionResponse = await extensionHandler(requestId, method, parameters, cancellationToken).ConfigureAwait(false);
+                if (extensionResponse != null)
+                {
+                    return extensionResponse;
+                }
+            }
+
+            rpcRequest = root.Deserialize(A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(JsonRpcRequest))) as JsonRpcRequest;
 
             //activity?.SetTag("request.id", rpcRequest!.Id.ToString());
             //activity?.SetTag("request.method", rpcRequest!.Method);
@@ -44,23 +69,29 @@ internal static class A2AJsonRpcProcessor
                 return StreamResponse(requestHandler, rpcRequest.Id, rpcRequest.Method, rpcRequest.Params, cancellationToken);
             }
 
-            return await SingleResponseAsync(requestHandler, rpcRequest.Id, rpcRequest.Method, rpcRequest.Params, cancellationToken).ConfigureAwait(false);
+            return await SingleResponseAsync(requestHandler, rpcRequest.Id, rpcRequest.Method, rpcRequest.Params, cancellationToken, extensionHandler).ConfigureAwait(false);
         }
         catch (A2AException ex)
         {
             //activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            var errorId = rpcRequest?.Id ?? new JsonRpcId(ex.GetRequestId());
+            var errorId = rpcRequest?.Id ?? parsedRequestId ?? new JsonRpcId(ex.GetRequestId());
             return new JsonRpcResponseResult(JsonRpcResponse.CreateJsonRpcErrorResponse(errorId, ex));
         }
         catch (Exception)
         {
             //activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            var errorId = rpcRequest?.Id ?? new JsonRpcId((string?)null);
+            var errorId = rpcRequest?.Id ?? parsedRequestId ?? new JsonRpcId((string?)null);
             return new JsonRpcResponseResult(JsonRpcResponse.InternalErrorResponse(errorId, "An internal error occurred."));
         }
     }
 
-    internal static async Task<JsonRpcResponseResult> SingleResponseAsync(IA2ARequestHandler requestHandler, JsonRpcId requestId, string method, JsonElement? parameters, CancellationToken cancellationToken)
+    internal static async Task<JsonRpcResponseResult> SingleResponseAsync(
+        IA2ARequestHandler requestHandler,
+        JsonRpcId requestId,
+        string method,
+        JsonElement? parameters,
+        CancellationToken cancellationToken,
+        Func<JsonRpcId, string, JsonElement?, CancellationToken, Task<JsonRpcResponseResult>> extensionHandler = null)
     {
         //using var activity = A2AAspNetCoreDiagnostics.Source.StartActivity($"SingleResponse/{method}", ActivityKind.Server);
         //activity?.SetTag("request.id", requestId.ToString());
@@ -159,11 +190,25 @@ internal static class A2AJsonRpcProcessor
                 response = JsonRpcResponse.CreateJsonRpcResponse(requestId, extCard);
                 break;
             default:
-                response = JsonRpcResponse.MethodNotFoundResponse(requestId);
-                break;
+                return new JsonRpcResponseResult(JsonRpcResponse.MethodNotFoundResponse(requestId));
         }
 
         return new JsonRpcResponseResult(response);
+    }
+
+    private static JsonRpcId GetRequestId(JsonElement request)
+    {
+        if (!request.TryGetProperty("id", out var id) || id.ValueKind == JsonValueKind.Null)
+        {
+            return new JsonRpcId((string?)null);
+        }
+
+        return id.ValueKind switch
+        {
+            JsonValueKind.String => new JsonRpcId(id.GetString()),
+            JsonValueKind.Number when id.TryGetInt64(out var numericId) => new JsonRpcId(numericId),
+            _ => throw new A2AException("Invalid JSON-RPC request: 'id' must be a string, integer, or null.", A2AErrorCode.InvalidRequest),
+        };
     }
 
     private static T DeserializeAndValidate<T>(JsonElement jsonParamValue) where T : class

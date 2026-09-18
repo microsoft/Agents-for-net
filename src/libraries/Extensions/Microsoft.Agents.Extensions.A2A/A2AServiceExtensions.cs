@@ -20,6 +20,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 
 [assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
     typeof(Microsoft.Agents.Extensions.A2A.Integration.A2AServiceRegistrar))]
@@ -235,6 +236,9 @@ public static class A2AServiceExtensions
         // /v1/tasks/{id}:cancel endpoint
         routeGroup.MapPost($"{prefixPath}/tasks/{{id}}:cancel", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
             adapter.CancelTaskAsync(request, response, agent, id, cancellationToken));
+
+        routeGroup.MapPost($"{prefixPath}/tasks/{{id}}:resumeAuth", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromBody] ResumeAuthRequest resumeRequest, CancellationToken cancellationToken) =>
+            adapter.ResumeAuthAsync(request, response, agent, id, resumeRequest, cancellationToken));
 
         // /v1/tasks/{id}:subscribe endpoint
         routeGroup.MapGet($"{prefixPath}/tasks/{{id}}:subscribe", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>

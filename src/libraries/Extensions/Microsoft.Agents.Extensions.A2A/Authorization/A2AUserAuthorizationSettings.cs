@@ -37,15 +37,20 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// by the caller, the validated inbound A2A token is returned unchanged.
 /// </para>
 /// <para>
-/// The handler supplies the validated inbound request token to the AgentApplication authorization
-/// pipeline. In this preview, <see cref="RequiredScopes"/> contributes Agent Card metadata and can
-/// optionally be enabled for built-in delegated JWT scope validation with
-/// <see cref="EnforceRequiredScopes"/>. Applications that need additional claim checks, application
-/// token authorization, or opaque-token validation must enforce those requirements separately.
+/// In <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.RequestToken"/> mode, the handler supplies the validated
+/// inbound request token to the AgentApplication authorization pipeline. In
+/// <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.InTask"/> mode, the credential submitted to
+/// <c>resumeAuth</c> must either be validated by the configured ASP.NET Core authentication scheme
+/// or be validated through an OBO exchange before the banked activity is replayed.
 /// </para>
 /// </remarks>
 public sealed class A2AUserAuthorizationSettings : OBOSettings
 {
+    /// <summary>
+    /// Gets or sets how the handler obtains its inbound credential.
+    /// </summary>
+    public A2AUserAuthorizationMode Mode { get; set; }
+
     /// <summary>
     /// Gets or sets the Agent Card security scheme name used by this handler.
     /// </summary>
@@ -123,10 +128,17 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
     {
         if (settings.OAuthFlows == null)
         {
+            if (settings.Mode == A2AUserAuthorizationMode.InTask)
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.AuthorizationExactlyOneOAuthFlowRequired,
+                    null);
+            }
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(settings.SecuritySchemeName))
+        if (settings.Mode == A2AUserAuthorizationMode.RequestToken
+            && string.IsNullOrWhiteSpace(settings.SecuritySchemeName))
         {
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
                 ErrorHelper.AuthorizationSecuritySchemeNameRequired,

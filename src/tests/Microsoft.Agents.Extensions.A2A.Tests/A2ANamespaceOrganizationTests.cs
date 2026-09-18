@@ -106,6 +106,7 @@ public class A2ANamespaceOrganizationTests
             "Microsoft.Agents.Extensions.A2A.IA2ATurnContext",
             "Microsoft.Agents.Extensions.A2A.AgentCard.IAgentCardHandler",
             "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorization",
+            "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode",
             "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationSettings",
             "Microsoft.Agents.Extensions.A2A.Integration.A2AServiceRegistrar",
             "Microsoft.Agents.Extensions.A2A.Storage.BlobTaskStore",

@@ -7,6 +7,7 @@ using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 
 namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 
@@ -70,6 +71,11 @@ internal interface IA2AHttpAdapter : IAgentHttpAdapter
     /// <param name="cancellationToken">A token used to cancel processing.</param>
     /// <returns>The result to write to the HTTP response.</returns>
     Task<IResult> SendMessageAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, SendMessageRequest sendRequest, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resumes a task-scoped authorization request.
+    /// </summary>
+    Task<IResult> ResumeAuthAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string taskId, ResumeAuthRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sends an A2A message and returns a streaming result.

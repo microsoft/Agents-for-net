@@ -45,6 +45,41 @@ internal sealed class A2AAgentCardAuthentication
 
     public IReadOnlyList<string> Scopes { get; }
 
+    internal static A2AAgentCardAuthentication CreateInTask(
+        OAuthFlows flows,
+        IReadOnlyList<string> scopes,
+        string connectionName)
+    {
+        ArgumentNullException.ThrowIfNull(flows);
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionName);
+
+        if (flows.DeviceCode is not null)
+        {
+            return new A2AAgentCardAuthentication(
+                A2AAuthMode.Delegated,
+                A2AOAuthFlowType.DeviceCode,
+                connectionName,
+                null,
+                flows.DeviceCode.TokenUrl,
+                flows.DeviceCode.DeviceAuthorizationUrl,
+                scopes);
+        }
+        if (flows.AuthorizationCode is not null)
+        {
+            return new A2AAgentCardAuthentication(
+                A2AAuthMode.Delegated,
+                A2AOAuthFlowType.AuthorizationCode,
+                connectionName,
+                flows.AuthorizationCode.AuthorizationUrl,
+                flows.AuthorizationCode.TokenUrl,
+                null,
+                scopes);
+        }
+
+        throw new InvalidOperationException(
+            "In-task authorization requires a delegated Device Code or Authorization Code OAuth flow.");
+    }
+
     public static A2AAgentCardAuthentication Select(AgentCard card, A2AAuthMode mode)
         => Select(card, skill: null, mode);
 

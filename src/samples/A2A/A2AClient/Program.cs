@@ -62,11 +62,20 @@ internal sealed class Program
 
             var resolver = new A2ACardResolver(options.AgentUrl, httpClient);
             AgentCard card = await resolver.GetAgentCardAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+            if ((card.Capabilities.Extensions ?? []).Any(extension =>
+                string.Equals(extension.Uri, A2AInTaskAuthorizationClient.ExtensionUri, StringComparison.Ordinal)))
+            {
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation(
+                    A2AInTaskAuthorizationClient.ExtensionHeader,
+                    A2AInTaskAuthorizationClient.ExtensionUri);
+            }
             if (startupOptions.AuthMode is A2AAuthMode authMode)
             {
                 authenticationSession.SetMode(authMode);
             }
             IA2AClient client = CreateClient(card, httpClient, options.AgentUrl);
+            A2AInTaskAuthorizationClient inTaskAuthorizationClient =
+                A2AInTaskAuthorizationClient.Create(card, httpClient, accessTokenProvider, options.AgentUrl);
 
             var console = new A2AConsole(
                 client,
@@ -76,7 +85,8 @@ internal sealed class Program
                 Console.Out,
                 options.ShowHistory,
                 options.UsePushNotifications,
-                options.PushNotificationReceiver);
+                options.PushNotificationReceiver,
+                inTaskAuthorizationClient);
 
             return await console.RunAsync(cancellationTokenSource.Token).ConfigureAwait(false);
         }
