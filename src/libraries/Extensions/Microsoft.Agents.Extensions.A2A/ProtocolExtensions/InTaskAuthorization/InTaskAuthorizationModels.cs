@@ -59,7 +59,8 @@ internal sealed class InTaskAuthorizationContext
 
     internal string HandlerName { get; set; }
 
-    internal TokenResponse TokenResponse { get; set; }
+    internal IDictionary<string, TokenResponse> TokenResponses { get; } =
+        new Dictionary<string, TokenResponse>(System.StringComparer.Ordinal);
 
     internal bool Accepted { get; set; }
 }

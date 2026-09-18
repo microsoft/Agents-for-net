@@ -1015,36 +1015,18 @@ public class A2AAdapterTests
         var routed = 0;
         var record = UseRecord(record =>
         {
-            var authorization = new A2AUserAuthorization(
-                "request",
-                record.Storage,
-                connections,
-                new A2AUserAuthorizationSettings
-                {
-                    Mode = A2AUserAuthorizationMode.InTask,
-                    OAuthFlows = new OAuthFlows
-                    {
-                        DeviceCode = new DeviceCodeOAuthFlow
-                        {
-                            DeviceAuthorizationUrl = "https://login.example.com/devicecode",
-                            TokenUrl = "https://login.example.com/token",
-                            Scopes = new Dictionary<string, string>
-                            {
-                                ["agent.read"] = "Access the agent",
-                            },
-                        },
-                    },
-                    RequiredScopes = ["agent.read"],
-                });
+            var firstAuthorization = CreateInTaskAuthorization("first", record.Storage, connections);
+            var secondAuthorization = CreateInTaskAuthorization("second", record.Storage, connections);
             var options = new TestApplicationOptions(record.Storage)
             {
                 UserAuthorization = new UserAuthorizationOptions(
                     NullLoggerFactory.Instance,
                     record.Storage,
                     connections,
-                    authorization)
+                    firstAuthorization,
+                    secondAuthorization)
                 {
-                    DefaultHandlerName = "request",
+                    DefaultHandlerName = "first",
                     AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
                 },
             };
@@ -1055,9 +1037,12 @@ public class A2AAdapterTests
                 .OnMessage("Hello", async (context, _, cancellationToken) =>
                 {
                     routed++;
-                    var token = await agent.UserAuthorization.GetTurnTokenAsync(context, "request", cancellationToken);
-                    await context.SendActivityAsync($"Token: {token}", cancellationToken: cancellationToken);
-                }, autoSigninHandlers: ["request"]));
+                    var firstToken = await agent.UserAuthorization.GetTurnTokenAsync(context, "first", cancellationToken);
+                    var secondToken = await agent.UserAuthorization.GetTurnTokenAsync(context, "second", cancellationToken);
+                    await context.SendActivityAsync(
+                        $"Tokens: {firstToken}, {secondToken}",
+                        cancellationToken: cancellationToken);
+                }, autoSigninHandlers: ["first", "second"]));
             return agent;
         });
 
@@ -1130,7 +1115,16 @@ public class A2AAdapterTests
         Assert.True(rejectedTask.Status.State == TaskState.AuthRequired, rejectedJson);
         Assert.Equal(0, routed);
 
-        var resumeContext = await ResumeAsync("procured-token", validated: true);
+        var firstResumeContext = await ResumeAsync("first-token", validated: true);
+        var secondAuthTask = ReadTaskResponse(firstResumeContext);
+        Assert.Equal(TaskState.AuthRequired, secondAuthTask.Status.State);
+        Assert.Equal(0, routed);
+        resumeParameters.AuthorizationRequestId = secondAuthTask.Status.Message.Metadata[InTaskAuthorizationExtension.Uri]
+            .GetProperty("authorizationRequest")
+            .GetProperty("id")
+            .GetString();
+
+        var resumeContext = await ResumeAsync("second-token", validated: true);
         resumeContext.Response.Body.Seek(0, SeekOrigin.Begin);
         var resumeResponseJson = new StreamReader(resumeContext.Response.Body, leaveOpen: true).ReadToEnd();
         Assert.True(
@@ -1138,10 +1132,13 @@ public class A2AAdapterTests
             $"{resumeResponseJson} Routed: {routed}");
         var completedTask = ReadTaskResponse(resumeContext);
         Assert.Equal(TaskState.Completed, completedTask.Status.State);
-        Assert.Equal("Token: procured-token", completedTask.Status.Message.Parts[0].Text);
+        Assert.Equal("Tokens: first-token, second-token", completedTask.Status.Message.Parts[0].Text);
         Assert.Equal(1, routed);
         var state = await record.Storage.ReadAsync<InTaskAuthorizationState>(
-            [InTaskAuthorizationExtension.GetStateKey("request", initialTask.Id)],
+            [
+                InTaskAuthorizationExtension.GetStateKey("first", initialTask.Id),
+                InTaskAuthorizationExtension.GetStateKey("second", initialTask.Id),
+            ],
             CancellationToken.None);
         Assert.Empty(state);
     }
@@ -1421,6 +1418,34 @@ public class A2AAdapterTests
                 }
             })
         };
+    }
+
+    private static A2AUserAuthorization CreateInTaskAuthorization(
+        string name,
+        IStorage storage,
+        IConnections connections)
+    {
+        return new A2AUserAuthorization(
+            name,
+            storage,
+            connections,
+            new A2AUserAuthorizationSettings
+            {
+                Mode = A2AUserAuthorizationMode.InTask,
+                OAuthFlows = new OAuthFlows
+                {
+                    DeviceCode = new DeviceCodeOAuthFlow
+                    {
+                        DeviceAuthorizationUrl = "https://login.example.com/devicecode",
+                        TokenUrl = "https://login.example.com/token",
+                        Scopes = new Dictionary<string, string>
+                        {
+                            ["agent.read"] = "Access the agent",
+                        },
+                    },
+                },
+                RequiredScopes = ["agent.read"],
+            });
     }
 
     private static AgentTask ReadTaskResponse(DefaultHttpContext context)

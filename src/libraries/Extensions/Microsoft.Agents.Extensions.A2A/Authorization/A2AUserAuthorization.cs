@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Threading;
@@ -33,6 +34,7 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     private readonly A2AUserAuthorizationSettings _settings;
     private readonly IStorage _storage;
     private readonly ILogger _logger;
+    private readonly ConcurrentDictionary<string, TokenResponse> _resumedTokens = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Initializes a handler loaded from configuration.
@@ -126,14 +128,13 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
         {
             var resume = turnContext.Services.Get<InTaskAuthorizationContext>()
                 ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UnexpectedRequestToken, null, [Name]);
-            if (!string.Equals(resume.HandlerName, Name, StringComparison.Ordinal)
-                || resume.TokenResponse == null)
+            if (!resume.TokenResponses.TryGetValue(Name, out var response))
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UnexpectedRequestToken, null, [Name]);
             }
 
             await DeleteInTaskStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
-            return resume.TokenResponse;
+            return response;
         }
 
         var tokenResponse = CreateTokenResponse(turnContext);
@@ -241,6 +242,11 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
         }
         if (turnContext.Activity.IsType(ActivityTypes.EndOfConversation))
         {
+            var canceledTaskId = GetTaskId(turnContext);
+            if (!string.IsNullOrEmpty(canceledTaskId))
+            {
+                _resumedTokens.TryRemove(canceledTaskId, out _);
+            }
             await DeleteInTaskStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             return null;
         }
@@ -257,6 +263,16 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             && !string.Equals(resume.HandlerName, Name, StringComparison.Ordinal))
         {
             resume = null;
+        }
+        if (state?.IsResuming == true
+            && _resumedTokens.TryGetValue(taskId, out var resumedToken))
+        {
+            var currentResume = turnContext.Services.Get<InTaskAuthorizationContext>();
+            if (currentResume != null)
+            {
+                currentResume.TokenResponses[Name] = resumedToken;
+            }
+            return CreateResumeMarker(state);
         }
 
         if (resume != null)
@@ -291,13 +307,15 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
                         "The in-task credential must be validated by ASP.NET Core authentication or used in an OBO exchange.");
                 }
 
-                resume.TokenResponse = await GetTokenResponseAsync(
+                var response = await GetTokenResponseAsync(
                     turnContext,
                     resume.AccessToken,
                     exchangeConnection,
                     exchangeScopes,
                     cancellationToken).ConfigureAwait(false);
                 resume.HandlerName = Name;
+                resume.TokenResponses[Name] = response;
+                _resumedTokens[taskId] = response;
             }
             catch (Exception ex)
             {
@@ -311,12 +329,7 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             var agentContext = turnContext.Services.Get<Pipeline.AgentRequestContext>()
                 ?? throw new InvalidOperationException("The A2A request context is unavailable.");
             Pipeline.A2AAdapter.RegisterContinuation(state.OriginalRequestId, agentContext);
-            return new TokenResponse
-            {
-                Token = state.AuthorizationRequestId,
-                IsExchangeable = true,
-                Expiration = DateTimeOffset.UtcNow.AddMinutes(5),
-            };
+            return CreateResumeMarker(state);
         }
 
         if (state != null)
@@ -372,11 +385,30 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             return Task.CompletedTask;
         }
 
+        var taskId = GetTaskId(turnContext);
+        if (string.IsNullOrEmpty(taskId))
+        {
+            return Task.CompletedTask;
+        }
+
+        _resumedTokens.TryRemove(taskId, out _);
+        return _storage.DeleteAsync([InTaskAuthorizationExtension.GetStateKey(Name, taskId)], cancellationToken);
+    }
+
+    private static string GetTaskId(ITurnContext turnContext)
+    {
         var message = Pipeline.A2AActivity.GetMessage(turnContext.Activity);
-        var taskId = message?.TaskId ?? turnContext.Activity.Conversation?.Id;
-        return string.IsNullOrEmpty(taskId)
-            ? Task.CompletedTask
-            : _storage.DeleteAsync([InTaskAuthorizationExtension.GetStateKey(Name, taskId)], cancellationToken);
+        return message?.TaskId ?? turnContext.Activity.Conversation?.Id;
+    }
+
+    private static TokenResponse CreateResumeMarker(InTaskAuthorizationState state)
+    {
+        return new TokenResponse
+        {
+            Token = state.AuthorizationRequestId,
+            IsExchangeable = true,
+            Expiration = DateTimeOffset.UtcNow.AddMinutes(5),
+        };
     }
 
     private async Task ResetInTaskResumeAsync(string stateKey, CancellationToken cancellationToken)
