@@ -37,7 +37,7 @@ public class BlobTaskStore : ITaskStore
     private const string TaskPrefix = "a2atask/";
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.A2A.BlobTaskStore"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.A2A.Storage.BlobTaskStore"/> class.
     /// </summary>
     /// <param name="dataConnectionString">Azure Storage connection string.</param>
     /// <param name="containerName">Name of the Blob container where tasks will be stored.</param>
@@ -53,7 +53,7 @@ public class BlobTaskStore : ITaskStore
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.A2A.BlobTaskStore"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.A2A.Storage.BlobTaskStore"/> class.
     /// </summary>
     /// <param name="containerClient">The custom implementation of BlobContainerClient.</param>
     /// <param name="jsonSerializerOptions">Custom JsonSerializerOptions.</param>

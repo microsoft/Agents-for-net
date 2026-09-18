@@ -25,6 +25,7 @@ public class A2ANamespaceOrganizationTests
     [InlineData("A2AAgentCardOptions", RootNamespace + ".AgentCard")]
     [InlineData("IAgentCardHandler", RootNamespace + ".AgentCard")]
     [InlineData("SerializationInit", RootNamespace + ".Integration")]
+    [InlineData("A2AAdapterOptions", RootNamespace)]
     [InlineData("A2AClient", RootNamespace)]
     [InlineData("BlobTaskStore", RootNamespace + ".Storage")]
     public void Type_UsesExpectedNamespace(string typeName, string expectedNamespace)
@@ -46,6 +47,7 @@ public class A2ANamespaceOrganizationTests
     [InlineData(typeof(A2ASkillBuilder))]
     [InlineData(typeof(A2AMessageRouteAttribute))]
     [InlineData(typeof(A2AAgentTransportProtocol))]
+    [InlineData(typeof(A2AAdapterOptions))]
     [InlineData(typeof(A2AClient))]
     [InlineData(typeof(A2AServiceExtensions))]
     [InlineData(typeof(A2AExtensions))]
@@ -59,6 +61,7 @@ public class A2ANamespaceOrganizationTests
     {
         string[] expected =
         [
+            "A2AAdapterOptions",
             "A2AAgentExtension",
             "A2AAgentTransportProtocol",
             "A2AClient",
@@ -88,6 +91,7 @@ public class A2ANamespaceOrganizationTests
     {
         string[] expected =
         [
+            "Microsoft.Agents.Extensions.A2A.A2AAdapterOptions",
             "Microsoft.Agents.Extensions.A2A.A2AAgentExtension",
             "Microsoft.Agents.Extensions.A2A.A2AAgentTransportProtocol",
             "Microsoft.Agents.Extensions.A2A.A2AClient",

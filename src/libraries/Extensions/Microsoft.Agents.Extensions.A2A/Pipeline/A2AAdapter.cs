@@ -50,6 +50,8 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private static readonly string _assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<A2AServer> _a2aServerLogger;
+    private readonly string _agentCardLastModified = DateTimeOffset.UtcNow.ToString("R", CultureInfo.InvariantCulture);
+    private readonly string _agentCardCacheControl;
     private readonly IConfiguration _configuration;
 
     /// <summary>
@@ -58,8 +60,15 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     /// <param name="storage">The storage provider retained for compatibility with agent host registration.</param>
     /// <param name="loggerFactory">The factory used to create adapter loggers.</param>
     /// <param name="a2aNotifier">The optional notifier for A2A channel events.</param>
+    /// <param name="options">The optional A2A adapter options.</param>
     /// <param name="configuration">The optional configuration used to compose Agent Cards.</param>
-    public A2AAdapter(IStorage storage, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null, IConfiguration configuration = null) : this(new InMemoryTaskStore(), loggerFactory, a2aNotifier, configuration)
+    public A2AAdapter(
+        IStorage storage,
+        ILoggerFactory loggerFactory,
+        ChannelEventNotifier a2aNotifier = null,
+        A2AAdapterOptions options = null,
+        IConfiguration configuration = null)
+        : this(new InMemoryTaskStore(), loggerFactory, a2aNotifier, options, configuration)
     {
     }
 
@@ -69,9 +78,16 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     /// <param name="taskStore">The store used to persist A2A tasks.</param>
     /// <param name="loggerFactory">The factory used to create adapter loggers.</param>
     /// <param name="a2aNotifier">The optional notifier for A2A channel events.</param>
+    /// <param name="options">The optional A2A adapter options.</param>
     /// <param name="configuration">The optional configuration used to compose Agent Cards.</param>
     /// <exception cref="ArgumentNullException"><paramref name="taskStore"/> is <see langword="null"/>.</exception>
-    public A2AAdapter(ITaskStore taskStore, ILoggerFactory loggerFactory, ChannelEventNotifier a2aNotifier = null, IConfiguration configuration = null) : base(loggerFactory.CreateLogger<A2AAdapter>())
+    public A2AAdapter(
+        ITaskStore taskStore,
+        ILoggerFactory loggerFactory,
+        ChannelEventNotifier a2aNotifier = null,
+        A2AAdapterOptions options = null,
+        IConfiguration configuration = null)
+        : base(loggerFactory.CreateLogger<A2AAdapter>())
     {
         AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
 
@@ -90,6 +106,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         _taskStore = taskStore;
         _a2aNotifier = a2aNotifier ?? new ChannelEventNotifier();
         _a2aServerLogger = loggerFactory.CreateLogger<A2AServer>();
+        _agentCardCacheControl = $"public, max-age={(long)Math.Ceiling(adapterOptions.AgentCardCacheMaxAge.TotalSeconds)}";
         _configuration = configuration;
 
         OnTurnError = (turnContext, exception) =>

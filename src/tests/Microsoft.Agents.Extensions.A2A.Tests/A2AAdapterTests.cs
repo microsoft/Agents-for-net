@@ -23,10 +23,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -672,6 +674,101 @@ public class A2AAdapterTests
     }
 
     [Fact]
+    public async Task ProcessAgentCardAsync_ShouldIncludeCacheControlMaxAge()
+    {
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger);
+        var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
+        var mockHttpResponse = CreateMockHttpResponse();
+
+        await adapter.ProcessAgentCardAsync(mockHttpRequest.Object, mockHttpResponse.Object, new Mock<IAgent>().Object, "/a2a", CancellationToken.None);
+
+        Assert.Equal("public, max-age=3600", mockHttpResponse.Object.Headers.CacheControl);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCardAsync_WithOptions_ShouldUseConfiguredCacheMaxAge()
+    {
+        var adapter = new A2AAdapter(
+            _mockTaskStore.Object,
+            _mockLogger,
+            options: new A2AAdapterOptions { AgentCardCacheMaxAge = TimeSpan.FromMinutes(15) });
+        var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
+        var mockHttpResponse = CreateMockHttpResponse();
+
+        await adapter.ProcessAgentCardAsync(mockHttpRequest.Object, mockHttpResponse.Object, new Mock<IAgent>().Object, "/a2a", CancellationToken.None);
+
+        Assert.Equal("public, max-age=900", mockHttpResponse.Object.Headers.CacheControl);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCardAsync_WithConfiguration_ShouldUseConfiguredCacheMaxAge()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string>
+            {
+                ["A2AAdapterOptions:AgentCardCacheMaxAge"] = "00:10:00",
+            })
+            .Build();
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger, configuration: configuration);
+        var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
+        var mockHttpResponse = CreateMockHttpResponse();
+
+        await adapter.ProcessAgentCardAsync(mockHttpRequest.Object, mockHttpResponse.Object, new Mock<IAgent>().Object, "/a2a", CancellationToken.None);
+
+        Assert.Equal("public, max-age=600", mockHttpResponse.Object.Headers.CacheControl);
+    }
+
+    [Fact]
+    public void Constructor_WithNegativeAgentCardCacheMaxAge_ShouldThrow()
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => new A2AAdapter(
+            _mockTaskStore.Object,
+            _mockLogger,
+            options: new A2AAdapterOptions { AgentCardCacheMaxAge = TimeSpan.FromSeconds(-1) }));
+
+        Assert.Equal("options", exception.ParamName);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCardAsync_ShouldIncludeBodyDerivedETag()
+    {
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger);
+        var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
+        var defaultResponse = CreateMockHttpResponse();
+        var attributedResponse = CreateMockHttpResponse();
+
+        await adapter.ProcessAgentCardAsync(mockHttpRequest.Object, defaultResponse.Object, new Mock<IAgent>().Object, "/a2a", CancellationToken.None);
+        await adapter.ProcessAgentCardAsync(mockHttpRequest.Object, attributedResponse.Object, new TestAgentWithAttributes(), "/a2a", CancellationToken.None);
+
+        Assert.False(string.IsNullOrEmpty(defaultResponse.Object.Headers.ETag));
+        Assert.NotEqual(defaultResponse.Object.Headers.ETag, attributedResponse.Object.Headers.ETag);
+        Assert.Equal(
+            $"\"{Convert.ToHexString(SHA256.HashData(((MemoryStream)defaultResponse.Object.Body).ToArray()))}\"",
+            defaultResponse.Object.Headers.ETag);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCardAsync_ShouldIncludeStableLastModified()
+    {
+        var adapter = new A2AAdapter(_mockTaskStore.Object, _mockLogger);
+        var mockHttpRequest = CreateMockHttpRequest("https", "localhost:3978");
+        var firstResponse = CreateMockHttpResponse();
+        var secondResponse = CreateMockHttpResponse();
+        var mockAgent = new Mock<IAgent>();
+
+        await adapter.ProcessAgentCardAsync(mockHttpRequest.Object, firstResponse.Object, mockAgent.Object, "/a2a", CancellationToken.None);
+        await adapter.ProcessAgentCardAsync(mockHttpRequest.Object, secondResponse.Object, mockAgent.Object, "/a2a", CancellationToken.None);
+
+        Assert.Equal(firstResponse.Object.Headers.LastModified, secondResponse.Object.Headers.LastModified);
+        Assert.True(DateTimeOffset.TryParseExact(
+            firstResponse.Object.Headers.LastModified,
+            "R",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal,
+            out _));
+    }
+
+    [Fact]
     public async Task ProcessAgentCardAsync_WithAgentAttribute_ShouldUseAttributeValues()
     {
         // Arrange
@@ -967,6 +1064,7 @@ public class A2AAdapterTests
         var mockResponse = new Mock<HttpResponse>();
         var memoryStream = new MemoryStream();
         mockResponse.SetupProperty(r => r.ContentType);
+        mockResponse.Setup(r => r.Headers).Returns(new HeaderDictionary());
         mockResponse.Setup(r => r.Body).Returns(memoryStream);
         return mockResponse;
     }
