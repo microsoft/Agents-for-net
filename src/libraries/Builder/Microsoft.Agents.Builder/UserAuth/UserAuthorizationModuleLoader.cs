@@ -34,32 +34,32 @@ namespace Microsoft.Agents.Builder.UserAuth
         {
             AssertionHelpers.ThrowIfNullOrEmpty(name, nameof(name));
 
-            if (string.IsNullOrEmpty(assemblyName))
-            {
-                // A Assembly Lib name wasn't given in config.  Set to the default assembly lib
-                assemblyName = typeof(AzureBotUserAuthorization).Assembly.GetName().Name;
-                logger.LogInformation("No assembly name given in config for connection `{name}`.  Using default assembly lib: `{assemblyName}`", name, assemblyName);
-            }
-
             if (string.IsNullOrEmpty(typeName))
             {
-                // A Type name wasn't given in config.  Set to the default type name
-                typeName = typeof(AzureBotUserAuthorization).FullName;
-                logger.LogInformation("No type name given in config for connection `{name}`.  Using default type name: `{typeName}`", name, typeName);
+                logger.LogInformation(
+                    "No type name given in config for connection `{name}`. Using default type name: `{typeName}`",
+                    name,
+                    typeof(AzureBotUserAuthorization).FullName);
             }
-            else if (string.Equals(nameof(AzureBotUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+
+            var builtInType = ResolveBuiltInProviderType(typeName);
+            if (builtInType != null)
             {
-                typeName = typeof(AzureBotUserAuthorization).FullName;
+                typeName = builtInType.FullName;
+                if (string.IsNullOrEmpty(assemblyName))
+                {
+                    assemblyName = builtInType.Assembly.GetName().Name;
+                }
             }
-            else if (string.Equals(nameof(AgenticUserAuthorization), typeName, StringComparison.OrdinalIgnoreCase))
+            else if (string.IsNullOrEmpty(assemblyName))
             {
-                typeName = typeof(AgenticUserAuthorization).FullName;
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                    ErrorHelper.UserAuthorizationAssemblyRequired,
+                    null,
+                    name,
+                    typeName);
             }
-            else if (typeName.Equals(nameof(ConnectorUserAuthorization), StringComparison.OrdinalIgnoreCase))
-            {
-                typeName = typeof(ConnectorUserAuthorization).FullName;
-            }
-            
+
             // This throws for invalid assembly name.
 #if !NETSTANDARD
                 Assembly assembly = _loadContext.LoadFromAssemblyName(new AssemblyName(assemblyName));
@@ -67,17 +67,65 @@ namespace Microsoft.Agents.Builder.UserAuth
             // This throws for invalid assembly name.
             Assembly assembly = _loadContext.Load(assemblyName);
 #endif
-            Type type = assembly.GetType(typeName);
-            if (!IsValidProviderType(type))
+            Type type = ResolveProviderType(assembly, typeName);
+            if (type == null)
             {
-                // Perhaps config left off the full type name?
-                type = assembly.GetType($"{assemblyName}.{typeName}");
-                if (!IsValidProviderType(type))
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationTypeNotFound, null, typeName, assemblyName, name);
+            }
+
+            return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, null, typeName, assemblyName); 
+        }
+
+        private static Type ResolveProviderType(Assembly assembly, string typeName)
+        {
+            Type type = assembly.GetType(typeName);
+            if (IsValidProviderType(type))
+            {
+                return type;
+            }
+
+            Type simpleNameMatch = null;
+            foreach (Type candidate in assembly.GetTypes())
+            {
+                if (!IsValidProviderType(candidate)
+                    || !string.Equals(candidate.Name, typeName, StringComparison.OrdinalIgnoreCase))
                 {
-                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.UserAuthorizationTypeNotFound, null, typeName, assemblyName, name);
+                    continue;
+                }
+
+                if (simpleNameMatch != null)
+                {
+                    return null;
+                }
+
+                simpleNameMatch = candidate;
+            }
+
+            return simpleNameMatch;
+        }
+
+        private static Type ResolveBuiltInProviderType(string typeName)
+        {
+            if (string.IsNullOrEmpty(typeName))
+            {
+                return typeof(AzureBotUserAuthorization);
+            }
+
+            foreach (var type in new[]
+            {
+                typeof(AzureBotUserAuthorization),
+                typeof(AgenticUserAuthorization),
+                typeof(ConnectorUserAuthorization),
+            })
+            {
+                if (string.Equals(type.Name, typeName, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(type.FullName, typeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return type;
                 }
             }
-            return GetConstructor(type) ?? throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.FailedToCreateUserAuthorizationHandler, null, typeName, assemblyName); 
+
+            return null;
         }
 
         public IEnumerable<ConstructorInfo> GetProviderConstructors(string assemblyName)

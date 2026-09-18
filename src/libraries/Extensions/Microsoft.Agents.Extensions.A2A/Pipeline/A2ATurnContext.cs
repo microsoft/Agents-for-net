@@ -1,0 +1,34 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A;
+
+namespace Microsoft.Agents.Extensions.A2A.Pipeline;
+
+/// <summary>
+/// An A2A-specific <see cref="Microsoft.Agents.Builder.ITurnContext"/> wrapper that surfaces the current activity as a
+/// strongly-typed <see cref="Microsoft.Agents.Extensions.A2A.IA2AActivity"/> and exposes A2A-specific helpers.
+/// </summary>
+internal class A2ATurnContext : TurnContextWrapper, IA2ATurnContext
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="A2ATurnContext"/> class.
+    /// </summary>
+    /// <param name="turnContext">The underlying turn context to wrap.</param>
+    public A2ATurnContext(ITurnContext turnContext) : base(turnContext)
+    {
+    }
+
+    /// <inheritdoc/>
+    public new IA2AActivity Activity =>
+        _turnContext.Activity as IA2AActivity ?? ProtocolJsonSerializer.ToObject<A2AMessageActivity>(_turnContext.Activity);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The client is available only during the current A2A turn because it uses services attached
+    /// to that turn's context.
+    /// </remarks>
+    public A2AClient Client => new(_turnContext);
+}

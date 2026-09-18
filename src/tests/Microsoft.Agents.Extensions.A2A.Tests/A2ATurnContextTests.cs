@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Moq;
 using Xunit;
 
