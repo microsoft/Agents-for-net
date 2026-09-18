@@ -414,6 +414,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
+        /// Adds the core agent services using custom configuration section paths for connections and the
+        /// connections map.
+        /// </summary>
+        /// <param name="builder">The host application builder.</param>
+        /// <param name="connectionsKey">The configuration section path containing connection definitions.</param>
+        /// <param name="mapKey">The configuration section path containing the connections map.</param>
+        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <remarks>
+        /// This method uses <see cref="CloudAdapter"/> and does not replace an existing
+        /// <see cref="IConnections"/> registration. Call it before <c>AddAgent</c> when custom configuration
+        /// section paths are required.
+        /// </remarks>
+        public static IHostApplicationBuilder AddAgentCore(this IHostApplicationBuilder builder, string connectionsKey, string mapKey)
+        {
+            return builder.AddAgentCore<CloudAdapter>(connectionsKey, mapKey);
+        }
+
+        /// <summary>
         /// Adds the core agent services using a derived CloudAdapter.
         /// <list type="bullet">
         /// <item><c>IConnections, which uses IConfiguration for settings.</c></item>
@@ -426,6 +444,25 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public static IHostApplicationBuilder AddAgentCore<TAdapter>(this IHostApplicationBuilder builder) where TAdapter : CloudAdapter
         {
             builder.Services.AddAgentCore<TAdapter>();
+            return builder;
+        }
+
+        /// <summary>
+        /// Adds the core agent services using a derived CloudAdapter and custom configuration section paths
+        /// for connections and the connections map.
+        /// </summary>
+        /// <typeparam name="TAdapter">The type of cloud adapter to register. Must inherit from CloudAdapter.</typeparam>
+        /// <param name="builder">The host application builder.</param>
+        /// <param name="connectionsKey">The configuration section path containing connection definitions.</param>
+        /// <param name="mapKey">The configuration section path containing the connections map.</param>
+        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <remarks>
+        /// This method does not replace an existing <see cref="IConnections"/> registration. Call it before
+        /// <c>AddAgent</c> when custom configuration section paths are required.
+        /// </remarks>
+        public static IHostApplicationBuilder AddAgentCore<TAdapter>(this IHostApplicationBuilder builder, string connectionsKey, string mapKey) where TAdapter : CloudAdapter
+        {
+            builder.Services.AddAgentCore<TAdapter>(connectionsKey, mapKey);
             return builder;
         }
 
