@@ -167,6 +167,7 @@ namespace Microsoft.Agents.Authentication.Msal
         #endregion
 
         #region IAgenticTokenProvider
+        /// <inheritdoc/>
         public async Task<string> GetAgenticApplicationTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
@@ -192,7 +193,15 @@ namespace Microsoft.Agents.Authentication.Msal
             throw new InvalidOperationException("Only IConfidentialClientApplication or AuthType.IdentityProxyManager is supported for Agentic.");
         }
 
+
+        /// <inheritdoc/>
         public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
+        {
+            return await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, IList<string> scopes = null, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
@@ -210,13 +219,16 @@ namespace Microsoft.Agents.Authentication.Msal
                 .WithHttpClientFactory(_msalHttpClient)
                 .Build();
 
+            IList<string> resolvedScopes = scopes != null && scopes.Count > 0 ? scopes : new List<string>() { "api://AzureAdTokenExchange/.default" };
+
             var agentInstanceToken = await instanceApp
-                .AcquireTokenForClient(["api://AzureAdTokenExchange/.default"])
+                .AcquireTokenForClient(resolvedScopes)
                 .ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
             return agentInstanceToken.AccessToken;
         }
 
+        /// <inheritdoc/>
         public async Task<string> GetAgenticUserTokenAsync(string tenantId, string agentAppInstanceId, string agenticUserId, IList<string> scopes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
@@ -225,7 +237,7 @@ namespace Microsoft.Agents.Authentication.Msal
             using var telemetryScope = new ScopeGetAgenticUserToken(agentAppInstanceId, agenticUserId, scopes);
 
             var agentToken = await GetAgenticApplicationTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
-            var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, cancellationToken).ConfigureAwait(false);
+            var instanceToken = await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, null, cancellationToken).ConfigureAwait(false);
 
             var instanceApp = ConfidentialClientApplicationBuilder
                 .Create(agentAppInstanceId)
