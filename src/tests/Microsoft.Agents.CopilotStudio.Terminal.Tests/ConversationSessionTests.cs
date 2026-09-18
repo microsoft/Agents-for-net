@@ -55,6 +55,7 @@ public sealed class ConversationSessionTests
         Activity request = Assert.Single(client.Requests);
         Assert.Equal(ActivityTypes.Message, request.Type);
         Assert.Equal("Hello", request.Text);
+        Assert.Equal(session.ConversationId, request.Conversation.Id);
         Assert.Equal(
             [
                 (ActivityDirection.Outbound, "Hello"),
@@ -152,6 +153,14 @@ public sealed class ConversationSessionTests
         ConversationSession session = CreateSession(new FakeCopilotConversationClient());
 
         await Assert.ThrowsAsync<ArgumentException>(() => session.SendAsync("   ", CancellationToken.None));
+    }
+
+    [Fact]
+    public void ConversationId_ExposesGeneratedSessionIdentifier()
+    {
+        ConversationSession session = CreateSession(new FakeCopilotConversationClient());
+
+        Assert.Matches("^Sample-[0-9a-f]{32}$", session.ConversationId);
     }
 
     private static ConversationSession CreateSession(ICopilotConversationClient client)

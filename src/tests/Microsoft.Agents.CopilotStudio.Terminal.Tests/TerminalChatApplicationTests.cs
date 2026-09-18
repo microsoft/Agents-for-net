@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -43,6 +44,161 @@ public sealed class TerminalChatApplicationTests
 
         Assert.Equal(expectedText, text);
         Assert.Equal(expectedSend, send);
+    }
+
+    [Fact]
+    public void HelpText_IncludesF5SaveActivities()
+    {
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(TerminalOptions.Parse([]));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        View help = Assert.Single(shell.ContentRegion.SubViews, view => view.Title == "_Help");
+        Label content = Assert.Single(help.SubViews.OfType<Label>());
+
+        Assert.Contains("F5", content.Text);
+        Assert.Contains("Save activities", content.Text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ReadmeKeyboardShortcuts_IncludeF5SaveActivities()
+    {
+        string repositoryRoot = Path.GetFullPath(
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+        string readme = File.ReadAllText(
+            Path.Combine(
+                repositoryRoot,
+                "src",
+                "samples",
+                "CopilotStudioClient",
+                "CopilotStudioClient.Terminal",
+                "README.md"));
+
+        Assert.Contains("`F5`: save activities", readme, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void F5_FromHelpStartsOneExportAndReportsFilenameWithoutChangingSurface()
+    {
+        TaskCompletionSource<object?> exportStarted = NewSignal();
+        TaskCompletionSource<object?> releaseExport = NewSignal();
+        int exportCalls = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(
+            TerminalOptions.Parse([]),
+            confirmOpen: null,
+            startProcess: _ => { },
+            outputEncoding: Encoding.UTF8,
+            saveActivityLog: async cancellationToken =>
+            {
+                Interlocked.Increment(ref exportCalls);
+                exportStarted.TrySetResult(null);
+                await releaseExport.Task.WaitAsync(cancellationToken);
+                return "conversation-20260917-225547-516.json";
+            });
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        shell.Show(TerminalSurface.Help);
+        int stage = 0;
+
+        application.Iteration += (_, _) =>
+        {
+            try
+            {
+                if (stage == 0)
+                {
+                    RaiseTerminalKey(application, Key.F5);
+                    RaiseTerminalKey(application, Key.F5);
+                    Assert.Equal(TerminalSurface.Help, shell.ActiveSurface);
+                    stage = 1;
+                    return;
+                }
+
+                if (stage == 1 && exportStarted.Task.IsCompleted)
+                {
+                    Assert.Equal(1, Volatile.Read(ref exportCalls));
+                    releaseExport.TrySetResult(null);
+                    stage = 2;
+                    return;
+                }
+
+                if (stage == 2
+                    && GetStatus(shell).Content
+                        == "Saved activity log to conversation-20260917-225547-516.json.")
+                {
+                    Assert.Equal(TimelineRole.Muted, GetStatus(shell).Role);
+                    stage = 3;
+                    application.RequestStop();
+                }
+            }
+            catch
+            {
+                application.RequestStop();
+                throw;
+            }
+        };
+
+        application.Run(shell);
+
+        Assert.Equal(3, stage);
+        Assert.Equal(1, exportCalls);
+    }
+
+    [Fact]
+    public void F5_ExpectedFailureReportsErrorWithoutPayloadLeak()
+    {
+        const string secret = "activity-json-must-not-leak";
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using CancellationTokenSource shutdown = new();
+        TerminalChatApplication terminal = new(
+            TerminalOptions.Parse([]),
+            confirmOpen: null,
+            startProcess: _ => { },
+            outputEncoding: Encoding.UTF8,
+            saveActivityLog: _ => Task.FromException<string>(
+                new JsonException($"invalid {secret}")));
+        using TerminalPresenter presenter = CreatePresenter(terminal);
+        using TerminalShellView shell = Assert.IsType<TerminalShellView>(
+            terminal.CreateShell(application, presenter, shutdown));
+        int stage = 0;
+
+        application.Iteration += (_, _) =>
+        {
+            try
+            {
+                if (stage == 0)
+                {
+                    RaiseTerminalKey(application, Key.F5);
+                    stage = 1;
+                    return;
+                }
+
+                TimelineRoleLabel status = GetStatus(shell);
+                if (stage == 1 && status.Role == TimelineRole.Error)
+                {
+                    Assert.Equal("Error: Unable to save activity log.", status.Content);
+                    Assert.DoesNotContain(secret, status.Content, StringComparison.Ordinal);
+                    stage = 2;
+                    application.RequestStop();
+                }
+            }
+            catch
+            {
+                application.RequestStop();
+                throw;
+            }
+        };
+
+        application.Run(shell);
+
+        Assert.Equal(2, stage);
     }
 
     [Fact]
@@ -1883,6 +2039,12 @@ public sealed class TerminalChatApplicationTests
     {
         application.StopAfterFirstIteration = true;
         application.Run(shell);
+    }
+
+    private static TaskCompletionSource<object?> NewSignal()
+    {
+        return new TaskCompletionSource<object?>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
     private static void RaiseTerminalKey(IApplication application, Key key)

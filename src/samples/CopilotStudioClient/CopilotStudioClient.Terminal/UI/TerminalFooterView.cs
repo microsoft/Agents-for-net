@@ -19,8 +19,8 @@ internal sealed class TerminalFooterView : View
     {
         _palette = palette ?? throw new ArgumentNullException(nameof(palette));
         Text = useUnicode
-            ? "Enter send · F1–F4 views · Esc back · Ctrl+C copy · Ctrl+Q quit"
-            : "Enter send - F1-F4 views - Esc back - Ctrl+C copy - Ctrl+Q quit";
+            ? "Enter send · F1–F4 views · F5 save activities · Esc back · Ctrl+C copy · Ctrl+Q quit"
+            : "Enter send - F1-F4 views - F5 save activities - Esc back - Ctrl+C copy - Ctrl+Q quit";
         Role = TimelineRole.Muted;
         Height = 1;
         CanFocus = false;

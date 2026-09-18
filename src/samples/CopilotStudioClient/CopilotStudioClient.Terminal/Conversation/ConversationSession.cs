@@ -23,6 +23,8 @@ internal sealed class ConversationSession
 
     internal ActivityInterpreter Interpreter { get; }
 
+    internal string ConversationId => _conversationId;
+
     public event EventHandler<PublishedActivityEventArgs>? ActivityPublished;
 
     public event EventHandler<bool>? BusyChanged;

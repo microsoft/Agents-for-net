@@ -161,11 +161,13 @@ public sealed class TerminalShellViewTests
         TerminalSurface initialSurface = (TerminalSurface)initialSurfaceValue;
         int shellCopies = 0;
         int shellQuits = 0;
+        int shellSaves = 0;
         using IApplication application = Application.Create();
         application.Init(DriverRegistry.Names.ANSI);
         using TerminalShellView shell = CreateShell(
             copy: () => shellCopies++,
-            quit: () => shellQuits++);
+            quit: () => shellQuits++,
+            saveActivities: () => shellSaves++);
         using Dialog modal = new();
         shell.Show(initialSurface);
         shell.RegisterApplicationBindings(application);
@@ -180,6 +182,7 @@ public sealed class TerminalShellViewTests
             Assert.False(handled);
             Assert.Equal(0, shellCopies);
             Assert.Equal(0, shellQuits);
+            Assert.Equal(0, shellSaves);
             Assert.Equal(initialSurface, shell.ActiveSurface);
         }
         finally
@@ -196,9 +199,40 @@ public sealed class TerminalShellViewTests
             { Key.F2, (int)TerminalSurface.Help },
             { Key.F3, (int)TerminalSurface.Help },
             { Key.F4, (int)TerminalSurface.Chat },
+            { Key.F5, (int)TerminalSurface.Chat },
             { Key.C.WithCtrl, (int)TerminalSurface.Thoughts },
             { Key.Q.WithCtrl, (int)TerminalSurface.Activities }
         };
+
+    [Theory]
+    [InlineData((int)TerminalSurface.Chat)]
+    [InlineData((int)TerminalSurface.Thoughts)]
+    [InlineData((int)TerminalSurface.Activities)]
+    [InlineData((int)TerminalSurface.Help)]
+    public void F5_SaveActivitiesIsGlobalAndDoesNotChangeSurface(int surfaceValue)
+    {
+        TerminalSurface surface = (TerminalSurface)surfaceValue;
+        int saves = 0;
+        using IApplication application = Application.Create();
+        application.Init(DriverRegistry.Names.ANSI);
+        using TerminalShellView shell = CreateShell(saveActivities: () => saves++);
+        shell.Show(surface);
+        shell.RegisterApplicationBindings(application);
+        SessionToken shellSession = Assert.IsType<SessionToken>(application.Begin(shell));
+
+        try
+        {
+            bool handled = application.Keyboard.RaiseKeyDownEvent(Key.F5);
+
+            Assert.True(handled);
+            Assert.Equal(1, saves);
+            Assert.Equal(surface, shell.ActiveSurface);
+        }
+        finally
+        {
+            application.End(shellSession);
+        }
+    }
 
     private static TerminalShellView CreateShell(
         Func<TerminalSurface, View?>? resolveFocusTarget = null,
@@ -206,7 +240,8 @@ public sealed class TerminalShellViewTests
         Action? copy = null,
         Action? quit = null,
         Action? requestFullRefresh = null,
-        Action<TerminalSurface>? activeSurfaceChanged = null)
+        Action<TerminalSurface>? activeSurfaceChanged = null,
+        Action? saveActivities = null)
     {
         Dictionary<TerminalSurface, View> surfaces = new()
         {
@@ -224,7 +259,8 @@ public sealed class TerminalShellViewTests
             quit ?? (() => { }),
             requestFullRefresh ?? (() => { }),
             reportNavigationFailure ?? (_ => { }),
-            activeSurfaceChanged);
+            activeSurfaceChanged,
+            saveActivities);
     }
 
     private static View CreateSurface()

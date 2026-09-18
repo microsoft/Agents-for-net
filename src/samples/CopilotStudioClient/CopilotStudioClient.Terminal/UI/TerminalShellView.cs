@@ -25,7 +25,8 @@ internal sealed class TerminalShellView : Runnable
         Action quit,
         Action requestFullRefresh,
         Action<Exception> reportNavigationFailure,
-        Action<TerminalSurface>? activeSurfaceChanged = null)
+        Action<TerminalSurface>? activeSurfaceChanged = null,
+        Action? saveActivities = null)
     {
         Navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
         _surfaces = surfaces ?? throw new ArgumentNullException(nameof(surfaces));
@@ -72,6 +73,18 @@ internal sealed class TerminalShellView : Runnable
         AddCommand(Command.Find, () => IsCurrentTop && Navigate(TerminalSurface.Thoughts));
         AddCommand(Command.Open, () => IsCurrentTop && Navigate(TerminalSurface.Activities));
         AddCommand(Command.Context, () => IsCurrentTop && Navigate(TerminalSurface.Help));
+        AddCommand(
+            Command.Save,
+            () =>
+            {
+                if (!IsCurrentTop)
+                {
+                    return false;
+                }
+
+                saveActivities?.Invoke();
+                return true;
+            });
         AddCommand(
             Command.Cancel,
             () =>
@@ -127,6 +140,8 @@ internal sealed class TerminalShellView : Runnable
         application.Keyboard.KeyBindings.AddApp(Key.F2, this, [Command.Find]);
         application.Keyboard.KeyBindings.AddApp(Key.F3, this, [Command.Open]);
         application.Keyboard.KeyBindings.AddApp(Key.F4, this, [Command.Context]);
+        application.Keyboard.KeyBindings.Remove(Key.F5);
+        application.Keyboard.KeyBindings.AddApp(Key.F5, this, [Command.Save]);
         application.Keyboard.KeyBindings.AddApp(Key.C.WithCtrl, this, [Command.Copy]);
         application.Keyboard.KeyBindings.AddApp(Key.Q.WithCtrl, this, [Command.Quit]);
     }

@@ -92,6 +92,8 @@ public sealed class TerminalComposerViewTests
 
         Assert.False(footer.CanFocus);
         Assert.Contains("F1", footer.Text, StringComparison.Ordinal);
+        Assert.Contains("F5", footer.Text, StringComparison.Ordinal);
+        Assert.Contains("save", footer.Text, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(TimelineRole.Muted, footer.Role);
     }
 

@@ -8,6 +8,7 @@ using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Security;
 using System.Text;
+using System.Text.Json;
 using Terminal.Gui.App;
 using Terminal.Gui.Drivers;
 using Terminal.Gui.Drawing;
@@ -352,6 +353,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         + "F2      Thoughts\r\n"
         + "F3      Activities\r\n"
         + "F4      Help\r\n"
+        + "F5      Save activities\r\n"
         + "Esc     Return to chat\r\n"
         + "Ctrl+C  Copy focused link or selected activity JSON\r\n"
         + "Ctrl+Q  Quit\r\n"
@@ -380,9 +382,10 @@ internal sealed class TerminalChatApplication : ITerminalView
         new(entry => entry.Kind is ChatEntryKind.Thought or ChatEntryKind.ToolCall);
     private readonly TerminalChatState _actionState = new();
     private readonly TerminalActivityState _activityState;
+    private readonly Func<CancellationToken, Task<string>>? _saveActivityLog;
     private readonly List<ReceivedLink> _linkViews = [];
-    private readonly HashSet<Task> _sendTasks = [];
-    private readonly object _sendTasksGate = new();
+    private readonly HashSet<Task> _backgroundTasks = [];
+    private readonly object _backgroundTasksGate = new();
     private IApplication? _application;
     private TerminalPresenter? _presenter;
     private CancellationTokenSource? _shutdownSource;
@@ -403,6 +406,7 @@ internal sealed class TerminalChatApplication : ITerminalView
     private bool _isBusy;
     private bool _startupSucceeded;
     private bool _activityInspectorVisible;
+    private int _activityExportInProgress;
 
     public TerminalChatApplication(TerminalOptions options)
         : this(
@@ -413,6 +417,19 @@ internal sealed class TerminalChatApplication : ITerminalView
     {
     }
 
+    public TerminalChatApplication(
+        TerminalOptions options,
+        ConversationSession session,
+        ActivityLogExporter activityLogExporter)
+        : this(
+            options,
+            confirmOpen: null,
+            startProcess: startInfo => { Process.Start(startInfo); },
+            outputEncoding: null,
+            saveActivityLog: CreateSaveActivityLog(session, activityLogExporter))
+    {
+    }
+
     internal TerminalChatApplication(
         TerminalOptions options,
         Func<Uri, bool>? confirmOpen,
@@ -420,13 +437,15 @@ internal sealed class TerminalChatApplication : ITerminalView
         Encoding? outputEncoding = null,
         Func<Encoding>? outputEncodingResolver = null,
         Func<string, string>? activityJsonFormatter = null,
-        Action? activitySequenceLookup = null)
+        Action? activitySequenceLookup = null,
+        Func<CancellationToken, Task<string>>? saveActivityLog = null)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _confirmOpen = confirmOpen;
         _startProcess = startProcess ?? throw new ArgumentNullException(nameof(startProcess));
         _outputEncodingOverride = outputEncoding;
         _outputEncodingResolver = outputEncodingResolver ?? (() => Console.OutputEncoding);
+        _saveActivityLog = saveActivityLog;
         _activityState = new TerminalActivityState(
             activityJsonFormatter,
             activitySequenceLookup);
@@ -469,7 +488,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         {
             presenter.Dispose();
             shutdownSource.Cancel();
-            await AwaitSendTasksAsync().ConfigureAwait(false);
+            await AwaitBackgroundTasksAsync().ConfigureAwait(false);
             await startupMonitor.ConfigureAwait(false);
             startupFailure = _startupFailure;
             shell?.Dispose();
@@ -584,7 +603,8 @@ internal sealed class TerminalChatApplication : ITerminalView
             exception => SetStatus(
                 $"Navigation failed: {exception.Message}",
                 DiagnosticSeverity.Error),
-            OnActiveSurfaceChanged);
+            OnActiveSurfaceChanged,
+            SaveActivityLog);
         shell.SetScheme(GetControlScheme());
         shell.ContentRegion.SetScheme(GetControlScheme());
         shell.RegisterApplicationBindings(application);
@@ -946,7 +966,7 @@ internal sealed class TerminalChatApplication : ITerminalView
         _composer.Value = string.Empty;
         _actionState.ClearActions();
         RebuildActions();
-        TrackSend(ObserveSendAsync(_presenter.SendAsync(text, _shutdownSource.Token)));
+        TrackBackgroundTask(ObserveSendAsync(_presenter.SendAsync(text, _shutdownSource.Token)));
     }
 
     private async Task ObserveSendAsync(Task sendTask)
@@ -966,19 +986,87 @@ internal sealed class TerminalChatApplication : ITerminalView
         }
     }
 
-    private void TrackSend(Task sendTask)
+    private void SaveActivityLog()
     {
-        lock (_sendTasksGate)
+        if (_saveActivityLog is null
+            || _shutdownSource is null
+            || Interlocked.CompareExchange(ref _activityExportInProgress, 1, 0) != 0)
         {
-            _sendTasks.Add(sendTask);
+            return;
         }
 
-        _ = sendTask.ContinueWith(
+        Task<string> exportTask;
+        try
+        {
+            exportTask = _saveActivityLog(_shutdownSource.Token);
+        }
+        catch (Exception exception) when (IsExpectedActivityLogExportFailure(exception))
+        {
+            Interlocked.Exchange(ref _activityExportInProgress, 0);
+            ReportActivityLogExportFailure(exception);
+            return;
+        }
+
+        TrackBackgroundTask(ObserveActivityLogExportAsync(exportTask));
+    }
+
+    private async Task ObserveActivityLogExportAsync(Task<string> exportTask)
+    {
+        try
+        {
+            string filename = await exportTask.ConfigureAwait(false);
+            if (_shutdownSource?.IsCancellationRequested != true)
+            {
+                SetStatus(
+                    $"Saved activity log to {filename}.",
+                    DiagnosticSeverity.Information);
+            }
+        }
+        catch (OperationCanceledException) when (_shutdownSource?.IsCancellationRequested == true)
+        {
+        }
+        catch (Exception exception) when (IsExpectedActivityLogExportFailure(exception))
+        {
+            ReportActivityLogExportFailure(exception);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _activityExportInProgress, 0);
+        }
+    }
+
+    private void ReportActivityLogExportFailure(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        if (_shutdownSource?.IsCancellationRequested != true)
+        {
+            SetStatus("Unable to save activity log.", DiagnosticSeverity.Error);
+        }
+    }
+
+    private static bool IsExpectedActivityLogExportFailure(Exception exception)
+    {
+        return exception is JsonException
+            or IOException
+            or UnauthorizedAccessException
+            or NotSupportedException
+            or ArgumentException
+            or SecurityException;
+    }
+
+    private void TrackBackgroundTask(Task task)
+    {
+        lock (_backgroundTasksGate)
+        {
+            _backgroundTasks.Add(task);
+        }
+
+        _ = task.ContinueWith(
             completedTask =>
             {
-                lock (_sendTasksGate)
+                lock (_backgroundTasksGate)
                 {
-                    _sendTasks.Remove(completedTask);
+                    _backgroundTasks.Remove(completedTask);
                 }
             },
             CancellationToken.None,
@@ -986,15 +1074,27 @@ internal sealed class TerminalChatApplication : ITerminalView
             TaskScheduler.Default);
     }
 
-    private async Task AwaitSendTasksAsync()
+    private async Task AwaitBackgroundTasksAsync()
     {
         Task[] pending;
-        lock (_sendTasksGate)
+        lock (_backgroundTasksGate)
         {
-            pending = _sendTasks.ToArray();
+            pending = _backgroundTasks.ToArray();
         }
 
         await Task.WhenAll(pending).ConfigureAwait(false);
+    }
+
+    private static Func<CancellationToken, Task<string>> CreateSaveActivityLog(
+        ConversationSession session,
+        ActivityLogExporter activityLogExporter)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(activityLogExporter);
+        return cancellationToken => activityLogExporter.ExportAsync(
+            session.Journal,
+            session.ConversationId,
+            cancellationToken);
     }
 
     internal async Task MonitorStartupAsync(

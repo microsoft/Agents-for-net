@@ -47,6 +47,16 @@ namespace CopilotStudioClient.Terminal
             UseS2SConnection = config.GetValue<bool>(nameof(UseS2SConnection), false);
             AppClientSecret = config[nameof(AppClientSecret)];
 
+            if (string.IsNullOrWhiteSpace(DirectConnectUrl))
+            {
+                DirectConnectUrl = null;
+            }
+            else
+            {
+                EnvironmentId = null;
+                SchemaName = null;
+            }
+
             Validate();
         }
 

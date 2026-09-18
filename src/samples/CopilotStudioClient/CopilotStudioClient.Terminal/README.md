@@ -82,7 +82,9 @@ Create or reuse a confidential-client Entra app registration:
 
 ## Configuration
 
-Edit `appsettings.json` in this sample directory and fill in `CopilotStudioClientSettings`.
+Configure `CopilotStudioClientSettings` in `appsettings.json`, with command-line
+options, or with both. A supplied command-line value overrides
+`appsettings.json`; an omitted option preserves the configured value.
 
 ```json
 {
@@ -98,14 +100,40 @@ Edit `appsettings.json` in this sample directory and fill in `CopilotStudioClien
 }
 ```
 
+All seven settings have long and short command-line forms:
+
+| Setting | Long option | Short option |
+| --- | --- | --- |
+| `TenantId` | `--tenant-id <value>` | `-t <value>` |
+| `AppClientId` | `--app-client-id <value>` | `-c <value>` |
+| `AppClientSecret` | `--app-client-secret <value>` | `-k <value>` |
+| `DirectConnectUrl` | `--direct-connect-url <value>` | `-d <value>` |
+| `EnvironmentId` | `--environment-id <value>` | `-e <value>` |
+| `SchemaName` | `--schema-name <value>` | `-s <value>` |
+| `UseS2SConnection` | `--use-s2s-connection true\|false` | `-u true\|false` |
+
+The application validates the final merged settings. Passing an empty or
+whitespace value deliberately clears the corresponding configured value, and
+the merged result must still satisfy the rules below.
+
+> [!WARNING]
+> Command-line values can be visible in process listings and shell history.
+> Prefer `appsettings.json`, environment variables, or another protected
+> configuration source for `AppClientSecret`. If you use
+> `--app-client-secret` / `-k`, take appropriate steps to protect and remove
+> the command from shell history.
+
 ### Required values
 
-- `AppClientId`: always required.
-- `TenantId`: always required.
-- `DirectConnectUrl`: required unless both `EnvironmentId` and `SchemaName` are supplied.
-- `EnvironmentId` and `SchemaName`: required together when `DirectConnectUrl` is blank.
-- `UseS2SConnection`: set to `true` for service-principal authentication.
-- `AppClientSecret`: required only when `UseS2SConnection` is `true`.
+- `AppClientId` and `TenantId` are always required in the final settings.
+- A nonblank `DirectConnectUrl` takes precedence. When present,
+  `EnvironmentId` and `SchemaName` are ignored.
+- Without `DirectConnectUrl`, both `EnvironmentId` and `SchemaName` are
+  required. `SchemaName` cannot be used without `EnvironmentId`.
+- `UseS2SConnection=true` requires a final nonblank `AppClientSecret`.
+- `UseS2SConnection=false` selects interactive authentication and does not
+  require `AppClientSecret`, including when `false` overrides a configured
+  `true` value.
 
 ### Interactive configuration
 
@@ -133,7 +161,24 @@ From this sample directory:
 ```powershell
 dotnet run
 dotnet run -- --layout split
+dotnet run -- --tenant-id "<tenant-id>" --app-client-id "<client-id>" --direct-connect-url "<direct-connect-url>"
+dotnet run -- -t "<tenant-id>" -c "<client-id>" -d "" -e "<environment-id>" -s "<schema-name>"
 dotnet run -- --help
+```
+
+For service-principal authentication, values can be split between
+`appsettings.json` and the command line. For example, this enables S2S using a
+secret already present in configuration:
+
+```powershell
+dotnet run -- --use-s2s-connection true
+```
+
+This example overrides a configured S2S setting and returns to interactive
+authentication without requiring a client secret:
+
+```powershell
+dotnet run -- -u false
 ```
 
 From the repository root:
@@ -141,6 +186,7 @@ From the repository root:
 ```powershell
 dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Terminal/CopilotStudioClient.Terminal.csproj
 dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Terminal/CopilotStudioClient.Terminal.csproj -- --layout split
+dotnet run --project src/samples/CopilotStudioClient/CopilotStudioClient.Terminal/CopilotStudioClient.Terminal.csproj -- -t "<tenant-id>" -c "<client-id>" -d "<direct-connect-url>"
 ```
 
 ## Layouts
@@ -166,6 +212,7 @@ The default layout shows the borderless **Chat** timeline below a persistent nav
 - `F2`: show **Thoughts**
 - `F3`: show **Activities**
 - `F4`: show **Help**
+- `F5`: save activities
 - `Esc`: return to **Chat**
 - `Ctrl+C`: copy the focused link or selected activity JSON
 - `Ctrl+Q`: cancel active work and quit

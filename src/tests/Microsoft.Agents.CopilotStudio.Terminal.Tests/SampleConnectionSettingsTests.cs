@@ -12,10 +12,12 @@ public sealed class SampleConnectionSettingsTests
     {
         SampleConnectionSettings settings = CreateSettings(
             directConnectUrl: "https://example.com/direct",
-            environmentId: "",
-            schemaName: "");
+            environmentId: "ignored-environment",
+            schemaName: "ignored-schema");
 
         Assert.Equal("https://example.com/direct", settings.DirectConnectUrl);
+        Assert.Null(settings.EnvironmentId);
+        Assert.Null(settings.SchemaName);
     }
 
     [Fact]
@@ -76,6 +78,19 @@ public sealed class SampleConnectionSettingsTests
     }
 
     [Fact]
+    public void Constructor_RejectsSchemaWithoutEnvironment()
+    {
+        ArgumentException exception = Assert.Throws<ArgumentException>(
+            () => CreateSettings(
+                directConnectUrl: "",
+                environmentId: "",
+                schemaName: "schema"));
+
+        Assert.Contains("EnvironmentId", exception.Message);
+        Assert.Contains("SchemaName", exception.Message);
+    }
+
+    [Fact]
     public void Constructor_InteractiveAuthenticationDoesNotRequireClientSecret()
     {
         SampleConnectionSettings settings = CreateSettings(
@@ -86,6 +101,23 @@ public sealed class SampleConnectionSettingsTests
             });
 
         Assert.False(settings.UseS2SConnection);
+    }
+
+    [Fact]
+    public void Constructor_ValidationErrorDoesNotPrintClientSecret()
+    {
+        const string secret = "settings-secret-must-not-be-printed";
+
+        ArgumentException exception = Assert.Throws<ArgumentException>(
+            () => CreateSettings(
+                overrides: new Dictionary<string, string?>
+                {
+                    ["TenantId"] = "",
+                    ["AppClientSecret"] = secret
+                }));
+
+        Assert.Contains("TenantId", exception.Message);
+        Assert.DoesNotContain(secret, exception.Message);
     }
 
     private static SampleConnectionSettings CreateSettings(

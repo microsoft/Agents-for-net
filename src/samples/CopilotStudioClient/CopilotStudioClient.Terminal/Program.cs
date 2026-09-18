@@ -2,6 +2,7 @@
 
 using CopilotStudioClient.Terminal;
 using Microsoft.Agents.CopilotStudio.Client;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -55,7 +56,7 @@ internal static class TerminalProgram
 
         try
         {
-            HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+            HostApplicationBuilder builder = Host.CreateApplicationBuilder();
             return await RunConfiguredAsync(
                 options,
                 builder,
@@ -88,6 +89,13 @@ internal static class TerminalProgram
 
         try
         {
+            IReadOnlyDictionary<string, string?>? connectionOverrides =
+                options.ConnectionOverrides?.BuildConfigurationValues();
+            if (connectionOverrides is { Count: > 0 })
+            {
+                builder.Configuration.AddInMemoryCollection(connectionOverrides);
+            }
+
             SampleConnectionSettings settings = new(
                 builder.Configuration.GetSection("CopilotStudioClientSettings"));
 
@@ -111,6 +119,7 @@ internal static class TerminalProgram
                 })
                 .AddSingleton<ICopilotConversationClient, CopilotConversationClient>()
                 .AddSingleton<ActivityJournal>()
+                .AddSingleton<ActivityLogExporter>()
                 .AddSingleton<ActivityInterpreter>()
                 .AddSingleton<ConversationSession>()
                 .AddSingleton<TerminalChatApplication>()
