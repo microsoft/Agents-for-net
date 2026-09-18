@@ -420,8 +420,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         // ─────────────────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// A <see cref="TestAdapter"/> whose <see cref="SendActivitiesAsync"/> always throws,
-        /// simulating a transient transport failure. Signals <see cref="SendAttempted"/> before
+        /// A <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> whose <see cref="Microsoft.Agents.Builder.Tests.App.TypingWorkerTests.ThrowingTestAdapter.SendActivitiesAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/> always throws,
+        /// simulating a transient transport failure. Signals <see cref="Microsoft.Agents.Builder.Tests.App.TypingWorkerTests.ThrowingTestAdapter.SendAttempted"/> before
         /// throwing so tests can synchronize on the failure without sleeping.
         /// </summary>
         private sealed class ThrowingTestAdapter : TestAdapter
@@ -608,7 +608,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         /// <summary>
-        /// A <see cref="TestAdapter"/> that holds each typing send open on a gate until the test
+        /// A <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> that holds each typing send open on a gate until the test
         /// releases it, letting tests deterministically control the "send in-flight" window
         /// without any wall-clock delay.
         /// </summary>
@@ -653,7 +653,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         /// <summary>
-        /// A <see cref="TestAdapter"/> that signals <see cref="TypingSent"/> after each typing
+        /// A <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> that signals <see cref="Microsoft.Agents.Builder.Tests.App.TypingWorkerTests.SignalingTestAdapter.TypingSent"/> after each typing
         /// activity is recorded, allowing tests to await sends deterministically.
         /// </summary>
         private sealed class SignalingTestAdapter : TestAdapter
@@ -683,8 +683,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         /// <summary>
-        /// A <see cref="TimeProvider"/> that wraps a <see cref="FakeTimeProvider"/> and signals
-        /// <see cref="TimerArmed"/> each time a timer is created (i.e., each time the worker begins
+        /// A <see cref="System.TimeProvider"/> that wraps a <see cref="Microsoft.Extensions.Time.Testing.FakeTimeProvider"/> and signals
+        /// <see cref="Microsoft.Agents.Builder.Tests.App.TypingWorkerTests.SignalingTimeProvider.TimerArmed"/> each time a timer is created (i.e., each time the worker begins
         /// a delay). Tests await that signal before advancing virtual time, eliminating the
         /// classic race where a test advances the clock before the code under test has armed its
         /// next timer.

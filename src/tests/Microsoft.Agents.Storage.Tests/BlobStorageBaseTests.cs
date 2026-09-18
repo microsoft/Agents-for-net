@@ -12,7 +12,7 @@ using Xunit;
 namespace Microsoft.Agents.Storage.Tests
 {
     /// <summary>
-    /// Base tests for <seealso cref="BlobsStorageTests"/> and <seealso cref="AzureBlobStorageTests"/>.
+    /// Base tests for <seealso cref="Microsoft.Agents.Storage.Tests.BlobsStorageTests"/>.
     /// </summary>
     public abstract class BlobStorageBaseTests : StorageBaseTests
     {

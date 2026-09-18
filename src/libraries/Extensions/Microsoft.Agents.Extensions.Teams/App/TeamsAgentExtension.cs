@@ -331,7 +331,6 @@ namespace Microsoft.Agents.Extensions.Teams.App
 
         /// <summary>
         /// Registers a handler for feedback loop events when a user clicks the thumbsup or thumbsdown button on a response sent from the AI module.
-        /// <see cref="Microsoft.Agents.Extensions.Teams.AI.AIOptions{TState}.EnableFeedbackLoop"/> must be set to true.
         /// </summary>
         /// <param name="handler">Function to call when the route is triggered</param>
         /// <param name="rank">0 - ushort.MaxValue for order of evaluation.  Ranks of the same value are evaluated in order of addition.</param>

@@ -15,10 +15,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 /// <summary>
 /// RouteBuilder for routing Channel ConversationUpdate activities in an AgentApplication.
 /// </summary>
-/// <remarks>Use <see cref="ChannelUpdateRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <remarks>Use <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.ConversationUpdate"/> with
 /// <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData.EventType"/> matching channel events.
-/// This builder allows matching specific event types via <see cref="ForChannelCreated()"/>, <see cref="ForChannelDeleted()"/>, etc.,
+/// This builder allows matching specific event types via <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder.ForChannelCreated()"/>, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder.ForChannelDeleted()"/>, etc.,
 /// and supports ordering, oauth, and agentic routing scenarios.
 /// This builder defaults to the <c>Microsoft.Agents.Core.Models.Channels.Msteams</c> channelId unless otherwise specified.
 /// </remarks>
@@ -39,7 +39,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <summary>
     /// Match on channel created events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelCreated()
     {
         _channelEvents.Add(ConversationEventType.ChannelCreated);
@@ -59,7 +59,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <summary>
     /// Match on channel renamed events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelRenamed()
     {
         _channelEvents.Add(ConversationEventType.ChannelRenamed);
@@ -69,7 +69,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <summary>
     /// Match on channel restored events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelRestored()
     {
         _channelEvents.Add(ConversationEventType.ChannelRestored);
@@ -79,7 +79,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <summary>
     /// Match on channel shared events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelShared()
     {
         _channelEvents.Add(ConversationEventType.ChannelShared);
@@ -89,7 +89,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <summary>
     /// Match on channel unshared events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelUnshared()
     {
         _channelEvents.Add(ConversationEventType.ChannelUnShared);
@@ -99,7 +99,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <summary>
     /// Match on channel member added events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelMemberAdded()
     {
         _channelEvents.Add(ConversationEventType.ChannelMemberAdded);
@@ -109,7 +109,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <summary>
     /// Match on channel member removed events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public ChannelUpdateRouteBuilder ForChannelMemberRemoved()
     {
         _channelEvents.Add(ConversationEventType.ChannelMemberRemoved);
@@ -151,7 +151,7 @@ public partial class ChannelUpdateRouteBuilder : RouteBuilderBase<ChannelUpdateR
     /// <remarks>Channel updates cannot be configured as invoke routes. This method always returns the
     /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
     /// <param name="isInvoke">Ignored</param>
-    /// <returns>The current instance of <see cref="ChannelUpdateRouteBuilder"/>.</returns>
+    /// <returns>The current instance of <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateRouteBuilder"/>.</returns>
     public override ChannelUpdateRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;

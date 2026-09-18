@@ -9,8 +9,8 @@ namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
 /// Provides direct access to the A2A primitives for the current turn: the outgoing
-/// <see cref="AgentEventQueue"/>, the incoming <see cref="A2A.RequestContext"/>, and the
-/// <see cref="ITaskStore"/>.
+/// <see cref="global::A2A.AgentEventQueue"/>, the incoming <see cref="global::A2A.RequestContext"/>, and the
+/// <see cref="global::A2A.ITaskStore"/>.
 /// </summary>
 public class A2AClient
 {

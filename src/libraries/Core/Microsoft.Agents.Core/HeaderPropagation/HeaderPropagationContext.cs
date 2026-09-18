@@ -10,7 +10,7 @@ using Microsoft.Extensions.Primitives;
 namespace Microsoft.Agents.Core.HeaderPropagation;
 
 /// <summary>
-/// Shared context to manage request headers that will be used to propagate them in the <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationExtensions.AddHeaderPropagation"/>.
+/// Shared context to manage request headers that will be used to propagate them in the <see cref="Microsoft.Agents.Core.HeaderPropagation.HeaderPropagationExtensions.AddHeaderPropagation(System.Net.Http.HttpClient)"/>.
 /// </summary>
 public class HeaderPropagationContext()
 {
@@ -60,7 +60,7 @@ public class HeaderPropagationContext()
     }
 
     /// <summary>
-    /// Gets the per-request list of <see cref="IHeaderValueProvider"/> instances that supply
+    /// Gets the per-request list of <see cref="Microsoft.Agents.Core.HeaderPropagation.IHeaderValueProvider"/> instances that supply
     /// dynamically resolved headers for outgoing requests.
     /// </summary>
     public static IList<IHeaderValueProvider> HeaderProviders

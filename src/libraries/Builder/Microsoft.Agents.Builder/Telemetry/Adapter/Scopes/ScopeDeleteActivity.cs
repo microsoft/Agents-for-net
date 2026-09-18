@@ -9,19 +9,19 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the deletion of an activity through
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the deletion of an activity through
     /// the channel adapter.
     /// </summary>
     /// <remarks>
     /// Records the activity type and conversation identifier as span tags and increments
-    /// the <see cref="Metrics.ActivitiesDeleted"/> counter.
+    /// the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Metrics.ActivitiesDeleted"/> counter.
     /// </remarks>
     internal class ScopeDeleteActivity : TelemetryScope
     {
         private readonly IActivity _activity;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeDeleteActivity"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeDeleteActivity"/> class.
         /// </summary>
         /// <param name="activity">The activity being deleted.</param>
         public ScopeDeleteActivity(IActivity activity) : base(Constants.ScopeDeleteActivity)

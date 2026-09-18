@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
     /// Verifies the outbound 64 KB chunking invariant for stream payloads: stream bytes larger
-    /// than <see cref="NamedPipeProtocol.MaxSendStreamChunkSize"/> (65536) are split across multiple
+    /// than <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeProtocol.MaxSendStreamChunkSize"/> (65536) are split across multiple
     /// frames sharing the same payload id, and only the last chunk carries End=true when the
     /// caller requested termination.
     /// </summary>

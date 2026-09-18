@@ -8,7 +8,7 @@ using System;
 namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces a proactive "continue conversation"
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces a proactive "continue conversation"
     /// operation through the channel adapter.
     /// </summary>
     /// <remarks>
@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         private readonly IActivity _activity;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeContinueConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeContinueConversation"/> class.
         /// </summary>
         /// <param name="activity">The activity representing the conversation reference to continue.</param>
         public ScopeContinueConversation(IActivity activity) : base(Constants.ScopeContinueConversation)

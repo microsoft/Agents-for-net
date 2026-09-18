@@ -15,14 +15,14 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.MSTeams;
 
 /// <summary>
-/// Shared factory used by <see cref="TeamsAgentExtension"/> and <see cref="TeamsTurnContext"/> to build
-/// <see cref="GraphServiceClient"/> instances, keeping the token-provider and scope-derivation logic in a single place.
+/// Shared factory used by <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension"/> and <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsTurnContext"/> to build
+/// <see cref="Microsoft.Graph.GraphServiceClient"/> instances, keeping the token-provider and scope-derivation logic in a single place.
 /// </summary>
 internal static class GraphClientFactory
 {
     /// <summary>
-    /// Creates a <see cref="GraphServiceClient"/> that acquires a delegated (user) token via
-    /// <see cref="UserAuthorization"/> for the current turn.
+    /// Creates a <see cref="Microsoft.Graph.GraphServiceClient"/> that acquires a delegated (user) token via
+    /// <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization"/> for the current turn.
     /// </summary>
     internal static GraphServiceClient CreateUserGraphClient(UserAuthorization userAuthorization, ITurnContext turnContext, string handlerName, string graphBaseUrl)
     {
@@ -34,7 +34,7 @@ internal static class GraphClientFactory
     }
 
     /// <summary>
-    /// Creates a <see cref="GraphServiceClient"/> that acquires an app-only (application) token from the supplied
+    /// Creates a <see cref="Microsoft.Graph.GraphServiceClient"/> that acquires an app-only (application) token from the supplied
     /// token connection.
     /// </summary>
     internal static GraphServiceClient CreateAppGraphClient(Microsoft.Agents.Authentication.IAccessTokenProvider tokenProvider, string graphBaseUrl)

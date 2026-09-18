@@ -15,10 +15,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Teams;
 /// <summary>
 /// RouteBuilder for routing Teams ConversationUpdate activities in an AgentApplication.
 /// </summary>
-/// <remarks>Use <see cref="TeamUpdateRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// <remarks>Use <see cref="Microsoft.Agents.Extensions.MSTeams.Teams.TeamUpdateRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.ConversationUpdate"/> with
 /// <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData.EventType"/> matching team events.
-/// This builder allows matching specific event types via <see cref="ForTeamArchived()"/>, <see cref="ForTeamDeleted()"/>, etc.,
+/// This builder allows matching specific event types via <see cref="Microsoft.Agents.Extensions.MSTeams.Teams.TeamUpdateRouteBuilder.ForTeamArchived()"/>, <see cref="Microsoft.Agents.Extensions.MSTeams.Teams.TeamUpdateRouteBuilder.ForTeamDeleted()"/>, etc.,
 /// and supports ordering, oauth, and agentic routing scenarios.
 /// This builder defaults to the <c>Microsoft.Agents.Core.Models.Channels.Msteams</c> channelId unless otherwise specified.
 /// </remarks>
@@ -39,7 +39,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <summary>
     /// Match on team archived events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Teams.TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamArchived()
     {
         _teamEvents.Add(ConversationEventType.TeamArchived);
@@ -59,7 +59,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <summary>
     /// Match on team deleted events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Teams.TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamDeleted()
     {
         _teamEvents.Add(ConversationEventType.TeamDeleted);
@@ -69,7 +69,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <summary>
     /// Match on team renamed events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Teams.TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamRenamed()
     {
         _teamEvents.Add(ConversationEventType.TeamRenamed);
@@ -79,7 +79,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <summary>
     /// Match on team restored events.
     /// </summary>
-    /// <returns>The current instance of the <see cref="TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
+    /// <returns>The current instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.Teams.TeamUpdateRouteBuilder"/>, enabling method chaining.</returns>
     public TeamUpdateRouteBuilder ForTeamRestored()
     {
         _teamEvents.Add(ConversationEventType.TeamRestored);
@@ -121,7 +121,7 @@ public partial class TeamUpdateRouteBuilder : RouteBuilderBase<TeamUpdateRouteBu
     /// <remarks>Team updates cannot be configured as invoke routes. This method always returns the
     /// current instance, regardless of the value of <paramref name="isInvoke"/>.</remarks>
     /// <param name="isInvoke">Ignored</param>
-    /// <returns>The current instance of <see cref="TeamUpdateRouteBuilder"/>.</returns>
+    /// <returns>The current instance of <see cref="Microsoft.Agents.Extensions.MSTeams.Teams.TeamUpdateRouteBuilder"/>.</returns>
     public override TeamUpdateRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;

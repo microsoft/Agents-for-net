@@ -7,7 +7,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Model
     /// Result of a successful sidecar token acquisition.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="SidecarTokenResult"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.Model.SidecarTokenResult"/> class.
     /// </remarks>
     /// <param name="scheme">The authorization scheme (e.g. "Bearer").</param>
     /// <param name="token">The raw access token.</param>

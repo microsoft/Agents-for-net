@@ -17,13 +17,13 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
 {
     /// <summary>
     /// Provides a concrete builder for routing Adaptive Card dynamic search (<c>application/search</c>) invoke
-    /// activities in an <see cref="AgentApplication"/>.
+    /// activities in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
     /// Routes built from this builder match invoke activities named <c>application/search</c> whose dataset matches
-    /// the configured dataset or dataset pattern. When neither <see cref="WithDataset(string)"/> nor
-    /// <see cref="WithDataset(Regex)"/> is called the route matches any dataset. A custom selector supplied via
-    /// <see cref="WithSelector(RouteSelector)"/> is additive to the basic route matching (channel, activity type,
+    /// the configured dataset or dataset pattern. When neither <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder.WithDataset(System.String)"/> nor
+    /// <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder.WithDataset(System.Text.RegularExpressions.Regex)"/> is called the route matches any dataset. A custom selector supplied via
+    /// <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/> is additive to the basic route matching (channel, activity type,
     /// invoke name, and dataset).
     /// </remarks>
     public class SearchRouteBuilder : RouteBuilderBase<SearchRouteBuilder>
@@ -34,9 +34,9 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         private Regex _datasetPattern;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="SearchRouteBuilder"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder"/> class.
         /// </summary>
-        /// <returns>A new <see cref="SearchRouteBuilder"/>.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder"/>.</returns>
         public static SearchRouteBuilder Create()
         {
             return new SearchRouteBuilder();
@@ -51,7 +51,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to match only search activities whose dataset equals the specified value.
         /// </summary>
         /// <param name="dataset">The dataset to match. Comparison is exact.</param>
-        /// <returns>The current <see cref="SearchRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder"/> instance for method chaining.</returns>
         public SearchRouteBuilder WithDataset(string dataset)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(dataset, nameof(dataset));
@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to match search activities whose dataset matches the specified pattern.
         /// </summary>
         /// <param name="datasetPattern">A regular expression used to match the dataset.</param>
-        /// <returns>The current <see cref="SearchRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder"/> instance for method chaining.</returns>
         public SearchRouteBuilder WithDataset(Regex datasetPattern)
         {
             AssertionHelpers.ThrowIfNull(datasetPattern, nameof(datasetPattern));
@@ -90,7 +90,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="selector">The route selector that defines additional criteria for matching requests to the route. The supplied
         /// selector does not need to validate base route properties like ChannelId, Agentic, activity type, invoke
         /// name, or dataset.</param>
-        /// <returns>The current <see cref="SearchRouteBuilder"/> instance with the specified selector applied.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder"/> instance with the specified selector applied.</returns>
         public override SearchRouteBuilder WithSelector(RouteSelector selector)
         {
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
@@ -108,7 +108,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to handle dynamic search events using the specified handler.
         /// </summary>
         /// <param name="handler">The handler to invoke when a matching search activity is received. Cannot be null.</param>
-        /// <returns>The current <see cref="SearchRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchRouteBuilder"/> instance for method chaining.</returns>
         public SearchRouteBuilder WithHandler(SearchHandler handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));

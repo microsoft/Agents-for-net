@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for channel created events in Teams.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelCreatedRoute]
 /// public async Task OnChannelCreatedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -20,10 +20,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 ///     // Handle channel created event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnCreated"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnCreated(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]
@@ -44,7 +44,7 @@ public class TeamsChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushor
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for channel deleted events in Teams.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelDeletedRoute]
 /// public async Task OnChannelDeletedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -52,10 +52,10 @@ public class TeamsChannelCreatedRouteAttribute(bool isAgenticOnly = false, ushor
 ///     // Handle channel deleted event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnDeleted"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnDeleted(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]
@@ -76,7 +76,7 @@ public class TeamsChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushor
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for channel member added events in Teams.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelMemberAddedRoute]
 /// public async Task OnChannelMemberAddedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -84,10 +84,10 @@ public class TeamsChannelDeletedRouteAttribute(bool isAgenticOnly = false, ushor
 ///     // Handle channel member added event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnMemberAdded"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnMemberAdded(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]
@@ -108,7 +108,7 @@ public class TeamsChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, u
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for channel member removed events in Teams.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelMemberRemovedRoute]
 /// public async Task OnChannelMemberRemovedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -116,10 +116,10 @@ public class TeamsChannelMemberAddedRouteAttribute(bool isAgenticOnly = false, u
 ///     // Handle channel member removed event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnMemberRemoved"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnMemberRemoved(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]
@@ -140,7 +140,7 @@ public class TeamsChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false,
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for channel renamed events in Teams.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelRenamedRoute]
 /// public async Task OnChannelRenamedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -148,10 +148,10 @@ public class TeamsChannelMemberRemovedRouteAttribute(bool isAgenticOnly = false,
 ///     // Handle channel renamed event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnRenamed"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnRenamed(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]
@@ -172,7 +172,7 @@ public class TeamsChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushor
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for channel restored events in Teams.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelRestoredRoute]
 /// public async Task OnChannelRestoredAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -180,10 +180,10 @@ public class TeamsChannelRenamedRouteAttribute(bool isAgenticOnly = false, ushor
 ///     // Handle channel restored event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnRestored"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnRestored(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]
@@ -204,7 +204,7 @@ public class TeamsChannelRestoredRouteAttribute(bool isAgenticOnly = false, usho
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for channel shared events in Teams.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelSharedRoute]
 /// public async Task OnChannelSharedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -212,10 +212,10 @@ public class TeamsChannelRestoredRouteAttribute(bool isAgenticOnly = false, usho
 ///     // Handle channel shared event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnShared"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnShared(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]
@@ -236,7 +236,7 @@ public class TeamsChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for channel unshared events in Teams.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelUnsharedRoute]
 /// public async Task OnChannelUnsharedAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -244,10 +244,10 @@ public class TeamsChannelSharedRouteAttribute(bool isAgenticOnly = false, ushort
 ///     // Handle channel unshared event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnUnshared"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnUnshared(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]
@@ -269,8 +269,8 @@ public class TeamsChannelUnsharedRouteAttribute(bool isAgenticOnly = false, usho
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for all channel update events in Teams,
 /// including created, deleted, renamed, restored, shared, unshared, member added, and member removed.
-/// Use the specific event attributes (e.g., <see cref="TeamsChannelCreatedRouteAttribute"/>) to handle individual event types.
-/// The method must match the <see cref="ChannelUpdateHandler"/> delegate signature.
+/// Use the specific event attributes (e.g., <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannelCreatedRouteAttribute"/>) to handle individual event types.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler"/> delegate signature.
 /// <code>
 /// [TeamsChannelUpdateRoute]
 /// public async Task OnAnyChannelEventAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel channel, CancellationToken cancellationToken)
@@ -278,10 +278,10 @@ public class TeamsChannelUnsharedRouteAttribute(bool isAgenticOnly = false, usho
 ///     // Handle any channel update event
 /// }
 /// </code>
-/// Alternatively, <see cref="TeamsChannel.OnChannelEventReceived"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.Channels.TeamsChannel.OnChannelEventReceived(Microsoft.Agents.Extensions.MSTeams.Channels.ChannelUpdateHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(ChannelUpdateHandler))]

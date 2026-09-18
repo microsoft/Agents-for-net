@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
     public class SourcePoint : IEquatable<SourcePoint>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SourcePoint"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/> class.
         /// </summary>
         public SourcePoint()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SourcePoint"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/> class.
         /// </summary>
         /// <param name="lineIndex">line index.</param>
         /// <param name="charIndex">char index.</param>
@@ -45,22 +45,22 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         public int CharIndex { get; set; }
 
         /// <summary>
-        /// Returns a string that represents the current <see cref="SourcePoint"/>.
+        /// Returns a string that represents the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/>.
         /// </summary>
-        /// <returns>A string that represents the current <see cref="SourcePoint"/>.</returns>
+        /// <returns>A string that represents the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/>.</returns>
         public override string ToString() => $"{LineIndex}:{CharIndex}";
 
         /// <summary>
-        /// Creates a new instance of the <see cref="SourcePoint"/>. All properties are recursively cloned.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/>. All properties are recursively cloned.
         /// </summary>
-        /// <returns>A new instance of the <see cref="SourcePoint"/>.</returns>
+        /// <returns>A new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/>.</returns>
         public SourcePoint DeepClone() => new SourcePoint() { LineIndex = LineIndex, CharIndex = CharIndex };
 
         /// <summary>
-        /// Indicates whether the current <see cref="SourcePoint"/> is equal to another object.
+        /// Indicates whether the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/> is equal to another object.
         /// </summary>
-        /// <param name="obj">An object to compare with this <see cref="SourcePoint"/>.</param>
-        /// <returns><c>true</c> if the current <see cref="SourcePoint"/> is equal to the object parameter; otherwise, <c>false</c>.</returns>
+        /// <param name="obj">An object to compare with this <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/>.</param>
+        /// <returns><c>true</c> if the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/> is equal to the object parameter; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
         {
             // Auto-generated
@@ -68,10 +68,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         }
 
         /// <summary>
-        /// Indicates whether the current <see cref="SourcePoint"/> is equal to another object of the same type.
+        /// Indicates whether the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/> is equal to another object of the same type.
         /// </summary>
-        /// <param name="other">An object to compare with this <see cref="SourcePoint"/>.</param>
-        /// <returns><c>true</c> if the current <see cref="SourcePoint"/> is equal to the other parameter; otherwise, <c>false</c>.</returns>
+        /// <param name="other">An object to compare with this <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/>.</param>
+        /// <returns><c>true</c> if the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/> is equal to the other parameter; otherwise, <c>false</c>.</returns>
         public bool Equals(SourcePoint other)
         {
             // Auto-generated
@@ -81,9 +81,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
         }
 
         /// <summary>
-        /// Creates a hash code for the current <see cref="SourcePoint"/>.
+        /// Creates a hash code for the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/>.
         /// </summary>
-        /// <returns>A hash code for the current <see cref="SourcePoint"/>.</returns>
+        /// <returns>A hash code for the current <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourcePoint"/>.</returns>
         public override int GetHashCode()
         {
             // Auto-generated

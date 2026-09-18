@@ -3,6 +3,10 @@
   "package": "Microsoft.Teams.Apps",
   "declaredVersion": "2.1.0",
   "sourceRoot": "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams",
+  "sourceReview": {
+    "outcome": "no-usage-metadata-change",
+    "reason": "Only XML documentation references changed; Teams API usage symbols, members, exposure, and source associations are unchanged."
+  },
   "usages": [
     { "upstreamSymbol": "Microsoft.Teams.Apps.Clients.ApiClient", "members": [], "usageKinds": ["extension-receiver"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsApiClientExtensions.cs"] },
     { "upstreamSymbol": "Microsoft.Teams.Apps.Clients.Meeting", "members": [], "usageKinds": ["return-type"], "exposure": "publicly-exposed", "files": ["src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/TeamsApiClientExtensions.cs"] },
