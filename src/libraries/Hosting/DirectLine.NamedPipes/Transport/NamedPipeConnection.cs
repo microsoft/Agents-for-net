@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         private NamedPipeServerStream _outgoingPipe;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NamedPipeConnection"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.NamedPipeConnection"/> class.
         /// </summary>
         /// <param name="pipeName">The base pipe name. Must not be null or empty.</param>
         /// <param name="logger">The logger instance.</param>

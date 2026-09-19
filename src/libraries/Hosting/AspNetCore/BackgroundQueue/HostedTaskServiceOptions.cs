@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     public class HostedTaskServiceOptions
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="HostedTaskServiceOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedTaskServiceOptions"/> class.
         /// </summary>
         /// <param name="configuration">The application configuration.</param>
         public HostedTaskServiceOptions(IConfiguration configuration)

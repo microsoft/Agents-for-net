@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.Teams.Models
         public string Type { get; set; }
 
         /// <summary>
-        /// Gets or sets properties that are not otherwise defined by the <see cref="TabSubmit"/> type but that
+        /// Gets or sets properties that are not otherwise defined by the <see cref="Microsoft.Agents.Extensions.Teams.Models.TabSubmit"/> type but that
         /// might appear in the serialized REST JSON object.
         /// </summary>
         /// <value>The extended properties for the object.</value>

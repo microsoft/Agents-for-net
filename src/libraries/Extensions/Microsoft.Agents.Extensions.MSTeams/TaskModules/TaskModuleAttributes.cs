@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.TaskModules;
 
 /// <summary>
 /// Attribute to define a route that handles Teams task module fetch events.
-/// The decorated method must match the <see cref="TaskFetchHandler"/> delegate signature —
+/// The decorated method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchHandler"/> delegate signature —
 /// the third parameter must be <see cref="Microsoft.Teams.Apps.TaskModules.TaskModuleRequest"/>.
 /// </summary>
 /// <remarks>
@@ -21,12 +21,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.TaskModules;
 ///     // Handle task module fetch event
 /// }
 /// </code>
-/// Alternatively, <see cref="TaskModule.OnFetch(string, TaskFetchHandler, string)"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskModule.OnFetch(System.String, Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskFetchHandler, System.String, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="value">The task module key value to match.  If null this will match for any fetch request.</param>
 /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(TaskFetchHandler))]
@@ -50,7 +50,7 @@ public class TeamsTaskFetchRouteAttribute(string value = null, string key = null
 
 /// <summary>
 /// Attribute to define a route that handles Teams task module submit events.
-/// The decorated method must match the <see cref="TaskSubmitHandler"/> delegate signature —
+/// The decorated method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitHandler"/> delegate signature —
 /// the third parameter must be <see cref="Microsoft.Teams.Apps.TaskModules.TaskModuleRequest"/>.
 /// </summary>
 /// <remarks>
@@ -62,12 +62,12 @@ public class TeamsTaskFetchRouteAttribute(string value = null, string key = null
 ///     // Handle task module submit event
 /// }
 /// </code>
-/// Alternatively, <see cref="TaskModule.OnSubmit(string, TaskSubmitHandler, string)"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskModule.OnSubmit(System.String, Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitHandler, System.String, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="value">The task module key value to match.  If null, this will match for any submit request.</param>
 /// <param name="key">The JSON field name used to identify the key in the task data. Defaults to <c>"task"</c> if not specified.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(TaskSubmitHandler))]

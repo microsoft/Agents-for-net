@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder
     {
         /// <summary>
         /// Gets a value indicating whether enforcement is enabled. When <see langword="false"/>,
-        /// <see cref="IsAllowed(string)"/> returns <see langword="true"/> for any input (current, un-restricted behavior).
+        /// <see cref="Microsoft.Agents.Builder.IOutboundHostValidator.IsAllowed(System.String)"/> returns <see langword="true"/> for any input (current, un-restricted behavior).
         /// </summary>
         bool Enabled { get; }
 
@@ -38,10 +38,10 @@ namespace Microsoft.Agents.Builder
     }
 
     /// <summary>
-    /// Options controlling the shared <see cref="IOutboundHostValidator"/> "allowed hosts" anti-SSRF control.
+    /// Options controlling the shared <see cref="Microsoft.Agents.Builder.IOutboundHostValidator"/> "allowed hosts" anti-SSRF control.
     /// </summary>
     /// <remarks>
-    /// Enforcement is <b>opt-in</b>: <see cref="Enabled"/> defaults to <see langword="false"/> so existing behavior
+    /// Enforcement is <b>opt-in</b>: <see cref="Microsoft.Agents.Builder.OutboundHostValidatorOptions.Enabled"/> defaults to <see langword="false"/> so existing behavior
     /// is preserved until an operator explicitly turns it on.
     /// </remarks>
     public class OutboundHostValidatorOptions
@@ -67,7 +67,7 @@ namespace Microsoft.Agents.Builder
     }
 
     /// <summary>
-    /// Default <see cref="IOutboundHostValidator"/> implementation backed by <see cref="OutboundHostValidatorOptions"/>.
+    /// Default <see cref="Microsoft.Agents.Builder.IOutboundHostValidator"/> implementation backed by <see cref="Microsoft.Agents.Builder.OutboundHostValidatorOptions"/>.
     /// </summary>
     public sealed class OutboundHostValidator : IOutboundHostValidator
     {
@@ -88,7 +88,7 @@ namespace Microsoft.Agents.Builder
         private readonly string[] _suffixes;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OutboundHostValidator"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.OutboundHostValidator"/> class.
         /// </summary>
         /// <param name="options">The allowed-hosts options. When <see langword="null"/>, enforcement is disabled.</param>
         public OutboundHostValidator(OutboundHostValidatorOptions options)

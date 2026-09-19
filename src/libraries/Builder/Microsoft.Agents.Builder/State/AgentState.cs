@@ -24,11 +24,11 @@ namespace Microsoft.Agents.Builder.State
         private CachedAgentState _cachedAgentState;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AgentState"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.State.AgentState"/> class.
         /// </summary>
         /// <param name="storage">The storage layer this state management object will use to store
         /// and retrieve state.</param>
-        /// <param name="stateName">The key for the state cache for this <see cref="AgentState"/>.</param>
+        /// <param name="stateName">The key for the state cache for this <see cref="Microsoft.Agents.Builder.State.AgentState"/>.</param>
         /// <remarks>This constructor creates a state management object and associated scope.
         /// The object uses <paramref name="storage"/> to persist state property values.
         /// The object uses the <paramref name="stateName"/> to cache state within the context for each turn.
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Builder.State
         public string Name { get; private set; }
 
         /// <summary>
-        /// Creates a named state property within the scope of a <see cref="AgentState"/> and returns
+        /// Creates a named state property within the scope of a <see cref="Microsoft.Agents.Builder.State.AgentState"/> and returns
         /// an accessor for the property.
         /// </summary>
         /// <typeparam name="T">The value type of the property.</typeparam>
@@ -290,7 +290,7 @@ namespace Microsoft.Agents.Builder.State
         protected abstract string GetStorageKey(ITurnContext turnContext);
 
         /// <summary>
-        /// Gets the value of a property from the state cache for this <see cref="AgentState"/>.
+        /// Gets the value of a property from the state cache for this <see cref="Microsoft.Agents.Builder.State.AgentState"/>.
         /// </summary>
         /// <typeparam name="T">The value type of the property.</typeparam>
         /// <param name="propertyName">The name of the property.</param>
@@ -313,7 +313,7 @@ namespace Microsoft.Agents.Builder.State
         }
 
         /// <summary>
-        /// Deletes a property from the state cache for this <see cref="AgentState"/>.
+        /// Deletes a property from the state cache for this <see cref="Microsoft.Agents.Builder.State.AgentState"/>.
         /// </summary>
         /// <param name="propertyName">The name of the property.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
@@ -329,7 +329,7 @@ namespace Microsoft.Agents.Builder.State
         }
 
         /// <summary>
-        /// Sets the value of a property in the state cache for this <see cref="AgentState"/>.
+        /// Sets the value of a property in the state cache for this <see cref="Microsoft.Agents.Builder.State.AgentState"/>.
         /// </summary>
         /// <param name="propertyName">The name of the property to set.</param>
         /// <param name="value">The value to set on the property.</param>
@@ -416,10 +416,10 @@ namespace Microsoft.Agents.Builder.State
         internal class CachedAgentState
         {
             /// <summary>
-            /// Initializes a new instance of the <see cref="CachedAgentState"/> class.
+            /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.State.AgentState.CachedAgentState"/> class.
             /// </summary>
             /// <param name="key">Unique state key.  Typically the storage key.</param>
-            /// <param name="state">Initial state for the <see cref="CachedAgentState"/>.</param>
+            /// <param name="state">Initial state for the <see cref="Microsoft.Agents.Builder.State.AgentState.CachedAgentState"/>.</param>
             public CachedAgentState(string key, IDictionary<string, object> state = null)
             {
                 State = state ?? new Dictionary<string, object>();
@@ -458,7 +458,7 @@ namespace Microsoft.Agents.Builder.State
 
         #region Obsolete AgentStatePropertyAccessor
         /// <summary>
-        /// Implements an <see cref="IStatePropertyAccessor{T}"/> for a property container.
+        /// Implements an <see cref="Microsoft.Agents.Builder.State.IStatePropertyAccessor{T}"/> for a property container.
         /// Note the semantics of this accessor are intended to be lazy, this means the Get, Set and Delete
         /// methods will first call LoadAsync. This will be a no-op if the data is already loaded.
         /// The implication is you can just use this accessor in the application code directly without first calling LoadAsync
@@ -488,7 +488,7 @@ namespace Microsoft.Agents.Builder.State
             /// </summary>
             /// <param name="turnContext">The turn context.</param>
             /// <param name="cancellationToken">The cancellation token.</param>
-            /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+            /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
             public async Task DeleteAsync(ITurnContext turnContext, CancellationToken cancellationToken)
             {
                 await _agentState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
@@ -504,7 +504,7 @@ namespace Microsoft.Agents.Builder.State
             /// If defaultValueFactory is defined as null in that case, the method returns null and
             /// <see cref="SetAsync(ITurnContext, T, CancellationToken)">SetAsync</see> is not called.</param>
             /// <param name="cancellationToken">The cancellation token.</param>
-            /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+            /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
             public async Task<T> GetAsync(ITurnContext turnContext, Func<T> defaultValueFactory, CancellationToken cancellationToken)
             {
                 await _agentState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);
@@ -520,7 +520,7 @@ namespace Microsoft.Agents.Builder.State
             /// <param name="turnContext">turn context.</param>
             /// <param name="value">value.</param>
             /// <param name="cancellationToken">The cancellation token.</param>
-            /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+            /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
             public async Task SetAsync(ITurnContext turnContext, T value, CancellationToken cancellationToken)
             {
                 await _agentState.LoadAsync(turnContext, false, cancellationToken).ConfigureAwait(false);

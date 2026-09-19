@@ -25,4 +25,10 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.Slack\Microsoft.Agents.Extensions.Slack.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Fixtures\feedback-submit-action.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>

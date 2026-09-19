@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
     /// Accepts client connections, wires up the protocol, and handles reconnection.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="NamedPipeHostedService"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.NamedPipeHostedService"/> class.
     /// </remarks>
     /// <param name="activityHandler">The activity handler for processing inbound requests.</param>
     /// <param name="messageHandler">The message handler for outbound pipe routing.</param>

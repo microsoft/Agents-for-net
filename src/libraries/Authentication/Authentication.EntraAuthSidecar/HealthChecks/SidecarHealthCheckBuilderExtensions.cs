@@ -28,14 +28,14 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
         /// <remarks>
         /// This is equivalent to <c>builder.Services.AddHealthChecks().AddSidecarHealthCheck(...)</c>. To expose
         /// the result, map the health endpoint on the built application (e.g. <c>app.MapHealthChecks("/health")</c>).
-        /// See <see cref="AddSidecarHealthCheck(IHealthChecksBuilder, string, string, bool, HealthStatus?, IEnumerable{string})"/>
+        /// See <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks.SidecarHealthCheckBuilderExtensions.AddSidecarHealthCheck(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder, System.String, System.String, System.Boolean, Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus?, System.Collections.Generic.IEnumerable{System.String})"/>
         /// for parameter details.
         /// </remarks>
         /// <param name="builder">The host application builder.</param>
         /// <param name="name">The health check name. Defaults to <c>entra_sidecar</c>.</param>
         /// <param name="sidecarBaseUrl">Optional sidecar base URL. When null, resolves from <c>SIDECAR_URL</c>, then the default.</param>
         /// <param name="bypassLocalNetworkRestriction">When <c>true</c>, disables the loopback/private-address safety check. <b>UNSAFE</b>.</param>
-        /// <param name="failureStatus">The status reported when the sidecar is unreachable. Defaults to <see cref="HealthStatus.Unhealthy"/>.</param>
+        /// <param name="failureStatus">The status reported when the sidecar is unreachable. Defaults to <see cref="Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy"/>.</param>
         /// <param name="tags">Optional tags used to filter health checks.</param>
         /// <returns>The same host application builder for chaining.</returns>
         public static IHostApplicationBuilder AddSidecarHealthCheck(
@@ -56,9 +56,9 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
         /// via its <c>/healthz</c> endpoint.
         /// </summary>
         /// <remarks>
-        /// If a <see cref="SidecarHttpClient"/> has been registered (for example via
-        /// <see cref="SidecarServiceCollectionExtensions.AddSidecarConnections"/>) it is reused;
-        /// otherwise one is created using <see cref="IHttpClientFactory"/> and the resolved base URL.
+        /// If a <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient"/> has been registered (for example via
+        /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarServiceCollectionExtensions.AddSidecarConnections(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration, System.String)"/>) it is reused;
+        /// otherwise one is created using <see cref="System.Net.Http.IHttpClientFactory"/> and the resolved base URL.
         /// </remarks>
         /// <param name="builder">The health checks builder.</param>
         /// <param name="name">The health check name. Defaults to <c>entra_sidecar</c>.</param>
@@ -68,12 +68,12 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
         /// </param>
         /// <param name="bypassLocalNetworkRestriction">
         /// When <c>true</c>, disables the loopback/private-address safety check on the resolved URL.
-        /// <b>UNSAFE</b>; see <see cref="SidecarHttpClient.ValidateBaseUrl"/>. Only used when no
-        /// <see cref="SidecarHttpClient"/> is already registered.
+        /// <b>UNSAFE</b>; see <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient.ValidateBaseUrl(System.String, System.Boolean)"/>. Only used when no
+        /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient"/> is already registered.
         /// </param>
         /// <param name="failureStatus">
-        /// The <see cref="HealthStatus"/> reported when the sidecar is unreachable. Defaults to
-        /// <see cref="HealthStatus.Unhealthy"/>.
+        /// The <see cref="Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus"/> reported when the sidecar is unreachable. Defaults to
+        /// <see cref="Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy"/>.
         /// </param>
         /// <param name="tags">Optional tags used to filter health checks.</param>
         /// <returns>The health checks builder for chaining.</returns>

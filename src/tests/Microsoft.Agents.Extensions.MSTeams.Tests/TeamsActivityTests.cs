@@ -8,11 +8,11 @@ using Xunit;
 namespace Microsoft.Agents.Extensions.MSTeams.Tests
 {
     /// <summary>
-    /// Tests for <see cref="TeamsActivity"/> and <see cref="ITeamsActivity"/>.
+    /// Tests for <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsActivity"/> and <see cref="Microsoft.Agents.Extensions.MSTeams.ITeamsActivity"/>.
     ///
     /// Resolution is driven by the <c>[ActivityType(ChannelId = "msteams")]</c> annotation on
-    /// <see cref="TeamsActivity"/>, which the source generator auto-registers so that any inbound
-    /// Activity on the msteams channel deserializes to <see cref="TeamsActivity"/>.
+    /// <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsActivity"/>, which the source generator auto-registers so that any inbound
+    /// Activity on the msteams channel deserializes to <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsActivity"/>.
     /// </summary>
     public class TeamsActivityTests
     {

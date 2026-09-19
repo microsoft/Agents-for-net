@@ -25,7 +25,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Models
 #endif
 
         /// <summary>
-        /// The parameters to pass to the tool. Kept as <see cref="object"/> for maximum
+        /// The parameters to pass to the tool. Kept as <see cref="System.Object"/> for maximum
         /// compatibility with arbitrary JSON payloads.
         /// </summary>
         [JsonPropertyName("parameters")]

@@ -7,15 +7,15 @@ using Microsoft.Agents.Core.Serialization;
 namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
-/// An A2A-specific <see cref="Activity"/> that surfaces the A2A channel payload as a
-/// strongly-typed <see cref="A2A.Message"/>. This is the concrete <see cref="IA2AActivity"/>
+/// An A2A-specific <see cref="Microsoft.Agents.Core.Models.Activity"/> that surfaces the A2A channel payload as a
+/// strongly-typed <see cref="global::A2A.Message"/>. This is the concrete <see cref="Microsoft.Agents.Extensions.A2A.IA2AActivity"/>
 /// produced when an incoming A2A message is converted to an Activity.
 /// </summary>
 /// <remarks>
 /// The <c>[ActivityType(ChannelId = "a2a")]</c> annotation auto-registers this type (via the
-/// generated <see cref="ActivityTypeInitAssemblyAttribute"/>), so any inbound Activity whose
-/// <see cref="Activity.ChannelId"/> is <c>"a2a"</c> deserializes to <see cref="A2AMessageActivity"/>.
-/// The typed <see cref="ChannelData"/> shadow reads through the base <see cref="Activity.ChannelData"/>,
+/// generated <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeInitAssemblyAttribute"/>), so any inbound Activity whose
+/// <see cref="Microsoft.Agents.Core.Models.Activity.ChannelId"/> is <c>"a2a"</c> deserializes to <see cref="Microsoft.Agents.Extensions.A2A.A2AMessageActivity"/>.
+/// The typed <see cref="Microsoft.Agents.Extensions.A2A.A2AMessageActivity.ChannelData"/> shadow reads through the base <see cref="Microsoft.Agents.Core.Models.Activity.ChannelData"/>,
 /// so both the base and typed views stay in sync.
 /// </remarks>
 [ActivityType(ChannelId = Channels.A2A)]

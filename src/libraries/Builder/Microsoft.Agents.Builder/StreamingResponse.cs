@@ -28,10 +28,10 @@ namespace Microsoft.Agents.Builder
     /// </summary>
     /// <remarks>
     /// Only Teams and WebChat support streaming messages.  However, channels that do not support
-    /// streaming messages will only receive the final message when <see cref="EndStreamAsync"/> is called.
+    /// streaming messages will only receive the final message when <see cref="Microsoft.Agents.Builder.StreamingResponse.EndStreamAsync(System.Threading.CancellationToken)"/> is called.
     /// </remarks>
     /// <remarks>
-    /// This class support throttling via the <see cref="Interval"/> property.  Teams and Azure Channels require
+    /// This class support throttling via the <see cref="Microsoft.Agents.Builder.StreamingResponse.Interval"/> property.  Teams and Azure Channels require
     /// some throttling since services like OpenAI produce streams that exceed allowed Channel message limits.
     /// Teams defaults to 1000ms per intermediate message, and WebChat 500ms.  Reducing the Interval could result
     /// in message delivery failures.
@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Builder
 
 
         /// <summary>
-        /// Creates a new instance of the <see cref="StreamingResponse"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Builder.StreamingResponse"/> class.
         /// </summary>
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         public StreamingResponse(TurnContext turnContext)
@@ -782,19 +782,19 @@ namespace Microsoft.Agents.Builder
         /// <remarks>
         /// This method is invoked on each timer tick while a stream is active. On every pass it:
         /// <list type="number">
-        /// <item><description>Guards against re-entrancy: if a previous callback is still running (<see cref="_processingTimer"/>), it returns immediately.</description></item>
-        /// <item><description>Updates <see cref="_streamElapsedTime"/> based on the time since the stream started.</description></item>
+        /// <item><description>Guards against re-entrancy: if a previous callback is still running (<see cref="Microsoft.Agents.Builder.StreamingResponse._processingTimer"/>), it returns immediately.</description></item>
+        /// <item><description>Updates <see cref="Microsoft.Agents.Builder.StreamingResponse._streamElapsedTime"/> based on the time since the stream started.</description></item>
         /// <item><description>For the M365 Copilot (BizChat) channel, evaluates two conditions:
         ///     <list type="bullet">
-        ///     <item><description><b>Timeout:</b> if the total elapsed time is at or beyond <see cref="M365StreamingTimeout"/>, the stream is considered timed out. Depending on whether any text has been sent, either a timeout message or a space plus terminating block is sent, the timer is stopped, and streaming is disabled so the channel falls back to async (non-streaming) delivery.</description></item>
-        ///     <item><description><b>Working notice:</b> if more than <see cref="BizChatWorkingNoticeInterval"/> (~45 seconds) has elapsed since the last pass and the queue is empty, an informative "working" update is queued to keep the BizChat stream alive.</description></item>
+        ///     <item><description><b>Timeout:</b> if the total elapsed time is at or beyond <see cref="Microsoft.Agents.Builder.StreamingResponse.M365StreamingTimeout"/>, the stream is considered timed out. Depending on whether any text has been sent, either a timeout message or a space plus terminating block is sent, the timer is stopped, and streaming is disabled so the channel falls back to async (non-streaming) delivery.</description></item>
+        ///     <item><description><b>Working notice:</b> if more than <see cref="Microsoft.Agents.Builder.StreamingResponse.BizChatWorkingNoticeInterval"/> (~45 seconds) has elapsed since the last pass and the queue is empty, an informative "working" update is queued to keep the BizChat stream alive.</description></item>
         ///     </list>
         /// </description></item>
         /// <item><description>Dequeues and sends the next buffered activity (if any). If the queue is empty and the stream has ended, it signals completion and stops the timer; otherwise it shortens the interval to pick up the next chunk sooner.</description></item>
         /// </list>
-        /// Because the timer runs on a background thread, exceptions are handled within <see cref="SendActivityAsync"/> rather than propagated, and awaits are performed outside of any <c>lock</c>.
+        /// Because the timer runs on a background thread, exceptions are handled within <see cref="Microsoft.Agents.Builder.StreamingResponse.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/> rather than propagated, and awaits are performed outside of any <c>lock</c>.
         /// </remarks>
-        /// <param name="state">State object supplied by the <see cref="Timer"/> callback. Not used.</param>
+        /// <param name="state">State object supplied by the <see cref="System.Threading.Timer"/> callback. Not used.</param>
         private async void SendIntermediateMessage(object state)
         {
             if (_processingTimer)
@@ -1044,13 +1044,13 @@ namespace Microsoft.Agents.Builder
         /// <remarks>
         /// If <paramref name="activity"/> is <c>null</c>, no update is performed and <c>null</c> is returned.
         /// Any exception thrown while updating is caught and logged (with additional detail extracted for
-        /// <see cref="ErrorResponseException"/>) rather than propagated, so a failed update does not crash the
+        /// <see cref="Microsoft.Agents.Core.Errors.ErrorResponseException"/>) rather than propagated, so a failed update does not crash the
         /// caller — commonly invoked from the streaming/timer path. On failure, <c>null</c> is returned.
         /// </remarks>
         /// <param name="activity">The activity to send as an update. If <c>null</c>, the call is a no-op.</param>
         /// <param name="cancellationToken">A token used to cancel the update operation.</param>
         /// <returns>
-        /// The <see cref="ResourceResponse"/> returned by the underlying update, or <c>null</c> if
+        /// The <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/> returned by the underlying update, or <c>null</c> if
         /// <paramref name="activity"/> was <c>null</c> or the update failed.
         /// </returns>
         private async Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default)

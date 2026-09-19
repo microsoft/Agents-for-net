@@ -57,9 +57,9 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
             string.IsNullOrWhiteSpace(_settings.BlueprintServiceName) ? DefaultBlueprintServiceName : _settings.BlueprintServiceName;
 
         /// <summary>
-        /// Creates a new <see cref="SidecarAuth"/> using DI service provider.
+        /// Creates a new <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarAuth"/> using DI service provider.
         /// This constructor matches the <c>(IServiceProvider, IConfigurationSection)</c> signature
-        /// required by the <see cref="Authentication.ConfigurationConnections"/> module loader,
+        /// required by the <see cref="Microsoft.Agents.Authentication.ConfigurationConnections"/> module loader,
         /// allowing this provider to be used as a connection-level token provider in config.
         /// </summary>
         /// <param name="serviceProvider">The DI service provider.</param>
@@ -72,7 +72,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         }
 
         /// <summary>
-        /// Creates a new <see cref="SidecarAuth"/> from configuration.
+        /// Creates a new <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarAuth"/> from configuration.
         /// </summary>
         /// <param name="sidecarClient">The shared sidecar HTTP client.</param>
         /// <param name="configurationSection">Configuration section with sidecar connection settings.</param>
@@ -82,7 +82,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         }
 
         /// <summary>
-        /// Creates a new <see cref="SidecarAuth"/> with explicit settings.
+        /// Creates a new <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarAuth"/> with explicit settings.
         /// </summary>
         /// <param name="sidecarClient">The shared sidecar HTTP client.</param>
         /// <param name="settings">The sidecar connection settings.</param>
@@ -96,7 +96,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         public ImmutableConnectionSettings ConnectionSettings => new(_settings);
 
         /// <summary>
-        /// Creates a <see cref="SidecarHttpClient"/> from the DI service provider and configuration section.
+        /// Creates a <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient"/> from the DI service provider and configuration section.
         /// Uses IHttpClientFactory if registered, otherwise falls back to a new HttpClient instance.
         /// </summary>
         private static SidecarHttpClient CreateSidecarHttpClient(IServiceProvider serviceProvider, IConfigurationSection configurationSection)
@@ -225,7 +225,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         /// <summary>
         /// Acquires a token from the sidecar, serving it from the in-memory cache when a valid
         /// (non-expired) entry exists for the same request parameters. When the request opts into
-        /// <see cref="SidecarRequestOptions.ForceRefresh"/>, any cached entry is evicted and a fresh
+        /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.Model.SidecarRequestOptions.ForceRefresh"/>, any cached entry is evicted and a fresh
         /// token is acquired.
         /// </summary>
         private async Task<string> GetCachedTokenAsync(string serviceName, SidecarRequestOptions options, CancellationToken cancellationToken = default)
@@ -314,7 +314,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         /// request parameters that change the issued token, so distinct flows, users, tenants, and
         /// scopes never collide. Scopes are normalized (deduplicated and ordered) so the same scope set
         /// supplied in a different order maps to the same entry, improving cache hits.
-        /// <see cref="SidecarRequestOptions.ForceRefresh"/> is intentionally excluded so a forced
+        /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.Model.SidecarRequestOptions.ForceRefresh"/> is intentionally excluded so a forced
         /// refresh updates the same entry.
         /// </summary>
         private static string BuildCacheKey(string serviceName, SidecarRequestOptions options)

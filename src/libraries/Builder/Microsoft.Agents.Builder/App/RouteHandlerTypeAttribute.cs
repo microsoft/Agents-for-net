@@ -9,9 +9,9 @@ namespace Microsoft.Agents.Builder.App
     /// Declares the handler delegate type that a route attribute expects an attributed method to match.
     /// </summary>
     /// <remarks>
-    /// Apply this attribute to a route attribute class (a class implementing <see cref="IRouteAttribute"/>)
-    /// to declare the delegate type (for example <see cref="RouteHandler"/>, <see cref="HandoffHandler"/>,
-    /// or <see cref="FeedbackLoopHandler"/>) that decorated methods are bound to at runtime.
+    /// Apply this attribute to a route attribute class (a class implementing <see cref="Microsoft.Agents.Builder.App.IRouteAttribute"/>)
+    /// to declare the delegate type (for example <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>, <see cref="Microsoft.Agents.Builder.App.HandoffHandler"/>,
+    /// or <see cref="Microsoft.Agents.Builder.App.FeedbackLoopHandler"/>) that decorated methods are bound to at runtime.
     /// <para>
     /// The handler type is recorded as an attribute argument so that it is preserved in compiled metadata.
     /// This allows a Roslyn analyzer running in a consuming project to read the expected handler delegate
@@ -25,12 +25,12 @@ namespace Microsoft.Agents.Builder.App
     /// analyzer, because the closed type is inferred from the decorated method at runtime.
     /// </para>
     /// </remarks>
-    /// <param name="handlerType">The delegate <see cref="Type"/> that decorated methods must be assignable to.</param>
+    /// <param name="handlerType">The delegate <see cref="System.Type"/> that decorated methods must be assignable to.</param>
     [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = true)]
     public sealed class RouteHandlerTypeAttribute(Type handlerType) : Attribute
     {
         /// <summary>
-        /// Gets the delegate <see cref="Type"/> that decorated methods are expected to match.
+        /// Gets the delegate <see cref="System.Type"/> that decorated methods are expected to match.
         /// </summary>
         public Type HandlerType { get; } = handlerType;
     }

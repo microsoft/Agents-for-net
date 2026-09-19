@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Builder
     public abstract class ChannelServiceAdapterBase : ChannelAdapter
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelServiceAdapterBase"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.ChannelServiceAdapterBase"/> class.
         /// </summary>
         /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
         /// <param name="logger">The ILogger implementation this adapter should use.</param>
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelServiceAdapterBase"/> class with outbound service URL validation.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.ChannelServiceAdapterBase"/> class with outbound service URL validation.
         /// </summary>
         /// <param name="channelServiceClientFactory">The IChannelServiceClientFactory to use for creating IConnectorClient and IUserTokenClient instances.</param>
         /// <param name="logger">The ILogger implementation this adapter should use.</param>
