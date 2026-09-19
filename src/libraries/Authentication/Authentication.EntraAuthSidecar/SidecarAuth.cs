@@ -181,17 +181,23 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
         /// <inheritdoc/>
         public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, CancellationToken cancellationToken = default)
         {
-            // Autonomous agent (instance) token for the configured resource. The sidecar performs the
-            // full Blueprint -> Instance chain internally and returns an app-only resource token.
-            // Requires the downstream API to be configured app-only (RequestAppToken) on the sidecar.
+            return await GetAgenticInstanceTokenAsync(tenantId, agentAppInstanceId, null, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, IList<string> scopes, CancellationToken cancellationToken = default)
+        {
+            // Autonomous agent (instance) token for the requested scopes. The sidecar performs the
+            // full Blueprint -> Instance chain internally and returns a resource token for the
+            // requested scopes. Requires the downstream API to be configured app-only (RequestAppToken)
+            // on the sidecar.
             var options = new SidecarRequestOptions
             {
                 AgentIdentity = agentAppInstanceId,
                 RequestAppToken = true,
                 Tenant = tenantId,
-                Scopes = _settings.Scopes
+                Scopes = scopes ?? _settings.Scopes
             };
-
             return await GetCachedTokenAsync(
                 ServiceName,
                 options,
