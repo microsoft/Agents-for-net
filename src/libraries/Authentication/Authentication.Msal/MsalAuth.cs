@@ -201,7 +201,7 @@ namespace Microsoft.Agents.Authentication.Msal
         }
 
         /// <inheritdoc/>
-        public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, IList<string> scopes = null, CancellationToken cancellationToken = default)
+        public async Task<string> GetAgenticInstanceTokenAsync(string tenantId, string agentAppInstanceId, IList<string> scopes, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(agentAppInstanceId, nameof(agentAppInstanceId));
 
