@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Extensions.SharePoint
         /// <summary>
         /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.SharePoint.SharePointSSOTokenExchangeMiddleware"/> class.
         /// </summary>
-        /// <param name="storage">The <see cref="Microsoft.Agents.Builder.State.IStorage"/> to use for deduplication.</param>
+        /// <param name="storage">The <see cref="Microsoft.Agents.Storage.IStorage"/> to use for deduplication.</param>
         /// <param name="connectionName">The connection name to use for the single
         /// sign on token exchange.</param>
         public SharePointSSOTokenExchangeMiddleware(IStorage storage, string connectionName)

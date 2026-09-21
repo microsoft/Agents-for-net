@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
     ///   (a) Core → Teams → Core: properties built in C# on the Core side survive the round-trip.
     ///   (b) Teams → Core: properties from an incoming Teams JSON payload land correctly in Core.
     ///       Teams-only properties that the Core model can preserve (via <c>Properties</c> + a
-    ///       registered <see cref="JsonConverter"/>) are also verified for full preservation.
+    ///       registered <see cref="System.Text.Json.Serialization.JsonConverter"/>) are also verified for full preservation.
     ///
     /// A failing test indicates data is silently dropped during the conversion — a bug to fix.
     ///

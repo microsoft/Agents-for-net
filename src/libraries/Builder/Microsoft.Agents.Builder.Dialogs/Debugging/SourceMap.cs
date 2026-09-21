@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
     public class SourceMap : ConcurrentDictionary<object, SourceRange>, ISourceMap
     {
         /// <summary>
-        /// Initializes a read-only new instance of the <see cref="SourceMap"/>.
+        /// Initializes a read-only new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceMap"/>.
         /// </summary>
         public static readonly SourceMap Instance = new SourceMap();
 

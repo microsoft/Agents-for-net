@@ -287,7 +287,7 @@ namespace Microsoft.Agents.Connector
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        /// <returns>A task that represents the <see cref="Microsoft.Agents.Core.Models.PagedMembersResult"/>.</returns>
+        /// <returns>A task that represents the <see cref="Microsoft.Agents.Connector.Types.PagedMembersResult"/>.</returns>
         Task<PagedMembersResult> GetConversationPagedMembersAsync(string conversationId, int? pageSize = default, string continuationToken = default, CancellationToken cancellationToken = default);
 
         /// <summary>

@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension query events in Teams.
-/// The method must match the <see cref="QueryHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryHandler"/> delegate signature.
 /// <code>
 /// [TeamsQueryRoute("searchProducts")]
 /// public async Task&lt;Response&gt; OnSearchProductsAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery query, CancellationToken cancellationToken)
@@ -24,12 +24,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = attachments } };
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnQuery(string, QueryHandler)"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnQuery(System.String, Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(QueryHandler))]
@@ -59,7 +59,7 @@ public class TeamsQueryRouteAttribute(string commandId = null, string commandIdP
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension link unfurling events in Teams.
-/// The method must match the <see cref="QueryLinkHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkHandler"/> delegate signature.
 /// <code>
 /// [TeamsQueryLinkRoute]
 /// public async Task&lt;Response&gt; OnQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
@@ -69,10 +69,10 @@ public class TeamsQueryRouteAttribute(string commandId = null, string commandIdP
 ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [attachment] } };
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnQueryLink"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnQueryLink(Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(QueryLinkHandler))]
@@ -92,7 +92,7 @@ public class TeamsQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort ran
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension anonymous query link events in Teams.
-/// The method must match the <see cref="QueryLinkHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkHandler"/> delegate signature.
 /// <code>
 /// [TeamsAnonQueryLinkRoute]
 /// public async Task&lt;Response&gt; OnAnonQueryLinkAsync(ITeamsTurnContext turnContext, ITurnState turnState, string url, CancellationToken cancellationToken)
@@ -102,10 +102,10 @@ public class TeamsQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort ran
 ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [attachment] } };
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnAnonymousQueryLink"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnAnonymousQueryLink(Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(QueryLinkHandler))]
@@ -125,7 +125,7 @@ public class TeamsAnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension query URL setting events in Teams.
-/// The method must match the <see cref="QuerySettingUrlHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QuerySettingUrlHandler"/> delegate signature.
 /// <code>
 /// [TeamsQuerySettingUrlRoute]
 /// public Task&lt;Response&gt; OnQuerySettingUrlAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -143,10 +143,10 @@ public class TeamsAnonQueryLinkRouteAttribute(bool isAgenticOnly = false, ushort
 ///     });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnQuerySettingUrl"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnQuerySettingUrl(Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QuerySettingUrlHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(QuerySettingUrlHandler))]
@@ -166,7 +166,7 @@ public class TeamsQuerySettingUrlRouteAttribute(bool isAgenticOnly = false, usho
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension <c>composeExtension/fetchTask</c> Invokes in Teams.
-/// The method must match the <see cref="FetchActionHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionHandler"/> delegate signature.
 /// <code>
 /// [TeamsFetchActionRoute("myCommand")]
 /// public Task&lt;ActionResponse&gt; OnFetchTaskAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction action, CancellationToken cancellationToken)
@@ -181,12 +181,12 @@ public class TeamsQuerySettingUrlRouteAttribute(bool isAgenticOnly = false, usho
 ///     });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnFetchAction(string, FetchActionHandler)"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnFetchAction(System.String, Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(FetchActionHandler))]
@@ -216,7 +216,7 @@ public class TeamsFetchActionRouteAttribute(string commandId = null, string comm
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension agent message preview edit events in Teams.
-/// The method must match the <see cref="MessagePreviewEditHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewEditHandler"/> delegate signature.
 /// <code>
 /// [TeamsMessagePreviewEditRoute("composeCmd")]
 /// public Task&lt;Response&gt; OnMessagePreviewEditAsync(ITeamsTurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
@@ -226,12 +226,12 @@ public class TeamsFetchActionRouteAttribute(string commandId = null, string comm
 ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [BuildEditCard(draft)] } });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnMessagePreviewEdit(string, MessagePreviewEditHandler)"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnMessagePreviewEdit(System.String, Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewEditHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(MessagePreviewEditHandler))]
@@ -261,7 +261,7 @@ public class TeamsMessagePreviewEditRouteAttribute(string commandId = null, stri
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension agent message preview send events in Teams.
-/// The method must match the <see cref="MessagePreviewSendHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewSendHandler"/> delegate signature.
 /// <code>
 /// [TeamsMessagePreviewSendRoute("composeCmd")]
 /// public async Task OnMessagePreviewSendAsync(ITeamsTurnContext turnContext, ITurnState turnState, IActivity activityPreview, CancellationToken cancellationToken)
@@ -271,12 +271,12 @@ public class TeamsMessagePreviewEditRouteAttribute(string commandId = null, stri
 ///     await _channel.PostAsync(content, cancellationToken);
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnMessagePreviewSend(string, MessagePreviewSendHandler)"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnMessagePreviewSend(System.String, Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessagePreviewSendHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match.  Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The message extension command ID pattern to match using regular expressions.  Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(MessagePreviewSendHandler))]
@@ -306,7 +306,7 @@ public class TeamsMessagePreviewSendRouteAttribute(string commandId = null, stri
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension configure settings events in Teams.
-/// The method must match the <see cref="SettingHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingHandler"/> delegate signature.
 /// <code>
 /// [TeamsSettingRoute]
 /// public Task&lt;Response&gt; OnSettingAsync(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.MessageExtensions.MessageExtensionQuery query, CancellationToken cancellationToken)
@@ -317,10 +317,10 @@ public class TeamsMessagePreviewSendRouteAttribute(string commandId = null, stri
 ///     return Task.FromResult(new Response { ComposeExtension = new Result { Type = ResultType.Config } });
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnSetting"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnSetting(Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SettingHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SettingHandler))]
@@ -340,7 +340,7 @@ public class TeamsSettingRouteAttribute(bool isAgenticOnly = false, ushort rank 
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension submit action events in Teams.
-/// The method must match the <see cref="SubmitActionHandler"/> delegate signature —
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SubmitActionHandler"/> delegate signature —
 /// the third parameter must be <see cref="Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction"/>.
 /// <code>
 /// [TeamsSubmitActionRoute("createTask")]
@@ -351,12 +351,12 @@ public class TeamsSettingRouteAttribute(bool isAgenticOnly = false, ushort rank 
 ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [card] } };
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnSubmitAction(string, SubmitActionHandler)"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnSubmitAction(System.String, Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SubmitActionHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="commandId">The message extension command ID to match. Mutually exclusive with commandIdPattern.</param>
 /// <param name="commandIdPattern">The regular expression pattern to match the message extension command ID. Mutually exclusive with commandId.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SubmitActionHandler))]
@@ -388,7 +388,7 @@ public class TeamsSubmitActionRouteAttribute(string commandId = null, string com
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension select item events in Teams.
-/// The method must match the <see cref="SelectItemHandler{TData}"/> delegate signature, where <c>TData</c> is inferred
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SelectItemHandler{TData}"/> delegate signature, where <c>TData</c> is inferred
 /// from the method's third parameter type.
 /// <code>
 /// public record ProductSummary(string Id, string Name);
@@ -401,10 +401,10 @@ public class TeamsSubmitActionRouteAttribute(string commandId = null, string com
 ///     return new Response { ComposeExtension = new Result { Type = ResultType.List, Attachments = [card] } };
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnSelectItem"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnSelectItem{TData}(Microsoft.Agents.Extensions.MSTeams.MessageExtensions.SelectItemHandler{TData}, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SelectItemHandler<>))]
@@ -426,7 +426,7 @@ public class TeamsSelectItemRouteAttribute(bool isAgenticOnly = false, ushort ra
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for message extension card button click events in Teams.
-/// The method must match the <see cref="CardButtonClickedHandler{TData}"/> delegate signature, where <c>TData</c> is inferred
+/// The method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CardButtonClickedHandler{TData}"/> delegate signature, where <c>TData</c> is inferred
 /// from the method's third parameter type.
 /// <code>
 /// public record ApprovalAction(string ItemId, string Decision);
@@ -438,10 +438,10 @@ public class TeamsSelectItemRouteAttribute(bool isAgenticOnly = false, ushort ra
 ///     await turnContext.SendActivityAsync($"Decision '{cardData.Decision}' recorded.", cancellationToken: cancellationToken);
 /// }
 /// </code>
-/// Alternatively, <see cref="MessageExtension.OnCardButtonClicked"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.MessageExtension.OnCardButtonClicked{TData}(Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CardButtonClickedHandler{TData}, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(CardButtonClickedHandler<>))]

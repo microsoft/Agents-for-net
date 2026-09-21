@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// <summary>
         /// Creates a message activity that includes a list of choices formatted based on the capabilities of a given channel.
         /// </summary>
-        /// <param name="channelId">A channel ID. The <see cref="Connector.Channels"/> class contains known channel IDs.</param>
+        /// <param name="channelId">A channel ID. The <see cref="Microsoft.Agents.Core.Models.Channels"/> class contains known channel IDs.</param>
         /// <param name="list">The list of choices to include.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
         /// <param name="speak">Optional, the text to be spoken by your Agent on a speech-enabled channel.</param>
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         /// <summary>
         /// Creates a message activity that includes a list of choices formatted based on the capabilities of a given channel.
         /// </summary>
-        /// <param name="channelId">A channel ID. The <see cref="Connector.Channels"/> class contains known channel IDs.</param>
+        /// <param name="channelId">A channel ID. The <see cref="Microsoft.Agents.Core.Models.Channels"/> class contains known channel IDs.</param>
         /// <param name="list">The list of choices to include.</param>
         /// <param name="text">Optional, the text of the message to send.</param>
         /// <param name="speak">Optional, the text to be spoken by your Agent on a speech-enabled channel.</param>
@@ -279,7 +279,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
         }
 
         /// <summary>
-        /// Takes a list of strings and returns them as <see cref="Choice"/>.
+        /// Takes a list of strings and returns them as <see cref="Microsoft.Agents.Builder.Dialogs.Choices.Choice"/>.
         /// </summary>
         /// <param name="choices">The list of choices to add.</param>
         /// <returns>A list of choices.</returns>

@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Provides the generic base builder for routing handoff invoke activities in an <see cref="AgentApplication"/>.
+    /// Provides the generic base builder for routing handoff invoke activities in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Derive from <see cref="HandoffRouteBuilderBase{TBuilder}"/> to create specialized handoff route builders
+    /// Derive from <see cref="Microsoft.Agents.Builder.App.HandoffRouteBuilderBase{TBuilder}"/> to create specialized handoff route builders
     /// while preserving fluent chaining on the concrete builder type. Routes built from this base match invoke
     /// activities named <c>handoff/action</c>.
     /// </remarks>

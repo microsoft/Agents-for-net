@@ -8,7 +8,7 @@ using System.Collections.Concurrent;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// Values persisted for the lifetime of the turn as part of the <see cref="ITurnContext"/>.
+    /// Values persisted for the lifetime of the turn as part of the <see cref="Microsoft.Agents.Builder.ITurnContext"/>.
     /// </summary>
     public class TurnContextStateCollection : ConcurrentDictionary<string, object>, IDisposable
     {
@@ -17,7 +17,7 @@ namespace Microsoft.Agents.Builder
         internal bool HasBeenDisposed => _disposed;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TurnContextStateCollection"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.TurnContextStateCollection"/> class.
         /// </summary>
         public TurnContextStateCollection()
             : base(StringComparer.InvariantCultureIgnoreCase)
@@ -54,7 +54,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <typeparam name="T">The type of the object.</typeparam>
         /// <returns>The object; or null if no default service of the type is registered.</returns>
-        /// <remarks>The default service key is the <see cref="Type.FullName"/> of the object type.</remarks>
+        /// <remarks>The default service key is the <see cref="System.Type.FullName"/> of the object type.</remarks>
         public T Get<T>()
             where T : class
         {

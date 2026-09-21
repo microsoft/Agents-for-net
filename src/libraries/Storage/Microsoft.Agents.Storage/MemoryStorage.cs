@@ -50,8 +50,8 @@ namespace Microsoft.Agents.Storage
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.ReadAsync(string[], System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.WriteAsync(System.Collections.Generic.IDictionary{string, object}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.ReadAsync(System.String[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.WriteAsync(System.Collections.Generic.IDictionary{System.String, System.Object}, System.Threading.CancellationToken)"/>
         public Task DeleteAsync(string[] keys, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
@@ -79,8 +79,8 @@ namespace Microsoft.Agents.Storage
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activities are successfully sent, the task result contains
         /// the items read, indexed by key.</remarks>
-        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.DeleteAsync(string[], System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.WriteAsync(System.Collections.Generic.IDictionary{string, object}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.DeleteAsync(System.String[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.WriteAsync(System.Collections.Generic.IDictionary{System.String, System.Object}, System.Threading.CancellationToken)"/>
         public Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(keys, nameof(keys));
@@ -162,8 +162,8 @@ namespace Microsoft.Agents.Storage
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute. Throws ArgumentException for an ETag conflict.</returns>
-        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.DeleteAsync(string[], System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.ReadAsync(string[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.DeleteAsync(System.String[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.MemoryStorage.ReadAsync(System.String[], System.Threading.CancellationToken)"/>
         public Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));

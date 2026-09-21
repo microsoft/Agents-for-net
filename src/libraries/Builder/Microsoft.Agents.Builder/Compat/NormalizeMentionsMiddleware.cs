@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.Compat
     public class NormalizeMentionsMiddleware : IMiddleware
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="NormalizeMentionsMiddleware"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Compat.NormalizeMentionsMiddleware"/> class.
         /// </summary>
         public NormalizeMentionsMiddleware()
         {
@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Builder.Compat
         /// <param name="turnContext">turn context.</param>
         /// <param name="next">next middleware.</param>
         /// <param name="cancellationToken">cancellationToken.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         public async Task OnTurnAsync(ITurnContext turnContext, NextDelegate next, CancellationToken cancellationToken = default)
         {
             turnContext.Activity.NormalizeMentions(RemoveRecipientMention);

@@ -10,13 +10,13 @@ namespace Microsoft.Agents.Core.Serialization
 {
     /// <summary>
     /// Assembly-level attribute that points at a custom <see cref="Microsoft.Agents.Core.Models.Activity"/>
-    /// subclass annotated with one or more <see cref="ActivityTypeAttribute"/> declarations.
+    /// subclass annotated with one or more <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute"/> declarations.
     /// </summary>
     /// <remarks>
     /// One instance is emitted by the <c>ActivityTypeInitSourceGenerator</c> for each <c>[ActivityType]</c>
-    /// class in an assembly. At <see cref="ProtocolJsonSerializer"/> initialization these attributes are
+    /// class in an assembly. At <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer"/> initialization these attributes are
     /// read off the loaded assemblies and their declarations auto-registered, so extension authors do not
-    /// need to call <see cref="ProtocolJsonSerializer.RegisterActivityTypes"/> manually, and the runtime
+    /// need to call <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.RegisterActivityTypes(System.Collections.Generic.IEnumerable{System.Type})"/> manually, and the runtime
     /// never has to scan every type to find custom Activity subclasses.
     /// </remarks>
     /// <param name="type">The annotated custom <see cref="Microsoft.Agents.Core.Models.Activity"/> subclass.</param>

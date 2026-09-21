@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Core.Analyzers
 {
     /// <summary>
-    /// Provides a code fix for <see cref="RouteHandlerSignatureAnalyzer"/> (MAA002) that rewrites a route
+    /// Provides a code fix for <see cref="Microsoft.Agents.Core.Analyzers.RouteHandlerSignatureAnalyzer"/> (MAA002) that rewrites a route
     /// handler method's parameter list and return type to match the expected handler delegate signature.
     /// When the attribute declares several acceptable handler delegates, one fix is offered per delegate.
     /// </summary>

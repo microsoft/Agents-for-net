@@ -26,14 +26,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         private readonly PromptValidator<IActivity> _validator;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActivityPrompt"/> class.
-        /// Called from constructors in derived classes to initialize the <see cref="ActivityPrompt"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.ActivityPrompt"/> class.
+        /// Called from constructors in derived classes to initialize the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.ActivityPrompt"/> class.
         /// </summary>
         /// <param name="dialogId">The ID to assign to this prompt.</param>
-        /// <param name="validator">A <see cref="PromptValidator{Activity}"/> that contains
+        /// <param name="validator">A <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptValidator{Activity}"/> that contains
         /// validation for this prompt.</param>
         /// <remarks>The value of <paramref name="dialogId"/> must be unique within the
-        /// <see cref="DialogSet"/> or <see cref="ComponentDialog"/> to which the prompt is added.</remarks>
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> or <see cref="Microsoft.Agents.Builder.Dialogs.ComponentDialog"/> to which the prompt is added.</remarks>
         public ActivityPrompt(string dialogId, PromptValidator<IActivity> validator)
             : base(dialogId)
         {
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="options">Optional, additional information to pass to the prompt being started.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the prompt is still
         /// active after the turn has been processed by the prompt.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options, CancellationToken cancellationToken = default)
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="dc">The dialog context for the current turn of conversation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.
         /// <para>The prompt generally continues to receive the user's replies until it accepts the
@@ -156,7 +156,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// The type of the value returned is dependent on the previous dialog.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
         public override async Task<DialogTurnResult> ResumeDialogAsync(DialogContext dc, DialogReason reason, object result = null, CancellationToken cancellationToken = default)
@@ -182,7 +182,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="instance">The instance of the dialog on the stack.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         public override async Task RepromptDialogAsync(ITurnContext turnContext, DialogInstance instance, CancellationToken cancellationToken = default)
         {
             var state = (PersistedState)instance.State[PersistedState];
@@ -206,10 +206,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         /// <param name="state">Contains state for the current instance of the prompt on the dialog stack.</param>
         /// <param name="options">A prompt options object constructed from the options initially provided
-        /// in the call to <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>.</param>
+        /// in the call to <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         protected virtual async Task OnPromptAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, CancellationToken cancellationToken = default)
             => await OnPromptAsync(turnContext, state, options, false, cancellationToken).ConfigureAwait(false);
 
@@ -219,11 +219,11 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         /// <param name="state">Contains state for the current instance of the prompt on the dialog stack.</param>
         /// <param name="options">A prompt options object constructed from the options initially provided
-        /// in the call to <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>.</param>
-        /// <param name="isRetry">A <see cref="bool"/> representing if the prompt is a retry.</param>
+        /// in the call to <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>.</param>
+        /// <param name="isRetry">A <see cref="System.Boolean"/> representing if the prompt is a retry.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the result of the asynchronous operation.</returns>
         protected virtual async Task OnPromptAsync(
             ITurnContext turnContext,
             IDictionary<string, object> state,
@@ -250,10 +250,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="turnContext">Context for the current turn of conversation with the user.</param>
         /// <param name="state">Contains state for the current instance of the prompt on the dialog stack.</param>
         /// <param name="options">A prompt options object constructed from the options initially provided
-        /// in the call to <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>.</param>
+        /// in the call to <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result describes the result of the recognition attempt.</remarks>
         protected virtual Task<PromptRecognizerResult<IActivity>> OnRecognizeAsync(ITurnContext turnContext, IDictionary<string, object> state, PromptOptions options, CancellationToken cancellationToken = default)
         {

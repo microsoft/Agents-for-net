@@ -46,8 +46,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Resolves the <see cref="IChannelAdapter"/> registered for the specified <paramref name="channelId"/> using
-        /// the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// Resolves the <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> registered for the specified <paramref name="channelId"/> using
+        /// the <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="channelId">The channelId whose adapter should be resolved. Cannot be null or empty.</param>
         /// <returns>The adapter registered for the channel.</returns>
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         /// <summary>
         /// Sends an activity to an existing conversation, resolving the channel adapter from the specified
-        /// <paramref name="channelId"/> via the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// <paramref name="channelId"/> via the <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="channelId">The channelId whose registered adapter is used to send the activity. Cannot be null or empty.</param>
         /// <param name="conversationId">The unique identifier of the conversation to which the activity will be sent. Cannot be 
@@ -118,7 +118,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Sends an activity to a conversation, resolving the channel adapter from the conversation's
         /// <see cref="Microsoft.Agents.Core.Models.ConversationReference.ChannelId"/> via the
-        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> constructors or <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/>.</param>
         /// <param name="activity">The activity to send to the conversation. If the activity's Type property is null or empty, it defaults to a
@@ -197,7 +197,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         /// <summary>
         /// Continues an existing conversation by resuming activity, resolving the channel adapter from the specified
-        /// <paramref name="channelId"/> via the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>. The
+        /// <paramref name="channelId"/> via the <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>. The
         /// conversation must have previously been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>.
         /// </summary>
         /// <param name="channelId">The channelId whose registered adapter is used to continue the conversation. Cannot be null or empty.</param>
@@ -218,7 +218,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Continues an existing conversation by resuming activity using the specified channel adapter and conversation
         /// ID. The conversation must have previously been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>.<br/><br/>
-        /// See  <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.ContinueConversationAsync(Microsoft.Agents.Builder.IChannelAdapter, Microsoft.Agents.Builder.App.Proactive.Conversation, Microsoft.Agents.Builder.App.RouteHandler, string[], Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// See  <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.ContinueConversationAsync(Microsoft.Agents.Builder.IChannelAdapter, Microsoft.Agents.Builder.App.Proactive.Conversation, Microsoft.Agents.Builder.App.RouteHandler, System.String[], Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         /// for more details.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send and receive activities for the conversation.</param>
@@ -243,7 +243,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Continues an existing conversation by calling the specified route handler, resolving the channel adapter
         /// from the conversation's <see cref="Microsoft.Agents.Core.Models.ConversationReference.ChannelId"/> via the
-        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> constructors or <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/>.</param>
         /// <param name="continuationHandler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>
@@ -343,8 +343,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         /// <summary>
         /// Creates a new conversation, resolving the channel adapter from
-        /// <see cref="CreateConversationOptions.ChannelId"/> via the
-        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptions.ChannelId"/> via the
+        /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="createOptions">An object containing the details required to create the conversation, including conversation identity,
         /// reference, parameters, and scope. Cannot be null. See <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/>.</param>
@@ -511,7 +511,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// conversation does not exist.
         /// </summary>
         /// <remarks>If no conversation is found for the specified identifier, a <see
-        /// cref="KeyNotFoundException"/> is thrown. Use this method when the absence of a conversation should be
+        /// cref="System.Collections.Generic.KeyNotFoundException"/> is thrown. Use this method when the absence of a conversation should be
         /// treated as an error.</remarks>
         /// <param name="conversationId">The unique identifier of the conversation to retrieve. Cannot be null or empty.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>

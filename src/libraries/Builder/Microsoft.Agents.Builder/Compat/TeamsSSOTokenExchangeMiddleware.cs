@@ -38,9 +38,9 @@ namespace Microsoft.Agents.Builder.Compat
         private readonly string _oAuthConnectionName;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsSSOTokenExchangeMiddleware"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Compat.TeamsSSOTokenExchangeMiddleware"/> class.
         /// </summary>
-        /// <param name="storage">The <see cref="IStorage"/> to use for deduplication.</param>
+        /// <param name="storage">The <see cref="Microsoft.Agents.Storage.IStorage"/> to use for deduplication.</param>
         /// <param name="connectionName">The connection name to use for the single
         /// sign on token exchange.</param>
         public TeamsSSOTokenExchangeMiddleware(IStorage storage, string connectionName)

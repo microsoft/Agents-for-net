@@ -7,12 +7,12 @@ using System;
 namespace Microsoft.Agents.Extensions.MSTeams;
 
 /// <summary>
-/// Marks an <see cref="AgentApplication"/> subclass to automatically receive a
-/// generated <c>Teams</c> property of type <see cref="TeamsAgentExtension"/>.
+/// Marks an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> subclass to automatically receive a
+/// generated <c>Teams</c> property of type <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension"/>.
 /// </summary>
 /// <remarks>
 /// The decorated class must be declared as <c>partial</c>. When the class is compiled, a source
-/// generator creates a companion partial class that exposes a <see cref="TeamsAgentExtension"/>
+/// generator creates a companion partial class that exposes a <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension"/>
 /// through a <c>Teams</c> property. The extension is lazily initialized and registered with the
 /// application on first access.
 /// <code>

@@ -8,7 +8,7 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the execution of a matched route handler
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the execution of a matched route handler
     /// during a turn.
     /// </summary>
     /// <remarks>
