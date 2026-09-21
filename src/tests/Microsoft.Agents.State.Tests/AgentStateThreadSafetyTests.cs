@@ -261,6 +261,29 @@ namespace Microsoft.Agents.State.Tests
         }
 
         [Fact]
+        public async Task State_DeleteAfterLoad_ShouldNotSaveDeletedStateAtEndOfTurn()
+        {
+            var storage = new MemoryStorage();
+            var seed = new ConversationState(storage);
+            var seedContext = TestUtilities.CreateEmptyContext();
+            await seed.LoadAsync(seedContext);
+            seed.SetValue("key", "value");
+            await seed.SaveChangesAsync(seedContext);
+
+            var state = new ConversationState(storage);
+            var context = TestUtilities.CreateEmptyContext();
+            await state.LoadAsync(context);
+
+            await state.DeleteStateAsync(context);
+            await state.SaveChangesAsync(context);
+
+            var reloadedState = new ConversationState(storage);
+            var reloadContext = TestUtilities.CreateEmptyContext();
+            await reloadedState.LoadAsync(reloadContext);
+            Assert.False(reloadedState.HasValue("key"));
+        }
+
+        [Fact]
         public async Task State_OverlappingTurns_WithoutLoadedVersion_ShouldPreserveUpsertBehavior()
         {
             var storage = new MemoryStorage();

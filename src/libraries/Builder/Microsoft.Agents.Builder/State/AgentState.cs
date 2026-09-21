@@ -321,6 +321,20 @@ namespace Microsoft.Agents.Builder.State
 
             var storageKey = GetStorageKey(turnContext);
             await _storage.DeleteAsync([storageKey], cancellationToken).ConfigureAwait(false);
+
+            // DeleteStateAsync removes the backing document, unlike ClearState which is
+            // intentionally persisted as an empty document at the end of the turn. Once the
+            // delete succeeds, the loaded version is no longer valid and the cleared cache must
+            // not trigger the automatic end-of-turn save.
+            lock (_stateLock)
+            {
+                var cachedState = GetCachedState();
+                if (cachedState != null)
+                {
+                    cachedState.Version = null;
+                    cachedState.Hash = CachedAgentState.ComputeHash(cachedState.State);
+                }
+            }
         }
 
         /// <summary>
