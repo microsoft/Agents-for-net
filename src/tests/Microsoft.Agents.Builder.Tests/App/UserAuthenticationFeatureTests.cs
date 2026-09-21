@@ -386,6 +386,51 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
+        public async Task Test_EndOfConversation_ResetsActiveHandlerAndClearsSignInState()
+        {
+            var signInCalls = 0;
+            var resetCalls = 0;
+            var storage = new MemoryStorage();
+            var graphMock = new Mock<IUserAuthorization>();
+            graphMock
+                .Setup(e => e.SignInUserAsync(It.IsAny<ITurnContext>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<CancellationToken>()))
+                .Callback(() => signInCalls++)
+                .ReturnsAsync((TokenResponse)null);
+            graphMock
+                .Setup(e => e.ResetStateAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
+                .Callback(() => resetCalls++)
+                .Returns(Task.CompletedTask);
+            graphMock
+                .Setup(e => e.Name)
+                .Returns(GraphName);
+
+            var options = new TestApplicationOptions(storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, storage, MockConnections.Object, graphMock.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny
+                }
+            };
+            var app = new TestApplication(options);
+            var storageKey = "oauth/channelId/fromId/userAuthorizationState";
+
+            var firstTurn = MockTurnContext();
+            var firstState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(firstTurn);
+            Assert.False(await app.UserAuthorization.StartOrContinueSignInUserAsync(firstTurn, firstState));
+            Assert.NotEmpty(await storage.ReadAsync<object>([storageKey], CancellationToken.None));
+
+            var endOfConversationTurn = MockTurnContext();
+            endOfConversationTurn.Activity.Type = ActivityTypes.EndOfConversation;
+            var endOfConversationState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(endOfConversationTurn);
+            var continued = await app.UserAuthorization.StartOrContinueSignInUserAsync(endOfConversationTurn, endOfConversationState);
+
+            Assert.False(continued);
+            Assert.Equal(1, signInCalls);
+            Assert.Equal(1, resetCalls);
+            Assert.Empty(await storage.ReadAsync<object>([storageKey], CancellationToken.None));
+        }
+
+        [Fact]
         public async Task Test_AutoSignIn_UserCancelled_DoesNotSendFailureMessage()
         {
             var storage = new MemoryStorage();

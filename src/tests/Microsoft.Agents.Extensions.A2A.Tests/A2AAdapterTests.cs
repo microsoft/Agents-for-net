@@ -1009,6 +1009,73 @@ public class A2AAdapterTests
         Assert.Equal("agent.read", request.GetProperty("requiredScopes")[0].GetString());
     }
 
+    [Fact]
+    public async Task CancelTaskAsync_WithInTaskAuthorization_ClearsUserAuthorizationState()
+    {
+        var connections = Mock.Of<IConnections>();
+        IActivity endOfConversation = null;
+        var record = UseRecord(record =>
+        {
+            var authorization = CreateInTaskAuthorization("request", record.Storage, connections);
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections,
+                    authorization)
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                },
+            };
+            var agent = new TestApplication(options);
+            var extension = new A2AAgentExtension(agent);
+            agent.RegisteredExtensions.Add(extension);
+            extension.Skill("protected", skill => skill
+                .OnMessage("Hello", (_, _, _) => throw new InvalidOperationException("Protected route must not run before authorization."), autoSigninHandlers: ["request"]));
+            return agent;
+        });
+        record.Adapter.Use(new CaptureActivityMiddleware(activity =>
+        {
+            if (activity.IsType(ActivityTypes.EndOfConversation))
+            {
+                endOfConversation = activity;
+            }
+        }));
+
+        var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-in-task")));
+        initialContext.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+        var initialResult = await record.Adapter.ProcessJsonRpcAsync(
+            initialContext.Request,
+            initialContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await initialResult.ExecuteAsync(initialContext);
+
+        var initialTask = ReadTaskResponse(initialContext);
+        var storageKey = $"oauth/{Channels.A2A}/{initialTask.Id}/userAuthorizationState";
+        Assert.NotEmpty(await record.Storage.ReadAsync<object>([storageKey], CancellationToken.None));
+
+        var cancelContext = CreateHttpContext(JsonSerializer.Serialize(new JsonRpcRequest
+        {
+            Id = Guid.NewGuid().ToString(),
+            Method = A2AMethods.CancelTask,
+            Params = JsonSerializer.SerializeToElement(new CancelTaskRequest { Id = initialTask.Id }),
+        }));
+        var cancelResult = await record.Adapter.ProcessJsonRpcAsync(
+            cancelContext.Request,
+            cancelContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await cancelResult.ExecuteAsync(cancelContext);
+
+        Assert.Equal(TaskState.Canceled, ReadTaskResponse(cancelContext).Status.State);
+        Assert.NotNull(endOfConversation);
+        Assert.Equal(EndOfConversationCodes.UserCancelled, endOfConversation.Code);
+        Assert.Empty(await record.Storage.ReadAsync<object>([storageKey], CancellationToken.None));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
