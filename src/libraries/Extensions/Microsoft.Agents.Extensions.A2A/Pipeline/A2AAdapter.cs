@@ -19,18 +19,14 @@ using Microsoft.Agents.Extensions.A2A.ProtocolExtensions;
 using Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -54,6 +50,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
     private readonly ITaskStore _taskStore;
     private readonly ChannelEventNotifier _a2aNotifier;
     private static readonly ConcurrentDictionary<string, AgentRequestContext> _a2aAgentContext = new();
+    private static readonly AsyncLocal<AgentRequestContext> _currentAgentContext = new();
     private static readonly A2AServerOptions _a2aServerOptions = new();
     private static readonly string _assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
     private readonly ILoggerFactory _loggerFactory;
@@ -282,7 +279,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             {
                 try
                 {
-                    await SetResumeAuthorizationAsync(agentContext, httpRequest, request, ct).ConfigureAwait(false);
+                    SetResumeAuthorization(agentContext, request);
                     return await ResumeTaskAsync(agentContext, request, ct).ConfigureAwait(false);
                 }
                 finally
@@ -464,7 +461,8 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         AgentCallbackHandler callback,
         CancellationToken cancellationToken)
     {
-        if (_a2aAgentContext.TryGetValue(continuationActivity.RequestId, out var agentContext))
+        var agentContext = _currentAgentContext.Value;
+        if (agentContext != null)
         {
             await ProcessActivityWithA2AAuthenticationAsync(
                 claimsIdentity,
@@ -536,17 +534,19 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             context.Services.Set(resumeAuthorization);
         }
-        if (agentRequestContext != null)
-        {
-            context.Services.Set(agentRequestContext);
-        }
-        await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
-        return null;
-    }
+        context.Services.Set(new A2AClient(context));
 
-    internal static void RegisterContinuation(string requestId, AgentRequestContext context)
-    {
-        _a2aAgentContext[requestId] = context;
+        var previousContext = _currentAgentContext.Value;
+        _currentAgentContext.Value = agentRequestContext ?? previousContext;
+        try
+        {
+            await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
+            return null;
+        }
+        finally
+        {
+            _currentAgentContext.Value = previousContext;
+        }
     }
 
     private static void RemoveAgentContext(AgentRequestContext context)
@@ -581,7 +581,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             var request = parameters?.Deserialize<ResumeAuthRequest>(A2AJsonUtilities.DefaultOptions)
                 ?? throw new A2AException("Invalid resumeAuth parameters.", A2AErrorCode.InvalidParams);
-            await SetResumeAuthorizationAsync(agentContext, agentContext.HttpRequest, request, cancellationToken).ConfigureAwait(false);
+            SetResumeAuthorization(agentContext, request);
             var result = await agentContext.Adapter.ResumeTaskAsync(agentContext, request, cancellationToken).ConfigureAwait(false);
             return new JsonRpcResponseResult(JsonRpcResponse.CreateJsonRpcResponse(requestId, result));
         }
@@ -601,7 +601,9 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         if (task.Status?.State != TaskState.AuthRequired
             || !string.Equals(task.ContextId, request.ContextId, StringComparison.Ordinal))
         {
-            throw new A2AException("The resumeAuth request does not match an authorization-required task.", A2AErrorCode.InvalidParams);
+            throw new A2AException(
+                "The resumeAuth request does not match an authorization-required task.",
+                A2AErrorCode.InvalidParams);
         }
 
         var message = CreateResumeMessage(request).Message;
@@ -615,7 +617,20 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             StreamingResponse = false,
         };
         var eventQueue = new AgentEventQueue();
-        var execution = ExecuteAndCompleteAsync(agentContext, requestContext, eventQueue, cancellationToken);
+        var activity = A2AActivity.ActivityFromMessage(agentContext.RequestId, task.Id, message);
+        activity.Type = ActivityTypes.Event;
+        activity.Name = InTaskAuthorizationExtension.ResumeAuthEventName;
+        activity.Value = new ResumeAuthEventValue
+        {
+            AccessToken = GetResumeAccessToken(agentContext.HttpRequest),
+            Message = message,
+        };
+        var execution = ExecuteAndCompleteAsync(
+            agentContext,
+            requestContext,
+            eventQueue,
+            activity,
+            cancellationToken);
         var producedEvent = false;
 
         try
@@ -649,11 +664,12 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         AgentRequestContext agentContext,
         RequestContext requestContext,
         AgentEventQueue eventQueue,
+        IActivity activity,
         CancellationToken cancellationToken)
     {
         try
         {
-            await agentContext.ExecuteAsync(requestContext, eventQueue, cancellationToken).ConfigureAwait(false);
+            await agentContext.ExecuteActivityAsync(requestContext, eventQueue, activity, cancellationToken).ConfigureAwait(false);
             eventQueue.Complete();
         }
         catch (Exception ex)
@@ -663,11 +679,9 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
     }
 
-    private static async Task SetResumeAuthorizationAsync(
+    private static void SetResumeAuthorization(
         AgentRequestContext context,
-        HttpRequest request,
-        ResumeAuthRequest resumeRequest,
-        CancellationToken cancellationToken)
+        ResumeAuthRequest resumeRequest)
     {
         if (!context.ExtensionRequest.IsActivated(InTaskAuthorizationExtension.Uri))
         {
@@ -682,65 +696,12 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 A2AErrorCode.InvalidParams);
         }
 
-        var header = request.Headers[InTaskAuthorizationExtension.CredentialHeader];
-        if (header.Count != 1
-            || !AuthenticationHeaderValue.TryParse(header[0], out var credential)
-            || !string.Equals(credential.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase)
-            || string.IsNullOrWhiteSpace(credential.Parameter))
-        {
-            throw new A2AException("A2A-InTask-Authorization must contain one Bearer credential.", A2AErrorCode.InvalidRequest);
-        }
-
         context.ResumeAuthorization = new InTaskAuthorizationContext
         {
             TaskId = resumeRequest.TaskId,
             ContextId = resumeRequest.ContextId,
             AuthorizationRequestId = resumeRequest.AuthorizationRequestId,
-            AccessToken = credential.Parameter,
-            CredentialValidated = await ValidateInTaskCredentialAsync(
-                context,
-                request,
-                credential.Parameter,
-                cancellationToken).ConfigureAwait(false),
         };
-    }
-
-    private static async Task<bool> ValidateInTaskCredentialAsync(
-        AgentRequestContext context,
-        HttpRequest request,
-        string accessToken,
-        CancellationToken cancellationToken)
-    {
-        if (string.Equals(context.Authentication.AccessToken, accessToken, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        var services = request.HttpContext.Features.Get<IServiceProvidersFeature>()?.RequestServices;
-        var authentication = services?.GetService<IAuthenticationService>();
-        var schemes = services?.GetService<IAuthenticationSchemeProvider>();
-        var scheme = schemes == null
-            ? null
-            : await schemes.GetDefaultAuthenticateSchemeAsync().ConfigureAwait(false);
-        if (authentication == null || scheme == null)
-        {
-            return false;
-        }
-
-        var validationContext = new DefaultHttpContext
-        {
-            RequestServices = services,
-        };
-        validationContext.Request.Scheme = request.Scheme;
-        validationContext.Request.Host = request.Host;
-        validationContext.Request.PathBase = request.PathBase;
-        validationContext.Request.Path = request.Path;
-        validationContext.Request.QueryString = request.QueryString;
-        validationContext.Request.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer", accessToken).ToString();
-
-        var result = await authentication.AuthenticateAsync(validationContext, scheme.Name).ConfigureAwait(false);
-        return result.Succeeded;
     }
 
     private static SendMessageRequest CreateResumeMessage(ResumeAuthRequest request)
@@ -757,10 +718,24 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         };
     }
 
+    private static string GetResumeAccessToken(HttpRequest request)
+    {
+        var values = request.Headers[InTaskAuthorizationExtension.TokenHeader];
+        if (values.Count != 1 || string.IsNullOrWhiteSpace(values[0]))
+        {
+            throw new A2AException(
+                $"{InTaskAuthorizationExtension.TokenHeader} must contain one access token.",
+                A2AErrorCode.InvalidRequest);
+        }
+
+        return values[0];
+    }
+
     /// <inheritdoc/>
     public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
     {
-        if (!_a2aAgentContext.TryGetValue(turnContext.Activity.RequestId, out var agentContext))
+        if (!_a2aAgentContext.TryGetValue(turnContext.Activity.RequestId, out var agentContext)
+            && (agentContext = _currentAgentContext.Value) == null)
         {
             throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
                 ErrorHelper.AgentRequestContextMissing,
@@ -811,6 +786,17 @@ class AgentRequestContext : IAgentHandler
         }
 
         await Adapter.ExecuteAgentTurnAsync(this, context, eventQueue, cancellationToken);
+    }
+
+    public async Task ExecuteActivityAsync(
+        RequestContext context,
+        AgentEventQueue eventQueue,
+        IActivity activity,
+        CancellationToken cancellationToken)
+    {
+        EventQueue = eventQueue;
+        CurrentContext = context;
+        await Adapter.ProcessActivityAsync(Identity, activity, Agent.OnTurnAsync, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task CancelAsync(RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)

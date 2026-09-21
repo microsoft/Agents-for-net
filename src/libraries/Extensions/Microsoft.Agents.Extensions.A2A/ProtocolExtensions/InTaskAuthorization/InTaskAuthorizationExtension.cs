@@ -22,12 +22,14 @@ internal sealed class InTaskAuthorizationExtension : IA2AProtocolExtension
     public const string ResumeAuthOperation = "resumeAuth";
 
     /// <summary>
-    /// The header carrying the task-scoped bearer credential.
+    /// The Activity event name used to route a resume request through AgentApplication.
     /// </summary>
-    public const string CredentialHeader = "A2A-InTask-Authorization";
+    public const string ResumeAuthEventName = Uri + "/resumeAuth";
 
-    internal static string GetStateKey(string handlerName, string taskId)
-        => $"a2a/inTaskAuthorization/{handlerName}/{taskId}";
+    /// <summary>
+    /// The request header carrying the delegated access token for a resume request.
+    /// </summary>
+    public const string TokenHeader = "x-a2a-intask-authorization";
 
     string IA2AProtocolExtension.Uri => Uri;
 
@@ -45,7 +47,6 @@ internal sealed class InTaskAuthorizationExtension : IA2AProtocolExtension
                     jsonRpc = ResumeAuthOperation,
                     httpJson = "POST /tasks/{taskId}:resumeAuth",
                 },
-                credentialHeader = CredentialHeader,
             }),
         };
     }

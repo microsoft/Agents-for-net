@@ -42,12 +42,52 @@ internal static class A2AOAuthFlowConfiguration
 #pragma warning restore CS0618
     }
 
+    internal static IList<string> GetScopeNames(OAuthFlows flows)
+    {
+        var scopes = new List<string>();
+        AddScopeNames(scopes, flows?.AuthorizationCode?.Scopes);
+        AddScopeNames(scopes, flows?.ClientCredentials?.Scopes);
+        AddScopeNames(scopes, flows?.DeviceCode?.Scopes);
+#pragma warning disable CS0618 // Deprecated flows must still be normalized when present.
+        AddScopeNames(scopes, flows?.Implicit?.Scopes);
+        AddScopeNames(scopes, flows?.Password?.Scopes);
+#pragma warning restore CS0618
+        scopes.Sort(StringComparer.Ordinal);
+        return scopes;
+    }
+
+    private static void AddScopeNames(List<string> destination, IDictionary<string, string> scopes)
+    {
+        if (scopes == null)
+        {
+            return;
+        }
+
+        foreach (var scope in scopes.Keys)
+        {
+            destination.Add(scope);
+        }
+    }
+
     private static Dictionary<string, string> ReadScopes(IConfigurationSection flow)
     {
         // IConfiguration treats ':' in URI scopes as a path separator; retain each complete relative key.
-        return flow.GetSection("Scopes")
+        var scopes = flow.GetSection("Scopes")
             .AsEnumerable(makePathsRelative: true)
             .Where(entry => entry.Value != null)
+            .ToArray();
+        if (scopes.Any(entry => !IsUnresolvedTemplate(entry.Key)))
+        {
+            scopes = scopes
+                .Where(entry => !IsUnresolvedTemplate(entry.Key))
+                .ToArray();
+        }
+
+        return scopes
             .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
     }
+
+    private static bool IsUnresolvedTemplate(string scope)
+        => scope?.Contains("{{") == true
+            && scope.Contains("}}");
 }

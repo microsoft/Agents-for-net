@@ -35,5 +35,5 @@ The A2A samples live under `src\samples\A2A`.
 | Anonymous echo | automatic or `:auth none` | any normal text | The sample echoes the text and completes the task. |
 | Delegated OBO to Graph | automatic or `:auth delegated` | `-me` | The client selects the advertised profile skill and delegated requirement. The agent exchanges the inbound Agent API token for Microsoft Graph `User.Read` and returns the signed-in user's display name and UPN. |
 
-The inbound access token must target the Agent API (`api://<agent-client-id>/access_as_user`).
+The inbound access token must target the Agent API (`api://botid-<agent-client-id>/access_as_user`).
 Do not send a Microsoft Graph token directly to the A2A endpoint.

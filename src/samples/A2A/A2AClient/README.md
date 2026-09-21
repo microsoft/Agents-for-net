@@ -1,19 +1,25 @@
 # A2AClient
 
-`A2AClient` is an interactive console client for an A2A agent. It resolves the public Agent Card anonymously, selects a JSON-RPC or HTTP+JSON interface on the configured origin, predicts the intended skill, and chooses the matching authentication requirement before starting a task. It also activates the optional Agents SDK in-task authorization extension when advertised and handles `TASK_STATE_AUTH_REQUIRED` by acquiring the requested OAuth credential and calling `resumeAuth`.
+`A2AClient` is an interactive console client for connecting to an A2A agent. It
+does not require prior knowledge of the agent's skills, protocol binding,
+authentication provider, OAuth endpoints, or scopes.
 
-OAuth acquisition is driven by either the selected Agent Card security scheme or an in-task authorization request. The client supports these A2A OAuth flows without provider-specific token clients:
+At startup, the client:
+
+1. Resolves the agent's public Agent Card anonymously.
+1. Selects a JSON-RPC or HTTP+JSON interface on the configured agent origin.
+1. Uses the Agent Card's skill examples to predict the skill for each message.
+1. Evaluates the selected skill's security requirements and OAuth metadata.
+1. Acquires a token when the selected requirement matches a configured local
+   OAuth connection.
+1. Activates the optional Agents SDK in-task authorization extension when the
+   Agent Card advertises it.
+
+The client supports these OAuth flows without provider-specific code:
 
 - Device Code
-- Authorization Code, with a loopback callback and optional PKCE
+- Authorization Code with a loopback redirect and optional PKCE
 - Client Credentials
-
-For the current `A2AAgent` sample, automatic mode recognizes:
-
-- `-me` -> Device Code for `api://<agent-client-id>/access_as_user`
-- `-issues` -> Device Code for `repo`
-
-`--auth-mode` and `:auth` remain explicit testing overrides. Discovery is always anonymous.
 
 ## Run the client
 
@@ -21,7 +27,7 @@ For the current `A2AAgent` sample, automatic mode recognizes:
 dotnet run --project src\samples\A2A\A2AClient\A2AClient.csproj -- --agent http://localhost:3978/a2a
 ```
 
-The current startup options are:
+The startup options are:
 
 ```text
 --agent <url>
@@ -32,115 +38,236 @@ The current startup options are:
 --help
 ```
 
+`--agent` overrides `A2A:AgentUrl` from configuration.
+
 While the client is running:
 
-- `:auth auto|none|delegated|app` changes authentication mode for future requests.
+- `:auth auto|none|delegated|app` changes authentication selection for future
+  requests.
 - `:history on|off` changes task history display.
 - `:q` or `quit` exits.
 
-Changing authentication mode drops any task awaiting continuation so one caller's task is never resumed with another credential.
+`auto` uses the selected skill's advertised security requirements. `none`
+sends no OAuth token. `delegated` requires a supported Device Code or
+Authorization Code flow. `app` requires a Client Credentials flow.
 
-## OAuth connection profiles
+Changing authentication mode drops any task awaiting continuation so a task is
+not resumed using a different authentication selection.
 
-The Agent Card supplies the OAuth flow, endpoints, and required scopes. Local connection profiles supply the registered OAuth client and restrict which endpoint origins may receive that client's credentials.
+## Configuration
 
-Connection names match Agent Card security-scheme names. In-task authorization
-uses the `delegated` connection because its runtime metadata intentionally does
-not create an Agent Card security scheme:
+The client loads configuration in this order:
+
+1. `appsettings.json`
+1. Environment variables prefixed with `A2ACLIENT_`
+1. .NET user secrets
+
+Values loaded later override values loaded earlier. Command-line `--agent`
+overrides the configured agent URL.
+
+The configuration has two top-level areas:
 
 ```json
 {
   "A2A": {
-    "AgentUrl": "http://localhost:3978/a2a"
+    "AgentUrl": "https://agent.example.com/a2a"
   },
   "Authentication": {
     "Connections": {
       "delegated": {
-        "ClientId": "<agent-api-public-client-id>",
+        "ClientId": "<public-client-id>",
         "AllowedOrigins": [
-          "https://login.microsoftonline.com"
+          "https://identity.example.com"
         ],
         "AdditionalScopes": [
           "offline_access"
         ]
       },
-      "github": {
-        "ClientId": "<github-client-id>",
+      "browser-oauth": {
+        "ClientId": "<public-or-confidential-client-id>",
+        "RedirectUri": "http://localhost:8400/callback/",
         "AllowedOrigins": [
-          "https://github.com"
-        ]
+          "https://identity.example.com"
+        ],
+        "TokenEndpointAuthenticationMethod": "None",
+        "UsePkce": true
+      },
+      "service-oauth": {
+        "ClientId": "<confidential-client-id>",
+        "ClientSecret": "<store-outside-source-control>",
+        "AllowedOrigins": [
+          "https://identity.example.com"
+        ],
+        "TokenEndpointAuthenticationMethod": "ClientSecretPost"
       }
     }
   }
 }
 ```
 
-Supported connection properties:
+### `A2A`
 
 | Property | Purpose |
 |---|---|
-| `ClientId` | OAuth client registration identifier. Required for all supported flows. |
-| `ClientSecret` | Confidential client credential. Keep it in user secrets or environment configuration. |
-| `RedirectUri` | HTTP loopback callback registered for Authorization Code. The path must end in `/`. |
-| `AllowedOrigins` | HTTPS origins allowed for Agent Card authorization, device authorization, and token endpoints. |
-| `AdditionalScopes` | Local protocol scopes added to Agent Card acquisition scopes, such as `offline_access`. |
-| `TokenEndpointAuthenticationMethod` | `None`, `ClientSecretBasic`, or `ClientSecretPost`. |
+| `AgentUrl` | Base URL used to resolve the public Agent Card. Must be an absolute URI. The `--agent` option overrides it. |
+
+### `Authentication:Connections`
+
+`Connections` is a dictionary of local OAuth client profiles. The client does
+not choose OAuth endpoints or resource scopes from these profiles. Those values
+come from the Agent Card or an in-task authorization request.
+
+For Agent Card authentication, the connection name must exactly match the
+selected OAuth security-scheme name. Names are case-sensitive. For example, an
+Agent Card scheme named `browser-oauth` selects
+`Authentication:Connections:browser-oauth`.
+
+In-task authorization metadata does not define an Agent Card security-scheme
+name. The client uses the connection named `delegated` for all in-task Device
+Code and Authorization Code requests.
+
+Connection names and client registrations are local policy. An agent can
+advertise any standards-compliant provider and flow, but token acquisition
+fails unless the client has a matching connection and trusts the advertised
+endpoint origins.
+
+### Connection properties
+
+| Property | Purpose |
+|---|---|
+| `ClientId` | OAuth client registration identifier. Required for every supported flow. |
+| `ClientSecret` | Confidential client credential. Required when `TokenEndpointAuthenticationMethod` is `ClientSecretBasic` or `ClientSecretPost`. Keep it outside source control. |
+| `RedirectUri` | Loopback HTTP callback for Authorization Code. It must be an absolute URI whose path ends in `/`, and it must be registered with the provider. |
+| `AllowedOrigins` | HTTPS origins that may receive this connection's client ID or client credentials. Every advertised authorization, device authorization, and token endpoint is checked against this list. |
+| `AdditionalScopes` | Scopes added locally to the acquisition scopes advertised by the agent, such as `offline_access`. Duplicate scopes are removed. |
+| `TokenEndpointAuthenticationMethod` | Client authentication used at the token endpoint: `None`, `ClientSecretBasic`, or `ClientSecretPost`. Defaults to `None`. |
 | `UsePkce` | Enables Authorization Code PKCE. Defaults to `true`. |
 
-The client rejects an advertised OAuth endpoint unless its origin appears in the selected connection's `AllowedOrigins`. This prevents an untrusted Agent Card from directing a configured client secret to another host.
+The client has no global tenant setting. Tenant selection is part of the OAuth
+endpoint URLs advertised by the agent.
 
-## Generic provider examples
+### Flow-specific profiles
 
-### Microsoft Entra Device Code
+**Device Code**
 
-The `delegated` connection's `ClientId` must be the A2A Agent API public-client registration. The Agent Card supplies the `api://<agent-client-id>/access_as_user` scope and Entra endpoints. `offline_access` is configured locally so an expiring access token can be refreshed without repeating device sign-in.
+- Requires `ClientId`.
+- Requires each advertised device authorization and token endpoint origin in
+  `AllowedOrigins`.
+- Usually uses `TokenEndpointAuthenticationMethod: None`.
+- Can add protocol scopes such as `offline_access` through `AdditionalScopes`.
 
-Do not acquire a Microsoft Graph token and send it directly to the agent. The agent expects an Agent API token and performs the Graph `User.Read` exchange itself.
+**Authorization Code**
 
-### GitHub Device Code
+- Requires `ClientId`, `RedirectUri`, and trusted authorization and token
+  endpoint origins.
+- Uses a loopback HTTP callback.
+- Uses PKCE unless `UsePkce` is set to `false`.
+- Requires `ClientSecret` when the selected token endpoint authentication
+  method uses a client secret.
 
-The `github` connection contains only the GitHub OAuth App client ID and trusted GitHub origin. The same generic Device Code executor handles GitHub; there is no GitHub-specific token acquisition implementation.
+**Client Credentials**
 
-The acquired opaque token is sent to the agent. The sample agent validates it, requires `repo`, and reuses the validated token for the assigned-issues request.
+- Requires `ClientId` and a trusted token endpoint origin.
+- Typically requires `ClientSecret` with `ClientSecretBasic` or
+  `ClientSecretPost`.
 
-### LinkedIn Authorization Code
+## Keep credentials outside `appsettings.json`
 
-An Agent Card can advertise LinkedIn's Authorization Code endpoints and scopes. A matching local connection can be configured without adding LinkedIn source code:
+The committed `appsettings.json` contains placeholders only. Store local
+credentials with .NET user secrets:
 
-```json
-{
-  "Authentication": {
-    "Connections": {
-      "linkedin": {
-        "ClientId": "<linkedin-client-id>",
-        "ClientSecret": "<linkedin-client-secret>",
-        "RedirectUri": "http://localhost:8400/callback/",
-        "AllowedOrigins": [
-          "https://www.linkedin.com"
-        ],
-        "TokenEndpointAuthenticationMethod": "ClientSecretPost",
-        "UsePkce": true
-      }
-    }
-  }
-}
+```powershell
+dotnet user-secrets set "Authentication:Connections:delegated:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
+dotnet user-secrets set "Authentication:Connections:service-oauth:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
+dotnet user-secrets set "Authentication:Connections:service-oauth:ClientSecret" "<client-secret>" --project src\samples\A2A\A2AClient\A2AClient.csproj
 ```
 
-Register the same redirect URI with the provider. When the flow starts, the client opens the authorization URL in the default browser, validates the callback state, exchanges the code, and caches or refreshes the resulting token.
+Environment variables use the `A2ACLIENT_` prefix and `__` for configuration
+section separators:
 
-## Token lifetime
+```powershell
+$env:A2ACLIENT_A2A__AgentUrl = "https://agent.example.com/a2a"
+$env:A2ACLIENT_Authentication__Connections__delegated__ClientId = "<client-id>"
+$env:A2ACLIENT_Authentication__Connections__delegated__AllowedOrigins__0 = "https://identity.example.com"
+```
 
-Tokens are cached by security scheme, flow, and acquisition scopes. A token with `expires_in` is reused until one minute before expiration. If the response includes a refresh token, the client uses it at expiration; otherwise it runs the advertised flow again. A token without `expires_in` is retained as non-expiring.
+Do not store client secrets in committed files.
 
-Keep real secrets out of source control. The committed `appsettings.json` contains placeholders only.
+## Authentication behavior
 
-## Expected failures
+### Agent Card authorization
 
-- A protected request fails when no connection matches the selected Agent Card security scheme.
-- An endpoint outside `AllowedOrigins` is rejected before credentials are sent.
-- Authorization Code fails when `RedirectUri` is absent or is not an HTTP loopback URI.
-- A connection using `ClientSecretBasic` or `ClientSecretPost` fails when `ClientSecret` is absent.
-- `-me` with `:auth app` fails because the current Agent Card does not advertise Client Credentials for that skill.
-- `-issues` with `:auth none` fails because the route requires a validated GitHub token.
+The client evaluates the selected skill's security requirements, falling back
+to card-level requirements when appropriate. A requirement is usable when it:
 
-Access tokens are attached to requests but are never printed, including in failed-request output.
+- names one OAuth security scheme;
+- specifies at least one acquisition scope;
+- advertises a supported flow for the selected authentication mode; and
+- has valid HTTPS endpoints whose origins are trusted by the matching local
+  connection.
+
+If automatic selection finds multiple delegated or application alternatives,
+the client reports the ambiguity instead of guessing.
+
+The acquired token is sent in the normal HTTP `Authorization` header.
+
+### In-task authorization
+
+When the Agent Card advertises the Agents SDK in-task authorization extension,
+the client activates the extension with the `A2A-Extensions` request header.
+
+If a task enters `TASK_STATE_AUTH_REQUIRED`, the client:
+
+1. Reads the OAuth flow and required scopes from the task status metadata.
+1. Uses the local `delegated` connection.
+1. Acquires the requested token.
+1. Calls `resumeAuth`.
+1. Sends the raw token in `x-a2a-intask-authorization`.
+1. Repeats the process when the task returns another distinct authorization
+   request.
+
+The normal `Authorization` header remains available for the JWT that
+authenticates the A2A request. A repeated authorization request ID is rejected
+to prevent a non-progress loop.
+
+## Token caching
+
+Tokens are cached by connection name, OAuth flow, and acquisition scopes.
+
+- A token with `expires_in` is reused until one minute before expiration.
+- A refresh token is used when the cached access token expires.
+- Without a refresh token, the advertised OAuth flow runs again.
+- A token without `expires_in` is treated as non-expiring.
+
+Access tokens and refresh tokens are never printed.
+
+## Endpoint trust
+
+OAuth endpoints are supplied by an external agent, so `AllowedOrigins` is a
+required security boundary. The client rejects:
+
+- malformed endpoint URLs;
+- non-HTTPS OAuth endpoints; and
+- endpoints whose scheme and authority do not match an allowed origin.
+
+This check occurs before the client sends credentials.
+
+Agent API access tokens are also restricted to the configured agent origin.
+The client refuses to send them to another origin or over plaintext HTTP,
+except for HTTP loopback addresses used during local development.
+
+## Common configuration errors
+
+- No local connection has the selected Agent Card security-scheme name.
+- In-task authorization is requested but the `delegated` connection is absent.
+- `ClientId` is missing or still contains a shipped all-zero placeholder.
+- A required endpoint origin is absent from `AllowedOrigins`.
+- Authorization Code is selected without a valid loopback `RedirectUri`.
+- A client-secret authentication method is selected without `ClientSecret`.
+- The selected requirement advertises no acquisition scopes.
+- The selected mode does not match any flow advertised by the agent.
+- The provider rejects the advertised scopes, client registration, redirect
+  URI, or tenant-specific endpoint.
+
+OAuth HTTP failures include the provider's `error` and `error_description`
+values when available, without printing tokens.

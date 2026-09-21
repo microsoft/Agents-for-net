@@ -13,7 +13,9 @@ internal sealed record OAuthDeviceAuthorizationResponse(
     [property: JsonPropertyName("verification_uri_complete")] string? VerificationUriComplete,
     [property: JsonPropertyName("message")] string? Message,
     [property: JsonPropertyName("expires_in")] int ExpiresIn,
-    [property: JsonPropertyName("interval")] int? Interval);
+    [property: JsonPropertyName("interval")] int? Interval,
+    [property: JsonPropertyName("error")] string? Error,
+    [property: JsonPropertyName("error_description")] string? ErrorDescription);
 
 internal sealed record OAuthTokenResponse(
     [property: JsonPropertyName("access_token")] string? AccessToken,

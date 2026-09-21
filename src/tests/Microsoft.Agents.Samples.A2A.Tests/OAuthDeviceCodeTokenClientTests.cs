@@ -116,6 +116,50 @@ public class OAuthDeviceCodeTokenClientTests
         Assert.Empty(handler.Requests);
     }
 
+    [Fact]
+    public async Task AcquireTokenAsync_PlaceholderClientId_ThrowsBeforeSendingRequest()
+    {
+        var handler = new SequenceJsonHandler("{}");
+        using var client = new HttpClient(handler);
+        var sut = new OAuthDeviceCodeTokenClient(client, TextWriter.Null);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.AcquireTokenAsync(
+                CreateAuthentication(),
+                new OAuthConnectionOptions
+                {
+                    ClientId = "00000000-0000-0000-0000-000000000000",
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                },
+                CancellationToken.None));
+
+        Assert.Contains("placeholder", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task AcquireTokenAsync_DeviceAuthorizationError_IncludesProviderDetails()
+    {
+        var handler = new SequenceResponseHandler(
+            (HttpStatusCode.BadRequest, """
+                {
+                  "error": "invalid_request",
+                  "error_description": "AADSTS50059: No tenant-identifying information found."
+                }
+                """));
+        using var client = new HttpClient(handler);
+        var sut = new OAuthDeviceCodeTokenClient(client, TextWriter.Null);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.AcquireTokenAsync(
+                CreateAuthentication(),
+                CreateConnection(),
+                CancellationToken.None));
+
+        Assert.Contains("invalid_request", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("AADSTS50059", exception.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("expired_token", "expired")]
     [InlineData("access_denied", "denied")]

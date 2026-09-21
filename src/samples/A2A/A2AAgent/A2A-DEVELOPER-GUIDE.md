@@ -96,10 +96,10 @@ under `AgentApplication:A2A:AgentCard`:
             "OAuth2SecurityScheme": {
               "Flows": {
                 "DeviceCode": {
-                  "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
-                  "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                  "DeviceAuthorizationUrl": "https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/devicecode",
+                  "TokenUrl": "https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/token",
                   "Scopes": {
-                    "api://<agent-app-id>/weather.read": "Read weather data."
+                    "api://botid-<agent-app-id>/weather.read": "Read weather data."
                   }
                 }
               }
@@ -241,72 +241,73 @@ map to a completed task.
 Use `IA2ATurnContext.Client` when a route needs the native A2A request context,
 event queue, or task store.
 
-## OAuth and Agent Card security
+## OAuth
 
-An A2A client uses the Agent Card to discover how to acquire an Agent API token.
-ASP.NET Core validates the incoming token. `A2AUserAuthorization` then makes the
-validated request token available through the same `AgentApplication.UserAuthorization`
-API used by other channels and can perform an OBO exchange for a downstream API.
-Because `A2AUserAuthorization` is defined by an extension assembly, each handler
-configuration must set `Assembly` to `Microsoft.Agents.Extensions.A2A`. Only
-handlers defined by `Microsoft.Agents.Builder` can omit `Assembly`.
+A2A OAuth uses the same `AgentApplication.UserAuthorization` model as other
+channels:
 
-These responsibilities are separate:
+1. Define named handlers under
+   `AgentApplication:UserAuthorization:Handlers`.
+1. Associate one or more handlers with a route by setting
+   `autoSigninHandlers` on `A2ASkillAttribute` or the equivalent fluent route.
+1. Retrieve the handler's token with `UserAuthorization.GetTurnTokenAsync`.
+1. Use `UserAuthorization.ExchangeTurnTokenAsync` when the route needs to
+   explicitly exchange a delegated token for a downstream resource.
 
-1. **Agent Card metadata** tells a client which scheme and scopes to use.
-1. **ASP.NET Core authentication** validates the inbound credential.
-1. **Route authorization** enforces the claims, scopes, roles, or policies
-   required by the application.
-1. **User authorization handlers** provide the request token or exchange it for
-   a downstream token.
+`A2AUserAuthorization` is defined by the A2A extension, so each handler must set
+`Assembly` to `Microsoft.Agents.Extensions.A2A`. The handler can obtain the
+credential from either the authenticated A2A request or the A2A in-task
+authorization extension.
 
-The following scenarios progress from the simplest configuration to a centrally
-managed Agent Card.
+### Choose an authorization method
 
-### Scenario 1: Request authorization inside a task
+| Method | Use when | Tradeoffs |
+| --- | --- | --- |
+| Agent Card authorization | The client should discover OAuth from the standard Agent Card and send the token with the request. | Most compatible with the A2A specification and other A2A implementations. Each request carries one authorization token, and the built-in path expects a JWT that ASP.NET Core can validate. |
+| In-task authorization | The route may need one or more user tokens after the A2A task has started. | Requires support for the Agents SDK A2A in-task authorization extension. It matches `AgentApplication.UserAuthorization` more closely, can request multiple handlers during one task, and can carry opaque tokens. |
 
-This is the recommended starting point and the pattern used by the `A2AAgent`
-sample. A single `A2AUserAuthorization` handler contains the runtime OAuth
-request and OBO settings:
+### Agent Card authorization
+
+Agent Card authorization is the most interoperable option. The Agent Card
+advertises the OAuth scheme, and `A2ASkillAttribute.AutoSignInHandlers`
+associates a handler with the skill's security requirement. The client acquires
+the required token before invoking the skill and sends that token in the
+standard HTTP `Authorization` header.
+
+#### Simple delegated authorization
+
+The handler can define its OAuth scheme inline:
 
 ```json
-{
-  "AgentApplication": {
-    "UserAuthorization": {
-      "DefaultHandlerName": "graph",
-      "AutoSignin": false,
-      "Handlers": {
-        "graph": {
-          "Assembly": "Microsoft.Agents.Extensions.A2A",
-          "Type": "A2AUserAuthorization",
-          "Settings": {
-            "Mode": "InTask",
-            "OAuthFlows": {
-              "DeviceCode": {
-                "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
-                "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-                "Scopes": {
-                  "api://<agent-app-id>/access_as_user": "Access the agent as the signed-in user."
-                }
-              }
-            },
-            "RequiredScopes": [
-              "api://<agent-app-id>/access_as_user"
-            ],
-            "EnforceRequiredScopes": true,
-            "OBOConnectionName": "ServiceConnection",
-            "OBOScopes": [
-              "User.Read"
-            ]
-          }
+"graph": {
+  "Assembly": "Microsoft.Agents.Extensions.A2A",
+  "Type": "A2AUserAuthorization",
+  "Settings": {
+    "OAuthFlows": {
+      "DeviceCode": {
+        "DeviceAuthorizationUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/devicecode",
+        "TokenUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token",
+        "Scopes": {
+          "api://botid-{{ClientId}}/access_as_user": "Access the A2A Agent API as the signed-in user."
         }
       }
-    }
+    },
+    "EnforceRequiredScopes": true,
+    "OBOConnectionName": "ServiceConnection",
+    "OBOScopes": [
+      "User.Read"
+    ]
   }
 }
 ```
 
-Attach the handler to a route through `autoSigninHandlers`:
+When an inline flow is present, `SecuritySchemeName` defaults to the handler
+name (`graph`) and `RequiredScopes` defaults to every key in the flow's
+`Scopes` dictionary. Set `RequiredScopes` explicitly to select a subset, or set
+it to an empty array to advertise no required scopes.
+
+Associate the handler with the skill and retrieve the token through the normal
+user-authorization API:
 
 ```csharp
 [A2ASkill(
@@ -332,105 +333,36 @@ private async Task OnGraphAsync(
 }
 ```
 
-`Mode: InTask` advertises the optional Agents SDK in-task authorization
-extension but does not add an OAuth security scheme or requirement to the Agent
-Card. When the route needs a token, the task transitions to
-`TASK_STATE_AUTH_REQUIRED` and includes `OAuthFlows` plus `RequiredScopes` in
-the task status metadata. The client acquires the credential and calls
-`resumeAuth`; the SDK then replays the banked activity.
+Because `OBOScopes` is configured, `GetTurnTokenAsync` exchanges the inbound
+delegated token and returns a Microsoft Graph token. A route can instead call
+`ExchangeTurnTokenAsync` to provide the connection or downstream scopes at
+runtime.
 
-`EnforceRequiredScopes` is optional and defaults to `false`; when enabled,
-`A2AUserAuthorization` validates the task-scoped delegated JWT before OBO and
-requires every configured
-`RequiredScopes` value to appear in the token's `scp` claim. For Microsoft
-Entra resource-qualified scope URIs, the handler compares the final permission
-value such as `access_as_user`. `OBOScopes` is not advertised to the client;
-`GetTurnTokenAsync` returns the downstream Graph token after the exchange.
+#### Interoperability and opaque tokens
 
-### Scenario 2: One handler defines a scheme and another references it
+This method is closest to the A2A specification, but it provides only one token
+per request. The token advertised by the selected Agent Card security scheme is
+also the token sent in the request's `Authorization` header.
 
-Use this pattern when handlers accept the same inbound credential but require
-different scopes or use different runtime token settings.
+The built-in request-token path relies on ASP.NET Core authentication to
+validate that credential and on JWT claims for optional scope enforcement.
+Opaque access tokens, such as tokens issued by providers including GitHub or
+LinkedIn, cannot be decoded or validated by this JWT-based path. There is also
+no second standard request header in which to carry a separate opaque user
+token while retaining a JWT for A2A request authentication. Use in-task
+authorization when the route must accept an opaque token or obtain multiple
+tokens.
 
-Handler `agent-read` defines the shared scheme. Handler `profile-read` uses the
-same `SecuritySchemeName` without `OAuthFlows`, so it references the scheme
-already contributed by `agent-read`:
+#### Advanced Agent Card schemes
 
-```json
-{
-  "AgentApplication": {
-    "UserAuthorization": {
-      "AutoSignin": false,
-      "Handlers": {
-        "agent-read": {
-          "Assembly": "Microsoft.Agents.Extensions.A2A",
-          "Type": "A2AUserAuthorization",
-          "Settings": {
-            "SecuritySchemeName": "delegated",
-            "OAuthFlows": {
-              "DeviceCode": {
-                "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
-                "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
-                "Scopes": {
-                  "api://<agent-app-id>/agent.read": "Read agent data.",
-                  "api://<agent-app-id>/profile.read": "Read profile data."
-                }
-              }
-            },
-            "RequiredScopes": [
-              "api://<agent-app-id>/agent.read"
-            ]
-          }
-        },
-        "profile-read": {
-          "Assembly": "Microsoft.Agents.Extensions.A2A",
-          "Type": "A2AUserAuthorization",
-          "Settings": {
-            "SecuritySchemeName": "delegated",
-            "RequiredScopes": [
-              "api://<agent-app-id>/profile.read"
-            ],
-            "OBOConnectionName": "ServiceConnection",
-            "OBOScopes": [
-              "User.Read"
-            ]
-          }
-        }
-      }
-    }
-  }
-}
-```
+`A2AUserAuthorizationSettings.SecuritySchemeName` can reference OAuth security
+information defined separately from the handler. This is useful when the
+application centrally owns the Agent Card or multiple handlers reference one
+published scheme.
 
-Routes can reference either handler:
-
-```csharp
-[A2ASkill(
-    name: "Agent data",
-    tags: "a2a,data",
-    text: "-data",
-    autoSigninHandlers: "agent-read")]
-private Task OnAgentDataAsync(...) { }
-
-[A2ASkill(
-    name: "Profile",
-    tags: "a2a,profile",
-    text: "-profile",
-    autoSigninHandlers: "profile-read")]
-private Task OnProfileAsync(...) { }
-```
-
-The Agent Card contains one `delegated` security scheme. Each generated skill
-requirement contains the scopes from its referenced handler. The handler names
-remain distinct runtime authorization configurations even though both
-requirements point to the same Agent Card scheme.
-
-### Scenario 3: Define the Agent Card scheme catalog separately
-
-Use this pattern when the application centrally manages its Agent Card and
-multiple handlers only need to reference published schemes.
-
-Define the scheme under `AgentApplication:A2A:AgentCard:SecuritySchemes`:
+Define the scheme under
+`AgentApplication:A2A:AgentCard:SecuritySchemes`, then configure the handler
+without `OAuthFlows`:
 
 ```json
 {
@@ -442,11 +374,10 @@ Define the scheme under `AgentApplication:A2A:AgentCard:SecuritySchemes`:
             "OAuth2SecurityScheme": {
               "Flows": {
                 "DeviceCode": {
-                  "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
-                  "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+                  "DeviceAuthorizationUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/devicecode",
+                  "TokenUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token",
                   "Scopes": {
-                    "api://<agent-app-id>/agent.read": "Read agent data.",
-                    "api://<agent-app-id>/profile.read": "Read profile data."
+                    "api://botid-{{ClientId}}/access_as_user": "Access the A2A Agent API as the signed-in user."
                   }
                 }
               }
@@ -456,25 +387,14 @@ Define the scheme under `AgentApplication:A2A:AgentCard:SecuritySchemes`:
       }
     },
     "UserAuthorization": {
-      "AutoSignin": false,
       "Handlers": {
-        "agent-read": {
+        "graph": {
           "Assembly": "Microsoft.Agents.Extensions.A2A",
           "Type": "A2AUserAuthorization",
           "Settings": {
             "SecuritySchemeName": "delegated",
             "RequiredScopes": [
-              "api://<agent-app-id>/agent.read"
-            ]
-          }
-        },
-        "profile-read": {
-          "Assembly": "Microsoft.Agents.Extensions.A2A",
-          "Type": "A2AUserAuthorization",
-          "Settings": {
-            "SecuritySchemeName": "delegated",
-            "RequiredScopes": [
-              "api://<agent-app-id>/profile.read"
+              "api://botid-{{ClientId}}/access_as_user"
             ]
           }
         }
@@ -484,68 +404,88 @@ Define the scheme under `AgentApplication:A2A:AgentCard:SecuritySchemes`:
 }
 ```
 
-Neither handler defines `OAuthFlows`; `SecuritySchemeName` references the
-existing Agent Card scheme. Agent Card composition fails if a generated
-requirement references a scheme that the card does not define.
+`SecuritySchemeName` must match a scheme in the composed Agent Card.
+Applications that generate or modify the catalog in code can provide the same
+scheme through `IAgentCardHandler`. Treat `IAgentCardHandler` as a final
+composition hook: preserve the endpoint, capabilities, skills, and security
+metadata already contributed by the host, configuration, handlers, and
+`A2ASkillAttribute` registrations.
+
+### In-task authorization
+
+In-task authorization requires client and server support for the Agents SDK A2A
+in-task authorization extension. Set the handler mode to `InTask`:
+
+```json
+"graph": {
+  "Assembly": "Microsoft.Agents.Extensions.A2A",
+  "Type": "A2AUserAuthorization",
+  "Settings": {
+    "Mode": "InTask",
+    "OAuthFlows": {
+      "DeviceCode": {
+        "DeviceAuthorizationUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/devicecode",
+        "TokenUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token",
+        "Scopes": {
+          "User.Read": "Read the signed-in user's profile."
+        }
+      }
+    }
+  }
+}
+```
+
+When a route needs the handler, the task transitions to
+`TASK_STATE_AUTH_REQUIRED` and publishes the handler's `OAuthFlows` and
+`RequiredScopes` in task status metadata. The client acquires the token and
+calls `resumeAuth`. The standard `Authorization` header continues to carry the
+JWT that authenticates the A2A request; the acquired user token is sent
+separately as the raw `x-a2a-intask-authorization` header value.
+
+The A2A extension converts `resumeAuth` to an event Activity whose value
+contains both the access token and the raw A2A message, then resumes the normal
+`AgentApplication.UserAuthorization` pipeline. A route with multiple
+`autoSigninHandlers` can complete the handlers separately, allowing multiple
+tokens during one A2A task.
+
+Because the user token is separate from request authentication, it can be an
+opaque provider token. `GetTurnTokenAsync` returns it unchanged when no OBO
+scopes are configured. Provider-specific exchange and authorization rules still
+apply: built-in `EnforceRequiredScopes` supports delegated JWT `scp` claims,
+and a downstream OBO exchange must support the supplied token.
 
 ## Authorization setting reference
 
 | Setting | Meaning | When omitted |
 | --- | --- | --- |
-| `Mode` | `RequestToken` uses the credential already associated with the A2A request. `InTask` emits an auth-required task status and accepts the procured credential through `resumeAuth`. | Defaults to `RequestToken` for compatibility. |
-| `SecuritySchemeName` | Identifies the Agent Card scheme used by the handler. With `OAuthFlows`, the handler defines that scheme inline. Without `OAuthFlows`, it references an existing scheme. | A handler with no name contributes no Agent Card security metadata and cannot generate a protected requirement. |
-| `OAuthFlows` | Defines one OAuth flow. In `RequestToken` mode it can define an inline Agent Card scheme. In `InTask` mode it is returned only in auth-required task metadata. | In `RequestToken` mode, `SecuritySchemeName` is treated as a reference to an existing scheme. |
-| `RequiredScopes` | Scopes placed in a generated Agent Card requirement for `RequestToken`, or in auth-required task metadata for `InTask`. When `EnforceRequiredScopes` is enabled, the same list is validated against the delegated JWT's `scp` claim before OBO. | The requirement contains an empty scope list. `EnforceRequiredScopes` cannot be enabled until at least one non-empty value is configured. |
-| `EnforceRequiredScopes` | Enables built-in delegated JWT runtime enforcement. Every configured `RequiredScopes` value must appear in the original validated inbound token's `scp` claim before OBO; Microsoft Entra resource-qualified scopes also match by final permission segment such as `access_as_user`. | Defaults to `false`, so `RequiredScopes` remains Agent Card metadata only. Application tokens (`roles`) and opaque tokens require provider-specific or application-specific authorization. |
+| `Mode` | `RequestToken` uses the credential associated with the A2A request. `InTask` emits an auth-required task status and accepts the acquired credential through `resumeAuth`. | Defaults to `RequestToken`. |
+| `SecuritySchemeName` | Identifies the Agent Card scheme used by a `RequestToken` handler. With `OAuthFlows`, the handler defines that scheme inline. Without `OAuthFlows`, it references an existing scheme contributed through configuration or `IAgentCardHandler`. | With inline `OAuthFlows`, defaults to the handler name. Without inline flows, the handler contributes no Agent Card security metadata. |
+| `OAuthFlows` | Defines one OAuth flow. In `RequestToken` mode it can define an inline Agent Card scheme. In `InTask` mode it is returned in auth-required task metadata. | In `RequestToken` mode, an explicit `SecuritySchemeName` references an existing Agent Card scheme. |
+| `RequiredScopes` | Scopes placed in a generated Agent Card requirement for `RequestToken`, or in auth-required task metadata for `InTask`. When `EnforceRequiredScopes` is enabled, the same list is validated against the delegated JWT's `scp` claim before OBO. | Defaults to all scope keys advertised by `OAuthFlows`. An explicit empty array disables inferred requirements. |
+| `EnforceRequiredScopes` | Requires every `RequiredScopes` value in the delegated JWT's `scp` claim. Microsoft Entra resource-qualified scopes also match by their final permission segment, such as `access_as_user`. | Defaults to `false`. Application tokens, opaque tokens, and provider-specific authorization require application logic. |
 | `OBOConnectionName` | Connection used for an OBO exchange. | The default connection selected for the turn is used when an exchange is requested. |
-| `OBOScopes` | Downstream scopes requested during OBO. | No OBO exchange occurs and the validated inbound request token is returned unchanged. |
+| `OBOScopes` | Downstream scopes requested during OBO. | No automatic OBO exchange occurs, and the inbound token is returned unchanged. |
 
 ### `Scopes`, `RequiredScopes`, and `OBOScopes`
 
 These settings describe different stages:
 
-- `OAuthFlows.<flow>.Scopes` is the catalog of scopes available from the
+- `OAuthFlows.<flow>.Scopes` advertises the scopes available from the
   authorization server.
-- `RequiredScopes` is the subset placed in the Agent Card requirement for the
-  agent or skill.
-- `EnforceRequiredScopes` optionally validates that subset against the original
-  trusted saved inbound delegated JWT before OBO. Every configured
-  `RequiredScopes` value must appear in the token's `scp` claim, and Microsoft
-  Entra resource-qualified scope URIs may match by their final permission value
-  such as `access_as_user`.
-- `OBOScopes` is requested from a downstream service after the request reaches
-  the agent.
-
-Available scopes are not automatically required. Inferring all advertised
-scopes could cause clients to request excessive permissions. The SDK also does
-not infer `RequiredScopes` from that catalog. `EnforceRequiredScopes` defaults
-to `false`, preserving compatibility for metadata-only handlers. When enabled,
-the built-in check supports delegated JWT `scp` claims only; Microsoft Entra
-Client Credentials `roles` claims and opaque-token authorization remain
-provider-specific or application-specific concerns.
-
-### Delegated and application tokens
-
-A delegated token represents a signed-in user. It can provide the user identity
-needed by user-scoped state and can be exchanged through OBO for a downstream
-API.
+- `RequiredScopes` identifies the scopes required by the Agent Card skill or
+  in-task authorization request. When omitted, it includes every advertised
+  OAuth flow scope.
+- `EnforceRequiredScopes` optionally validates every required scope against a
+  delegated JWT's `scp` claim before OBO.
+- `OBOScopes` identifies scopes requested from a downstream service after the
+  request reaches the agent.
 
 An application token represents a service, workload, or another agent. For
 Microsoft Entra Client Credentials, the acquisition scope is commonly
-`api://<agent-app-id>/.default`, and the resulting token carries application
-permissions in `roles` rather than delegated permissions in `scp`. It does not
-naturally provide a person identity for `ITurnState.User`.
-
-`EnforceRequiredScopes` does not authorize these application tokens because it
-checks delegated JWT `scp` values only. Applications using opaque tokens
-likewise need provider-specific or application-specific authorization.
-
-Inbound application authentication is different from an agent using
-`MsalAuth` for an outbound call:
-
-- inbound A2A application token: caller to A2A agent;
-- outbound client credentials: agent to downstream service; and
-- outbound OBO: agent acting for an inbound user to downstream service.
+`api://botid-<agent-app-id>/.default`, and the resulting token carries application
+permissions in `roles` rather than delegated permissions in `scp`.
+`EnforceRequiredScopes` does not authorize these tokens because it validates
+delegated `scp` claims only.
 
 ## How clients use skill security
 

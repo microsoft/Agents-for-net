@@ -131,7 +131,69 @@ public class A2AUserAuthorizationConfigurationTests
     }
 
     [Fact]
-    public void Configuration_WithoutRequiredScopes_LeavesOptionalMetadataUnset()
+    public void Configuration_WithoutRequiredScopes_DefaultsToAllOAuthFlowScopes()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "SecuritySchemeName": "deviceCode",
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token",
+                      "Scopes": {
+                        "agent.read": "Access the agent",
+                        "agent.write": "Update the agent"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """);
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+        Assert.Equal(["agent.read", "agent.write"], metadata.RequiredScopes);
+    }
+
+    [Fact]
+    public void Configuration_WithConcreteAndTemplateScopes_IgnoresTemplateScope()
+    {
+        var configuration = CreateAgentApplicationConfiguration(
+            """
+            {
+              "request": {
+                "Assembly": "Microsoft.Agents.Extensions.A2A",
+                "Type": "A2AUserAuthorization",
+                "Settings": {
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token",
+                      "Scopes": {
+                        "api://botid-{{ClientId}}/access_as_user": "Template scope",
+                        "api://botid-agent/defaultScopes": "Configured scope"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """);
+
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
+
+        Assert.Equal(["api://botid-agent/defaultScopes"], metadata.RequiredScopes);
+        Assert.Equal(
+            ["api://botid-agent/defaultScopes"],
+            metadata.SecurityScheme.OAuth2SecurityScheme.Flows.DeviceCode.Scopes.Keys);
+    }
+
+    [Fact]
+    public void Configuration_WithExplicitEmptyRequiredScopes_PreservesEmptyList()
     {
         var configuration = CreateAgentApplicationConfiguration(
             """
@@ -149,14 +211,16 @@ public class A2AUserAuthorizationConfigurationTests
                         "agent.read": "Access the agent"
                       }
                     }
-                  }
+                  },
+                  "RequiredScopes": []
                 }
               }
             }
             """);
+
         var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
-        Assert.Null(metadata.RequiredScopes);
-        Assert.Null(metadata.RequiredScopes);
+
+        Assert.Empty(metadata.RequiredScopes);
     }
 
     [Fact]
@@ -241,7 +305,7 @@ public class A2AUserAuthorizationConfigurationTests
     }
 
     [Fact]
-    public void Configuration_WithInlineOAuthFlowAndNoSchemeName_Throws()
+    public void Configuration_WithInlineOAuthFlowAndNoSchemeName_DefaultsToHandlerName()
     {
         var configuration = CreateAgentApplicationConfiguration(
             """
@@ -261,14 +325,14 @@ public class A2AUserAuthorizationConfigurationTests
             }
             """);
 
-        var exception = Assert.Throws<InvalidOperationException>(() => A2AAuthorizationMetadata.Resolve(configuration));
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
 
-        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100007);
-        Assert.Equal("SecuritySchemeName is required when OAuthFlows is configured.", exception.Message);
+        Assert.Equal("request", metadata.SecuritySchemeName);
+        Assert.NotNull(metadata.SecurityScheme);
     }
 
     [Fact]
-    public void Configuration_WithEnforcementAndNoRequiredScopes_Throws()
+    public void Configuration_WithEnforcementAndOAuthFlowScopes_DefaultsRequiredScopes()
     {
         var configuration = CreateAgentApplicationConfiguration(
             """
@@ -277,7 +341,16 @@ public class A2AUserAuthorizationConfigurationTests
                 "Assembly": "Microsoft.Agents.Extensions.A2A",
                 "Type": "A2AUserAuthorization",
                 "Settings": {
-                  "SecuritySchemeName": "delegated",
+                  "OAuthFlows": {
+                    "DeviceCode": {
+                      "DeviceAuthorizationUrl": "https://login.example.com/devicecode",
+                      "TokenUrl": "https://login.example.com/token",
+                      "Scopes": {
+                        "agent.read": "Access the agent",
+                        "agent.write": "Update the agent"
+                      }
+                    }
+                  },
                   "EnforceRequiredScopes": true
                 }
               }
@@ -287,15 +360,16 @@ public class A2AUserAuthorizationConfigurationTests
         IConfigurationSection settings = configuration.GetSection(
             "AgentApplication:UserAuthorization:Handlers:request:Settings");
 
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-            () => new A2AUserAuthorization(
-                "request",
-                new MemoryStorage(),
-                Mock.Of<IConnections>(),
-                settings,
-                NullLogger.Instance));
+        var authorization = new A2AUserAuthorization(
+            "request",
+            new MemoryStorage(),
+            Mock.Of<IConnections>(),
+            settings,
+            NullLogger.Instance);
+        var metadata = Assert.Single(A2AAuthorizationMetadata.Resolve(configuration));
 
-        A2AErrorMetadataAssertions.AssertErrorMetadata(exception, -100020);
+        Assert.NotNull(authorization);
+        Assert.Equal(["agent.read", "agent.write"], metadata.RequiredScopes);
     }
 
     [Fact]

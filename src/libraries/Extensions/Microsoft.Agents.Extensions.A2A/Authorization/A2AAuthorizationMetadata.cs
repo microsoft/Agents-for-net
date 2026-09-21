@@ -19,7 +19,9 @@ internal sealed class A2AAuthorizationMetadata
         HandlerName = handlerName;
         Mode = settings.Mode;
         SecuritySchemeName = string.IsNullOrWhiteSpace(settings.SecuritySchemeName)
-            ? null
+            ? settings.Mode == A2AUserAuthorizationMode.RequestToken && settings.OAuthFlows != null
+                ? handlerName
+                : null
             : settings.SecuritySchemeName;
         ReferencedSecurityScheme = settings.Mode == A2AUserAuthorizationMode.RequestToken && settings.OAuthFlows == null
             ? SecuritySchemeName

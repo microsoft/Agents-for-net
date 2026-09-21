@@ -19,13 +19,14 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// <remarks>
 /// <para>
 /// <see cref="SecuritySchemeName"/> identifies the Agent Card security scheme used by the handler.
-/// When <see cref="OAuthFlows"/> is configured, the handler defines that named scheme inline.
+/// When <see cref="OAuthFlows"/> is configured, the handler defines that named scheme inline and
+/// defaults the name to the authorization handler name when omitted.
 /// Otherwise, the handler references an existing scheme with that name.
 /// </para>
 /// <para>
 /// <see cref="RequiredScopes"/> identifies the scopes required by a generated Agent Card
-/// security requirement. This differs from the scope dictionary on an OAuth flow, which
-/// advertises all scopes available from that authorization server. It also differs from
+/// security requirement. When omitted, it defaults to every scope advertised by the configured
+/// OAuth flow. An explicit value can select a subset of those scopes. This differs from
 /// <see cref="OBOSettings.OBOScopes"/>, which identifies downstream scopes requested during
 /// an on-behalf-of exchange.
 /// </para>
@@ -39,9 +40,9 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// <para>
 /// In <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.RequestToken"/> mode, the handler supplies the validated
 /// inbound request token to the AgentApplication authorization pipeline. In
-/// <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.InTask"/> mode, the credential submitted to
-/// <c>resumeAuth</c> must either be validated by the configured ASP.NET Core authentication scheme
-/// or be validated through an OBO exchange before the banked activity is replayed.
+/// <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.InTask"/> mode, a <c>resumeAuth</c>
+/// request supplies the delegated token through the <c>x-a2a-intask-authorization</c> header while the standard
+/// HTTP <c>Authorization</c> header remains available for request authentication.
 /// </para>
 /// </remarks>
 public sealed class A2AUserAuthorizationSettings : OBOSettings
@@ -56,9 +57,9 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
     /// </summary>
     /// <remarks>
     /// When <see cref="OAuthFlows"/> is configured, the handler defines an inline OAuth scheme
-    /// with this name. Without <see cref="OAuthFlows"/>, the handler references an existing
-    /// Agent Card scheme with this name. When this property is omitted, the handler contributes
-    /// no Agent Card security metadata and cannot be used to generate a protected requirement.
+    /// with this name, defaulting to the authorization handler name when omitted. Without
+    /// <see cref="OAuthFlows"/>, the handler references an existing Agent Card scheme with this
+    /// name; omitting it in that case contributes no Agent Card security metadata.
     /// </remarks>
     public string SecuritySchemeName { get; set; }
 
@@ -80,9 +81,9 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
     /// </summary>
     /// <remarks>
     /// These values should be a subset of the scopes advertised by the resolved OAuth flow.
-    /// When omitted, generated requirements contain an empty scope list. The SDK does not infer
-    /// required scopes from the flow's available-scope catalog and does not automatically enforce
-    /// the scopes in the inbound token. For Microsoft Entra Client Credentials, the acquisition
+    /// When omitted, the SDK uses every key from the configured OAuth flow's <c>Scopes</c>
+    /// dictionary, sorted ordinally. An explicit list, including an empty list, is preserved.
+    /// Scope enforcement remains controlled by <see cref="EnforceRequiredScopes"/>. For Microsoft Entra Client Credentials, the acquisition
     /// scope is commonly <c>api://{resource-app-id}/.default</c>; the resulting token carries
     /// application permissions in its <c>roles</c> claim rather than its <c>scp</c> claim.
     /// </remarks>
@@ -102,6 +103,12 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
     {
         var settings = configurationSection?.Get<A2AUserAuthorizationSettings>() ?? new A2AUserAuthorizationSettings();
         A2AOAuthFlowConfiguration.BindScopes(configurationSection?.GetSection(nameof(OAuthFlows)), settings.OAuthFlows);
+        if (settings.RequiredScopes == null
+            && configurationSection?.GetSection(nameof(RequiredScopes)).Value == string.Empty)
+        {
+            settings.RequiredScopes = [];
+        }
+        ApplyDefaults(settings);
 
         if (settings.OBOScopes == null && configurationSection != null)
         {
@@ -115,6 +122,14 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
         ValidateSecurityScheme(settings);
         ValidateRuntimeEnforcement(settings);
         return settings;
+    }
+
+    internal static void ApplyDefaults(A2AUserAuthorizationSettings settings)
+    {
+        if (settings?.RequiredScopes == null && settings?.OAuthFlows != null)
+        {
+            settings.RequiredScopes = A2AOAuthFlowConfiguration.GetScopeNames(settings.OAuthFlows);
+        }
     }
 
     internal static A2AUserAuthorizationSettings FromOBOSettings(OBOSettings settings)
@@ -135,14 +150,6 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
                     null);
             }
             return;
-        }
-
-        if (settings.Mode == A2AUserAuthorizationMode.RequestToken
-            && string.IsNullOrWhiteSpace(settings.SecuritySchemeName))
-        {
-            throw ExceptionHelper.GenerateException<InvalidOperationException>(
-                ErrorHelper.AuthorizationSecuritySchemeNameRequired,
-                null);
         }
 
         var flowCount = 0;

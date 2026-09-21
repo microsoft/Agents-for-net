@@ -3,9 +3,9 @@
 
 using A2A;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,7 +18,7 @@ internal sealed class A2AInTaskAuthorizationClient
 {
     internal const string ExtensionUri = "https://schemas.microsoft.com/agents/a2a/extensions/in-task-authorization/v1";
     internal const string ExtensionHeader = "A2A-Extensions";
-    private const string CredentialHeader = "A2A-InTask-Authorization";
+    internal const string TokenHeader = "x-a2a-intask-authorization";
     private const string ConnectionName = "delegated";
     private readonly HttpClient _httpClient;
     private readonly IA2AAccessTokenProvider _accessTokenProvider;
@@ -61,41 +61,48 @@ internal sealed class A2AInTaskAuthorizationClient
 
     internal async Task<AgentTask?> ResumeIfRequiredAsync(AgentTask? task, CancellationToken cancellationToken)
     {
-        if (task?.Status.State != TaskState.AuthRequired
-            || task.Status.Message?.Metadata is null
-            || !task.Status.Message.Metadata.TryGetValue(ExtensionUri, out JsonElement metadata))
+        var handledAuthorizationRequests = new HashSet<string>(StringComparer.Ordinal);
+
+        while (task?.Status.State == TaskState.AuthRequired
+            && task.Status.Message?.Metadata is not null
+            && task.Status.Message.Metadata.TryGetValue(ExtensionUri, out JsonElement metadata))
         {
-            return task;
+            InTaskAuthorizationMetadata authorization = metadata.Deserialize<InTaskAuthorizationMetadata>(A2AJsonUtilities.DefaultOptions)
+                ?? throw new InvalidOperationException("The in-task authorization metadata is invalid.");
+            if (!handledAuthorizationRequests.Add(authorization.AuthorizationRequest.Id))
+            {
+                throw new InvalidOperationException(
+                    $"The authorization request '{authorization.AuthorizationRequest.Id}' was repeated.");
+            }
+            A2AAgentCardAuthentication authentication = A2AAgentCardAuthentication.CreateInTask(
+                authorization.AuthorizationRequest.OAuth2.Flows,
+                authorization.AuthorizationRequest.RequiredScopes,
+                ConnectionName);
+            string token = await _accessTokenProvider.GetAccessTokenAsync(authentication, cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("The OAuth flow did not return an access token.");
+            var resumeRequest = new ResumeAuthRequest
+            {
+                TaskId = task.Id,
+                ContextId = task.ContextId,
+                AuthorizationRequestId = authorization.AuthorizationRequest.Id,
+            };
+
+            using var request = _isJsonRpc
+                ? CreateJsonRpcRequest(resumeRequest, token)
+                : CreateHttpJsonRequest(resumeRequest, token);
+            using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            using JsonDocument document = await JsonDocument.ParseAsync(
+                await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+            JsonElement result = document.RootElement.TryGetProperty("result", out JsonElement jsonRpcResult)
+                ? jsonRpcResult
+                : document.RootElement;
+            task = result.Deserialize<AgentTask>(A2AJsonUtilities.DefaultOptions)
+                ?? throw new InvalidOperationException("The resumeAuth response did not contain an A2A task.");
         }
 
-        InTaskAuthorizationMetadata authorization = metadata.Deserialize<InTaskAuthorizationMetadata>(A2AJsonUtilities.DefaultOptions)
-            ?? throw new InvalidOperationException("The in-task authorization metadata is invalid.");
-        A2AAgentCardAuthentication authentication = A2AAgentCardAuthentication.CreateInTask(
-            authorization.AuthorizationRequest.OAuth2.Flows,
-            authorization.AuthorizationRequest.RequiredScopes,
-            ConnectionName);
-        string token = await _accessTokenProvider.GetAccessTokenAsync(authentication, cancellationToken).ConfigureAwait(false)
-            ?? throw new InvalidOperationException("The OAuth flow did not return an access token.");
-        var resumeRequest = new ResumeAuthRequest
-        {
-            TaskId = task.Id,
-            ContextId = task.ContextId,
-            AuthorizationRequestId = authorization.AuthorizationRequest.Id,
-        };
-
-        using var request = _isJsonRpc
-            ? CreateJsonRpcRequest(resumeRequest, token)
-            : CreateHttpJsonRequest(resumeRequest, token);
-        using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        using JsonDocument document = await JsonDocument.ParseAsync(
-            await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
-            cancellationToken: cancellationToken).ConfigureAwait(false);
-        JsonElement result = document.RootElement.TryGetProperty("result", out JsonElement jsonRpcResult)
-            ? jsonRpcResult
-            : document.RootElement;
-        return result.Deserialize<AgentTask>(A2AJsonUtilities.DefaultOptions)
-            ?? throw new InvalidOperationException("The resumeAuth response did not contain an A2A task.");
+        return task;
     }
 
     private HttpRequestMessage CreateJsonRpcRequest(ResumeAuthRequest request, string token)
@@ -132,7 +139,7 @@ internal sealed class A2AInTaskAuthorizationClient
     private static void AddHeaders(HttpRequestMessage request, string token)
     {
         request.Headers.TryAddWithoutValidation(ExtensionHeader, ExtensionUri);
-        request.Headers.TryAddWithoutValidation(CredentialHeader, new AuthenticationHeaderValue("Bearer", token).ToString());
+        request.Headers.TryAddWithoutValidation(TokenHeader, token);
     }
 
     private sealed class InTaskAuthorizationMetadata

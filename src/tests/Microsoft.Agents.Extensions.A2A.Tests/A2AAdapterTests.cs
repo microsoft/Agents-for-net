@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using A2A;
@@ -20,6 +20,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -108,23 +109,25 @@ public class A2AAdapterTests
     #region ProcessAgentCardAsync Tests
 
     [Fact]
-    public async Task ProcessAgentCard_WithConfiguredScheme_EmitsOAuth2Scheme()
+    public async Task ProcessAgentCard_WithDefaultedSchemeAndScopes_EmitsOAuth2SchemeAndRequirement()
     {
         var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
         {
             ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
-            ["AgentApplication:UserAuthorization:Handlers:request:Settings:SecuritySchemeName"] = "deviceCode",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:DeviceAuthorizationUrl"] = "https://login.example.com/devicecode",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:TokenUrl"] = "https://login.example.com/token",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:Scopes:agent.read"] = "Access the agent",
+            ["AgentApplication:UserAuthorization:AutoSignIn"] = "true",
+            ["AgentApplication:UserAuthorization:DefaultHandlerName"] = "request",
         }));
 
         var agentCard = await ProcessAgentCardAsync(adapter, new AgentApplication(new AgentApplicationOptions(_mockStorage.Object)));
 
-        var scheme = agentCard.SecuritySchemes["deviceCode"].OAuth2SecurityScheme;
+        var scheme = agentCard.SecuritySchemes["request"].OAuth2SecurityScheme;
         Assert.NotNull(scheme);
         Assert.Equal("https://login.example.com/devicecode", scheme.Flows.DeviceCode.DeviceAuthorizationUrl);
         Assert.Equal("Access the agent", scheme.Flows.DeviceCode.Scopes["agent.read"]);
+        Assert.Equal(["agent.read"], Assert.Single(agentCard.SecurityRequirements).Schemes["request"].List);
     }
 
     [Fact]
@@ -548,7 +551,7 @@ public class A2AAdapterTests
         Assert.Equal(InTaskAuthorizationExtension.Uri, extension.Uri);
         Assert.False(extension.Required);
         Assert.Equal("resumeAuth", extension.Params!.Value.GetProperty("operations").GetProperty("jsonRpc").GetString());
-        Assert.Equal("A2A-InTask-Authorization", extension.Params.Value.GetProperty("credentialHeader").GetString());
+        Assert.False(extension.Params.Value.TryGetProperty("credentialHeader", out _));
         Assert.DoesNotContain(agentCard.SecuritySchemes.Values, scheme => scheme.OAuth2SecurityScheme != null);
         Assert.Null(agentCard.SecurityRequirements);
         Assert.Null(Assert.Single(agentCard.Skills).SecurityRequirements);
@@ -1013,6 +1016,7 @@ public class A2AAdapterTests
     {
         var connections = Mock.Of<IConnections>();
         var routed = 0;
+        JsonElement? resumeEventValue = null;
         var record = UseRecord(record =>
         {
             var firstAuthorization = CreateInTaskAuthorization("first", record.Storage, connections);
@@ -1045,6 +1049,16 @@ public class A2AAdapterTests
                 }, autoSigninHandlers: ["first", "second"]));
             return agent;
         });
+        record.Adapter.Use(new CaptureActivityMiddleware(activity =>
+        {
+            if (activity.IsType(ActivityTypes.Event)
+                && string.Equals(activity.Name, InTaskAuthorizationExtension.ResumeAuthEventName, StringComparison.Ordinal))
+            {
+                resumeEventValue = JsonSerializer.SerializeToElement(
+                    activity.Value,
+                    A2AJsonUtilities.DefaultOptions);
+            }
+        }));
 
         var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-in-task")));
         initialContext.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
@@ -1068,15 +1082,13 @@ public class A2AAdapterTests
             AuthorizationRequestId = authorizationRequestId,
         };
 
-        async Task<DefaultHttpContext> ResumeAsync(string token, bool validated)
+        async Task<DefaultHttpContext> ResumeAsync(string token)
         {
             var context = CreateHttpContext(string.Empty);
             context.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
-            context.Request.Headers[InTaskAuthorizationExtension.CredentialHeader] = $"Bearer {token}";
-            if (validated)
-            {
-                AuthenticateContext(context, token);
-            }
+            context.Request.Headers.Authorization = "Bearer agent-jwt";
+            context.Request.Headers["x-a2a-intask-authorization"] = token;
+            AuthenticateContext(context, "agent-jwt");
 
             IResult result;
             if (useHttpJson)
@@ -1108,14 +1120,24 @@ public class A2AAdapterTests
             return context;
         }
 
-        var rejectedContext = await ResumeAsync("unvalidated-token", validated: false);
-        var rejectedTask = ReadTaskResponse(rejectedContext);
-        rejectedContext.Response.Body.Seek(0, SeekOrigin.Begin);
-        var rejectedJson = new StreamReader(rejectedContext.Response.Body, leaveOpen: true).ReadToEnd();
-        Assert.True(rejectedTask.Status.State == TaskState.AuthRequired, rejectedJson);
-        Assert.Equal(0, routed);
+        var contextId = resumeParameters.ContextId;
+        resumeParameters.ContextId = "wrong-context";
+        var invalidResumeContext = await ResumeAsync("invalid-token");
+        invalidResumeContext.Response.Body.Seek(0, SeekOrigin.Begin);
+        if (useHttpJson)
+        {
+            Assert.Equal(StatusCodes.Status400BadRequest, invalidResumeContext.Response.StatusCode);
+        }
+        else
+        {
+            using var invalidResponse = JsonDocument.Parse(invalidResumeContext.Response.Body);
+            Assert.Equal(
+                -32602,
+                invalidResponse.RootElement.GetProperty("error").GetProperty("code").GetInt32());
+        }
+        resumeParameters.ContextId = contextId;
 
-        var firstResumeContext = await ResumeAsync("first-token", validated: true);
+        var firstResumeContext = await ResumeAsync("first-token");
         var secondAuthTask = ReadTaskResponse(firstResumeContext);
         Assert.Equal(TaskState.AuthRequired, secondAuthTask.Status.State);
         Assert.Equal(0, routed);
@@ -1124,7 +1146,7 @@ public class A2AAdapterTests
             .GetProperty("id")
             .GetString();
 
-        var resumeContext = await ResumeAsync("second-token", validated: true);
+        var resumeContext = await ResumeAsync("second-token");
         resumeContext.Response.Body.Seek(0, SeekOrigin.Begin);
         var resumeResponseJson = new StreamReader(resumeContext.Response.Body, leaveOpen: true).ReadToEnd();
         Assert.True(
@@ -1134,13 +1156,14 @@ public class A2AAdapterTests
         Assert.Equal(TaskState.Completed, completedTask.Status.State);
         Assert.Equal("Tokens: first-token, second-token", completedTask.Status.Message.Parts[0].Text);
         Assert.Equal(1, routed);
-        var state = await record.Storage.ReadAsync<InTaskAuthorizationState>(
-            [
-                InTaskAuthorizationExtension.GetStateKey("first", initialTask.Id),
-                InTaskAuthorizationExtension.GetStateKey("second", initialTask.Id),
-            ],
-            CancellationToken.None);
-        Assert.Empty(state);
+        Assert.True(resumeEventValue.HasValue);
+        Assert.Equal("second-token", resumeEventValue.Value.GetProperty("accessToken").GetString());
+        var resumeMessage = resumeEventValue.Value.GetProperty("message");
+        Assert.Equal(initialTask.Id, resumeMessage.GetProperty("taskId").GetString());
+        Assert.Equal(initialTask.ContextId, resumeMessage.GetProperty("contextId").GetString());
+        Assert.Equal(
+            InTaskAuthorizationExtension.Uri,
+            resumeMessage.GetProperty("extensions")[0].GetString());
     }
 
     [Fact]
@@ -1451,7 +1474,12 @@ public class A2AAdapterTests
     private static AgentTask ReadTaskResponse(DefaultHttpContext context)
     {
         context.Response.Body.Seek(0, SeekOrigin.Begin);
-        var response = ProtocolJsonSerializer.ToObject<JsonRpcResponse>(new StreamReader(context.Response.Body).ReadToEnd());
+        var json = new StreamReader(context.Response.Body).ReadToEnd();
+        var response = ProtocolJsonSerializer.ToObject<JsonRpcResponse>(json);
+        if (response.Result == null)
+        {
+            throw new InvalidOperationException(json);
+        }
         var result = response.Result.AsObject();
         return ProtocolJsonSerializer.ToObject<AgentTask>(
             result.TryGetPropertyValue("id", out _) ? result : result.GetAt(0).Value);
@@ -1460,6 +1488,10 @@ public class A2AAdapterTests
     private static DefaultHttpContext CreateHttpContext(string requestContent = null)
     {
         var context = new DefaultHttpContext();
+        context.RequestServices = new ServiceCollection()
+            .AddLogging()
+            .AddProblemDetails()
+            .BuildServiceProvider();
         context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(requestContent));
         context.Request.Method = HttpMethods.Post;
         context.Response.StatusCode = 0;
@@ -1489,6 +1521,18 @@ public class A2AAdapterTests
     private sealed class StubAuthenticateResultFeature : IAuthenticateResultFeature
     {
         public AuthenticateResult AuthenticateResult { get; set; }
+    }
+
+    private sealed class CaptureActivityMiddleware(Action<IActivity> capture) : Microsoft.Agents.Builder.IMiddleware
+    {
+        public async Task OnTurnAsync(
+            ITurnContext turnContext,
+            NextDelegate next,
+            CancellationToken cancellationToken = default)
+        {
+            capture(turnContext.Activity);
+            await next(cancellationToken);
+        }
     }
 
     private static Record UseRecord(Func<Record, IAgent> createAgent)

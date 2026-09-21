@@ -237,8 +237,15 @@ internal sealed class OAuthDeviceCodeTokenClient
                     && !(allowOAuthErrorResponse
                         && payload is OAuthTokenResponse { Error: { Length: > 0 } }))
                 {
+                    string providerDetails = payload is OAuthDeviceAuthorizationResponse
+                    {
+                        Error: { Length: > 0 } error,
+                        ErrorDescription: var description,
+                    }
+                        ? $" OAuth error '{error}'.{(string.IsNullOrWhiteSpace(description) ? string.Empty : $" {description}")}"
+                        : string.Empty;
                     throw new InvalidOperationException(
-                        $"OAuth {endpointName} returned HTTP {(int)response.StatusCode} ({response.ReasonPhrase ?? "Unknown"}).");
+                        $"OAuth {endpointName} returned HTTP {(int)response.StatusCode} ({response.ReasonPhrase ?? "Unknown"}).{providerDetails}");
                 }
 
                 return payload;
@@ -255,6 +262,12 @@ internal sealed class OAuthDeviceCodeTokenClient
         if (string.IsNullOrWhiteSpace(connection.ClientId))
         {
             throw new InvalidOperationException("The selected OAuth connection requires ClientId.");
+        }
+
+        if (connection.ClientId.Trim().Trim('0', '-').Length == 0)
+        {
+            throw new InvalidOperationException(
+                "The selected OAuth connection ClientId is still a placeholder. Configure a registered OAuth client.");
         }
     }
 

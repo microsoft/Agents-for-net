@@ -3,7 +3,6 @@
 
 using A2A;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Storage;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -53,31 +52,15 @@ internal sealed class InTaskAuthorizationContext
 
     public string AuthorizationRequestId { get; init; }
 
-    public string AccessToken { get; init; }
-
-    internal bool CredentialValidated { get; init; }
-
-    internal string HandlerName { get; set; }
-
     internal IDictionary<string, TokenResponse> TokenResponses { get; } =
         new Dictionary<string, TokenResponse>(System.StringComparer.Ordinal);
-
-    internal bool Accepted { get; set; }
 }
 
-internal sealed class InTaskAuthorizationState : IStoreItem
+internal sealed class ResumeAuthEventValue
 {
-    public string HandlerName { get; set; }
+    [JsonPropertyName("accessToken")]
+    public string AccessToken { get; init; }
 
-    public string TaskId { get; set; }
-
-    public string ContextId { get; set; }
-
-    public string AuthorizationRequestId { get; set; }
-
-    public string OriginalRequestId { get; set; }
-
-    public bool IsResuming { get; set; }
-
-    public string ETag { get; set; }
+    [JsonPropertyName("message")]
+    public Message Message { get; init; }
 }

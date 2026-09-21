@@ -54,7 +54,7 @@ without Microsoft Entra configuration.
 The `-me` skill uses a single `graph` `A2AUserAuthorization` handler. The handler:
 
 1. returns `TASK_STATE_AUTH_REQUIRED` with a delegated Device Code flow and Agent API scope when the client invokes `-me` without a task credential;
-2. accepts the procured credential through the optional in-task authorization extension's `resumeAuth` operation;
+2. accepts the procured credential as the raw `x-a2a-intask-authorization` header value on the optional in-task authorization extension's `resumeAuth` operation while `Authorization` carries the request-authentication JWT;
 3. can validate the task-scoped delegated JWT against every configured
    `RequiredScopes` value before OBO; and
 4. exchanges the validated inbound token through `ServiceConnection` for
@@ -68,7 +68,7 @@ scheme or security requirement to the Agent Card or the `-me` skill.
 1. Create a single-tenant Microsoft Entra app registration for the Agent API.
 1. Set `requestedAccessTokenVersion` to `2`.
 1. In **Expose an API**, publish
-   `api://<agent-client-id>/access_as_user`.
+   `api://botid-<agent-client-id>/access_as_user`.
 1. Add the delegated Microsoft Graph permission `User.Read`.
 1. Grant the consent required by your tenant.
 1. Under **Authentication** > **Advanced settings**, set **Allow public client
@@ -104,16 +104,13 @@ The relevant authorization configuration is:
           "Mode": "InTask",
           "OAuthFlows": {
             "DeviceCode": {
-              "DeviceAuthorizationUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/devicecode",
-              "TokenUrl": "https://login.microsoftonline.com/organizations/oauth2/v2.0/token",
+              "DeviceAuthorizationUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/devicecode",
+              "TokenUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token",
               "Scopes": {
-                "api://{{ClientId}}/access_as_user": "Access the A2A Agent API as the signed-in user."
+                "api://botid-{{ClientId}}/access_as_user": "Access the A2A Agent API as the signed-in user."
               }
             }
           },
-          "RequiredScopes": [
-            "api://{{ClientId}}/access_as_user"
-          ],
           "EnforceRequiredScopes": true,
           "OBOConnectionName": "ServiceConnection",
           "OBOScopes": [
@@ -126,21 +123,22 @@ The relevant authorization configuration is:
 }
 ```
 
-In both `OAuthFlows.DeviceCode.Scopes` and `RequiredScopes`, `{{ClientId}}` is
-the application (client) ID of the **A2AAgent's Entra app registration**. It is
+In `OAuthFlows.DeviceCode.Scopes`, `{{ClientId}}` is the application (client)
+ID of the **A2AAgent's Entra app registration**. It is
 the same app registration where `access_as_user` is defined under **Expose an
 API**, and the same ID used by `TokenValidation:Audiences`. It is not the
-A2AClient's client ID or a Microsoft Graph application ID. Both settings use
-the resulting Agent API scope URI:
-`api://<A2AAgent-client-id>/access_as_user`.
+A2AClient's client ID or a Microsoft Graph application ID. The resulting Agent
+API scope URI is:
+`api://botid-<A2AAgent-client-id>/access_as_user`.
 
 `A2AAgentStartup` enables token validation in Development only after
 `TokenValidation:Audiences` contains real GUIDs.
 
-`EnforceRequiredScopes` makes `A2AUserAuthorization` validate the credential
-submitted to `resumeAuth` before OBO. Every configured `RequiredScopes` value must
-appear in the token's `scp` claim; for Microsoft Entra resource-qualified scope
-URIs, the handler compares the final permission value such as
+Because `RequiredScopes` is omitted, it defaults to every key in
+`OAuthFlows.DeviceCode.Scopes`. `EnforceRequiredScopes` makes
+`A2AUserAuthorization` validate the credential submitted to `resumeAuth` before
+OBO. Every required scope must appear in the token's `scp` claim; for Microsoft
+Entra resource-qualified scope URIs, the handler compares the final permission value such as
 `access_as_user`. The option is disabled by default and does not support opaque
 tokens or application-role validation.
 
@@ -148,11 +146,13 @@ tokens or application-role validation.
 
 Configure the [A2AClient sample](../A2AClient/README.md) with:
 
-- `Authentication:TenantId` set to the tenant ID; and
-- `Authentication:PublicClientId` set to the Agent API client ID.
+- `Authentication:Connections:delegated:ClientId` set to the Agent API client
+  ID.
 
 The Agent API registration itself must be used as the public client for this
 sample so the inbound token satisfies the SDK's OBO exchange checks.
+Configure the tenant ID in this agent's `DeviceAuthorizationUrl` and `TokenUrl`;
+the client uses the endpoints advertised by the authorization metadata.
 
 Start the client without `--auth-mode` and send:
 
@@ -162,8 +162,9 @@ Start the client without `--auth-mode` and send:
 
 The client matches the advertised skill example, receives the task-scoped OAuth
 flow in the auth-required status, acquires an Agent API token, and calls
-`resumeAuth`. Endpoint authentication remains independent and continues to use
-the normal `Authorization` header.
+`resumeAuth` with that token in the `x-a2a-intask-authorization` header. The normal
+`Authorization` header remains reserved for the JWT that authenticates the A2A
+request.
 
 Expected failures:
 
