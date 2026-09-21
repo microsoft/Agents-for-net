@@ -8,17 +8,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Core.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
     /// <summary>
-    /// End-to-end tests for Tier 2 dispatch resolution (<see cref="AgentEndpointExtensions.ResolveAdapterAsync"/>),
+    /// End-to-end tests for Tier 2 dispatch resolution (<see cref="Microsoft.Agents.Hosting.AspNetCore.AgentEndpointExtensions.ResolveAdapterAsync(Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry, Microsoft.Agents.Hosting.AspNetCore.IAgentHttpAdapter, Microsoft.AspNetCore.Http.HttpRequest, System.Threading.CancellationToken)"/>),
     /// which peeks the inbound Activity's channelId, looks it up in the registry, casts the resolved
-    /// <see cref="IChannelAdapter"/> to <see cref="IAgentHttpAdapter"/>, and falls back to the default adapter.
+    /// <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> to <see cref="Microsoft.Agents.Hosting.AspNetCore.IAgentHttpAdapter"/>, and falls back to the default adapter.
     /// </summary>
     public class Tier2ResolveAdapterTests
     {
@@ -81,6 +82,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             ctx.Request.Body = new MemoryStream(bytes);
             ctx.Request.ContentType = "application/json";
             return ctx.Request;
+        }
+
+        [Fact]
+        public async Task RegistryNotRegistered_ReturnsDefaultWithoutReadingBody()
+        {
+            var defaultAdapter = new DefaultHttpAdapter();
+            using var services = new ServiceCollection().BuildServiceProvider();
+            var ctx = new DefaultHttpContext();
+            ctx.Request.Body = new ThrowOnReadStream();
+
+            var resolved = await AgentEndpointExtensions.ResolveAdapterAsync(
+                services,
+                defaultAdapter,
+                ctx.Request,
+                CancellationToken.None);
+
+            Assert.Same(defaultAdapter, resolved);
         }
 
         [Fact]

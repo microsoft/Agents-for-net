@@ -228,6 +228,87 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <inheritdoc/>
+        public IActivity WithRecipient(ChannelAccount recipient)
+        {
+            AssertionHelpers.ThrowIfNull(recipient, nameof(recipient));
+
+            Recipient = recipient;
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithRecipient(string id)
+        {
+            return WithRecipient(new ChannelAccount(id, role: RoleTypes.User));
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithTargetedRecipient(ChannelAccount recipient)
+        {
+            AssertionHelpers.ThrowIfNull(recipient, nameof(recipient));
+
+            Recipient = recipient;
+            var foundTargetedTreatment = false;
+            if (Entities != null)
+            {
+                for (var index = Entities.Count - 1; index >= 0; index--)
+                {
+                    if (Entities[index] is ActivityTreatment treatment
+                        && treatment.Treatment == ActivityTreatmentTypes.Targeted)
+                    {
+                        if (foundTargetedTreatment)
+                        {
+                            Entities.RemoveAt(index);
+                        }
+                        else
+                        {
+                            foundTargetedTreatment = true;
+                        }
+                    }
+                }
+            }
+
+            if (!foundTargetedTreatment)
+            {
+                Entities ??= [];
+                Entities.Add(new ActivityTreatment { Treatment = ActivityTreatmentTypes.Targeted });
+            }
+
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithTargetedRecipient(string id)
+        {
+            return WithTargetedRecipient(new ChannelAccount(id, role: RoleTypes.User));
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithMention(ChannelAccount account, string text = null, bool addText = true)
+        {
+            AssertionHelpers.ThrowIfNull(account, nameof(account));
+
+            string mentionText = text ?? account.Name;
+
+            if (addText)
+            {
+                Text = $"<at>{mentionText}</at> {Text}";
+            }
+
+            Entities ??= [];
+            Entities.Add(new Mention(account, $"<at>{mentionText}</at>"));
+
+            return this;
+        }
+
+        /// <inheritdoc/>
+        public IActivity WithMention(string id, string name = null, bool addText = true)
+        {
+            AssertionHelpers.ThrowIfNullOrEmpty(id, nameof(id));
+            return WithMention(new ChannelAccount(id, name), name, addText);
+        }
+
+        /// <inheritdoc/>
         public IActivity AddText(string text)
         {
             Text += text;
@@ -386,22 +467,12 @@ namespace Microsoft.Agents.Core.Models
         /// <inheritdoc/>
         public IActivity MakeTargetedActivity(ChannelAccount user = null)
         {
-            if (IsTargetedActivity())
-            {
-                return this;
-            }
-
             if (Recipient == null && user == null)
             {
                 throw new InvalidOperationException("Cannot mark activity as targeted because both the Activity.Recipient and `user` argument are null. At least one must be provided.");
             }
 
-            Entities ??= [];
-            Entities.Add(new ActivityTreatment() { Treatment = ActivityTreatmentTypes.Targeted });
-
-            Recipient = user ?? Recipient;
-
-            return this;
+            return WithTargetedRecipient(user ?? Recipient);
         }
 
         /// <inheritdoc/>

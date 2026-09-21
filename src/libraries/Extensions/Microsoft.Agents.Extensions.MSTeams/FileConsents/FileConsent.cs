@@ -15,9 +15,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 /// The consent flow is:
 /// </para>
 /// <list type="number">
-///   <item>Register accept and decline handlers via <see cref="OnAccept"/> and <see cref="OnDecline"/>.</item>
-///   <item>Send a <see cref="Microsoft.Teams.Api.FileConsentCard"/> attachment to prompt the user.</item>
-///   <item>If the user accepts, the registered accept handler is called with <see cref="Microsoft.Teams.Api.FileConsentCardResponse"/> containing upload details. Perform an HTTP PUT to <see cref="Microsoft.Teams.Api.FileUploadInfo.UploadUrl"/> to complete the upload.</item>
+///   <item>Register accept and decline handlers via <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsent.OnAccept(Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentHandler, System.String[], System.UInt16)"/> and <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsent.OnDecline(Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentHandler, System.String[], System.UInt16)"/>.</item>
+///   <item>Send a file consent card attachment to prompt the user.</item>
+///   <item>If the user accepts, the registered accept handler is called with <see cref="Microsoft.Teams.Apps.Files.FileConsentValue"/> containing upload details. Perform an HTTP PUT to <see cref="Microsoft.Teams.Apps.Files.FileUploadInfo.UploadUrl"/> to complete the upload.</item>
 ///   <item>If the user declines, the registered decline handler is called.</item>
 /// </list>
 /// <example>
@@ -30,7 +30,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 ///     [MessageRoute]
 ///     public Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
 ///     {
-///         var consentCard = new Microsoft.Teams.Api.FileConsentCard
+///         var consentCard = new
 ///         {
 ///             Description = "Here is the report you requested.",
 ///             SizeInBytes = 42000,
@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 ///     public async Task OnFileConsentAcceptAsync(
 ///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
-///         Microsoft.Teams.Api.FileConsentCardResponse response,
+///         Microsoft.Teams.Apps.Files.FileConsentValue response,
 ///         CancellationToken cancellationToken)
 ///     {
 ///         var filePath = Path.Combine("wwwroot", "report.txt");
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 ///     public Task OnFileConsentDeclineAsync(
 ///         ITeamsTurnContext turnContext,
 ///         ITurnState turnState,
-///         Microsoft.Teams.Api.FileConsentCardResponse response,
+///         Microsoft.Teams.Apps.Files.FileConsentValue response,
 ///         CancellationToken cancellationToken)
 ///     {
 ///         return turnContext.SendActivityAsync(
@@ -101,10 +101,10 @@ public class FileConsent
     /// <summary>
     /// Handles when a file consent card is accepted by the user.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsFileConsentAcceptRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.TeamsFileConsentAcceptRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public FileConsent OnAccept(FileConsentHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {
@@ -120,10 +120,10 @@ public class FileConsent
     /// <summary>
     /// Handles when a file consent card is declined by the user.
     /// </summary>
-    /// <remarks>Alternatively, the <see cref="TeamsFileConsentDeclineRouteAttribute"/> can be used to decorate a <see cref="FileConsentHandler"/> method for the same purpose.</remarks>
+    /// <remarks>Alternatively, the <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.TeamsFileConsentDeclineRouteAttribute"/> can be used to decorate a <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentHandler"/> method for the same purpose.</remarks>
     /// <param name="handler">Function to call when the route is triggered.</param>
     /// <param name="autoSignInHandlers">OAuth sign-in handler names for automatic sign-in before the route handler is invoked. Specify <see langword="null"/> to skip automatic sign-in.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <returns>The AgentExtension instance for chaining purposes.</returns>
     public FileConsent OnDecline(FileConsentHandler handler, string[] autoSignInHandlers = null, ushort rank = RouteRank.Unspecified)
     {

@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
@@ -30,10 +31,12 @@ namespace Microsoft.Agents.Builder.Tests.App
         private readonly ConversationReference _conversationRef;
         private readonly ITurnContext _turnContext;
         private readonly IDictionary<string, string> _claims;
+        private IChannelAdapter _registeredAdapter;
 
         public ProactiveTests()
         {
             _mockAdapter = new Mock<IChannelAdapter>();
+            _registeredAdapter = _mockAdapter.Object;
             _mockRegistry = new Mock<IChannelAdapterRegistry>();
             _storage = new MemoryStorage();
             var options = new AgentApplicationOptions(_storage)
@@ -60,7 +63,10 @@ namespace Microsoft.Agents.Builder.Tests.App
             _claims = new Dictionary<string, string> { { "aud", _conversationRef.Agent.Id } };
 
             _mockRegistry
-                .Setup(r => r.GetAdapter(_conversationRef.ChannelId))
+                .Setup(r => r.TryGetAdapter(_conversationRef.ChannelId, out _registeredAdapter))
+                .Returns(true);
+            _mockRegistry
+                .Setup(r => r.GetDefault())
                 .Returns(_mockAdapter.Object);
         }
 
@@ -424,7 +430,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.NotNull(result);
-            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+            _mockRegistry.Verify(r => r.TryGetAdapter(_conversationRef.ChannelId, out _registeredAdapter), Times.Once);
             _mockAdapter.Verify(a => a.ContinueConversationAsync(
                 It.IsAny<ClaimsIdentity>(),
                 It.IsAny<ConversationReference>(),
@@ -443,15 +449,14 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
-        public async Task SendActivityAsync_ByChannelId_UnknownChannel_ShouldThrow()
+        public async Task SendActivityAsync_ByChannelId_UnknownChannel_ShouldUseDefault()
         {
             var activity = new Activity { Text = "Test" };
-            _mockRegistry
-                .Setup(r => r.GetAdapter("unknown"))
-                .Throws(new InvalidOperationException("No adapter registered for channel 'unknown'."));
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _proactive.SendActivityAsync("unknown", "test-id", activity));
+
+            _mockRegistry.Verify(r => r.GetDefault(), Times.Once);
         }
 
         [Fact]
@@ -488,7 +493,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.NotNull(result);
             Assert.Equal("sentId", result.Id);
-            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+            _mockRegistry.Verify(r => r.TryGetAdapter(_conversationRef.ChannelId, out _registeredAdapter), Times.Once);
         }
 
         [Fact]
@@ -699,7 +704,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.True(handlerCalled);
-            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+            _mockRegistry.Verify(r => r.TryGetAdapter(_conversationRef.ChannelId, out _registeredAdapter), Times.Once);
         }
 
         [Fact]
@@ -739,7 +744,7 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert
             Assert.True(handlerCalled);
-            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+            _mockRegistry.Verify(r => r.TryGetAdapter(_conversationRef.ChannelId, out _registeredAdapter), Times.Once);
         }
 
         [Fact]
@@ -840,7 +845,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             // Assert
             Assert.NotNull(newConversation);
             Assert.Equal("new-conversation-id", newConversation.Reference.Conversation.Id);
-            _mockRegistry.Verify(r => r.GetAdapter(_conversationRef.ChannelId), Times.Once);
+            _mockRegistry.Verify(r => r.TryGetAdapter(_conversationRef.ChannelId, out _registeredAdapter), Times.Once);
         }
 
         [Fact]

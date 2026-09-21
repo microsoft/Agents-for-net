@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     public enum OAuthFlowStatus
     {
         /// <summary>
-        /// A token was successfully obtained. <see cref="OAuthFlowResult.TokenResponse"/> is non-null.
+        /// A token was successfully obtained. <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthFlowResult.TokenResponse"/> is non-null.
         /// </summary>
         Complete,
 
@@ -38,7 +38,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
     }
 
     /// <summary>
-    /// The structured result returned by <see cref="OAuthFlow.ContinueFlowAsync"/>.
+    /// The structured result returned by <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthFlow.ContinueFlowAsync(Microsoft.Agents.Builder.ITurnContext, System.DateTime, System.Threading.CancellationToken)"/>.
     /// </summary>
     public sealed class OAuthFlowResult
     {
@@ -59,12 +59,12 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         public OAuthFlowStatus Status { get; }
 
         /// <summary>
-        /// The token response. Non-null only when <see cref="Status"/> is <see cref="OAuthFlowStatus.Complete"/>.
+        /// The token response. Non-null only when <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthFlowResult.Status"/> is <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthFlowStatus.Complete"/>.
         /// </summary>
         public TokenResponse TokenResponse { get; }
 
         /// <summary>
-        /// The sign-in failure payload. Non-null only when <see cref="Status"/> is <see cref="OAuthFlowStatus.SignInFailed"/>.
+        /// The sign-in failure payload. Non-null only when <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthFlowResult.Status"/> is <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthFlowStatus.SignInFailed"/>.
         /// </summary>
         public ErrorResponse ErrorResponse { get; }
 

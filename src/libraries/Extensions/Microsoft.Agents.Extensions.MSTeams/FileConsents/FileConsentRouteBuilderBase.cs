@@ -24,7 +24,7 @@ public abstract class FileConsentRouteBuilderBase<TBuilder> : RouteBuilderBase<T
     protected string Action { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="FileConsentRouteBuilderBase{TBuilder}"/>,
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentRouteBuilderBase{TBuilder}"/>,
     /// pre-configured as an Invoke route.
     /// </summary>
     protected FileConsentRouteBuilderBase() : base()
@@ -52,13 +52,13 @@ public abstract class FileConsentRouteBuilderBase<TBuilder> : RouteBuilderBase<T
         {
             if (!IsContextMatch(context, _route)
                 || !context.Activity.IsType(ActivityTypes.Invoke)
-                || !string.Equals(context.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.FileConsent, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(context.Activity.Name, Microsoft.Teams.Apps.InvokeNames.FileConsent, StringComparison.OrdinalIgnoreCase)
                 || context.Activity.Value == null)
             {
                 return Task.FromResult(false);
             }
 
-            var response = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.FileConsentCardResponse>(context.Activity.Value);
+            var response = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Files.FileConsentValue>(context.Activity.Value);
             return Task.FromResult(response != null && string.Equals(response.Action, Action, StringComparison.OrdinalIgnoreCase));
         };
     }

@@ -13,10 +13,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Provides the generic base builder for routing message activities in an <see cref="AgentApplication"/>.
+    /// Provides the generic base builder for routing message activities in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Derive from <see cref="MessageRouteBuilderBase{TBuilder}"/> to create specialized message route builders
+    /// Derive from <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilderBase{TBuilder}"/> to create specialized message route builders
     /// while preserving fluent chaining on the concrete builder type. This base class supplies the shared message
     /// matching behavior, including message-only routing, optional text filters, custom selectors, channel
     /// constraints, and agentic routing support.
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder.App
         /// values.</remarks>
         /// <param name="text">The text to match against the incoming activity's message content. Comparison is case-insensitive. Cannot be
         /// null.</param>
-        /// <returns>The current builder instance with the added selector for matching <see cref="IActivity.Text"/>.</returns>
+        /// <returns>The current builder instance with the added selector for matching <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/>.</returns>
         public TBuilder WithText(string text)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(text, nameof(text));
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Builder.App
         /// messages whose text matches a specific pattern.</remarks>
         /// <param name="textPattern">The regular expression used to match the text of incoming message activities. Cannot be null. The selector
         /// will only match activities whose text property is not null and matches this pattern.</param>
-        /// <returns>The current builder instance configured with the specified <see cref="IActivity.Text"/> pattern selector.</returns>
+        /// <returns>The current builder instance configured with the specified <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> pattern selector.</returns>
         public TBuilder WithText(Regex textPattern)
         {
             AssertionHelpers.ThrowIfNull(textPattern, nameof(textPattern));

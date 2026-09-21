@@ -61,6 +61,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The AgentApplication.AgenticAuthorization feature is unavailable because no AgentApplicationOptions.Connections were configured..
+        /// </summary>
+        internal static string AgenticAuthorizationNotConfigured {
+            get {
+                return ResourceManager.GetString("AgenticAuthorizationNotConfigured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to get Agentic token for Tenant &apos;{0}&apos;, InstanceId &apos;{1}&apos;, UPN &apos;{2}&apos;, Role &apos;{3}&apos;.
         /// </summary>
         internal static string AgenticTokenProviderFailed {
@@ -115,7 +124,7 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An instance of this extension has already been registered for this application. {0}.
+        ///   Looks up a localized string similar to An instance of this extention has allready been registred for this application. {0}.
         /// </summary>
         internal static string ExtensionAlreadyRegistered {
             get {
@@ -196,35 +205,6 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to RouteBuilder &apos;{0}&apos; missing required property &apos;{1}&apos;.
-        /// </summary>
-        internal static string RouteBuilderMissingProperty {
-            get {
-                return ResourceManager.GetString("RouteBuilderMissingProperty", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Method &apos;{0}&apos; does not match any handler delegate signature declared by route attribute &apos;{1}&apos;..
-        /// </summary>
-        internal static string RouteHandlerSignatureMismatch {
-            get {
-                return ResourceManager.GetString("RouteHandlerSignatureMismatch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to A selector has already been defined for this route. Multiple selectors are not supported. Builder method &apos;{0}&apos;..
-        /// </summary>
-        internal static string RouteSelectorAlreadyDefined
-        {
-            get
-            {
-                return ResourceManager.GetString("RouteSelectorAlreadyDefined", resourceCulture);
-            }
-        }
-
-        /// <summary>
         ///   Looks up a localized string similar to IActivity instance required for this Proactive request.
         /// </summary>
         internal static string ProactiveActivityRequired {
@@ -234,20 +214,20 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Conversation not found for conversationId &apos;{0}&apos;..
-        /// </summary>
-        internal static string ProactiveConversationNotFound {
-            get {
-                return ResourceManager.GetString("ProactiveConversationNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to No IChannelAdapterRegistry is available to resolve the adapter for channelId &apos;{0}&apos;. Ensure AddCloudAdapter has been called so the registry is registered..
         /// </summary>
         internal static string ProactiveAdapterRegistryNotAvailable {
             get {
                 return ResourceManager.GetString("ProactiveAdapterRegistryNotAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Conversation not found for conversationId &apos;{0}&apos;..
+        /// </summary>
+        internal static string ProactiveConversationNotFound {
+            get {
+                return ResourceManager.GetString("ProactiveConversationNotFound", resourceCulture);
             }
         }
         
@@ -360,11 +340,47 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to RouteBuilder &apos;{0}&apos; missing required property &apos;{1}&apos;.
+        /// </summary>
+        internal static string RouteBuilderMissingProperty {
+            get {
+                return ResourceManager.GetString("RouteBuilderMissingProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Method &apos;{0}&apos; does not match any handler delegate signature declared by route attribute &apos;{1}&apos;..
+        /// </summary>
+        internal static string RouteHandlerSignatureMismatch {
+            get {
+                return ResourceManager.GetString("RouteHandlerSignatureMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A selector has already been defined for this route. Multiple selectors are not supported. Builder method &apos;{0}&apos;..
+        /// </summary>
+        internal static string RouteSelectorAlreadyDefined {
+            get {
+                return ResourceManager.GetString("RouteSelectorAlreadyDefined", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to StreamingResponse instance has already ended..
         /// </summary>
         internal static string StreamingResponseEnded {
             get {
                 return ResourceManager.GetString("StreamingResponseEnded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The token credential cannot be used after its originating turn has ended. Create a new credential within the current turn..
+        /// </summary>
+        internal static string TurnTokenCredentialOutsideTurn {
+            get {
+                return ResourceManager.GetString("TurnTokenCredentialOutsideTurn", resourceCulture);
             }
         }
         

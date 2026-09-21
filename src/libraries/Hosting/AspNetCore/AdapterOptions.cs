@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
+
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
     /// <summary>
@@ -14,6 +16,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <remarks>If the shutdown process does not complete within the specified timeout, the
         /// application may be terminated forcefully. Set this value according to the expected shutdown duration of your
         /// application components.</remarks>
+        [Obsolete("Use HostedActivityServiceOptions or HostedTaskServiceOptions instead.")]
         public int ShutdownTimeoutSeconds { get; set; } = 60;
 
         /// <summary>
@@ -21,9 +24,5 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </summary>
         public bool EmitStackTrace { get; set; } = false;
 
-        /// <summary>
-        /// Gets or sets a value indicating whether Activity.ServiceUrl should be validated using the 'serviceurl' claim in the incoming token. This is typically used to ensure that the request is coming from a trusted source.
-        /// </summary>
-        public bool ValidateServiceUrl { get; set; } = false;
     }
 }

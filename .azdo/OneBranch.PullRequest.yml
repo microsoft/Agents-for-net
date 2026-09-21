@@ -108,6 +108,24 @@ extends:
                     Write-Host "Replaced $($_.FullName)"
                   }
 
+          - task: UseDotNet@2
+            displayName: Install .NET 8 SDK
+            inputs:
+              packageType: sdk
+              version: 8.0.x
+              performMultiLevelLookup: true
+            env:
+              ob_restore_phase: true
+
+          - task: UseDotNet@2
+            displayName: Install .NET SDK from global.json
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              performMultiLevelLookup: true
+            env:
+              ob_restore_phase: true
+
           - task: NuGetAuthenticate@1
 
           - script: dotnet tool restore --configfile $(Build.SourcesDirectory)/.azdo/nuget.config

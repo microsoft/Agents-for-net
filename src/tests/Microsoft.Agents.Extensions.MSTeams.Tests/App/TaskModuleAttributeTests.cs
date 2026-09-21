@@ -201,7 +201,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             return (app, turnContext);
         }
@@ -228,7 +228,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
             return (app, turnContext);
         }
@@ -251,63 +251,63 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         }
 
         [TeamsTaskFetchRoute("test-verb")]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAsync(
+        public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnFetchAsync(
             ITeamsTurnContext turnContext, ITurnState turnState,
-            Microsoft.Teams.Api.TaskModules.Request data,
+            Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
             CancellationToken cancellationToken)
         {
             FetchHandlerCalled = true;
-            return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+            return Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
         }
 
         [TeamsTaskSubmitRoute("test-verb")]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAsync(
+        public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnSubmitAsync(
             ITeamsTurnContext turnContext, ITurnState turnState,
-            Microsoft.Teams.Api.TaskModules.Request data,
+            Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
             CancellationToken cancellationToken)
         {
             SubmitHandlerCalled = true;
-            return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+            return Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
         }
 
         [TeamsTaskFetchRoute("fetch-action", key: "action")]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchCustomKeyAsync(
+        public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnFetchCustomKeyAsync(
             ITeamsTurnContext turnContext, ITurnState turnState,
-            Microsoft.Teams.Api.TaskModules.Request data,
+            Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
             CancellationToken cancellationToken)
         {
             CustomKeyFetchHandlerCalled = true;
-            return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+            return Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
         }
 
         [TeamsTaskSubmitRoute("submit-action", key: "action")]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitCustomKeyAsync(
+        public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnSubmitCustomKeyAsync(
             ITeamsTurnContext turnContext, ITurnState turnState,
-            Microsoft.Teams.Api.TaskModules.Request data,
+            Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
             CancellationToken cancellationToken)
         {
             CustomKeySubmitHandlerCalled = true;
-            return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+            return Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
         }
 
         [TeamsTaskFetchRoute]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnFetchAnyAsync(
+        public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnFetchAnyAsync(
             ITeamsTurnContext turnContext, ITurnState turnState,
-            Microsoft.Teams.Api.TaskModules.Request data,
+            Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
             CancellationToken cancellationToken)
         {
             NullKeyFetchHandlerCalled = true;
-            return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+            return Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
         }
 
         [TeamsTaskSubmitRoute]
-        public Task<Microsoft.Teams.Api.TaskModules.Response> OnSubmitAnyAsync(
+        public Task<Microsoft.Teams.Apps.TaskModules.TaskModuleResponse> OnSubmitAnyAsync(
             ITeamsTurnContext turnContext, ITurnState turnState,
-            Microsoft.Teams.Api.TaskModules.Request data,
+            Microsoft.Teams.Apps.TaskModules.TaskModuleRequest data,
             CancellationToken cancellationToken)
         {
             NullKeySubmitHandlerCalled = true;
-            return Task.FromResult(new Microsoft.Teams.Api.TaskModules.Response());
+            return Task.FromResult(new Microsoft.Teams.Apps.TaskModules.TaskModuleResponse());
         }
     }
 

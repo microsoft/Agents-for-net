@@ -9,19 +9,19 @@ using System.Linq;
 namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the sending of one or more outgoing
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the sending of one or more outgoing
     /// activities through the channel adapter.
     /// </summary>
     /// <remarks>
     /// Records the batch count, conversation identifier, and increments the
-    /// <see cref="Metrics.ActivitiesSent"/> counter for each activity in the batch.
+    /// <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Metrics.ActivitiesSent"/> counter for each activity in the batch.
     /// </remarks>
     internal class ScopeSendActivities : TelemetryScope
     {
         private readonly IActivity[] _activities;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeSendActivities"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeSendActivities"/> class.
         /// </summary>
         /// <param name="activities">The outgoing activities being sent.</param>
         public ScopeSendActivities(IActivity[] activities) : base(Constants.ScopeSendActivities)
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// <inheritdoc />
         /// <remarks>
         /// Tags the span with the activity count and conversation identifier, and
-        /// increments <see cref="Metrics.ActivitiesSent"/> once per activity.
+        /// increments <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Metrics.ActivitiesSent"/> once per activity.
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {

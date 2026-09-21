@@ -3,9 +3,11 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
@@ -17,11 +19,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// Provides extension methods for registering agent-related services, adapters, and middleware with dependency
     /// injection containers.
     /// </summary>
-    /// <remarks>These extension methods operate on <see cref="IServiceCollection"/> (and
+    /// <remarks>These extension methods operate on <see cref="Microsoft.Extensions.DependencyInjection.IServiceCollection"/> (and
     /// <c>IHostApplicationBuilder.Services</c>) to register agents, adapters, options, and supporting
     /// services during application startup, such as those using CloudAdapter and AgentApplication. The
     /// application-builder and request-pipeline APIs (fluent startup, middleware ordering, and endpoint mapping)
-    /// live in <see cref="AgentHostExtensions"/>.</remarks>
+    /// live in <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions"/>.</remarks>
     public static class ServiceCollectionExtensions
     {
         #region IServiceCollection Extensions
@@ -58,7 +60,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>Registers both the agent and its adapter as transient services. Only one instance of
-        /// each agent type is registered. <see cref="AgentApplicationOptions"/> is automatically registered
+        /// each agent type is registered. <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions"/> is automatically registered
         /// if not already present. This method is typically used to configure multi-agent scenarios in
         /// applications that use dependency injection.</remarks>
         /// <typeparam name="TAgent">The type of the agent to register. Must implement the IAgent interface.</typeparam>
@@ -132,8 +134,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 services.AddSingleton<IChannelServiceClientFactory, RestChannelServiceClientFactory>();
             }
 
+            if (!services.Any(x => x.ServiceType == typeof(IOutboundHostValidator)))
+            {
+                // Shared allowed-hosts anti-SSRF control. Opt-in via the "OutboundHostValidator" config section
+                // (disabled by default). Consumed by CloudAdapter (ServiceUrl) and the attachment downloaders.
+                services.AddSingleton<IOutboundHostValidator>(sp =>
+                {
+                    var config = sp.GetService<IConfiguration>();
+                    return new OutboundHostValidator(config?.GetSection("OutboundHostValidator")?.Get<OutboundHostValidatorOptions>());
+                });
+            }
+
             // Add the CloudAdapter, this is the default adapter that works with Azure Bot Service and Activity Protocol Agents.
             services.AddCloudAdapter<TAdapter>();
+            services.AddAgentExtensionServices();
             return services;
         }
 
@@ -155,17 +169,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             AddAsyncAdapterSupport(services);
 
-            if (!services.Any(x => x.ServiceType == typeof(T)))
+            services.TryAddSingleton<T>();
+            if (typeof(T) != typeof(CloudAdapter))
             {
-                services.AddSingleton<CloudAdapter, T>();
-                services.AddSingleton<IAgentHttpAdapter>(sp => sp.GetService<CloudAdapter>());
-                services.AddSingleton<IChannelAdapter>(sp => sp.GetService<CloudAdapter>());
+                services.TryAddSingleton<CloudAdapter>(sp => sp.GetRequiredService<T>());
             }
+            services.TryAddSingleton<IAgentHttpAdapter>(sp => sp.GetRequiredService<T>());
 
-            // The registry resolves adapters by channelId for Tier 2 dispatch and SDK features
-            // (proactive messaging, diagnostics). CloudAdapter (IAgentHttpAdapter) is the default;
-            // channel-specific adapters are discovered from [ChannelAdapter] attributes.
-            services.TryAddSingleton<IChannelAdapterRegistry, ChannelAdapterRegistry>();
+            // CloudAdapter is the conventional default, but an explicit developer selection wins.
+            services.TrySetDefaultChannelAdapter<T>();
             return services;
         }
 
@@ -183,6 +195,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             if (!services.Any(x => x.ServiceType == typeof(IActivityTaskQueue)))
             {
+                services.AddSingleton<HostedActivityServiceOptions>();
+                services.AddSingleton<HostedTaskServiceOptions>();
+
                 // Activity specific BackgroundService for processing authenticated activities.
                 services.AddHostedService<HostedActivityService>();
                 // Generic BackgroundService for processing tasks.

@@ -7,11 +7,9 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
-using Microsoft.Agents.Extensions.MSTeams.Config;
 using Microsoft.Agents.Extensions.MSTeams.FileConsents;
 using Microsoft.Agents.Extensions.MSTeams.Meetings;
 using Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
-using Microsoft.Agents.Extensions.MSTeams.Messages;
 using Microsoft.Agents.Extensions.MSTeams.TaskModules;
 using Microsoft.Agents.Extensions.MSTeams.Channels;
 using Microsoft.Agents.Extensions.MSTeams.Teams;
@@ -32,14 +30,14 @@ public class TeamsAgentExtension : AgentExtension
     private readonly AgentApplication _agentApplication;
 
     /// <summary>
-    /// Creates a new <see cref="TeamsAgentExtension"/> instance.
+    /// Creates a new <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension"/> instance.
     /// </summary>
     /// <remarks>
-    /// The preferred way to enable the Teams extension is via the <see cref="TeamsExtensionAttribute"/> on a
-    /// <c>partial</c> <see cref="AgentApplication"/> subclass, which causes a source generator to expose a
+    /// The preferred way to enable the Teams extension is via the <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsExtensionAttribute"/> on a
+    /// <c>partial</c> <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> subclass, which causes a source generator to expose a
     /// <c>Teams</c> property of this type automatically.
-    /// Use this constructor directly only when manually calling
-    /// <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/>.
+    /// Use this constructor directly only when manually registering the extension with
+    /// <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </remarks>
     /// <param name="agentApplication">The AgentApplication for this extension.</param>
     public TeamsAgentExtension(AgentApplication agentApplication)
@@ -54,21 +52,16 @@ public class TeamsAgentExtension : AgentExtension
         Channels = new TeamsChannel(agentApplication, ChannelId);
         Teams = new TeamsTeam(agentApplication, ChannelId);
         FileConsent = new FileConsent(agentApplication, ChannelId);
-        Messages = new Message(agentApplication, ChannelId);
-        Config = new TeamsConfig(agentApplication, ChannelId);
 
         _agentApplication = agentApplication;
-        _agentApplication.OnBeforeTurn((turnContext, turnState, cancellationToken) =>
+        _agentApplication.OnBeforeTurn(async (turnContext, turnState, cancellationToken) =>
         {
             if (turnContext.Activity.ChannelId == ChannelId)
             {
                 // Set the TeamsApiClient in the turn context for use in handlers.
-                turnContext.SetTeamsApiClient(_agentApplication, cancellationToken);
-
-                // Explicit conversion of Activity.ChannelData to Teams' ChannelData for improved performance
-                turnContext.Activity.ChannelData = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.ChannelData>(turnContext.Activity.ChannelData);
+                await turnContext.SetTeamsApiClient(_agentApplication, cancellationToken).ConfigureAwait(false);
             }
-            return Task.FromResult(true);
+            return true;
         });
     }
 
@@ -103,21 +96,11 @@ public class TeamsAgentExtension : AgentExtension
     public FileConsent FileConsent { get; }
 
     /// <summary>
-    /// Message features.
-    /// </summary>
-    public Message Messages { get; }
-
-    /// <summary>
-    /// Teams config features.
-    /// </summary>
-    public TeamsConfig Config { get; }
-
-    /// <summary>
     /// Gets the Teams API client for the specified turn context.
     /// </summary>
     /// <param name="turnContext">The turn context.</param>
     /// <returns>The Teams API client.</returns>
-    public Microsoft.Teams.Api.Clients.ApiClient GetTeamsClient(ITurnContext turnContext)
+    public Microsoft.Teams.Apps.Clients.ApiClient GetTeamsClient(ITurnContext turnContext)
     {
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         return turnContext.GetTeamsApiClient();
@@ -145,15 +128,15 @@ public class TeamsAgentExtension : AgentExtension
     /// <b>app-only</b> (application) token from the agent's configured token connection.
     /// </summary>
     /// <remarks>
-    /// Unlike <see cref="GetGraphClient(ITurnContext, string, string)"/>, which acquires a token for the
+    /// Unlike <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsAgentExtension.GetGraphClient(Microsoft.Agents.Builder.ITurnContext, System.String, System.String)"/>, which acquires a token for the
     /// signed-in user, this method uses the credentials of the token connection resolved for the current turn
-    /// (via <see cref="IConnections.GetTokenProvider(System.Security.Claims.ClaimsIdentity, IActivity)"/>).
+    /// (via <see cref="Microsoft.Agents.Authentication.IConnections.GetTokenProvider(System.Security.Claims.ClaimsIdentity, Microsoft.Agents.Core.Models.IActivity)"/>).
     /// The returned client is authenticated with application permissions, so the caller must specify the
     /// target resource in the request path (for example <c>client.Users["{userId}"]...</c>). No additional
     /// configuration beyond the existing token connection is required.
     /// </remarks>
-    /// <param name="turnContext">The turn context. Its <see cref="ITurnContext.Identity"/> and
-    /// <see cref="ITurnContext.Activity"/> are used to resolve the connection. Cannot be null.</param>
+    /// <param name="turnContext">The turn context. Its <see cref="Microsoft.Agents.Builder.ITurnContext.Identity"/> and
+    /// <see cref="Microsoft.Agents.Builder.ITurnContext.Activity"/> are used to resolve the connection. Cannot be null.</param>
     /// <param name="graphBaseUrl">The base URL for the Microsoft Graph API. Defaults to "https://graph.microsoft.com/v1.0".</param>
     /// <returns>A GraphServiceClient instance authenticated with an app-only token.</returns>
     public GraphServiceClient GetAppGraphClient(ITurnContext turnContext, string graphBaseUrl = "https://graph.microsoft.com/v1.0")

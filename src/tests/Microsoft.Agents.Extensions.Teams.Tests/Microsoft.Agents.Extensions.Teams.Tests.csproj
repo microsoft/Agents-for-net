@@ -3,6 +3,9 @@
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.Teams</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
+		<!-- Microsoft.Extensions.TimeProvider.Testing ships a net462 asset that works on net4.8
+		     via the Microsoft.Bcl.TimeProvider polyfill; silence its heuristic TFM-support warning. -->
+		<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 	

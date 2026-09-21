@@ -117,6 +117,46 @@ namespace Microsoft.Agents.Builder.Tests.Telemetry
 
         #endregion
 
+        #region ScopeTypingIndicator
+
+        [Fact]
+        public void ScopeTypingIndicator_CreatesActivity_WithCorrectName()
+        {
+            using var scope = new ScopeTypingIndicator(CreateTurnContext());
+
+            var started = Assert.Single(StartedActivities);
+            Assert.Equal("agents.app.typing_indicator", started.OperationName);
+        }
+
+        [Fact]
+        public void ScopeTypingIndicator_Callback_SetsActivityMetadataTags()
+        {
+            var turnContext = CreateTurnContext(
+                channelId: "msteams",
+                conversationId: "conv-typing");
+            var scope = new ScopeTypingIndicator(turnContext);
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(ActivityTypes.Typing, stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Equal("msteams", stopped.GetTagItem(TagNames.ActivityChannelId));
+            Assert.Equal("conv-typing", stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
+        public void ScopeTypingIndicator_SetError_SetsErrorStatus()
+        {
+            var scope = new ScopeTypingIndicator(CreateTurnContext());
+            scope.SetError(new InvalidOperationException("typing error"));
+            scope.Dispose();
+
+            var stopped = Assert.Single(StoppedActivities);
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
+            Assert.Equal("typing error", stopped.StatusDescription);
+        }
+
+        #endregion
+
         #region ScopeBeforeTurn
 
         [Fact]

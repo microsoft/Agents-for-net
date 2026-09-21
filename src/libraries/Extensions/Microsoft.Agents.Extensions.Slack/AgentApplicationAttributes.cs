@@ -16,8 +16,8 @@ namespace Microsoft.Agents.Extensions.Slack;
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for activities of the specified type.
 /// Provide either <paramref name="type"/> for an exact match or <paramref name="typeRegex"/> for a pattern match; they are mutually exclusive.
-/// When neither is provided the route matches any activity type and defaults to <see cref="RouteRank.Last"/>.
-/// The method must match the <see cref="SlackRouteHandler"/>, <see cref="RouteHandler"/>, or <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> delegate signature.
+/// When neither is provided the route matches any activity type and defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/>.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.Slack.SlackRouteHandler"/>, <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>, or <see cref="Microsoft.Agents.Builder.App.TypedRouteHandler{T}"/> of <see cref="Microsoft.Agents.Extensions.Slack.ISlackActivity"/> delegate signature.
 /// <code>
 /// // Match by exact type
 /// [SlackActivityRoute(ActivityTypes.Event)]
@@ -41,10 +41,10 @@ namespace Microsoft.Agents.Extensions.Slack;
 /// }
 /// </code>
 /// </remarks>
-/// <param name="type">The exact activity <see cref="IActivity.Type"/> to match, e.g. <see cref="ActivityTypes"/>. Mutually exclusive with <paramref name="typeRegex"/>.</param>
-/// <param name="typeRegex">A regular expression pattern matched against <see cref="IActivity.Type"/>. Mutually exclusive with <paramref name="type"/>.</param>
+/// <param name="type">The exact activity <see cref="Microsoft.Agents.Core.Models.IActivity.Type"/> to match, e.g. <see cref="Microsoft.Agents.Core.Models.ActivityTypes"/>. Mutually exclusive with <paramref name="typeRegex"/>.</param>
+/// <param name="typeRegex">A regular expression pattern matched against <see cref="Microsoft.Agents.Core.Models.IActivity.Type"/>. Mutually exclusive with <paramref name="type"/>.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. When no type filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-type routes take priority.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. When no type filter is specified, defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/> so specific-type routes take priority.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
@@ -71,11 +71,11 @@ public class SlackActivityRouteAttribute(string type = null, string typeRegex = 
 }
 
 /// <summary>
-/// Attribute to define a route that handles <see cref="ActivityTypes.InstallationUpdate"/> activities.
+/// Attribute to define a route that handles <see cref="Microsoft.Agents.Core.Models.ActivityTypes.InstallationUpdate"/> activities.
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for installation update activities.
-/// The method must match the <see cref="SlackRouteHandler"/>, <see cref="RouteHandler"/>, or <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.Slack.SlackRouteHandler"/>, <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>, or <see cref="Microsoft.Agents.Builder.App.TypedRouteHandler{T}"/> of <see cref="Microsoft.Agents.Extensions.Slack.ISlackActivity"/> delegate signature.
 /// <code>
 /// [SlackInstallationUpdateRoute]
 /// public async Task OnInstallationUpdateAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -85,7 +85,7 @@ public class SlackActivityRouteAttribute(string type = null, string typeRegex = 
 /// </code>
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
@@ -109,7 +109,7 @@ public class SlackInstallationUpdateRouteAttribute(bool isAgenticOnly = false, u
 /// Decorate a method with this attribute to register it as a handler for message activities.
 /// Provide <paramref name="text"/> for an exact match, <paramref name="textRegex"/> for a pattern match, or neither to match any message.
 /// <paramref name="text"/> and <paramref name="textRegex"/> are mutually exclusive.
-/// The method must match the <see cref="SlackRouteHandler"/>, <see cref="RouteHandler"/>, or <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.Slack.SlackRouteHandler"/>, <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>, or <see cref="Microsoft.Agents.Builder.App.TypedRouteHandler{T}"/> of <see cref="Microsoft.Agents.Extensions.Slack.ISlackActivity"/> delegate signature.
 /// <code>
 /// // Match any message
 /// [SlackMessageRoute]
@@ -134,9 +134,9 @@ public class SlackInstallationUpdateRouteAttribute(bool isAgenticOnly = false, u
 /// </code>
 /// </remarks>
 /// <param name="text">The exact message text to match (case-insensitive). Mutually exclusive with <paramref name="textRegex"/>. When both are omitted, all messages are matched.</param>
-/// <param name="textRegex">A regular expression pattern matched against <see cref="IActivity.Text"/>. Mutually exclusive with <paramref name="text"/>.</param>
+/// <param name="textRegex">A regular expression pattern matched against <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/>. Mutually exclusive with <paramref name="text"/>.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. When no text filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-text routes take priority.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. When no text filter is specified, defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/> so specific-text routes take priority.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
@@ -170,7 +170,7 @@ public class SlackMessageRouteAttribute(string text = null, string textRegex = n
 /// Decorate a method with this attribute to register it as a handler for event activities.
 /// Provide <paramref name="name"/> for an exact match, <paramref name="nameRegex"/> for a pattern match, or neither to match any event.
 /// <paramref name="name"/> and <paramref name="nameRegex"/> are mutually exclusive.
-/// The method must match the <see cref="SlackRouteHandler"/>, <see cref="RouteHandler"/>, or <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.Slack.SlackRouteHandler"/>, <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>, or <see cref="Microsoft.Agents.Builder.App.TypedRouteHandler{T}"/> of <see cref="Microsoft.Agents.Extensions.Slack.ISlackActivity"/> delegate signature.
 /// <code>
 /// // Match any event
 /// [SlackEventRoute]
@@ -194,10 +194,10 @@ public class SlackMessageRouteAttribute(string text = null, string textRegex = n
 /// }
 /// </code>
 /// </remarks>
-/// <param name="name">The exact event name to match (case-insensitive), e.g. <see cref="IActivity.Name"/>. Mutually exclusive with <paramref name="nameRegex"/>. When both are omitted, all events are matched.</param>
-/// <param name="nameRegex">A regular expression pattern matched against <see cref="IActivity.Name"/>. Mutually exclusive with <paramref name="name"/>.</param>
+/// <param name="name">The exact event name to match (case-insensitive), e.g. <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/>. Mutually exclusive with <paramref name="nameRegex"/>. When both are omitted, all events are matched.</param>
+/// <param name="nameRegex">A regular expression pattern matched against <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/>. Mutually exclusive with <paramref name="name"/>.</param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. When no name filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-name routes take priority.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. When no name filter is specified, defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/> so specific-name routes take priority.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
@@ -229,10 +229,10 @@ public class SlackEventRouteAttribute(string name = null, string nameRegex = nul
 /// </summary>
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for conversation update activities.
-/// When <paramref name="eventName"/> is provided, it is matched against <see cref="ConversationUpdateEvents"/> values.
+/// When <paramref name="eventName"/> is provided, it is matched against <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/> values.
 /// When omitted, all conversation update activities are matched.
-/// Use <see cref="MembersAddedRouteAttribute"/> or <see cref="MembersRemovedRouteAttribute"/> for the common member events.
-/// The method must match the <see cref="SlackRouteHandler"/>, <see cref="RouteHandler"/>, or <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> delegate signature.
+/// Use <see cref="Microsoft.Agents.Builder.App.MembersAddedRouteAttribute"/> or <see cref="Microsoft.Agents.Builder.App.MembersRemovedRouteAttribute"/> for the common member events.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.Slack.SlackRouteHandler"/>, <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>, or <see cref="Microsoft.Agents.Builder.App.TypedRouteHandler{T}"/> of <see cref="Microsoft.Agents.Extensions.Slack.ISlackActivity"/> delegate signature.
 /// <code>
 /// // Match any conversation update
 /// [SlackConversationUpdateRoute]
@@ -243,14 +243,14 @@ public class SlackEventRouteAttribute(string name = null, string nameRegex = nul
 /// </code>
 /// </remarks>
 /// <param name="eventName">
-/// A <see cref="ConversationUpdateEvents"/> value to match. Only <see cref="ConversationUpdateEvents.MembersAdded"/>
-/// and <see cref="ConversationUpdateEvents.MembersRemoved"/> receive specific matching logic; any other value
+/// A <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/> value to match. Only <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents.MembersAdded"/>
+/// and <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents.MembersRemoved"/> receive specific matching logic; any other value
 /// matches all <c>conversationUpdate</c> activities. When omitted, all conversation update activities are matched
-/// and the route defaults to <see cref="RouteRank.Last"/>.
-/// Prefer <see cref="MembersAddedRouteAttribute"/> or <see cref="MembersRemovedRouteAttribute"/> for member events.
+/// and the route defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/>.
+/// Prefer <see cref="Microsoft.Agents.Builder.App.MembersAddedRouteAttribute"/> or <see cref="Microsoft.Agents.Builder.App.MembersRemovedRouteAttribute"/> for member events.
 /// </param>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
@@ -280,8 +280,8 @@ public class SlackConversationUpdateRouteAttribute(string eventName = null, bool
 /// Attribute to define a route that handles conversation update activities when members are added.
 /// </summary>
 /// <remarks>
-/// Decorate a method with this attribute to register it as a handler for the <see cref="ConversationUpdateEvents.MembersAdded"/> event.
-/// The method must match the <see cref="SlackRouteHandler"/>, <see cref="RouteHandler"/>, or <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> delegate signature.
+/// Decorate a method with this attribute to register it as a handler for the <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents.MembersAdded"/> event.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.Slack.SlackRouteHandler"/>, <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>, or <see cref="Microsoft.Agents.Builder.App.TypedRouteHandler{T}"/> of <see cref="Microsoft.Agents.Extensions.Slack.ISlackActivity"/> delegate signature.
 /// <code>
 /// [SlackMembersAddedRoute]
 /// public async Task OnMembersAddedAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -297,7 +297,7 @@ public class SlackConversationUpdateRouteAttribute(string eventName = null, bool
 /// </code>
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
@@ -318,8 +318,8 @@ public class SlackMembersAddedRouteAttribute(bool isAgenticOnly = false, ushort 
 /// Attribute to define a route that handles conversation update activities when members are removed.
 /// </summary>
 /// <remarks>
-/// Decorate a method with this attribute to register it as a handler for the <see cref="ConversationUpdateEvents.MembersRemoved"/> event.
-/// The method must match the <see cref="SlackRouteHandler"/>, <see cref="RouteHandler"/>, or <see cref="TypedRouteHandler{T}"/> of <see cref="ISlackActivity"/> delegate signature.
+/// Decorate a method with this attribute to register it as a handler for the <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents.MembersRemoved"/> event.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.Slack.SlackRouteHandler"/>, <see cref="Microsoft.Agents.Builder.App.RouteHandler"/>, or <see cref="Microsoft.Agents.Builder.App.TypedRouteHandler{T}"/> of <see cref="Microsoft.Agents.Extensions.Slack.ISlackActivity"/> delegate signature.
 /// <code>
 /// [SlackMembersRemovedRoute]
 /// public async Task OnMembersRemovedAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -329,7 +329,7 @@ public class SlackMembersAddedRouteAttribute(bool isAgenticOnly = false, ushort 
 /// </code>
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackRouteHandler))]
@@ -352,7 +352,7 @@ public class SlackMembersRemovedRouteAttribute(bool isAgenticOnly = false, ushor
 /// <remarks>
 /// Decorate a method with this attribute to register it as a handler for <c>message/submitAction</c> invoke activities
 /// where <c>actionName</c> is <c>feedback</c>.
-/// The method must match the <see cref="SlackFeedbackLoopHandler"/> or <see cref="FeedbackLoopHandler"/> delegate signature.
+/// The method must match the <see cref="Microsoft.Agents.Extensions.Slack.SlackFeedbackLoopHandler"/> or <see cref="Microsoft.Agents.Builder.App.FeedbackLoopHandler"/> delegate signature.
 /// <code>
 /// [SlackFeedbackLoopRoute]
 /// public async Task OnFeedbackAsync(ISlackTurnContext turnContext, ITurnState turnState, FeedbackData feedbackData, CancellationToken cancellationToken)
@@ -362,7 +362,7 @@ public class SlackMembersRemovedRouteAttribute(bool isAgenticOnly = false, ushor
 /// </code>
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(SlackFeedbackLoopHandler))]

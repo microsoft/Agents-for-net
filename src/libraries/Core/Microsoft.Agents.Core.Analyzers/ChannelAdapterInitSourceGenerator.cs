@@ -20,8 +20,8 @@ namespace Microsoft.Agents.Core.Analyzers
     [Generator]
     public class ChannelAdapterInitSourceGenerator : IIncrementalGenerator
     {
-        internal const string ChannelAdapterAttributeFullName = "Microsoft.Agents.Hosting.AspNetCore.ChannelAdapterAttribute";
-        internal const string ChannelAdapterInitAssemblyAttributeFullName = "Microsoft.Agents.Hosting.AspNetCore.ChannelAdapterInitAssemblyAttribute";
+        internal const string ChannelAdapterAttributeFullName = "Microsoft.Agents.Builder.Adapters.ChannelAdapterAttribute";
+        internal const string ChannelAdapterInitAssemblyAttributeFullName = "Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {

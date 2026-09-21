@@ -24,11 +24,11 @@ namespace Microsoft.Agents.Extensions.Slack;
 /// to activities originating from the Slack channel.
 /// </para>
 /// <para>
-/// The preferred way to enable the Slack extension is via the <see cref="SlackExtensionAttribute"/> on a
-/// <c>partial</c> <see cref="AgentApplication"/> subclass, which causes a source generator to expose a
+/// The preferred way to enable the Slack extension is via the <see cref="Microsoft.Agents.Extensions.Slack.SlackExtensionAttribute"/> on a
+/// <c>partial</c> <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> subclass, which causes a source generator to expose a
 /// <c>SlackExtension</c> property of this type automatically.
-/// Use this constructor directly only when manually calling
-/// <see cref="AgentApplication.RegisterExtension(IAgentExtension)"/>.
+/// Use this constructor directly only when manually registering the extension with
+/// <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
 /// </para>
 /// </remarks>
 public class SlackAgentExtension : AgentExtension

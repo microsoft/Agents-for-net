@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Client
         private readonly IServiceProvider _serviceProvider;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
-        private readonly IStorage _storage;
+        private readonly IStorageV2 _storage;
         internal IDictionary<string, HttpAgentClientSettings> _agents;
 
         public ConfigurationAgentHost(
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Client
             _serviceProvider = systemServiceProvider ?? throw new ArgumentNullException(nameof(systemServiceProvider));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _connections = connections ?? throw new ArgumentNullException(nameof(connections));
-            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _storage = StorageCompatibility.AsV2(storage ?? throw new ArgumentNullException(nameof(storage)));
 
             if (!string.IsNullOrWhiteSpace(hostEndpoint))
             {
@@ -187,9 +187,11 @@ namespace Microsoft.Agents.Client
         public async Task<string> GetConversation(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default)
         {
             var key = GetAgentStorageKey(turnContext);
-            var items = await _storage.ReadAsync([key], CancellationToken.None);
+            var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
 
-            if (items != null && items.TryGetValue(key, out var conversations))
+            if (items.TryGetValue(key, out var result)
+                && result.Status == StorageOperationStatus.Succeeded
+                && result.Value is object conversations)
             {
                 var agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
                 if (agentConversations.TryGetValue(agentName, out var conversation))
@@ -207,14 +209,16 @@ namespace Microsoft.Agents.Client
             var result = new List<AgentConversation>();
 
             var key = GetAgentStorageKey(turnContext);
-            var items = await _storage.ReadAsync([key], CancellationToken.None);
+            var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
 
-            if (items != null && items.TryGetValue(key, out var conversations))
+            if (items.TryGetValue(key, out var readResult)
+                && readResult.Status == StorageOperationStatus.Succeeded
+                && readResult.Value is object conversations)
             {
                 var agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
                 foreach (var conversation in agentConversations)
                 {
-                    result.Add(ProtocolJsonSerializer.ToObject<AgentConversation>(conversation.Value));
+                    result.Add(conversation.Value);
                 }
             }
 
@@ -225,8 +229,9 @@ namespace Microsoft.Agents.Client
         public async Task<string> GetOrCreateConversationAsync(ITurnContext turnContext, string agentName, CancellationToken cancellationToken = default)
         {
             IDictionary<string, AgentConversation> agentConversations = new Dictionary<string, AgentConversation>();
-            var items = await _storage.ReadAsync([GetAgentStorageKey(turnContext)], cancellationToken).ConfigureAwait(false);
-            if (items != null && items.TryGetValue(GetAgentStorageKey(turnContext), out var conversations))
+            var key = GetAgentStorageKey(turnContext);
+            var results = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+            if (results[key].Status == StorageOperationStatus.Succeeded && results[key].Value is object conversations)
             {
                 agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
 
@@ -273,8 +278,8 @@ namespace Microsoft.Agents.Client
             string agentName = null;
             IDictionary<string, AgentConversation> agentConversations;
             var agentConversationsKey = GetAgentStorageKey(turnContext);
-            var items = await _storage.ReadAsync([agentConversationsKey], cancellationToken).ConfigureAwait(false);
-            if (items != null && items.TryGetValue(agentConversationsKey, out var conversations))
+            var results = await _storage.ReadAsync([agentConversationsKey], cancellationToken).ConfigureAwait(false);
+            if (results[agentConversationsKey].Status == StorageOperationStatus.Succeeded && results[agentConversationsKey].Value is object conversations)
             {
                 agentConversations = ProtocolJsonSerializer.ToObject<IDictionary<string, AgentConversation>>(conversations);
 
@@ -371,9 +376,11 @@ namespace Microsoft.Agents.Client
                 .ReadAsync(new[] { GetAgentConversationStorageKey(agentConversationId) }, cancellationToken)
                 .ConfigureAwait(false);
 
-            if (channelConversationInfo.TryGetValue(agentConversationId, out var channelConversationReference))
+            if (channelConversationInfo.TryGetValue(agentConversationId, out var result)
+                && result.Status == StorageOperationStatus.Succeeded
+                && result.Value != null)
             {
-                return ProtocolJsonSerializer.ToObject<ChannelConversationReference>(channelConversationReference);
+                return ProtocolJsonSerializer.ToObject<ChannelConversationReference>(result.Value);
             }
 
             return null;

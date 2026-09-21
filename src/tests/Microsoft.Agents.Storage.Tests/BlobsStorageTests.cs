@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             // No changes. Should throw.
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync((IDictionary<string, object>)null));
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace Microsoft.Agents.Storage.Tests
                 //{ "key6", "value1" },
             };
 
-            await _storage.WriteAsync(changes);
+            await _storage.WriteAsync((IDictionary<string, object>)changes);
 
             _client.Verify(
                 e => e.UploadAsync(
@@ -134,7 +134,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var changes = new Dictionary<string, object> { { "key", new StoreItem() } };
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync(changes));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _storage.WriteAsync((IDictionary<string, object>)changes));
         }
 
         [Fact]
@@ -155,7 +155,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var changes = new Dictionary<string, object> { { "key", new StoreItem() } };
 
-            await Assert.ThrowsAsync<EtagException>(() => _storage.WriteAsync(changes));
+            await Assert.ThrowsAsync<EtagException>(() => _storage.WriteAsync((IDictionary<string, object>)changes));
         }
 
         [Fact]
@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Storage.Tests
         {
             InitStorage();
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync<StoreItem>(null, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.WriteAsync((IDictionary<string, StoreItem>)null, CancellationToken.None));
         }
 
         [Fact]
@@ -172,7 +172,7 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             // No keys. Should throw.
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.DeleteAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _storage.DeleteAsync((string[])null));
         }
 
         [Fact]
@@ -214,6 +214,26 @@ namespace Microsoft.Agents.Storage.Tests
             Assert.Single(items);
             Assert.IsAssignableFrom<StoreItem>(items["key"]);
             _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ReadAsyncV2_ReturnsVersionFromSameDownloadResponse()
+        {
+            InitStorage();
+
+            Stream stream = new MemoryStream(Encoding.ASCII.GetBytes("{\"ETag\":\"*\", \"$type\": \"Microsoft.Agents.Storage.Tests.StoreItem\", \"$typeAssembly\": \"Microsoft.Agents.Storage.Tests\"}"));
+            var blobDownloadInfo = BlobsModelFactory.BlobDownloadInfo(
+                content: stream,
+                eTag: new ETag("\"version-1\""));
+            var response = new Mock<Response<BlobDownloadInfo>>();
+            response.SetupGet(e => e.Value).Returns(blobDownloadInfo);
+            _client.Setup(e => e.DownloadAsync(It.IsAny<CancellationToken>())).ReturnsAsync(response.Object);
+
+            var results = await ((IStorageV2)_storage).ReadAsync(new[] { "key" });
+
+            Assert.Equal("\"version-1\"", results["key"].Version);
+            Assert.Equal("\"version-1\"", Assert.IsType<StoreItem>(results["key"].Value).ETag);
+            _client.Verify(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -277,7 +297,7 @@ namespace Microsoft.Agents.Storage.Tests
                 { key, new StoreItem() }
             };
 
-            await _storage.WriteAsync(changes, CancellationToken.None);
+            await _storage.WriteAsync((IDictionary<string, StoreItem>)changes, CancellationToken.None);
 
             Stream stream = new MemoryStream(Encoding.ASCII.GetBytes("{\"ETag\":\"*\", \"$type\": \"Microsoft.Agents.Storage.Tests.StoreItem\", \"$typeAssembly\": \"Microsoft.Agents.Storage.Tests\"}"));
             var blobDownloadInfo = BlobsModelFactory.BlobDownloadInfo(content: stream);
@@ -291,6 +311,34 @@ namespace Microsoft.Agents.Storage.Tests
             Assert.Single(readStoreItems);
             Assert.IsAssignableFrom<StoreItem>(readStoreItems[key]);
             _client.Verify(e => e.DownloadAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task WriteAsyncV2_CreateOnly_WhenUploadReturnsBlobAlreadyExists_ReturnsConflict()
+        {
+            InitStorage();
+
+            _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new RequestFailedException((int)HttpStatusCode.NotFound, "not found"));
+
+            _client.Setup(e => e.UploadAsync(
+                    It.IsAny<Stream>(),
+                    It.IsAny<BlobHttpHeaders>(),
+                    It.IsAny<IDictionary<string, string>>(),
+                    It.IsAny<BlobRequestConditions>(),
+                    It.IsAny<IProgress<long>>(),
+                    It.IsAny<AccessTier?>(),
+                    It.IsAny<StorageTransferOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new RequestFailedException((int)HttpStatusCode.Conflict, "already exists", BlobErrorCode.BlobAlreadyExists.ToString(), null));
+
+            var results = await _storage.WriteAsync(
+                new Dictionary<string, object> { ["key"] = new StoreItem() },
+                new StorageWriteOptions() { Mode = StorageWriteMode.CreateOnly },
+                CancellationToken.None);
+
+            Assert.Equal(StorageOperationStatus.Conflict, results["key"].Status);
+            Assert.Null(results["key"].Version);
         }
 
         [Fact]

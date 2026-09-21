@@ -65,6 +65,7 @@ namespace Microsoft.Agents.Builder.Errors
         internal static readonly AgentErrorDefinition AgenticTokenProviderNotFound = new AgentErrorDefinition(-50023, Properties.Resources.IAgenticTokenProviderNotFound, "https://aka.ms/M365AgentsErrorCodes/#-50023");
         internal static readonly AgentErrorDefinition AgenticTokenProviderFailed = new AgentErrorDefinition(-50024, Properties.Resources.AgenticTokenProviderFailed, "https://aka.ms/M365AgentsErrorCodes/#-50024");
         internal static readonly AgentErrorDefinition NotAnAgenticRequest = new AgentErrorDefinition(-50025, Properties.Resources.NotAnAgenticRequest, "https://aka.ms/M365AgentsErrorCodes/#-50025");
+        internal static readonly AgentErrorDefinition TurnTokenCredentialOutsideTurn = new AgentErrorDefinition(-50026, Properties.Resources.TurnTokenCredentialOutsideTurn, "https://aka.ms/M365AgentsErrorCodes/#-50026");
         // ConnectorUserAuthorization
         internal static readonly AgentErrorDefinition UnexpectedConnectorRequestToken = new AgentErrorDefinition(-50030, Properties.Resources.UnexpectedConnectorRequestToken, "https://aka.ms/M365AgentsErrorCodes/#-50030");
         internal static readonly AgentErrorDefinition UnexpectedConnectorTokenExpiration = new AgentErrorDefinition(-50031, Properties.Resources.UnexpectedConnectorTokenExpiration, "https://aka.ms/M365AgentsErrorCodes/#-50031");
@@ -90,5 +91,7 @@ namespace Microsoft.Agents.Builder.Errors
         internal static readonly AgentErrorDefinition ProactiveInvalidConversationParametersInstance = new AgentErrorDefinition(-50046, Properties.Resources.ProactiveInvalidConversationParametersInstance, "https://aka.ms/M365AgentsErrorCodes/#-50046");
         internal static readonly AgentErrorDefinition ProactiveNotAllHandlersSignedIn = new AgentErrorDefinition(-50047, Properties.Resources.ProactiveNotAllHandlersSignedIn, "https://aka.ms/M365AgentsErrorCodes/#-50047");
         internal static readonly AgentErrorDefinition ProactiveAdapterRegistryNotAvailable = new AgentErrorDefinition(-50048, Properties.Resources.ProactiveAdapterRegistryNotAvailable, "https://aka.ms/M365AgentsErrorCodes/#-50048");
+        // AgenticAuthorization (Application)
+        internal static readonly AgentErrorDefinition AgenticAuthorizationNotConfigured = new AgentErrorDefinition(-50049, Properties.Resources.AgenticAuthorizationNotConfigured, "https://aka.ms/M365AgentsErrorCodes/#-50049");
     }
 }

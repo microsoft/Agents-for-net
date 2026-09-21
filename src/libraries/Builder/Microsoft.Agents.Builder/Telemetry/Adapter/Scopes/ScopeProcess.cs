@@ -9,11 +9,11 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the processing of an incoming activity
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the processing of an incoming activity
     /// through the channel adapter pipeline.
     /// </summary>
     /// <remarks>
-    /// Call <see cref="Share"/> to associate the incoming <see cref="IActivity"/> with this
+    /// Call <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeProcess.Share(Microsoft.Agents.Core.Models.IActivity)"/> to associate the incoming <see cref="Microsoft.Agents.Core.Models.IActivity"/> with this
     /// scope so that its metadata (type, channel, conversation, delivery mode) is recorded
     /// as span tags and metric dimensions when the scope is disposed.
     /// </remarks>
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         private IActivity? _activity = null;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeProcess"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeProcess"/> class.
         /// </summary>
         public ScopeProcess() : base(Constants.ScopeProcess)
         {
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// <inheritdoc />
         /// <remarks>
         /// Enriches the span with activity metadata tags and records
-        /// <see cref="Metrics.AdapterProcessDuration"/> and <see cref="Metrics.ActivitiesReceived"/>.
+        /// <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Metrics.AdapterProcessDuration"/> and <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Metrics.ActivitiesReceived"/>.
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         }
 
         /// <summary>
-        /// Associates an incoming <see cref="IActivity"/> with this scope so its metadata
+        /// Associates an incoming <see cref="Microsoft.Agents.Core.Models.IActivity"/> with this scope so its metadata
         /// can be recorded as tags on the underlying span.
         /// </summary>
         /// <param name="activity">The incoming activity being processed.</param>

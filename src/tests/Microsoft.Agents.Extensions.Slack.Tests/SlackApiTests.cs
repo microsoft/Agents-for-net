@@ -110,7 +110,12 @@ public class SlackApiTests
         string? mediaType = null;
         var slackApi = CreateSlackApi(async (request, cancellationToken) =>
         {
+#if NETSTANDARD
             body = await request.Content!.ReadAsStringAsync(cancellationToken);
+#else
+            body = await request.Content!.ReadAsStringAsync();
+#endif
+
             mediaType = request.Content.Headers.ContentType?.MediaType;
             return CreateJsonResponse("""{"ok":true}""");
         });
@@ -128,7 +133,11 @@ public class SlackApiTests
         string? body = null;
         var slackApi = CreateSlackApi(async (request, cancellationToken) =>
         {
+#if NETSTANDARD
             body = await request.Content!.ReadAsStringAsync(cancellationToken);
+#else
+            body = await request.Content!.ReadAsStringAsync();
+#endif
             return CreateJsonResponse("""{"ok":true}""");
         });
 

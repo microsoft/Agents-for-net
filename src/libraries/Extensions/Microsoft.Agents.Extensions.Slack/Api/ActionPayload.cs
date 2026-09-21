@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Microsoft.Agents.Builder.State;
@@ -219,5 +220,37 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
         private static JsonElement? GetElement(JsonNode value, JsonSerializerOptions options)
             => value == null ? null : JsonSerializer.SerializeToElement(value, options);
+    }
+
+    internal sealed class SlackChannelIdConverter : JsonConverter<string>
+    {
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                return reader.GetString();
+            }
+
+            if (reader.TokenType != JsonTokenType.StartObject)
+            {
+                throw new JsonException("Slack channel must be a string or an object.");
+            }
+
+            using var channel = JsonDocument.ParseValue(ref reader);
+            if (!channel.RootElement.TryGetProperty("id", out var channelId) || channelId.ValueKind == JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            if (channelId.ValueKind != JsonValueKind.String)
+            {
+                throw new JsonException("Slack channel id must be a string.");
+            }
+
+            return channelId.GetString();
+        }
+
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
+            => writer.WriteStringValue(value);
     }
 }

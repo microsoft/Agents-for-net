@@ -2,9 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Teams.Api;
-using System;
-using System.Collections.Generic;
+using Microsoft.Teams.Apps.Schema;
 using System.Text.Json;
 using Xunit;
 
@@ -83,70 +81,6 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
         }
 
         [Fact]
-        public void TeamsNotifyUser_ShouldConfigureAlert()
-        {
-            var activity = new Activity { };
-
-            activity.TeamsNotifyUser();
-
-            Assert.Equal(true, ((ChannelData)activity.ChannelData).Notification.Alert);
-            Assert.Equal(false, ((ChannelData)activity.ChannelData).Notification.AlertInMeeting);
-        }
-
-        [Fact]
-        public void TeamsNotifyUser_ShouldConfigureAlertInMeeting()
-        {
-            var activity = new Activity { };
-
-            activity.TeamsNotifyUser(alertInMeeting: true);
-
-            Assert.Equal(true, ((ChannelData)activity.ChannelData).Notification.AlertInMeeting);
-            Assert.Equal(false, ((ChannelData)activity.ChannelData).Notification.Alert);
-        }
-
-        [Fact]
-        public void TeamsNotifyUser_ShouldUseExternalResourceUrl()
-        {
-            string resourceUrl = "https://microsoft.com";
-
-            var activity = new Activity { };
-
-            activity.TeamsNotifyUser(false, externalResourceUrl: resourceUrl);
-
-            Assert.Equal(resourceUrl, ((ChannelData)activity.ChannelData).Notification.ExternalResourceUrl);
-        }
-
-        [Fact]
-        public void TeamsNotifyUser_ShouldNotOverrideExistingChannelData()
-        {
-            var activity = new Activity { ChannelData = new ChannelData { Team = new Team { Id = "team123" } } };
-
-            activity.TeamsNotifyUser();
-
-            Assert.True(((ChannelData)activity.ChannelData).Notification.Alert);
-            Assert.Equal("team123", ((ChannelData)activity.ChannelData).Team.Id);
-        }
-
-        [Fact]
-        public void TeamsGetTeamOnBehalfOf_ShouldReturnOnBehalfOf()
-        {
-            var onBehalfOf = new OnBehalfOf
-            {
-                DisplayName = "TestOnBehalfOf",
-                ItemId = 0,
-                MentionType = "person",
-                Mri = Guid.NewGuid().ToString()
-            };
-
-            IActivity activity = new Activity { ChannelData = JsonSerializer.SerializeToElement(new { onBehalfOf = new List<OnBehalfOf> { onBehalfOf } }) };
-
-            var onBehalfOfList = activity.TeamsGetTeamOnBehalfOf();
-
-            Assert.Single(onBehalfOfList);
-            Assert.Equal("TestOnBehalfOf", onBehalfOfList[0].DisplayName);
-        }
-
-        [Fact]
         public void TeamsEnableFeedbackLoop_ShouldAddFeedbackLoopData()
         {
             var activity = new Activity();
@@ -161,7 +95,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
         [Fact]
         public void TeamsEnableFeedbackLoop_ShouldReturnFalse_WhenChannelDataAlreadySet()
         {
-            var existingChannelData = new ChannelData { Team = new Team { Id = "team123" } };
+            var existingChannelData = new TeamsChannelData { Team = new Team { Id = "team123" } };
             var activity = new Activity { ChannelData = existingChannelData };
 
             var result = activity.TeamsEnableFeedbackLoop();
@@ -169,5 +103,6 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             Assert.False(result);
             Assert.Same(existingChannelData, activity.ChannelData);
         }
+
     }
 }

@@ -128,6 +128,23 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public async Task ContinueConversationAsync_ShouldRejectDisallowedServiceUrl()
+        {
+            // Arrange
+            var factory = CreateMockChannelServiceClientFactory();
+            var adapter = new TestChannelAdapter(
+                factory.Object,
+                new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true, IncludeDefaultMicrosoftHosts = false }));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => adapter.ContinueConversationAsync(new ClaimsIdentity(), _reference, ContinueCallback, CancellationToken.None));
+            factory.Verify(
+                x => x.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task ContinueConversationAsync_ShouldSendMessageWithClaims()
         {
             // Arrange
@@ -413,6 +430,54 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         [Fact]
+        public async Task CreateConversationAsync_ShouldRejectDisallowedServiceUrl()
+        {
+            // Arrange
+            var factory = CreateMockChannelServiceClientFactory();
+            var adapter = new TestChannelAdapter(
+                factory.Object,
+                new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true, IncludeDefaultMicrosoftHosts = false }));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => adapter.CreateConversationAsync(
+                    new ClaimsIdentity([new Claim("aud", "agent-id")]),
+                    Channels.Test,
+                    "https://evil.example.com",
+                    null,
+                    new ConversationParameters(),
+                    ContinueCallback,
+                    CancellationToken.None));
+            factory.Verify(
+                x => x.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateConversationAsync_ShouldRejectDisallowedDefaultServiceUrl()
+        {
+            // Arrange
+            var factory = CreateMockChannelServiceClientFactory();
+            var adapter = new TestChannelAdapter(
+                factory.Object,
+                new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true, IncludeDefaultMicrosoftHosts = false }));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => adapter.CreateConversationAsync(
+                    new ClaimsIdentity([new Claim("aud", "agent-id")]),
+                    Channels.Test,
+                    null,
+                    null,
+                    new ConversationParameters(),
+                    ContinueCallback,
+                    CancellationToken.None));
+            factory.Verify(
+                x => x.CreateConnectorClientAsync(It.IsAny<ITurnContext>(), It.IsAny<string>(), It.IsAny<IList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task SendActivitiesAsync_ShouldNotUseConnectorForExpectReplies()
         {
             // Arrange
@@ -510,8 +575,8 @@ namespace Microsoft.Agents.Builder.Tests
 
         private class TestChannelAdapter : ChannelServiceAdapterBase
         {
-            public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory)
-                : base(channelServiceClientFactory)
+            public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory, IOutboundHostValidator hostValidator = null)
+                : base(channelServiceClientFactory, null, hostValidator)
             {
             }
         }

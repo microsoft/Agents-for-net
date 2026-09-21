@@ -38,9 +38,9 @@ namespace Microsoft.Agents.Builder.Compat
         private readonly string _oAuthConnectionName;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TeamsSSOTokenExchangeMiddleware"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Compat.TeamsSSOTokenExchangeMiddleware"/> class.
         /// </summary>
-        /// <param name="storage">The <see cref="IStorage"/> to use for deduplication.</param>
+        /// <param name="storage">The <see cref="Microsoft.Agents.Storage.IStorage"/> to use for deduplication.</param>
         /// <param name="connectionName">The connection name to use for the single
         /// sign on token exchange.</param>
         public TeamsSSOTokenExchangeMiddleware(IStorage storage, string connectionName)
@@ -78,13 +78,37 @@ namespace Microsoft.Agents.Builder.Compat
 
         private async Task<bool> DeduplicatedTokenExchangeIdAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
+            var storageKey = TokenStoreItem.GetStorageKey(turnContext);
+
+            if (_storage is IStorageV2 storageV2)
+            {
+                var results = await storageV2.WriteAsync(
+                    new Dictionary<string, TokenExchangeDeduplicationMarker> { { storageKey, new TokenExchangeDeduplicationMarker() } },
+                    new StorageWriteOptions { Mode = StorageWriteMode.CreateOnly },
+                    cancellationToken).ConfigureAwait(false);
+
+                var result = results[storageKey];
+                if (result.Status == StorageOperationStatus.Succeeded)
+                {
+                    return true;
+                }
+
+                if (result.Status == StorageOperationStatus.Conflict)
+                {
+                    await SendInvokeResponseAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    return false;
+                }
+
+                throw new InvalidOperationException($"Unexpected storage write status '{result.Status}' for token exchange deduplication.");
+            }
+
             // Create a StoreItem with Etag of the unique 'signin/tokenExchange' request
             var storeItem = new TokenStoreItem
             {
                 ETag = ProtocolJsonSerializer.ToJsonElements(turnContext.Activity.Value)["id"].ToString(),
             };
 
-            var storeItems = new Dictionary<string, object> { { TokenStoreItem.GetStorageKey(turnContext), storeItem } };
+            var storeItems = new Dictionary<string, object> { { storageKey, storeItem } };
             try
             {
                 // Writing the IStoreItem with ETag of unique id will succeed only once
@@ -104,6 +128,10 @@ namespace Microsoft.Agents.Builder.Compat
             }
 
             return true;
+        }
+
+        private sealed class TokenExchangeDeduplicationMarker
+        {
         }
 
         private static async Task SendInvokeResponseAsync(ITurnContext turnContext, object body = null, HttpStatusCode httpStatusCode = HttpStatusCode.OK, CancellationToken cancellationToken = default)

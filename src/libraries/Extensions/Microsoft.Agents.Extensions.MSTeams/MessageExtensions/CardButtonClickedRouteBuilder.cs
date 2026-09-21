@@ -14,9 +14,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// Provides a builder for configuring card button click routes in an AgentApplication.
 /// </summary>
 /// <remarks>
-/// Use <see cref="CardButtonClickedRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CardButtonClickedRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.CardButtonClicked"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionCardButtonClicked"/>.
 /// </remarks>
 public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedRouteBuilder>
 {
@@ -62,7 +62,7 @@ public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedR
     /// maintaining consistency with the route's initial setup.</remarks>
     /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
     /// route is always configured for Invoke routing.</param>
-    /// <returns>The current instance of <see cref="CardButtonClickedRouteBuilder"/> with Invoke routing enabled.</returns>
+    /// <returns>The current instance of <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CardButtonClickedRouteBuilder"/> with Invoke routing enabled.</returns>
     public override CardButtonClickedRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;
@@ -82,7 +82,7 @@ public class CardButtonClickedRouteBuilder : RouteBuilderBase<CardButtonClickedR
                 return Task.FromResult(
                     IsContextMatch(ctx, _route)
                     && ctx.Activity.IsType(ActivityTypes.Invoke)
-                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.CardButtonClicked)
+                    && string.Equals(ctx.Activity.Name, Microsoft.Teams.Apps.InvokeNames.MessageExtensionCardButtonClicked)
                 );
             };
     }

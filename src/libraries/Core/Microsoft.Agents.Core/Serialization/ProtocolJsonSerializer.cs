@@ -39,10 +39,10 @@ namespace Microsoft.Agents.Core.Serialization
         public static ConcurrentDictionary<string, Type> EntityTypes { get; private set; } = CoreEntities();
 
         /// <summary>
-        /// Maps activity <c>type</c> strings to custom <see cref="Activity"/> subclasses for the
+        /// Maps activity <c>type</c> strings to custom <see cref="Microsoft.Agents.Core.Models.Activity"/> subclasses for the
         /// simple type-only case. Retained for direct inspection; declarative discriminators
         /// (including channelId/name) are held in the internal registration list. Populated by
-        /// <see cref="RegisterActivityTypes"/>.
+        /// <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.RegisterActivityTypes(System.Collections.Generic.IEnumerable{System.Type})"/>.
         /// </summary>
         internal static readonly object _activityResolutionLock = new object();
         private static ActivityTypeRegistration[] _activityRegistrations = Array.Empty<ActivityTypeRegistration>();
@@ -60,6 +60,7 @@ namespace Microsoft.Agents.Core.Serialization
 
         static ProtocolJsonSerializer()
         {
+            AgentSdkInitializer.EnsureInitialized();
             SerializationInitAssemblyAttribute.InitSerialization();
             EntityInitAssemblyAttribute.InitSerialization();
             ActivityTypeInitAssemblyAttribute.InitSerialization();
@@ -109,8 +110,8 @@ namespace Microsoft.Agents.Core.Serialization
 
         /// <summary>
         /// Applies a transformation function to <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.SerializationOptions"/>, replacing it with
-        /// the result. This is an advanced escape hatch — prefer <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.ApplyExtensionConverters"/>
-        /// or <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.AddTypeInfoResolver"/> for typical extensions.
+        /// the result. This is an advanced escape hatch — prefer <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.ApplyExtensionConverters(System.Collections.Generic.IList{System.Text.Json.Serialization.JsonConverter})"/>
+        /// or <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.AddTypeInfoResolver(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver)"/> for typical extensions.
         /// </summary>
         /// <param name="applyFunc">
         /// A function that receives the current options and returns the new options.
@@ -175,23 +176,23 @@ namespace Microsoft.Agents.Core.Serialization
         }
 
         /// <summary>
-        /// Registers custom <see cref="Activity"/> subclasses for polymorphic deserialization.
-        /// Each type must derive from <see cref="Activity"/> and be annotated with one or more
-        /// <see cref="ActivityTypeAttribute"/>. Each attribute declares the discriminators
+        /// Registers custom <see cref="Microsoft.Agents.Core.Models.Activity"/> subclasses for polymorphic deserialization.
+        /// Each type must derive from <see cref="Microsoft.Agents.Core.Models.Activity"/> and be annotated with one or more
+        /// <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute"/>. Each attribute declares the discriminators
         /// (<c>type</c>, and optionally <c>channelId</c> and/or <c>name</c>) that an inbound Activity
         /// must match for the subclass to be used.
         /// </summary>
         /// <remarks>
         /// Annotated subclasses are normally auto-registered at assembly load time (the
-        /// <c>ActivityTypeInitSourceGenerator</c> emits an <see cref="ActivityTypeInitAssemblyAttribute"/>
+        /// <c>ActivityTypeInitSourceGenerator</c> emits an <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeInitAssemblyAttribute"/>
         /// per <c>[ActivityType]</c> class), so calling this directly is rarely needed. It remains public
         /// for explicit/dynamic registration. Registration is idempotent — registering the same type and
         /// discriminators more than once is a no-op.
         /// </remarks>
-        /// <param name="types">The annotated <see cref="Activity"/> subclasses to register.</param>
+        /// <param name="types">The annotated <see cref="Microsoft.Agents.Core.Models.Activity"/> subclasses to register.</param>
         /// <exception cref="ArgumentException">
-        /// A supplied type does not derive from <see cref="Activity"/>, or one of its
-        /// <see cref="ActivityTypeAttribute"/> declarations sets none of Type/ChannelId/Name.
+        /// A supplied type does not derive from <see cref="Microsoft.Agents.Core.Models.Activity"/>, or one of its
+        /// <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute"/> declarations sets none of Type/ChannelId/Name.
         /// </exception>
         public static void RegisterActivityTypes(IEnumerable<Type> types)
         {
@@ -279,9 +280,9 @@ namespace Microsoft.Agents.Core.Serialization
         }
 
         /// <summary>
-        /// Registers an imperative <see cref="ActivityTypeResolver"/> for custom Activity resolution
-        /// scenarios that the declarative <see cref="ActivityTypeAttribute"/> discriminators cannot
-        /// express. The resolver receives a private <see cref="Utf8JsonReader"/> copy positioned at
+        /// Registers an imperative <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeResolver"/> for custom Activity resolution
+        /// scenarios that the declarative <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute"/> discriminators cannot
+        /// express. The resolver receives a private <see cref="System.Text.Json.Utf8JsonReader"/> copy positioned at
         /// the Activity's <c>StartObject</c> (so it can discriminate on any property, including nested
         /// ones) plus the well-known peeked discriminators for convenience. Resolvers are consulted
         /// (in registration order) before declarative registrations; the first resolver to return a
@@ -303,8 +304,8 @@ namespace Microsoft.Agents.Core.Serialization
         }
 
         /// <summary>
-        /// Resolves the custom <see cref="Activity"/> subclass to deserialize into for the given
-        /// peeked discriminators, or <see langword="null"/> to use the base <see cref="Activity"/>.
+        /// Resolves the custom <see cref="Microsoft.Agents.Core.Models.Activity"/> subclass to deserialize into for the given
+        /// peeked discriminators, or <see langword="null"/> to use the base <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// Imperative resolvers are consulted first (in registration order); then the most-specific
         /// matching declarative registration (greatest number of set discriminators; ties resolved
         /// by registration order).
@@ -363,6 +364,7 @@ namespace Microsoft.Agents.Core.Serialization
             options.Converters.Add(new ActivityConverter());
             options.Converters.Add(new IActivityConverter());
             options.Converters.Add(new EntityConverter());
+            options.Converters.Add(new ActivityContextConverter());
 
             return options;
         }

@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
-    /// Boundary condition tests for <see cref="NamedPipeMessageHandler"/>:
+    /// Boundary condition tests for <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.NamedPipeMessageHandler"/>:
     /// null URI, non-pipe URI, no protocol, missing /v3/ path, protocol
     /// exceptions returning 502, and content-type fallback.
     /// </summary>
@@ -139,7 +139,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 
             await harness.WriteResponseAsync(frame.Header.Id, 202);
 
-            var response = await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await sendTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         }
 
@@ -185,7 +185,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
                 End = true,
             }, "test"u8.ToArray());
 
-            var response = await sendTask.WaitAsync(TimeSpan.FromSeconds(5));
+            var response = await sendTask.WaitAsync(TestTimeouts.Observe);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Equal("application/json", response.Content.Headers.ContentType.MediaType);
         }

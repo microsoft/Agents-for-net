@@ -8,14 +8,14 @@ using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.MSTeams.Tests.Model;
-using Microsoft.Teams.Api;
+using Microsoft.Teams.Apps.Schema;
 using Moq;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using static Microsoft.Teams.Api.Activities.ConversationUpdateActivity;
+using Microsoft.Teams.Apps;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
 {
@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var team = new Team { Id = "team-123" };
-            var turnContexts = CreateTeamContexts(EventType.TeamArchived, team, adapter);
+            var turnContexts = CreateTeamContexts(ConversationEventType.TeamArchived, team, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedTeamIds = new List<string>();
@@ -56,7 +56,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             // Only channel events — no team events
-            var turnContexts = CreateChannelContexts(EventType.ChannelCreated, new Channel { Id = "c1" }, adapter);
+            var turnContexts = CreateChannelContexts(ConversationEventType.ChannelCreated, new TeamsChannel { Id = "c1" }, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var called = false;
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var team = new Team { Id = "archived-team" };
-            var turnContexts = CreateTeamContexts(EventType.TeamArchived, team, adapter);
+            var turnContexts = CreateTeamContexts(ConversationEventType.TeamArchived, team, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             var adapter = new NotImplementedAdapter();
             var team = new Team { Id = "t1" };
             // teamDeleted should not trigger an OnArchived handler
-            var turnContext = new TurnContext(adapter, CreateTeamActivity(EventType.TeamDeleted, team));
+            var turnContext = new TurnContext(adapter, CreateTeamActivity(ConversationEventType.TeamDeleted, team));
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = CreateApp(turnState);
             var called = false;
@@ -141,7 +141,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var team = new Team { Id = "unarchived-team" };
-            var turnContexts = CreateTeamContexts(EventType.TeamUnarchived, team, adapter);
+            var turnContexts = CreateTeamContexts(ConversationEventType.TeamUnarchived, team, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -170,7 +170,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var team = new Team { Id = "renamed-team" };
-            var turnContexts = CreateTeamContexts(EventType.TeamRenamed, team, adapter);
+            var turnContexts = CreateTeamContexts(ConversationEventType.TeamRenamed, team, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -199,7 +199,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var team = new Team { Id = "restored-team" };
-            var turnContexts = CreateTeamContexts(EventType.TeamRestored, team, adapter);
+            var turnContexts = CreateTeamContexts(ConversationEventType.TeamRestored, team, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -228,7 +228,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             // Arrange
             var adapter = new NotImplementedAdapter();
             var team = new Team { Id = "deleted-team" };
-            var turnContexts = CreateTeamContexts(EventType.TeamDeleted, team, adapter);
+            var turnContexts = CreateTeamContexts(ConversationEventType.TeamDeleted, team, adapter);
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
             var app = CreateApp(turnState);
             var capturedIds = new List<string>();
@@ -252,35 +252,6 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         }
 
         [Fact]
-        public async Task Test_OnHardDeleted_MatchesTeamHardDeleted()
-        {
-            // Arrange
-            var adapter = new NotImplementedAdapter();
-            var team = new Team { Id = "hard-deleted-team" };
-            var turnContexts = CreateTeamContexts(EventType.TeamHardDeleted, team, adapter);
-            var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContexts[0]);
-            var app = CreateApp(turnState);
-            var capturedIds = new List<string>();
-            var extension = new TeamsAgentExtension(app);
-            app.RegisterExtension(extension, (ext) =>
-            {
-                ext.Teams.OnHardDeleted((ctx, _, data, ct) =>
-                {
-                    capturedIds.Add(data.Id);
-                    return Task.CompletedTask;
-                });
-            });
-
-            // Act
-            foreach (var ctx in turnContexts)
-                await app.OnTurnAsync(ctx, CancellationToken.None);
-
-            // Assert
-            Assert.Single(capturedIds);
-            Assert.Equal("hard-deleted-team", capturedIds[0]);
-        }
-
-        [Fact]
         public async Task Test_TeamHandlers_DoNotFireForNonTeamsChannel()
         {
             // Arrange
@@ -291,7 +262,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat,
-                ChannelData = new ChannelData { EventType = EventType.TeamArchived, Team = team },
+                ChannelData = new TeamsChannelData { EventType = ConversationEventType.TeamArchived, Team = team },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -326,7 +297,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.Message,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = EventType.TeamArchived, Team = team },
+                ChannelData = new TeamsChannelData { EventType = ConversationEventType.TeamArchived, Team = team },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -356,12 +327,12 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            // ChannelData has the right event type but no Team object
+            // TeamsChannelData has the right event type but no Team object
             var turnContext = new TurnContext(adapter, new Activity
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = EventType.TeamArchived },
+                ChannelData = new TeamsChannelData { EventType = ConversationEventType.TeamArchived },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -391,7 +362,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var turnContext = new TurnContext(adapter, CreateTeamActivity(EventType.TeamRenamed, new Team { Id = "t1" }));
+            var turnContext = new TurnContext(adapter, CreateTeamActivity(ConversationEventType.TeamRenamed, new Team { Id = "t1" }));
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = CreateApp(turnState);
             var renamedCalled = false;
@@ -417,7 +388,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
         {
             // Arrange
             var adapter = new NotImplementedAdapter();
-            var turnContext = new TurnContext(adapter, CreateTeamActivity(EventType.TeamArchived, new Team { Id = "t1" }));
+            var turnContext = new TurnContext(adapter, CreateTeamActivity(ConversationEventType.TeamArchived, new Team { Id = "t1" }));
             var turnState = TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
             var app = CreateApp(turnState);
             var archivedCalled = false;
@@ -449,7 +420,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 RemoveRecipientMention = false,
                 StartTypingTimer = false,
                 Connections = new Mock<IConnections>().Object,
-                HttpClientFactory = new Mock<IHttpClientFactory>().Object,
+                HttpClientFactory = new TestHttpClientFactory(),
             });
         }
 
@@ -459,7 +430,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             {
                 Type = ActivityTypes.ConversationUpdate,
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                ChannelData = new ChannelData { EventType = eventType, Team = team },
+                ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Team = team },
                 Recipient = new() { Id = "recipientId" },
                 Conversation = new() { Id = "conversationId" },
                 From = new() { Id = "fromId" },
@@ -476,13 +447,13 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             [
                 // Matching: correct event type, correct channel
                 new TurnContext(adapter, CreateTeamActivity(eventType, team)),
-                // Non-matching: channel event — no Team in ChannelData, also won't match "team.*" regex
+                // Non-matching: channel event — no Team in TeamsChannelData, also won't match "team.*" regex
                 // (specific-event tests have a dedicated test for "different team event doesn't match")
                 new TurnContext(adapter, new Activity
                 {
                     Type = ActivityTypes.ConversationUpdate,
                     ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                    ChannelData = new ChannelData { EventType = EventType.ChannelCreated, Channel = new Channel { Id = "c-other" } },
+                    ChannelData = new TeamsChannelData { EventType = ConversationEventType.ChannelCreated, Channel = new TeamsChannel { Id = "c-other" } },
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From = new() { Id = "fromId" },
@@ -492,7 +463,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 {
                     Type = ActivityTypes.ConversationUpdate,
                     ChannelId = Microsoft.Agents.Core.Models.Channels.Webchat,
-                    ChannelData = new ChannelData { EventType = eventType, Team = team },
+                    ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Team = team },
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From = new() { Id = "fromId" },
@@ -502,7 +473,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 {
                     Type = ActivityTypes.Message,
                     ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                    ChannelData = new ChannelData { EventType = eventType, Team = team },
+                    ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Team = team },
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From = new() { Id = "fromId" },
@@ -510,7 +481,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
             ];
         }
 
-        private static ITurnContext[] CreateChannelContexts(string eventType, Channel channel, ChannelAdapter adapter)
+        private static ITurnContext[] CreateChannelContexts(string eventType, TeamsChannel channel, ChannelAdapter adapter)
         {
             return
             [
@@ -518,7 +489,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.App
                 {
                     Type = ActivityTypes.ConversationUpdate,
                     ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams,
-                    ChannelData = new ChannelData { EventType = eventType, Channel = channel },
+                    ChannelData = new TeamsChannelData { EventType = new Microsoft.Teams.Apps.ConversationEventType(eventType.ToString()), Channel = channel },
                     Recipient = new() { Id = "recipientId" },
                     Conversation = new() { Id = "conversationId" },
                     From = new() { Id = "fromId" },

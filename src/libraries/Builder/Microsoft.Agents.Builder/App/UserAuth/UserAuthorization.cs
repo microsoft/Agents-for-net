@@ -1,12 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Azure.Core;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -24,7 +27,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
     /// 
     /// Auto Sign In:
     /// If enabled in <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorizationOptions"/>, sign in starts automatically after the first Message the user sends.  When
-    /// the sign in is complete, the turn continues with the original message. On failure, <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(System.Func{Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.State.ITurnState, string, Microsoft.Agents.Builder.UserAuth.SignInResponse, System.Threading.CancellationToken, System.Threading.Tasks.Task})"/>
+    /// the sign in is complete, the turn continues with the original message. On failure, <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(Microsoft.Agents.Builder.App.UserAuth.AuthorizationFailure)"/>
     /// is called.
     /// 
     /// </summary>
@@ -37,6 +40,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         private readonly IUserAuthorizationDispatcher _dispatcher;
         private readonly UserAuthorizationOptions _options;
         private readonly AgentApplication _app;
+        private readonly IStorageV2 _storage;
         private readonly List<HandlerToken> _authTokens = [];
 
         /// <summary>
@@ -50,6 +54,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         {
             _app = app ?? throw new ArgumentNullException(nameof(app));
             _options = options ?? throw new ArgumentNullException(nameof(options));
+            _storage = StorageCompatibility.AsV2(_options.Storage);
             _dispatcher = options.Dispatcher;
 
             if (_options.AutoSignIn != null)
@@ -95,7 +100,64 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             return await ExchangeTurnTokenAsync(turnContext, handlerName, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Creates a token credential backed by the user token for the current turn.
+        /// </summary>
+        /// <remarks>
+        /// The returned credential is scoped to <paramref name="turnContext"/> and must only be used
+        /// during that turn. Do not cache it or provide it to a client that outlives the turn.
+        /// Create a new credential in each turn instead.
+        /// </remarks>
+        /// <param name="turnContext">The current turn context.</param>
+        /// <param name="handlerName">The user authorization handler name, or <see langword="null"/> to use the default handler.</param>
+        /// <returns>A token credential that returns the current turn's user token.</returns>
+        public TokenCredential GetTurnTokenAsTokenCredential(ITurnContext turnContext, string handlerName = default)
+        {
+            return ExchangeTurnTokenAsTokenCredential(turnContext, handlerName);
+        }
+
         public async Task<string> ExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
+        {
+            var res = await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+            return res?.Token;
+        }
+
+        /// <summary>
+        /// Creates a token credential that exchanges the user token for scopes requested during the current turn.
+        /// </summary>
+        /// <remarks>
+        /// The returned credential is scoped to <paramref name="turnContext"/> and must only be used
+        /// during that turn. Do not cache it or provide it to a client that outlives the turn.
+        /// Create a new credential in each turn instead.
+        /// Scopes requested from the credential are combined with <paramref name="exchangeScopes"/>
+        /// and duplicate scopes are removed.
+        /// </remarks>
+        /// <param name="turnContext">The current turn context.</param>
+        /// <param name="handlerName">The user authorization handler name, or <see langword="null"/> to use the default handler.</param>
+        /// <param name="exchangeConnection">The connection used for token exchange, or <see langword="null"/> to use the handler's configured connection.</param>
+        /// <param name="exchangeScopes">Additional scopes to include in every token exchange.</param>
+        /// <returns>A token credential that exchanges the current turn's user token for requested scopes.</returns>
+        public TokenCredential ExchangeTurnTokenAsTokenCredential(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default)
+        {
+            string[] configuredScopes = exchangeScopes?.ToArray();
+
+            return DelegatedTokenCredentialExtension.Create(async (scopes, ct) =>
+            {
+                if (turnContext.Services.HasBeenDisposed)
+                {
+                    throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.TurnTokenCredentialOutsideTurn, null);
+                }
+                IList<string> allScopes = (configuredScopes ?? [])
+                    .Concat(scopes ?? [])
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
+
+                return await InternalExchangeTurnTokenAsync(turnContext, handlerName, exchangeConnection, allScopes, ct).ConfigureAwait(false);
+            });
+        }
+
+
+        internal async Task<TokenResponse> InternalExchangeTurnTokenAsync(ITurnContext turnContext, string handlerName = default, string exchangeConnection = default, IList<string> exchangeScopes = default, CancellationToken cancellationToken = default)
         {
             if (_authTokens == null || _authTokens.Count == 0)
             {
@@ -123,7 +185,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                     var diff = token.Expiration - DateTimeOffset.UtcNow;
                     if (diff.HasValue && diff?.TotalMinutes >= 5)
                     {
-                        return token.Token;
+                        return token;
                     }
                 }
 
@@ -137,7 +199,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                         // Refresh cahce with the latest non-exchangeable token.
                         CacheToken(handlerName, response);
                     }
-                    return response.Token;
+                    return response;
                 }
 
                 // This is a critical error since the only way we are here is we had a token (user signed in) yet
@@ -181,8 +243,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         /// </summary>
         /// <remarks>
         /// This should be called to start or continue the user auth until true is returned, which indicates sign in is complete.
-        /// When complete, the token is cached and can be access via <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.GetTurnTokenAsync"/>.
-        /// <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(System.Func{Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.State.ITurnState, string, Microsoft.Agents.Builder.UserAuth.SignInResponse, System.Threading.CancellationToken, System.Threading.Tasks.Task})"/> is called on an error completion.
+        /// When complete, the token is cached and can be access via <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.GetTurnTokenAsync(Microsoft.Agents.Builder.ITurnContext, System.String, System.Threading.CancellationToken)"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(Microsoft.Agents.Builder.App.UserAuth.AuthorizationFailure)"/> is called on an error completion.
         /// </remarks>
         /// <param name="turnContext"></param>
         /// <param name="turnState"></param>
@@ -390,22 +452,23 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         private async Task<SignInState> GetSignInStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            var items = await _options.Storage.ReadAsync([GetStorageKey(turnContext)], cancellationToken).ConfigureAwait(false);
-            if (items.TryGetValue(GetStorageKey(turnContext), out var state) && state is SignInState signInState)
+            var key = GetStorageKey(turnContext);
+            var results = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+            if (results[key].Status == StorageOperationStatus.Succeeded && results[key].Value is SignInState signInState)
             {
                  return signInState;
             }
             return new();
         }
 
-        private Task SetSignInStateAsync(ITurnContext turnContext, SignInState state, CancellationToken cancellationToken)
+        private async Task SetSignInStateAsync(ITurnContext turnContext, SignInState state, CancellationToken cancellationToken)
         {
-            return _options.Storage.WriteAsync(new Dictionary<string, object> { { GetStorageKey(turnContext), state } }, cancellationToken);
+            await _storage.WriteAsync(new Dictionary<string, SignInState> { { GetStorageKey(turnContext), state } }, cancellationToken).ConfigureAwait(false);
         }
 
-        private Task DeleteSignInStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        private async Task DeleteSignInStateAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            return _options.Storage.DeleteAsync(new[] { GetStorageKey(turnContext) }, cancellationToken);
+            await _storage.DeleteAsync([GetStorageKey(turnContext)], cancellationToken).ConfigureAwait(false);
         }
 
         private static string GetStorageKey(ITurnContext turnContext)

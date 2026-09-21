@@ -115,6 +115,138 @@ namespace Microsoft.Agents.Auth.Tests
             Assert.Equal("claim2", identity.GetIncomingAudience());
         }
 
+        [Theory]
+        [InlineData("https://sts.windows.net/11111111-1111-1111-1111-111111111111/")]
+        [InlineData("https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0")]
+        [InlineData("https://login.microsoftonline.us/11111111-1111-1111-1111-111111111111/v2.0")]
+        [InlineData("https://login.partner.microsoftonline.cn/0b4a31a2-c1a0-475d-b363-5f26668660a3/11111111-1111-1111-1111-111111111111/v2.0")]
+        [InlineData("https://LOGIN.MICROSOFTONLINE.COM/11111111-1111-1111-1111-111111111111/v2.0")]
+        public void IsTenantIdIssuerValid_MatchingTenant_ReturnsTrue(string issuer)
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, issuer),
+                new(AuthenticationConstants.TenantIdClaim, "11111111-1111-1111-1111-111111111111")
+            ]);
+
+            Assert.True(identity.IsTenantIdIssuerValid());
+        }
+
+        [Theory]
+        [InlineData("https://sts.windows.net/11111111-1111-1111-1111-111111111111/")]
+        [InlineData("https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0")]
+        [InlineData("https://login.microsoftonline.us/11111111-1111-1111-1111-111111111111/v2.0")]
+        [InlineData("https://login.partner.microsoftonline.cn/0b4a31a2-c1a0-475d-b363-5f26668660a3/11111111-1111-1111-1111-111111111111/v2.0")]
+        public void IsTenantIdIssuerValid_MismatchingTenant_ReturnsFalse(string issuer)
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, issuer),
+                new(AuthenticationConstants.TenantIdClaim, "22222222-2222-2222-2222-222222222222")
+            ]);
+
+            Assert.False(identity.IsTenantIdIssuerValid());
+        }
+
+        [Fact]
+        public void IsTenantIdIssuerValid_MappedMismatchingTenant_ReturnsFalse()
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0"),
+                new("http://schemas.microsoft.com/identity/claims/tenantid", "22222222-2222-2222-2222-222222222222")
+            ]);
+
+            Assert.False(identity.IsTenantIdIssuerValid());
+        }
+
+        [Fact]
+        public void IsTenantIdIssuerValid_ConflictingRawAndMappedTenantIds_ReturnsFalse()
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0"),
+                new(AuthenticationConstants.TenantIdClaim, "11111111-1111-1111-1111-111111111111"),
+                new("http://schemas.microsoft.com/identity/claims/tenantid", "22222222-2222-2222-2222-222222222222")
+            ]);
+
+            Assert.False(identity.IsTenantIdIssuerValid());
+        }
+
+        [Fact]
+        public void IsTenantIdIssuerValid_BlankDuplicateTenantId_ReturnsFalse()
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0"),
+                new(AuthenticationConstants.TenantIdClaim, "11111111-1111-1111-1111-111111111111"),
+                new(AuthenticationConstants.TenantIdClaim, "")
+            ]);
+
+            Assert.False(identity.IsTenantIdIssuerValid());
+        }
+
+        [Theory]
+        [InlineData("https://api.botframework.com")]
+        [InlineData("https://api.botframework.us")]
+        [InlineData("https://login.microsoftonline.com/contoso.onmicrosoft.com/v2.0")]
+        [InlineData("https://login.example.com/11111111-1111-1111-1111-111111111111/v2.0")]
+        [InlineData("https://user@sts.windows.net/11111111-1111-1111-1111-111111111111/")]
+        [InlineData("https://sts.windows.net:8443/11111111-1111-1111-1111-111111111111/")]
+        [InlineData("https://sts.windows.net//11111111-1111-1111-1111-111111111111/")]
+        [InlineData("https://sts.windows.net/11111111-1111-1111-1111-111111111111")]
+        [InlineData("https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0/")]
+        [InlineData("https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/V2.0")]
+        [InlineData("https://login.partner.microsoftonline.cn/0b4a31a2-c1a0-475d-b363-5f26668660a3/11111111-1111-1111-1111-111111111111/V2.0")]
+        [InlineData("not-a-uri")]
+        public void IsTenantIdIssuerValid_UnbindableIssuer_ReturnsTrue(string issuer)
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, issuer),
+                new(AuthenticationConstants.TenantIdClaim, "22222222-2222-2222-2222-222222222222")
+            ]);
+
+            Assert.True(identity.IsTenantIdIssuerValid());
+        }
+
+        [Fact]
+        public void IsTenantIdIssuerValid_MissingTenantId_ReturnsTrue()
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0")
+            ]);
+
+            Assert.True(identity.IsTenantIdIssuerValid());
+        }
+
+        [Fact]
+        public void IsTenantIdIssuerValid_InvalidPresentTenantId_ReturnsFalse()
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0"),
+                new(AuthenticationConstants.TenantIdClaim, "not-a-guid")
+            ]);
+
+            Assert.False(identity.IsTenantIdIssuerValid());
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(" ")]
+        public void IsTenantIdIssuerValid_BlankPresentTenantId_ReturnsFalse(string tenantId)
+        {
+            ClaimsIdentity identity = new(
+            [
+                new(AuthenticationConstants.IssuerClaim, "https://login.microsoftonline.com/11111111-1111-1111-1111-111111111111/v2.0"),
+                new(AuthenticationConstants.TenantIdClaim, tenantId)
+            ]);
+
+            Assert.False(identity.IsTenantIdIssuerValid());
+        }
+
         [Fact]
         public void GetOutgoingAppId_ThrowIfNull()
         {

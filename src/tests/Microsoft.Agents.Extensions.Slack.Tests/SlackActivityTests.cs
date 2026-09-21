@@ -3,21 +3,26 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using System;
+using System.IO;
 using Xunit;
 
 namespace Microsoft.Agents.Extensions.Slack.Tests;
 
 /// <summary>
-/// Tests for the polymorphic resolution of inbound Activities to <see cref="SlackActivity"/>.
+/// Tests for the polymorphic resolution of inbound Activities to <see cref="Microsoft.Agents.Extensions.Slack.SlackActivity"/>.
 /// Resolution is driven by the <c>[ActivityType(ChannelId = "slack")]</c> annotation on
-/// <see cref="SlackActivity"/>, which the source generator turns into an assembly-level
-/// <see cref="ActivityTypeInitAssemblyAttribute"/> that auto-registers the type at load time.
-/// Any Activity whose channelId is "slack" therefore deserializes to <see cref="SlackActivity"/>,
-/// exposing a strongly-typed <see cref="Api.SlackChannelData"/> via the
-/// <see cref="SlackActivity.ChannelData"/> shadow.
+/// <see cref="Microsoft.Agents.Extensions.Slack.SlackActivity"/>, which the source generator turns into an assembly-level
+/// <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeInitAssemblyAttribute"/> that auto-registers the type at load time.
+/// Any Activity whose channelId is "slack" therefore deserializes to <see cref="Microsoft.Agents.Extensions.Slack.SlackActivity"/>,
+/// exposing a strongly-typed <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackChannelData"/> via the
+/// <see cref="Microsoft.Agents.Extensions.Slack.SlackActivity.ChannelData"/> shadow.
 /// </summary>
 public class SlackActivityTests
 {
+    internal static string FeedbackActivityJson => File.ReadAllText(
+        Path.Combine(AppContext.BaseDirectory, "Fixtures", "feedback-submit-action.json"));
+
     private const string SlackMessageJson = """
         {
           "type": "message",
@@ -55,6 +60,29 @@ public class SlackActivityTests
         Assert.Equal("C0AT123", channelData.Channel);
         Assert.Equal("xoxb-token", channelData.ApiToken);
         Assert.Equal("hello", channelData.Envelope.Get<string>("event.text"));
+    }
+
+    [Fact]
+    public void FeedbackActivity_ResolvesToSlackActivity()
+    {
+        var activity = ProtocolJsonSerializer.ToObject<Activity>(FeedbackActivityJson);
+
+        var slack = Assert.IsType<SlackActivity>(activity);
+        Assert.Equal(ActivityTypes.Invoke, slack.Type);
+        Assert.Equal("message/submitAction", slack.Name);
+    }
+
+    [Fact]
+    public void FeedbackActivity_ExposesTypedChannelData()
+    {
+        var slack = Assert.IsType<SlackActivity>(ProtocolJsonSerializer.ToObject<Activity>(FeedbackActivityJson));
+
+        Assert.Equal("D0LOCALDEV01", slack.ChannelData.Channel);
+        Assert.Equal("1700000000.000000", slack.ChannelData.ThreadTs);
+        Assert.Equal("D0LOCALDEV01", slack.ChannelData.Payload.channel);
+        Assert.Equal("D0LOCALDEV01", slack.ChannelData.Payload.Get<string>("container.channel_id"));
+        Assert.Equal("feedback_buttons", slack.ChannelData.Payload.Get<string>("actions[0].type"));
+        Assert.Equal("A0LOCALDEV01", slack.ChannelData.Payload.AdditionalProperties["api_app_id"].GetString());
     }
 
     [Fact]

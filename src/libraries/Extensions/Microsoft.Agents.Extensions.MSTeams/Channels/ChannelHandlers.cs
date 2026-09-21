@@ -18,4 +18,4 @@ namespace Microsoft.Agents.Extensions.MSTeams.Channels;
 /// triggered the event.</param>
 /// <param name="cancellationToken">A cancellation token that can be used to request cancellation of the asynchronous operation.</param>
 /// <returns>A task that represents the asynchronous operation of handling the channel update event.</returns>
-public delegate Task ChannelUpdateHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Api.Channel data, CancellationToken cancellationToken);
+public delegate Task ChannelUpdateHandler(ITeamsTurnContext turnContext, ITurnState turnState, Microsoft.Teams.Apps.Schema.TeamsChannel data, CancellationToken cancellationToken);

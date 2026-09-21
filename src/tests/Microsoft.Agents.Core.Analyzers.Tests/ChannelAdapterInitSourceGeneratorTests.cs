@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         /// the generator matches, so the test does not need a reference to the Hosting.AspNetCore assembly.
         /// </summary>
         private const string AttributeDeclaration = """
-            namespace Microsoft.Agents.Hosting.AspNetCore
+            namespace Microsoft.Agents.Builder.Adapters
             {
                 [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]
                 public sealed class ChannelAdapterAttribute : System.Attribute
@@ -76,7 +76,7 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var source = """
                 namespace MyApp
                 {
-                    [Microsoft.Agents.Hosting.AspNetCore.ChannelAdapter("msteams")]
+                    [Microsoft.Agents.Builder.Adapters.ChannelAdapter("msteams")]
                     public class TeamsChannelAdapter { }
                 }
                 """;
@@ -85,7 +85,7 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
                 .SourceText.ToString();
 
             Assert.Contains(
-                "[assembly: Microsoft.Agents.Hosting.AspNetCore.ChannelAdapterInitAssemblyAttribute(typeof(global::MyApp.TeamsChannelAdapter), \"msteams\")]",
+                "[assembly: Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute(typeof(global::MyApp.TeamsChannelAdapter), \"msteams\")]",
                 text);
         }
 
@@ -95,10 +95,10 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var source = """
                 namespace MyApp
                 {
-                    [Microsoft.Agents.Hosting.AspNetCore.ChannelAdapter("a")]
+                    [Microsoft.Agents.Builder.Adapters.ChannelAdapter("a")]
                     public class AdapterA { }
 
-                    [Microsoft.Agents.Hosting.AspNetCore.ChannelAdapter("b")]
+                    [Microsoft.Agents.Builder.Adapters.ChannelAdapter("b")]
                     public class AdapterB { }
                 }
                 """;
@@ -116,8 +116,8 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var source = """
                 namespace MyApp
                 {
-                    [Microsoft.Agents.Hosting.AspNetCore.ChannelAdapter("slack")]
-                    [Microsoft.Agents.Hosting.AspNetCore.ChannelAdapter("webchat")]
+                    [Microsoft.Agents.Builder.Adapters.ChannelAdapter("slack")]
+                    [Microsoft.Agents.Builder.Adapters.ChannelAdapter("webchat")]
                     public class MultiAdapter { }
                 }
                 """;
@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var source = """
                 namespace MyApp
                 {
-                    [Microsoft.Agents.Hosting.AspNetCore.ChannelAdapter("a2a")]
+                    [Microsoft.Agents.Builder.Adapters.ChannelAdapter("a2a")]
                     public class MyAdapter { }
                 }
                 """;
@@ -151,7 +151,7 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var source = """
                 namespace MyApp
                 {
-                    [Microsoft.Agents.Hosting.AspNetCore.ChannelAdapter("a2a")]
+                    [Microsoft.Agents.Builder.Adapters.ChannelAdapter("a2a")]
                     public class MyAdapter { }
                 }
                 """;

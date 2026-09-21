@@ -1,0 +1,292 @@
+name: Teams API Drift Detector (PR)
+
+# Compares a declared Microsoft.Teams.Apps update with the extension's recorded usage.
+# It classifies compatibility impact, publishes deterministic evidence, and generates an advisory report.
+on:
+  workflow_dispatch:
+    inputs:
+      from_version:
+        description: Baseline Microsoft.Teams.Apps version (defaults to the repository declaration)
+        required: false
+        type: string
+      to_version:
+        description: Candidate Microsoft.Teams.Apps version (defaults to the repository declaration)
+        required: false
+        type: string
+  pull_request:
+    branches:
+      - main
+      - 'rel/**'
+    paths:
+      - Directory.Packages.props
+
+permissions:
+  contents: read
+  pull-requests: write
+  copilot-requests: write
+
+concurrency:
+  group: teams-api-drift-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analysis-scope:
+    name: Compare, validate, and report
+    runs-on: ubuntu-latest
+    env:
+      ARTIFACTS: artifacts/teams-api-drift
+      TOOL: scripts/TeamsApiDrift/Microsoft.Agents.TeamsApiDrift.csproj
+      TESTS: src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj
+      MANIFEST: scripts/TeamsApiDrift/teams-api-usage.json
+      CAPABILITIES: scripts/TeamsApiDrift/teams-capabilities.json
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Build drift tool
+        id: tool
+        continue-on-error: true
+        run: dotnet build "$TOOL" -c Release
+
+      - name: Resolve versions
+        id: versions
+        if: always() && steps.tool.outcome == 'success'
+        shell: bash
+        env:
+          DISPATCH_FROM_VERSION: ${{ inputs.from_version }}
+          DISPATCH_TO_VERSION: ${{ inputs.to_version }}
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git show "${{ github.event.pull_request.base.sha }}:Directory.Packages.props" | dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props - > "$RUNNER_TEMP/from.txt"
+          elif [[ -n "$DISPATCH_FROM_VERSION" ]]; then
+            printf '%s\n' "$DISPATCH_FROM_VERSION" > "$RUNNER_TEMP/from.txt"
+          else
+            dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props > "$RUNNER_TEMP/from.txt"
+          fi
+          if [[ -n "$DISPATCH_TO_VERSION" ]]; then
+            printf '%s\n' "$DISPATCH_TO_VERSION" > "$RUNNER_TEMP/to.txt"
+          else
+            dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props > "$RUNNER_TEMP/to.txt"
+          fi
+          echo "from=$(cat "$RUNNER_TEMP/from.txt")" >> "$GITHUB_OUTPUT"
+          echo "to=$(cat "$RUNNER_TEMP/to.txt")" >> "$GITHUB_OUTPUT"
+
+      - name: Compare normalized package metadata
+        id: compare
+        if: always() && steps.versions.outcome == 'success'
+        continue-on-error: true
+        env:
+          FROM_VERSION: ${{ steps.versions.outputs.from }}
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet run --project "$TOOL" -c Release --no-build -- compare --from "$FROM_VERSION" --to "$TO_VERSION" --output "$ARTIFACTS"
+
+      - name: Build MSTeams against candidate
+        id: build
+        if: always() && steps.versions.outcome == 'success'
+        continue-on-error: true
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet build src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Microsoft.Agents.Extensions.MSTeams.csproj -c Release -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION"
+
+      - name: Run drift tool tests
+        id: drift_tests
+        if: always()
+        continue-on-error: true
+        run: dotnet test src/tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj -c Release
+
+      - name: Run Teams API compile-time contracts for net8.0
+        id: contract_net8
+        if: always() && steps.versions.outcome == 'success'
+        continue-on-error: true
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiContract'
+
+      - name: Run Teams API compile-time contracts for net10.0
+        id: contract_net10
+        if: always() && steps.versions.outcome == 'success'
+        continue-on-error: true
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiContract'
+
+      - name: Run Teams API runtime boundary for net8.0
+        id: boundary_net8
+        if: always() && steps.versions.outcome == 'success'
+        continue-on-error: true
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet test "$TESTS" -c Release -f net8.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiBoundary'
+
+      - name: Run Teams API runtime boundary for net10.0
+        id: boundary_net10
+        if: always() && steps.versions.outcome == 'success'
+        continue-on-error: true
+        env:
+          TO_VERSION: ${{ steps.versions.outputs.to }}
+        run: dotnet test "$TESTS" -c Release -f net10.0 -p:Microsoft_Teams_Apps_PkgVer="$TO_VERSION" --filter 'Category=TeamsApiBoundary'
+
+      - name: Collect actual Teams API usage
+        id: collect
+        if: always() && steps.build.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- collect-usage
+          --assembly bin/Release/CplTeams/net8.0/Microsoft.Agents.Extensions.MSTeams.dll
+          --assembly bin/Release/CplTeams/net10.0/Microsoft.Agents.Extensions.MSTeams.dll
+          --output "$ARTIFACTS/collected-usage.json"
+
+      - name: Validate usage manifest
+        id: manifest
+        if: always() && steps.collect.outcome == 'success' && steps.compare.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- validate-usage
+          --manifest "$MANIFEST" --collected "$ARTIFACTS/collected-usage.json"
+          --api-model "$ARTIFACTS/microsoft-teams-apps-after.api.json"
+          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json"
+
+      - name: Classify direct compatibility impact
+        id: classify-usage-impact
+        if: always() && steps.compare.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- classify
+          --comparison "$ARTIFACTS/raw-api-diff.json" --manifest "$MANIFEST"
+          --capabilities "$CAPABILITIES" --output "$ARTIFACTS/findings.json"
+
+      - name: Write test summary
+        if: always() && steps.tool.outcome == 'success'
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- write-test-summary --output "$ARTIFACTS/test-summary.json"
+          --check tool=${{ steps.tool.outcome }} --check compare=${{ steps.compare.outcome }} --check build=${{ steps.build.outcome }}
+          --check drift-tests=${{ steps.drift_tests.outcome }} --check contract-net8=${{ steps.contract_net8.outcome }}
+          --check contract-net10=${{ steps.contract_net10.outcome }} --check boundary-net8=${{ steps.boundary_net8.outcome }}
+          --check boundary-net10=${{ steps.boundary_net10.outcome }} --check manifest=${{ steps.manifest.outcome }}
+
+      - name: Render deterministic report
+        id: render-deterministic-report
+        if: always() && steps.classify-usage-impact.outcome == 'success'
+        continue-on-error: true
+        run: dotnet run --project "$TOOL" -c Release --no-build -- render-report --findings "$ARTIFACTS/findings.json" --test-summary "$ARTIFACTS/test-summary.json" --output "$ARTIFACTS/deterministic-report.md"
+
+      - name: Prepare bounded AI agent context
+        id: prepare-agent-context
+        if: >-
+          always() && steps.render-deterministic-report.outcome == 'success' &&
+          (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false))
+        continue-on-error: true
+        run: >-
+          dotnet run --project "$TOOL" -c Release --no-build -- prepare-agent-context
+          --findings "$ARTIFACTS/findings.json" --manifest "$MANIFEST" --capabilities "$CAPABILITIES"
+          --deterministic-report "$ARTIFACTS/deterministic-report.md" --test-summary "$ARTIFACTS/test-summary.json"
+          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/agent-context.json"
+
+      - name: Set up Node for external Copilot CLI
+        if: steps.prepare-agent-context.outcome == 'success'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+
+      - name: Generate advisory AI report
+        id: generate-advisory-report
+        if: steps.prepare-agent-context.outcome == 'success'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          npm install --global @github/copilot
+          # The advisory receives its complete, bounded context in the prompt.
+          # Deny every tool kind rather than using the unsupported '*' pattern.
+          instructions=$(cat .github/instructions/teams-api-drift-instructions.md)
+          context=$(cat "$ARTIFACTS/agent-context.json")
+          copilot --no-ask-user --deny-tool='shell,write,read,url,memory' --disable-builtin-mcps --log-level none -p "$instructions
+
+          $context" > "$ARTIFACTS/copilot-report.md"
+
+      - name: Validate advisory AI report
+        id: validate-advisory-report
+        if: always() && steps.generate-advisory-report.outcome == 'success'
+        continue-on-error: true
+        run: dotnet run --project "$TOOL" -c Release --no-build -- validate-agent-report --findings "$ARTIFACTS/findings.json" --report "$ARTIFACTS/copilot-report.md" --output "$ARTIFACTS/agent-report-validation.json"
+
+      - name: Upload drift evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: teams-api-drift-${{ github.run_id }}
+          path: artifacts/teams-api-drift
+          retention-days: 21
+          if-no-files-found: warn
+
+      - name: Publish pull-request comment
+        if: >-
+          always() && (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) &&
+          steps.render-deterministic-report.outcome == 'success'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          FINDINGS_PATH: ${{ format('{0}/findings.json', env.ARTIFACTS) }}
+          ARTIFACT_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const findings = JSON.parse(fs.readFileSync(process.env.FINDINGS_PATH, 'utf8'));
+            const marker = '<!-- teams-api-drift-report -->';
+            const actionableFindings = findings.findings
+              .filter(finding => finding.classification !== 'no-action');
+            const actionable = actionableFindings.slice(0, 5);
+            const lines = [
+              marker,
+              '## Teams API drift analysis',
+              '',
+              `Compared \`${findings.fromVersion}\` to \`${findings.toVersion}\`.`,
+              `The analysis identified **${findings.findings.length}** total findings, of which **${actionableFindings.length}** require attention.`,
+              `Blocking: **${findings.summary.blocking}** · Required: **${findings.summary.required}** · Review: **${findings.summary.review}**.`,
+              '',
+              ...(actionable.length === 0
+                ? ['- No actionable API changes were detected.']
+                : actionable.map(finding => `- **${finding.id}** — ${finding.classification} · ${finding.kind}: \`${finding.upstreamSymbol}${finding.member ? `.${finding.member}` : ''}\``)),
+              '',
+              `[Full report and artifacts](${process.env.ARTIFACT_URL})`
+            ];
+            const body = lines.join('\n');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find(comment => comment.user.type === 'Bot' && comment.body?.includes(marker));
+            if (existing) await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+
+      # Convert deferred check outcomes into the final workflow result after reports and artifacts are available.      
+      - name: Report final workflow result
+        if: always()
+        shell: bash
+        run: |
+          failures=()
+          [[ "${{ steps.tool.outcome }}" == success ]] || failures+=(tool)
+          [[ "${{ steps.versions.outcome }}" == success ]] || failures+=(versions)
+          [[ "${{ steps.compare.outcome }}" == success ]] || failures+=(comparison)
+          [[ "${{ steps.build.outcome }}" == success ]] || failures+=(build)
+          [[ "${{ steps.drift_tests.outcome }}" == success ]] || failures+=(drift-tests)
+          [[ "${{ steps.contract_net8.outcome }}" == success ]] || failures+=(contract-net8)
+          [[ "${{ steps.contract_net10.outcome }}" == success ]] || failures+=(contract-net10)
+          [[ "${{ steps.boundary_net8.outcome }}" == success ]] || failures+=(boundary-net8)
+          [[ "${{ steps.boundary_net10.outcome }}" == success ]] || failures+=(boundary-net10)
+          [[ "${{ steps.collect.outcome }}" == success ]] || failures+=(usage-collection)
+          [[ "${{ steps.manifest.outcome }}" == success ]] || failures+=(manifest)
+          [[ "${{ steps.classify-usage-impact.outcome }}" == success ]] || failures+=(classification)
+          [[ "${{ steps.render-deterministic-report.outcome }}" == success ]] || failures+=(deterministic-report)
+          if [[ "${{ github.event_name }}" == workflow_dispatch || ("${{ github.event_name }}" == pull_request && "${{ github.event.pull_request.head.repo.fork }}" == false) ]]; then
+            [[ "${{ steps.prepare-agent-context.outcome }}" == success ]] || failures+=(agent-context)
+            [[ "${{ steps.generate-advisory-report.outcome }}" == success ]] || failures+=(copilot-report)
+            [[ "${{ steps.validate-advisory-report.outcome }}" == success ]] || failures+=(agent-report-validation)
+          fi
+          if [[ -f "$ARTIFACTS/findings.json" ]] && [[ "$(jq '.summary.blocking + .summary.required' "$ARTIFACTS/findings.json")" -gt 0 ]]; then failures+=(policy-drift); fi
+          if (( ${#failures[@]} )); then printf 'Blocking failure(s): %s\n' "${failures[*]}"; exit 1; fi

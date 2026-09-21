@@ -271,11 +271,17 @@ namespace Microsoft.Agents.Model.Tests
             ProtocolJsonSerializer.RegisterActivityTypeResolver(
                 (ref Utf8JsonReader reader, in ActivityResolutionContext ctx) =>
                 {
+                    if (ctx.Type != ActivityTypes.Invoke)
+                    {
+                        return null;
+                    }
+
                     if (JsonDocument.TryParseValue(ref reader, out var doc))
                     {
                         using (doc)
                         {
                             if (doc.RootElement.TryGetProperty("value", out var value)
+                                && value.ValueKind == JsonValueKind.Object
                                 && value.TryGetProperty("action", out var action)
                                 && action.GetString() == "escalate")
                             {

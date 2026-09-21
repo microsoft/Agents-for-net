@@ -37,7 +37,7 @@ public static class AspNetExtensions
     /// </summary>
     /// <param name="builder">The host application builder.</param>
     /// <param name="tokenValidationSectionName">
-    /// Name of the configuration section to read <see cref="TokenValidationOptions"/> from.  Defaults to <c>"TokenValidation"</c>.
+    /// Name of the configuration section to read <see cref="AspNetExtensions.TokenValidationOptions"/> from.  Defaults to <c>"TokenValidation"</c>.
     /// </param>
     public static void AddAgentAspNetAuthentication(this IHostApplicationBuilder builder, string tokenValidationSectionName = "TokenValidation")
     {
@@ -47,14 +47,14 @@ public static class AspNetExtensions
     /// <summary>
     /// Adds JWT bearer token validation for Azure Bot Service and agent-to-agent requests, reading settings from configuration.
     /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add authentication services to.</param>
-    /// <param name="configuration">The application configuration containing a <see cref="TokenValidationOptions"/> section.</param>
+    /// <param name="services">The <see cref="Microsoft.Extensions.DependencyInjection.IServiceCollection"/> to add authentication services to.</param>
+    /// <param name="configuration">The application configuration containing a <see cref="AspNetExtensions.TokenValidationOptions"/> section.</param>
     /// <param name="tokenValidationSectionName">
-    /// Name of the configuration section to read <see cref="TokenValidationOptions"/> from.  Defaults to <c>"TokenValidation"</c>.
+    /// Name of the configuration section to read <see cref="AspNetExtensions.TokenValidationOptions"/> from.  Defaults to <c>"TokenValidation"</c>.
     /// </param>
     /// <remarks>
     /// <para>
-    /// If the configuration section is absent, an <see cref="ArgumentException"/> is thrown.
+    /// If the configuration section is absent, an <see cref="System.ArgumentException"/> is thrown.
     /// </para>
     /// <para>
     /// Minimum configuration for Azure Public cloud:
@@ -75,14 +75,14 @@ public static class AspNetExtensions
     /// }
     /// </code>
     /// Setting <c>IsGov</c> automatically selects the correct government-cloud issuer URLs and OpenID metadata
-    /// endpoints.  See <see cref="TokenValidationOptions.IsGov"/> for the full list of defaults that are applied.
+    /// endpoints.  See <see cref="AspNetExtensions.TokenValidationOptions.IsGov"/> for the full list of defaults that are applied.
     /// </para>
     /// <para>
     /// For China or other sovereign clouds, omit <c>IsGov</c> and set
-    /// <see cref="TokenValidationOptions.AzureBotServiceOpenIdMetadataUrl"/>,
-    /// <see cref="TokenValidationOptions.OpenIdMetadataUrl"/>, and
-    /// <see cref="TokenValidationOptions.ValidIssuers"/> explicitly.
-    /// See <see cref="TokenValidationOptions"/> for the full set of available settings.
+    /// <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceOpenIdMetadataUrl"/>,
+    /// <see cref="AspNetExtensions.TokenValidationOptions.OpenIdMetadataUrl"/>, and
+    /// <see cref="AspNetExtensions.TokenValidationOptions.ValidIssuers"/> explicitly.
+    /// See <see cref="AspNetExtensions.TokenValidationOptions"/> for the full set of available settings.
     /// </para>
     /// </remarks>
     public static void AddAgentAspNetAuthentication(this IServiceCollection services, IConfiguration configuration, string tokenValidationSectionName = "TokenValidation")
@@ -100,8 +100,8 @@ public static class AspNetExtensions
     /// <summary>
     /// Adds JWT bearer token validation for Azure Bot Service and agent-to-agent requests using the supplied options.
     /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add authentication services to.</param>
-    /// <param name="validationOptions">The fully populated <see cref="TokenValidationOptions"/> to use.</param>
+    /// <param name="services">The <see cref="Microsoft.Extensions.DependencyInjection.IServiceCollection"/> to add authentication services to.</param>
+    /// <param name="validationOptions">The fully populated <see cref="AspNetExtensions.TokenValidationOptions"/> to use.</param>
     public static void AddAgentAspNetAuthentication(this IServiceCollection services, TokenValidationOptions validationOptions)
     {
         AssertionHelpers.ThrowIfNull(validationOptions, nameof(validationOptions));
@@ -271,6 +271,14 @@ public static class AspNetExtensions
                         && issuer != null && IsBotFrameworkIssuer(issuer);
 
                     if (!isBotFrameworkToken
+                        && context.Principal?.Identity is System.Security.Claims.ClaimsIdentity identity
+                        && !identity.IsTenantIdIssuerValid())
+                    {
+                        context.Fail("Token tenant ID does not match its issuer.");
+                        return Task.CompletedTask;
+                    }
+
+                    if (!isBotFrameworkToken
                         && validationOptions.AllowedCallers != null
                         && validationOptions.AllowedCallers.Count > 0
                         && !validationOptions.AllowedCallers.Any(c => c.Equals("*", StringComparison.Ordinal)))
@@ -301,7 +309,7 @@ public static class AspNetExtensions
 
     /// <summary>
     /// Settings that control JWT bearer token validation for Azure Bot Service and agent-to-agent requests.
-    /// Read from the <c>TokenValidation</c> configuration section by <see cref="AddAgentAspNetAuthentication(IServiceCollection, IConfiguration, string)"/>.
+    /// Read from the <c>TokenValidation</c> configuration section by <see cref="AspNetExtensions.AddAgentAspNetAuthentication(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration, System.String)"/>.
     /// </summary>
     public class TokenValidationOptions
     {
@@ -312,19 +320,19 @@ public static class AspNetExtensions
 
         /// <summary>
         /// Tenant ID of the Azure Bot.  Optional but recommended.
-        /// When provided, tenant-specific issuer URLs are added to <see cref="ValidIssuers"/> automatically.
+        /// When provided, tenant-specific issuer URLs are added to <see cref="AspNetExtensions.TokenValidationOptions.ValidIssuers"/> automatically.
         /// </summary>
         public string? TenantId { get; set; }
 
         /// <summary>
         /// Override the list of trusted token issuers.  Optional.
-        /// When omitted, default issuers are derived from <see cref="IsGov"/> and <see cref="TenantId"/>.
+        /// When omitted, default issuers are derived from <see cref="AspNetExtensions.TokenValidationOptions.IsGov"/> and <see cref="AspNetExtensions.TokenValidationOptions.TenantId"/>.
         /// For Public cloud the defaults include the Azure Bot Service issuer and common Microsoft tenant issuers.
-        /// For Gov cloud the defaults include <see cref="AuthenticationConstants.GovBotFrameworkTokenIssuer"/> plus
-        /// tenant-specific issuer URLs built from <see cref="AuthenticationConstants.ValidTokenIssuerUrlTemplateV1"/>
-        /// and <see cref="AuthenticationConstants.ValidGovernmentTokenIssuerUrlTemplateV2"/>.
+        /// For Gov cloud the defaults include <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.GovBotFrameworkTokenIssuer"/> plus
+        /// tenant-specific issuer URLs built from <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.ValidTokenIssuerUrlTemplateV1"/>
+        /// and <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.ValidGovernmentTokenIssuerUrlTemplateV2"/>.
         /// For China or other clouds all issuers must be set explicitly since there is no corresponding <c>IsChina</c> flag.
-        /// See also <see cref="AzureBotServiceOnly"/> to default this to just the BotFramework issuer.
+        /// See also <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceOnly"/> to default this to just the BotFramework issuer.
         /// </summary>
         public IList<string>? ValidIssuers { get; set; }
 
@@ -333,19 +341,19 @@ public static class AspNetExtensions
         /// When <c>true</c>, the following defaults are applied to any property that is not set explicitly:
         /// <list type="bullet">
         /// <item><description>
-        /// <see cref="AzureBotServiceOpenIdMetadataUrl"/> →
-        /// <see cref="AuthenticationConstants.GovAzureBotServiceOpenIdMetadataUrl"/>
+        /// <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceOpenIdMetadataUrl"/> →
+        /// <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.GovAzureBotServiceOpenIdMetadataUrl"/>
         /// (<c>https://login.botframework.azure.us/v1/.well-known/openidconfiguration</c>)
         /// </description></item>
         /// <item><description>
-        /// <see cref="OpenIdMetadataUrl"/> →
-        /// <see cref="AuthenticationConstants.GovOpenIdMetadataUrl"/>
+        /// <see cref="AspNetExtensions.TokenValidationOptions.OpenIdMetadataUrl"/> →
+        /// <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.GovOpenIdMetadataUrl"/>
         /// (<c>https://login.microsoftonline.us/cab8a31a-1906-4287-a0d8-4eef66b95f6e/v2.0/.well-known/openid-configuration</c>)
         /// </description></item>
         /// <item><description>
-        /// <see cref="ValidIssuers"/> →
-        /// <see cref="AuthenticationConstants.GovBotFrameworkTokenIssuer"/> (<c>https://api.botframework.us</c>),
-        /// plus tenant-specific v1 and v2 issuer URLs when <see cref="TenantId"/> is provided.
+        /// <see cref="AspNetExtensions.TokenValidationOptions.ValidIssuers"/> →
+        /// <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.GovBotFrameworkTokenIssuer"/> (<c>https://api.botframework.us</c>),
+        /// plus tenant-specific v1 and v2 issuer URLs when <see cref="AspNetExtensions.TokenValidationOptions.TenantId"/> is provided.
         /// </description></item>
         /// </list>
         /// For China or other sovereign clouds, leave this <c>false</c> and set all URLs and issuers explicitly.
@@ -354,18 +362,18 @@ public static class AspNetExtensions
 
         /// <summary>
         /// Restrict the agent to accept only Azure Bot Service (BotFramework) traffic.  Defaults to <c>false</c>.
-        /// When <c>true</c> and <see cref="ValidIssuers"/> is not set explicitly, <see cref="ValidIssuers"/> is
+        /// When <c>true</c> and <see cref="AspNetExtensions.TokenValidationOptions.ValidIssuers"/> is not set explicitly, <see cref="AspNetExtensions.TokenValidationOptions.ValidIssuers"/> is
         /// defaulted to just the BotFramework token issuer
-        /// (<see cref="AuthenticationConstants.BotFrameworkTokenIssuer"/>, or
-        /// <see cref="AuthenticationConstants.GovBotFrameworkTokenIssuer"/> when <see cref="IsGov"/> is <c>true</c>).
+        /// (<see cref="Microsoft.Agents.Authentication.AuthenticationConstants.BotFrameworkTokenIssuer"/>, or
+        /// <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.GovBotFrameworkTokenIssuer"/> when <see cref="AspNetExtensions.TokenValidationOptions.IsGov"/> is <c>true</c>).
         /// Entra ID and agent-to-agent callers are then rejected at issuer validation, so the
-        /// <see cref="AllowedCallers"/> check does not apply.
+        /// <see cref="AspNetExtensions.TokenValidationOptions.AllowedCallers"/> check does not apply.
         /// <para>
         /// Note: this targets the legacy BotFramework issuer (<c>https://api.botframework.com</c>).  As Azure Bot
-        /// Service migrates channels to send Entra ID tokens (see <see cref="AzureBotServiceTokenHandling"/>), those
+        /// Service migrates channels to send Entra ID tokens (see <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceTokenHandling"/>), those
         /// tokens are issued by the Bot Service Entra tenants rather than the BotFramework issuer; if you rely on
-        /// that path, set <see cref="ValidIssuers"/> explicitly instead.  Keep <see cref="AzureBotServiceTokenHandling"/>
-        /// <c>true</c> when using this option.  For China or other sovereign clouds, set <see cref="ValidIssuers"/>
+        /// that path, set <see cref="AspNetExtensions.TokenValidationOptions.ValidIssuers"/> explicitly instead.  Keep <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceTokenHandling"/>
+        /// <c>true</c> when using this option.  For China or other sovereign clouds, set <see cref="AspNetExtensions.TokenValidationOptions.ValidIssuers"/>
         /// explicitly since there is no corresponding flag.
         /// </para>
         /// </summary>
@@ -373,18 +381,18 @@ public static class AspNetExtensions
 
         /// <summary>
         /// OpenID Connect metadata URL used to validate tokens issued by Azure Bot Service.  Optional.
-        /// When omitted, defaults to <see cref="AuthenticationConstants.PublicAzureBotServiceOpenIdMetadataUrl"/> when
-        /// <see cref="IsGov"/> is <c>false</c>, or <see cref="AuthenticationConstants.GovAzureBotServiceOpenIdMetadataUrl"/>
-        /// when <see cref="IsGov"/> is <c>true</c>.
+        /// When omitted, defaults to <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.PublicAzureBotServiceOpenIdMetadataUrl"/> when
+        /// <see cref="AspNetExtensions.TokenValidationOptions.IsGov"/> is <c>false</c>, or <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.GovAzureBotServiceOpenIdMetadataUrl"/>
+        /// when <see cref="AspNetExtensions.TokenValidationOptions.IsGov"/> is <c>true</c>.
         /// Set explicitly for China or other sovereign clouds.
         /// </summary>
         public string? AzureBotServiceOpenIdMetadataUrl { get; set; }
 
         /// <summary>
         /// OpenID Connect metadata URL used to validate Entra ID (AAD) tokens.  Optional.
-        /// When omitted, defaults to <see cref="AuthenticationConstants.PublicOpenIdMetadataUrl"/> when
-        /// <see cref="IsGov"/> is <c>false</c>, or <see cref="AuthenticationConstants.GovOpenIdMetadataUrl"/>
-        /// when <see cref="IsGov"/> is <c>true</c>.
+        /// When omitted, defaults to <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.PublicOpenIdMetadataUrl"/> when
+        /// <see cref="AspNetExtensions.TokenValidationOptions.IsGov"/> is <c>false</c>, or <see cref="Microsoft.Agents.Authentication.AuthenticationConstants.GovOpenIdMetadataUrl"/>
+        /// when <see cref="AspNetExtensions.TokenValidationOptions.IsGov"/> is <c>true</c>.
         /// Set explicitly for China or other sovereign clouds.
         /// </summary>
         public string? OpenIdMetadataUrl { get; set; }
@@ -392,8 +400,8 @@ public static class AspNetExtensions
         /// <summary>
         /// Enables special handling for tokens issued directly by Azure Bot Service (as opposed to Entra ID tokens).
         /// Defaults to <c>true</c> and should remain <c>true</c> until Azure Bot Service sends Entra ID tokens exclusively.
-        /// When <c>true</c>, the <see cref="AzureBotServiceOpenIdMetadataUrl"/> endpoint is used for ABS token validation
-        /// and <see cref="OpenIdMetadataUrl"/> is used for all other tokens.
+        /// When <c>true</c>, the <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceOpenIdMetadataUrl"/> endpoint is used for ABS token validation
+        /// and <see cref="AspNetExtensions.TokenValidationOptions.OpenIdMetadataUrl"/> is used for all other tokens.
         /// </summary>
         public bool AzureBotServiceTokenHandling { get; set; } = true;
 
@@ -407,7 +415,7 @@ public static class AspNetExtensions
         /// When empty or containing <c>"*"</c>, any caller is accepted.
         /// When populated with specific App IDs, the <c>azp</c> or <c>appid</c> claim in the inbound token
         /// must match one of the listed values.  This check applies only to non-BotFramework tokens.
-        /// To accept only Azure Bot Service (BotFramework) traffic, use <see cref="AzureBotServiceOnly"/>.
+        /// To accept only Azure Bot Service (BotFramework) traffic, use <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceOnly"/>.
         /// </summary>
         public IList<string>? AllowedCallers { get; set; }
     }

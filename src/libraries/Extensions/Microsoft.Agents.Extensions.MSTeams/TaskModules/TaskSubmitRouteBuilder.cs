@@ -10,10 +10,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.TaskModules;
 /// Provides a builder for configuring submit routes in an AgentApplication.
 /// </summary>
 /// <remarks>
-/// Use <see cref="TaskSubmitRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.TaskSubmitRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.Tasks.Submit"/>,
-/// optionally filtered by a task data key value via <see cref="WithValue(string)"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.TaskSubmit"/>,
+/// optionally filtered by a task data key value via <see cref="Microsoft.Agents.Extensions.MSTeams.TaskModules.KeyValueRouteBuilderBase{TBuilder}.WithValue(System.String)"/>.
 /// </remarks>
 public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBuilder>
 {
@@ -29,7 +29,7 @@ public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBu
 
     public TaskSubmitRouteBuilder() : base()
     {
-        InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.Tasks.Submit;
+        InvokeName = Microsoft.Teams.Apps.InvokeNames.TaskSubmit;
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public class TaskSubmitRouteBuilder : KeyValueRouteBuilderBase<TaskSubmitRouteBu
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.TaskModules.Request>(ctx.Activity.Value);
+            var value = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.TaskModules.TaskModuleRequest>(ctx.Activity.Value);
             var response = await handler(new TeamsTurnContext(ctx), ts, value, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };

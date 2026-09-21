@@ -23,6 +23,7 @@ namespace Microsoft.Agents.Builder.App
         private readonly M365AttachmentDownloaderOptions _options;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
+        private readonly IOutboundHostValidator _hostValidator;
 
 
         /// <summary>
@@ -31,8 +32,9 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="options">The options</param>
         /// <param name="connections"></param>
         /// <param name="httpClientFactory"></param>
+        /// <param name="hostValidator">Optional shared allowed-hosts validator. When enabled, the download URL is validated before the token-bearing request is made.</param>
         /// <exception cref="System.ArgumentException"></exception>
-        public M365AttachmentDownloader(IConnections connections, IHttpClientFactory httpClientFactory, M365AttachmentDownloaderOptions options = null)
+        public M365AttachmentDownloader(IConnections connections, IHttpClientFactory httpClientFactory, M365AttachmentDownloaderOptions options = null, IOutboundHostValidator hostValidator = null)
         {
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
@@ -40,6 +42,7 @@ namespace Microsoft.Agents.Builder.App
             _options = options ?? new();
             _connections = connections;
             _httpClientFactory = httpClientFactory;
+            _hostValidator = hostValidator;
         }
 
         /// <inheritdoc />
@@ -109,6 +112,14 @@ namespace Microsoft.Agents.Builder.App
                 else
                 {
                     downloadUrl = value.ToString();
+                }
+
+                // Shared allowed-hosts control (opt-in, disabled by default). The actual fetched URL is
+                // attachment.Content.downloadUrl (attacker-controllable), not attachment.ContentUrl. When enabled,
+                // never issue this token-bearing request to a host outside the allowlist.
+                if (_hostValidator != null && _hostValidator.Enabled && !_hostValidator.IsAllowed(downloadUrl))
+                {
+                    return null;
                 }
 
                 using var httpClient = _httpClientFactory.CreateClient(nameof(M365AttachmentDownloader));

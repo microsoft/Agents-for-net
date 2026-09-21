@@ -69,6 +69,26 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
             Assert.Equal(ActivityKind.Client, _startedActivities[0].Kind);
         }
 
+        [Fact]
+        public void TelemetryScope_Context_IsAvailable_WhenActivityIsCreated()
+        {
+            using var scope = new TelemetryScope("TestOperation");
+
+            var started = Assert.Single(_startedActivities);
+            Assert.Equal(started.Context, scope.Context);
+        }
+
+        [Fact]
+        public void TelemetryScope_Context_IsNull_WhenActivityIsNotCreated()
+        {
+            _listener.Dispose();
+
+            using var scope = new TelemetryScope("TestOperation");
+
+            Assert.Empty(_startedActivities);
+            Assert.Null(scope.Context);
+        }
+
         [Theory]
         [InlineData(ActivityKind.Server)]
         [InlineData(ActivityKind.Producer)]
@@ -79,6 +99,48 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
 
             Assert.Single(_startedActivities);
             Assert.Equal(kind, _startedActivities[0].Kind);
+        }
+
+        [Fact]
+        public void TelemetryScope_DefaultLinks_IsEmpty()
+        {
+            using var scope = new TelemetryScope("TestOperation");
+
+            var started = Assert.Single(_startedActivities);
+            Assert.Empty(started.Links);
+        }
+
+        [Fact]
+        public void TelemetryScope_SingleLink_IsAddedToActivity()
+        {
+            var linkContext = CreateActivityContext();
+            var link = new ActivityLink(linkContext);
+
+            using var scope = new TelemetryScope("TestOperation", ActivityKind.Internal, link);
+
+            var started = Assert.Single(_startedActivities);
+            var actualLink = Assert.Single(started.Links);
+            Assert.Equal(linkContext, actualLink.Context);
+        }
+
+        [Fact]
+        public void TelemetryScope_LinkAttributes_ArePreserved()
+        {
+            var linkContext = CreateActivityContext();
+            var attributes = new ActivityTagsCollection
+            {
+                { "link.type", "proactive" }
+            };
+
+            using var scope = new TelemetryScope(
+                "TestOperation",
+                ActivityKind.Internal,
+                new ActivityLink(linkContext, attributes));
+
+            var started = Assert.Single(_startedActivities);
+            var actualLink = Assert.Single(started.Links);
+            Assert.NotNull(actualLink.Tags);
+            Assert.Equal("proactive", actualLink.Tags!.Single(tag => tag.Key == "link.type").Value);
         }
 
         [Fact]
@@ -399,6 +461,16 @@ namespace Microsoft.Agents.Core.Telemetry.Tests
             scope.Dispose();
 
             Assert.Single(_stoppedActivities);
+        }
+
+        private static ActivityContext CreateActivityContext()
+        {
+            return new ActivityContext(
+                ActivityTraceId.CreateRandom(),
+                ActivitySpanId.CreateRandom(),
+                ActivityTraceFlags.Recorded,
+                traceState: "vendor=value",
+                isRemote: true);
         }
 
         private class TestTelemetryScope : TelemetryScope

@@ -35,6 +35,7 @@
 	  <ProjectReference Include="..\..\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
+	  <ProjectReference Include="..\Microsoft.Agents.Extensions.Slack\Microsoft.Agents.Extensions.Slack.csproj" />
 	</ItemGroup>
 
 </Project>

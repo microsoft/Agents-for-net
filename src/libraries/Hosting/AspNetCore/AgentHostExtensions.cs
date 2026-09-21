@@ -17,14 +17,14 @@ using System.Net.Http;
 namespace Microsoft.Agents.Hosting.AspNetCore
 {
     /// <summary>
-    /// Marker service registered by <see cref="AgentHostExtensions.AddAgentAuthorization"/> to indicate
-    /// that token validation was configured. Used by <see cref="AgentHostExtensions.MapDefaultAgentEndpoints"/>
+    /// Marker service registered by <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgentAuthorization(Microsoft.Extensions.Hosting.IHostApplicationBuilder, System.Action{Microsoft.Extensions.Hosting.IHostApplicationBuilder}, System.Boolean?)"/> to indicate
+    /// that token validation was configured. Used by <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.MapDefaultAgentEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.String)"/>
     /// to determine whether endpoints should require authorization.
     /// </summary>
     internal sealed class AgentAuthConfigured { }
 
     /// <summary>
-    /// Extension methods on <see cref="IHostApplicationBuilder"/> and <see cref="WebApplication"/>
+    /// Extension methods on <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> and <see cref="Microsoft.AspNetCore.Builder.WebApplication"/>
     /// for configuring agent services and the request pipeline.
     /// </summary>
     /// <remarks>
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// <code>
     /// builder.AddAgentDefaults()
     ///     .AddAgent&lt;MyAgent&gt;()
-    ///     .AddAgentAuthorization(b =&gt; b.AddAgentAspNetAuthentication());
+    ///     .AddAgentAuthorization(ConfigureAuthentication);
     ///
     /// var app = builder.Build();
     ///
@@ -43,14 +43,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// </para>
     /// <para>
     /// For advanced scenarios (custom <c>HttpClient</c> configuration, non-standard middleware ordering,
-    /// custom endpoint routing, etc.), use <see cref="ServiceCollectionExtensions"/> for DI registration
-    /// and <see cref="AgentEndpointExtensions"/> for endpoint mapping directly. The equivalent manual
+    /// custom endpoint routing, etc.), use <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions"/> for DI registration
+    /// and <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentEndpointExtensions"/> for endpoint mapping directly. The equivalent manual
     /// setup for the above is:
     /// <code>
     /// builder.Services.AddHttpClient();
     /// builder.Services.AddControllers();
     /// builder.AddAgent&lt;MyAgent&gt;();
-    /// // Configure authentication (e.g., AddAgentAspNetAuthentication, MISE, or custom)
+    /// // Register the application's ASP.NET Core authentication services.
     ///
     /// var app = builder.Build();
     ///
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </para>
         /// <para>
         /// If you need full control over HTTP client configuration for SDK internals, skip this method
-        /// and use <see cref="ServiceCollectionExtensions"/> directly to register services manually.
+        /// and use <see cref="Microsoft.Agents.Hosting.AspNetCore.ServiceCollectionExtensions"/> directly to register services manually.
         /// </para>
         /// </remarks>
         public static IHostApplicationBuilder AddAgentDefaults(this IHostApplicationBuilder builder)
@@ -98,14 +98,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// Configures token validation for inbound requests. The provided action should register
-        /// authentication services (e.g., call <c>AddAgentAspNetAuthentication</c>).
-        /// When enabled, endpoints mapped by <see cref="MapDefaultAgentEndpoints"/> will automatically
+        /// the application's ASP.NET Core authentication services.
+        /// When enabled, endpoints mapped by <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.MapDefaultAgentEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.String)"/> will automatically
         /// require authorization.
         /// </summary>
         /// <param name="builder">The host application builder.</param>
-        /// <param name="configure">Action that configures authentication on the builder. The sample-provided
-        /// <c>AddAgentAspNetAuthentication</c> is the default implementation, but developers may use MISE
-        /// or any other ASP.NET Core authentication mechanism.</param>
+        /// <param name="configure">Action that configures an ASP.NET Core authentication mechanism on the builder.</param>
         /// <param name="forceEnable">
         /// Override for whether authorization is enabled. When <c>null</c> (the default), authorization is
         /// enabled in all environments except Development. Pass an explicit value to override — for example:
@@ -115,7 +113,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <remarks>
         /// <para>
         /// When <paramref name="forceEnable"/> resolves to <c>true</c>, the <paramref name="configure"/> action
-        /// is invoked and a marker service is registered in DI. <see cref="MapDefaultAgentEndpoints"/> checks
+        /// is invoked and a marker service is registered in DI. <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.MapDefaultAgentEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.String)"/> checks
         /// for this marker to decide whether to call <c>RequireAuthorization()</c> on agent endpoints.
         /// </para>
         /// <para>
@@ -125,7 +123,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <para>
         /// To configure authentication manually without this method, register your authentication
         /// services directly on <c>builder.Services</c> and use
-        /// <see cref="AgentEndpointExtensions.MapAgentApplicationEndpoints"/> with <c>requireAuth: true</c>.
+        /// <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentEndpointExtensions.MapAgentApplicationEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.Boolean, System.String)"/> with <c>requireAuth: true</c>.
         /// </para>
         /// </remarks>
         public static IHostApplicationBuilder AddAgentAuthorization(this IHostApplicationBuilder builder, Action<IHostApplicationBuilder> configure, bool? forceEnable = null)
@@ -145,7 +143,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Registers an <see cref="IMiddleware"/> instance to be used by the <see cref="CloudAdapter"/>
+        /// Registers an <see cref="Microsoft.Agents.Builder.IMiddleware"/> instance to be used by the <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/>
         /// pipeline. Can be called multiple times to add additional middleware in order.
         /// </summary>
         /// <param name="builder">The host application builder.</param>
@@ -154,7 +152,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <remarks>
         /// Middleware registered here runs in the adapter pipeline (before <c>AgentApplication</c> routing).
         /// Each call appends to an internal list that is resolved as <c>IMiddleware[]</c> by the
-        /// <see cref="CloudAdapter"/> constructor.
+        /// <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> constructor.
         /// </remarks>
         public static IHostApplicationBuilder AddAgentMiddleware(this IHostApplicationBuilder builder, IMiddleware middleware)
         {
@@ -167,23 +165,23 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Registers the <see cref="HeaderPropagationMiddleware"/> so that incoming request headers are
+        /// Registers the <see cref="Microsoft.Agents.Hosting.AspNetCore.HeaderPropagationMiddleware"/> so that incoming request headers are
         /// propagated to outgoing requests. This builder-phase overload allows header propagation to be
         /// configured fluently alongside the other agent registration calls:
         /// <code>
         /// builder.AddAgentDefaults()
         ///     .AddAgent&lt;MyAgent&gt;()
         ///     .UseHeaderPropagation()
-        ///     .AddAgentAuthorization(b =&gt; b.AddAgentAspNetAuthentication());
+        ///     .AddAgentAuthorization(ConfigureAuthentication);
         /// </code>
         /// </summary>
         /// <param name="builder">The host application builder.</param>
         /// <returns>The same builder for chaining.</returns>
         /// <remarks>
-        /// This registers an <see cref="IStartupFilter"/> that inserts the middleware at the start of the
+        /// This registers an <see cref="Microsoft.AspNetCore.Hosting.IStartupFilter"/> that inserts the middleware at the start of the
         /// request pipeline, ensuring request headers are captured before any agent endpoints run. This is
-        /// equivalent to calling <see cref="UseHeaderPropagation(IApplicationBuilder)"/> on the built
-        /// <see cref="WebApplication"/>; use one or the other, not both.
+        /// equivalent to calling <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.UseHeaderPropagation(Microsoft.AspNetCore.Builder.IApplicationBuilder)"/> on the built
+        /// <see cref="Microsoft.AspNetCore.Builder.WebApplication"/>; use one or the other, not both.
         /// </remarks>
         public static IHostApplicationBuilder UseHeaderPropagation(this IHostApplicationBuilder builder)
         {
@@ -193,7 +191,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Registers an <see cref="IInputFileDownloader"/> instance for use by <see cref="AgentApplicationOptions"/>.
+        /// Registers an <see cref="Microsoft.Agents.Builder.App.IInputFileDownloader"/> instance for use by <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions"/>.
         /// Can be called multiple times to add additional downloaders.
         /// </summary>
         /// <param name="builder">The host application builder.</param>
@@ -214,7 +212,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Registers the <see cref="AttachmentDownloader"/> for non-Teams channels.
+        /// Registers the <see cref="Microsoft.Agents.Builder.App.AttachmentDownloader"/> for non-Teams channels.
         /// This downloader handles standard HTTP attachment URLs.
         /// </summary>
         /// <param name="builder">The host application builder.</param>
@@ -236,7 +234,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Registers the <see cref="M365AttachmentDownloader"/> for Teams/M365 channels.
+        /// Registers the <see cref="Microsoft.Agents.Builder.App.M365AttachmentDownloader"/> for Teams/M365 channels.
         /// This downloader handles M365 attachment URLs using the configured token provider.
         /// </summary>
         /// <param name="builder">The host application builder.</param>
@@ -276,13 +274,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>
-        /// This will also call <see cref="AddAgentCore(IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
-        /// The Agent is registered as Transient. <see cref="AgentApplicationOptions"/> is automatically registered
+        /// This will also call <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgentCore(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
+        /// The Agent is registered as Transient. <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions"/> is automatically registered
         /// if not already present.
         /// </remarks>
         /// <typeparam name="TAgent"></typeparam>
         /// <param name="builder"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgent<TAgent>(this IHostApplicationBuilder builder)
             where TAgent : class, IAgent
         {
@@ -290,7 +288,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         }
 
         /// <summary>
-        /// Same as <see cref="AddAgent{TAgent}(IHostApplicationBuilder)"/> but allows for use of
+        /// Same as <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgent{TAgent}(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> but allows for use of
         /// any <c>CloudAdapter</c> subclass.
         /// <code>
         /// builder.Services.AddSingleton&lt;IStorage, MemoryStorage&gt;();
@@ -298,12 +296,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>
-        /// <see cref="AgentApplicationOptions"/> is automatically registered if not already present.
+        /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions"/> is automatically registered if not already present.
         /// </remarks>
         /// <typeparam name="TAgent"></typeparam>
         /// <typeparam name="TAdapter"></typeparam>
         /// <param name="builder"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgent<TAgent, TAdapter>(this IHostApplicationBuilder builder)
             where TAgent : class, IAgent
             where TAdapter : CloudAdapter
@@ -332,29 +330,29 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>
-        /// This will also call <see cref="AddAgentCore(IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
-        /// The Agent is registered as Transient. <see cref="AgentApplicationOptions"/> is automatically registered
+        /// This will also call <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgentCore(Microsoft.Extensions.Hosting.IHostApplicationBuilder)"/> and uses <c>CloudAdapter</c>.
+        /// The Agent is registered as Transient. <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions"/> is automatically registered
         /// if not already present.
         /// </remarks>
         /// <param name="builder"></param>
         /// <param name="implementationFactory"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgent(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory)
         {
             return builder.AddAgent<CloudAdapter>(implementationFactory);
         }
 
         /// <summary>
-        /// This is the same as <see cref="AddAgent(IHostApplicationBuilder, Func{IServiceProvider, IAgent})"/>, except allows the
+        /// This is the same as <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgent(Microsoft.Extensions.Hosting.IHostApplicationBuilder, System.Func{System.IServiceProvider, Microsoft.Agents.Builder.IAgent})"/>, except allows the
         /// use of any <c>CloudAdapter</c> subclass.
         /// </summary>
         /// <remarks>
-        /// <see cref="AgentApplicationOptions"/> is automatically registered if not already present.
+        /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions"/> is automatically registered if not already present.
         /// </remarks>
         /// <typeparam name="TAdapter"></typeparam>
         /// <param name="builder"></param>
         /// <param name="implementationFactory"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgent<TAdapter>(this IHostApplicationBuilder builder, Func<IServiceProvider, IAgent> implementationFactory)
             where TAdapter : CloudAdapter
         {
@@ -366,7 +364,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Add the default CloudAdapter.
         /// </summary>
         /// <param name="builder">The host application builder to which the cloud adapter services will be added. Cannot be null.</param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddCloudAdapter(this IHostApplicationBuilder builder)
         {
             builder.Services.AddCloudAdapter();
@@ -377,7 +375,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Add a derived CloudAdapter.
         /// </summary>
         /// <param name="builder">The host application builder to which the cloud adapter services will be added. Cannot be null.</param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddCloudAdapter<T>(this IHostApplicationBuilder builder) where T : CloudAdapter
         {
             builder.Services.AddCloudAdapter<T>();
@@ -393,7 +391,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </remarks>
         /// <param name="builder"></param>
         /// <param name="autoSignIn"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgentApplicationOptions(this IHostApplicationBuilder builder, AutoSignInSelector autoSignIn = null)
         {
             builder.Services.AddAgentApplicationOptions(autoSignIn);
@@ -409,7 +407,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </list>
         /// </summary>
         /// <param name="builder"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgentCore(this IHostApplicationBuilder builder)
         {
             return builder.AddAgentCore<CloudAdapter>();
@@ -424,7 +422,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </list>
         /// </summary>
         /// <param name="builder"></param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgentCore<TAdapter>(this IHostApplicationBuilder builder) where TAdapter : CloudAdapter
         {
             builder.Services.AddAgentCore<TAdapter>();
@@ -446,10 +444,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// already configured elsewhere in the pipeline, otherwise it will be added twice.
         /// </param>
         /// <param name="useHeaderPropagation">When <see langword="true"/>, calls <c>app.UseHeaderPropagation()</c> to enable header propagation middleware.</param>
-        /// <returns>The same <see cref="WebApplication"/> for chaining.</returns>
+        /// <returns>The same <see cref="Microsoft.AspNetCore.Builder.WebApplication"/> for chaining.</returns>
         /// <remarks>
         /// <para>This calls <c>app.UseAuthentication()</c> and <c>app.UseAuthorization()</c> in the
-        /// correct order. Call this before <see cref="MapDefaultAgentEndpoints"/>.</para>
+        /// correct order. Call this before <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.MapDefaultAgentEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.String)"/>.</para>
         /// <para>
         /// If <paramref name="useRouting"/> is <see langword="true"/>, <c>app.UseRouting()</c> is called
         /// first, since routing must be registered before authentication and authorization.
@@ -481,15 +479,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// Indicates whether agent authorization was configured via
-        /// <see cref="AddAgentAuthorization(IHostApplicationBuilder, Action{IHostApplicationBuilder}, bool?)"/>.
+        /// <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgentAuthorization(Microsoft.Extensions.Hosting.IHostApplicationBuilder, System.Action{Microsoft.Extensions.Hosting.IHostApplicationBuilder}, System.Boolean?)"/>.
         /// </summary>
-        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="WebApplication"/>).</param>
+        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="Microsoft.AspNetCore.Builder.WebApplication"/>).</param>
         /// <returns>
         /// <see langword="true"/> if <c>AddAgentAuthorization</c> enabled authorization (and therefore registered
         /// authentication services); otherwise <see langword="false"/>.
         /// </returns>
         /// <remarks>
-        /// This is the same signal <see cref="MapDefaultAgentEndpoints"/> uses to decide whether to require
+        /// This is the same signal <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.MapDefaultAgentEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.String)"/> uses to decide whether to require
         /// authorization. Third-party endpoint-mapping helpers (for example a custom <c>MapA2AEndpoints</c>)
         /// can call this to align their <c>requireAuth</c> decision with the rest of the agent's endpoints
         /// instead of re-deriving it (e.g. from the hosting environment). For example:
@@ -505,7 +503,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// Indicates whether agent authorization was configured via
-        /// <see cref="AddAgentAuthorization(IHostApplicationBuilder, Action{IHostApplicationBuilder}, bool?)"/>.
+        /// <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgentAuthorization(Microsoft.Extensions.Hosting.IHostApplicationBuilder, System.Action{Microsoft.Extensions.Hosting.IHostApplicationBuilder}, System.Boolean?)"/>.
         /// </summary>
         /// <param name="services">The application's service provider (e.g. <c>app.Services</c>).</param>
         /// <returns>
@@ -521,16 +519,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// Maps the default agent endpoints: a root health endpoint (<c>GET /</c>) and agent message
         /// endpoints for all registered <c>AgentApplication</c> types.
         /// </summary>
-        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="WebApplication"/>).</param>
+        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="Microsoft.AspNetCore.Builder.WebApplication"/>).</param>
         /// <param name="path">The route path for agent message endpoints. Defaults to <c>"/api/messages"</c>.</param>
         /// <returns>
-        /// An <see cref="IEndpointConventionBuilder"/> covering all mapped endpoints so that additional
+        /// An <see cref="Microsoft.AspNetCore.Builder.IEndpointConventionBuilder"/> covering all mapped endpoints so that additional
         /// conventions can be chained (e.g. <c>.WithMetadata(...)</c>, <c>.RequireRateLimiting(...)</c>),
         /// consistent with framework endpoint-mapping methods such as <c>MapHealthChecks</c>.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Authorization is automatically required if <see cref="AddAgentAuthorization"/> was called
+        /// Authorization is automatically required if <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.AddAgentAuthorization(Microsoft.Extensions.Hosting.IHostApplicationBuilder, System.Action{Microsoft.Extensions.Hosting.IHostApplicationBuilder}, System.Boolean?)"/> was called
         /// during service configuration. Otherwise, endpoints allow anonymous access.
         /// </para>
         /// <para>This is equivalent to calling:</para>
@@ -540,8 +538,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// <para>
         /// For custom endpoint routing (e.g., different paths per agent, additional middleware per route,
-        /// or manual <c>requireAuth</c> control), use <see cref="AgentEndpointExtensions.MapAgentRootEndpoint"/>
-        /// and <see cref="AgentEndpointExtensions.MapAgentApplicationEndpoints"/> directly.
+        /// or manual <c>requireAuth</c> control), use <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentEndpointExtensions.MapAgentRootEndpoint(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder)"/>
+        /// and <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentEndpointExtensions.MapAgentApplicationEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.Boolean, System.String)"/> directly.
         /// </para>
         /// </remarks>
         public static IEndpointConventionBuilder MapDefaultAgentEndpoints(this IEndpointRouteBuilder endpoints, string path = "/api/messages")
@@ -557,7 +555,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <summary>
         /// Adds a middleware that collects headers to be propagated.
         /// </summary>
-        /// <param name="app">The <see cref="IApplicationBuilder"/> to add the middleware to.</param>
+        /// <param name="app">The <see cref="Microsoft.AspNetCore.Builder.IApplicationBuilder"/> to add the middleware to.</param>
         /// <returns>A reference to the <paramref name="app"/> after the operation has completed.</returns>
         public static IApplicationBuilder UseHeaderPropagation(this IApplicationBuilder app)
         {
@@ -570,9 +568,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         #region Private Helpers
 
         /// <summary>
-        /// An <see cref="IEndpointConventionBuilder"/> that fans out conventions to a set of underlying
+        /// An <see cref="Microsoft.AspNetCore.Builder.IEndpointConventionBuilder"/> that fans out conventions to a set of underlying
         /// builders. Used so that a single helper which maps multiple endpoints (e.g.
-        /// <see cref="MapDefaultAgentEndpoints"/>) can return one convention builder that applies chained
+        /// <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions.MapDefaultAgentEndpoints(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder, System.String)"/>) can return one convention builder that applies chained
         /// conventions to all of them, mirroring framework patterns such as <c>MapControllers</c>.
         /// </summary>
         private sealed class CompositeEndpointConventionBuilder : IEndpointConventionBuilder
@@ -662,7 +660,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 var deferred = sp.GetService<DeferredAttachmentDownloader>();
                 if (deferred != null)
                 {
-                    list.Add(new AttachmentDownloader(sp.GetRequiredService<IHttpClientFactory>()));
+                    list.Add(new AttachmentDownloader(
+                        sp.GetRequiredService<IHttpClientFactory>(),
+                        sp.GetService<IOutboundHostValidator>()));
                 }
 
                 var deferredM365 = sp.GetService<DeferredM365AttachmentDownloader>();
@@ -672,7 +672,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     list.Add(new M365AttachmentDownloader(
                         sp.GetRequiredService<IConnections>(),
                         sp.GetRequiredService<IHttpClientFactory>(),
-                        options));
+                        options,
+                        sp.GetService<IOutboundHostValidator>()));
                 }
 
                 return list;

@@ -3,8 +3,7 @@
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.Slack</ComponentAreaName>
 		<SignAssembly>true</SignAssembly>
-		<!-- Slack extension targets net8.0 only; match that here -->
-		<TargetFrameworks>net8.0</TargetFrameworks>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 	</PropertyGroup>
 	<Import Project="..\..\Build.Common.core.props" />
 
@@ -29,6 +28,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <FrameworkReference Include="Microsoft.AspNetCore.App" />
+	  <None Update="Fixtures\feedback-submit-action.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 </Project>

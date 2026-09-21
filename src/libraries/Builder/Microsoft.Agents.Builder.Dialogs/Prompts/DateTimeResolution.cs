@@ -4,7 +4,7 @@
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
-    /// A date-time value, as recognized by the <see cref="DateTimePrompt"/>.
+    /// A date-time value, as recognized by the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.DateTimePrompt"/>.
     /// </summary>
     /// <remarks>A value can represent a date, a time, a date and time, or a range of any of these.
     /// The representation of the value is determined by the locale used to parse the input.

@@ -45,6 +45,9 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
                 GetReferences(),
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
+            var errors = compilation.GetDiagnostics().Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+            Assert.True(!errors.Any(), string.Join(Environment.NewLine, errors));
+
             return compilation.ToMetadataReference();
         }
 
@@ -179,7 +182,7 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         }
 
         [Fact]
-        public void Generated_RegistersSerializationInitAssemblyAttribute()
+        public void Generated_RegistersAgentSdkInitAssemblyAttribute()
         {
             var reference = CreateReferencedAssembly("Ext.Reg", """
                 namespace Ext.Reg
@@ -191,9 +194,90 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var text = GeneratedText(RunGenerator(reference));
 
             Assert.Contains(
-                "[assembly: Microsoft.Agents.Core.Serialization.SerializationInitAssemblyAttribute(typeof(global::PreloadTypesRegistry))]",
+                "[assembly: Microsoft.Agents.Core.AgentSdkInitAssemblyAttribute(typeof(global::PreloadTypesRegistry))]",
                 text);
             Assert.Contains("internal static class PreloadTypesRegistry", text);
+        }
+
+        [Fact]
+        public void ChannelAdapterManifestInReferencedAssembly_IsPreloaded()
+        {
+            var reference = CreateReferencedAssembly("Ext.Adapter", """
+                [assembly: Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute(
+                    typeof(Ext.Adapter.CustomAdapter), "custom")]
+
+                namespace Microsoft.Agents.Builder.Adapters
+                {
+                    [System.AttributeUsage(System.AttributeTargets.Assembly, AllowMultiple = true)]
+                    public sealed class ChannelAdapterInitAssemblyAttribute : System.Attribute
+                    {
+                        public ChannelAdapterInitAssemblyAttribute(System.Type type, string channelId) { }
+                    }
+                }
+
+                namespace Ext.Adapter
+                {
+                    public class CustomAdapter { }
+                }
+                """);
+
+            var text = GeneratedText(RunGenerator(reference));
+
+            Assert.Contains("typeof(global::Ext.Adapter.CustomAdapter)", text);
+        }
+
+        [Fact]
+        public void AgentServiceRegistrationManifestInReferencedAssembly_IsPreloaded()
+        {
+            var reference = CreateReferencedAssembly("Ext.Services", """
+                [assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
+                    typeof(Ext.Services.CustomRegistrar))]
+
+                namespace Microsoft.Agents.Builder
+                {
+                    [System.AttributeUsage(System.AttributeTargets.Assembly, AllowMultiple = true)]
+                    public sealed class AgentServiceRegistrationAttribute : System.Attribute
+                    {
+                        public AgentServiceRegistrationAttribute(System.Type type) { }
+                    }
+                }
+
+                namespace Ext.Services
+                {
+                    public class CustomRegistrar { }
+                }
+                """);
+
+            var text = GeneratedText(RunGenerator(reference));
+
+            Assert.Contains("typeof(global::Ext.Services.CustomRegistrar)", text);
+        }
+
+        [Fact]
+        public void NonPublicManifestType_DoesNotGenerateInaccessibleConsumerReference()
+        {
+            var reference = CreateReferencedAssembly("Ext.InternalServices", """
+                [assembly: Microsoft.Agents.Builder.AgentServiceRegistrationAttribute(
+                    typeof(Ext.InternalServices.InternalRegistrar))]
+
+                namespace Microsoft.Agents.Builder
+                {
+                    [System.AttributeUsage(System.AttributeTargets.Assembly, AllowMultiple = true)]
+                    public sealed class AgentServiceRegistrationAttribute : System.Attribute
+                    {
+                        public AgentServiceRegistrationAttribute(System.Type type) { }
+                    }
+                }
+
+                namespace Ext.InternalServices
+                {
+                    internal class InternalRegistrar { }
+                }
+                """);
+
+            var result = RunGenerator(reference);
+
+            Assert.Empty(result.Results.Single().GeneratedSources);
         }
 
         [Fact]

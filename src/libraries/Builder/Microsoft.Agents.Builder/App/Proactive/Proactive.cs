@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
-using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Telemetry.Proactive.Scopes;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -31,6 +32,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         private readonly AgentApplication _app;
         private readonly ProactiveOptions _options;
 
+        private IStorageV2 Storage => StorageCompatibility.AsV2(_options.Storage);
+
         /// <summary>
         /// <c>IAcitivty.ValueType</c> that indicates additional key/values for the ContinueConversation Event.
         /// </summary>
@@ -43,8 +46,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
         }
 
         /// <summary>
-        /// Resolves the <see cref="IChannelAdapter"/> registered for the specified <paramref name="channelId"/> using
-        /// the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// Resolves the <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> registered for the specified <paramref name="channelId"/> using
+        /// the <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="channelId">The channelId whose adapter should be resolved. Cannot be null or empty.</param>
         /// <returns>The adapter registered for the channel.</returns>
@@ -56,12 +59,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
             var registry = _app.Options.ChannelAdapterRegistry
                 ?? throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ProactiveAdapterRegistryNotAvailable, null, channelId);
 
-            return registry.GetAdapter(channelId);
+            return registry.TryGetAdapter(channelId, out var adapter)
+                ? adapter
+                : registry.GetDefault();
         }
 
         /// <summary>
         /// Sends an activity to an existing conversation, resolving the channel adapter from the specified
-        /// <paramref name="channelId"/> via the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// <paramref name="channelId"/> via the <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="channelId">The channelId whose registered adapter is used to send the activity. Cannot be null or empty.</param>
         /// <param name="conversationId">The unique identifier of the conversation to which the activity will be sent. Cannot be 
@@ -113,7 +118,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Sends an activity to a conversation, resolving the channel adapter from the conversation's
         /// <see cref="Microsoft.Agents.Core.Models.ConversationReference.ChannelId"/> via the
-        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> constructors or <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/>.</param>
         /// <param name="activity">The activity to send to the conversation. If the activity's Type property is null or empty, it defaults to a
@@ -162,7 +167,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
                 activity.Type = ActivityTypes.Message;
             }
 
-            using var telemetryScope = new ScopeSendActivity(conversation.Reference.Conversation.Id, activity);
+            using var telemetryScope = new ScopeSendActivity(
+                conversation.Reference.Conversation.Id,
+                activity,
+                createActivityLink(conversation));
 
             ExceptionDispatchInfo exceptionInfo = null;
             ResourceResponse response = null;
@@ -189,7 +197,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         /// <summary>
         /// Continues an existing conversation by resuming activity, resolving the channel adapter from the specified
-        /// <paramref name="channelId"/> via the <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>. The
+        /// <paramref name="channelId"/> via the <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>. The
         /// conversation must have previously been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>.
         /// </summary>
         /// <param name="channelId">The channelId whose registered adapter is used to continue the conversation. Cannot be null or empty.</param>
@@ -210,7 +218,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Continues an existing conversation by resuming activity using the specified channel adapter and conversation
         /// ID. The conversation must have previously been stored using <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.StoreConversationAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/>.<br/><br/>
-        /// See  <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.ContinueConversationAsync(Microsoft.Agents.Builder.IChannelAdapter, Microsoft.Agents.Builder.App.Proactive.Conversation, Microsoft.Agents.Builder.App.RouteHandler, string[], Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// See  <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive.ContinueConversationAsync(Microsoft.Agents.Builder.IChannelAdapter, Microsoft.Agents.Builder.App.Proactive.Conversation, Microsoft.Agents.Builder.App.RouteHandler, System.String[], Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         /// for more details.
         /// </summary>
         /// <param name="adapter">The channel adapter used to send and receive activities for the conversation.</param>
@@ -235,7 +243,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Continues an existing conversation by calling the specified route handler, resolving the channel adapter
         /// from the conversation's <see cref="Microsoft.Agents.Core.Models.ConversationReference.ChannelId"/> via the
-        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="conversation">Instance of a <c>Conversation</c>.  This can be created with <see cref="Microsoft.Agents.Builder.App.Proactive.Conversation"/> constructors or <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationBuilder"/>.</param>
         /// <param name="continuationHandler">The route handler delegate to execute within the continued conversation context. Must not be null.</param>
@@ -311,7 +319,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
 
             var conversationId = conversation.Reference.Conversation.Id;
-            using var telemetryScope = new ScopeContinueConversation(conversationId, continuationActivity);
+            using var telemetryScope = new ScopeContinueConversation(conversationId, continuationActivity, createActivityLink(conversation));
             ExceptionDispatchInfo exceptionInfo = null;
 
             await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
@@ -335,8 +343,8 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         /// <summary>
         /// Creates a new conversation, resolving the channel adapter from
-        /// <see cref="CreateConversationOptions.ChannelId"/> via the
-        /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>.
+        /// <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptions.ChannelId"/> via the
+        /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>.
         /// </summary>
         /// <param name="createOptions">An object containing the details required to create the conversation, including conversation identity,
         /// reference, parameters, and scope. Cannot be null. See <see cref="Microsoft.Agents.Builder.App.Proactive.CreateConversationOptionsBuilder"/>.</param>
@@ -456,9 +464,12 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             using var telemetryScope = new ScopeStoreConversation(conversation.Reference.Conversation.Id);
 
+            // enable tracing of future proactive calls with the same conversation
+            conversation.ActivityContext = telemetryScope.Context;
+
             var key = GetRecordKey(conversation.Reference.Conversation.Id);
-            await _app.Options.Proactive.Storage.WriteAsync(
-                new Dictionary<string, object>
+            await Storage.WriteAsync(
+                new Dictionary<string, Conversation>
                 {
                     { key, conversation }
                 },
@@ -484,9 +495,9 @@ namespace Microsoft.Agents.Builder.App.Proactive
             using var telemetryScope = new ScopeGetConversation(conversationId);
 
             var key = GetRecordKey(conversationId);
-            var items = await _options.Storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+            var results = await Storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
 
-            if (items != null && items.TryGetValue(key, out var item) && item is Conversation record)
+            if (results[key].Status == StorageOperationStatus.Succeeded && results[key].Value is Conversation record)
             {
                 telemetryScope.Share(true);
                 return record;
@@ -500,7 +511,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// conversation does not exist.
         /// </summary>
         /// <remarks>If no conversation is found for the specified identifier, a <see
-        /// cref="KeyNotFoundException"/> is thrown. Use this method when the absence of a conversation should be
+        /// cref="System.Collections.Generic.KeyNotFoundException"/> is thrown. Use this method when the absence of a conversation should be
         /// treated as an error.</remarks>
         /// <param name="conversationId">The unique identifier of the conversation to retrieve. Cannot be null or empty.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
@@ -527,7 +538,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             var key = GetRecordKey(conversationId);
             return telemetryScope.WrapAsync(async () =>
             {
-                await _options.Storage.DeleteAsync([key], cancellationToken).ConfigureAwait(false);
+                await Storage.DeleteAsync([key], cancellationToken).ConfigureAwait(false);
             });
         }
 
@@ -567,5 +578,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
             return $"proactive/conversations/{conversationId}";
         }
         #endregion
+
+        internal static System.Diagnostics.ActivityLink? createActivityLink(Conversation conversation)
+        {
+            if (conversation?.ActivityContext != null)
+            {
+                return new System.Diagnostics.ActivityLink((System.Diagnostics.ActivityContext) conversation.ActivityContext);
+            }
+            return null;
+        }
     }
 }

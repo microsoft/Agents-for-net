@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Core.Errors;
@@ -125,14 +126,12 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                     }
 
                     agentGroup.MapMethods(agentInterface.Path, ["POST"],
-                        async (HttpRequest request, HttpResponse response, IAgentHttpAdapter defaultAdapter, IChannelAdapterRegistry registry, IServiceProvider services, CancellationToken cancellationToken) =>
+                        async (HttpRequest request, HttpResponse response, IAgentHttpAdapter defaultAdapter, IServiceProvider services, CancellationToken cancellationToken) =>
                         {
                             // Tier 2 resolution: when channel-specific adapters are registered, peek the
                             // channelId from the inbound Activity and resolve a channel-specific adapter.
                             // Otherwise (the common case) use the default AP adapter (CloudAdapter) directly.
-                            var adapter = registry != null && registry.HasChannelSpecificAdapters
-                                ? await ResolveAdapterAsync(registry, defaultAdapter, request, cancellationToken).ConfigureAwait(false)
-                                : defaultAdapter;
+                            var adapter = await ResolveAdapterAsync(services, defaultAdapter, request, cancellationToken).ConfigureAwait(false);
 
                             IAgent agentInstance = (IAgent)services.GetService(agent);
                             // This is to handle declaring an AgentApplication in an AddTransient lambda.
@@ -162,12 +161,24 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             return agentGroup;
         }
 
+        internal static ValueTask<IAgentHttpAdapter> ResolveAdapterAsync(
+            IServiceProvider services,
+            IAgentHttpAdapter defaultAdapter,
+            HttpRequest request,
+            CancellationToken cancellationToken)
+        {
+            var registry = services.GetService<IChannelAdapterRegistry>();
+            return registry?.HasChannelSpecificAdapters == true
+                ? ResolveAdapterAsync(registry, defaultAdapter, request, cancellationToken)
+                : new ValueTask<IAgentHttpAdapter>(defaultAdapter);
+        }
+
         /// <summary>
         /// Tier 2 adapter resolution for a shared Activity Protocol endpoint. Peeks the <c>channelId</c>
         /// from the inbound Activity and returns the channel-specific adapter when one is registered;
         /// otherwise returns the default Activity Protocol adapter (CloudAdapter).
         /// </summary>
-        /// <remarks>Only reached when <see cref="IChannelAdapterRegistry.HasChannelSpecificAdapters"/> is true.</remarks>
+        /// <remarks>Only reached when <see cref="Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry.HasChannelSpecificAdapters"/> is true.</remarks>
         internal static async ValueTask<IAgentHttpAdapter> ResolveAdapterAsync(
             IChannelAdapterRegistry registry,
             IAgentHttpAdapter defaultAdapter,
@@ -191,10 +202,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <summary>
         /// Extracts the top-level <c>channelId</c> from a buffered JSON request body without deserializing
         /// the Activity. Enables request buffering so the resolved adapter can re-read the full body in
-        /// <see cref="IAgentHttpAdapter.ProcessAsync"/>.
+        /// <see cref="Microsoft.Agents.Hosting.AspNetCore.IAgentHttpAdapter.ProcessAsync(Microsoft.AspNetCore.Http.HttpRequest, Microsoft.AspNetCore.Http.HttpResponse, Microsoft.Agents.Builder.IAgent, System.Threading.CancellationToken)"/>.
         /// </summary>
         /// <remarks>
-        /// The body is scanned incrementally in bounded chunks with a streaming <see cref="Utf8JsonReader"/>,
+        /// The body is scanned incrementally in bounded chunks with a streaming <see cref="System.Text.Json.Utf8JsonReader"/>,
         /// stopping as soon as the top-level <c>channelId</c> is found (or the root object closes). This avoids
         /// materializing the full payload into a second buffer and avoids sizing an allocation on the
         /// client-supplied <c>Content-Length</c>. Cancellation is propagated; only body-inspection failures
@@ -234,7 +245,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// Reads <paramref name="body"/> in bounded chunks and scans for the top-level <c>channelId</c> using a
-        /// resumable <see cref="Utf8JsonReader"/>, without materializing the entire body.
+        /// resumable <see cref="System.Text.Json.Utf8JsonReader"/>, without materializing the entire body.
         /// </summary>
         private static async ValueTask<string> ScanChannelIdAsync(System.IO.Stream body, CancellationToken cancellationToken)
         {
@@ -473,7 +484,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <remarks>The root endpoint provides a simple informational response containing the name and
         /// version of the calling assembly. This can be useful for diagnostics or verifying deployment
         /// details.</remarks>
-        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="WebApplication"/>) to which the root endpoint will be mapped.</param>
+        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="Microsoft.AspNetCore.Builder.WebApplication"/>) to which the root endpoint will be mapped.</param>
         public static IEndpointConventionBuilder MapAgentRootEndpoint(this IEndpointRouteBuilder endpoints)
         {
             var assemblyName = System.Reflection.Assembly.GetCallingAssembly().GetName().Name;

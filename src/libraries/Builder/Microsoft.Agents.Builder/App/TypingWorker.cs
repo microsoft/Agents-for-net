@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.Builder.Telemetry.App.Scopes;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     /// <remarks>
     /// Unlike the legacy <c>TypingTimer</c>, this class is scoped to a single turn and uses
-    /// <see cref="Task.Delay(int, CancellationToken)"/> instead of <see cref="System.Threading.Timer"/>,
+    /// <see cref="System.Threading.Tasks.Task.Delay(System.Int32, System.Threading.CancellationToken)"/> instead of <see cref="System.Threading.Timer"/>,
     /// avoiding thread-pool starvation and static shared state bugs.
     /// </remarks>
     internal sealed class TypingWorker : IAsyncDisposable
@@ -39,13 +40,13 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Creates a <see cref="TypingWorker"/> for the current turn, or returns <c>null</c> if
+        /// Creates a <see cref="Microsoft.Agents.Builder.App.TypingWorker"/> for the current turn, or returns <c>null</c> if
         /// the activity is not a message or typing is not applicable.
         /// </summary>
         /// <param name="turnContext">The turn context.</param>
         /// <param name="options">The typing options.</param>
         /// <param name="timeProvider">
-        /// Time source used for the delay/interval waits. Defaults to <see cref="TimeProvider.System"/>.
+        /// Time source used for the delay/interval waits. Defaults to <see cref="System.TimeProvider.System"/>.
         /// Tests inject a fake time provider to drive the worker deterministically without real delays.
         /// </param>
         public static TypingWorker? Create(ITurnContext turnContext, TypingOptions options, TimeProvider? timeProvider = null)
@@ -127,9 +128,9 @@ namespace Microsoft.Agents.Builder.App
 
         /// <summary>
         /// Waits for <paramref name="ms"/> milliseconds, restarting the countdown each time
-        /// <see cref="ResetInterval"/> is called (i.e., on each non-typing agent send).
-        /// Uses <see cref="TaskCompletionSource{T}"/> for reset signalling to avoid
-        /// <see cref="CancellationTokenSource"/> allocation and disposal races per reset.
+        /// <see cref="Microsoft.Agents.Builder.App.TypingWorker.ResetInterval()"/> is called (i.e., on each non-typing agent send).
+        /// Uses <see cref="System.Threading.Tasks.TaskCompletionSource{T}"/> for reset signalling to avoid
+        /// <see cref="System.Threading.CancellationTokenSource"/> allocation and disposal races per reset.
         /// </summary>
         private async Task WaitAsync(int ms, CancellationToken stopToken)
         {
@@ -226,14 +227,27 @@ namespace Microsoft.Agents.Builder.App
 
         private async Task SendTypingActivityAsync(CancellationToken cancellationToken)
         {
-            // Send directly on the adapter to bypass OnSendActivities middleware (matching
-            // ShowTypingMiddleware's approach) so our own handler doesn't reset the interval.
-            var conversationReference = _turnContext.Activity.GetConversationReference();
-            var typingActivity = _strategy.TypingFactory(_turnContext, conversationReference);
-            typingActivity.ApplyConversationReference(conversationReference);
+            using var telemetryScope = new ScopeTypingIndicator(_turnContext);
+            try
+            {
+                // Send directly on the adapter to bypass OnSendActivities middleware (matching
+                // ShowTypingMiddleware's approach) so our own handler doesn't reset the interval.
+                var conversationReference = _turnContext.Activity.GetConversationReference();
+                var typingActivity = _strategy.TypingFactory(_turnContext, conversationReference);
+                typingActivity.ApplyConversationReference(conversationReference);
 
-            await _turnContext.Adapter.SendActivitiesAsync(
-                _turnContext, [typingActivity], cancellationToken).ConfigureAwait(false);
+                await _turnContext.Adapter.SendActivitiesAsync(
+                    _turnContext, [typingActivity], cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                telemetryScope.SetError(ex);
+                throw;
+            }
         }
 
         /// <summary>

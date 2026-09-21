@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Core.Serialization
     /// </summary>
     /// <remarks>
     /// Only the well-known top-level discriminators are surfaced (cheap to peek without a full
-    /// parse). <see cref="ChannelId"/> is the channel segment only — any <c>:product</c> sub-channel
+    /// parse). <see cref="Microsoft.Agents.Core.Serialization.ActivityResolutionContext.ChannelId"/> is the channel segment only — any <c>:product</c> sub-channel
     /// suffix is stripped — so matching against a bare channel id (e.g. "msteams") works regardless
-    /// of the <see cref="ProtocolJsonSerializer.ChannelIdIncludesProduct"/> setting.
+    /// of the <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.ChannelIdIncludesProduct"/> setting.
     /// </remarks>
     public readonly struct ActivityResolutionContext
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActivityResolutionContext"/> struct.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Serialization.ActivityResolutionContext"/> struct.
         /// </summary>
         /// <param name="type">The Activity <c>type</c> field, or <see langword="null"/> if absent.</param>
         /// <param name="channelId">The Activity <c>channelId</c> (channel segment only), or <see langword="null"/> if absent.</param>

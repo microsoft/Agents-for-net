@@ -26,17 +26,18 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             var messagingExtensionAttachment = AttachmentExtensions.ToMessagingExtensionAttachment(attachment, previewAttachment);
 
             Assert.NotNull(messagingExtensionAttachment);
-            Assert.IsType<Microsoft.Teams.Api.MessageExtensions.Attachment>(messagingExtensionAttachment);
+            Assert.IsType<Microsoft.Teams.Apps.Schema.TeamsAttachment>(messagingExtensionAttachment);
             Assert.Equal(contentType, messagingExtensionAttachment.ContentType);
-            Assert.Equal(contentUrl, messagingExtensionAttachment.ContentUrl);
+            Assert.Equal(new System.Uri(contentUrl), messagingExtensionAttachment.ContentUrl);
             Assert.Equal(content, messagingExtensionAttachment.Content);
             Assert.Equal(name, messagingExtensionAttachment.Name);
-            Assert.Equal(thumbnailUrl, messagingExtensionAttachment.ThumbnailUrl);
+            Assert.Equal(new System.Uri(thumbnailUrl), messagingExtensionAttachment.ThumbnailUrl);
 
             if (previewAttachment != null)
             {
                 var previewAttachmentJson = ProtocolJsonSerializer.ToJson(previewAttachment);
-                var teamsPreviewJson = ProtocolJsonSerializer.ToJson(ProtocolJsonSerializer.ToObject<Attachment>(messagingExtensionAttachment.Preview));
+                var teamsPreviewJson = ProtocolJsonSerializer.ToJson(
+                    ProtocolJsonSerializer.ToObject<Attachment>(messagingExtensionAttachment.Properties["preview"]));
                 Assert.Equal(previewAttachmentJson, teamsPreviewJson);
             }
         }

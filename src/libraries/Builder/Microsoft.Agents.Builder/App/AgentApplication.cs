@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Builder.App.AdaptiveCards;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Errors;
@@ -29,6 +30,7 @@ namespace Microsoft.Agents.Builder.App
     public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
+        private readonly AgenticAuthorization _agenticAuth;
         private readonly string _agentName;
 
         private readonly RouteList _routes;
@@ -71,6 +73,11 @@ namespace Microsoft.Agents.Builder.App
             if (options.UserAuthorization != null)
             {
                 _userAuth = new UserAuthorization(this, options.UserAuthorization);
+            }
+
+            if (Options.Connections != null)
+            {
+                _agenticAuth = new AgenticAuthorization(Options.Connections);
             }
 
             ApplyRouteAttributes();
@@ -121,6 +128,22 @@ namespace Microsoft.Agents.Builder.App
                 }
 
                 return _userAuth;
+            }
+        }
+
+        /// <summary>
+        /// Accessing Agentic authorization features.
+        /// </summary>
+        public AgenticAuthorization AgenticAuthorization
+        {
+            get
+            {
+                if (_agenticAuth == null)
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.AgenticAuthorizationNotConfigured, null);
+                }
+
+                return _agenticAuth;
             }
         }
 
@@ -679,7 +702,7 @@ namespace Microsoft.Agents.Builder.App
             return this;
         }
 
-#endregion
+        #endregion
 
         #region ShowTyping
         /// <summary>
@@ -774,7 +797,8 @@ namespace Microsoft.Agents.Builder.App
         /// This stores the current <see cref="ITurnState"/>, <see cref="AdaptiveCard"/>, and
         /// <see cref="Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
         /// When user authorization is configured, the current <see cref="UserAuthorization"/>
-        /// instance is also registered.
+        /// instance is also registered. When Agentic authorization is configured, the current
+        /// <see cref="AgenticAuthorization"/> instance is also registered.
         /// </remarks>
         /// <param name="turnContext">The turn context to populate with services.</param>
         /// <param name="turnState">The turn state for the current turn.</param>
@@ -783,6 +807,10 @@ namespace Microsoft.Agents.Builder.App
             if (_userAuth != null)
             {
                 turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+            if (_agenticAuth != null)
+            {
+                turnContext.Services.Set<AgenticAuthorization>(_agenticAuth);
             }
             if (Options.Connections != null)
             {
@@ -842,7 +870,8 @@ namespace Microsoft.Agents.Builder.App
                 if (Options.StartTypingTimer)
                 {
                     StartTypingTimer(turnContext);
-                };
+                }
+                ;
 
                 // Handle @mentions
                 if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
@@ -1027,17 +1056,16 @@ namespace Microsoft.Agents.Builder.App
         /// <typeparam name="TExtension"></typeparam>
         /// <param name="extension"></param>
         /// <param name="extensionRegistration"></param>
-        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration)
+        public void RegisterExtension<TExtension>(TExtension extension, Action<TExtension> extensionRegistration = null)
             where TExtension : IAgentExtension
         {
-            AssertionHelpers.ThrowIfNull(extensionRegistration, nameof(extensionRegistration));
             if (RegisteredExtensions.Contains(extension))
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.ExtensionAlreadyRegistered, null, nameof(TExtension));
             }
             // TODO: add Logging event for extension registration
             RegisteredExtensions.Add(extension);
-            extensionRegistration(extension);
+            extensionRegistration?.Invoke(extension);
         }
         #endregion
     }

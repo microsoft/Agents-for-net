@@ -5,7 +5,9 @@ using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.Testing;
 using Microsoft.Agents.Builder.Tests.App.TestUtils;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Telemetry;
 using Microsoft.Agents.Storage;
+using Microsoft.Agents.TestSupport;
 using Microsoft.Extensions.Time.Testing;
 using System;
 using System.Collections.Generic;
@@ -16,7 +18,8 @@ using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests.App
 {
-    public class TypingWorkerTests
+    [Collection("TelemetryTests")]
+    public class TypingWorkerTests : TelemetryScopeTestBase
     {
         private static TypingOptions MakeOptions(int initialDelayMs, int intervalMs) =>
             new TypingOptions
@@ -152,6 +155,31 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Fact]
+        public async Task Start_EmitsTypingIndicatorTelemetryScope()
+        {
+            var time = new SignalingTimeProvider();
+            var adapter = new SignalingTestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 100, intervalMs: 30_000), time)!;
+
+            worker.Start();
+
+            await AwaitSignal(time.TimerArmed, "initial-delay timer armed");
+            time.Advance(TimeSpan.FromMilliseconds(100));
+            await AwaitSignal(adapter.TypingSent, "first typing activity");
+            await worker.DisposeAsync();
+
+            var stopped = Assert.Single(
+                StoppedActivities,
+                activity => activity.OperationName == "agents.app.typing_indicator");
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Unset, stopped.Status);
+            Assert.Equal(ActivityTypes.Typing, stopped.GetTagItem(TagNames.ActivityType));
+            Assert.Equal(Channels.Test, stopped.GetTagItem(TagNames.ActivityChannelId));
+            Assert.Equal("conv1", stopped.GetTagItem(TagNames.ConversationId));
+        }
+
+        [Fact]
         public async Task Start_SendsMultipleTypingActivities_AtInterval()
         {
             var time = new SignalingTimeProvider();
@@ -262,6 +290,64 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // Assert: DisposeAsync must not re-throw; a faulted _workerTask would propagate here.
             await worker.DisposeAsync();
+
+            var stopped = Assert.Single(
+                StoppedActivities,
+                activity => activity.OperationName == "agents.app.typing_indicator");
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
+            Assert.Equal("Simulated transport error", stopped.StatusDescription);
+            Assert.Contains(stopped.Events, telemetryEvent => telemetryEvent.Name == "exception");
+        }
+
+        [Fact]
+        public async Task RunAsync_RecordsTelemetry_WhenTypingFactoryThrows()
+        {
+            var adapter = new TestAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var strategy = new ThrowingTypingStrategy();
+            var options = new TypingOptions
+            {
+                ChannelStrategies = new Dictionary<string, ITypingChannelStrategy>(
+                    StringComparer.OrdinalIgnoreCase)
+                {
+                    [Channels.Test] = strategy
+                }
+            };
+            var worker = TypingWorker.Create(context, options)!;
+
+            worker.Start();
+
+            await AwaitSignal(strategy.FactoryInvoked, "typing factory invocation");
+            await worker.DisposeAsync();
+
+            var stopped = Assert.Single(
+                StoppedActivities,
+                activity => activity.OperationName == "agents.app.typing_indicator");
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Error, stopped.Status);
+            Assert.Equal("Simulated typing factory error", stopped.StatusDescription);
+        }
+
+        [Fact]
+        public async Task DisposeAsync_DoesNotRecordExpectedCancellationAsError()
+        {
+            var time = new SignalingTimeProvider();
+            var adapter = new GatedSendAdapter();
+            var context = new TurnContext(adapter, MakeMessageActivity());
+            var worker = TypingWorker.Create(
+                context, MakeOptions(initialDelayMs: 100, intervalMs: 30_000), time)!;
+            worker.Start();
+
+            await AwaitSignal(time.TimerArmed, "initial-delay timer armed");
+            time.Advance(TimeSpan.FromMilliseconds(100));
+            await AwaitSignal(adapter.SendStarted, "typing send in-flight");
+
+            await worker.DisposeAsync();
+
+            var stopped = Assert.Single(
+                StoppedActivities,
+                activity => activity.OperationName == "agents.app.typing_indicator");
+            Assert.Equal(System.Diagnostics.ActivityStatusCode.Unset, stopped.Status);
+            Assert.DoesNotContain(stopped.Events, telemetryEvent => telemetryEvent.Name == "exception");
         }
 
         // ── Fix 2: negative delay values must be rejected early ──────────────────────
@@ -334,8 +420,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         // ─────────────────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// A <see cref="TestAdapter"/> whose <see cref="SendActivitiesAsync"/> always throws,
-        /// simulating a transient transport failure. Signals <see cref="SendAttempted"/> before
+        /// A <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> whose <see cref="Microsoft.Agents.Builder.Tests.App.TypingWorkerTests.ThrowingTestAdapter.SendActivitiesAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/> always throws,
+        /// simulating a transient transport failure. Signals <see cref="Microsoft.Agents.Builder.Tests.App.TypingWorkerTests.ThrowingTestAdapter.SendAttempted"/> before
         /// throwing so tests can synchronize on the failure without sleeping.
         /// </summary>
         private sealed class ThrowingTestAdapter : TestAdapter
@@ -354,6 +440,24 @@ namespace Microsoft.Agents.Builder.Tests.App
                 _sendAttempted.Release();
                 throw new InvalidOperationException("Simulated transport error");
             }
+        }
+
+        private sealed class ThrowingTypingStrategy : ITypingChannelStrategy
+        {
+            private readonly SemaphoreSlim _factoryInvoked = new(0);
+
+            public int InitialDelayMs => 0;
+
+            public int IntervalMs => 30_000;
+
+            public Func<ITurnContext, ConversationReference, IActivity> TypingFactory =>
+                (_, _) =>
+                {
+                    _factoryInvoked.Release();
+                    throw new InvalidOperationException("Simulated typing factory error");
+                };
+
+            public SemaphoreSlim FactoryInvoked => _factoryInvoked;
         }
 
         [Fact]
@@ -504,7 +608,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         /// <summary>
-        /// A <see cref="TestAdapter"/> that holds each typing send open on a gate until the test
+        /// A <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> that holds each typing send open on a gate until the test
         /// releases it, letting tests deterministically control the "send in-flight" window
         /// without any wall-clock delay.
         /// </summary>
@@ -549,7 +653,7 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         /// <summary>
-        /// A <see cref="TestAdapter"/> that signals <see cref="TypingSent"/> after each typing
+        /// A <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> that signals <see cref="Microsoft.Agents.Builder.Tests.App.TypingWorkerTests.SignalingTestAdapter.TypingSent"/> after each typing
         /// activity is recorded, allowing tests to await sends deterministically.
         /// </summary>
         private sealed class SignalingTestAdapter : TestAdapter
@@ -579,8 +683,8 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         /// <summary>
-        /// A <see cref="TimeProvider"/> that wraps a <see cref="FakeTimeProvider"/> and signals
-        /// <see cref="TimerArmed"/> each time a timer is created (i.e., each time the worker begins
+        /// A <see cref="System.TimeProvider"/> that wraps a <see cref="Microsoft.Extensions.Time.Testing.FakeTimeProvider"/> and signals
+        /// <see cref="Microsoft.Agents.Builder.Tests.App.TypingWorkerTests.SignalingTimeProvider.TimerArmed"/> each time a timer is created (i.e., each time the worker begins
         /// a delay). Tests await that signal before advancing virtual time, eliminating the
         /// classic race where a test advances the clock before the code under test has armed its
         /// next timer.

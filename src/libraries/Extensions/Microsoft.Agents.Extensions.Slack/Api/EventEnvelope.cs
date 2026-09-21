@@ -16,12 +16,12 @@ namespace Microsoft.Agents.Extensions.Slack.Api
     /// <para>
     /// This class models the top-level structure of a Slack Events API request, including workspace,
     /// application, and authorization context, as well as the event-specific content. Use the strongly-typed properties
-    /// for common envelope fields and the <see cref="event_content"/> property for the inner event payload. Additional or
-    /// unmodeled fields are accessible via the <see cref="AdditionalProperties"/> dictionary. For more information on the envelope
+    /// for common envelope fields and the <see cref="Microsoft.Agents.Extensions.Slack.Api.EventEnvelope.event_content"/> property for the inner event payload. Additional or
+    /// unmodeled fields are accessible via the <see cref="Microsoft.Agents.Extensions.Slack.Api.EventEnvelope.AdditionalProperties"/> dictionary. For more information on the envelope
     /// structure, see https://docs.slack.dev/apis/events-api/#callback-field.
     /// </para>
     /// <para>
-    /// Use <see cref="SlackModel.Get{T}"/> and <see cref="SlackModel.TryGet{T}"/> to access any field by dot-notation
+    /// Use <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.Get{T}(System.String)"/> and <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.TryGet{T}(System.String, out T)"/> to access any field by dot-notation
     /// path. Top-level envelope fields (e.g. <c>"team_id"</c>), extension data fields, and nested event content fields
     /// using either the Slack JSON prefix <c>"event."</c> or the C# property prefix <c>"event_content."</c> are all
     /// supported.
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
         /// <summary>
         /// The inner event content. Use named properties for common fields, or navigate
-        /// any event-specific field with <see cref="SlackModel.Get{T}"/>.
+        /// any event-specific field with <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.Get{T}(System.String)"/>.
         /// Serialized as <c>"event"</c> in the Slack JSON payload.
         /// </summary>
         [JsonPropertyName("event")]
@@ -73,7 +73,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         /// Each element represents one installation in the scope of this event.
         /// </summary>
         /// <remarks>
-        /// Access via <see cref="SlackModel.Get{T}"/>: <c>envelope.Get&lt;JsonArray&gt;("authorizations")</c>
+        /// Access via <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.Get{T}(System.String)"/>: <c>envelope.Get&lt;JsonArray&gt;("authorizations")</c>
         /// or <c>envelope.Get&lt;List&lt;JsonObject&gt;&gt;("authorizations")</c> for typed access.
         /// See https://docs.slack.dev/apis/events-api/#callback-field
         /// </remarks>
@@ -103,7 +103,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
                 return "event";
 
             if (path.StartsWith("event_content.", StringComparison.OrdinalIgnoreCase))
-                return string.Concat("event", path.AsSpan("event_content".Length));
+                return string.Concat("event", path.Substring("event_content".Length));
 
             return path;
         }

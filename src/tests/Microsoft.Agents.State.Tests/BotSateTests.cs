@@ -82,7 +82,7 @@ namespace Microsoft.Agents.State.Tests
             {
                 { "customState", new CustomState() },
             };
-            await memory.WriteAsync(changes, CancellationToken.None);
+            await memory.WriteAsync((IDictionary<string, object>)changes, CancellationToken.None);
             var result = await memory.ReadAsync(new string[] { "customState" }, CancellationToken.None);
 
             Assert.Equal("0", dictionary["customState"]["ETag"].ToString());

@@ -10,10 +10,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// Provides a builder for configuring <c>composeExtension/fetchTask</c> Invokes in an AgentApplication.
 /// </summary>
 /// <remarks>
-/// Use <see cref="FetchActionRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.FetchActionRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
-/// <see cref="Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.FetchTask"/>,
-/// optionally filtered by command ID via <see cref="WithCommand(string)"/>.
+/// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionFetchTask"/>,
+/// optionally filtered by command ID via <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.CommandRouteBuilderBase{TBuilder}.WithCommand(System.String)"/>.
 /// </remarks>
 public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteBuilder>
 {
@@ -29,7 +29,7 @@ public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteB
 
     public FetchActionRouteBuilder() : base()
     {
-        InvokeName = Microsoft.Teams.Api.Activities.Invokes.Name.MessageExtensions.FetchTask;
+        InvokeName = Microsoft.Teams.Apps.InvokeNames.MessageExtensionFetchTask;
     }
 
     /// <summary>
@@ -44,7 +44,7 @@ public class FetchActionRouteBuilder : CommandRouteBuilderBase<FetchActionRouteB
     {
         _route.Handler = async (ctx, ts, ct) =>
         {
-            var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Api.MessageExtensions.Action>(ctx.Activity.Value);
+            var action = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageExtensions.MessageExtensionAction>(ctx.Activity.Value);
             var response = await handler(new TeamsTurnContext(ctx), ts, action, ct).ConfigureAwait(false);
             await TeamsAgentExtension.SetResponse(ctx, response).ConfigureAwait(false);
         };
