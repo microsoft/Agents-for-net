@@ -19,8 +19,10 @@ namespace Microsoft.Agents.Builder.State
     /// <seealso cref="Microsoft.Agents.Storage.IStorage"/>
     public abstract class AgentState : IPropertyManager, IAgentState
     {
-        private readonly IStorage _storage;
+        private readonly IStorageV2 _storage;
+        private readonly bool _supportsOptimisticConcurrency;
         private readonly object _stateLock = new object();
+        private readonly SemaphoreSlim _saveLock = new(1, 1);
         private CachedAgentState _cachedAgentState;
 
         /// <summary>
@@ -38,7 +40,9 @@ namespace Microsoft.Agents.Builder.State
         /// <seealso cref="Microsoft.Agents.Builder.ITurnContext"/>
         public AgentState(IStorage storage, string stateName)
         {
-            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            var storageInstance = storage ?? throw new ArgumentNullException(nameof(storage));
+            _supportsOptimisticConcurrency = storageInstance is IStorageV2;
+            _storage = StorageCompatibility.AsV2(storageInstance);
             Name = stateName ?? throw new ArgumentNullException(nameof(stateName));
         }
 
@@ -189,18 +193,19 @@ namespace Microsoft.Agents.Builder.State
 
             if (ShouldLoad(turnContext, storageKey, force))
             {
-                var items = await _storage.ReadAsync([storageKey], cancellationToken).ConfigureAwait(false);
-                items.TryGetValue(storageKey, out object val);
+                var results = await _storage.ReadAsync([storageKey], cancellationToken).ConfigureAwait(false);
+                var readResult = results[storageKey];
+                var storedState = readResult.Status == StorageOperationStatus.Succeeded ? readResult.Value : null;
 
-                if (val is IDictionary<string, object> asDictionary)
+                if (storedState is IDictionary<string, object> asDictionary)
                 {
                     _cachedAgentState = new CachedAgentState(storageKey, asDictionary);
                 }
-                else if (val is JsonObject || val is JsonElement)
+                else if (storedState is JsonObject || storedState is JsonElement)
                 {
-                    _cachedAgentState = new CachedAgentState(storageKey, ProtocolJsonSerializer.ToObject<IDictionary<string, object>>(val));
+                    _cachedAgentState = new CachedAgentState(storageKey, ProtocolJsonSerializer.ToObject<IDictionary<string, object>>(storedState));
                 }
-                else if (val == null)
+                else if (storedState == null)
                 {
                     // This is the case where the dictionary did not exist in the store.
                     _cachedAgentState = new CachedAgentState(storageKey);
@@ -210,6 +215,7 @@ namespace Microsoft.Agents.Builder.State
                     throw new InvalidOperationException("Data is not in the correct format for AgentState.");
                 }
 
+                _cachedAgentState.Version = readResult.Status == StorageOperationStatus.Succeeded ? readResult.Version : null;
                 turnContext.StackState.Set<CachedAgentState>(Name, _cachedAgentState);
             }
         }
@@ -225,33 +231,68 @@ namespace Microsoft.Agents.Builder.State
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
-            var cachedState = GetCachedState();
-            if (cachedState != null)
+            await _saveLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                // Snapshot state and compute new hash under lock to prevent concurrent
-                // mutations from being reflected during serialization.
-                Dictionary<string, object> snapshot;
-                string newHash;
-                lock (_stateLock)
+                var cachedState = GetCachedState();
+                if (cachedState != null)
                 {
-                    snapshot = new Dictionary<string, object>(cachedState.State);
-                    newHash = CachedAgentState.ComputeHash(snapshot);
-                }
-
-                // Check if changed outside the lock (cheap string comparison)
-                if (force || cachedState.Hash != newHash)
-                {
-                    var key = GetStorageKey(turnContext);
-                    var changes = new Dictionary<string, object>
+                    // Snapshot state and compute new hash under lock to prevent concurrent
+                    // mutations from being reflected during serialization.
+                    Dictionary<string, object> snapshot;
+                    string newHash;
+                    lock (_stateLock)
                     {
-                        { key, snapshot },
-                    };
-                    await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
-                    
-                    // Update hash after successful write
-                    cachedState.Hash = newHash;
-                    return;
+                        snapshot = new Dictionary<string, object>(cachedState.State);
+                        newHash = CachedAgentState.ComputeHash(snapshot);
+                    }
+
+                    // Check if changed outside the lock (cheap string comparison)
+                    if (force || cachedState.Hash != newHash)
+                    {
+                        var key = GetStorageKey(turnContext);
+                        var changes = new Dictionary<string, object>
+                        {
+                            { key, snapshot },
+                        };
+                        if (_supportsOptimisticConcurrency)
+                        {
+                            IReadOnlyDictionary<string, object> readOnlyChanges = changes;
+                            IReadOnlyDictionary<string, StorageWriteResult> writeResults;
+                            if (cachedState.Version != null)
+                            {
+                                writeResults = await _storage.WriteAsync(
+                                    readOnlyChanges,
+                                    new StorageWriteOptions { ExpectedVersion = cachedState.Version },
+                                    cancellationToken).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                writeResults = await _storage.WriteAsync(readOnlyChanges, cancellationToken).ConfigureAwait(false);
+                            }
+
+                            var writeResult = writeResults[key];
+                            if (writeResult.Status != StorageOperationStatus.Succeeded)
+                            {
+                                throw new EtagException($"AgentState '{Name}' could not save key '{key}' because another turn updated the state first (status: {writeResult.Status}). This turn's state changes were not saved.");
+                            }
+
+                            cachedState.Version = writeResult.Version;
+                        }
+                        else
+                        {
+                            await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
+                        }
+
+                        // Update hash after successful write
+                        cachedState.Hash = newHash;
+                        return;
+                    }
                 }
+            }
+            finally
+            {
+                _saveLock.Release();
             }
         }
 
@@ -279,7 +320,21 @@ namespace Microsoft.Agents.Builder.State
             }
 
             var storageKey = GetStorageKey(turnContext);
-            await _storage.DeleteAsync(new[] { storageKey }, cancellationToken).ConfigureAwait(false);
+            await _storage.DeleteAsync([storageKey], cancellationToken).ConfigureAwait(false);
+
+            // DeleteStateAsync removes the backing document, unlike ClearState which is
+            // intentionally persisted as an empty document at the end of the turn. Once the
+            // delete succeeds, the loaded version is no longer valid and the cleared cache must
+            // not trigger the automatic end-of-turn save.
+            lock (_stateLock)
+            {
+                var cachedState = GetCachedState();
+                if (cachedState != null)
+                {
+                    cachedState.Version = null;
+                    cachedState.Hash = CachedAgentState.ComputeHash(cachedState.State);
+                }
+            }
         }
 
         /// <summary>
@@ -438,6 +493,8 @@ namespace Microsoft.Agents.Builder.State
             internal string Hash { get; set; }
 
             internal string Key { get; set; }
+
+            internal string Version { get; set; }
 
             internal static string ComputeHash(object obj)
             {

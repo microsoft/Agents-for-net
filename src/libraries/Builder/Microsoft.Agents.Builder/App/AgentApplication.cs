@@ -30,6 +30,7 @@ namespace Microsoft.Agents.Builder.App
     public partial class AgentApplication : IAgent
     {
         private readonly UserAuthorization _userAuth;
+        private readonly AgenticAuthorization _agenticAuth;
         private readonly string _agentName;
 
         private readonly RouteList _routes;
@@ -74,6 +75,11 @@ namespace Microsoft.Agents.Builder.App
                 _userAuth = new UserAuthorization(this, options.UserAuthorization);
             }
 
+            if (Options.Connections != null)
+            {
+                _agenticAuth = new AgenticAuthorization(Options.Connections);
+            }
+
             ApplyRouteAttributes();
             ConfigureExtensions();
         }
@@ -85,10 +91,10 @@ namespace Microsoft.Agents.Builder.App
         /// infrastructure are registered before the first turn arrives.
         /// </summary>
         /// <remarks>
-        /// This method is called from the <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> constructor via virtual
+        /// This method is called from the <see cref="AgentApplication"/> constructor via virtual
         /// dispatch, so derived-class constructor bodies have not yet run when it executes.
-        /// Overrides must only depend on state initialized by <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> itself
-        /// (e.g., <see cref="Microsoft.Agents.Builder.App.AgentApplication.Options"/>, storage, and routing infrastructure) and must not access
+        /// Overrides must only depend on state initialized by <see cref="AgentApplication"/> itself
+        /// (e.g., <see cref="Options"/>, storage, and routing infrastructure) and must not access
         /// fields or properties set in a derived constructor body.
         /// </remarks>
         protected virtual void ConfigureExtensions() { }
@@ -122,6 +128,22 @@ namespace Microsoft.Agents.Builder.App
                 }
 
                 return _userAuth;
+            }
+        }
+
+        /// <summary>
+        /// Accessing Agentic authorization features.
+        /// </summary>
+        public AgenticAuthorization AgenticAuthorization
+        {
+            get
+            {
+                if (_agenticAuth == null)
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.AgenticAuthorizationNotConfigured, null);
+                }
+
+                return _agenticAuth;
             }
         }
 
@@ -680,7 +702,7 @@ namespace Microsoft.Agents.Builder.App
             return this;
         }
 
-#endregion
+        #endregion
 
         #region ShowTyping
         /// <summary>
@@ -735,7 +757,7 @@ namespace Microsoft.Agents.Builder.App
         /// <summary>
         /// Reset the typing timer's interval countdown for the current turn, restarting the wait before the
         /// next periodic "typing" activity is sent — equivalent to what happens automatically when the agent
-        /// sends an activity through the normal <see cref="Microsoft.Agents.Builder.ITurnContext.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// sends an activity through the normal <see cref="ITurnContext.SendActivityAsync(IActivity, System.Threading.CancellationToken)"/>
         /// pipeline.
         /// </summary>
         /// <remarks>
@@ -772,10 +794,11 @@ namespace Microsoft.Agents.Builder.App
         /// Registers the application-scoped services needed for the current turn.
         /// </summary>
         /// <remarks>
-        /// This stores the current <see cref="Microsoft.Agents.Builder.State.ITurnState"/>, <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.AdaptiveCard"/>, and
-        /// <see cref="Microsoft.Agents.Builder.App.Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
-        /// When user authorization is configured, the current <see cref="Microsoft.Agents.Builder.App.AgentApplication.UserAuthorization"/>
-        /// instance is also registered.
+        /// This stores the current <see cref="ITurnState"/>, <see cref="AdaptiveCard"/>, and
+        /// <see cref="Proactive.Proactive"/> instances on <paramref name="turnContext"/>.
+        /// When user authorization is configured, the current <see cref="UserAuthorization"/>
+        /// instance is also registered. When Agentic authorization is configured, the current
+        /// <see cref="AgenticAuthorization"/> instance is also registered.
         /// </remarks>
         /// <param name="turnContext">The turn context to populate with services.</param>
         /// <param name="turnState">The turn state for the current turn.</param>
@@ -784,6 +807,10 @@ namespace Microsoft.Agents.Builder.App
             if (_userAuth != null)
             {
                 turnContext.Services.Set<UserAuthorization>(_userAuth);
+            }
+            if (_agenticAuth != null)
+            {
+                turnContext.Services.Set<AgenticAuthorization>(_agenticAuth);
             }
             if (Options.Connections != null)
             {
@@ -800,7 +827,7 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Called by an adapter that implements <see cref="Microsoft.Agents.Builder.IChannelAdapter"/>
+        /// Called by the adapter (for example, a <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/>)
         /// at runtime in order to process an inbound <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>
@@ -843,7 +870,8 @@ namespace Microsoft.Agents.Builder.App
                 if (Options.StartTypingTimer)
                 {
                     StartTypingTimer(turnContext);
-                };
+                }
+                ;
 
                 // Handle @mentions
                 if (ActivityTypes.Message.Equals(turnContext.Activity.Type, StringComparison.OrdinalIgnoreCase))
