@@ -152,7 +152,24 @@ internal class GenericOAuth2CredentialProvider : IOAuthCredentialProvider
     protected virtual bool IsRegistrationCompatible(
         OAuthClientRegistration registration,
         A2AAgentCardAuthentication authentication)
-        => true;
+    {
+        ArgumentNullException.ThrowIfNull(registration);
+        ArgumentNullException.ThrowIfNull(authentication);
+
+        if (RequiresClientSecret(registration.TokenEndpointAuthenticationMethod)
+            && string.IsNullOrWhiteSpace(registration.ClientSecret))
+        {
+            return false;
+        }
+
+        if (authentication.FlowType == A2AOAuthFlowType.AuthorizationCode
+            && !HasPermittedRedirectUri(registration.RedirectUri))
+        {
+            return false;
+        }
+
+        return true;
+    }
 
     protected virtual string GetMissingRegistrationMessage(A2AAgentCardAuthentication authentication)
         => $"OAuth provider '{Id}' has no compatible registration for flow '{authentication.FlowType}'.";
@@ -191,5 +208,25 @@ internal class GenericOAuth2CredentialProvider : IOAuthCredentialProvider
         {
             yield return metadataEndpoint;
         }
+    }
+
+    private static bool RequiresClientSecret(OAuthTokenEndpointAuthenticationMethod authenticationMethod)
+        => authenticationMethod is OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic
+            or OAuthTokenEndpointAuthenticationMethod.ClientSecretPost;
+
+    private static bool HasPermittedRedirectUri(Uri? redirectUri)
+    {
+        if (redirectUri is null || !redirectUri.IsAbsoluteUri)
+        {
+            return false;
+        }
+
+        if (redirectUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return redirectUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            && redirectUri.IsLoopback;
     }
 }

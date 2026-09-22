@@ -166,6 +166,96 @@ public class OAuthCredentialProviderResolverTests
     }
 
     [Fact]
+    public async Task ResolveAsync_AuthorizationCodeSkipsRegistrationWithoutRedirectUriAndSelectsValidSibling()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            A2AAuthMode.Delegated,
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2CredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic",
+                    Type = OAuthCredentialProviderType.GenericOAuth2,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "missing-redirect",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "missing-redirect-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: false),
+                        new OAuthClientRegistration(
+                            "browser",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "browser-client-id",
+                            ClientSecret: null,
+                            RedirectUri: new Uri("http://localhost:8400/callback/"),
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: false)),
+                }));
+
+        OAuthCredentialBinding binding = await resolver.ResolveAsync(
+            s_agentOrigin,
+            authentication,
+            CancellationToken.None);
+
+        Assert.Equal("browser", binding.RegistrationId);
+        Assert.Equal("browser-client-id", binding.Registration.ClientId);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_AuthorizationCodeRejectsRegistrationWithoutRedirectUri()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            A2AAuthMode.Delegated,
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2CredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic",
+                    Type = OAuthCredentialProviderType.GenericOAuth2,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "missing-redirect",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "missing-redirect-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: false)),
+                }));
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => resolver.ResolveAsync(s_agentOrigin, authentication, CancellationToken.None));
+
+        Assert.Contains("generic", exception.Message);
+        Assert.Contains(nameof(A2AOAuthFlowType.AuthorizationCode), exception.Message);
+    }
+
+    [Fact]
     public async Task ResolveAsync_ClientCredentialsSelectsCompatibleRegistrationOnly()
     {
         A2AAgentCardAuthentication authentication = CreateAuthentication(
@@ -213,6 +303,94 @@ public class OAuthCredentialProviderResolverTests
         Assert.Equal("application", binding.RegistrationId);
         Assert.Equal("application-client-id", binding.Registration.ClientId);
         Assert.Equal(A2AOAuthFlowType.ClientCredentials, binding.FlowType);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ClientCredentialsSkipsSecretBasedRegistrationWithoutSecretAndSelectsValidSibling()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "application",
+            A2AAuthMode.App,
+            new OAuthFlows
+            {
+                ClientCredentials = new()
+                {
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["api://agent/.default"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2CredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic",
+                    Type = OAuthCredentialProviderType.GenericOAuth2,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "missing-secret",
+                            [A2AOAuthFlowType.ClientCredentials],
+                            "missing-secret-client-id",
+                            ClientSecret: " ",
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
+                            UsePkce: false),
+                        new OAuthClientRegistration(
+                            "application",
+                            [A2AOAuthFlowType.ClientCredentials],
+                            "application-client-id",
+                            ClientSecret: "secret",
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
+                            UsePkce: false)),
+                }));
+
+        OAuthCredentialBinding binding = await resolver.ResolveAsync(
+            s_agentOrigin,
+            authentication,
+            CancellationToken.None);
+
+        Assert.Equal("application", binding.RegistrationId);
+        Assert.Equal("application-client-id", binding.Registration.ClientId);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ClientCredentialsRejectsSecretBasedRegistrationWithoutSecret()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "application",
+            A2AAuthMode.App,
+            new OAuthFlows
+            {
+                ClientCredentials = new()
+                {
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["api://agent/.default"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2CredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic",
+                    Type = OAuthCredentialProviderType.GenericOAuth2,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "missing-secret",
+                            [A2AOAuthFlowType.ClientCredentials],
+                            "missing-secret-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic,
+                            UsePkce: false)),
+                }));
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => resolver.ResolveAsync(s_agentOrigin, authentication, CancellationToken.None));
+
+        Assert.Contains("generic", exception.Message);
+        Assert.Contains(nameof(A2AOAuthFlowType.ClientCredentials), exception.Message);
     }
 
     [Fact]
