@@ -16,7 +16,8 @@ internal sealed class A2AAgentCardAuthentication
     private A2AAgentCardAuthentication(
         A2AAuthMode mode,
         A2AOAuthFlowType flowType,
-        string securitySchemeName,
+        string? securitySchemeName,
+        string? metadataUrl,
         string? authorizationUrl,
         string tokenUrl,
         string? deviceAuthorizationUrl,
@@ -25,6 +26,7 @@ internal sealed class A2AAgentCardAuthentication
         Mode = mode;
         FlowType = flowType;
         SecuritySchemeName = securitySchemeName;
+        MetadataUrl = metadataUrl;
         AuthorizationUrl = authorizationUrl;
         TokenUrl = tokenUrl;
         DeviceAuthorizationUrl = deviceAuthorizationUrl;
@@ -35,7 +37,9 @@ internal sealed class A2AAgentCardAuthentication
 
     public A2AOAuthFlowType FlowType { get; }
 
-    public string SecuritySchemeName { get; }
+    public string? SecuritySchemeName { get; }
+
+    public string? MetadataUrl { get; }
 
     public string? AuthorizationUrl { get; }
 
@@ -47,33 +51,33 @@ internal sealed class A2AAgentCardAuthentication
 
     internal static A2AAgentCardAuthentication CreateInTask(
         OAuthFlows flows,
-        IReadOnlyList<string> scopes,
-        string connectionName)
+        IReadOnlyList<string> scopes)
     {
         ArgumentNullException.ThrowIfNull(flows);
-        ArgumentException.ThrowIfNullOrWhiteSpace(connectionName);
 
         if (flows.DeviceCode is not null)
         {
             return new A2AAgentCardAuthentication(
                 A2AAuthMode.Delegated,
                 A2AOAuthFlowType.DeviceCode,
-                connectionName,
-                null,
-                flows.DeviceCode.TokenUrl,
-                flows.DeviceCode.DeviceAuthorizationUrl,
-                scopes);
+                securitySchemeName: null,
+                metadataUrl: null,
+                authorizationUrl: null,
+                tokenUrl: flows.DeviceCode.TokenUrl,
+                deviceAuthorizationUrl: flows.DeviceCode.DeviceAuthorizationUrl,
+                scopes: scopes);
         }
         if (flows.AuthorizationCode is not null)
         {
             return new A2AAgentCardAuthentication(
                 A2AAuthMode.Delegated,
                 A2AOAuthFlowType.AuthorizationCode,
-                connectionName,
-                flows.AuthorizationCode.AuthorizationUrl,
-                flows.AuthorizationCode.TokenUrl,
-                null,
-                scopes);
+                securitySchemeName: null,
+                metadataUrl: null,
+                authorizationUrl: flows.AuthorizationCode.AuthorizationUrl,
+                tokenUrl: flows.AuthorizationCode.TokenUrl,
+                deviceAuthorizationUrl: null,
+                scopes: scopes);
         }
 
         throw new InvalidOperationException(
@@ -217,11 +221,12 @@ internal sealed class A2AAgentCardAuthentication
                     new A2AAgentCardAuthentication(
                         mode,
                         A2AOAuthFlowType.DeviceCode,
-                        schemeRequirement.Key,
+                        securitySchemeName: schemeRequirement.Key,
+                        metadataUrl: scheme.OAuth2SecurityScheme?.OAuth2MetadataUrl,
                         authorizationUrl: null,
-                        tokenUrl,
-                        deviceAuthorizationUrl,
-                        scopes));
+                        tokenUrl: tokenUrl,
+                        deviceAuthorizationUrl: deviceAuthorizationUrl,
+                        scopes: scopes));
                 continue;
             }
 
@@ -240,11 +245,12 @@ internal sealed class A2AAgentCardAuthentication
                     new A2AAgentCardAuthentication(
                         mode,
                         A2AOAuthFlowType.AuthorizationCode,
-                        schemeRequirement.Key,
-                        authorizationUrl,
-                        tokenUrl,
+                        securitySchemeName: schemeRequirement.Key,
+                        metadataUrl: scheme.OAuth2SecurityScheme?.OAuth2MetadataUrl,
+                        authorizationUrl: authorizationUrl,
+                        tokenUrl: tokenUrl,
                         deviceAuthorizationUrl: null,
-                        scopes));
+                        scopes: scopes));
                 continue;
             }
 
@@ -262,11 +268,12 @@ internal sealed class A2AAgentCardAuthentication
                     new A2AAgentCardAuthentication(
                         mode,
                         A2AOAuthFlowType.ClientCredentials,
-                        schemeRequirement.Key,
+                        securitySchemeName: schemeRequirement.Key,
+                        metadataUrl: scheme.OAuth2SecurityScheme?.OAuth2MetadataUrl,
                         authorizationUrl: null,
-                        tokenUrl,
+                        tokenUrl: tokenUrl,
                         deviceAuthorizationUrl: null,
-                        scopes));
+                        scopes: scopes));
                 continue;
             }
 

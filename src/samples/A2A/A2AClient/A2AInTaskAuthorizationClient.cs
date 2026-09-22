@@ -19,7 +19,6 @@ internal sealed class A2AInTaskAuthorizationClient
     internal const string ExtensionUri = "https://schemas.microsoft.com/agents/a2a/extensions/in-task-authorization/v1";
     internal const string ExtensionHeader = "A2A-Extensions";
     internal const string TokenHeader = "x-a2a-intask-authorization";
-    private const string ConnectionName = "delegated";
     private readonly HttpClient _httpClient;
     private readonly IA2AAccessTokenProvider _accessTokenProvider;
     private readonly Uri _interfaceUri;
@@ -76,8 +75,7 @@ internal sealed class A2AInTaskAuthorizationClient
             }
             A2AAgentCardAuthentication authentication = A2AAgentCardAuthentication.CreateInTask(
                 authorization.AuthorizationRequest.OAuth2.Flows,
-                authorization.AuthorizationRequest.RequiredScopes,
-                ConnectionName);
+                authorization.AuthorizationRequest.RequiredScopes);
             string token = await _accessTokenProvider.GetAccessTokenAsync(authentication, cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("The OAuth flow did not return an access token.");
             var resumeRequest = new ResumeAuthRequest

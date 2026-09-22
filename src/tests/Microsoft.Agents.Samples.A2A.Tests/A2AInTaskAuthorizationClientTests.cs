@@ -26,7 +26,8 @@ public class A2AInTaskAuthorizationClientTests
         tokenProvider
             .Setup(provider => provider.GetAccessTokenAsync(
                 It.Is<A2AAgentCardAuthentication>(authentication =>
-                    authentication.SecuritySchemeName == "delegated"
+                    authentication.SecuritySchemeName == null
+                    && authentication.MetadataUrl == null
                     && authentication.FlowType == A2AOAuthFlowType.DeviceCode
                     && authentication.Scopes.Count == 1
                     && authentication.Scopes[0] == "agent.read"),

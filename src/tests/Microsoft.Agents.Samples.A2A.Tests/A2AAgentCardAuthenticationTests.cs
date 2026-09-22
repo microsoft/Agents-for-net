@@ -12,6 +12,52 @@ namespace Microsoft.Agents.Samples.A2A.Tests;
 public class A2AAgentCardAuthenticationTests
 {
     [Fact]
+    public void Select_PreservesMetadataUrlAndKeepsSchemeNamesDistinct()
+    {
+        AgentCard browserCard = CreateCard(
+            "browser-oauth",
+            CreateDeviceCodeFlows(),
+            ["api://agent/access_as_user"],
+            metadataUrl: "https://identity.example.com/.well-known/openid-configuration");
+        AgentCard arbitraryCard = CreateCard(
+            "arbitrary-name",
+            CreateDeviceCodeFlows(),
+            ["api://agent/access_as_user"],
+            metadataUrl: "https://identity.example.com/.well-known/openid-configuration");
+
+        A2AAgentCardAuthentication browserAuthentication = A2AAgentCardAuthentication.Select(
+            browserCard,
+            A2AAuthMode.Delegated);
+        A2AAgentCardAuthentication arbitraryAuthentication = A2AAgentCardAuthentication.Select(
+            arbitraryCard,
+            A2AAuthMode.Delegated);
+
+        Assert.Equal("browser-oauth", browserAuthentication.SecuritySchemeName);
+        Assert.Equal("arbitrary-name", arbitraryAuthentication.SecuritySchemeName);
+        Assert.Equal(browserAuthentication.Mode, arbitraryAuthentication.Mode);
+        Assert.Equal(browserAuthentication.FlowType, arbitraryAuthentication.FlowType);
+        Assert.Equal(browserAuthentication.AuthorizationUrl, arbitraryAuthentication.AuthorizationUrl);
+        Assert.Equal(browserAuthentication.TokenUrl, arbitraryAuthentication.TokenUrl);
+        Assert.Equal(browserAuthentication.DeviceAuthorizationUrl, arbitraryAuthentication.DeviceAuthorizationUrl);
+        Assert.Equal(browserAuthentication.Scopes, arbitraryAuthentication.Scopes);
+        Assert.Equal("https://identity.example.com/.well-known/openid-configuration", browserAuthentication.MetadataUrl);
+        Assert.Equal(browserAuthentication.MetadataUrl, arbitraryAuthentication.MetadataUrl);
+    }
+
+    [Fact]
+    public void CreateInTask_SetsNullSecuritySchemeName()
+    {
+        A2AAgentCardAuthentication authentication = A2AAgentCardAuthentication.CreateInTask(
+            CreateDeviceCodeFlows(),
+            ["api://agent/access_as_user"]);
+
+        Assert.Null(authentication.SecuritySchemeName);
+        Assert.Null(authentication.MetadataUrl);
+        Assert.Equal(A2AAuthMode.Delegated, authentication.Mode);
+        Assert.Equal(A2AOAuthFlowType.DeviceCode, authentication.FlowType);
+    }
+
+    [Fact]
     public void Select_DelegatedMode_UsesDeviceCodeFlowAndRequirementScopes()
     {
         AgentCard card = CreateCard(
@@ -366,7 +412,8 @@ public class A2AAgentCardAuthenticationTests
         OAuthFlows flows,
         IReadOnlyList<string> requiredScopes,
         SecurityRequirement? additionalRequirement = null,
-        bool skillRequirement = false)
+        bool skillRequirement = false,
+        string? metadataUrl = null)
     {
         var requirement = new SecurityRequirement
         {
@@ -391,6 +438,7 @@ public class A2AAgentCardAuthenticationTests
                     OAuth2SecurityScheme = new OAuth2SecurityScheme
                     {
                         Flows = flows,
+                        OAuth2MetadataUrl = metadataUrl,
                     },
                 },
             },
