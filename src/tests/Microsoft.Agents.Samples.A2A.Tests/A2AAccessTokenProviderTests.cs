@@ -174,27 +174,111 @@ public class A2AAccessTokenProviderTests
         Assert.Equal("renewed-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
     }
 
-    private static A2AClientAuthenticationOptions CreateOptions(OAuthCredentialProviderOptions provider)
+    [Fact]
+    public async Task GetAccessTokenAsync_DifferentProvidersDoNotShareCachedTokens()
+    {
+        A2AAgentCardAuthentication firstAuthentication = CreateAuthentication(
+            securitySchemeName: "delegated",
+            baseUri: "https://identity-one.example.com");
+        A2AAgentCardAuthentication secondAuthentication = CreateAuthentication(
+            securitySchemeName: "delegated",
+            baseUri: "https://identity-two.example.com");
+        OAuthCredentialProviderOptions firstProvider = CreateProvider(
+            providerId: "provider-one",
+            origin: "https://identity-one.example.com");
+        OAuthCredentialProviderOptions secondProvider = CreateProvider(
+            providerId: "provider-two",
+            origin: "https://identity-two.example.com");
+        OAuthClientRegistration firstRegistration = firstProvider.Registrations["default"];
+        OAuthClientRegistration secondRegistration = secondProvider.Registrations["default"];
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                firstAuthentication,
+                firstProvider,
+                firstRegistration,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("provider-one-token", TimeSpan.FromMinutes(10)));
+        oauth.Setup(client => client.AcquireTokenAsync(
+                secondAuthentication,
+                secondProvider,
+                secondRegistration,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("provider-two-token", TimeSpan.FromMinutes(10)));
+        var provider = new A2AAccessTokenProvider(
+            CreateOptions(firstProvider, secondProvider),
+            oauth.Object,
+            new TestTimeProvider());
+
+        string? firstToken = await provider.GetAccessTokenAsync(firstAuthentication, CancellationToken.None);
+        string? secondToken = await provider.GetAccessTokenAsync(secondAuthentication, CancellationToken.None);
+
+        Assert.Equal("provider-one-token", firstToken);
+        Assert.Equal("provider-two-token", secondToken);
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_DifferentSchemeNamesShareTokenWhenTheyResolveToSameProvider()
+    {
+        A2AAgentCardAuthentication firstAuthentication = CreateAuthentication(securitySchemeName: "github");
+        A2AAgentCardAuthentication secondAuthentication = CreateAuthentication(securitySchemeName: "delegated");
+        OAuthCredentialProviderOptions providerOptions = CreateProvider();
+        OAuthClientRegistration registration = providerOptions.Registrations["default"];
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                firstAuthentication,
+                providerOptions,
+                registration,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("shared-token", TimeSpan.FromMinutes(10)));
+        var provider = new A2AAccessTokenProvider(
+            CreateOptions(providerOptions),
+            oauth.Object,
+            new TestTimeProvider());
+
+        string? firstToken = await provider.GetAccessTokenAsync(firstAuthentication, CancellationToken.None);
+        string? secondToken = await provider.GetAccessTokenAsync(secondAuthentication, CancellationToken.None);
+
+        Assert.Equal("shared-token", firstToken);
+        Assert.Equal("shared-token", secondToken);
+        oauth.Verify(
+            client => client.AcquireTokenAsync(firstAuthentication, providerOptions, registration, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    private static A2AClientAuthenticationOptions CreateOptions(params OAuthCredentialProviderOptions[] providers)
         => new()
         {
-            Providers = new Dictionary<string, OAuthCredentialProviderOptions>
-            {
-                [provider.Id] = provider,
-            },
+            Providers = CreateProviders(providers),
         };
 
-    private static OAuthCredentialProviderOptions CreateProvider()
+    private static IReadOnlyDictionary<string, OAuthCredentialProviderOptions> CreateProviders(
+        params OAuthCredentialProviderOptions[] providers)
+    {
+        var dictionary = new Dictionary<string, OAuthCredentialProviderOptions>(StringComparer.Ordinal);
+        foreach (OAuthCredentialProviderOptions provider in providers)
+        {
+            dictionary.Add(provider.Id, provider);
+        }
+
+        return dictionary;
+    }
+
+    private static OAuthCredentialProviderOptions CreateProvider(
+        string providerId = "default-provider",
+        string registrationId = "default",
+        string origin = "https://identity.example.com",
+        string clientId = "generic-client-id")
         => new()
         {
-            Id = "default-provider",
+            Id = providerId,
             Type = OAuthCredentialProviderType.GenericOAuth2,
-            AllowedOrigins = [new Uri("https://identity.example.com")],
+            AllowedOrigins = [new Uri(origin)],
             Registrations = new Dictionary<string, OAuthClientRegistration>(StringComparer.Ordinal)
             {
-                ["default"] = new(
-                    "default",
+                [registrationId] = new(
+                    registrationId,
                     [A2AOAuthFlowType.DeviceCode],
-                    "generic-client-id",
+                    clientId,
                     ClientSecret: null,
                     RedirectUri: null,
                     TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
@@ -202,13 +286,15 @@ public class A2AAccessTokenProviderTests
             },
         };
 
-    private static A2AAgentCardAuthentication CreateAuthentication()
+    private static A2AAgentCardAuthentication CreateAuthentication(
+        string securitySchemeName = "provider",
+        string baseUri = "https://identity.example.com")
     {
         var card = new AgentCard
         {
             SecuritySchemes = new Dictionary<string, SecurityScheme>
             {
-                ["provider"] = new()
+                [securitySchemeName] = new()
                 {
                     OAuth2SecurityScheme = new OAuth2SecurityScheme
                     {
@@ -216,8 +302,8 @@ public class A2AAccessTokenProviderTests
                         {
                             DeviceCode = new()
                             {
-                                DeviceAuthorizationUrl = "https://identity.example.com/oauth/device",
-                                TokenUrl = "https://identity.example.com/oauth/token",
+                                DeviceAuthorizationUrl = $"{baseUri}/oauth/device",
+                                TokenUrl = $"{baseUri}/oauth/token",
                             },
                         },
                     },
@@ -229,7 +315,7 @@ public class A2AAccessTokenProviderTests
                 {
                     Schemes = new Dictionary<string, StringList>
                     {
-                        ["provider"] = new() { List = ["agent.read"] },
+                        [securitySchemeName] = new() { List = ["agent.read"] },
                     },
                 },
             ],

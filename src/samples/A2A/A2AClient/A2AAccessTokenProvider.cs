@@ -47,20 +47,29 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
         await _oauthTokenCacheLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            string cacheKey = CreateCacheKey(authentication);
+            ResolvedClient resolvedClient = ResolveClient(authentication);
+            string cacheKey = CreateCacheKey(authentication, resolvedClient);
             if (_oauthTokenCache.TryGetValue(cacheKey, out OAuthTokenCacheEntry? cachedToken)
                 && cachedToken.CanReuse(_timeProvider.GetUtcNow()))
             {
                 return cachedToken.AccessToken;
             }
 
-            (OAuthCredentialProviderOptions provider, OAuthClientRegistration registration) = ResolveClient(authentication);
             OAuthAccessToken token = cachedToken?.RefreshToken is string refreshToken
                 ? await _oauth
-                    .RefreshTokenAsync(authentication, provider, registration, refreshToken, cancellationToken)
+                    .RefreshTokenAsync(
+                        authentication,
+                        resolvedClient.Provider,
+                        resolvedClient.Registration,
+                        refreshToken,
+                        cancellationToken)
                     .ConfigureAwait(false)
                 : await _oauth
-                    .AcquireTokenAsync(authentication, provider, registration, cancellationToken)
+                    .AcquireTokenAsync(
+                        authentication,
+                        resolvedClient.Provider,
+                        resolvedClient.Registration,
+                        cancellationToken)
                     .ConfigureAwait(false);
             _oauthTokenCache[cacheKey] = new OAuthTokenCacheEntry(
                 token.AccessToken,
@@ -76,10 +85,10 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
         }
     }
 
-    private (OAuthCredentialProviderOptions Provider, OAuthClientRegistration Registration) ResolveClient(
+    private ResolvedClient ResolveClient(
         A2AAgentCardAuthentication authentication)
     {
-        var matches = new List<(OAuthCredentialProviderOptions Provider, OAuthClientRegistration Registration)>();
+        var matches = new List<ResolvedClient>();
 
         foreach (OAuthCredentialProviderOptions provider in _options.Providers.Values)
         {
@@ -128,7 +137,7 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
             {
                 if (registration.GrantTypes.Contains(authentication.FlowType))
                 {
-                    matches.Add((provider, registration));
+                    matches.Add(new ResolvedClient(provider, registration));
                 }
             }
         }
@@ -143,8 +152,27 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
         };
     }
 
-    private static string CreateCacheKey(A2AAgentCardAuthentication authentication)
-        => $"{authentication.SecuritySchemeName}|{authentication.FlowType}|{string.Join("\u001f", authentication.Scopes)}";
+    private static string CreateCacheKey(
+        A2AAgentCardAuthentication authentication,
+        ResolvedClient resolvedClient)
+        => string.Join(
+            "\u001f",
+            resolvedClient.Provider.Id,
+            GetRegistrationCacheIdentity(resolvedClient.Registration),
+            authentication.FlowType.ToString(),
+            string.Join("\u001f", GetNormalizedScopes(authentication, resolvedClient.Provider)));
+
+    private static string GetRegistrationCacheIdentity(OAuthClientRegistration registration)
+        => string.IsNullOrWhiteSpace(registration.Id) ? registration.ClientId : registration.Id;
+
+    private static IReadOnlyList<string> GetNormalizedScopes(
+        A2AAgentCardAuthentication authentication,
+        OAuthCredentialProviderOptions provider)
+        => OAuthScopeResolver.GetScopes(authentication, provider)
+            .Where(scope => !string.IsNullOrWhiteSpace(scope))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(scope => scope, StringComparer.Ordinal)
+            .ToArray();
 
     private sealed record OAuthTokenCacheEntry(
         string AccessToken,
@@ -153,4 +181,8 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
     {
         public bool CanReuse(DateTimeOffset now) => ReuseUntil is null || now < ReuseUntil;
     }
+
+    private sealed record ResolvedClient(
+        OAuthCredentialProviderOptions Provider,
+        OAuthClientRegistration Registration);
 }
