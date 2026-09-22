@@ -13,6 +13,7 @@ public class A2AClientNamespaceTests
         { typeof(global::Microsoft.Agents.Samples.A2AClient.Configuration.A2AClientOptions), "Microsoft.Agents.Samples.A2AClient.Configuration" },
         { typeof(global::Microsoft.Agents.Samples.A2AClient.OAuth.Configuration.OAuthCredentialProviderOptions), "Microsoft.Agents.Samples.A2AClient.OAuth.Configuration" },
         { typeof(global::Microsoft.Agents.Samples.A2AClient.OAuth.OAuthCredentialBinding), "Microsoft.Agents.Samples.A2AClient.OAuth" },
+        { typeof(global::Microsoft.Agents.Samples.A2AClient.OAuth.Tokens.OAuthTokenClient), "Microsoft.Agents.Samples.A2AClient.OAuth.Tokens" },
         { typeof(global::Microsoft.Agents.Samples.A2AClient.OAuth.Discovery.OAuthAuthorizationServerMetadataClient), "Microsoft.Agents.Samples.A2AClient.OAuth.Discovery" },
         { typeof(global::Microsoft.Agents.Samples.A2AClient.OAuth.Registration.DynamicClientRegistrationClient), "Microsoft.Agents.Samples.A2AClient.OAuth.Registration" },
     };

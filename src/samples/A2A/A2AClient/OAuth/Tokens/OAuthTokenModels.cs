@@ -4,7 +4,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Tokens;
 
 internal sealed record OAuthDeviceAuthorizationResponse(
     [property: JsonPropertyName("device_code")] string? DeviceCode,

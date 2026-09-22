@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Samples.A2AClient.OAuth;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Tokens;
 
 internal sealed class OAuthTokenClient(
     OAuthDeviceCodeTokenClient deviceCode,

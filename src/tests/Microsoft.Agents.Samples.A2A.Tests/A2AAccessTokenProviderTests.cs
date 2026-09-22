@@ -10,6 +10,7 @@ using Microsoft.Agents.Samples.A2AClient;
 using Microsoft.Agents.Samples.A2AClient.OAuth;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Tokens;
 using Moq;
 using Xunit;
 
