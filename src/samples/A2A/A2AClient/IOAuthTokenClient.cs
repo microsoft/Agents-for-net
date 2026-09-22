@@ -10,12 +10,14 @@ internal interface IOAuthTokenClient
 {
     Task<OAuthAccessToken> AcquireTokenAsync(
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection,
+        OAuthCredentialProviderOptions provider,
+        OAuthClientRegistration registration,
         CancellationToken cancellationToken);
 
     Task<OAuthAccessToken> RefreshTokenAsync(
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection,
+        OAuthCredentialProviderOptions provider,
+        OAuthClientRegistration registration,
         string refreshToken,
         CancellationToken cancellationToken);
 }

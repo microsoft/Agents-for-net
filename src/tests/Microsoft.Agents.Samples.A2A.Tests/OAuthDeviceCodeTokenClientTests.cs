@@ -29,10 +29,13 @@ public class OAuthDeviceCodeTokenClientTests
             client,
             output,
             static (_, _) => Task.CompletedTask);
+        OAuthCredentialProviderOptions provider = CreateProvider();
+        OAuthClientRegistration registration = CreateRegistration();
 
         OAuthAccessToken token = await sut.AcquireTokenAsync(
             CreateAuthentication(),
-            CreateConnection(),
+            provider,
+            registration,
             CancellationToken.None);
 
         Assert.Equal("provider-token", token.AccessToken);
@@ -68,10 +71,13 @@ public class OAuthDeviceCodeTokenClientTests
                 delays.Add(delay);
                 return Task.CompletedTask;
             });
+        OAuthCredentialProviderOptions provider = CreateProvider();
+        OAuthClientRegistration registration = CreateRegistration();
 
         OAuthAccessToken token = await sut.AcquireTokenAsync(
             CreateAuthentication(),
-            CreateConnection(),
+            provider,
+            registration,
             CancellationToken.None);
 
         Assert.Equal("provider-token", token.AccessToken);
@@ -90,7 +96,7 @@ public class OAuthDeviceCodeTokenClientTests
             tokenUrl: "https://attacker.example/oauth/token");
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => sut.AcquireTokenAsync(authentication, CreateConnection(), CancellationToken.None));
+            () => sut.AcquireTokenAsync(authentication, CreateProvider(), CreateRegistration(), CancellationToken.None));
 
         Assert.Contains("not trusted", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Empty(handler.Requests);
@@ -106,10 +112,15 @@ public class OAuthDeviceCodeTokenClientTests
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => sut.AcquireTokenAsync(
                 CreateAuthentication(),
-                new OAuthConnectionOptions
-                {
-                    AllowedOrigins = [new Uri("https://identity.example.com")],
-                },
+                CreateProvider(),
+                new OAuthClientRegistration(
+                    "provider",
+                    [A2AOAuthFlowType.DeviceCode],
+                    string.Empty,
+                    ClientSecret: null,
+                    RedirectUri: null,
+                    TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                    UsePkce: true),
                 CancellationToken.None));
 
         Assert.Contains("ClientId", exception.Message, StringComparison.Ordinal);
@@ -126,11 +137,15 @@ public class OAuthDeviceCodeTokenClientTests
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => sut.AcquireTokenAsync(
                 CreateAuthentication(),
-                new OAuthConnectionOptions
-                {
-                    ClientId = "00000000-0000-0000-0000-000000000000",
-                    AllowedOrigins = [new Uri("https://identity.example.com")],
-                },
+                CreateProvider(),
+                new OAuthClientRegistration(
+                    "provider",
+                    [A2AOAuthFlowType.DeviceCode],
+                    "00000000-0000-0000-0000-000000000000",
+                    ClientSecret: null,
+                    RedirectUri: null,
+                    TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                    UsePkce: true),
                 CancellationToken.None));
 
         Assert.Contains("placeholder", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -153,7 +168,8 @@ public class OAuthDeviceCodeTokenClientTests
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => sut.AcquireTokenAsync(
                 CreateAuthentication(),
-                CreateConnection(),
+                CreateProvider(),
+                CreateRegistration(),
                 CancellationToken.None));
 
         Assert.Contains("invalid_request", exception.Message, StringComparison.Ordinal);
@@ -177,20 +193,32 @@ public class OAuthDeviceCodeTokenClientTests
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => sut.AcquireTokenAsync(
                 CreateAuthentication(),
-                CreateConnection(),
+                CreateProvider(),
+                CreateRegistration(),
                 CancellationToken.None));
 
         Assert.Contains(expected, exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("provider details", exception.Message, StringComparison.Ordinal);
     }
 
-    private static OAuthConnectionOptions CreateConnection()
+    private static OAuthCredentialProviderOptions CreateProvider()
         => new()
         {
-            ClientId = "provider-client-id",
+            Id = "provider",
+            Type = OAuthCredentialProviderType.GenericOAuth2,
             AllowedOrigins = [new Uri("https://identity.example.com")],
             AdditionalScopes = ["offline_access"],
         };
+
+    private static OAuthClientRegistration CreateRegistration()
+        => new(
+            "provider",
+            [A2AOAuthFlowType.DeviceCode],
+            "provider-client-id",
+            ClientSecret: null,
+            RedirectUri: null,
+            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+            UsePkce: true);
 
     private static A2AAgentCardAuthentication CreateAuthentication(
         string tokenUrl = "https://identity.example.com/oauth/token")

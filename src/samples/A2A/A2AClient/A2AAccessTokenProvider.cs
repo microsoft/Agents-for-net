@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -53,13 +54,13 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
                 return cachedToken.AccessToken;
             }
 
-            OAuthConnectionOptions connection = _options.GetRequiredConnection(authentication.SecuritySchemeName);
+            (OAuthCredentialProviderOptions provider, OAuthClientRegistration registration) = ResolveClient(authentication);
             OAuthAccessToken token = cachedToken?.RefreshToken is string refreshToken
                 ? await _oauth
-                    .RefreshTokenAsync(authentication, connection, refreshToken, cancellationToken)
+                    .RefreshTokenAsync(authentication, provider, registration, refreshToken, cancellationToken)
                     .ConfigureAwait(false)
                 : await _oauth
-                    .AcquireTokenAsync(authentication, connection, cancellationToken)
+                    .AcquireTokenAsync(authentication, provider, registration, cancellationToken)
                     .ConfigureAwait(false);
             _oauthTokenCache[cacheKey] = new OAuthTokenCacheEntry(
                 token.AccessToken,
@@ -73,6 +74,73 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
         {
             _oauthTokenCacheLock.Release();
         }
+    }
+
+    private (OAuthCredentialProviderOptions Provider, OAuthClientRegistration Registration) ResolveClient(
+        A2AAgentCardAuthentication authentication)
+    {
+        var matches = new List<(OAuthCredentialProviderOptions Provider, OAuthClientRegistration Registration)>();
+
+        foreach (OAuthCredentialProviderOptions provider in _options.Providers.Values)
+        {
+            try
+            {
+                _ = OAuthEndpointValidator.GetTrustedEndpoint(
+                    authentication.TokenUrl,
+                    provider,
+                    "token endpoint");
+            }
+            catch (InvalidOperationException)
+            {
+                continue;
+            }
+
+            if (authentication.FlowType == A2AOAuthFlowType.AuthorizationCode)
+            {
+                try
+                {
+                    _ = OAuthEndpointValidator.GetTrustedEndpoint(
+                        authentication.AuthorizationUrl,
+                        provider,
+                        "authorization endpoint");
+                }
+                catch (InvalidOperationException)
+                {
+                    continue;
+                }
+            }
+            else if (authentication.FlowType == A2AOAuthFlowType.DeviceCode)
+            {
+                try
+                {
+                    _ = OAuthEndpointValidator.GetTrustedEndpoint(
+                        authentication.DeviceAuthorizationUrl,
+                        provider,
+                        "device authorization endpoint");
+                }
+                catch (InvalidOperationException)
+                {
+                    continue;
+                }
+            }
+
+            foreach (OAuthClientRegistration registration in provider.Registrations.Values)
+            {
+                if (registration.GrantTypes.Contains(authentication.FlowType))
+                {
+                    matches.Add((provider, registration));
+                }
+            }
+        }
+
+        return matches.Count switch
+        {
+            1 => matches[0],
+            0 => throw new InvalidOperationException(
+                $"No configured OAuth provider can satisfy flow '{authentication.FlowType}' for token endpoint '{authentication.TokenUrl}'."),
+            _ => throw new InvalidOperationException(
+                $"Multiple configured OAuth providers can satisfy flow '{authentication.FlowType}': {string.Join(", ", matches.Select(match => $"{match.Provider.Id}/{match.Registration.Id}"))}."),
+        };
     }
 
     private static string CreateCacheKey(A2AAgentCardAuthentication authentication)

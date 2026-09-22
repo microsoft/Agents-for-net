@@ -66,40 +66,128 @@ public class A2AClientOptionsTests
         A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
 
         Assert.Equal(new Uri("https://command-line.example/a2a"), options.AgentUrl);
-        Assert.Empty(options.Authentication.Connections);
+        Assert.Empty(options.Authentication.Providers);
     }
 
     [Fact]
-    public void FromConfiguration_ReadsOAuthConnectionsBySecuritySchemeName()
+    public void FromConfiguration_BindsConfiguredOAuthProvidersAndRegistrations()
     {
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["A2A:AgentUrl"] = "https://agent.example/a2a",
-                ["Authentication:Connections:github:ClientId"] = "github-client-id",
-                ["Authentication:Connections:github:AllowedOrigins:0"] = "https://github.com",
-                ["Authentication:Connections:github:AdditionalScopes:0"] = "offline_access",
-                ["Authentication:Connections:linkedin:ClientId"] = "linkedin-client-id",
-                ["Authentication:Connections:linkedin:ClientSecret"] = "linkedin-client-secret",
-                ["Authentication:Connections:linkedin:RedirectUri"] = "http://localhost:8400/callback/",
-                ["Authentication:Connections:linkedin:AllowedOrigins:0"] = "https://www.linkedin.com",
-                ["Authentication:Connections:linkedin:TokenEndpointAuthenticationMethod"] = "ClientSecretPost",
+                ["Authentication:Providers:entra:Type"] = "Entra",
+                ["Authentication:Providers:entra:AllowedAuthorities:0"] = "https://login.microsoftonline.com",
+                ["Authentication:Providers:entra:AdditionalScopes:0"] = "offline_access",
+                ["Authentication:Providers:entra:Registrations:delegated:GrantTypes:0"] = "DeviceCode",
+                ["Authentication:Providers:entra:Registrations:delegated:GrantTypes:1"] = "AuthorizationCode",
+                ["Authentication:Providers:entra:Registrations:delegated:ClientId"] = "entra-client-id",
+                ["Authentication:Providers:entra:Registrations:delegated:RedirectUri"] = "http://localhost:8400/callback/",
+                ["Authentication:Providers:dcr:Type"] = "OAuth21PkceDcr",
+                ["Authentication:Providers:dcr:AllowInteractiveApproval"] = "true",
+                ["Authentication:Providers:dcr:RedirectUri"] = "http://localhost:8400/callback/",
             })
             .Build();
 
         A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, new StartupOptions());
 
-        OAuthConnectionOptions github = options.Authentication.GetRequiredConnection("github");
-        Assert.Equal("github-client-id", github.ClientId);
-        Assert.Equal([new Uri("https://github.com")], github.AllowedOrigins);
-        Assert.Equal(["offline_access"], github.AdditionalScopes);
-        Assert.Equal(OAuthTokenEndpointAuthenticationMethod.None, github.TokenEndpointAuthenticationMethod);
+        OAuthCredentialProviderOptions entra = Assert.IsType<OAuthCredentialProviderOptions>(options.Authentication.Providers["entra"]);
+        Assert.Equal(OAuthCredentialProviderType.Entra, entra.Type);
+        Assert.Equal([new Uri("https://login.microsoftonline.com")], entra.AllowedAuthorities);
+        Assert.Equal(["offline_access"], entra.AdditionalScopes);
 
-        OAuthConnectionOptions linkedin = options.Authentication.GetRequiredConnection("linkedin");
-        Assert.Equal("linkedin-client-id", linkedin.ClientId);
-        Assert.Equal("linkedin-client-secret", linkedin.ClientSecret);
-        Assert.Equal(new Uri("http://localhost:8400/callback/"), linkedin.RedirectUri);
-        Assert.Equal([new Uri("https://www.linkedin.com")], linkedin.AllowedOrigins);
-        Assert.Equal(OAuthTokenEndpointAuthenticationMethod.ClientSecretPost, linkedin.TokenEndpointAuthenticationMethod);
+        OAuthClientRegistration delegated = Assert.IsType<OAuthClientRegistration>(entra.Registrations["delegated"]);
+        Assert.Equal([A2AOAuthFlowType.DeviceCode, A2AOAuthFlowType.AuthorizationCode], delegated.GrantTypes);
+        Assert.Equal("entra-client-id", delegated.ClientId);
+        Assert.Equal(new Uri("http://localhost:8400/callback/"), delegated.RedirectUri);
+
+        OAuthCredentialProviderOptions dcr = Assert.IsType<OAuthCredentialProviderOptions>(options.Authentication.Providers["dcr"]);
+        Assert.Equal(OAuthCredentialProviderType.OAuth21PkceDcr, dcr.Type);
+        Assert.True(dcr.AllowInteractiveApproval);
+        Assert.Equal(new Uri("http://localhost:8400/callback/"), dcr.RedirectUri);
+    }
+
+    [Fact]
+    public void FromConfiguration_UnknownProviderType_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:generic:Type", "NotAProvider"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains("Authentication:Providers:generic:Type", exception.Message);
+    }
+
+    [Fact]
+    public void FromConfiguration_RelativeAllowedAuthority_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:entra:Type", "Entra"),
+            ("Authentication:Providers:entra:AllowedAuthorities:0", "/tenant"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains("Authentication:Providers:entra:AllowedAuthorities:0", exception.Message);
+    }
+
+    [Fact]
+    public void FromConfiguration_DuplicateGrantType_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:entra:Type", "Entra"),
+            ("Authentication:Providers:entra:Registrations:delegated:GrantTypes:0", "AuthorizationCode"),
+            ("Authentication:Providers:entra:Registrations:delegated:GrantTypes:1", "AuthorizationCode"),
+            ("Authentication:Providers:entra:Registrations:delegated:ClientId", "entra-client-id"),
+            ("Authentication:Providers:entra:Registrations:delegated:RedirectUri", "http://localhost:8400/callback/"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains("GrantTypes", exception.Message);
+    }
+
+    [Fact]
+    public void FromConfiguration_BlankConfiguredClientId_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:entra:Type", "Entra"),
+            ("Authentication:Providers:entra:Registrations:delegated:GrantTypes:0", "AuthorizationCode"),
+            ("Authentication:Providers:entra:Registrations:delegated:ClientId", " "));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains("ClientId", exception.Message);
+    }
+
+    [Fact]
+    public void FromConfiguration_ConnectionsOnly_DoesNotPopulateProviders()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Connections:github:ClientId", "github-client-id"),
+            ("Authentication:Connections:github:AllowedOrigins:0", "https://github.com"));
+
+        A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, new StartupOptions());
+
+        Assert.Empty(options.Authentication.Providers);
+    }
+
+    private static IConfiguration CreateAuthenticationConfiguration(params (string Key, string? Value)[] settings)
+    {
+        var values = new Dictionary<string, string?>
+        {
+            ["A2A:AgentUrl"] = "https://agent.example/a2a",
+        };
+
+        foreach ((string key, string? value) in settings)
+        {
+            values[key] = value;
+        }
+
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(values)
+            .Build();
     }
 }

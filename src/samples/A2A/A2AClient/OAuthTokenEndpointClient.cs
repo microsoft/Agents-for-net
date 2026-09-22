@@ -18,20 +18,20 @@ internal sealed class OAuthTokenEndpointClient(HttpClient httpClient)
 
     public async Task<OAuthAccessToken> RequestTokenAsync(
         Uri tokenEndpoint,
-        OAuthConnectionOptions connection,
+        OAuthClientRegistration registration,
         IEnumerable<KeyValuePair<string, string>> tokenFields,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(tokenEndpoint);
-        ArgumentNullException.ThrowIfNull(connection);
-        if (string.IsNullOrWhiteSpace(connection.ClientId))
+        ArgumentNullException.ThrowIfNull(registration);
+        if (string.IsNullOrWhiteSpace(registration.ClientId))
         {
-            throw new InvalidOperationException("The selected OAuth connection requires ClientId.");
+            throw new InvalidOperationException("The selected OAuth client registration requires ClientId.");
         }
 
         var fields = new List<KeyValuePair<string, string>>(tokenFields);
         using var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
-        ApplyClientAuthentication(request, fields, connection);
+        ApplyClientAuthentication(request, fields, registration);
         request.Content = new FormUrlEncodedContent(fields);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -98,35 +98,35 @@ internal sealed class OAuthTokenEndpointClient(HttpClient httpClient)
     private static void ApplyClientAuthentication(
         HttpRequestMessage request,
         List<KeyValuePair<string, string>> fields,
-        OAuthConnectionOptions connection)
+        OAuthClientRegistration registration)
     {
-        fields.Add(new("client_id", connection.ClientId!));
+        fields.Add(new("client_id", registration.ClientId));
 
-        switch (connection.TokenEndpointAuthenticationMethod)
+        switch (registration.TokenEndpointAuthenticationMethod)
         {
             case OAuthTokenEndpointAuthenticationMethod.None:
                 return;
             case OAuthTokenEndpointAuthenticationMethod.ClientSecretPost:
-                ValidateClientSecret(connection);
-                fields.Add(new("client_secret", connection.ClientSecret!));
+                ValidateClientSecret(registration);
+                fields.Add(new("client_secret", registration.ClientSecret!));
                 return;
             case OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic:
-                ValidateClientSecret(connection);
+                ValidateClientSecret(registration);
                 string credentials = Convert.ToBase64String(
-                    Encoding.UTF8.GetBytes($"{connection.ClientId}:{connection.ClientSecret}"));
+                    Encoding.UTF8.GetBytes($"{registration.ClientId}:{registration.ClientSecret}"));
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
                 return;
             default:
-                throw new ArgumentOutOfRangeException(nameof(connection));
+                throw new ArgumentOutOfRangeException(nameof(registration));
         }
     }
 
-    private static void ValidateClientSecret(OAuthConnectionOptions connection)
+    private static void ValidateClientSecret(OAuthClientRegistration registration)
     {
-        if (string.IsNullOrWhiteSpace(connection.ClientSecret))
+        if (string.IsNullOrWhiteSpace(registration.ClientSecret))
         {
             throw new InvalidOperationException(
-                $"The selected OAuth connection requires ClientSecret for {connection.TokenEndpointAuthenticationMethod}.");
+                $"The selected OAuth client registration requires ClientSecret for {registration.TokenEndpointAuthenticationMethod}.");
         }
     }
 }

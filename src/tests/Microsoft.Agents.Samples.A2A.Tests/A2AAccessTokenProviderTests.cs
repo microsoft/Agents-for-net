@@ -29,12 +29,14 @@ public class A2AAccessTokenProviderTests
     public async Task GetAccessTokenAsync_UsesConnectionMatchingSelectedSecurityScheme()
     {
         A2AAgentCardAuthentication authentication = CreateAuthentication();
-        OAuthConnectionOptions connection = CreateConnection();
-        var options = CreateOptions(connection);
+        OAuthCredentialProviderOptions providerOptions = CreateProvider();
+        OAuthClientRegistration registration = providerOptions.Registrations["default"];
+        var options = CreateOptions(providerOptions);
         var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
         oauth.Setup(client => client.AcquireTokenAsync(
                 authentication,
-                connection,
+                providerOptions,
+                registration,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OAuthAccessToken("generic-token", ExpiresIn: null));
         var provider = new A2AAccessTokenProvider(options, oauth.Object);
@@ -48,22 +50,24 @@ public class A2AAccessTokenProviderTests
     public async Task GetAccessTokenAsync_ReusesUnexpiredToken()
     {
         A2AAgentCardAuthentication authentication = CreateAuthentication();
-        OAuthConnectionOptions connection = CreateConnection();
+        OAuthCredentialProviderOptions providerOptions = CreateProvider();
+        OAuthClientRegistration registration = providerOptions.Registrations["default"];
         var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
         oauth.Setup(client => client.AcquireTokenAsync(
                 authentication,
-                connection,
+                providerOptions,
+                registration,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OAuthAccessToken("generic-token", TimeSpan.FromMinutes(10)));
         var timeProvider = new TestTimeProvider();
-        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object, timeProvider);
+        var provider = new A2AAccessTokenProvider(CreateOptions(providerOptions), oauth.Object, timeProvider);
 
         Assert.Equal("generic-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
         timeProvider.Advance(TimeSpan.FromMinutes(5));
         Assert.Equal("generic-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
 
         oauth.Verify(
-            client => client.AcquireTokenAsync(authentication, connection, It.IsAny<CancellationToken>()),
+            client => client.AcquireTokenAsync(authentication, providerOptions, registration, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -71,22 +75,24 @@ public class A2AAccessTokenProviderTests
     public async Task GetAccessTokenAsync_ReusesTokenWithoutExpiration()
     {
         A2AAgentCardAuthentication authentication = CreateAuthentication();
-        OAuthConnectionOptions connection = CreateConnection();
+        OAuthCredentialProviderOptions providerOptions = CreateProvider();
+        OAuthClientRegistration registration = providerOptions.Registrations["default"];
         var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
         oauth.Setup(client => client.AcquireTokenAsync(
                 authentication,
-                connection,
+                providerOptions,
+                registration,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OAuthAccessToken("generic-token", ExpiresIn: null));
         var timeProvider = new TestTimeProvider();
-        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object, timeProvider);
+        var provider = new A2AAccessTokenProvider(CreateOptions(providerOptions), oauth.Object, timeProvider);
 
         Assert.Equal("generic-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
         timeProvider.Advance(TimeSpan.FromDays(365));
         Assert.Equal("generic-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
 
         oauth.Verify(
-            client => client.AcquireTokenAsync(authentication, connection, It.IsAny<CancellationToken>()),
+            client => client.AcquireTokenAsync(authentication, providerOptions, registration, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -94,16 +100,18 @@ public class A2AAccessTokenProviderTests
     public async Task GetAccessTokenAsync_ConcurrentRequestsShareTokenAcquisition()
     {
         A2AAgentCardAuthentication authentication = CreateAuthentication();
-        OAuthConnectionOptions connection = CreateConnection();
+        OAuthCredentialProviderOptions providerOptions = CreateProvider();
+        OAuthClientRegistration registration = providerOptions.Registrations["default"];
         var tokenSource = new TaskCompletionSource<OAuthAccessToken>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
         oauth.Setup(client => client.AcquireTokenAsync(
                 authentication,
-                connection,
+                providerOptions,
+                registration,
                 It.IsAny<CancellationToken>()))
             .Returns(tokenSource.Task);
-        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object);
+        var provider = new A2AAccessTokenProvider(CreateOptions(providerOptions), oauth.Object);
 
         Task<string?> firstRequest = provider.GetAccessTokenAsync(authentication, CancellationToken.None);
         Task<string?> secondRequest = provider.GetAccessTokenAsync(authentication, CancellationToken.None);
@@ -112,7 +120,7 @@ public class A2AAccessTokenProviderTests
         string?[] tokens = await Task.WhenAll(firstRequest, secondRequest);
         Assert.All(tokens, token => Assert.Equal("generic-token", token));
         oauth.Verify(
-            client => client.AcquireTokenAsync(authentication, connection, It.IsAny<CancellationToken>()),
+            client => client.AcquireTokenAsync(authentication, providerOptions, registration, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -120,21 +128,24 @@ public class A2AAccessTokenProviderTests
     public async Task GetAccessTokenAsync_ExpiredToken_UsesRefreshToken()
     {
         A2AAgentCardAuthentication authentication = CreateAuthentication();
-        OAuthConnectionOptions connection = CreateConnection();
+        OAuthCredentialProviderOptions providerOptions = CreateProvider();
+        OAuthClientRegistration registration = providerOptions.Registrations["default"];
         var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
         oauth.Setup(client => client.AcquireTokenAsync(
                 authentication,
-                connection,
+                providerOptions,
+                registration,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OAuthAccessToken("initial-token", TimeSpan.FromMinutes(5), "refresh-token"));
         oauth.Setup(client => client.RefreshTokenAsync(
                 authentication,
-                connection,
+                providerOptions,
+                registration,
                 "refresh-token",
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OAuthAccessToken("renewed-token", TimeSpan.FromMinutes(5), "new-refresh-token"));
         var timeProvider = new TestTimeProvider();
-        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object, timeProvider);
+        var provider = new A2AAccessTokenProvider(CreateOptions(providerOptions), oauth.Object, timeProvider);
 
         Assert.Equal("initial-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
         timeProvider.Advance(TimeSpan.FromMinutes(5));
@@ -145,36 +156,50 @@ public class A2AAccessTokenProviderTests
     public async Task GetAccessTokenAsync_ExpiredTokenWithoutRefreshToken_Reacquires()
     {
         A2AAgentCardAuthentication authentication = CreateAuthentication();
-        OAuthConnectionOptions connection = CreateConnection();
+        OAuthCredentialProviderOptions providerOptions = CreateProvider();
+        OAuthClientRegistration registration = providerOptions.Registrations["default"];
         var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
         oauth.SetupSequence(client => client.AcquireTokenAsync(
                 authentication,
-                connection,
+                providerOptions,
+                registration,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OAuthAccessToken("initial-token", TimeSpan.FromMinutes(5)))
             .ReturnsAsync(new OAuthAccessToken("renewed-token", TimeSpan.FromMinutes(5)));
         var timeProvider = new TestTimeProvider();
-        var provider = new A2AAccessTokenProvider(CreateOptions(connection), oauth.Object, timeProvider);
+        var provider = new A2AAccessTokenProvider(CreateOptions(providerOptions), oauth.Object, timeProvider);
 
         Assert.Equal("initial-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
         timeProvider.Advance(TimeSpan.FromMinutes(5));
         Assert.Equal("renewed-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
     }
 
-    private static A2AClientAuthenticationOptions CreateOptions(OAuthConnectionOptions connection)
+    private static A2AClientAuthenticationOptions CreateOptions(OAuthCredentialProviderOptions provider)
         => new()
         {
-            Connections = new Dictionary<string, OAuthConnectionOptions>
+            Providers = new Dictionary<string, OAuthCredentialProviderOptions>
             {
-                ["provider"] = connection,
+                [provider.Id] = provider,
             },
         };
 
-    private static OAuthConnectionOptions CreateConnection()
+    private static OAuthCredentialProviderOptions CreateProvider()
         => new()
         {
-            ClientId = "generic-client-id",
+            Id = "default-provider",
+            Type = OAuthCredentialProviderType.GenericOAuth2,
             AllowedOrigins = [new Uri("https://identity.example.com")],
+            Registrations = new Dictionary<string, OAuthClientRegistration>(StringComparer.Ordinal)
+            {
+                ["default"] = new(
+                    "default",
+                    [A2AOAuthFlowType.DeviceCode],
+                    "generic-client-id",
+                    ClientSecret: null,
+                    RedirectUri: null,
+                    TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                    UsePkce: true),
+            },
         };
 
     private static A2AAgentCardAuthentication CreateAuthentication()

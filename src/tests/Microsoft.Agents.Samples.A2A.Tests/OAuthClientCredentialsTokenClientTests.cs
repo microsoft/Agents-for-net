@@ -23,17 +23,25 @@ public class OAuthClientCredentialsTokenClientTests
             """{ "access_token": "application-token", "token_type": "Bearer", "expires_in": 3600 }""");
         using var httpClient = new HttpClient(handler);
         var sut = new OAuthClientCredentialsTokenClient(httpClient);
-        OAuthConnectionOptions connection = new()
+        OAuthCredentialProviderOptions provider = new()
         {
-            ClientId = "application-client-id",
-            ClientSecret = "application-client-secret",
+            Id = "application-provider",
+            Type = OAuthCredentialProviderType.GenericOAuth2,
             AllowedOrigins = [new Uri("https://identity.example.com")],
-            TokenEndpointAuthenticationMethod = OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic,
         };
+        OAuthClientRegistration registration = new(
+            "application",
+            [A2AOAuthFlowType.ClientCredentials],
+            "application-client-id",
+            "application-client-secret",
+            RedirectUri: null,
+            OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic,
+            UsePkce: false);
 
         OAuthAccessToken token = await sut.AcquireTokenAsync(
             CreateClientCredentialsAuthentication(),
-            connection,
+            provider,
+            registration,
             CancellationToken.None);
 
         Assert.Equal("application-token", token.AccessToken);

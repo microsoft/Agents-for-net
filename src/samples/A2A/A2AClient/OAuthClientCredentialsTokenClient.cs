@@ -21,11 +21,13 @@ internal sealed class OAuthClientCredentialsTokenClient
 
     public Task<OAuthAccessToken> AcquireTokenAsync(
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection,
+        OAuthCredentialProviderOptions provider,
+        OAuthClientRegistration registration,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(authentication);
-        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(registration);
         if (authentication.FlowType != A2AOAuthFlowType.ClientCredentials)
         {
             throw new InvalidOperationException(
@@ -34,16 +36,16 @@ internal sealed class OAuthClientCredentialsTokenClient
 
         Uri tokenEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
             authentication.TokenUrl,
-            connection,
+            provider,
             "token endpoint");
         return _tokenEndpointClient.RequestTokenAsync(
             tokenEndpoint,
-            connection,
+            registration,
             [
                 new KeyValuePair<string, string>("grant_type", "client_credentials"),
                 new KeyValuePair<string, string>(
                     "scope",
-                    string.Join(' ', OAuthScopeResolver.GetScopes(authentication, connection))),
+                    string.Join(' ', OAuthScopeResolver.GetScopes(authentication, provider))),
             ],
             cancellationToken);
     }

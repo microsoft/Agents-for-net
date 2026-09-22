@@ -25,19 +25,21 @@ internal sealed class OAuthTokenClient(
 
     public Task<OAuthAccessToken> AcquireTokenAsync(
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection,
+        OAuthCredentialProviderOptions provider,
+        OAuthClientRegistration registration,
         CancellationToken cancellationToken)
         => authentication.FlowType switch
         {
-            A2AOAuthFlowType.DeviceCode => _deviceCode.AcquireTokenAsync(authentication, connection, cancellationToken),
-            A2AOAuthFlowType.AuthorizationCode => _authorizationCode.AcquireTokenAsync(authentication, connection, cancellationToken),
-            A2AOAuthFlowType.ClientCredentials => _clientCredentials.AcquireTokenAsync(authentication, connection, cancellationToken),
+            A2AOAuthFlowType.DeviceCode => _deviceCode.AcquireTokenAsync(authentication, provider, registration, cancellationToken),
+            A2AOAuthFlowType.AuthorizationCode => _authorizationCode.AcquireTokenAsync(authentication, provider, registration, cancellationToken),
+            A2AOAuthFlowType.ClientCredentials => _clientCredentials.AcquireTokenAsync(authentication, provider, registration, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(authentication), authentication.FlowType, "Unsupported OAuth flow."),
         };
 
     public Task<OAuthAccessToken> RefreshTokenAsync(
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection,
+        OAuthCredentialProviderOptions provider,
+        OAuthClientRegistration registration,
         string refreshToken,
         CancellationToken cancellationToken)
     {
@@ -48,15 +50,15 @@ internal sealed class OAuthTokenClient(
 
         Uri tokenEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
             authentication.TokenUrl,
-            connection,
+            provider,
             "token endpoint");
         return _tokenEndpoint.RequestTokenAsync(
             tokenEndpoint,
-            connection,
+            registration,
             [
                 new("grant_type", "refresh_token"),
                 new("refresh_token", refreshToken),
-                new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, connection))),
+                new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, provider))),
             ],
             cancellationToken);
     }

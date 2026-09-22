@@ -10,10 +10,10 @@ internal static class OAuthScopeResolver
 {
     public static IReadOnlyList<string> GetScopes(
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection)
+        OAuthCredentialProviderOptions provider)
     {
         var scopes = new List<string>(authentication.Scopes);
-        foreach (string scope in connection.AdditionalScopes)
+        foreach (string scope in provider.AdditionalScopes)
         {
             if (!string.IsNullOrWhiteSpace(scope)
                 && !scopes.Exists(candidate => string.Equals(candidate, scope, StringComparison.Ordinal)))

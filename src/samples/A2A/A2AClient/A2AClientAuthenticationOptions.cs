@@ -8,17 +8,6 @@ namespace Microsoft.Agents.Samples.A2AClient;
 
 internal sealed class A2AClientAuthenticationOptions
 {
-    public IReadOnlyDictionary<string, OAuthConnectionOptions> Connections { get; init; }
-        = new Dictionary<string, OAuthConnectionOptions>(StringComparer.Ordinal);
-
-    public OAuthConnectionOptions GetRequiredConnection(string securitySchemeName)
-    {
-        if (!Connections.TryGetValue(securitySchemeName, out OAuthConnectionOptions? connection))
-        {
-            throw new InvalidOperationException(
-                $"Missing A2A client OAuth connection for security scheme '{securitySchemeName}'.");
-        }
-
-        return connection;
-    }
+    public IReadOnlyDictionary<string, OAuthCredentialProviderOptions> Providers { get; init; }
+        = new Dictionary<string, OAuthCredentialProviderOptions>(StringComparer.Ordinal);
 }

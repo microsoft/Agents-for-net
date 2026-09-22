@@ -24,19 +24,25 @@ public class OAuthAuthorizationCodeTokenClientTests
             """{ "access_token": "linkedin-token", "token_type": "Bearer", "expires_in": 3600, "refresh_token": "refresh-token" }""");
         using var httpClient = new HttpClient(handler);
         var sut = new OAuthAuthorizationCodeTokenClient(httpClient, receiver);
-        OAuthConnectionOptions connection = new()
+        OAuthCredentialProviderOptions provider = new()
         {
-            ClientId = "linkedin-client-id",
-            ClientSecret = "linkedin-client-secret",
-            RedirectUri = new Uri("http://localhost:8400/callback/"),
+            Id = "linkedin-provider",
+            Type = OAuthCredentialProviderType.GenericOAuth2Pkce,
             AllowedOrigins = [new Uri("https://www.linkedin.com")],
-            TokenEndpointAuthenticationMethod = OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
-            UsePkce = true,
         };
+        OAuthClientRegistration registration = new(
+            "browser",
+            [A2AOAuthFlowType.AuthorizationCode],
+            "linkedin-client-id",
+            "linkedin-client-secret",
+            new Uri("http://localhost:8400/callback/"),
+            OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
+            UsePkce: true);
 
         OAuthAccessToken token = await sut.AcquireTokenAsync(
             CreateAuthorizationCodeAuthentication(),
-            connection,
+            provider,
+            registration,
             CancellationToken.None);
 
         Assert.Equal("linkedin-token", token.AccessToken);

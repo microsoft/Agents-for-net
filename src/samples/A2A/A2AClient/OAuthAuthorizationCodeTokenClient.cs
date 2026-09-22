@@ -28,54 +28,57 @@ internal sealed class OAuthAuthorizationCodeTokenClient
 
     public async Task<OAuthAccessToken> AcquireTokenAsync(
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection,
+        OAuthCredentialProviderOptions provider,
+        OAuthClientRegistration registration,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(authentication);
-        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(registration);
         if (authentication.FlowType != A2AOAuthFlowType.AuthorizationCode)
         {
             throw new InvalidOperationException(
                 "Authorization Code token acquisition requires an Authorization Code OAuth flow.");
         }
 
-        if (string.IsNullOrWhiteSpace(connection.ClientId))
+        if (string.IsNullOrWhiteSpace(registration.ClientId))
         {
-            throw new InvalidOperationException("The selected OAuth connection requires ClientId.");
+            throw new InvalidOperationException("The selected OAuth client registration requires ClientId.");
         }
 
-        if (connection.RedirectUri is null)
+        if (registration.RedirectUri is null)
         {
             throw new InvalidOperationException(
-                "The selected OAuth connection requires RedirectUri for Authorization Code.");
+                "The selected OAuth client registration requires RedirectUri for Authorization Code.");
         }
 
         Uri authorizationEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
             authentication.AuthorizationUrl,
-            connection,
+            provider,
             "authorization endpoint");
         Uri tokenEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
             authentication.TokenUrl,
-            connection,
+            provider,
             "token endpoint");
 
         string state = CreateRandomValue();
-        string? codeVerifier = connection.UsePkce ? CreateRandomValue() : null;
+        string? codeVerifier = registration.UsePkce ? CreateRandomValue() : null;
         Uri authorizationUri = CreateAuthorizationUri(
             authorizationEndpoint,
             authentication,
-            connection,
+            provider,
+            registration,
             state,
             codeVerifier);
         string code = await _authorizationCodeReceiver
-            .ReceiveCodeAsync(authorizationUri, connection.RedirectUri, state, cancellationToken)
+            .ReceiveCodeAsync(authorizationUri, registration.RedirectUri, state, cancellationToken)
             .ConfigureAwait(false);
 
         var fields = new List<KeyValuePair<string, string>>
         {
             new("grant_type", "authorization_code"),
             new("code", code),
-            new("redirect_uri", connection.RedirectUri.AbsoluteUri),
+            new("redirect_uri", registration.RedirectUri.AbsoluteUri),
         };
         if (codeVerifier is not null)
         {
@@ -83,23 +86,24 @@ internal sealed class OAuthAuthorizationCodeTokenClient
         }
 
         return await _tokenEndpointClient
-            .RequestTokenAsync(tokenEndpoint, connection, fields, cancellationToken)
+            .RequestTokenAsync(tokenEndpoint, registration, fields, cancellationToken)
             .ConfigureAwait(false);
     }
 
     private static Uri CreateAuthorizationUri(
         Uri authorizationEndpoint,
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection,
+        OAuthCredentialProviderOptions provider,
+        OAuthClientRegistration registration,
         string state,
         string? codeVerifier)
     {
         var fields = new List<KeyValuePair<string, string>>
         {
             new("response_type", "code"),
-            new("client_id", connection.ClientId!),
-            new("redirect_uri", connection.RedirectUri!.AbsoluteUri),
-            new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, connection))),
+            new("client_id", registration.ClientId),
+            new("redirect_uri", registration.RedirectUri!.AbsoluteUri),
+            new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, provider))),
             new("state", state),
         };
         if (codeVerifier is not null)

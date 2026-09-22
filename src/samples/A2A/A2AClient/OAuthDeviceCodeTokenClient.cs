@@ -31,33 +31,35 @@ internal sealed class OAuthDeviceCodeTokenClient
 
     public async Task<OAuthAccessToken> AcquireTokenAsync(
         A2AAgentCardAuthentication authentication,
-        OAuthConnectionOptions connection,
+        OAuthCredentialProviderOptions provider,
+        OAuthClientRegistration registration,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(authentication);
-        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(registration);
         if (authentication.FlowType != A2AOAuthFlowType.DeviceCode)
         {
             throw new InvalidOperationException("Device Code token acquisition requires a Device Code OAuth flow.");
         }
 
-        ValidateClientId(connection);
+        ValidateClientId(registration);
         Uri deviceEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
             authentication.DeviceAuthorizationUrl,
-            connection,
+            provider,
             "device authorization endpoint");
         Uri tokenEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
             authentication.TokenUrl,
-            connection,
+            provider,
             "token endpoint");
 
         OAuthDeviceAuthorizationResponse authorization = await SendAsync<OAuthDeviceAuthorizationResponse>(
             CreatePostRequest(
                 deviceEndpoint,
-                connection,
+                registration,
                 [
-                    new("client_id", connection.ClientId!),
-                    new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, connection))),
+                    new("client_id", registration.ClientId),
+                    new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, provider))),
                 ],
                 authenticateClient: false),
             "device authorization endpoint",
@@ -93,9 +95,9 @@ internal sealed class OAuthDeviceCodeTokenClient
                 tokenResponse = await SendAsync<OAuthTokenResponse>(
                     CreatePostRequest(
                         tokenEndpoint,
-                        connection,
+                        registration,
                         [
-                            new("client_id", connection.ClientId!),
+                            new("client_id", registration.ClientId),
                             new("device_code", authorization.DeviceCode!),
                             new("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
                         ],
@@ -166,7 +168,7 @@ internal sealed class OAuthDeviceCodeTokenClient
 
     private static HttpRequestMessage CreatePostRequest(
         Uri requestUri,
-        OAuthConnectionOptions connection,
+        OAuthClientRegistration registration,
         IEnumerable<KeyValuePair<string, string>> formFields,
         bool authenticateClient)
     {
@@ -174,7 +176,7 @@ internal sealed class OAuthDeviceCodeTokenClient
         var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
         if (authenticateClient)
         {
-            ApplyClientAuthentication(request, fields, connection);
+            ApplyClientAuthentication(request, fields, registration);
         }
 
         request.Content = new FormUrlEncodedContent(fields);
@@ -185,24 +187,24 @@ internal sealed class OAuthDeviceCodeTokenClient
     private static void ApplyClientAuthentication(
         HttpRequestMessage request,
         List<KeyValuePair<string, string>> fields,
-        OAuthConnectionOptions connection)
+        OAuthClientRegistration registration)
     {
-        switch (connection.TokenEndpointAuthenticationMethod)
+        switch (registration.TokenEndpointAuthenticationMethod)
         {
             case OAuthTokenEndpointAuthenticationMethod.None:
                 break;
             case OAuthTokenEndpointAuthenticationMethod.ClientSecretPost:
-                ValidateClientSecret(connection);
-                fields.Add(new("client_secret", connection.ClientSecret!));
+                ValidateClientSecret(registration);
+                fields.Add(new("client_secret", registration.ClientSecret!));
                 break;
             case OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic:
-                ValidateClientSecret(connection);
+                ValidateClientSecret(registration);
                 string credentials = Convert.ToBase64String(
-                    System.Text.Encoding.UTF8.GetBytes($"{connection.ClientId}:{connection.ClientSecret}"));
+                    System.Text.Encoding.UTF8.GetBytes($"{registration.ClientId}:{registration.ClientSecret}"));
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(connection));
+                throw new ArgumentOutOfRangeException(nameof(registration));
         }
     }
 
@@ -257,26 +259,26 @@ internal sealed class OAuthDeviceCodeTokenClient
         }
     }
 
-    private static void ValidateClientId(OAuthConnectionOptions connection)
+    private static void ValidateClientId(OAuthClientRegistration registration)
     {
-        if (string.IsNullOrWhiteSpace(connection.ClientId))
+        if (string.IsNullOrWhiteSpace(registration.ClientId))
         {
-            throw new InvalidOperationException("The selected OAuth connection requires ClientId.");
+            throw new InvalidOperationException("The selected OAuth client registration requires ClientId.");
         }
 
-        if (connection.ClientId.Trim().Trim('0', '-').Length == 0)
+        if (registration.ClientId.Trim().Trim('0', '-').Length == 0)
         {
             throw new InvalidOperationException(
-                "The selected OAuth connection ClientId is still a placeholder. Configure a registered OAuth client.");
+                "The selected OAuth client registration ClientId is still a placeholder. Configure a registered OAuth client.");
         }
     }
 
-    private static void ValidateClientSecret(OAuthConnectionOptions connection)
+    private static void ValidateClientSecret(OAuthClientRegistration registration)
     {
-        if (string.IsNullOrWhiteSpace(connection.ClientSecret))
+        if (string.IsNullOrWhiteSpace(registration.ClientSecret))
         {
             throw new InvalidOperationException(
-                $"The selected OAuth connection requires ClientSecret for {connection.TokenEndpointAuthenticationMethod}.");
+                $"The selected OAuth client registration requires ClientSecret for {registration.TokenEndpointAuthenticationMethod}.");
         }
     }
 
