@@ -224,6 +224,26 @@ public class OAuthAuthorizationServerMetadataClientTests
     }
 
     [Fact]
+    public async Task DiscoverAsync_Rfc8414TrailingSlashNearMatchDoesNotInvertIssuer()
+    {
+        Uri candidate = new("https://identity.example.com/.well-known/oauth-authorization-server/");
+        var handler = new StubMetadataHandler(
+            CreateResponse(
+                HttpStatusCode.OK,
+                CreateMetadataJson(
+                    issuer: "https://identity.example.com/tenant",
+                    authorizationEndpoint: "https://identity.example.com/tenant/oauth/authorize",
+                    tokenEndpoint: "https://identity.example.com/tenant/oauth/token",
+                    registrationEndpoint: "https://identity.example.com/tenant/oauth/register")));
+        var sut = new OAuthAuthorizationServerMetadataClient(handler);
+
+        OAuthAuthorizationServerMetadata metadata = await sut.DiscoverAsync([candidate], CancellationToken.None);
+
+        Assert.Equal(new Uri("https://identity.example.com/tenant"), metadata.Issuer);
+        Assert.Equal(candidate, metadata.MetadataUrl);
+    }
+
+    [Fact]
     public async Task DiscoverAsync_RejectsCanonicalOpenIdCandidateWhoseIssuerDoesNotMatchDerivedPath()
     {
         Uri candidate = new("https://identity.example.com/tenant/.well-known/openid-configuration");

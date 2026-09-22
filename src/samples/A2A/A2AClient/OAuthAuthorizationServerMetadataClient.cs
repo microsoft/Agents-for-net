@@ -294,7 +294,8 @@ internal sealed class OAuthAuthorizationServerMetadataClient : IOAuthAuthorizati
         }
 
         string oauthPrefix = OauthAuthorizationServerPath + "/";
-        if (candidatePath.StartsWith(oauthPrefix, StringComparison.Ordinal))
+        if (candidatePath.StartsWith(oauthPrefix, StringComparison.Ordinal)
+            && candidatePath.Length > oauthPrefix.Length)
         {
             return BuildOriginUri(candidate, candidatePath[(oauthPrefix.Length - 1)..]);
         }
