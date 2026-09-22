@@ -30,28 +30,22 @@ internal sealed class OAuthDeviceCodeTokenClient
     }
 
     public async Task<OAuthAccessToken> AcquireTokenAsync(
-        A2AAgentCardAuthentication authentication,
-        OAuthCredentialProviderOptions provider,
-        OAuthClientRegistration registration,
+        OAuthCredentialBinding binding,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(authentication);
-        ArgumentNullException.ThrowIfNull(provider);
-        ArgumentNullException.ThrowIfNull(registration);
-        if (authentication.FlowType != A2AOAuthFlowType.DeviceCode)
+        ArgumentNullException.ThrowIfNull(binding);
+
+        OAuthClientRegistration registration = binding.Registration;
+        if (binding.FlowType != A2AOAuthFlowType.DeviceCode)
         {
             throw new InvalidOperationException("Device Code token acquisition requires a Device Code OAuth flow.");
         }
 
         ValidateClientId(registration);
-        Uri deviceEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
-            authentication.DeviceAuthorizationUrl,
-            provider,
-            "device authorization endpoint");
-        Uri tokenEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
-            authentication.TokenUrl,
-            provider,
-            "token endpoint");
+        Uri deviceEndpoint = binding.DeviceAuthorizationEndpoint
+            ?? throw new InvalidOperationException(
+                "Device Code token acquisition requires a device authorization endpoint.");
+        Uri tokenEndpoint = binding.TokenEndpoint;
 
         OAuthDeviceAuthorizationResponse authorization = await SendAsync<OAuthDeviceAuthorizationResponse>(
             CreatePostRequest(
@@ -59,7 +53,7 @@ internal sealed class OAuthDeviceCodeTokenClient
                 registration,
                 [
                     new("client_id", registration.ClientId),
-                    new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, provider))),
+                    new("scope", string.Join(' ', binding.EffectiveScopes)),
                 ],
                 authenticateClient: false),
             "device authorization endpoint",

@@ -215,18 +215,5 @@ internal class GenericOAuth2CredentialProvider : IOAuthCredentialProvider
             or OAuthTokenEndpointAuthenticationMethod.ClientSecretPost;
 
     private static bool HasPermittedRedirectUri(Uri? redirectUri)
-    {
-        if (redirectUri is null || !redirectUri.IsAbsoluteUri)
-        {
-            return false;
-        }
-
-        if (redirectUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return redirectUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-            && redirectUri.IsLoopback;
-    }
+        => OAuthEndpointValidator.IsSupportedLoopbackRedirectUri(redirectUri);
 }

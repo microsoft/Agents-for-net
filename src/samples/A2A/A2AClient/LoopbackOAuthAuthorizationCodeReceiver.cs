@@ -32,13 +32,7 @@ internal sealed class LoopbackOAuthAuthorizationCodeReceiver : IOAuthAuthorizati
     {
         ArgumentNullException.ThrowIfNull(authorizationUri);
         ArgumentNullException.ThrowIfNull(redirectUri);
-        if (!redirectUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-            || !redirectUri.IsLoopback
-            || !redirectUri.AbsolutePath.EndsWith("/", StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                "Authorization Code requires an HTTP loopback RedirectUri whose path ends with '/'.");
-        }
+        OAuthEndpointValidator.EnsureSupportedLoopbackRedirectUri(redirectUri);
 
         using var listener = new HttpListener();
         listener.Prefixes.Add(redirectUri.AbsoluteUri);

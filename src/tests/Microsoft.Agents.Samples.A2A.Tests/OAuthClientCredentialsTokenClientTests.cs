@@ -8,7 +8,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using A2A;
 using Microsoft.Agents.Samples.A2AClient;
 using Xunit;
 
@@ -23,25 +22,9 @@ public class OAuthClientCredentialsTokenClientTests
             """{ "access_token": "application-token", "token_type": "Bearer", "expires_in": 3600 }""");
         using var httpClient = new HttpClient(handler);
         var sut = new OAuthClientCredentialsTokenClient(httpClient);
-        OAuthCredentialProviderOptions provider = new()
-        {
-            Id = "application-provider",
-            Type = OAuthCredentialProviderType.GenericOAuth2,
-            AllowedOrigins = [new Uri("https://identity.example.com")],
-        };
-        OAuthClientRegistration registration = new(
-            "application",
-            [A2AOAuthFlowType.ClientCredentials],
-            "application-client-id",
-            "application-client-secret",
-            RedirectUri: null,
-            OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic,
-            UsePkce: false);
 
         OAuthAccessToken token = await sut.AcquireTokenAsync(
-            CreateClientCredentialsAuthentication(),
-            provider,
-            registration,
+            CreateBinding(),
             CancellationToken.None);
 
         Assert.Equal("application-token", token.AccessToken);
@@ -52,40 +35,27 @@ public class OAuthClientCredentialsTokenClientTests
         Assert.Contains("scope=agent.read+agent.write", handler.Content, StringComparison.Ordinal);
     }
 
-    private static A2AAgentCardAuthentication CreateClientCredentialsAuthentication()
-    {
-        var card = new AgentCard
-        {
-            SecuritySchemes = new Dictionary<string, SecurityScheme>
-            {
-                ["application"] = new()
-                {
-                    OAuth2SecurityScheme = new OAuth2SecurityScheme
-                    {
-                        Flows = new OAuthFlows
-                        {
-                            ClientCredentials = new()
-                            {
-                                TokenUrl = "https://identity.example.com/oauth/token",
-                            },
-                        },
-                    },
-                },
-            },
-            SecurityRequirements =
-            [
-                new SecurityRequirement
-                {
-                    Schemes = new Dictionary<string, StringList>
-                    {
-                        ["application"] = new() { List = ["agent.read", "agent.write"] },
-                    },
-                },
-            ],
-        };
-
-        return A2AAgentCardAuthentication.Select(card, A2AAuthMode.App);
-    }
+    private static OAuthCredentialBinding CreateBinding()
+        => new(
+            ProviderId: "application-provider",
+            ProviderType: OAuthCredentialProviderType.GenericOAuth2,
+            RegistrationId: "application",
+            Registration: new OAuthClientRegistration(
+                "application",
+                [A2AOAuthFlowType.ClientCredentials],
+                "application-client-id",
+                "application-client-secret",
+                RedirectUri: null,
+                OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic,
+                UsePkce: false),
+            FlowType: A2AOAuthFlowType.ClientCredentials,
+            AuthorizationEndpoint: null,
+            DeviceAuthorizationEndpoint: null,
+            TokenEndpoint: new Uri("https://identity.example.com/oauth/token"),
+            MetadataUrl: null,
+            RegistrationEndpoint: null,
+            EffectiveScopes: ["agent.read", "agent.write"],
+            ProviderIdentity: "application-provider");
 
     private sealed class CapturingTokenHandler(string responseJson) : HttpMessageHandler
     {

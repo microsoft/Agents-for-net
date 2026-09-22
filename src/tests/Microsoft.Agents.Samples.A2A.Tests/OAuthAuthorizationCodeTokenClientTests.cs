@@ -8,7 +8,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using A2A;
 using Microsoft.Agents.Samples.A2AClient;
 using Xunit;
 
@@ -24,25 +23,9 @@ public class OAuthAuthorizationCodeTokenClientTests
             """{ "access_token": "linkedin-token", "token_type": "Bearer", "expires_in": 3600, "refresh_token": "refresh-token" }""");
         using var httpClient = new HttpClient(handler);
         var sut = new OAuthAuthorizationCodeTokenClient(httpClient, receiver);
-        OAuthCredentialProviderOptions provider = new()
-        {
-            Id = "linkedin-provider",
-            Type = OAuthCredentialProviderType.GenericOAuth2Pkce,
-            AllowedOrigins = [new Uri("https://www.linkedin.com")],
-        };
-        OAuthClientRegistration registration = new(
-            "browser",
-            [A2AOAuthFlowType.AuthorizationCode],
-            "linkedin-client-id",
-            "linkedin-client-secret",
-            new Uri("http://localhost:8400/callback/"),
-            OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
-            UsePkce: true);
 
         OAuthAccessToken token = await sut.AcquireTokenAsync(
-            CreateAuthorizationCodeAuthentication(),
-            provider,
-            registration,
+            CreateBinding(),
             CancellationToken.None);
 
         Assert.Equal("linkedin-token", token.AccessToken);
@@ -65,46 +48,60 @@ public class OAuthAuthorizationCodeTokenClientTests
         Assert.Contains("code_verifier=", handler.Content, StringComparison.Ordinal);
     }
 
-    private static A2AAgentCardAuthentication CreateAuthorizationCodeAuthentication()
+    [Fact]
+    public async Task AcquireTokenAsync_PkceProviderBindingWithoutPkce_ThrowsBeforeOpeningBrowser()
     {
-        var card = new AgentCard
+        bool receiverInvoked = false;
+        var receiver = new CapturingAuthorizationCodeReceiver("authorization-code")
         {
-            SecuritySchemes = new Dictionary<string, SecurityScheme>
-            {
-                ["linkedin"] = new()
-                {
-                    OAuth2SecurityScheme = new OAuth2SecurityScheme
-                    {
-                        Flows = new OAuthFlows
-                        {
-                            AuthorizationCode = new()
-                            {
-                                AuthorizationUrl = "https://www.linkedin.com/oauth/v2/authorization",
-                                TokenUrl = "https://www.linkedin.com/oauth/v2/accessToken",
-                            },
-                        },
-                    },
-                },
-            },
-            SecurityRequirements =
-            [
-                new SecurityRequirement
-                {
-                    Schemes = new Dictionary<string, StringList>
-                    {
-                        ["linkedin"] = new() { List = ["openid", "profile"] },
-                    },
-                },
-            ],
+            OnReceive = () => receiverInvoked = true,
         };
+        var handler = new CapturingTokenHandler("{}");
+        using var httpClient = new HttpClient(handler);
+        var sut = new OAuthAuthorizationCodeTokenClient(httpClient, receiver);
 
-        return A2AAgentCardAuthentication.Select(card, A2AAuthMode.Delegated);
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.AcquireTokenAsync(
+                CreateBinding(
+                    providerType: OAuthCredentialProviderType.GenericOAuth2Pkce,
+                    usePkce: false),
+                CancellationToken.None));
+
+        Assert.Contains("PKCE", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(receiverInvoked);
+        Assert.Null(handler.RequestUri);
     }
+
+    private static OAuthCredentialBinding CreateBinding(
+        OAuthCredentialProviderType providerType = OAuthCredentialProviderType.GenericOAuth2Pkce,
+        bool usePkce = true)
+        => new(
+            ProviderId: "linkedin-provider",
+            ProviderType: providerType,
+            RegistrationId: "browser",
+            Registration: new OAuthClientRegistration(
+                "browser",
+                [A2AOAuthFlowType.AuthorizationCode],
+                "linkedin-client-id",
+                "linkedin-client-secret",
+                new Uri("http://localhost:8400/callback/"),
+                OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
+                UsePkce: usePkce),
+            FlowType: A2AOAuthFlowType.AuthorizationCode,
+            AuthorizationEndpoint: new Uri("https://www.linkedin.com/oauth/v2/authorization"),
+            DeviceAuthorizationEndpoint: null,
+            TokenEndpoint: new Uri("https://www.linkedin.com/oauth/v2/accessToken"),
+            MetadataUrl: null,
+            RegistrationEndpoint: null,
+            EffectiveScopes: ["openid", "profile"],
+            ProviderIdentity: "linkedin-provider");
 
     private sealed class CapturingAuthorizationCodeReceiver(string authorizationCode)
         : IOAuthAuthorizationCodeReceiver
     {
         public Uri? AuthorizationUri { get; private set; }
+
+        public Action? OnReceive { get; init; }
 
         public Task<string> ReceiveCodeAsync(
             Uri authorizationUri,
@@ -112,6 +109,7 @@ public class OAuthAuthorizationCodeTokenClientTests
             string expectedState,
             CancellationToken cancellationToken)
         {
+            OnReceive?.Invoke();
             AuthorizationUri = authorizationUri;
             return Task.FromResult(authorizationCode);
         }

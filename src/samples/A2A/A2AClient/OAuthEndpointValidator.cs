@@ -77,6 +77,22 @@ internal static class OAuthEndpointValidator
         return null;
     }
 
+    public static bool IsSupportedLoopbackRedirectUri(Uri? redirectUri)
+        => redirectUri is not null
+            && redirectUri.IsAbsoluteUri
+            && redirectUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            && redirectUri.IsLoopback
+            && redirectUri.AbsolutePath.EndsWith("/", StringComparison.Ordinal);
+
+    public static void EnsureSupportedLoopbackRedirectUri(Uri? redirectUri)
+    {
+        if (!IsSupportedLoopbackRedirectUri(redirectUri))
+        {
+            throw new InvalidOperationException(
+                "Authorization Code requires an HTTP loopback RedirectUri whose path ends with '/'.");
+        }
+    }
+
     private static string NormalizePath(string path)
         => string.IsNullOrEmpty(path) || path == "/"
             ? string.Empty

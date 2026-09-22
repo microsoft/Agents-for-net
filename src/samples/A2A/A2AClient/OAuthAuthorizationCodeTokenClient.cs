@@ -27,15 +27,13 @@ internal sealed class OAuthAuthorizationCodeTokenClient
     }
 
     public async Task<OAuthAccessToken> AcquireTokenAsync(
-        A2AAgentCardAuthentication authentication,
-        OAuthCredentialProviderOptions provider,
-        OAuthClientRegistration registration,
+        OAuthCredentialBinding binding,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(authentication);
-        ArgumentNullException.ThrowIfNull(provider);
-        ArgumentNullException.ThrowIfNull(registration);
-        if (authentication.FlowType != A2AOAuthFlowType.AuthorizationCode)
+        ArgumentNullException.ThrowIfNull(binding);
+
+        OAuthClientRegistration registration = binding.Registration;
+        if (binding.FlowType != A2AOAuthFlowType.AuthorizationCode)
         {
             throw new InvalidOperationException(
                 "Authorization Code token acquisition requires an Authorization Code OAuth flow.");
@@ -52,22 +50,26 @@ internal sealed class OAuthAuthorizationCodeTokenClient
                 "The selected OAuth client registration requires RedirectUri for Authorization Code.");
         }
 
-        Uri authorizationEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
-            authentication.AuthorizationUrl,
-            provider,
-            "authorization endpoint");
-        Uri tokenEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
-            authentication.TokenUrl,
-            provider,
-            "token endpoint");
+        if ((binding.ProviderType is OAuthCredentialProviderType.GenericOAuth2Pkce
+            or OAuthCredentialProviderType.OAuth21PkceDcr)
+            && !registration.UsePkce)
+        {
+            throw new InvalidOperationException(
+                "The selected OAuth credential binding requires PKCE for Authorization Code.");
+        }
+
+        OAuthEndpointValidator.EnsureSupportedLoopbackRedirectUri(registration.RedirectUri);
+
+        Uri authorizationEndpoint = binding.AuthorizationEndpoint
+            ?? throw new InvalidOperationException(
+                "Authorization Code token acquisition requires an authorization endpoint.");
+        Uri tokenEndpoint = binding.TokenEndpoint;
 
         string state = CreateRandomValue();
         string? codeVerifier = registration.UsePkce ? CreateRandomValue() : null;
         Uri authorizationUri = CreateAuthorizationUri(
             authorizationEndpoint,
-            authentication,
-            provider,
-            registration,
+            binding,
             state,
             codeVerifier);
         string code = await _authorizationCodeReceiver
@@ -92,18 +94,17 @@ internal sealed class OAuthAuthorizationCodeTokenClient
 
     private static Uri CreateAuthorizationUri(
         Uri authorizationEndpoint,
-        A2AAgentCardAuthentication authentication,
-        OAuthCredentialProviderOptions provider,
-        OAuthClientRegistration registration,
+        OAuthCredentialBinding binding,
         string state,
         string? codeVerifier)
     {
+        OAuthClientRegistration registration = binding.Registration;
         var fields = new List<KeyValuePair<string, string>>
         {
             new("response_type", "code"),
             new("client_id", registration.ClientId),
             new("redirect_uri", registration.RedirectUri!.AbsoluteUri),
-            new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, provider))),
+            new("scope", string.Join(' ', binding.EffectiveScopes)),
             new("state", state),
         };
         if (codeVerifier is not null)

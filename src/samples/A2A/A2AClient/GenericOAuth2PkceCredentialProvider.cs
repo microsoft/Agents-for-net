@@ -15,10 +15,12 @@ internal sealed class GenericOAuth2PkceCredentialProvider : GenericOAuth2Credent
             throw new ArgumentNullException(nameof(options));
         }
 
-        if (options.Type != OAuthCredentialProviderType.GenericOAuth2Pkce)
+        if (options.Type is not OAuthCredentialProviderType.GenericOAuth2Pkce
+            and not OAuthCredentialProviderType.OAuth21PkceDcr)
         {
             throw new InvalidOperationException(
-                $"Provider '{options.Id}' must declare Type '{OAuthCredentialProviderType.GenericOAuth2Pkce}'.");
+                $"Provider '{options.Id}' must declare Type '{OAuthCredentialProviderType.GenericOAuth2Pkce}' "
+                + $"or '{OAuthCredentialProviderType.OAuth21PkceDcr}'.");
         }
     }
 

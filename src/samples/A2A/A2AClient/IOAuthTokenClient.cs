@@ -9,15 +9,11 @@ namespace Microsoft.Agents.Samples.A2AClient;
 internal interface IOAuthTokenClient
 {
     Task<OAuthAccessToken> AcquireTokenAsync(
-        A2AAgentCardAuthentication authentication,
-        OAuthCredentialProviderOptions provider,
-        OAuthClientRegistration registration,
+        OAuthCredentialBinding binding,
         CancellationToken cancellationToken);
 
     Task<OAuthAccessToken> RefreshTokenAsync(
-        A2AAgentCardAuthentication authentication,
-        OAuthCredentialProviderOptions provider,
-        OAuthClientRegistration registration,
+        OAuthCredentialBinding binding,
         string refreshToken,
         CancellationToken cancellationToken);
 }

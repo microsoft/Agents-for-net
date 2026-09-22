@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 
@@ -24,4 +25,11 @@ internal static class OAuthScopeResolver
 
         return scopes;
     }
+
+    public static IReadOnlyList<string> GetCacheIdentityScopes(IReadOnlyList<string> scopes)
+        => scopes
+            .Where(scope => !string.IsNullOrWhiteSpace(scope))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(scope => scope, StringComparer.Ordinal)
+            .ToArray();
 }

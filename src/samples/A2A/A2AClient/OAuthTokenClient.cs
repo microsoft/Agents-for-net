@@ -24,22 +24,18 @@ internal sealed class OAuthTokenClient(
         ?? throw new ArgumentNullException(nameof(tokenEndpoint));
 
     public Task<OAuthAccessToken> AcquireTokenAsync(
-        A2AAgentCardAuthentication authentication,
-        OAuthCredentialProviderOptions provider,
-        OAuthClientRegistration registration,
+        OAuthCredentialBinding binding,
         CancellationToken cancellationToken)
-        => authentication.FlowType switch
+        => binding.FlowType switch
         {
-            A2AOAuthFlowType.DeviceCode => _deviceCode.AcquireTokenAsync(authentication, provider, registration, cancellationToken),
-            A2AOAuthFlowType.AuthorizationCode => _authorizationCode.AcquireTokenAsync(authentication, provider, registration, cancellationToken),
-            A2AOAuthFlowType.ClientCredentials => _clientCredentials.AcquireTokenAsync(authentication, provider, registration, cancellationToken),
-            _ => throw new ArgumentOutOfRangeException(nameof(authentication), authentication.FlowType, "Unsupported OAuth flow."),
+            A2AOAuthFlowType.DeviceCode => _deviceCode.AcquireTokenAsync(binding, cancellationToken),
+            A2AOAuthFlowType.AuthorizationCode => _authorizationCode.AcquireTokenAsync(binding, cancellationToken),
+            A2AOAuthFlowType.ClientCredentials => _clientCredentials.AcquireTokenAsync(binding, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(binding), binding.FlowType, "Unsupported OAuth flow."),
         };
 
     public Task<OAuthAccessToken> RefreshTokenAsync(
-        A2AAgentCardAuthentication authentication,
-        OAuthCredentialProviderOptions provider,
-        OAuthClientRegistration registration,
+        OAuthCredentialBinding binding,
         string refreshToken,
         CancellationToken cancellationToken)
     {
@@ -48,17 +44,13 @@ internal sealed class OAuthTokenClient(
             throw new ArgumentException("Refresh token is required.", nameof(refreshToken));
         }
 
-        Uri tokenEndpoint = OAuthEndpointValidator.GetTrustedEndpoint(
-            authentication.TokenUrl,
-            provider,
-            "token endpoint");
         return _tokenEndpoint.RequestTokenAsync(
-            tokenEndpoint,
-            registration,
+            binding.TokenEndpoint,
+            binding.Registration,
             [
                 new("grant_type", "refresh_token"),
                 new("refresh_token", refreshToken),
-                new("scope", string.Join(' ', OAuthScopeResolver.GetScopes(authentication, provider))),
+                new("scope", string.Join(' ', binding.EffectiveScopes)),
             ],
             cancellationToken);
     }

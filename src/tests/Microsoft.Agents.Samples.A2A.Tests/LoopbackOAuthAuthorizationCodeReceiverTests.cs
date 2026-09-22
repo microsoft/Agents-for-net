@@ -14,7 +14,8 @@ public class LoopbackOAuthAuthorizationCodeReceiverTests
     [Theory]
     [InlineData("https://localhost:8400/callback/")]
     [InlineData("http://example.com:8400/callback/")]
-    public async Task ReceiveCodeAsync_NonHttpLoopbackRedirect_ThrowsBeforeOpeningBrowser(string redirectUri)
+    [InlineData("http://localhost:8400/callback")]
+    public async Task ReceiveCodeAsync_IncompatibleRedirect_ThrowsBeforeOpeningBrowser(string redirectUri)
     {
         bool browserOpened = false;
         var sut = new LoopbackOAuthAuthorizationCodeReceiver(_ => browserOpened = true);

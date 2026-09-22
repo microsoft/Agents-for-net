@@ -385,6 +385,49 @@ public class OAuthCredentialProviderResolverTests
         Assert.Contains(nameof(A2AOAuthFlowType.AuthorizationCode), exception.Message);
     }
 
+    [Theory]
+    [InlineData("https://localhost:8400/callback/")]
+    [InlineData("http://localhost:8400/callback")]
+    public async Task ResolveAsync_AuthorizationCodeRejectsRegistrationWithoutSupportedLoopbackRedirect(
+        string redirectUri)
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            A2AAuthMode.Delegated,
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2CredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic",
+                    Type = OAuthCredentialProviderType.GenericOAuth2,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "browser",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "browser-client-id",
+                            ClientSecret: null,
+                            RedirectUri: new Uri(redirectUri),
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: false)),
+                }));
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => resolver.ResolveAsync(s_agentOrigin, authentication, CancellationToken.None));
+
+        Assert.Contains("generic", exception.Message);
+        Assert.Contains(nameof(A2AOAuthFlowType.AuthorizationCode), exception.Message);
+    }
+
     [Fact]
     public async Task ResolveAsync_ClientCredentialsSelectsCompatibleRegistrationOnly()
     {

@@ -55,8 +55,9 @@ internal sealed class Program
                 new OAuthClientCredentialsTokenClient(oauthHttpClient),
                 new OAuthTokenEndpointClient(oauthHttpClient));
             var accessTokenProvider = new A2AAccessTokenProvider(
-                options.Authentication,
-                oauthTokenClient);
+                CreateCredentialProviderResolver(options.Authentication),
+                oauthTokenClient,
+                A2AAgentOrigin.FromAgentUrl(options.AgentUrl));
             using var httpClient = new HttpClient(
                 new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider, options.AgentUrl));
 
@@ -245,5 +246,31 @@ internal sealed class Program
         }
 
         return args[++index];
+    }
+
+    private static IOAuthCredentialProviderResolver CreateCredentialProviderResolver(
+        A2AClientAuthenticationOptions authentication)
+    {
+        ArgumentNullException.ThrowIfNull(authentication);
+
+        IOAuthCredentialProvider[] providers = authentication.Providers.Values
+            .Select(CreateCredentialProvider)
+            .ToArray();
+        return new OAuthCredentialProviderResolver(providers);
+    }
+
+    private static IOAuthCredentialProvider CreateCredentialProvider(OAuthCredentialProviderOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        return options.Type switch
+        {
+            OAuthCredentialProviderType.Entra => new EntraOAuthCredentialProvider(options),
+            OAuthCredentialProviderType.GenericOAuth2 => new GenericOAuth2CredentialProvider(options),
+            OAuthCredentialProviderType.GenericOAuth2Pkce => new GenericOAuth2PkceCredentialProvider(options),
+            OAuthCredentialProviderType.OAuth21PkceDcr => new GenericOAuth2PkceCredentialProvider(options),
+            _ => throw new InvalidOperationException(
+                $"Unsupported OAuth credential provider type '{options.Type}'."),
+        };
     }
 }
