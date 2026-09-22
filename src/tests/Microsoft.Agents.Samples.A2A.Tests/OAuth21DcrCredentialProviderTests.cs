@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Xunit;
 
 namespace Microsoft.Agents.Samples.A2A.Tests;

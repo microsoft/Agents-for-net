@@ -4,41 +4,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Agents.Samples.A2AClient;
 using Microsoft.Extensions.Configuration;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 
-internal sealed class A2AClientOptions
+internal static class OAuthCredentialProviderConfigurationReader
 {
-    public required Uri AgentUrl { get; init; }
-
-    public A2AClientAuthenticationOptions Authentication { get; init; } = new();
-
-    public bool ShowHistory { get; init; }
-
-    public bool UsePushNotifications { get; init; }
-
-    public Uri PushNotificationReceiver { get; init; } = new("http://localhost:5000");
-
-    public static A2AClientOptions FromConfiguration(IConfiguration configuration, StartupOptions startupOptions)
+    public static IReadOnlyDictionary<string, OAuthCredentialProviderOptions> Read(
+        IConfigurationSection providersSection)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(startupOptions);
-
-        Uri agentUrl = startupOptions.AgentUrl
-            ?? GetRequiredAbsoluteUri(configuration, "A2A:AgentUrl");
-
-        return new A2AClientOptions
-        {
-            AgentUrl = agentUrl,
-            Authentication = new A2AClientAuthenticationOptions
-            {
-                Providers = ReadOAuthProviders(configuration.GetSection("Authentication:Providers")),
-            },
-            ShowHistory = startupOptions.ShowHistory,
-            UsePushNotifications = startupOptions.UsePushNotifications,
-            PushNotificationReceiver = startupOptions.PushNotificationReceiver ?? new Uri("http://localhost:5000"),
-        };
+        ArgumentNullException.ThrowIfNull(providersSection);
+        return ReadOAuthProviders(providersSection);
     }
 
     private static IReadOnlyDictionary<string, OAuthCredentialProviderOptions> ReadOAuthProviders(
@@ -318,22 +295,6 @@ internal sealed class A2AClientOptions
     private static string GetConfigurationKey(IConfigurationSection configuration, string key)
         => $"{configuration.Path}:{key}";
 
-    private static Uri GetRequiredAbsoluteUri(IConfiguration configuration, string key)
-    {
-        string? value = configuration[key];
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new InvalidOperationException($"Missing required A2A client configuration value '{key}'.");
-        }
-
-        if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri))
-        {
-            throw new InvalidOperationException($"A2A client configuration value '{key}' must be an absolute URI.");
-        }
-
-        return uri;
-    }
-
     private static Uri GetRequiredAbsoluteUri(string? value, string key)
     {
         if (string.IsNullOrWhiteSpace(value) || !Uri.TryCreate(value, UriKind.Absolute, out Uri? uri))
@@ -343,19 +304,4 @@ internal sealed class A2AClientOptions
 
         return uri;
     }
-}
-
-internal sealed class StartupOptions
-{
-    public Uri? AgentUrl { get; init; }
-
-    public A2AAuthMode? AuthMode { get; init; }
-
-    public bool ShowHistory { get; init; }
-
-    public bool UsePushNotifications { get; init; }
-
-    public Uri? PushNotificationReceiver { get; init; }
-
-    public bool ShowHelp { get; init; }
 }

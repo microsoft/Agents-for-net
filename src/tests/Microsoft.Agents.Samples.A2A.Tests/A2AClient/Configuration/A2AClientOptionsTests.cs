@@ -5,10 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Agents.Samples.A2AClient.Configuration;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 
-namespace Microsoft.Agents.Samples.A2A.Tests;
+namespace Microsoft.Agents.Samples.A2AClient.Tests.Configuration;
 
 public class A2AClientOptionsTests
 {

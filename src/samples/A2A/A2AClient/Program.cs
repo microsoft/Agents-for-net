@@ -8,6 +8,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using A2A;
+using Microsoft.Agents.Samples.A2AClient.Configuration;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Samples.A2AClient;
@@ -44,7 +46,7 @@ internal sealed class Program
                 .AddUserSecrets<Program>(optional: true)
                 .Build();
 
-            A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
+            Configuration.A2AClientOptions options = Configuration.A2AClientOptions.FromConfiguration(configuration, startupOptions);
             var authenticationSession = new A2AAuthenticationSession();
             using var oauthHttpClient = new HttpClient(CreateNoRedirectHttpHandler());
             using var metadataHttpClient = new HttpClient(CreateNoRedirectHttpHandler());

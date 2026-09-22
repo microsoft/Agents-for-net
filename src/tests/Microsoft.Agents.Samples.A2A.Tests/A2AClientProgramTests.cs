@@ -13,6 +13,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Agents.Samples.A2AClient.Configuration;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;

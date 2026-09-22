@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 
