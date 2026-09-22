@@ -200,6 +200,7 @@ Continue to normalize the selected Agent Card or in-task OAuth requirement:
 - Authentication mode
 - Flow type
 - Agent Card security-scheme name, when available
+- OAuth2 metadata URL, when advertised
 - Authorization endpoint
 - Device authorization endpoint
 - Token endpoint
@@ -214,7 +215,7 @@ Represents one configured provider. It contains provider type, trust rules,
 additional scopes, registrations, DCR policy, and optional discovery
 configuration.
 
-### `OAuthClientRegistrationOptions`
+### `OAuthClientRegistration`
 
 Represents one configured local client registration and the grants it can
 satisfy.
@@ -332,15 +333,16 @@ ambiguous provider and registration IDs.
 When no configured provider matches, an `OAuth21PkceDcr` provider with
 interactive approval can attempt discovery:
 
-1. Use an Agent Card OpenID Connect discovery URL when available.
-2. Otherwise try standard authorization-server metadata discovery from the
-   advertised endpoint origin.
-3. If discovery fails, prompt for an issuer or server URL and retry standards-
+1. Use a configured metadata URL when present.
+2. Otherwise use the selected OAuth2 scheme's metadata URL when advertised.
+3. Otherwise try both RFC 8414 and OpenID Connect metadata URLs on each
+   advertised authorization/token endpoint origin.
+4. If discovery fails, prompt for an issuer or server URL and retry standards-
    based metadata discovery.
-4. Require a valid HTTPS `registration_endpoint`.
-5. Display the discovered values and request approval.
-6. Register a public PKCE client.
-7. Save the returned client ID through `IOAuthClientRegistrationStore`.
+5. Require a valid HTTPS `registration_endpoint`.
+6. Display the discovered values and request approval.
+7. Register a public PKCE client.
+8. Save the returned client ID through `IOAuthClientRegistrationStore`.
 
 No registration request is sent before approval.
 
@@ -366,8 +368,9 @@ status. It uses the same provider resolver and no hard-coded connection name.
   is transmitted.
 - All authorization-server, token, metadata, and registration endpoints must
   use HTTPS.
-- Redirects during metadata, DCR, and token requests must not escape the
-  approved authority/origin policy.
+- Metadata and DCR clients disable automatic redirects and reject redirect
+  responses. Token redirects must not escape the approved authority/origin
+  policy.
 - Client secrets are available only to configured confidential
   registrations.
 - DCR creates public clients and does not persist secrets.
@@ -495,4 +498,3 @@ The expected implementation primarily changes:
 New files will contain the provider catalog, resolver, provider
 implementations, approval interface, metadata/DCR clients, credential binding,
 and registration store.
-
