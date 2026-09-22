@@ -46,9 +46,9 @@ internal sealed class Program
 
             A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
             var authenticationSession = new A2AAuthenticationSession();
-            using var oauthHttpClient = new HttpClient();
-            using var metadataHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
-            using var registrationHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+            using var oauthHttpClient = new HttpClient(CreateNoRedirectHttpHandler());
+            using var metadataHttpClient = new HttpClient(CreateNoRedirectHttpHandler());
+            using var registrationHttpClient = new HttpClient(CreateNoRedirectHttpHandler());
             var registrationStore = new InMemoryOAuthClientRegistrationStore();
             var approval = new ConsoleOAuthProviderApproval();
             var metadataClient = new OAuthAuthorizationServerMetadataClient(metadataHttpClient);
@@ -259,6 +259,9 @@ internal sealed class Program
 
         return args[++index];
     }
+
+    internal static HttpClientHandler CreateNoRedirectHttpHandler()
+        => new() { AllowAutoRedirect = false };
 
     internal static IReadOnlyList<IOAuthCredentialProvider> CreateCredentialProviders(
         A2AClientAuthenticationOptions options,

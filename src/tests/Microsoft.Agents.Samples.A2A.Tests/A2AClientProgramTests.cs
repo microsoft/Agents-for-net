@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,14 @@ namespace Microsoft.Agents.Samples.A2A.Tests;
 
 public class A2AClientProgramTests
 {
+    [Fact]
+    public void CreateNoRedirectHttpHandler_DisablesAutomaticRedirects()
+    {
+        using HttpClientHandler handler = Program.CreateNoRedirectHttpHandler();
+
+        Assert.False(handler.AllowAutoRedirect);
+    }
+
     [Fact]
     public void CreateCredentialProviders_CreatesConcreteProviders_AndSharesDcrDependencies()
     {
