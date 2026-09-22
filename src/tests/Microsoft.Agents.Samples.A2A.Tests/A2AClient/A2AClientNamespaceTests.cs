@@ -4,7 +4,7 @@
 using System;
 using Xunit;
 
-namespace Microsoft.Agents.Samples.A2A.Tests;
+namespace Microsoft.Agents.Samples.A2AClient.Tests;
 
 public class A2AClientNamespaceTests
 {
