@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using A2A;
-using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Agents.Samples.A2AClient.A2A;
 using Microsoft.Agents.Samples.A2AClient.OAuth;
 using Xunit;
 
-namespace Microsoft.Agents.Samples.A2A.Tests;
+namespace Microsoft.Agents.Samples.A2AClient.Tests.A2A;
 
 public class A2AAgentCardAuthenticationTests
 {

@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using A2A;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.A2A;
 
 internal sealed class A2AConsole
 {

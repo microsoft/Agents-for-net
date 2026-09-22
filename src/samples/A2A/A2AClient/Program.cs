@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using A2A;
+using Microsoft.Agents.Samples.A2AClient.A2A;
 using Microsoft.Agents.Samples.A2AClient.Configuration;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;

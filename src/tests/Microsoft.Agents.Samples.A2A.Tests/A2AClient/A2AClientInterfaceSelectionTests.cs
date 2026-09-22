@@ -9,9 +9,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Agents.Samples.A2AClient.A2A;
 using Xunit;
 
-namespace Microsoft.Agents.Samples.A2A.Tests;
+namespace Microsoft.Agents.Samples.A2AClient.Tests;
 
 /// <summary>
 /// Agent Card interface selection must reject anything that is not on the configured agent origin,

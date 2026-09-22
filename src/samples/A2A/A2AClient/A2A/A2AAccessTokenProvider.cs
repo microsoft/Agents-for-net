@@ -10,7 +10,7 @@ using Microsoft.Agents.Samples.A2AClient.OAuth;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Providers;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Tokens;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.A2A;
 
 internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
 {

@@ -7,7 +7,7 @@ using System.Linq;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient.OAuth;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.A2A;
 
 /// <summary>
 /// Selects the OAuth metadata needed to acquire an Agent API token from an A2A Agent Card.

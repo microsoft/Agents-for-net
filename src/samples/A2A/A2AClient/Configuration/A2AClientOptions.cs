@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using Microsoft.Agents.Samples.A2AClient.A2A;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Microsoft.Extensions.Configuration;
 

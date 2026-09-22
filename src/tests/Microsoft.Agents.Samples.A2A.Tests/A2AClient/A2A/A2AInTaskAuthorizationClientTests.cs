@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 using A2A;
-using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Agents.Samples.A2AClient.A2A;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -20,7 +20,7 @@ using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Tokens;
 using Xunit;
 
-namespace Microsoft.Agents.Samples.A2A.Tests;
+namespace Microsoft.Agents.Samples.A2AClient.Tests.A2A;
 
 public class A2AInTaskAuthorizationClientTests
 {

@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using A2A;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.A2A;
 
 internal static class A2AResponseWriter
 {

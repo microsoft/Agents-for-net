@@ -10,6 +10,7 @@ public class A2AClientNamespaceTests
 {
     public static TheoryData<Type, string> ExpectedNamespaces => new()
     {
+        { typeof(global::Microsoft.Agents.Samples.A2AClient.A2A.A2AAccessTokenProvider), "Microsoft.Agents.Samples.A2AClient.A2A" },
         { typeof(global::Microsoft.Agents.Samples.A2AClient.Configuration.A2AClientOptions), "Microsoft.Agents.Samples.A2AClient.Configuration" },
         { typeof(global::Microsoft.Agents.Samples.A2AClient.OAuth.Configuration.OAuthCredentialProviderOptions), "Microsoft.Agents.Samples.A2AClient.OAuth.Configuration" },
         { typeof(global::Microsoft.Agents.Samples.A2AClient.OAuth.OAuthCredentialBinding), "Microsoft.Agents.Samples.A2AClient.OAuth" },

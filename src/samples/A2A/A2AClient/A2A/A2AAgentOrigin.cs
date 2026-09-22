@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.A2A;
 
 /// <summary>
 /// Origin rules that decide where the client is willing to send an Agent API access token.
