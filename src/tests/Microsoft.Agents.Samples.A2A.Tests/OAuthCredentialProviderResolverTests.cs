@@ -166,6 +166,136 @@ public class OAuthCredentialProviderResolverTests
     }
 
     [Fact]
+    public async Task ResolveAsync_GenericPkceSkipsRegistrationWithoutRedirectUriAndSelectsValidSibling()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            A2AAuthMode.Delegated,
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2PkceCredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic-pkce",
+                    Type = OAuthCredentialProviderType.GenericOAuth2Pkce,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "missing-redirect",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "missing-redirect-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: true),
+                        new OAuthClientRegistration(
+                            "browser",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "browser-client-id",
+                            ClientSecret: null,
+                            RedirectUri: new Uri("http://localhost:8400/callback/"),
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: true)),
+                }));
+
+        OAuthCredentialBinding binding = await resolver.ResolveAsync(
+            s_agentOrigin,
+            authentication,
+            CancellationToken.None);
+
+        Assert.Equal("browser", binding.RegistrationId);
+        Assert.Equal("browser-client-id", binding.Registration.ClientId);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_GenericPkceRejectsRegistrationWithoutRedirectUri()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            A2AAuthMode.Delegated,
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2PkceCredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic-pkce",
+                    Type = OAuthCredentialProviderType.GenericOAuth2Pkce,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "missing-redirect",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "missing-redirect-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: true)),
+                }));
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => resolver.ResolveAsync(s_agentOrigin, authentication, CancellationToken.None));
+
+        Assert.Contains("generic-pkce", exception.Message);
+        Assert.Contains(nameof(A2AOAuthFlowType.AuthorizationCode), exception.Message);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_GenericPkceRejectsSecretBasedRegistrationWithoutSecret()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            A2AAuthMode.Delegated,
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2PkceCredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic-pkce",
+                    Type = OAuthCredentialProviderType.GenericOAuth2Pkce,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "missing-secret",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "missing-secret-client-id",
+                            ClientSecret: " ",
+                            RedirectUri: new Uri("http://localhost:8400/callback/"),
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
+                            UsePkce: true)),
+                }));
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => resolver.ResolveAsync(s_agentOrigin, authentication, CancellationToken.None));
+
+        Assert.Contains("generic-pkce", exception.Message);
+        Assert.Contains(nameof(A2AOAuthFlowType.AuthorizationCode), exception.Message);
+    }
+
+    [Fact]
     public async Task ResolveAsync_AuthorizationCodeSkipsRegistrationWithoutRedirectUriAndSelectsValidSibling()
     {
         A2AAgentCardAuthentication authentication = CreateAuthentication(

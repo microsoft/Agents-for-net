@@ -25,7 +25,8 @@ internal sealed class GenericOAuth2PkceCredentialProvider : GenericOAuth2Credent
     protected override bool IsRegistrationCompatible(
         OAuthClientRegistration registration,
         A2AAgentCardAuthentication authentication)
-        => authentication.FlowType != A2AOAuthFlowType.AuthorizationCode || registration.UsePkce;
+        => base.IsRegistrationCompatible(registration, authentication)
+            && (authentication.FlowType != A2AOAuthFlowType.AuthorizationCode || registration.UsePkce);
 
     protected override string GetMissingRegistrationMessage(A2AAgentCardAuthentication authentication)
         => authentication.FlowType == A2AOAuthFlowType.AuthorizationCode
