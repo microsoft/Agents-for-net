@@ -58,15 +58,6 @@ internal sealed class A2AClientOptions
         return uri;
     }
 
-    private static Uri GetRequiredAbsoluteUri(string? value, string key)
-    {
-        if (string.IsNullOrWhiteSpace(value) || !Uri.TryCreate(value, UriKind.Absolute, out Uri? uri))
-        {
-            throw new InvalidOperationException($"A2A client configuration value '{key}' must be an absolute URI.");
-        }
-
-        return uri;
-    }
 }
 
 internal sealed class StartupOptions

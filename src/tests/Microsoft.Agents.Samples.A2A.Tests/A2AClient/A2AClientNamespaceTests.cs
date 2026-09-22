@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Linq;
 using Xunit;
 
 namespace Microsoft.Agents.Samples.A2AClient.Tests;
@@ -25,5 +26,18 @@ public class A2AClientNamespaceTests
     public void Type_UsesExpectedNamespace(Type type, string expectedNamespace)
     {
         Assert.Equal(expectedNamespace, type.Namespace);
+    }
+
+    [Fact]
+    public void RootNamespace_ContainsOnlyProgram()
+    {
+        Type[] rootNamespaceTypes = typeof(Program).Assembly.GetTypes()
+            .Where(type =>
+                !type.IsNested
+                && string.Equals(type.Namespace, "Microsoft.Agents.Samples.A2AClient", StringComparison.Ordinal))
+            .ToArray();
+
+        Type programType = Assert.Single(rootNamespaceTypes);
+        Assert.Same(typeof(Program), programType);
     }
 }

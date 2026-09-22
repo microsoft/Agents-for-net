@@ -7,7 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using A2A;
+using A2AProtocol = A2A;
 using Microsoft.Agents.Samples.A2AClient.A2A;
 using Microsoft.Agents.Samples.A2AClient.Configuration;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
@@ -51,7 +51,7 @@ internal sealed class Program
                 .AddUserSecrets<Program>(optional: true)
                 .Build();
 
-            Configuration.A2AClientOptions options = Configuration.A2AClientOptions.FromConfiguration(configuration, startupOptions);
+            A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
             var authenticationSession = new A2AAuthenticationSession();
             using var oauthHttpClient = new HttpClient(CreateNoRedirectHttpHandler());
             using var metadataHttpClient = new HttpClient(CreateNoRedirectHttpHandler());
@@ -80,8 +80,8 @@ internal sealed class Program
             using var httpClient = new HttpClient(
                 new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider, options.AgentUrl));
 
-            var resolver = new A2ACardResolver(options.AgentUrl, httpClient);
-            AgentCard card = await resolver.GetAgentCardAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+            var resolver = new A2AProtocol.A2ACardResolver(options.AgentUrl, httpClient);
+            A2AProtocol.AgentCard card = await resolver.GetAgentCardAsync(cancellationTokenSource.Token).ConfigureAwait(false);
             if ((card.Capabilities.Extensions ?? []).Any(extension =>
                 string.Equals(extension.Uri, A2AInTaskAuthorizationClient.ExtensionUri, StringComparison.Ordinal)))
             {
@@ -93,7 +93,7 @@ internal sealed class Program
             {
                 authenticationSession.SetMode(authMode);
             }
-            IA2AClient client = CreateClient(card, httpClient, options.AgentUrl);
+            A2AProtocol.IA2AClient client = CreateClient(card, httpClient, options.AgentUrl);
             A2AInTaskAuthorizationClient inTaskAuthorizationClient =
                 A2AInTaskAuthorizationClient.Create(card, httpClient, accessTokenProvider, options.AgentUrl);
 
@@ -200,14 +200,14 @@ internal sealed class Program
     /// agent, so an interface URL pointing somewhere else must fail here — before the shared authenticated
     /// <see cref="HttpClient"/> could attach the Agent API access token to it.
     /// </remarks>
-    internal static IA2AClient CreateClient(AgentCard card, HttpClient httpClient, Uri agentUrl)
+    internal static A2AProtocol.IA2AClient CreateClient(A2AProtocol.AgentCard card, HttpClient httpClient, Uri agentUrl)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(httpClient);
 
         Uri agentOrigin = A2AAgentOrigin.FromAgentUrl(agentUrl);
 
-        List<AgentInterface> supported = (card.SupportedInterfaces ?? [])
+        List<A2AProtocol.AgentInterface> supported = (card.SupportedInterfaces ?? [])
             .Where(item => IsSupportedBinding(item.ProtocolBinding))
             .ToList();
 
@@ -217,9 +217,9 @@ internal sealed class Program
                 "The Agent Card does not advertise a supported JSON-RPC or HTTP+JSON interface.");
         }
 
-        AgentInterface? interfaceDefinition = null;
+        A2AProtocol.AgentInterface? interfaceDefinition = null;
         Uri? interfaceUri = null;
-        foreach (AgentInterface candidate in supported)
+        foreach (A2AProtocol.AgentInterface candidate in supported)
         {
             if (Uri.TryCreate(candidate.Url, UriKind.Absolute, out Uri? candidateUri)
                 && A2AAgentOrigin.IsSameOrigin(agentOrigin, candidateUri))
@@ -237,14 +237,14 @@ internal sealed class Program
                 + "Refusing to use an interface hosted elsewhere.");
         }
 
-        return string.Equals(interfaceDefinition.ProtocolBinding, ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
+        return string.Equals(interfaceDefinition.ProtocolBinding, A2AProtocol.ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
             ? new global::A2A.A2AClient(interfaceUri, httpClient)
-            : new A2AHttpJsonClient(interfaceUri, httpClient);
+            : new A2AProtocol.A2AHttpJsonClient(interfaceUri, httpClient);
     }
 
     private static bool IsSupportedBinding(string? protocolBinding)
-        => string.Equals(protocolBinding, ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(protocolBinding, ProtocolBindingNames.HttpJson, StringComparison.OrdinalIgnoreCase);
+        => string.Equals(protocolBinding, A2AProtocol.ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(protocolBinding, A2AProtocol.ProtocolBindingNames.HttpJson, StringComparison.OrdinalIgnoreCase);
 
     private static Uri ReadAbsoluteUri(string[] args, ref int index, string optionName)
     {
