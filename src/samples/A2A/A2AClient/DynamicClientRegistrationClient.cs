@@ -66,6 +66,8 @@ internal sealed class DynamicClientRegistrationClient : IDynamicClientRegistrati
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken).ConfigureAwait(false);
 
+        EnsureFinalRequestUriMatchesOrigin(response, trustedRegistrationEndpoint);
+
         if (response.StatusCode is < HttpStatusCode.OK or >= HttpStatusCode.MultipleChoices)
         {
             throw await CreateHttpFailureExceptionAsync(response, cancellationToken).ConfigureAwait(false);
@@ -241,6 +243,35 @@ internal sealed class DynamicClientRegistrationClient : IDynamicClientRegistrati
         catch (InvalidOperationException)
         {
             return (null, null);
+        }
+    }
+
+    private static void EnsureFinalRequestUriMatchesOrigin(
+        HttpResponseMessage response,
+        Uri registrationEndpoint)
+    {
+        Uri? finalRequestUri = response.RequestMessage?.RequestUri;
+        if (finalRequestUri is null)
+        {
+            throw new InvalidOperationException(
+                $"Dynamic client registration endpoint '{registrationEndpoint.AbsoluteUri}' returned a response without a final request URI.");
+        }
+
+        if (!finalRequestUri.IsAbsoluteUri)
+        {
+            throw new InvalidOperationException(
+                $"Dynamic client registration endpoint '{registrationEndpoint.AbsoluteUri}' returned non-absolute final request URI '{finalRequestUri}'.");
+        }
+
+        if (Uri.Compare(
+                registrationEndpoint,
+                finalRequestUri,
+                UriComponents.SchemeAndServer,
+                UriFormat.Unescaped,
+                StringComparison.OrdinalIgnoreCase) != 0)
+        {
+            throw new InvalidOperationException(
+                $"Dynamic client registration endpoint '{registrationEndpoint.AbsoluteUri}' returned final request URI '{finalRequestUri.AbsoluteUri}' on a different origin.");
         }
     }
 

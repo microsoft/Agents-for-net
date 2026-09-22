@@ -107,6 +107,37 @@ public class DynamicClientRegistrationClientTests
     }
 
     [Fact]
+    public async Task RegisterPublicClientAsync_RejectsSuccessfulResponseFromDifferentFinalOriginWithoutLeakingBody()
+    {
+        Uri registrationEndpoint = new("https://identity.example.com/oauth/register");
+        Uri unexpectedFinalUri = new("https://login.example.com/oauth/register");
+        var response = CreateResponse(
+            HttpStatusCode.OK,
+            """
+            {
+              "client_id": "provider-client-id",
+              "client_secret": "top-secret"
+            }
+            """);
+        var handler = new RecordingRegistrationHandler(response)
+        {
+            ResponseRequestUri = unexpectedFinalUri,
+        };
+        var sut = new DynamicClientRegistrationClient(handler);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.RegisterPublicClientAsync(
+                "browser",
+                registrationEndpoint,
+                new Uri("http://localhost:8400/callback/"),
+                CancellationToken.None));
+
+        Assert.Contains("final request URI", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(unexpectedFinalUri.AbsoluteUri, exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("top-secret", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RegisterPublicClientAsync_NonSuccessResponse_IncludesOnlySafeOAuthErrorFields()
     {
         var handler = new RecordingRegistrationHandler(
@@ -340,6 +371,8 @@ public class DynamicClientRegistrationClientTests
 
         public List<Uri> RequestUris { get; } = [];
 
+        public Uri? ResponseRequestUri { get; init; }
+
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
@@ -351,7 +384,9 @@ public class DynamicClientRegistrationClientTests
             Content = request.Content is null
                 ? string.Empty
                 : await request.Content.ReadAsStringAsync(cancellationToken);
-            return _responses.Dequeue();
+            HttpResponseMessage response = _responses.Dequeue();
+            response.RequestMessage = new HttpRequestMessage(request.Method, ResponseRequestUri ?? request.RequestUri);
+            return response;
         }
     }
 }
