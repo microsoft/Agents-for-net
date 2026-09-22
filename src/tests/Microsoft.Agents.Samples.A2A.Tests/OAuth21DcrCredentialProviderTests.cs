@@ -244,6 +244,177 @@ public class OAuth21DcrCredentialProviderTests
     }
 
     [Fact]
+    public async Task BindAsync_InvalidAdvertisedDiscoveryInputs_FallThroughToPrompt()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata(
+            issuer: "https://issuer.example/tenant",
+            metadataUrl: "https://issuer.example/.well-known/oauth-authorization-server/tenant");
+        var metadataClient = new RecordingMetadataClient(metadata);
+        var approval = new RecordingApproval
+        {
+            RequestedServerUri = new Uri("https://issuer.example/tenant"),
+        };
+        var sut = CreateProvider(
+            metadataClient: metadataClient,
+            registrationStore: new RecordingRegistrationStore(
+                CreateStoreEntry(metadata.Issuer.AbsoluteUri, s_redirectUri, CreateDynamicRegistration())),
+            approval: approval);
+        A2AAgentCardAuthentication authentication = A2AAgentCardAuthentication.CreateInTask(
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "http://identity.example.com/oauth/authorize",
+                    TokenUrl = "http://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        OAuthCredentialBinding binding = await sut.BindAsync(
+            s_agentOrigin,
+            authentication,
+            Assert.IsType<OAuthProviderMatch>(sut.Match(authentication)),
+            CancellationToken.None);
+
+        Assert.Equal(1, approval.RequestServerUriCallCount);
+        Assert.Equal(0, approval.ApproveCallCount);
+        Assert.Equal(
+        [
+            new Uri("https://issuer.example/.well-known/oauth-authorization-server/tenant"),
+            new Uri("https://issuer.example/tenant/.well-known/openid-configuration"),
+        ],
+        Assert.Single(metadataClient.Requests));
+        Assert.Equal(metadata.Issuer.AbsoluteUri, binding.ProviderIdentity);
+    }
+
+    [Fact]
+    public async Task BindAsync_ConfiguredServerUrlIsTriedBeforePrompt_AndSuppressesPromptOnSuccess()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata(
+            issuer: "https://configured.example/tenant",
+            metadataUrl: "https://configured.example/.well-known/oauth-authorization-server/tenant");
+        var metadataClient = new RecordingMetadataClient(
+            new InvalidOperationException("initial discovery failed"),
+            metadata);
+        var approval = new RecordingApproval
+        {
+            RequestedServerUri = new Uri("https://prompted.example/tenant"),
+        };
+        var sut = CreateProvider(
+            options: new OAuthCredentialProviderOptions
+            {
+                Id = "dcr",
+                Type = OAuthCredentialProviderType.OAuth21PkceDcr,
+                AllowInteractiveApproval = true,
+                RedirectUri = s_redirectUri,
+                ServerUrl = new Uri("https://configured.example/tenant"),
+            },
+            metadataClient: metadataClient,
+            registrationStore: new RecordingRegistrationStore(
+                CreateStoreEntry(metadata.Issuer.AbsoluteUri, s_redirectUri, CreateDynamicRegistration())),
+            approval: approval);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        OAuthCredentialBinding binding = await sut.BindAsync(
+            s_agentOrigin,
+            authentication,
+            Assert.IsType<OAuthProviderMatch>(sut.Match(authentication)),
+            CancellationToken.None);
+
+        Assert.Equal(0, approval.RequestServerUriCallCount);
+        Assert.Equal(
+        [
+            new Uri("https://identity.example.com/.well-known/oauth-authorization-server"),
+            new Uri("https://identity.example.com/.well-known/openid-configuration"),
+        ],
+        metadataClient.Requests[0]);
+        Assert.Equal(
+        [
+            new Uri("https://configured.example/.well-known/oauth-authorization-server/tenant"),
+            new Uri("https://configured.example/tenant/.well-known/openid-configuration"),
+        ],
+        metadataClient.Requests[1]);
+        Assert.Equal(metadata.Issuer.AbsoluteUri, binding.ProviderIdentity);
+    }
+
+    [Fact]
+    public async Task BindAsync_ConfiguredServerUrlFailure_FallsThroughToPrompt()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata(
+            issuer: "https://prompted.example/tenant",
+            metadataUrl: "https://prompted.example/.well-known/oauth-authorization-server/tenant");
+        var metadataClient = new RecordingMetadataClient(
+            new InvalidOperationException("initial discovery failed"),
+            new InvalidOperationException("configured server discovery failed"),
+            metadata);
+        var approval = new RecordingApproval
+        {
+            RequestedServerUri = new Uri("https://prompted.example/tenant"),
+        };
+        var sut = CreateProvider(
+            options: new OAuthCredentialProviderOptions
+            {
+                Id = "dcr",
+                Type = OAuthCredentialProviderType.OAuth21PkceDcr,
+                AllowInteractiveApproval = true,
+                RedirectUri = s_redirectUri,
+                ServerUrl = new Uri("https://configured.example/tenant"),
+            },
+            metadataClient: metadataClient,
+            registrationStore: new RecordingRegistrationStore(
+                CreateStoreEntry(metadata.Issuer.AbsoluteUri, s_redirectUri, CreateDynamicRegistration())),
+            approval: approval);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        OAuthCredentialBinding binding = await sut.BindAsync(
+            s_agentOrigin,
+            authentication,
+            Assert.IsType<OAuthProviderMatch>(sut.Match(authentication)),
+            CancellationToken.None);
+
+        Assert.Equal(1, approval.RequestServerUriCallCount);
+        Assert.Equal(
+        [
+            new Uri("https://identity.example.com/.well-known/oauth-authorization-server"),
+            new Uri("https://identity.example.com/.well-known/openid-configuration"),
+        ],
+        metadataClient.Requests[0]);
+        Assert.Equal(
+        [
+            new Uri("https://configured.example/.well-known/oauth-authorization-server/tenant"),
+            new Uri("https://configured.example/tenant/.well-known/openid-configuration"),
+        ],
+        metadataClient.Requests[1]);
+        Assert.Equal(
+        [
+            new Uri("https://prompted.example/.well-known/oauth-authorization-server/tenant"),
+            new Uri("https://prompted.example/tenant/.well-known/openid-configuration"),
+        ],
+        metadataClient.Requests[2]);
+        Assert.Equal(metadata.Issuer.AbsoluteUri, binding.ProviderIdentity);
+    }
+
+    [Fact]
     public async Task BindAsync_DiscoveryFailurePromptsForServerUri_AndDeclinedApprovalStopsBeforeRegistration()
     {
         OAuthAuthorizationServerMetadata metadata = CreateMetadata(

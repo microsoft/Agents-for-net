@@ -141,14 +141,38 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
         CancellationToken cancellationToken)
     {
         IReadOnlyList<Uri> discoveryCandidates = GetDiscoveryCandidates(authentication);
+        Exception? discoveryFailure = null;
 
-        try
+        if (discoveryCandidates.Count > 0)
         {
-            return await _metadataClient.DiscoverAsync(discoveryCandidates, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return await _metadataClient.DiscoverAsync(discoveryCandidates, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or HttpRequestException
+                && !cancellationToken.IsCancellationRequested)
+            {
+                discoveryFailure = exception;
+            }
         }
-        catch (Exception exception) when (exception is InvalidOperationException or HttpRequestException
-            && !cancellationToken.IsCancellationRequested
-            && _options.AllowInteractiveApproval)
+
+        if (_options.ServerUrl is not null)
+        {
+            IReadOnlyList<Uri> configuredServerCandidates =
+                OAuthAuthorizationServerMetadataClient.GetMetadataCandidatesFromIssuer(_options.ServerUrl);
+
+            try
+            {
+                return await _metadataClient.DiscoverAsync(configuredServerCandidates, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or HttpRequestException
+                && !cancellationToken.IsCancellationRequested)
+            {
+                discoveryFailure = exception;
+            }
+        }
+
+        if (_options.AllowInteractiveApproval)
         {
             Uri? serverUri = await _approval.RequestServerUriAsync(
                 agentOrigin,
@@ -163,6 +187,9 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
             IReadOnlyList<Uri> promptedCandidates = OAuthAuthorizationServerMetadataClient.GetMetadataCandidatesFromIssuer(serverUri);
             return await _metadataClient.DiscoverAsync(promptedCandidates, cancellationToken).ConfigureAwait(false);
         }
+
+        throw discoveryFailure ?? new InvalidOperationException(
+            $"OAuth provider '{Id}' could not discover OAuth metadata because no valid discovery candidates were available.");
     }
 
     private IReadOnlyList<Uri> GetDiscoveryCandidates(A2AAgentCardAuthentication authentication)
@@ -175,12 +202,10 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
 
         if (!string.IsNullOrWhiteSpace(authentication.MetadataUrl))
         {
-            candidates.AddRange(
-                OAuthAuthorizationServerMetadataClient.GetMetadataCandidatesFromMetadataUrl(
-                    OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.MetadataUrl, "metadata URL")));
+            TryAddMetadataCandidates(authentication.MetadataUrl, candidates);
         }
 
-        foreach (Uri endpoint in GetOriginEndpoints(authentication))
+        foreach (Uri endpoint in GetOriginEndpoints(authentication).Distinct())
         {
             candidates.AddRange(OAuthAuthorizationServerMetadataClient.GetMetadataCandidatesFromOrigin(endpoint));
         }
@@ -188,30 +213,67 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
         return OAuthAuthorizationServerMetadataClient.DeduplicateMetadataCandidates(candidates);
     }
 
+    private static void TryAddMetadataCandidates(string? metadataUrl, List<Uri> candidates)
+    {
+        if (TryGetAdvertisedEndpoint(metadataUrl, "metadata URL", out Uri? metadataEndpoint)
+            && metadataEndpoint is not null)
+        {
+            candidates.AddRange(
+                OAuthAuthorizationServerMetadataClient.GetMetadataCandidatesFromMetadataUrl(metadataEndpoint));
+        }
+    }
+
     private static IReadOnlyList<Uri> GetOriginEndpoints(A2AAgentCardAuthentication authentication)
     {
         var endpoints = new List<Uri>();
-        if (!string.IsNullOrWhiteSpace(authentication.AuthorizationUrl))
+        if (TryGetAdvertisedEndpoint(authentication.AuthorizationUrl, "authorization endpoint", out Uri? authorizationEndpoint)
+            && authorizationEndpoint is not null)
         {
-            endpoints.Add(
-                OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.AuthorizationUrl, "authorization endpoint"));
+            endpoints.Add(authorizationEndpoint);
         }
 
-        endpoints.Add(OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.TokenUrl, "token endpoint"));
+        if (TryGetAdvertisedEndpoint(authentication.TokenUrl, "token endpoint", out Uri? tokenEndpoint)
+            && tokenEndpoint is not null)
+        {
+            endpoints.Add(tokenEndpoint);
+        }
+
         return endpoints;
     }
 
     private static IReadOnlyList<Uri> GetAdvertisedEndpoints(A2AAgentCardAuthentication authentication)
     {
         var endpoints = new List<Uri>();
-        if (!string.IsNullOrWhiteSpace(authentication.AuthorizationUrl))
+        if (TryGetAdvertisedEndpoint(authentication.AuthorizationUrl, "authorization endpoint", out Uri? authorizationEndpoint)
+            && authorizationEndpoint is not null)
         {
-            endpoints.Add(
-                OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.AuthorizationUrl, "authorization endpoint"));
+            endpoints.Add(authorizationEndpoint);
         }
 
-        endpoints.Add(OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.TokenUrl, "token endpoint"));
+        if (TryGetAdvertisedEndpoint(authentication.TokenUrl, "token endpoint", out Uri? tokenEndpoint)
+            && tokenEndpoint is not null)
+        {
+            endpoints.Add(tokenEndpoint);
+        }
+
         return endpoints;
+    }
+
+    private static bool TryGetAdvertisedEndpoint(
+        string? value,
+        string endpointName,
+        out Uri? endpoint)
+    {
+        try
+        {
+            endpoint = OAuthEndpointValidator.GetAdvertisedEndpoint(value, endpointName);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            endpoint = null;
+            return false;
+        }
     }
 
     private static void EnsureStoredRegistrationCompatible(
