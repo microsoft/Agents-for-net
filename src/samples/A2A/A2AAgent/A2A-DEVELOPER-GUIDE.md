@@ -504,6 +504,13 @@ The client sends the original input unchanged. Skill selection is a client-side
 prediction and does not constrain server routing. Tied matches are not guessed,
 and task continuations retain the selection made when the task began.
 
+After the client selects a skill, it resolves both Agent Card authorization and
+in-task authorization through the same local provider catalog. Advertised
+scheme names identify the remote security entry, but they do not select local
+provider or registration IDs. Local matching is deterministic over the
+advertised flow, metadata URL, and endpoints, and equal-rank provider matches
+fail explicitly instead of falling back to an arbitrary choice.
+
 ## Current preview limitations
 
 - The server extension implements the Agents SDK in-task authorization

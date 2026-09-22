@@ -146,13 +146,15 @@ tokens or application-role validation.
 
 Configure the [A2AClient sample](../A2AClient/README.md) with:
 
-- `Authentication:Connections:delegated:ClientId` set to the Agent API client
-  ID.
+- `Authentication:Providers:entra:Registrations:delegated:ClientId` set to the
+  Agent API client ID.
 
 The Agent API registration itself must be used as the public client for this
 sample so the inbound token satisfies the SDK's OBO exchange checks.
 Configure the tenant ID in this agent's `DeviceAuthorizationUrl` and `TokenUrl`;
-the client uses the endpoints advertised by the authorization metadata.
+the client uses the endpoints advertised by the authorization metadata. The
+Agent Card's scheme name does not select local client configuration; the client
+matches its local provider catalog from the advertised flow and endpoints.
 
 Start the client without `--auth-mode` and send:
 

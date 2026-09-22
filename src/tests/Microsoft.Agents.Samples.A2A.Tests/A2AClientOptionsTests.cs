@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Microsoft.Agents.Samples.A2AClient;
 using Microsoft.Extensions.Configuration;
 using Xunit;
@@ -108,6 +109,39 @@ public class A2AClientOptionsTests
     }
 
     [Fact]
+    public void FromConfiguration_SampleAppSettings_BindsDocumentedProviderCatalog()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddJsonFile(GetA2AClientSampleAppSettingsPath(), optional: false)
+            .Build();
+
+        A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, new StartupOptions());
+
+        OAuthCredentialProviderOptions entra = Assert.IsType<OAuthCredentialProviderOptions>(options.Authentication.Providers["entra"]);
+        Assert.Equal(OAuthCredentialProviderType.Entra, entra.Type);
+        Assert.Equal(["offline_access"], entra.AdditionalScopes);
+        Assert.Contains(new Uri("https://login.microsoftonline.com"), entra.AllowedAuthorities);
+        Assert.Equal(
+            [A2AOAuthFlowType.DeviceCode, A2AOAuthFlowType.AuthorizationCode],
+            entra.Registrations["delegated"].GrantTypes);
+        Assert.Equal([A2AOAuthFlowType.ClientCredentials], entra.Registrations["application"].GrantTypes);
+        Assert.Equal(string.Empty, entra.Registrations["application"].ClientSecret);
+
+        OAuthCredentialProviderOptions genericPkce = Assert.IsType<OAuthCredentialProviderOptions>(options.Authentication.Providers["browser-oauth"]);
+        Assert.Equal(OAuthCredentialProviderType.GenericOAuth2Pkce, genericPkce.Type);
+        Assert.Contains(new Uri("https://identity.example.com"), genericPkce.AllowedOrigins);
+        Assert.Equal(
+            [A2AOAuthFlowType.AuthorizationCode],
+            genericPkce.Registrations["browser"].GrantTypes);
+
+        OAuthCredentialProviderOptions dcr = Assert.IsType<OAuthCredentialProviderOptions>(options.Authentication.Providers["interactive-dcr"]);
+        Assert.Equal(OAuthCredentialProviderType.OAuth21PkceDcr, dcr.Type);
+        Assert.True(dcr.AllowInteractiveApproval);
+        Assert.Equal(new Uri("http://localhost:8402/callback/"), dcr.RedirectUri);
+        Assert.Empty(dcr.Registrations);
+    }
+
+    [Fact]
     public void FromConfiguration_UnknownProviderType_Throws()
     {
         IConfiguration configuration = CreateAuthenticationConfiguration(
@@ -190,4 +224,17 @@ public class A2AClientOptionsTests
             .AddInMemoryCollection(values)
             .Build();
     }
+
+    private static string GetA2AClientSampleAppSettingsPath()
+        => Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "src",
+            "samples",
+            "A2A",
+            "A2AClient",
+            "appsettings.json"));
 }

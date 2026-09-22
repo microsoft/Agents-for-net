@@ -134,14 +134,19 @@ The configuration has two top-level areas:
 
 ### `Authentication:Providers`
 
-`Providers` is a dictionary of local OAuth provider policies. The agent still
-advertises the flow, scopes, and endpoints. Local configuration supplies trust
-rules, registered clients, optional extra scopes, and the approval policy for
-interactive OAuth 2.1 dynamic client registration.
+`Providers` is a dictionary of local OAuth provider policies. The Agent Card
+still discovers the advertised flow, scopes, metadata URL, and OAuth
+endpoints. Local configuration supplies trust rules, registered clients,
+optional extra scopes, and the approval policy for interactive OAuth 2.1
+dynamic client registration.
 
-Agent Card scheme names are diagnostic only. The client resolves both Agent
-Card authorization and in-task authorization through the same provider
-resolver, using the advertised flow and endpoints instead of a local alias.
+Provider IDs and registration IDs are local configuration identifiers only.
+Agent Card scheme names are diagnostic and never select a local provider.
+Both Agent Card authorization and in-task authorization go through the same
+deterministic provider resolver, which ranks candidates by provider type,
+trusted authority/origin specificity, and registration compatibility. If two
+local matches tie at the same rank, the client reports an explicit ambiguity
+error instead of guessing.
 
 ### Provider properties
 
@@ -202,9 +207,20 @@ endpoint URLs advertised by the agent.
 - Requires `Type: OAuth21PkceDcr` and a loopback `RedirectUri`.
 - Reuses a stored public client registration when one already exists for the
   discovered issuer and redirect URI.
+- Discovers metadata in this order: configured `MetadataUrl`, advertised
+  metadata URL, origins derived from advertised authorization and token
+  endpoints, configured `ServerUrl`, and finally an interactive server-URL
+  prompt when approval is enabled.
 - When no stored registration exists and `AllowInteractiveApproval` is `true`,
   the client shows the discovered issuer, metadata, registration endpoint, and
   redirect URI before registering a public PKCE client.
+
+### Dynamic client registration storage
+
+The sample program uses a process-local in-memory registration store, so DCR
+registrations last only for the current process. Applications can replace
+`IOAuthClientRegistrationStore` with their own durable implementation before
+constructing `OAuth21DcrCredentialProvider`.
 
 ## Keep credentials outside `appsettings.json`
 
@@ -215,7 +231,12 @@ credentials with .NET user secrets:
 dotnet user-secrets set "Authentication:Providers:entra:Registrations:delegated:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
 dotnet user-secrets set "Authentication:Providers:entra:Registrations:application:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
 dotnet user-secrets set "Authentication:Providers:entra:Registrations:application:ClientSecret" "<client-secret>" --project src\samples\A2A\A2AClient\A2AClient.csproj
+dotnet user-secrets set "Authentication:Providers:browser-oauth:Registrations:browser:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
 ```
+
+These configuration paths use local provider and registration IDs. Do not
+replace `entra`, `application`, or `browser-oauth` with an Agent Card scheme
+name.
 
 Environment variables use the `A2ACLIENT_` prefix and `__` for configuration
 section separators:
@@ -241,7 +262,7 @@ to card-level requirements when appropriate. A requirement is usable when it:
 - has valid HTTPS endpoints trusted by the matching local provider policy.
 
 If automatic selection finds multiple delegated or application alternatives,
-the client reports the ambiguity instead of guessing.
+the client reports the equal-rank ambiguity instead of guessing.
 
 The acquired token is sent in the normal HTTP `Authorization` header.
 
@@ -254,7 +275,7 @@ If a task enters `TASK_STATE_AUTH_REQUIRED`, the client:
 
 1. Reads the OAuth flow and required scopes from the task status metadata.
 1. Resolves the request through the shared local provider catalog using the
-   advertised flow and endpoints.
+   advertised flow, metadata URL, and endpoints.
 1. Acquires the requested token.
 1. Calls `resumeAuth`.
 1. Sends the raw token in `x-a2a-intask-authorization`.
