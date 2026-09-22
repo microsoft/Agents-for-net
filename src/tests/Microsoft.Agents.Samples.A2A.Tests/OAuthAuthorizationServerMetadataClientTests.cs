@@ -184,6 +184,66 @@ public class OAuthAuthorizationServerMetadataClientTests
     }
 
     [Fact]
+    public async Task DiscoverAsync_TrailingSlashNearMatchDoesNotInvertIssuer()
+    {
+        Uri candidate = new("https://identity.example.com/.well-known/openid-configuration/");
+        var handler = new StubMetadataHandler(
+            CreateResponse(
+                HttpStatusCode.OK,
+                CreateMetadataJson(
+                    issuer: "https://identity.example.com/tenant",
+                    authorizationEndpoint: "https://identity.example.com/tenant/oauth/authorize",
+                    tokenEndpoint: "https://identity.example.com/tenant/oauth/token",
+                    registrationEndpoint: "https://identity.example.com/tenant/oauth/register")));
+        var sut = new OAuthAuthorizationServerMetadataClient(handler);
+
+        OAuthAuthorizationServerMetadata metadata = await sut.DiscoverAsync([candidate], CancellationToken.None);
+
+        Assert.Equal(new Uri("https://identity.example.com/tenant"), metadata.Issuer);
+        Assert.Equal(candidate, metadata.MetadataUrl);
+    }
+
+    [Fact]
+    public async Task DiscoverAsync_CasingVariantNearMatchDoesNotInvertIssuer()
+    {
+        Uri candidate = new("https://identity.example.com/.WELL-known/openid-configuration");
+        var handler = new StubMetadataHandler(
+            CreateResponse(
+                HttpStatusCode.OK,
+                CreateMetadataJson(
+                    issuer: "https://identity.example.com/tenant",
+                    authorizationEndpoint: "https://identity.example.com/tenant/oauth/authorize",
+                    tokenEndpoint: "https://identity.example.com/tenant/oauth/token",
+                    registrationEndpoint: "https://identity.example.com/tenant/oauth/register")));
+        var sut = new OAuthAuthorizationServerMetadataClient(handler);
+
+        OAuthAuthorizationServerMetadata metadata = await sut.DiscoverAsync([candidate], CancellationToken.None);
+
+        Assert.Equal(new Uri("https://identity.example.com/tenant"), metadata.Issuer);
+        Assert.Equal(candidate, metadata.MetadataUrl);
+    }
+
+    [Fact]
+    public async Task DiscoverAsync_RejectsCanonicalOpenIdCandidateWhoseIssuerDoesNotMatchDerivedPath()
+    {
+        Uri candidate = new("https://identity.example.com/tenant/.well-known/openid-configuration");
+        var handler = new StubMetadataHandler(
+            CreateResponse(
+                HttpStatusCode.OK,
+                CreateMetadataJson(
+                    issuer: "https://identity.example.com/other",
+                    authorizationEndpoint: "https://identity.example.com/tenant/oauth/authorize",
+                    tokenEndpoint: "https://identity.example.com/tenant/oauth/token",
+                    registrationEndpoint: "https://identity.example.com/tenant/oauth/register")));
+        var sut = new OAuthAuthorizationServerMetadataClient(handler);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.DiscoverAsync([candidate], CancellationToken.None));
+
+        Assert.Contains(candidate.AbsoluteUri, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task DiscoverAsync_FinalFailureListsAttemptedUrlsWithoutResponseBodies()
     {
         Uri first = new("https://identity.example.com/.well-known/oauth-authorization-server");

@@ -287,26 +287,26 @@ internal sealed class OAuthAuthorizationServerMetadataClient : IOAuthAuthorizati
 
     private static Uri? TryDeriveIssuer(Uri candidate)
     {
-        string normalizedPath = NormalizePath(candidate.AbsolutePath);
-        if (normalizedPath.Equals(OauthAuthorizationServerPath, StringComparison.OrdinalIgnoreCase))
+        string candidatePath = candidate.AbsolutePath;
+        if (candidatePath.Equals(OauthAuthorizationServerPath, StringComparison.Ordinal))
         {
             return BuildOriginUri(candidate, string.Empty);
         }
 
         string oauthPrefix = OauthAuthorizationServerPath + "/";
-        if (normalizedPath.StartsWith(oauthPrefix, StringComparison.OrdinalIgnoreCase))
+        if (candidatePath.StartsWith(oauthPrefix, StringComparison.Ordinal))
         {
-            return BuildOriginUri(candidate, "/" + normalizedPath[oauthPrefix.Length..]);
+            return BuildOriginUri(candidate, candidatePath[(oauthPrefix.Length - 1)..]);
         }
 
-        if (normalizedPath.Equals(OpenIdConfigurationPath, StringComparison.OrdinalIgnoreCase))
+        if (candidatePath.Equals(OpenIdConfigurationPath, StringComparison.Ordinal))
         {
             return BuildOriginUri(candidate, string.Empty);
         }
 
-        if (normalizedPath.EndsWith(OpenIdConfigurationPath, StringComparison.OrdinalIgnoreCase))
+        if (candidatePath.EndsWith(OpenIdConfigurationPath, StringComparison.Ordinal))
         {
-            return BuildOriginUri(candidate, normalizedPath[..^OpenIdConfigurationPath.Length]);
+            return BuildOriginUri(candidate, candidatePath[..^OpenIdConfigurationPath.Length]);
         }
 
         return null;
