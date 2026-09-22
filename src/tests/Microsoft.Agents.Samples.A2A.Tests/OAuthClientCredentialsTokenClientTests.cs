@@ -35,7 +35,24 @@ public class OAuthClientCredentialsTokenClientTests
         Assert.Contains("scope=agent.read+agent.write", handler.Content, StringComparison.Ordinal);
     }
 
-    private static OAuthCredentialBinding CreateBinding()
+    [Fact]
+    public async Task AcquireTokenAsync_PlaceholderClientId_ThrowsBeforeSendingCredentials()
+    {
+        var handler = new CapturingTokenHandler("{}");
+        using var httpClient = new HttpClient(handler);
+        var sut = new OAuthClientCredentialsTokenClient(httpClient);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.AcquireTokenAsync(
+                CreateBinding(clientId: "00000000-0000-0000-0000-000000000000"),
+                CancellationToken.None));
+
+        Assert.Contains("placeholder", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(handler.RequestUri);
+        Assert.DoesNotContain("application-client-secret", exception.Message, StringComparison.Ordinal);
+    }
+
+    private static OAuthCredentialBinding CreateBinding(string clientId = "application-client-id")
         => new(
             ProviderId: "application-provider",
             ProviderType: OAuthCredentialProviderType.GenericOAuth2,
@@ -43,7 +60,7 @@ public class OAuthClientCredentialsTokenClientTests
             Registration: new OAuthClientRegistration(
                 "application",
                 [A2AOAuthFlowType.ClientCredentials],
-                "application-client-id",
+                clientId,
                 "application-client-secret",
                 RedirectUri: null,
                 OAuthTokenEndpointAuthenticationMethod.ClientSecretBasic,

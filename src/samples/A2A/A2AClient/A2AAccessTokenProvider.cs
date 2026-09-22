@@ -63,18 +63,31 @@ internal sealed class A2AAccessTokenProvider : IA2AAccessTokenProvider
                 return cachedToken.AccessToken;
             }
 
-            OAuthAccessToken token = cachedToken?.RefreshToken is string refreshToken
-                ? await _oauth
-                    .RefreshTokenAsync(
-                        cachedToken.Binding,
-                        refreshToken,
-                        cancellationToken)
-                    .ConfigureAwait(false)
-                : await _oauth
-                    .AcquireTokenAsync(
-                        binding,
-                        cancellationToken)
-                    .ConfigureAwait(false);
+            OAuthAccessToken token;
+            if (cachedToken?.RefreshToken is string refreshToken)
+            {
+                try
+                {
+                    token = await _oauth
+                        .RefreshTokenAsync(cachedToken.Binding, refreshToken, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException
+                    && !cancellationToken.IsCancellationRequested)
+                {
+                    // The refresh token is no longer usable. Drop the poisoned entry so no later request can
+                    // replay it, then run the advertised flow once. A failure here propagates and leaves the
+                    // cache empty rather than retrying in a loop.
+                    _oauthTokenCache.TryRemove(cacheKey, out _);
+                    cachedToken = null;
+                    token = await _oauth.AcquireTokenAsync(binding, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                token = await _oauth.AcquireTokenAsync(binding, cancellationToken).ConfigureAwait(false);
+            }
+
             _oauthTokenCache[cacheKey] = new OAuthTokenCacheEntry(
                 token.AccessToken,
                 token.ExpiresIn is TimeSpan expiresIn

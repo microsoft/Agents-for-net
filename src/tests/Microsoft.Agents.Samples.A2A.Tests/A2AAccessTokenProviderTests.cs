@@ -172,6 +172,96 @@ public class A2AAccessTokenProviderTests
     }
 
     [Fact]
+    public async Task GetAccessTokenAsync_RefreshFailure_EvictsPoisonedEntryAndReacquiresOnce()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthCredentialBinding binding = CreateBinding();
+        var resolver = new Mock<IOAuthCredentialProviderResolver>(MockBehavior.Strict);
+        resolver.Setup(value => value.ResolveAsync(s_agentOrigin, authentication, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(binding);
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.SetupSequence(client => client.AcquireTokenAsync(binding, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("initial-token", TimeSpan.FromMinutes(5), "refresh-token"))
+            .ReturnsAsync(new OAuthAccessToken("reacquired-token", TimeSpan.FromMinutes(5), "fresh-refresh-token"));
+        oauth.Setup(client => client.RefreshTokenAsync(binding, "refresh-token", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("OAuth token endpoint returned error 'invalid_grant'."));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(resolver.Object, oauth.Object, s_agentOrigin, timeProvider);
+
+        Assert.Equal("initial-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+        Assert.Equal("reacquired-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+
+        oauth.Verify(
+            client => client.RefreshTokenAsync(binding, "refresh-token", It.IsAny<CancellationToken>()),
+            Times.Once);
+        oauth.Verify(
+            client => client.AcquireTokenAsync(binding, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_RefreshAndReacquisitionFailure_PropagatesAndLeavesNoStaleEntry()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthCredentialBinding binding = CreateBinding();
+        var resolver = new Mock<IOAuthCredentialProviderResolver>(MockBehavior.Strict);
+        resolver.Setup(value => value.ResolveAsync(s_agentOrigin, authentication, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(binding);
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.SetupSequence(client => client.AcquireTokenAsync(binding, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("initial-token", TimeSpan.FromMinutes(5), "refresh-token"))
+            .ThrowsAsync(new InvalidOperationException("OAuth token endpoint returned HTTP 503 (Service Unavailable)."))
+            .ReturnsAsync(new OAuthAccessToken("recovered-token", TimeSpan.FromMinutes(5)));
+        oauth.Setup(client => client.RefreshTokenAsync(binding, "refresh-token", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("OAuth token endpoint returned error 'invalid_grant'."));
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(resolver.Object, oauth.Object, s_agentOrigin, timeProvider);
+
+        Assert.Equal("initial-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        Assert.Contains("503", exception.Message, StringComparison.Ordinal);
+
+        Assert.Equal("recovered-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+
+        oauth.Verify(
+            client => client.RefreshTokenAsync(binding, "refresh-token", It.IsAny<CancellationToken>()),
+            Times.Once);
+        oauth.Verify(
+            client => client.AcquireTokenAsync(binding, It.IsAny<CancellationToken>()),
+            Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task GetAccessTokenAsync_RefreshCancellation_DoesNotReacquire()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication();
+        OAuthCredentialBinding binding = CreateBinding();
+        var resolver = new Mock<IOAuthCredentialProviderResolver>(MockBehavior.Strict);
+        resolver.Setup(value => value.ResolveAsync(s_agentOrigin, authentication, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(binding);
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(binding, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("initial-token", TimeSpan.FromMinutes(5), "refresh-token"));
+        oauth.Setup(client => client.RefreshTokenAsync(binding, "refresh-token", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+        var timeProvider = new TestTimeProvider();
+        var provider = new A2AAccessTokenProvider(resolver.Object, oauth.Object, s_agentOrigin, timeProvider);
+
+        Assert.Equal("initial-token", await provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => provider.GetAccessTokenAsync(authentication, CancellationToken.None));
+
+        oauth.Verify(
+            client => client.AcquireTokenAsync(binding, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task GetAccessTokenAsync_DifferentSchemeNamesWithSameBindingShareToken()
     {
         A2AAgentCardAuthentication firstAuthentication = CreateAuthentication(securitySchemeName: "github");

@@ -39,10 +39,7 @@ internal sealed class OAuthAuthorizationCodeTokenClient
                 "Authorization Code token acquisition requires an Authorization Code OAuth flow.");
         }
 
-        if (string.IsNullOrWhiteSpace(registration.ClientId))
-        {
-            throw new InvalidOperationException("The selected OAuth client registration requires ClientId.");
-        }
+        OAuthClientRegistrationValidator.EnsureUsableClientId(registration);
 
         if (registration.RedirectUri is null)
         {

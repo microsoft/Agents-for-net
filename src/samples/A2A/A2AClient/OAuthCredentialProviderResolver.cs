@@ -37,61 +37,40 @@ internal sealed class OAuthCredentialProviderResolver : IOAuthCredentialProvider
             }
         }
 
-        OAuthProviderMatch[] bindableMatches = matches
-            .Where(match => match.RegistrationSpecificity >= 0)
-            .OrderByDescending(match => match.ProviderSpecificity)
-            .ThenByDescending(match => match.AuthoritySpecificity)
+        if (matches.Count == 0)
+        {
+            string evaluatedProviders = string.Join(", ", _providers.Select(provider => provider.Id).Distinct(StringComparer.Ordinal));
+            throw new InvalidOperationException(
+                $"No OAuth provider can satisfy flow '{authentication.FlowType}' for {DescribeAdvertisedEndpoints(authentication)}. "
+                + $"Evaluated providers: {evaluatedProviders}.");
+        }
+
+        // A provider only produces a match after its trust policy accepted every advertised endpoint, so the
+        // highest provider specificity present is the most specific trusted authority match. Lower-specificity
+        // providers - including dynamic client registration - are not considered even when the winning provider
+        // has no compatible registration, so a configured provider reports its own missing-registration error
+        // instead of silently falling through to a broader provider.
+        int bestProviderSpecificity = matches.Max(match => match.ProviderSpecificity);
+        OAuthProviderMatch[] rankedMatches = matches
+            .Where(match => match.ProviderSpecificity == bestProviderSpecificity)
+            .OrderByDescending(match => match.AuthoritySpecificity)
             .ThenByDescending(match => match.RegistrationSpecificity)
             .ToArray();
-        if (bindableMatches.Length > 0)
+        OAuthProviderMatch bestMatch = rankedMatches[0];
+        OAuthProviderMatch[] ambiguousMatches = rankedMatches
+            .Where(match =>
+                match != bestMatch
+                && match.AuthoritySpecificity == bestMatch.AuthoritySpecificity
+                && match.RegistrationSpecificity == bestMatch.RegistrationSpecificity)
+            .ToArray();
+        if (ambiguousMatches.Length > 0)
         {
-            OAuthProviderMatch bestMatch = bindableMatches[0];
-            OAuthProviderMatch[] ambiguousMatches = bindableMatches
-                .Where(match =>
-                    match != bestMatch
-                    && match.ProviderSpecificity == bestMatch.ProviderSpecificity
-                    && match.AuthoritySpecificity == bestMatch.AuthoritySpecificity
-                    && match.RegistrationSpecificity == bestMatch.RegistrationSpecificity)
-                .ToArray();
-            if (ambiguousMatches.Length > 0)
-            {
-                string[] candidates = [FormatCandidate(bestMatch), .. ambiguousMatches.Select(FormatCandidate)];
-                throw new InvalidOperationException(
-                    $"Multiple OAuth providers can satisfy flow '{authentication.FlowType}': {string.Join(", ", candidates)}.");
-            }
-
-            return bestMatch.Provider.BindAsync(agentOrigin, authentication, bestMatch, cancellationToken);
+            string[] candidates = [FormatCandidate(bestMatch), .. ambiguousMatches.Select(FormatCandidate)];
+            throw new InvalidOperationException(
+                $"Multiple OAuth providers can satisfy flow '{authentication.FlowType}': {string.Join(", ", candidates)}.");
         }
 
-        if (matches.Count > 0)
-        {
-            OAuthProviderMatch[] diagnosticMatches = matches
-                .OrderByDescending(match => match.ProviderSpecificity)
-                .ThenByDescending(match => match.AuthoritySpecificity)
-                .ThenByDescending(match => match.RegistrationSpecificity)
-                .ToArray();
-            OAuthProviderMatch diagnosticMatch = diagnosticMatches[0];
-            OAuthProviderMatch[] ambiguousMatches = diagnosticMatches
-                .Where(match =>
-                    match != diagnosticMatch
-                    && match.ProviderSpecificity == diagnosticMatch.ProviderSpecificity
-                    && match.AuthoritySpecificity == diagnosticMatch.AuthoritySpecificity
-                    && match.RegistrationSpecificity == diagnosticMatch.RegistrationSpecificity)
-                .ToArray();
-            if (ambiguousMatches.Length > 0)
-            {
-                string[] candidates = [FormatCandidate(diagnosticMatch), .. ambiguousMatches.Select(FormatCandidate)];
-                throw new InvalidOperationException(
-                    $"Multiple OAuth providers can satisfy flow '{authentication.FlowType}': {string.Join(", ", candidates)}.");
-            }
-
-            return diagnosticMatch.Provider.BindAsync(agentOrigin, authentication, diagnosticMatch, cancellationToken);
-        }
-
-        string evaluatedProviders = string.Join(", ", _providers.Select(provider => provider.Id).Distinct(StringComparer.Ordinal));
-        throw new InvalidOperationException(
-            $"No OAuth provider can satisfy flow '{authentication.FlowType}' for {DescribeAdvertisedEndpoints(authentication)}. "
-            + $"Evaluated providers: {evaluatedProviders}.");
+        return bestMatch.Provider.BindAsync(agentOrigin, authentication, bestMatch, cancellationToken);
     }
 
     private static string DescribeAdvertisedEndpoints(A2AAgentCardAuthentication authentication)

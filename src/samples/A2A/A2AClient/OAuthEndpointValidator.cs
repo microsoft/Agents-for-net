@@ -114,8 +114,8 @@ internal static class OAuthEndpointValidator
         }
 
         string endpointPath = NormalizePath(endpoint.AbsolutePath);
-        return endpointPath.Equals(authorityPath, StringComparison.OrdinalIgnoreCase)
-            || endpointPath.StartsWith(authorityPath + "/", StringComparison.OrdinalIgnoreCase);
+        return endpointPath.Equals(authorityPath, StringComparison.Ordinal)
+            || endpointPath.StartsWith(authorityPath + "/", StringComparison.Ordinal);
     }
 
     private static bool IsOriginMatch(Uri endpoint, Uri allowedOrigin)

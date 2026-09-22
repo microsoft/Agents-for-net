@@ -57,14 +57,16 @@ internal sealed class A2AClientOptions
             }
 
             Uri[] allowedOrigins = ReadTrustedUris(providerSection.GetSection("AllowedOrigins"));
-            bool allowInteractiveApproval = GetOptionalBoolean(providerSection["AllowInteractiveApproval"]);
+            bool allowInteractiveApproval = ParseOptionalBoolean(
+                providerSection,
+                "AllowInteractiveApproval",
+                defaultValue: false);
             Uri? redirectUri = GetOptionalRedirectUri(providerSection, "RedirectUri");
-            if (type == OAuthCredentialProviderType.OAuth21PkceDcr
-                && allowInteractiveApproval
-                && redirectUri is null)
+            if (type == OAuthCredentialProviderType.OAuth21PkceDcr && redirectUri is null)
             {
                 throw new InvalidOperationException(
-                    $"A2A client configuration value '{providerSection.Path}:RedirectUri' is required when interactive approval is enabled.");
+                    $"Missing required A2A client configuration value '{providerSection.Path}:RedirectUri' "
+                    + $"for provider type '{OAuthCredentialProviderType.OAuth21PkceDcr}'.");
             }
 
             providers.Add(
@@ -108,11 +110,22 @@ internal sealed class A2AClientOptions
                     $"A2A client configuration value '{registrationSection.Path}:ClientId' must not be blank.");
             }
 
-            bool usePkce = GetOptionalBoolean(registrationSection["UsePkce"], defaultValue: true);
+            bool usePkce = ParseOptionalBoolean(registrationSection, "UsePkce", defaultValue: true);
             if (providerType is OAuthCredentialProviderType.GenericOAuth2Pkce or OAuthCredentialProviderType.OAuth21PkceDcr)
             {
                 usePkce = true;
             }
+
+            string? clientSecret = registrationSection["ClientSecret"];
+            OAuthTokenEndpointAuthenticationMethod authenticationMethod = ParseOptionalEnumValue(
+                registrationSection,
+                "TokenEndpointAuthenticationMethod",
+                defaultValue: OAuthTokenEndpointAuthenticationMethod.None);
+            ValidateRegistrationClientAuthentication(
+                registrationSection,
+                grantTypes,
+                clientSecret,
+                authenticationMethod);
 
             registrations.Add(
                 registrationId,
@@ -120,16 +133,54 @@ internal sealed class A2AClientOptions
                     registrationId,
                     grantTypes,
                     clientId,
-                    registrationSection["ClientSecret"],
+                    clientSecret,
                     GetOptionalRedirectUri(registrationSection, "RedirectUri"),
-                    ParseOptionalEnumValue(
-                        registrationSection,
-                        "TokenEndpointAuthenticationMethod",
-                        defaultValue: OAuthTokenEndpointAuthenticationMethod.None),
+                    authenticationMethod,
                     usePkce));
         }
 
         return registrations;
+    }
+
+    /// <summary>
+    /// Rejects client-authentication settings that cannot produce a usable token request.
+    /// </summary>
+    /// <remarks>
+    /// The resolver also skips incompatible registrations, but a contradictory registration is a configuration
+    /// mistake rather than a deliberate non-match, so it fails at startup where the offending key can be named.
+    /// </remarks>
+    private static void ValidateRegistrationClientAuthentication(
+        IConfigurationSection registrationSection,
+        IReadOnlyList<A2AOAuthFlowType> grantTypes,
+        string? clientSecret,
+        OAuthTokenEndpointAuthenticationMethod authenticationMethod)
+    {
+        bool hasClientSecret = !string.IsNullOrWhiteSpace(clientSecret);
+        if (authenticationMethod == OAuthTokenEndpointAuthenticationMethod.None)
+        {
+            if (hasClientSecret)
+            {
+                throw new InvalidOperationException(
+                    $"A2A client configuration value '{registrationSection.Path}:ClientSecret' must be empty when "
+                    + $"'TokenEndpointAuthenticationMethod' is '{OAuthTokenEndpointAuthenticationMethod.None}'.");
+            }
+
+            if (grantTypes.Contains(A2AOAuthFlowType.ClientCredentials))
+            {
+                throw new InvalidOperationException(
+                    $"A2A client configuration value '{registrationSection.Path}:TokenEndpointAuthenticationMethod' "
+                    + $"must authenticate the client for grant type '{A2AOAuthFlowType.ClientCredentials}'.");
+            }
+
+            return;
+        }
+
+        if (!hasClientSecret)
+        {
+            throw new InvalidOperationException(
+                $"Missing required A2A client configuration value '{registrationSection.Path}:ClientSecret' "
+                + $"for 'TokenEndpointAuthenticationMethod' '{authenticationMethod}'.");
+        }
     }
 
     private static IReadOnlyList<A2AOAuthFlowType> ReadGrantTypes(
@@ -148,6 +199,12 @@ internal sealed class A2AClientOptions
             }
 
             grantTypes.Add(grantType);
+        }
+
+        if (grantTypes.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"A2A client configuration value '{key}' must contain at least one grant type.");
         }
 
         return grantTypes;
@@ -197,8 +254,22 @@ internal sealed class A2AClientOptions
             : ParseEnumValue<TEnum>(configuration, key);
     }
 
-    private static bool GetOptionalBoolean(string? value, bool defaultValue = false)
-        => bool.TryParse(value, out bool parsed) ? parsed : defaultValue;
+    private static bool ParseOptionalBoolean(IConfigurationSection configuration, string key, bool defaultValue)
+    {
+        string? value = configuration[key];
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return defaultValue;
+        }
+
+        if (!bool.TryParse(value.Trim(), out bool parsed))
+        {
+            throw new InvalidOperationException(
+                $"A2A client configuration value '{GetConfigurationKey(configuration, key)}' must be 'true' or 'false'.");
+        }
+
+        return parsed;
+    }
 
     private static Uri? GetOptionalTrustedUri(IConfigurationSection configuration, string key)
     {
@@ -213,13 +284,15 @@ internal sealed class A2AClientOptions
     }
 
     private static Uri GetRequiredTrustedUri(IConfigurationSection configuration, string key)
-        => ValidateTrustedUri(GetRequiredAbsoluteUri(configuration, key), GetConfigurationKey(configuration, key));
+        => GetRequiredTrustedUri(configuration[key], GetConfigurationKey(configuration, key));
 
     private static Uri GetRequiredTrustedUri(string? value, string key)
         => ValidateTrustedUri(GetRequiredAbsoluteUri(value, key), key);
 
     private static Uri GetRequiredRedirectUri(IConfigurationSection configuration, string key)
-        => ValidateRedirectUri(GetRequiredAbsoluteUri(configuration, key), GetConfigurationKey(configuration, key));
+        => ValidateRedirectUri(
+            GetRequiredAbsoluteUri(configuration[key], GetConfigurationKey(configuration, key)),
+            GetConfigurationKey(configuration, key));
 
     private static Uri ValidateTrustedUri(Uri uri, string key)
     {
@@ -233,18 +306,13 @@ internal sealed class A2AClientOptions
 
     private static Uri ValidateRedirectUri(Uri uri, string key)
     {
-        if (uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        if (!OAuthEndpointValidator.IsSupportedLoopbackRedirectUri(uri))
         {
-            return uri;
+            throw new InvalidOperationException(
+                $"A2A client configuration value '{key}' must be an absolute loopback HTTP URI whose path ends with '/'.");
         }
 
-        if (uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) && uri.IsLoopback)
-        {
-            return uri;
-        }
-
-        throw new InvalidOperationException(
-            $"A2A client configuration value '{key}' must use HTTPS or loopback HTTP.");
+        return uri;
     }
 
     private static string GetConfigurationKey(IConfigurationSection configuration, string key)

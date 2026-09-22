@@ -74,6 +74,22 @@ internal sealed class OAuthAuthorizationServerMetadataClient : IOAuthAuthorizati
         ]);
     }
 
+    /// <summary>
+    /// Returns the authority a metadata document URL represents for trust matching.
+    /// </summary>
+    /// <remarks>
+    /// RFC 8414 places <c>/.well-known/oauth-authorization-server</c> before the issuer path, so the raw
+    /// metadata URL of a path-scoped issuer sits outside that issuer's path. Matching the derived issuer keeps a
+    /// path-specific <c>AllowedAuthorities</c> rule usable with standards-based metadata URLs. Metadata URLs that
+    /// are not well-known documents are matched as supplied.
+    /// </remarks>
+    internal static Uri GetMetadataTrustAuthority(Uri metadataUrl)
+    {
+        ArgumentNullException.ThrowIfNull(metadataUrl);
+
+        return metadataUrl.IsAbsoluteUri ? TryDeriveIssuer(metadataUrl) ?? metadataUrl : metadataUrl;
+    }
+
     internal static IReadOnlyList<Uri> DeduplicateMetadataCandidates(IEnumerable<Uri> metadataCandidates)
     {
         ArgumentNullException.ThrowIfNull(metadataCandidates);
@@ -116,6 +132,11 @@ internal sealed class OAuthAuthorizationServerMetadataClient : IOAuthAuthorizati
             }
             catch (Exception exception) when (exception is InvalidOperationException or HttpRequestException)
             {
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // An HttpClient timeout surfaces as a canceled operation on a token the caller did not cancel.
+                // Treat it as a failed candidate and continue; caller cancellation still propagates.
             }
         }
 

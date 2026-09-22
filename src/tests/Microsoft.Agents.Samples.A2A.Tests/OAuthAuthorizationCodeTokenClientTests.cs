@@ -72,9 +72,32 @@ public class OAuthAuthorizationCodeTokenClientTests
         Assert.Null(handler.RequestUri);
     }
 
+    [Fact]
+    public async Task AcquireTokenAsync_PlaceholderClientId_ThrowsBeforeOpeningBrowser()
+    {
+        bool receiverInvoked = false;
+        var receiver = new CapturingAuthorizationCodeReceiver("authorization-code")
+        {
+            OnReceive = () => receiverInvoked = true,
+        };
+        var handler = new CapturingTokenHandler("{}");
+        using var httpClient = new HttpClient(handler);
+        var sut = new OAuthAuthorizationCodeTokenClient(httpClient, receiver);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.AcquireTokenAsync(
+                CreateBinding(clientId: "00000000-0000-0000-0000-000000000000"),
+                CancellationToken.None));
+
+        Assert.Contains("placeholder", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(receiverInvoked);
+        Assert.Null(handler.RequestUri);
+    }
+
     private static OAuthCredentialBinding CreateBinding(
         OAuthCredentialProviderType providerType = OAuthCredentialProviderType.GenericOAuth2Pkce,
-        bool usePkce = true)
+        bool usePkce = true,
+        string clientId = "linkedin-client-id")
         => new(
             ProviderId: "linkedin-provider",
             ProviderType: providerType,
@@ -82,7 +105,7 @@ public class OAuthAuthorizationCodeTokenClientTests
             Registration: new OAuthClientRegistration(
                 "browser",
                 [A2AOAuthFlowType.AuthorizationCode],
-                "linkedin-client-id",
+                clientId,
                 "linkedin-client-secret",
                 new Uri("http://localhost:8400/callback/"),
                 OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,

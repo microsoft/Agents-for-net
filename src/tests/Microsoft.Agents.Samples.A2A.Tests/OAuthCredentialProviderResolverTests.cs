@@ -816,6 +816,87 @@ public class OAuthCredentialProviderResolverTests
         Assert.Contains(nameof(A2AOAuthFlowType.ClientCredentials), exception.Message);
     }
 
+    [Fact]
+    public async Task ResolveAsync_AuthorityPathMatchingIsCaseSensitive()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "oauth",
+            A2AAuthMode.Delegated,
+            new OAuthFlows
+            {
+                DeviceCode = new()
+                {
+                    DeviceAuthorizationUrl = "https://identity.example.com/tenant/oauth/device",
+                    TokenUrl = "https://identity.example.com/tenant/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2CredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic",
+                    Type = OAuthCredentialProviderType.GenericOAuth2,
+                    AllowedAuthorities = [new Uri("https://identity.example.com/Tenant")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "device",
+                            [A2AOAuthFlowType.DeviceCode],
+                            "device-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: true)),
+                }));
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => resolver.ResolveAsync(s_agentOrigin, authentication, CancellationToken.None));
+
+        Assert.Contains("No OAuth provider", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_AuthorityHostMatchingRemainsCaseInsensitive()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "oauth",
+            A2AAuthMode.Delegated,
+            new OAuthFlows
+            {
+                DeviceCode = new()
+                {
+                    DeviceAuthorizationUrl = "https://Identity.Example.com/tenant/oauth/device",
+                    TokenUrl = "https://identity.example.COM/tenant/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var resolver = CreateResolver(
+            new GenericOAuth2CredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "generic",
+                    Type = OAuthCredentialProviderType.GenericOAuth2,
+                    AllowedAuthorities = [new Uri("https://identity.example.com/tenant")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "device",
+                            [A2AOAuthFlowType.DeviceCode],
+                            "device-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: true)),
+                }));
+
+        OAuthCredentialBinding binding = await resolver.ResolveAsync(
+            s_agentOrigin,
+            authentication,
+            CancellationToken.None);
+
+        Assert.Equal("generic", binding.ProviderId);
+        Assert.Equal("device", binding.RegistrationId);
+    }
+
     private static OAuthCredentialProviderResolver CreateResolver(params IOAuthCredentialProvider[] providers)
         => new(providers);
 

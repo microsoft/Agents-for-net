@@ -282,6 +282,65 @@ public class OAuthAuthorizationServerMetadataClientTests
         Assert.DoesNotContain("refresh_token=top-secret", exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task DiscoverAsync_ContinuesToNextCandidateAfterHttpClientTimeout()
+    {
+        Uri first = new("https://identity.example.com/.well-known/oauth-authorization-server");
+        Uri second = new("https://identity.example.com/.well-known/openid-configuration");
+        var handler = new ScriptedMetadataHandler(
+            new TaskCanceledException(
+                "The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.",
+                new TimeoutException()),
+            CreateResponse(
+                HttpStatusCode.OK,
+                CreateMetadataJson(
+                    issuer: "https://identity.example.com",
+                    authorizationEndpoint: "https://identity.example.com/oauth/authorize",
+                    tokenEndpoint: "https://identity.example.com/oauth/token",
+                    registrationEndpoint: "https://identity.example.com/oauth/register")));
+        var sut = new OAuthAuthorizationServerMetadataClient(handler);
+
+        OAuthAuthorizationServerMetadata metadata = await sut.DiscoverAsync(
+            [first, second],
+            CancellationToken.None);
+
+        Assert.Equal(second, metadata.MetadataUrl);
+        Assert.Equal([first, second], handler.RequestUris);
+    }
+
+    [Fact]
+    public async Task DiscoverAsync_TimeoutOnEveryCandidateListsAttemptedUrls()
+    {
+        Uri first = new("https://identity.example.com/.well-known/oauth-authorization-server");
+        Uri second = new("https://identity.example.com/.well-known/openid-configuration");
+        var handler = new ScriptedMetadataHandler(
+            new TaskCanceledException("timeout", new TimeoutException()),
+            new TaskCanceledException("timeout", new TimeoutException()));
+        var sut = new OAuthAuthorizationServerMetadataClient(handler);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.DiscoverAsync([first, second], CancellationToken.None));
+
+        Assert.Contains(first.AbsoluteUri, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(second.AbsoluteUri, exception.Message, StringComparison.Ordinal);
+        Assert.Equal([first, second], handler.RequestUris);
+    }
+
+    [Fact]
+    public async Task DiscoverAsync_CallerCancellationStopsDiscovery()
+    {
+        Uri first = new("https://identity.example.com/.well-known/oauth-authorization-server");
+        Uri second = new("https://identity.example.com/.well-known/openid-configuration");
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var handler = new CancelingMetadataHandler(cancellationTokenSource);
+        var sut = new OAuthAuthorizationServerMetadataClient(handler);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => sut.DiscoverAsync([first, second], cancellationTokenSource.Token));
+
+        Assert.Equal([first], handler.RequestUris);
+    }
+
     public static IEnumerable<object[]> GetInvalidMetadataPayloads()
     {
         yield return [CreateMetadataJson(issuer: "http://identity.example.com")];
@@ -339,6 +398,47 @@ public class OAuthAuthorizationServerMetadataClientTests
             Assert.NotNull(request.RequestUri);
             RequestUris.Add(request.RequestUri!);
             return Task.FromResult(_responses.Dequeue());
+        }
+    }
+
+    private sealed class ScriptedMetadataHandler(params object[] outcomes)
+        : HttpMessageHandler
+    {
+        private readonly Queue<object> _outcomes = new(outcomes);
+
+        public List<Uri> RequestUris { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Assert.NotNull(request.RequestUri);
+            RequestUris.Add(request.RequestUri!);
+
+            object outcome = _outcomes.Dequeue();
+            return outcome switch
+            {
+                HttpResponseMessage response => Task.FromResult(response),
+                Exception exception => Task.FromException<HttpResponseMessage>(exception),
+                _ => throw new InvalidOperationException("Unexpected metadata handler outcome."),
+            };
+        }
+    }
+
+    private sealed class CancelingMetadataHandler(CancellationTokenSource cancellationTokenSource)
+        : HttpMessageHandler
+    {
+        public List<Uri> RequestUris { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Assert.NotNull(request.RequestUri);
+            RequestUris.Add(request.RequestUri!);
+            cancellationTokenSource.Cancel();
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("Expected cancellation.");
         }
     }
 }

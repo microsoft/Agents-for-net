@@ -49,7 +49,7 @@ internal class GenericOAuth2CredentialProvider : IOAuthCredentialProvider
             ? OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.DeviceAuthorizationUrl, "device authorization endpoint")
             : null;
         Uri tokenEndpoint = OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.TokenUrl, "token endpoint");
-        Uri[] endpoints = [.. GetAdvertisedEndpoints(authorizationEndpoint, deviceAuthorizationEndpoint, tokenEndpoint, metadataEndpoint)];
+        Uri[] endpoints = [.. GetTrustEvaluationEndpoints(authorizationEndpoint, deviceAuthorizationEndpoint, tokenEndpoint, metadataEndpoint)];
         int? authoritySpecificity = OAuthEndpointValidator.GetCommonTrustMatchSpecificity(
             endpoints,
             AllowedAuthorities,
@@ -105,7 +105,7 @@ internal class GenericOAuth2CredentialProvider : IOAuthCredentialProvider
             ? OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.DeviceAuthorizationUrl, "device authorization endpoint")
             : null;
         Uri tokenEndpoint = OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.TokenUrl, "token endpoint");
-        Uri[] endpoints = [.. GetAdvertisedEndpoints(authorizationEndpoint, deviceAuthorizationEndpoint, tokenEndpoint, metadataEndpoint)];
+        Uri[] endpoints = [.. GetTrustEvaluationEndpoints(authorizationEndpoint, deviceAuthorizationEndpoint, tokenEndpoint, metadataEndpoint)];
         int? authoritySpecificity = OAuthEndpointValidator.GetCommonTrustMatchSpecificity(
             endpoints,
             AllowedAuthorities,
@@ -186,7 +186,7 @@ internal class GenericOAuth2CredentialProvider : IOAuthCredentialProvider
             : OAuthEndpointValidator.GetAdvertisedEndpoint(authentication.MetadataUrl, "metadata URL");
     }
 
-    private static IEnumerable<Uri> GetAdvertisedEndpoints(
+    private static IEnumerable<Uri> GetTrustEvaluationEndpoints(
         Uri? authorizationEndpoint,
         Uri? deviceAuthorizationEndpoint,
         Uri tokenEndpoint,
@@ -206,7 +206,7 @@ internal class GenericOAuth2CredentialProvider : IOAuthCredentialProvider
 
         if (metadataEndpoint is not null)
         {
-            yield return metadataEndpoint;
+            yield return OAuthAuthorizationServerMetadataClient.GetMetadataTrustAuthority(metadataEndpoint);
         }
     }
 

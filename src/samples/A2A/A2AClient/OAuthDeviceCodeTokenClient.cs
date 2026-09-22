@@ -41,7 +41,7 @@ internal sealed class OAuthDeviceCodeTokenClient
             throw new InvalidOperationException("Device Code token acquisition requires a Device Code OAuth flow.");
         }
 
-        ValidateClientId(registration);
+        OAuthClientRegistrationValidator.EnsureUsableClientId(registration);
         Uri deviceEndpoint = binding.DeviceAuthorizationEndpoint
             ?? throw new InvalidOperationException(
                 "Device Code token acquisition requires a device authorization endpoint.");
@@ -250,20 +250,6 @@ internal sealed class OAuthDeviceCodeTokenClient
             {
                 throw new InvalidOperationException($"OAuth {endpointName} returned malformed JSON.", exception);
             }
-        }
-    }
-
-    private static void ValidateClientId(OAuthClientRegistration registration)
-    {
-        if (string.IsNullOrWhiteSpace(registration.ClientId))
-        {
-            throw new InvalidOperationException("The selected OAuth client registration requires ClientId.");
-        }
-
-        if (registration.ClientId.Trim().Trim('0', '-').Length == 0)
-        {
-            throw new InvalidOperationException(
-                "The selected OAuth client registration ClientId is still a placeholder. Configure a registered OAuth client.");
         }
     }
 

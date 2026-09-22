@@ -125,7 +125,10 @@ public class A2AClientOptionsTests
             [A2AOAuthFlowType.DeviceCode, A2AOAuthFlowType.AuthorizationCode],
             entra.Registrations["delegated"].GrantTypes);
         Assert.Equal([A2AOAuthFlowType.ClientCredentials], entra.Registrations["application"].GrantTypes);
-        Assert.Equal(string.Empty, entra.Registrations["application"].ClientSecret);
+        Assert.Equal(
+            OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
+            entra.Registrations["application"].TokenEndpointAuthenticationMethod);
+        Assert.False(string.IsNullOrWhiteSpace(entra.Registrations["application"].ClientSecret));
 
         OAuthCredentialProviderOptions genericPkce = Assert.IsType<OAuthCredentialProviderOptions>(options.Authentication.Providers["browser-oauth"]);
         Assert.Equal(OAuthCredentialProviderType.GenericOAuth2Pkce, genericPkce.Type);
@@ -194,6 +197,172 @@ public class A2AClientOptionsTests
             () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
 
         Assert.Contains("ClientId", exception.Message);
+    }
+
+    [Fact]
+    public void FromConfiguration_RegistrationWithoutGrantTypes_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:entra:Type", "Entra"),
+            ("Authentication:Providers:entra:Registrations:delegated:ClientId", "entra-client-id"),
+            ("Authentication:Providers:entra:Registrations:delegated:RedirectUri", "http://localhost:8400/callback/"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains(
+            "Authentication:Providers:entra:Registrations:delegated:GrantTypes",
+            exception.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("https://identity.example.com/callback/")]
+    [InlineData("http://localhost:8400/callback")]
+    [InlineData("http://contoso.example/callback/")]
+    [InlineData("/callback/")]
+    public void FromConfiguration_UnsupportedProviderRedirectUri_Throws(string redirectUri)
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:dcr:Type", "OAuth21PkceDcr"),
+            ("Authentication:Providers:dcr:AllowInteractiveApproval", "true"),
+            ("Authentication:Providers:dcr:RedirectUri", redirectUri));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains("Authentication:Providers:dcr:RedirectUri", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FromConfiguration_UnsupportedRegistrationRedirectUri_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:entra:Type", "Entra"),
+            ("Authentication:Providers:entra:Registrations:delegated:GrantTypes:0", "AuthorizationCode"),
+            ("Authentication:Providers:entra:Registrations:delegated:ClientId", "entra-client-id"),
+            ("Authentication:Providers:entra:Registrations:delegated:RedirectUri", "https://identity.example.com/callback/"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains(
+            "Authentication:Providers:entra:Registrations:delegated:RedirectUri",
+            exception.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FromConfiguration_DcrProviderWithoutRedirectUri_ThrowsEvenWithoutInteractiveApproval()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:dcr:Type", "OAuth21PkceDcr"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains("Authentication:Providers:dcr:RedirectUri", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FromConfiguration_MalformedAllowInteractiveApproval_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:dcr:Type", "OAuth21PkceDcr"),
+            ("Authentication:Providers:dcr:AllowInteractiveApproval", "yes"),
+            ("Authentication:Providers:dcr:RedirectUri", "http://localhost:8400/callback/"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains(
+            "Authentication:Providers:dcr:AllowInteractiveApproval",
+            exception.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FromConfiguration_MalformedUsePkce_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:generic:Type", "GenericOAuth2"),
+            ("Authentication:Providers:generic:AllowedOrigins:0", "https://identity.example.com"),
+            ("Authentication:Providers:generic:Registrations:browser:GrantTypes:0", "AuthorizationCode"),
+            ("Authentication:Providers:generic:Registrations:browser:ClientId", "browser-client-id"),
+            ("Authentication:Providers:generic:Registrations:browser:RedirectUri", "http://localhost:8400/callback/"),
+            ("Authentication:Providers:generic:Registrations:browser:UsePkce", "sometimes"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains(
+            "Authentication:Providers:generic:Registrations:browser:UsePkce",
+            exception.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FromConfiguration_NoneAuthenticationWithClientSecret_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:generic:Type", "GenericOAuth2"),
+            ("Authentication:Providers:generic:AllowedOrigins:0", "https://identity.example.com"),
+            ("Authentication:Providers:generic:Registrations:browser:GrantTypes:0", "AuthorizationCode"),
+            ("Authentication:Providers:generic:Registrations:browser:ClientId", "browser-client-id"),
+            ("Authentication:Providers:generic:Registrations:browser:RedirectUri", "http://localhost:8400/callback/"),
+            ("Authentication:Providers:generic:Registrations:browser:ClientSecret", "browser-secret"),
+            ("Authentication:Providers:generic:Registrations:browser:TokenEndpointAuthenticationMethod", "None"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains(
+            "Authentication:Providers:generic:Registrations:browser",
+            exception.Message,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("browser-secret", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FromConfiguration_ClientCredentialsWithNoneAuthentication_Throws()
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:generic:Type", "GenericOAuth2"),
+            ("Authentication:Providers:generic:AllowedOrigins:0", "https://identity.example.com"),
+            ("Authentication:Providers:generic:Registrations:application:GrantTypes:0", "ClientCredentials"),
+            ("Authentication:Providers:generic:Registrations:application:ClientId", "application-client-id"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains(
+            "Authentication:Providers:generic:Registrations:application",
+            exception.Message,
+            StringComparison.Ordinal);
+        Assert.Contains(nameof(A2AOAuthFlowType.ClientCredentials), exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void FromConfiguration_SecretBasedAuthenticationWithoutSecret_Throws(string? clientSecret)
+    {
+        IConfiguration configuration = CreateAuthenticationConfiguration(
+            ("Authentication:Providers:generic:Type", "GenericOAuth2"),
+            ("Authentication:Providers:generic:AllowedOrigins:0", "https://identity.example.com"),
+            ("Authentication:Providers:generic:Registrations:application:GrantTypes:0", "ClientCredentials"),
+            ("Authentication:Providers:generic:Registrations:application:ClientId", "application-client-id"),
+            ("Authentication:Providers:generic:Registrations:application:ClientSecret", clientSecret),
+            ("Authentication:Providers:generic:Registrations:application:TokenEndpointAuthenticationMethod", "ClientSecretPost"));
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => A2AClientOptions.FromConfiguration(configuration, new StartupOptions()));
+
+        Assert.Contains(
+            "Authentication:Providers:generic:Registrations:application:ClientSecret",
+            exception.Message,
+            StringComparison.Ordinal);
     }
 
     [Fact]

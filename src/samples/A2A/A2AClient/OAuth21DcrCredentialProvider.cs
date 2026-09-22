@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -15,11 +16,24 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
     private const int DcrProviderSpecificity = -1;
     private const int DcrRegistrationSpecificity = 0;
 
+    /// <summary>
+    /// Authority specificity used when the provider declares no trust lists.
+    /// </summary>
+    /// <remarks>
+    /// Ranks below the origin-only specificity of a pinned provider so an explicitly pinned DCR provider always
+    /// outranks an open one instead of tying with it.
+    /// </remarks>
+    private const int UnpinnedAuthoritySpecificity = -1;
+
     private readonly OAuthCredentialProviderOptions _options;
     private readonly IOAuthAuthorizationServerMetadataClient _metadataClient;
     private readonly IDynamicClientRegistrationClient _registrationClient;
     private readonly IOAuthClientRegistrationStore _registrationStore;
     private readonly IOAuthProviderApproval _approval;
+    private readonly ConcurrentDictionary<string, OAuthAuthorizationServerMetadata> _metadataCache
+        = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _metadataCacheLocks
+        = new(StringComparer.Ordinal);
 
     public OAuth21DcrCredentialProvider(
         OAuthCredentialProviderOptions options,
@@ -45,18 +59,44 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
 
     public string Id => _options.Id;
 
+    private bool HasTrustPolicy => _options.AllowedAuthorities.Count > 0 || _options.AllowedOrigins.Count > 0;
+
     public OAuthProviderMatch? Match(A2AAgentCardAuthentication authentication)
     {
         ArgumentNullException.ThrowIfNull(authentication);
 
-        return authentication.FlowType == A2AOAuthFlowType.AuthorizationCode
-            ? new OAuthProviderMatch(
-                this,
-                RegistrationId: null,
-                ProviderSpecificity: DcrProviderSpecificity,
-                AuthoritySpecificity: 0,
-                RegistrationSpecificity: DcrRegistrationSpecificity)
-            : null;
+        if (authentication.FlowType != A2AOAuthFlowType.AuthorizationCode)
+        {
+            return null;
+        }
+
+        int authoritySpecificity = UnpinnedAuthoritySpecificity;
+        if (HasTrustPolicy)
+        {
+            IReadOnlyList<Uri> advertisedEndpoints = GetTrustEvaluationEndpoints(authentication);
+            if (advertisedEndpoints.Count == 0)
+            {
+                return null;
+            }
+
+            int? matchedSpecificity = OAuthEndpointValidator.GetCommonTrustMatchSpecificity(
+                advertisedEndpoints,
+                _options.AllowedAuthorities,
+                _options.AllowedOrigins);
+            if (matchedSpecificity is null)
+            {
+                return null;
+            }
+
+            authoritySpecificity = matchedSpecificity.Value;
+        }
+
+        return new OAuthProviderMatch(
+            this,
+            RegistrationId: null,
+            ProviderSpecificity: DcrProviderSpecificity,
+            AuthoritySpecificity: authoritySpecificity,
+            RegistrationSpecificity: DcrRegistrationSpecificity);
     }
 
     public async Task<OAuthCredentialBinding> BindAsync(
@@ -83,7 +123,7 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
         }
 
         Uri redirectUri = _options.RedirectUri!;
-        OAuthAuthorizationServerMetadata metadata = await DiscoverMetadataAsync(
+        OAuthAuthorizationServerMetadata metadata = await GetOrDiscoverMetadataAsync(
             agentOrigin,
             authentication,
             cancellationToken).ConfigureAwait(false);
@@ -134,6 +174,60 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
 
         return CreateBinding(authentication, metadata, registration, providerIdentity);
     }
+
+    /// <summary>
+    /// Returns memoized authorization server metadata, discovering it once per distinct discovery input set.
+    /// </summary>
+    /// <remarks>
+    /// Metadata discovery can issue several HTTP requests and, when advertised discovery fails, prompt the
+    /// operator for an issuer or server URL. Both would otherwise repeat on every token request. Only validated
+    /// metadata is memoized - failures and approvals are never cached - and the registration store is still
+    /// consulted on every bind so a revoked or replaced registration is observed.
+    /// </remarks>
+    private async Task<OAuthAuthorizationServerMetadata> GetOrDiscoverMetadataAsync(
+        Uri agentOrigin,
+        A2AAgentCardAuthentication authentication,
+        CancellationToken cancellationToken)
+    {
+        string cacheKey = CreateMetadataCacheKey(authentication);
+        if (_metadataCache.TryGetValue(cacheKey, out OAuthAuthorizationServerMetadata? cachedMetadata))
+        {
+            return cachedMetadata;
+        }
+
+        SemaphoreSlim discoveryLock = _metadataCacheLocks.GetOrAdd(cacheKey, _ => new SemaphoreSlim(1, 1));
+        await discoveryLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_metadataCache.TryGetValue(cacheKey, out cachedMetadata))
+            {
+                return cachedMetadata;
+            }
+
+            OAuthAuthorizationServerMetadata metadata = await DiscoverMetadataAsync(
+                agentOrigin,
+                authentication,
+                cancellationToken).ConfigureAwait(false);
+            EnsureDiscoveredEndpointsTrusted(metadata);
+            _metadataCache[cacheKey] = metadata;
+            return metadata;
+        }
+        finally
+        {
+            discoveryLock.Release();
+        }
+    }
+
+    private string CreateMetadataCacheKey(A2AAgentCardAuthentication authentication)
+        => string.Join(
+            "\u001f",
+            [
+                Id,
+                _options.RedirectUri!.AbsoluteUri,
+                _options.ServerUrl?.AbsoluteUri ?? string.Empty,
+                _options.AllowInteractiveApproval ? "interactive" : "non-interactive",
+                .. GetDiscoveryCandidates(authentication).Select(candidate => candidate.AbsoluteUri),
+            ]);
 
     private async Task<OAuthAuthorizationServerMetadata> DiscoverMetadataAsync(
         Uri agentOrigin,
@@ -243,20 +337,71 @@ internal sealed class OAuth21DcrCredentialProvider : IOAuthCredentialProvider
 
     private static IReadOnlyList<Uri> GetAdvertisedEndpoints(A2AAgentCardAuthentication authentication)
     {
-        var endpoints = new List<Uri>();
-        if (TryGetAdvertisedEndpoint(authentication.AuthorizationUrl, "authorization endpoint", out Uri? authorizationEndpoint)
-            && authorizationEndpoint is not null)
+        var endpoints = new List<Uri>(GetOriginEndpoints(authentication));
+        if (TryGetAdvertisedEndpoint(authentication.MetadataUrl, "metadata URL", out Uri? metadataEndpoint)
+            && metadataEndpoint is not null)
         {
-            endpoints.Add(authorizationEndpoint);
-        }
-
-        if (TryGetAdvertisedEndpoint(authentication.TokenUrl, "token endpoint", out Uri? tokenEndpoint)
-            && tokenEndpoint is not null)
-        {
-            endpoints.Add(tokenEndpoint);
+            endpoints.Add(metadataEndpoint);
         }
 
         return endpoints;
+    }
+
+    private static IReadOnlyList<Uri> GetTrustEvaluationEndpoints(A2AAgentCardAuthentication authentication)
+    {
+        var endpoints = new List<Uri>(GetOriginEndpoints(authentication));
+        if (TryGetAdvertisedEndpoint(authentication.MetadataUrl, "metadata URL", out Uri? metadataEndpoint)
+            && metadataEndpoint is not null)
+        {
+            endpoints.Add(OAuthAuthorizationServerMetadataClient.GetMetadataTrustAuthority(metadataEndpoint));
+        }
+
+        return endpoints;
+    }
+
+    private void EnsureDiscoveredEndpointsTrusted(OAuthAuthorizationServerMetadata metadata)
+    {
+        if (!HasTrustPolicy)
+        {
+            return;
+        }
+
+        var endpoints = new List<Uri>
+        {
+            metadata.Issuer,
+            OAuthAuthorizationServerMetadataClient.GetMetadataTrustAuthority(metadata.MetadataUrl),
+            metadata.TokenEndpoint,
+            metadata.RegistrationEndpoint,
+        };
+        if (metadata.AuthorizationEndpoint is not null)
+        {
+            endpoints.Add(metadata.AuthorizationEndpoint);
+        }
+
+        if (OAuthEndpointValidator.GetCommonTrustMatchSpecificity(
+            endpoints,
+            _options.AllowedAuthorities,
+            _options.AllowedOrigins) is not null)
+        {
+            return;
+        }
+
+        var reportedEndpoints = new List<Uri>
+        {
+            metadata.Issuer,
+            metadata.MetadataUrl,
+            metadata.TokenEndpoint,
+            metadata.RegistrationEndpoint,
+        };
+        if (metadata.AuthorizationEndpoint is not null)
+        {
+            reportedEndpoints.Add(metadata.AuthorizationEndpoint);
+        }
+
+        throw new InvalidOperationException(
+            $"OAuth provider '{Id}' does not trust the discovered OAuth endpoints "
+            + $"({string.Join(", ", reportedEndpoints.Select(endpoint => endpoint.AbsoluteUri))}). "
+            + "Add them to AllowedAuthorities or AllowedOrigins.");
     }
 
     private static bool TryGetAdvertisedEndpoint(

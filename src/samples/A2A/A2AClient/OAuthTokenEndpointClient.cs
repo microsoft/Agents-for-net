@@ -24,10 +24,7 @@ internal sealed class OAuthTokenEndpointClient(HttpClient httpClient)
     {
         ArgumentNullException.ThrowIfNull(tokenEndpoint);
         ArgumentNullException.ThrowIfNull(registration);
-        if (string.IsNullOrWhiteSpace(registration.ClientId))
-        {
-            throw new InvalidOperationException("The selected OAuth client registration requires ClientId.");
-        }
+        OAuthClientRegistrationValidator.EnsureUsableClientId(registration);
 
         var fields = new List<KeyValuePair<string, string>>(tokenFields);
         using var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);

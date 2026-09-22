@@ -639,6 +639,754 @@ public class OAuth21DcrCredentialProviderTests
         Assert.True(reader.CancellationAwareReadUsed);
     }
 
+    [Fact]
+    public void Match_PinnedAuthorityUsesCommonSpecificityOverAdvertisedEndpoints()
+    {
+        var sut = CreateProvider(
+            CreateDcrOptions(allowedAuthorities: [new Uri("https://identity.example.com/tenant")]));
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/tenant/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/tenant/oauth/token",
+                },
+            },
+            ["repo.read"],
+            metadataUrl: "https://identity.example.com/tenant/.well-known/oauth-authorization-server");
+
+        OAuthProviderMatch match = Assert.IsType<OAuthProviderMatch>(sut.Match(authentication));
+
+        Assert.Equal(2, match.AuthoritySpecificity);
+    }
+
+    [Fact]
+    public void Match_HostWideAuthorityRanksBelowPathSpecificAuthority()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/tenant/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/tenant/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        OAuthProviderMatch hostWide = Assert.IsType<OAuthProviderMatch>(
+            CreateProvider(CreateDcrOptions(allowedAuthorities: [new Uri("https://identity.example.com")]))
+                .Match(authentication));
+        OAuthProviderMatch originOnly = Assert.IsType<OAuthProviderMatch>(
+            CreateProvider(CreateDcrOptions(allowedOrigins: [new Uri("https://identity.example.com")]))
+                .Match(authentication));
+
+        Assert.Equal(1, hostWide.AuthoritySpecificity);
+        Assert.Equal(0, originOnly.AuthoritySpecificity);
+    }
+
+    [Fact]
+    public void Match_UntrustedAdvertisedEndpointsDoNotMatchPinnedProvider()
+    {
+        var sut = CreateProvider(
+            CreateDcrOptions(allowedAuthorities: [new Uri("https://identity.example.com/tenant")]));
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/other/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/other/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        Assert.Null(sut.Match(authentication));
+    }
+
+    [Fact]
+    public void Match_AdvertisedMetadataUrlOutsideTrustPolicyDoesNotMatch()
+    {
+        var sut = CreateProvider(
+            CreateDcrOptions(allowedOrigins: [new Uri("https://identity.example.com")]));
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"],
+            metadataUrl: "https://malicious.example/.well-known/oauth-authorization-server");
+
+        Assert.Null(sut.Match(authentication));
+    }
+
+    [Fact]
+    public void Match_OpenProviderWithoutTrustListsMatchesAnyAuthorizationCodeFlow()
+    {
+        var sut = CreateProvider(CreateDcrOptions());
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        OAuthProviderMatch match = Assert.IsType<OAuthProviderMatch>(sut.Match(authentication));
+
+        Assert.Null(match.RegistrationId);
+        Assert.Equal(-1, match.ProviderSpecificity);
+    }
+
+    [Fact]
+    public async Task BindAsync_RejectsDiscoveredEndpointsOutsideTrustPolicyBeforeApproval()
+    {
+        var metadataClient = new RecordingMetadataClient(
+            CreateMetadata(
+                issuer: "https://malicious.example",
+                metadataUrl: "https://malicious.example/.well-known/oauth-authorization-server"));
+        var registrationClient = new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration());
+        var approval = new RecordingApproval();
+        var store = new RecordingRegistrationStore();
+        var sut = CreateProvider(
+            CreateDcrOptions(
+                allowedOrigins: [new Uri("https://identity.example.com")],
+                metadataUrl: new Uri("https://identity.example.com/.well-known/oauth-authorization-server")),
+            metadataClient,
+            registrationClient,
+            store,
+            approval);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.BindAsync(
+                s_agentOrigin,
+                authentication,
+                Assert.IsType<OAuthProviderMatch>(sut.Match(authentication)),
+                CancellationToken.None));
+
+        Assert.Contains("dcr", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("https://malicious.example", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(0, approval.ApproveCallCount);
+        Assert.Equal(0, registrationClient.RegisterCallCount);
+        Assert.Empty(store.Saved);
+    }
+
+    [Fact]
+    public async Task BindAsync_RejectsDiscoveredRegistrationEndpointOutsideTrustPolicy()
+    {
+        var metadataClient = new RecordingMetadataClient(
+            new OAuthAuthorizationServerMetadata(
+                new Uri("https://identity.example.com"),
+                new Uri("https://identity.example.com/.well-known/oauth-authorization-server"),
+                new Uri("https://identity.example.com/oauth/authorize"),
+                new Uri("https://identity.example.com/oauth/token"),
+                new Uri("https://malicious.example/oauth/register"),
+                ["authorization_code"],
+                ["S256"]));
+        var registrationClient = new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration());
+        var approval = new RecordingApproval();
+        var sut = CreateProvider(
+            CreateDcrOptions(allowedOrigins: [new Uri("https://identity.example.com")]),
+            metadataClient,
+            registrationClient,
+            new RecordingRegistrationStore(),
+            approval);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.BindAsync(
+                s_agentOrigin,
+                authentication,
+                Assert.IsType<OAuthProviderMatch>(sut.Match(authentication)),
+                CancellationToken.None));
+
+        Assert.Contains("https://malicious.example/oauth/register", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(0, approval.ApproveCallCount);
+        Assert.Equal(0, registrationClient.RegisterCallCount);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_PathSpecificDcrProviderOutranksHostWideDcrProviderWithoutAmbiguity()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/tenant/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/tenant/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata(
+            issuer: "https://identity.example.com/tenant",
+            metadataUrl: "https://identity.example.com/.well-known/oauth-authorization-server/tenant");
+        var pinnedMetadataClient = new RecordingMetadataClient(metadata);
+        var hostWideMetadataClient = new RecordingMetadataClient(metadata);
+        var resolver = new OAuthCredentialProviderResolver(
+        [
+            new OAuth21DcrCredentialProvider(
+                CreateDcrOptions(id: "dcr-host", allowedOrigins: [new Uri("https://identity.example.com")]),
+                hostWideMetadataClient,
+                new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration()),
+                new RecordingRegistrationStore(),
+                new RecordingApproval()),
+            new OAuth21DcrCredentialProvider(
+                CreateDcrOptions(id: "dcr-tenant", allowedAuthorities: [new Uri("https://identity.example.com/tenant")]),
+                pinnedMetadataClient,
+                new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration()),
+                new RecordingRegistrationStore(),
+                new RecordingApproval()),
+        ]);
+
+        OAuthCredentialBinding binding = await resolver.ResolveAsync(
+            s_agentOrigin,
+            authentication,
+            CancellationToken.None);
+
+        Assert.Equal("dcr-tenant", binding.ProviderId);
+        Assert.Empty(hostWideMetadataClient.Requests);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_TrustedConfiguredProviderWithoutRegistrationDoesNotFallBackToDcr()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var metadataClient = new RecordingMetadataClient(CreateMetadata());
+        var registrationClient = new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration());
+        var approval = new RecordingApproval();
+        var resolver = new OAuthCredentialProviderResolver(
+        [
+            new GenericOAuth2PkceCredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "configured",
+                    Type = OAuthCredentialProviderType.GenericOAuth2Pkce,
+                    AllowedOrigins = [new Uri("https://identity.example.com")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "device",
+                            [A2AOAuthFlowType.DeviceCode],
+                            "configured-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: true)),
+                }),
+            new OAuth21DcrCredentialProvider(
+                CreateDcrOptions(),
+                metadataClient,
+                registrationClient,
+                new RecordingRegistrationStore(),
+                approval),
+        ]);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => resolver.ResolveAsync(s_agentOrigin, authentication, CancellationToken.None));
+
+        Assert.Contains("configured", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(A2AOAuthFlowType.AuthorizationCode), exception.Message, StringComparison.Ordinal);
+        Assert.Empty(metadataClient.Requests);
+        Assert.Equal(0, approval.ApproveCallCount);
+        Assert.Equal(0, registrationClient.RegisterCallCount);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_ConfiguredProviderThatDoesNotMatchStillAllowsDcr()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        var metadataClient = new RecordingMetadataClient(CreateMetadata());
+        var registrationClient = new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration());
+        var approval = new RecordingApproval();
+        var resolver = new OAuthCredentialProviderResolver(
+        [
+            new GenericOAuth2PkceCredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "configured",
+                    Type = OAuthCredentialProviderType.GenericOAuth2Pkce,
+                    AllowedOrigins = [new Uri("https://other-identity.example")],
+                    Registrations = CreateRegistrations(
+                        new OAuthClientRegistration(
+                            "browser",
+                            [A2AOAuthFlowType.AuthorizationCode],
+                            "configured-client-id",
+                            ClientSecret: null,
+                            RedirectUri: s_redirectUri,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: true)),
+                }),
+            new OAuth21DcrCredentialProvider(
+                CreateDcrOptions(),
+                metadataClient,
+                registrationClient,
+                new RecordingRegistrationStore(),
+                approval),
+        ]);
+
+        OAuthCredentialBinding binding = await resolver.ResolveAsync(
+            s_agentOrigin,
+            authentication,
+            CancellationToken.None);
+
+        Assert.Equal("dcr", binding.ProviderId);
+        Assert.Equal(1, approval.ApproveCallCount);
+        Assert.Equal(1, registrationClient.RegisterCallCount);
+    }
+
+    [Fact]
+    public async Task BindAsync_RepeatedBindsDiscoverMetadataOnceAndLookUpTheStoreEachTime()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata();
+        var metadataClient = new RecordingMetadataClient(metadata);
+        OAuthClientRegistration storedRegistration = CreateDynamicRegistration(clientId: "stored-client-id");
+        var store = new RecordingRegistrationStore(
+            CreateStoreEntry(metadata.Issuer.AbsoluteUri, s_redirectUri, storedRegistration));
+        var approval = new RecordingApproval();
+        var registrationClient = new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration());
+        var sut = CreateProvider(CreateDcrOptions(), metadataClient, registrationClient, store, approval);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        OAuthProviderMatch match = Assert.IsType<OAuthProviderMatch>(sut.Match(authentication));
+
+        OAuthCredentialBinding first = await sut.BindAsync(s_agentOrigin, authentication, match, CancellationToken.None);
+        OAuthCredentialBinding second = await sut.BindAsync(s_agentOrigin, authentication, match, CancellationToken.None);
+
+        Assert.Single(metadataClient.Requests);
+        Assert.Equal(2, store.Lookups.Count);
+        Assert.Equal(0, approval.ApproveCallCount);
+        Assert.Equal(0, registrationClient.RegisterCallCount);
+        Assert.Equal(storedRegistration, first.Registration);
+        Assert.Equal(storedRegistration, second.Registration);
+    }
+
+    [Fact]
+    public async Task BindAsync_SecondBindAfterDynamicRegistrationDoesNotDiscoverOrApproveAgain()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata();
+        var metadataClient = new RecordingMetadataClient(metadata);
+        var store = new RecordingRegistrationStore();
+        var approval = new RecordingApproval();
+        var registrationClient = new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration());
+        var sut = CreateProvider(CreateDcrOptions(), metadataClient, registrationClient, store, approval);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        OAuthProviderMatch match = Assert.IsType<OAuthProviderMatch>(sut.Match(authentication));
+
+        await sut.BindAsync(s_agentOrigin, authentication, match, CancellationToken.None);
+        await sut.BindAsync(s_agentOrigin, authentication, match, CancellationToken.None);
+
+        Assert.Single(metadataClient.Requests);
+        Assert.Equal(1, approval.ApproveCallCount);
+        Assert.Equal(1, registrationClient.RegisterCallCount);
+        Assert.Single(store.Saved);
+        Assert.Equal(2, store.Lookups.Count);
+    }
+
+    [Fact]
+    public async Task BindAsync_ConcurrentBindsShareOneMetadataDiscovery()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata();
+        var discoveryStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var discoveryCompletion = new TaskCompletionSource<OAuthAuthorizationServerMetadata>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var metadataClient = new GatedMetadataClient(discoveryStarted, discoveryCompletion.Task);
+        OAuthClientRegistration storedRegistration = CreateDynamicRegistration(clientId: "stored-client-id");
+        var store = new RecordingRegistrationStore(
+            CreateStoreEntry(metadata.Issuer.AbsoluteUri, s_redirectUri, storedRegistration));
+        var sut = CreateProvider(
+            CreateDcrOptions(),
+            metadataClient,
+            new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration()),
+            store,
+            new RecordingApproval());
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        OAuthProviderMatch match = Assert.IsType<OAuthProviderMatch>(sut.Match(authentication));
+
+        Task<OAuthCredentialBinding> first = sut.BindAsync(s_agentOrigin, authentication, match, CancellationToken.None);
+        await discoveryStarted.Task;
+        Task<OAuthCredentialBinding> second = sut.BindAsync(s_agentOrigin, authentication, match, CancellationToken.None);
+        discoveryCompletion.SetResult(metadata);
+        OAuthCredentialBinding[] bindings = await Task.WhenAll(first, second);
+
+        Assert.Equal(1, metadataClient.CallCount);
+        Assert.Equal(2, store.Lookups.Count);
+        Assert.All(bindings, binding => Assert.Equal(storedRegistration, binding.Registration));
+    }
+
+    [Fact]
+    public async Task BindAsync_CancellationWhileDiscoveryIsInFlightIsObserved()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata();
+        var discoveryStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var discoveryCompletion = new TaskCompletionSource<OAuthAuthorizationServerMetadata>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var metadataClient = new GatedMetadataClient(discoveryStarted, discoveryCompletion.Task);
+        var store = new RecordingRegistrationStore(
+            CreateStoreEntry(metadata.Issuer.AbsoluteUri, s_redirectUri, CreateDynamicRegistration()));
+        var sut = CreateProvider(
+            CreateDcrOptions(),
+            metadataClient,
+            new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration()),
+            store,
+            new RecordingApproval());
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        OAuthProviderMatch match = Assert.IsType<OAuthProviderMatch>(sut.Match(authentication));
+
+        Task<OAuthCredentialBinding> first = sut.BindAsync(s_agentOrigin, authentication, match, CancellationToken.None);
+        await discoveryStarted.Task;
+        using var cancellationTokenSource = new CancellationTokenSource();
+        Task<OAuthCredentialBinding> second = sut.BindAsync(
+            s_agentOrigin,
+            authentication,
+            match,
+            cancellationTokenSource.Token);
+        await cancellationTokenSource.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => second);
+
+        discoveryCompletion.SetResult(metadata);
+        await first;
+        Assert.Equal(1, metadataClient.CallCount);
+    }
+
+    [Fact]
+    public async Task BindAsync_FailedDiscoveryIsNotMemoized()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata();
+        var metadataClient = new RecordingMetadataClient(
+            new InvalidOperationException("Failed to discover OAuth authorization server metadata."),
+            metadata);
+        var store = new RecordingRegistrationStore(
+            CreateStoreEntry(metadata.Issuer.AbsoluteUri, s_redirectUri, CreateDynamicRegistration()));
+        var sut = CreateProvider(
+            CreateDcrOptions(),
+            metadataClient,
+            new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration()),
+            store,
+            new RecordingApproval());
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        OAuthProviderMatch match = Assert.IsType<OAuthProviderMatch>(sut.Match(authentication));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.BindAsync(s_agentOrigin, authentication, match, CancellationToken.None));
+        OAuthCredentialBinding binding = await sut.BindAsync(
+            s_agentOrigin,
+            authentication,
+            match,
+            CancellationToken.None);
+
+        Assert.Equal(2, metadataClient.Requests.Count);
+        Assert.Equal(metadata.Issuer.AbsoluteUri, binding.ProviderIdentity);
+    }
+
+    [Fact]
+    public async Task BindAsync_ApprovalRequestCarriesEveryAdvertisedAndDiscoveredEndpoint()
+    {
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata();
+        var approval = new RecordingApproval();
+        var sut = CreateProvider(
+            CreateDcrOptions(),
+            new RecordingMetadataClient(metadata),
+            new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration()),
+            new RecordingRegistrationStore(),
+            approval);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"],
+            metadataUrl: "https://identity.example.com/.well-known/oauth-authorization-server");
+
+        await sut.BindAsync(
+            s_agentOrigin,
+            authentication,
+            Assert.IsType<OAuthProviderMatch>(sut.Match(authentication)),
+            CancellationToken.None);
+
+        OAuthProviderApprovalRequest request = Assert.IsType<OAuthProviderApprovalRequest>(approval.LastApprovalRequest);
+        Assert.Equal(
+        [
+            new Uri("https://identity.example.com/oauth/authorize"),
+            new Uri("https://identity.example.com/oauth/token"),
+            new Uri("https://identity.example.com/.well-known/oauth-authorization-server"),
+        ],
+        request.AdvertisedEndpoints);
+        Assert.Equal(metadata.Issuer, request.Metadata.Issuer);
+        Assert.Equal(metadata.MetadataUrl, request.Metadata.MetadataUrl);
+        Assert.Equal(metadata.AuthorizationEndpoint, request.Metadata.AuthorizationEndpoint);
+        Assert.Equal(metadata.TokenEndpoint, request.Metadata.TokenEndpoint);
+        Assert.Equal(metadata.RegistrationEndpoint, request.Metadata.RegistrationEndpoint);
+        Assert.Equal(s_redirectUri, request.RedirectUri);
+    }
+
+    [Fact]
+    public async Task ConsoleApproval_ApproveAsync_DisplaysEveryEndpointThatDefinesTheApprovedTrustBoundary()
+    {
+        var output = new StringWriter();
+        var sut = new ConsoleOAuthProviderApproval(new StringReader("y" + Environment.NewLine), output);
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata(
+            issuer: "https://issuer.example/tenant",
+            metadataUrl: "https://issuer.example/.well-known/oauth-authorization-server/tenant");
+        OAuthProviderApprovalRequest request = new(
+            s_agentOrigin,
+            SecuritySchemeName: null,
+            ["repo.read"],
+            [
+                new Uri("https://identity.example.com/oauth/authorize"),
+                new Uri("https://identity.example.com/oauth/token"),
+                new Uri("https://identity.example.com/.well-known/oauth-authorization-server"),
+            ],
+            metadata,
+            s_redirectUri);
+
+        bool approved = await sut.ApproveAsync(request, CancellationToken.None);
+
+        string text = output.ToString();
+        Assert.True(approved);
+        foreach (Uri advertisedEndpoint in request.AdvertisedEndpoints)
+        {
+            Assert.Contains(advertisedEndpoint.AbsoluteUri, text, StringComparison.Ordinal);
+        }
+
+        Assert.Contains(metadata.Issuer.AbsoluteUri, text, StringComparison.Ordinal);
+        Assert.Contains(metadata.MetadataUrl.AbsoluteUri, text, StringComparison.Ordinal);
+        Assert.Contains(metadata.AuthorizationEndpoint!.AbsoluteUri, text, StringComparison.Ordinal);
+        Assert.Contains(metadata.TokenEndpoint.AbsoluteUri, text, StringComparison.Ordinal);
+        Assert.Contains(metadata.RegistrationEndpoint.AbsoluteUri, text, StringComparison.Ordinal);
+        Assert.Contains(s_redirectUri.AbsoluteUri, text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BindAsync_OpenProviderWithoutApprovalOrStoredRegistrationRefusesToRegister()
+    {
+        var registrationClient = new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration());
+        var approval = new RecordingApproval { ApprovalResult = false };
+        var sut = CreateProvider(
+            CreateDcrOptions(allowInteractiveApproval: false),
+            new RecordingMetadataClient(CreateMetadata()),
+            registrationClient,
+            new RecordingRegistrationStore(),
+            approval);
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.BindAsync(
+                s_agentOrigin,
+                authentication,
+                Assert.IsType<OAuthProviderMatch>(sut.Match(authentication)),
+                CancellationToken.None));
+
+        Assert.Contains("interactive approval is disabled", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(0, approval.ApproveCallCount);
+        Assert.Equal(0, registrationClient.RegisterCallCount);
+    }
+
+    [Fact]
+    public void Match_OpenProviderWithoutTrustListsRanksBelowAPinnedProvider()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+
+        OAuthProviderMatch open = Assert.IsType<OAuthProviderMatch>(
+            CreateProvider(CreateDcrOptions()).Match(authentication));
+        OAuthProviderMatch originPinned = Assert.IsType<OAuthProviderMatch>(
+            CreateProvider(CreateDcrOptions(allowedOrigins: [new Uri("https://identity.example.com")]))
+                .Match(authentication));
+
+        Assert.Equal(open.ProviderSpecificity, originPinned.ProviderSpecificity);
+        Assert.True(open.AuthoritySpecificity < originPinned.AuthoritySpecificity);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_PinnedDcrProviderOutranksOpenDcrProviderWithoutAmbiguity()
+    {
+        A2AAgentCardAuthentication authentication = CreateAuthentication(
+            "browser-oauth",
+            new OAuthFlows
+            {
+                AuthorizationCode = new()
+                {
+                    AuthorizationUrl = "https://identity.example.com/oauth/authorize",
+                    TokenUrl = "https://identity.example.com/oauth/token",
+                },
+            },
+            ["repo.read"]);
+        OAuthAuthorizationServerMetadata metadata = CreateMetadata();
+        var openMetadataClient = new RecordingMetadataClient(metadata);
+        var pinnedMetadataClient = new RecordingMetadataClient(metadata);
+        var resolver = new OAuthCredentialProviderResolver(
+        [
+            new OAuth21DcrCredentialProvider(
+                CreateDcrOptions(id: "dcr-open"),
+                openMetadataClient,
+                new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration()),
+                new RecordingRegistrationStore(),
+                new RecordingApproval()),
+            new OAuth21DcrCredentialProvider(
+                CreateDcrOptions(id: "dcr-pinned", allowedOrigins: [new Uri("https://identity.example.com")]),
+                pinnedMetadataClient,
+                new RecordingDynamicClientRegistrationClient(CreateDynamicRegistration()),
+                new RecordingRegistrationStore(),
+                new RecordingApproval()),
+        ]);
+
+        OAuthCredentialBinding binding = await resolver.ResolveAsync(
+            s_agentOrigin,
+            authentication,
+            CancellationToken.None);
+
+        Assert.Equal("dcr-pinned", binding.ProviderId);
+        Assert.Empty(openMetadataClient.Requests);
+    }
+
+    private static OAuthCredentialProviderOptions CreateDcrOptions(
+        string id = "dcr",
+        bool allowInteractiveApproval = true,
+        IReadOnlyList<Uri>? allowedAuthorities = null,
+        IReadOnlyList<Uri>? allowedOrigins = null,
+        Uri? metadataUrl = null,
+        Uri? serverUrl = null)
+        => new()
+        {
+            Id = id,
+            Type = OAuthCredentialProviderType.OAuth21PkceDcr,
+            AllowInteractiveApproval = allowInteractiveApproval,
+            RedirectUri = s_redirectUri,
+            AllowedAuthorities = allowedAuthorities ?? [],
+            AllowedOrigins = allowedOrigins ?? [],
+            MetadataUrl = metadataUrl,
+            ServerUrl = serverUrl,
+        };
+
     private static OAuth21DcrCredentialProvider CreateProvider(
         OAuthCredentialProviderOptions? options = null,
         IOAuthAuthorizationServerMetadataClient? metadataClient = null,
@@ -792,12 +1540,19 @@ public class OAuth21DcrCredentialProviderTests
 
         public List<SaveCall> Saved { get; } = [];
 
+        public List<LookupCall> Lookups { get; } = [];
+
         public Task<OAuthClientRegistration?> GetAsync(
             string providerIdentity,
             Uri redirectUri,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            lock (Lookups)
+            {
+                Lookups.Add(new LookupCall(providerIdentity, redirectUri));
+            }
+
             _registrations.TryGetValue(CreateKey(providerIdentity, redirectUri), out OAuthClientRegistration? registration);
             return Task.FromResult(registration);
         }
@@ -818,8 +1573,30 @@ public class OAuth21DcrCredentialProviderTests
 
         public sealed record SaveCall(string ProviderIdentity, Uri RedirectUri, OAuthClientRegistration Registration);
 
+        public sealed record LookupCall(string ProviderIdentity, Uri RedirectUri);
+
         private static string CreateKey(string providerIdentity, Uri redirectUri)
             => $"{providerIdentity}|{redirectUri.AbsoluteUri}";
+    }
+
+    private sealed class GatedMetadataClient(
+        TaskCompletionSource discoveryStarted,
+        Task<OAuthAuthorizationServerMetadata> completion)
+        : IOAuthAuthorizationServerMetadataClient
+    {
+        private int _callCount;
+
+        public int CallCount => Volatile.Read(ref _callCount);
+
+        public async Task<OAuthAuthorizationServerMetadata> DiscoverAsync(
+            IReadOnlyList<Uri> metadataCandidates,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Interlocked.Increment(ref _callCount);
+            discoveryStarted.TrySetResult();
+            return await completion.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private sealed class RecordingApproval : IOAuthProviderApproval

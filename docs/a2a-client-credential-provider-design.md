@@ -173,9 +173,27 @@ when compatible registrations exist. `GenericOAuth2Pkce` requires PKCE for
 Authorization Code.
 
 `OAuth21PkceDcr` supports Authorization Code with PKCE and public dynamic
-client registration. It can optionally define a known issuer, server URL, or
-metadata URL. `AllowInteractiveApproval` permits discovery and registration
-with an unknown provider after explicit user approval.
+client registration. It requires a loopback `RedirectUri`. It can optionally
+define a known issuer, server URL, or metadata URL, and optional
+`AllowedAuthorities`/`AllowedOrigins`. When those trust lists are non-empty the
+provider is *pinned*: it matches only when every advertised
+authorization/token/metadata endpoint satisfies one common rule, the matched
+rule's specificity participates in ranking, and the same rule is re-applied to
+the discovered issuer, authorization endpoint, token endpoint, metadata URL,
+and registration endpoint before approval or binding. When both trust lists are
+empty the provider is *open*: its configuration declares no checkable
+authority, so explicit approval is the trust decision and the approval prompt
+must display every advertised and discovered endpoint.
+`AllowInteractiveApproval` permits discovery and registration with an unknown
+provider after explicit user approval.
+
+Configuration is validated when it is read. Redirect URIs must be absolute
+loopback HTTP URIs whose path ends with `/`. Registrations must declare at
+least one grant type. `AllowInteractiveApproval` and `UsePkce` must parse as
+booleans. Client authentication must be self-consistent: a client secret with
+`TokenEndpointAuthenticationMethod` `None` is rejected, a `ClientCredentials`
+registration cannot use `None`, and a secret-based method requires a non-blank
+secret.
 
 ### Registration settings
 
@@ -325,13 +343,19 @@ Candidates are ranked without using configuration order:
 3. A path-specific authority rule over a host-wide rule.
 4. A configured registration over DCR.
 
+Ranking is lexicographic and provider specificity is evaluated first. Only the
+matches at the highest provider specificity are considered, so a lower-
+specificity provider - including a DCR provider - cannot win because a more
+specific trusted provider lacks a compatible registration. In that case the
+more specific provider reports its own missing-compatible-registration error.
+
 If multiple candidates remain at the same rank, resolution fails and names the
 ambiguous provider and registration IDs.
 
 ### No configured match
 
-When no configured provider matches, an `OAuth21PkceDcr` provider with
-interactive approval can attempt discovery:
+When no provider of higher specificity matches, an `OAuth21PkceDcr` provider
+with interactive approval can attempt discovery:
 
 1. Use a configured metadata URL when present.
 2. Otherwise use the selected OAuth2 scheme's metadata URL when advertised.
@@ -340,11 +364,19 @@ interactive approval can attempt discovery:
 4. If discovery fails, prompt for an issuer or server URL and retry standards-
    based metadata discovery.
 5. Require a valid HTTPS `registration_endpoint`.
-6. Display the discovered values and request approval.
-7. Register a public PKCE client.
-8. Save the returned client ID through `IOAuthClientRegistrationStore`.
+6. Enforce the provider's trust lists, when non-empty, on every discovered
+   endpoint.
+7. Display the discovered values and request approval.
+8. Register a public PKCE client.
+9. Save the returned client ID through `IOAuthClientRegistrationStore`.
 
 No registration request is sent before approval.
+
+Successfully discovered metadata is memoized for the lifetime of the provider,
+keyed by the normalized discovery inputs and provider configuration, so
+repeated token requests neither rediscover metadata nor repeat the server-URL
+prompt. Failures and approvals are never memoized, and the registration store
+is consulted on every bind.
 
 ## Token Acquisition Flow
 
@@ -368,11 +400,15 @@ status. It uses the same provider resolver and no hard-coded connection name.
   is transmitted.
 - All authorization-server, token, metadata, and registration endpoints must
   use HTTPS.
+- Authority scheme and host comparisons are case-insensitive; authority path
+  comparisons are case-sensitive (`Ordinal`).
 - Metadata and DCR clients disable automatic redirects and reject redirect
   responses. Token redirects must not escape the approved authority/origin
   policy.
 - Client secrets are available only to configured confidential
   registrations.
+- A shipped all-zero placeholder client ID is rejected at a shared acquisition
+  validation point, so no flow can transmit it.
 - DCR creates public clients and does not persist secrets.
 - The approval prompt identifies the agent and every endpoint that will receive
   registration metadata.
