@@ -5,8 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 
 internal sealed record OAuthProviderApprovalRequest(
     Uri AgentOrigin,

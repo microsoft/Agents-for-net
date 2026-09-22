@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using A2A;
+using Microsoft.Agents.Samples.A2AClient.OAuth;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 

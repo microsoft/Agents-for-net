@@ -4,7 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Agents.Samples.A2AClient.OAuth;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;

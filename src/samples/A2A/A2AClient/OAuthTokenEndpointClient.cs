@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 

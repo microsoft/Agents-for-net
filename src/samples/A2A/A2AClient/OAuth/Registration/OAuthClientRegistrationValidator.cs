@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 
 /// <summary>
 /// Validates a resolved client registration at the point credentials would leave the process.

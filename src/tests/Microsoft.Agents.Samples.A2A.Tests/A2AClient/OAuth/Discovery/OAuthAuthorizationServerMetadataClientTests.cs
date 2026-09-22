@@ -10,10 +10,10 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Agents.Samples.A2AClient;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;
 using Xunit;
 
-namespace Microsoft.Agents.Samples.A2A.Tests;
+namespace Microsoft.Agents.Samples.A2AClient.Tests.OAuth.Discovery;
 
 public class OAuthAuthorizationServerMetadataClientTests
 {

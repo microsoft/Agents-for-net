@@ -4,8 +4,9 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth;
 
 internal sealed record OAuthCredentialBinding(
     string ProviderId,

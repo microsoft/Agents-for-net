@@ -6,7 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Agents.Samples.A2AClient.OAuth;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 
 namespace Microsoft.Agents.Samples.A2AClient;
 

@@ -3,8 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Agents.Samples.A2AClient.OAuth;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 
 internal enum OAuthTokenEndpointAuthenticationMethod
 {

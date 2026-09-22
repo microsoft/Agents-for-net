@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;
 
 internal sealed class OAuthAuthorizationServerMetadataClient : IOAuthAuthorizationServerMetadataClient
 {

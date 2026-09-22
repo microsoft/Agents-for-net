@@ -6,7 +6,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 
 internal sealed class InMemoryOAuthClientRegistrationStore : IOAuthClientRegistrationStore
 {

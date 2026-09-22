@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.Agents.Samples.A2AClient;
+namespace Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;
 
 internal sealed record OAuthAuthorizationServerMetadata(
     Uri Issuer,

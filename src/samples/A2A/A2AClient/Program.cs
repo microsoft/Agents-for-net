@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using A2A;
 using Microsoft.Agents.Samples.A2AClient.Configuration;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 using Microsoft.Extensions.Configuration;
 
 namespace Microsoft.Agents.Samples.A2AClient;
