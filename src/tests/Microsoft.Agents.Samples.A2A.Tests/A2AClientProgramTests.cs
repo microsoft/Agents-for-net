@@ -17,6 +17,7 @@ using Microsoft.Agents.Samples.A2AClient.Configuration;
 using Microsoft.Agents.Samples.A2AClient.OAuth;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Providers;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

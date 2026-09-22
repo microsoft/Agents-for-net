@@ -12,10 +12,11 @@ using Microsoft.Agents.Samples.A2AClient;
 using Microsoft.Agents.Samples.A2AClient.OAuth;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Configuration;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Discovery;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Providers;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Registration;
 using Xunit;
 
-namespace Microsoft.Agents.Samples.A2A.Tests;
+namespace Microsoft.Agents.Samples.A2AClient.Tests.OAuth.Providers;
 
 public class OAuth21DcrCredentialProviderTests
 {

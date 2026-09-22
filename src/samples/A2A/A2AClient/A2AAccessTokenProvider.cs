@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Samples.A2AClient.OAuth;
+using Microsoft.Agents.Samples.A2AClient.OAuth.Providers;
 using Microsoft.Agents.Samples.A2AClient.OAuth.Tokens;
 
 namespace Microsoft.Agents.Samples.A2AClient;
