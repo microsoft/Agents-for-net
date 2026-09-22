@@ -253,7 +253,8 @@ the client activates the extension with the `A2A-Extensions` request header.
 If a task enters `TASK_STATE_AUTH_REQUIRED`, the client:
 
 1. Reads the OAuth flow and required scopes from the task status metadata.
-1. Uses the local `delegated` connection.
+1. Resolves the request through the shared local provider catalog using the
+   advertised flow and endpoints.
 1. Acquires the requested token.
 1. Calls `resumeAuth`.
 1. Sends the raw token in `x-a2a-intask-authorization`.
@@ -266,7 +267,8 @@ to prevent a non-progress loop.
 
 ## Token caching
 
-Tokens are cached by connection name, OAuth flow, and acquisition scopes.
+Tokens are cached by resolved provider identity, provider ID, registration ID,
+client ID, OAuth flow, and normalized acquisition scopes.
 
 - A token with `expires_in` is reused until one minute before expiration.
 - A refresh token is used when the cached access token expires.
@@ -292,8 +294,10 @@ except for HTTP loopback addresses used during local development.
 
 ## Common configuration errors
 
-- No local connection has the selected Agent Card security-scheme name.
-- In-task authorization is requested but the `delegated` connection is absent.
+- No trusted local provider can satisfy the advertised OAuth endpoints and
+  selected flow.
+- A trusted provider matches the flow, but none of its registrations is
+  compatible with the advertised request.
 - `ClientId` is missing or still contains a shipped all-zero placeholder.
 - A required endpoint origin is absent from `AllowedOrigins`.
 - Authorization Code is selected without a valid loopback `RedirectUri`.
