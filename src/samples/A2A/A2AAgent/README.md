@@ -140,7 +140,9 @@ Because `RequiredScopes` is omitted, it defaults to every key in
 OBO. Every required scope must appear in the token's `scp` claim; for Microsoft
 Entra resource-qualified scope URIs, the handler compares the final permission value such as
 `access_as_user`. The option is disabled by default and does not support opaque
-tokens or application-role validation.
+tokens or application-role validation. In `InTask` mode, enabling it requires
+configured `OBOScopes` so the client-supplied token is validated by the exchange
+before the protected route runs.
 
 ### Configure and run the client
 

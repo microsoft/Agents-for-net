@@ -95,7 +95,11 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
     /// <remarks>
     /// When enabled, the handler requires a delegated JWT with an <c>scp</c> claim containing every
     /// configured required scope. Opaque tokens and application tokens require application-specific
-    /// authorization and are not supported by this built-in check. The default is <see langword="false"/>.
+    /// authorization and are not supported by this built-in check. In
+    /// <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.InTask"/>
+    /// mode, configured <see cref="Microsoft.Agents.Builder.UserAuth.OBOSettings.OBOScopes"/> are
+    /// also required so the client-supplied token is validated by a trusted exchange before the
+    /// protected route runs. The default is <see langword="false"/>.
     /// </remarks>
     public bool EnforceRequiredScopes { get; set; }
 
@@ -178,6 +182,15 @@ public sealed class A2AUserAuthorizationSettings : OBOSettings
         {
             throw ExceptionHelper.GenerateException<InvalidOperationException>(
                 ErrorHelper.AuthorizationRequiredScopesMissing,
+                null);
+        }
+
+        if (settings.Mode == A2AUserAuthorizationMode.InTask
+            && settings.EnforceRequiredScopes
+            && (settings.OBOScopes == null || settings.OBOScopes.Count == 0))
+        {
+            throw ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.AuthorizationInTaskScopeEnforcementRequiresOBO,
                 null);
         }
     }

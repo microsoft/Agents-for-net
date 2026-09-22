@@ -59,4 +59,6 @@ internal static partial class ErrorHelper
         new(-100021, Resource(nameof(AuthorizationDelegatedJwtRequired)), $"{HelpLinkBase}-100021");
     internal static readonly AgentErrorDefinition AuthorizationRequiredScopesNotGranted =
         new(-100022, Resource(nameof(AuthorizationRequiredScopesNotGranted)), $"{HelpLinkBase}-100022");
+    internal static readonly AgentErrorDefinition AuthorizationInTaskScopeEnforcementRequiresOBO =
+        new(-100023, Resource(nameof(AuthorizationInTaskScopeEnforcementRequiresOBO)), $"{HelpLinkBase}-100023");
 }

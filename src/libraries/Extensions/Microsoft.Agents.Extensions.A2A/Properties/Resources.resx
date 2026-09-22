@@ -155,6 +155,9 @@
   <data name="AuthorizationRequiredScopesNotGranted" xml:space="preserve">
     <value>The token for handler '{0}' is missing required scope(s): {1}.</value>
   </data>
+  <data name="AuthorizationInTaskScopeEnforcementRequiresOBO" xml:space="preserve">
+    <value>EnforceRequiredScopes in InTask mode requires at least one OBOScopes value so the client-supplied token is validated by a trusted exchange.</value>
+  </data>
   <data name="AgentCardNullSecurityScheme" xml:space="preserve">
     <value>A2A Agent Card security scheme '{0}' cannot be null.</value>
   </data>
