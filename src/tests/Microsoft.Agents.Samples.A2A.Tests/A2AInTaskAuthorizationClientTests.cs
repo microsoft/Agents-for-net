@@ -118,6 +118,69 @@ public class A2AInTaskAuthorizationClientTests
         Assert.Equal(1, handler.RequestCount);
     }
 
+    [Fact]
+    public async Task ResumeIfRequiredAsync_ResolvesInTaskAuthorizationByEndpointsWithoutLocalAlias()
+    {
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                It.Is<OAuthCredentialBinding>(binding =>
+                    binding.ProviderId == "github-device"
+                    && binding.RegistrationId == "device"
+                    && binding.FlowType == A2AOAuthFlowType.DeviceCode
+                    && binding.DeviceAuthorizationEndpoint!.AbsoluteUri == "https://github.com/login/device/code"
+                    && binding.TokenEndpoint.AbsoluteUri == "https://github.com/login/oauth/access_token"
+                    && binding.Registration.ClientId == "github-client-id"),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("procured-token", TimeSpan.FromMinutes(10)));
+        var tokenProvider = new A2AAccessTokenProvider(
+            new OAuthCredentialProviderResolver(
+            [
+                new GenericOAuth2CredentialProvider(
+                    new OAuthCredentialProviderOptions
+                    {
+                        Id = "github-device",
+                        Type = OAuthCredentialProviderType.GenericOAuth2,
+                        AllowedOrigins = [new Uri("https://github.com")],
+                        Registrations = new Dictionary<string, OAuthClientRegistration>(StringComparer.Ordinal)
+                        {
+                            ["device"] = new(
+                                "device",
+                                [A2AOAuthFlowType.DeviceCode],
+                                "github-client-id",
+                                ClientSecret: null,
+                                RedirectUri: null,
+                                TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                                UsePkce: true),
+                        },
+                    }),
+            ]),
+            oauth.Object,
+            new Uri("https://agent.example"));
+        var handler = new RecordingHandler();
+        using var httpClient = new HttpClient(handler);
+        var client = A2AInTaskAuthorizationClient.Create(
+            CreateAgentCard(ProtocolBindingNames.JsonRpc),
+            httpClient,
+            tokenProvider,
+            new Uri("https://agent.example/a2a"));
+
+        AgentTask? result = await client.ResumeIfRequiredAsync(
+            CreateAuthRequiredTask(
+                authorizationRequestId: "auth-github",
+                requiredScope: "repo",
+                deviceAuthorizationUrl: "https://github.com/login/device/code",
+                tokenUrl: "https://github.com/login/oauth/access_token"),
+            CancellationToken.None);
+
+        Assert.Equal(TaskState.Completed, result!.Status.State);
+        Assert.Equal(
+            "procured-token",
+            Assert.Single(handler.Request!.Headers.GetValues(A2AInTaskAuthorizationClient.TokenHeader)));
+        oauth.Verify(
+            client => client.AcquireTokenAsync(It.IsAny<OAuthCredentialBinding>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     private static AgentCard CreateAgentCard(string protocolBinding)
     {
         return new AgentCard
@@ -143,7 +206,9 @@ public class A2AInTaskAuthorizationClientTests
 
     private static AgentTask CreateAuthRequiredTask(
         string authorizationRequestId = "auth-1",
-        string requiredScope = "agent.read")
+        string requiredScope = "agent.read",
+        string deviceAuthorizationUrl = "https://login.example.com/devicecode",
+        string tokenUrl = "https://login.example.com/token")
     {
         return new AgentTask
         {
@@ -169,8 +234,8 @@ public class A2AInTaskAuthorizationClientTests
                                     {
                                         deviceCode = new
                                         {
-                                            deviceAuthorizationUrl = "https://login.example.com/devicecode",
-                                            tokenUrl = "https://login.example.com/token",
+                                            deviceAuthorizationUrl,
+                                            tokenUrl,
                                             scopes = new Dictionary<string, string>
                                             {
                                                 [requiredScope] = "Access the resource",

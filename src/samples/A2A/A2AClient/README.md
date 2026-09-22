@@ -11,7 +11,7 @@ At startup, the client:
 1. Uses the Agent Card's skill examples to predict the skill for each message.
 1. Evaluates the selected skill's security requirements and OAuth metadata.
 1. Acquires a token when the selected requirement matches a configured local
-   OAuth connection.
+   OAuth provider and registration policy.
 1. Activates the optional Agents SDK in-task authorization extension when the
    Agent Card advertises it.
 
@@ -73,32 +73,53 @@ The configuration has two top-level areas:
     "AgentUrl": "https://agent.example.com/a2a"
   },
   "Authentication": {
-    "Connections": {
-      "delegated": {
-        "ClientId": "<public-client-id>",
-        "AllowedOrigins": [
-          "https://identity.example.com"
+    "Providers": {
+      "entra": {
+        "Type": "Entra",
+        "AllowedAuthorities": [
+          "https://login.microsoftonline.com"
         ],
         "AdditionalScopes": [
           "offline_access"
-        ]
+        ],
+        "Registrations": {
+          "delegated": {
+            "GrantTypes": [
+              "DeviceCode",
+              "AuthorizationCode"
+            ],
+            "ClientId": "<public-client-id>",
+            "RedirectUri": "http://localhost:8400/callback/"
+          },
+          "application": {
+            "GrantTypes": [
+              "ClientCredentials"
+            ],
+            "ClientId": "<confidential-client-id>",
+            "ClientSecret": "<store-outside-source-control>",
+            "TokenEndpointAuthenticationMethod": "ClientSecretPost"
+          }
+        }
       },
       "browser-oauth": {
-        "ClientId": "<public-or-confidential-client-id>",
-        "RedirectUri": "http://localhost:8400/callback/",
+        "Type": "GenericOAuth2Pkce",
         "AllowedOrigins": [
           "https://identity.example.com"
         ],
-        "TokenEndpointAuthenticationMethod": "None",
-        "UsePkce": true
+        "Registrations": {
+          "browser": {
+            "GrantTypes": [
+              "AuthorizationCode"
+            ],
+            "ClientId": "<public-client-id>",
+            "RedirectUri": "http://localhost:8401/callback/"
+          }
+        }
       },
-      "service-oauth": {
-        "ClientId": "<confidential-client-id>",
-        "ClientSecret": "<store-outside-source-control>",
-        "AllowedOrigins": [
-          "https://identity.example.com"
-        ],
-        "TokenEndpointAuthenticationMethod": "ClientSecretPost"
+      "interactive-dcr": {
+        "Type": "OAuth21PkceDcr",
+        "AllowInteractiveApproval": true,
+        "RedirectUri": "http://localhost:8402/callback/"
       }
     }
   }
@@ -111,65 +132,79 @@ The configuration has two top-level areas:
 |---|---|
 | `AgentUrl` | Base URL used to resolve the public Agent Card. Must be an absolute URI. The `--agent` option overrides it. |
 
-### `Authentication:Connections`
+### `Authentication:Providers`
 
-`Connections` is a dictionary of local OAuth client profiles. The client does
-not choose OAuth endpoints or resource scopes from these profiles. Those values
-come from the Agent Card or an in-task authorization request.
+`Providers` is a dictionary of local OAuth provider policies. The agent still
+advertises the flow, scopes, and endpoints. Local configuration supplies trust
+rules, registered clients, optional extra scopes, and the approval policy for
+interactive OAuth 2.1 dynamic client registration.
 
-For Agent Card authentication, the connection name must exactly match the
-selected OAuth security-scheme name. Names are case-sensitive. For example, an
-Agent Card scheme named `browser-oauth` selects
-`Authentication:Connections:browser-oauth`.
+Agent Card scheme names are diagnostic only. The client resolves both Agent
+Card authorization and in-task authorization through the same provider
+resolver, using the advertised flow and endpoints instead of a local alias.
 
-In-task authorization metadata does not define an Agent Card security-scheme
-name. The client uses the connection named `delegated` for all in-task Device
-Code and Authorization Code requests.
-
-Connection names and client registrations are local policy. An agent can
-advertise any standards-compliant provider and flow, but token acquisition
-fails unless the client has a matching connection and trusts the advertised
-endpoint origins.
-
-### Connection properties
+### Provider properties
 
 | Property | Purpose |
 |---|---|
-| `ClientId` | OAuth client registration identifier. Required for every supported flow. |
-| `ClientSecret` | Confidential client credential. Required when `TokenEndpointAuthenticationMethod` is `ClientSecretBasic` or `ClientSecretPost`. Keep it outside source control. |
-| `RedirectUri` | Loopback HTTP callback for Authorization Code. It must be an absolute URI whose path ends in `/`, and it must be registered with the provider. |
-| `AllowedOrigins` | HTTPS origins that may receive this connection's client ID or client credentials. Every advertised authorization, device authorization, and token endpoint is checked against this list. |
+| `Type` | Provider kind: `Entra`, `GenericOAuth2`, `GenericOAuth2Pkce`, or `OAuth21PkceDcr`. |
+| `AllowedAuthorities` | HTTPS issuer or server authorities that may satisfy every advertised OAuth endpoint. Use this for path-specific trust such as `https://login.microsoftonline.com/{tenant}`. |
+| `AllowedOrigins` | HTTPS origins trusted for every advertised OAuth endpoint when origin-level trust is sufficient. |
 | `AdditionalScopes` | Scopes added locally to the acquisition scopes advertised by the agent, such as `offline_access`. Duplicate scopes are removed. |
-| `TokenEndpointAuthenticationMethod` | Client authentication used at the token endpoint: `None`, `ClientSecretBasic`, or `ClientSecretPost`. Defaults to `None`. |
-| `UsePkce` | Enables Authorization Code PKCE. Defaults to `true`. |
+| `Registrations` | Named local client registrations available to the provider. |
+| `AllowInteractiveApproval` | Enables operator approval and dynamic client registration for `OAuth21PkceDcr`. |
+| `RedirectUri` | Loopback callback used by Authorization Code or DCR flows. It must be an absolute URI whose path ends in `/`. |
+| `MetadataUrl` | Optional HTTPS metadata document URL used before deriving well-known metadata from advertised endpoints. |
+| `ServerUrl` | Optional HTTPS issuer or server URL fallback when metadata cannot be discovered from advertised endpoints. |
 
 The client has no global tenant setting. Tenant selection is part of the OAuth
 endpoint URLs advertised by the agent.
 
-### Flow-specific profiles
+### Registration properties
+
+| Property | Purpose |
+|---|---|
+| `GrantTypes` | Supported OAuth flows for the registration: `DeviceCode`, `AuthorizationCode`, and/or `ClientCredentials`. |
+| `ClientId` | OAuth client registration identifier. Required for every configured registration. |
+| `ClientSecret` | Confidential client credential. Required when `TokenEndpointAuthenticationMethod` is `ClientSecretBasic` or `ClientSecretPost`. Keep it outside source control. |
+| `RedirectUri` | Optional per-registration loopback callback. |
+| `TokenEndpointAuthenticationMethod` | Client authentication used at the token endpoint: `None`, `ClientSecretBasic`, or `ClientSecretPost`. Defaults to `None`. |
+| `UsePkce` | Enables Authorization Code PKCE. Defaults to `true` and is required for PKCE/DCR providers. |
+
+### Flow-specific provider guidance
 
 **Device Code**
 
-- Requires `ClientId`.
+- Requires a registration with `GrantTypes` including `DeviceCode`.
 - Requires each advertised device authorization and token endpoint origin in
-  `AllowedOrigins`.
+  `AllowedAuthorities` or `AllowedOrigins`.
 - Usually uses `TokenEndpointAuthenticationMethod: None`.
 - Can add protocol scopes such as `offline_access` through `AdditionalScopes`.
 
 **Authorization Code**
 
-- Requires `ClientId`, `RedirectUri`, and trusted authorization and token
-  endpoint origins.
+- Requires a registration with `GrantTypes` including `AuthorizationCode`,
+  `RedirectUri`, and trusted authorization and token endpoint origins.
 - Uses a loopback HTTP callback.
-- Uses PKCE unless `UsePkce` is set to `false`.
+- Uses PKCE unless the provider type allows non-PKCE registrations.
 - Requires `ClientSecret` when the selected token endpoint authentication
   method uses a client secret.
 
 **Client Credentials**
 
-- Requires `ClientId` and a trusted token endpoint origin.
+- Requires a registration with `GrantTypes` including `ClientCredentials` and
+  a trusted token endpoint origin.
 - Typically requires `ClientSecret` with `ClientSecretBasic` or
   `ClientSecretPost`.
+
+**OAuth 2.1 PKCE + DCR**
+
+- Requires `Type: OAuth21PkceDcr` and a loopback `RedirectUri`.
+- Reuses a stored public client registration when one already exists for the
+  discovered issuer and redirect URI.
+- When no stored registration exists and `AllowInteractiveApproval` is `true`,
+  the client shows the discovered issuer, metadata, registration endpoint, and
+  redirect URI before registering a public PKCE client.
 
 ## Keep credentials outside `appsettings.json`
 
@@ -177,9 +212,9 @@ The committed `appsettings.json` contains placeholders only. Store local
 credentials with .NET user secrets:
 
 ```powershell
-dotnet user-secrets set "Authentication:Connections:delegated:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
-dotnet user-secrets set "Authentication:Connections:service-oauth:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
-dotnet user-secrets set "Authentication:Connections:service-oauth:ClientSecret" "<client-secret>" --project src\samples\A2A\A2AClient\A2AClient.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:delegated:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:application:ClientId" "<client-id>" --project src\samples\A2A\A2AClient\A2AClient.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:application:ClientSecret" "<client-secret>" --project src\samples\A2A\A2AClient\A2AClient.csproj
 ```
 
 Environment variables use the `A2ACLIENT_` prefix and `__` for configuration
@@ -187,8 +222,8 @@ section separators:
 
 ```powershell
 $env:A2ACLIENT_A2A__AgentUrl = "https://agent.example.com/a2a"
-$env:A2ACLIENT_Authentication__Connections__delegated__ClientId = "<client-id>"
-$env:A2ACLIENT_Authentication__Connections__delegated__AllowedOrigins__0 = "https://identity.example.com"
+$env:A2ACLIENT_Authentication__Providers__entra__Registrations__delegated__ClientId = "<client-id>"
+$env:A2ACLIENT_Authentication__Providers__entra__AllowedAuthorities__0 = "https://login.microsoftonline.com"
 ```
 
 Do not store client secrets in committed files.
@@ -203,8 +238,7 @@ to card-level requirements when appropriate. A requirement is usable when it:
 - names one OAuth security scheme;
 - specifies at least one acquisition scope;
 - advertises a supported flow for the selected authentication mode; and
-- has valid HTTPS endpoints whose origins are trusted by the matching local
-  connection.
+- has valid HTTPS endpoints trusted by the matching local provider policy.
 
 If automatic selection finds multiple delegated or application alternatives,
 the client reports the ambiguity instead of guessing.

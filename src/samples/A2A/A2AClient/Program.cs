@@ -47,6 +47,12 @@ internal sealed class Program
             A2AClientOptions options = A2AClientOptions.FromConfiguration(configuration, startupOptions);
             var authenticationSession = new A2AAuthenticationSession();
             using var oauthHttpClient = new HttpClient();
+            using var metadataHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+            using var registrationHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+            var registrationStore = new InMemoryOAuthClientRegistrationStore();
+            var approval = new ConsoleOAuthProviderApproval();
+            var metadataClient = new OAuthAuthorizationServerMetadataClient(metadataHttpClient);
+            var registrationClient = new DynamicClientRegistrationClient(registrationHttpClient);
             var oauthTokenClient = new OAuthTokenClient(
                 new OAuthDeviceCodeTokenClient(oauthHttpClient, Console.Out),
                 new OAuthAuthorizationCodeTokenClient(
@@ -55,7 +61,13 @@ internal sealed class Program
                 new OAuthClientCredentialsTokenClient(oauthHttpClient),
                 new OAuthTokenEndpointClient(oauthHttpClient));
             var accessTokenProvider = new A2AAccessTokenProvider(
-                CreateCredentialProviderResolver(options.Authentication),
+                new OAuthCredentialProviderResolver(
+                    CreateCredentialProviders(
+                        options.Authentication,
+                        metadataClient,
+                        registrationClient,
+                        registrationStore,
+                        approval)),
                 oauthTokenClient,
                 A2AAgentOrigin.FromAgentUrl(options.AgentUrl));
             using var httpClient = new HttpClient(
@@ -248,18 +260,35 @@ internal sealed class Program
         return args[++index];
     }
 
-    private static IOAuthCredentialProviderResolver CreateCredentialProviderResolver(
-        A2AClientAuthenticationOptions authentication)
+    internal static IReadOnlyList<IOAuthCredentialProvider> CreateCredentialProviders(
+        A2AClientAuthenticationOptions options,
+        IOAuthAuthorizationServerMetadataClient metadataClient,
+        IDynamicClientRegistrationClient registrationClient,
+        IOAuthClientRegistrationStore registrationStore,
+        IOAuthProviderApproval approval)
     {
-        ArgumentNullException.ThrowIfNull(authentication);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(metadataClient);
+        ArgumentNullException.ThrowIfNull(registrationClient);
+        ArgumentNullException.ThrowIfNull(registrationStore);
+        ArgumentNullException.ThrowIfNull(approval);
 
-        IOAuthCredentialProvider[] providers = authentication.Providers.Values
-            .Select(CreateCredentialProvider)
+        return options.Providers.Values
+            .Select(providerOptions => CreateCredentialProvider(
+                providerOptions,
+                metadataClient,
+                registrationClient,
+                registrationStore,
+                approval))
             .ToArray();
-        return new OAuthCredentialProviderResolver(providers);
     }
 
-    private static IOAuthCredentialProvider CreateCredentialProvider(OAuthCredentialProviderOptions options)
+    private static IOAuthCredentialProvider CreateCredentialProvider(
+        OAuthCredentialProviderOptions options,
+        IOAuthAuthorizationServerMetadataClient metadataClient,
+        IDynamicClientRegistrationClient registrationClient,
+        IOAuthClientRegistrationStore registrationStore,
+        IOAuthProviderApproval approval)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -268,7 +297,12 @@ internal sealed class Program
             OAuthCredentialProviderType.Entra => new EntraOAuthCredentialProvider(options),
             OAuthCredentialProviderType.GenericOAuth2 => new GenericOAuth2CredentialProvider(options),
             OAuthCredentialProviderType.GenericOAuth2Pkce => new GenericOAuth2PkceCredentialProvider(options),
-            OAuthCredentialProviderType.OAuth21PkceDcr => new GenericOAuth2PkceCredentialProvider(options),
+            OAuthCredentialProviderType.OAuth21PkceDcr => new OAuth21DcrCredentialProvider(
+                options,
+                metadataClient,
+                registrationClient,
+                registrationStore,
+                approval),
             _ => throw new InvalidOperationException(
                 $"Unsupported OAuth credential provider type '{options.Type}'."),
         };

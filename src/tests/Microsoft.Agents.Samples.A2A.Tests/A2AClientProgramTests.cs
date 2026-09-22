@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using A2A;
@@ -15,11 +16,85 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Microsoft.Agents.Samples.A2A.Tests;
 
 public class A2AClientProgramTests
 {
+    [Fact]
+    public void CreateCredentialProviders_CreatesConcreteProviders_AndSharesDcrDependencies()
+    {
+        var metadataClient = new Mock<IOAuthAuthorizationServerMetadataClient>(MockBehavior.Strict);
+        var registrationClient = new Mock<IDynamicClientRegistrationClient>(MockBehavior.Strict);
+        var registrationStore = new Mock<IOAuthClientRegistrationStore>(MockBehavior.Strict);
+        var approval = new Mock<IOAuthProviderApproval>(MockBehavior.Strict);
+        var options = new A2AClientAuthenticationOptions
+        {
+            Providers = new Dictionary<string, OAuthCredentialProviderOptions>(StringComparer.Ordinal)
+            {
+                ["entra"] = CreateProviderOptions(
+                    "entra",
+                    OAuthCredentialProviderType.Entra,
+                    allowedAuthorities: [new Uri("https://login.microsoftonline.com")],
+                    registrations: CreateRegistrations(
+                        CreateRegistration("delegated", "entra-client", A2AOAuthFlowType.DeviceCode))),
+                ["generic"] = CreateProviderOptions(
+                    "generic",
+                    OAuthCredentialProviderType.GenericOAuth2,
+                    allowedOrigins: [new Uri("https://github.com")],
+                    registrations: CreateRegistrations(
+                        CreateRegistration("device", "github-client", A2AOAuthFlowType.DeviceCode))),
+                ["pkce"] = CreateProviderOptions(
+                    "pkce",
+                    OAuthCredentialProviderType.GenericOAuth2Pkce,
+                    allowedOrigins: [new Uri("https://gitlab.example.com")],
+                    registrations: CreateRegistrations(
+                        CreateRegistration(
+                            "browser",
+                            "gitlab-client",
+                            A2AOAuthFlowType.AuthorizationCode,
+                            redirectUri: new Uri("http://localhost:8400/callback/"),
+                            usePkce: true))),
+                ["dcr-one"] = CreateProviderOptions(
+                    "dcr-one",
+                    OAuthCredentialProviderType.OAuth21PkceDcr,
+                    redirectUri: new Uri("http://localhost:8400/callback/")),
+                ["dcr-two"] = CreateProviderOptions(
+                    "dcr-two",
+                    OAuthCredentialProviderType.OAuth21PkceDcr,
+                    redirectUri: new Uri("http://localhost:8401/callback/")),
+            },
+        };
+
+        IReadOnlyList<IOAuthCredentialProvider> providers = Program.CreateCredentialProviders(
+            options,
+            metadataClient.Object,
+            registrationClient.Object,
+            registrationStore.Object,
+            approval.Object);
+
+        Assert.Collection(
+            providers,
+            provider => Assert.IsType<EntraOAuthCredentialProvider>(provider),
+            provider => Assert.IsType<GenericOAuth2CredentialProvider>(provider),
+            provider => Assert.IsType<GenericOAuth2PkceCredentialProvider>(provider),
+            provider =>
+            {
+                OAuth21DcrCredentialProvider dcrProvider = Assert.IsType<OAuth21DcrCredentialProvider>(provider);
+                Assert.Same(metadataClient.Object, GetPrivateField<IOAuthAuthorizationServerMetadataClient>(dcrProvider, "_metadataClient"));
+                Assert.Same(registrationClient.Object, GetPrivateField<IDynamicClientRegistrationClient>(dcrProvider, "_registrationClient"));
+                Assert.Same(registrationStore.Object, GetPrivateField<IOAuthClientRegistrationStore>(dcrProvider, "_registrationStore"));
+                Assert.Same(approval.Object, GetPrivateField<IOAuthProviderApproval>(dcrProvider, "_approval"));
+            },
+            provider =>
+            {
+                OAuth21DcrCredentialProvider dcrProvider = Assert.IsType<OAuth21DcrCredentialProvider>(provider);
+                Assert.Same(registrationStore.Object, GetPrivateField<IOAuthClientRegistrationStore>(dcrProvider, "_registrationStore"));
+                Assert.Same(approval.Object, GetPrivateField<IOAuthProviderApproval>(dcrProvider, "_approval"));
+            });
+    }
+
     [Theory]
     [InlineData("none", "none")]
     [InlineData("none", "delegated")]
@@ -314,5 +389,51 @@ public class A2AClientProgramTests
                 await process.WaitForExitAsync();
             }
         }
+    }
+
+    private static OAuthCredentialProviderOptions CreateProviderOptions(
+        string id,
+        OAuthCredentialProviderType type,
+        IReadOnlyList<Uri>? allowedAuthorities = null,
+        IReadOnlyList<Uri>? allowedOrigins = null,
+        IReadOnlyDictionary<string, OAuthClientRegistration>? registrations = null,
+        Uri? redirectUri = null)
+        => new()
+        {
+            Id = id,
+            Type = type,
+            AllowedAuthorities = allowedAuthorities ?? [],
+            AllowedOrigins = allowedOrigins ?? [],
+            Registrations = registrations ?? new Dictionary<string, OAuthClientRegistration>(StringComparer.Ordinal),
+            RedirectUri = redirectUri,
+        };
+
+    private static IReadOnlyDictionary<string, OAuthClientRegistration> CreateRegistrations(
+        params OAuthClientRegistration[] registrations)
+        => registrations.ToDictionary(registration => registration.Id, StringComparer.Ordinal);
+
+    private static OAuthClientRegistration CreateRegistration(
+        string id,
+        string clientId,
+        A2AOAuthFlowType flowType,
+        Uri? redirectUri = null,
+        bool usePkce = true)
+        => new(
+            id,
+            [flowType],
+            clientId,
+            ClientSecret: null,
+            RedirectUri: redirectUri,
+            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+            UsePkce: usePkce);
+
+    private static TField GetPrivateField<TField>(object instance, string name)
+    {
+        FieldInfo field = instance.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException(
+                $"Expected private field '{name}' on '{instance.GetType().Name}'.");
+        object? value = field.GetValue(instance);
+        Assert.NotNull(value);
+        return Assert.IsAssignableFrom<TField>(value);
     }
 }

@@ -202,6 +202,63 @@ public class A2AAccessTokenProviderTests
     }
 
     [Fact]
+    public async Task GetAccessTokenAsync_ArbitraryAgentCardSchemeNamesResolveThroughTheSameProvider()
+    {
+        A2AAgentCardAuthentication firstAuthentication = CreateAuthentication(
+            securitySchemeName: "alpha-scheme",
+            baseUri: "https://github.com/login");
+        A2AAgentCardAuthentication secondAuthentication = CreateAuthentication(
+            securitySchemeName: "beta-scheme",
+            baseUri: "https://github.com/login");
+        var resolver = new OAuthCredentialProviderResolver(
+        [
+            new GenericOAuth2CredentialProvider(
+                new OAuthCredentialProviderOptions
+                {
+                    Id = "github-device",
+                    Type = OAuthCredentialProviderType.GenericOAuth2,
+                    AllowedOrigins = [new Uri("https://github.com")],
+                    Registrations = new Dictionary<string, OAuthClientRegistration>(StringComparer.Ordinal)
+                    {
+                        ["device"] = new(
+                            "device",
+                            [A2AOAuthFlowType.DeviceCode],
+                            "github-client-id",
+                            ClientSecret: null,
+                            RedirectUri: null,
+                            TokenEndpointAuthenticationMethod: OAuthTokenEndpointAuthenticationMethod.None,
+                            UsePkce: true),
+                    },
+                }),
+        ]);
+        var oauth = new Mock<IOAuthTokenClient>(MockBehavior.Strict);
+        oauth.Setup(client => client.AcquireTokenAsync(
+                It.Is<OAuthCredentialBinding>(binding =>
+                    binding.ProviderId == "github-device"
+                    && binding.RegistrationId == "device"
+                    && binding.FlowType == A2AOAuthFlowType.DeviceCode
+                    && binding.Registration.ClientId == "github-client-id"
+                    && binding.DeviceAuthorizationEndpoint!.AbsoluteUri == "https://github.com/login/oauth/device"
+                    && binding.TokenEndpoint.AbsoluteUri == "https://github.com/login/oauth/token"),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OAuthAccessToken("shared-token", TimeSpan.FromMinutes(10)));
+        var provider = new A2AAccessTokenProvider(
+            resolver,
+            oauth.Object,
+            s_agentOrigin,
+            new TestTimeProvider());
+
+        string? firstToken = await provider.GetAccessTokenAsync(firstAuthentication, CancellationToken.None);
+        string? secondToken = await provider.GetAccessTokenAsync(secondAuthentication, CancellationToken.None);
+
+        Assert.Equal("shared-token", firstToken);
+        Assert.Equal("shared-token", secondToken);
+        oauth.Verify(
+            client => client.AcquireTokenAsync(It.IsAny<OAuthCredentialBinding>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
     public Task GetAccessTokenAsync_DifferentProviderIdentitiesDoNotShareCachedTokens()
         => AssertDistinctBindingsDoNotShareCachedTokens(binding => binding with
         {
