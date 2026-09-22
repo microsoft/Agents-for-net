@@ -57,7 +57,7 @@ internal sealed class OAuthCredentialProviderResolver : IOAuthCredentialProvider
             {
                 string[] candidates = [FormatCandidate(bestMatch), .. ambiguousMatches.Select(FormatCandidate)];
                 throw new InvalidOperationException(
-                    $"Multiple configured OAuth providers can satisfy flow '{authentication.FlowType}': {string.Join(", ", candidates)}.");
+                    $"Multiple OAuth providers can satisfy flow '{authentication.FlowType}': {string.Join(", ", candidates)}.");
             }
 
             return bestMatch.Provider.BindAsync(agentOrigin, authentication, bestMatch, cancellationToken);
@@ -82,14 +82,16 @@ internal sealed class OAuthCredentialProviderResolver : IOAuthCredentialProvider
             {
                 string[] candidates = [FormatCandidate(diagnosticMatch), .. ambiguousMatches.Select(FormatCandidate)];
                 throw new InvalidOperationException(
-                    $"Multiple configured OAuth providers can satisfy flow '{authentication.FlowType}': {string.Join(", ", candidates)}.");
+                    $"Multiple OAuth providers can satisfy flow '{authentication.FlowType}': {string.Join(", ", candidates)}.");
             }
 
             return diagnosticMatch.Provider.BindAsync(agentOrigin, authentication, diagnosticMatch, cancellationToken);
         }
 
+        string evaluatedProviders = string.Join(", ", _providers.Select(provider => provider.Id).Distinct(StringComparer.Ordinal));
         throw new InvalidOperationException(
-            $"No configured OAuth provider can satisfy flow '{authentication.FlowType}' for {DescribeAdvertisedEndpoints(authentication)}.");
+            $"No OAuth provider can satisfy flow '{authentication.FlowType}' for {DescribeAdvertisedEndpoints(authentication)}. "
+            + $"Evaluated providers: {evaluatedProviders}.");
     }
 
     private static string DescribeAdvertisedEndpoints(A2AAgentCardAuthentication authentication)
