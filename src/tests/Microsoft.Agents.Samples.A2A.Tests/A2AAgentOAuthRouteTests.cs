@@ -39,12 +39,13 @@ namespace Microsoft.Agents.Samples.A2A.Tests;
 
 public class A2AAgentOAuthRouteTests
 {
-    private const string GraphHandlerName = "graph";
+    private const string GraphAgentCardHandlerName = "graph-agentcard";
+    private const string GraphInTaskHandlerName = "graph-intask";
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task AgentCard_FromSampleConfiguration_AdvertisesInTaskAuthorizationWithoutOAuthSecurity(bool protectedSkills)
+    public async Task AgentCard_FromSampleConfiguration_AdvertisesAgentCardAndInTaskAuthorization(bool protectedSkills)
     {
         const string tenantId = "11111111-1111-1111-1111-111111111111";
         const string clientId = "22222222-2222-2222-2222-222222222222";
@@ -54,14 +55,26 @@ public class A2AAgentOAuthRouteTests
         using var settingsStream = new MemoryStream(Encoding.UTF8.GetBytes(settings));
         var configuration = new ConfigurationBuilder().AddJsonStream(settingsStream).Build();
         Assert.False(configuration.GetSection("AgentApplication:A2A:AgentCard").Exists());
-        var handler = Assert.Single(configuration.GetSection("AgentApplication:UserAuthorization:Handlers").GetChildren());
-        Assert.Equal(GraphHandlerName, handler.Key);
-        Assert.Equal("Microsoft.Agents.Extensions.A2A", handler["Assembly"]);
-        Assert.Equal(GraphHandlerName, configuration["AgentApplication:UserAuthorization:DefaultHandlerName"]);
-        Assert.Equal("intask", handler["Settings:Mode"]?.ToLowerInvariant());
-        Assert.Equal("true", handler["Settings:EnforceRequiredScopes"]?.ToLowerInvariant());
-        Assert.Equal("ServiceConnection", handler["Settings:OBOConnectionName"]);
-        Assert.Equal("User.Read", handler["Settings:OBOScopes:0"]);
+        var handlers = configuration
+            .GetSection("AgentApplication:UserAuthorization:Handlers")
+            .GetChildren()
+            .ToDictionary(handler => handler.Key, StringComparer.Ordinal);
+        Assert.Equal(2, handlers.Count);
+        Assert.Equal(GraphInTaskHandlerName, configuration["AgentApplication:UserAuthorization:DefaultHandlerName"]);
+
+        IConfigurationSection agentCardHandler = handlers[GraphAgentCardHandlerName];
+        Assert.Equal("Microsoft.Agents.Extensions.A2A", agentCardHandler["Assembly"]);
+        Assert.Equal("requesttoken", agentCardHandler["Settings:Mode"]?.ToLowerInvariant());
+        Assert.Equal("true", agentCardHandler["Settings:EnforceRequiredScopes"]?.ToLowerInvariant());
+        Assert.Equal("ServiceConnection", agentCardHandler["Settings:OBOConnectionName"]);
+        Assert.Equal("User.Read", agentCardHandler["Settings:OBOScopes:0"]);
+
+        IConfigurationSection inTaskHandler = handlers[GraphInTaskHandlerName];
+        Assert.Equal("Microsoft.Agents.Extensions.A2A", inTaskHandler["Assembly"]);
+        Assert.Equal("intask", inTaskHandler["Settings:Mode"]?.ToLowerInvariant());
+        Assert.Equal("true", inTaskHandler["Settings:EnforceRequiredScopes"]?.ToLowerInvariant());
+        Assert.Equal("ServiceConnection", inTaskHandler["Settings:OBOConnectionName"]);
+        Assert.Equal("User.Read", inTaskHandler["Settings:OBOScopes:0"]);
 
         var storage = new MemoryStorage();
         var adapter = new A2AAdapter(storage, NullLoggerFactory.Instance, configuration: configuration);
@@ -80,17 +93,27 @@ public class A2AAgentOAuthRouteTests
         Assert.DoesNotContain("User.Read", Encoding.UTF8.GetString(responseBody.ToArray()), StringComparison.Ordinal);
         Assert.NotNull(card.SecuritySchemes);
         Assert.Null(card.SecurityRequirements);
-        Assert.DoesNotContain("delegated", card.SecuritySchemes.Keys);
+        Assert.Contains(GraphAgentCardHandlerName, card.SecuritySchemes.Keys);
         Assert.NotNull(card.Capabilities.Extensions);
         Assert.Contains(
             card.Capabilities.Extensions,
             extension => extension.Uri == "https://schemas.microsoft.com/agents/a2a/extensions/in-task-authorization/v1");
         if (protectedSkills)
         {
-            AgentSkill skill = Assert.Single(card.Skills, candidate => candidate.Id == "Microsoft Graph profile");
-            Assert.NotNull(skill.Examples);
-            Assert.Contains("-me", skill.Examples);
-            Assert.Null(skill.SecurityRequirements);
+            AgentSkill agentCardSkill = Assert.Single(
+                card.Skills,
+                candidate => candidate.Id == "Microsoft Graph profile (Agent Card)");
+            Assert.NotNull(agentCardSkill.Examples);
+            Assert.Contains("-me-agentcard", agentCardSkill.Examples);
+            SecurityRequirement requirement = Assert.Single(agentCardSkill.SecurityRequirements!);
+            Assert.Contains(GraphAgentCardHandlerName, requirement.Schemes!.Keys);
+
+            AgentSkill inTaskSkill = Assert.Single(
+                card.Skills,
+                candidate => candidate.Id == "Microsoft Graph profile (In-Task)");
+            Assert.NotNull(inTaskSkill.Examples);
+            Assert.Contains("-me-intask", inTaskSkill.Examples);
+            Assert.Null(inTaskSkill.SecurityRequirements);
         }
     }
 
@@ -113,27 +136,25 @@ public class A2AAgentOAuthRouteTests
     }
 
     [Fact]
-    public void GraphSkill_DeclaresAutoSignInHandlerAndNoDuplicateRoute()
+    public void GraphSkills_DeclareTheirAuthorizationHandlersAndNoDuplicateRoutes()
     {
-        MethodInfo method = typeof(MyAgent).GetMethod("OnGraphAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
-
-        A2ASkillAttribute skill = Assert.Single(method.GetCustomAttributes<A2ASkillAttribute>());
-
-        Assert.Equal([GraphHandlerName], skill.AutoSignInHandlers);
-        Assert.Empty(method.GetCustomAttributes<A2AMessageRouteAttribute>());
+        AssertGraphSkill("OnGraphAgentCardAsync", GraphAgentCardHandlerName);
+        AssertGraphSkill("OnGraphInTaskAsync", GraphInTaskHandlerName);
     }
 
-    [Fact]
-    public async Task GraphRoute_UsesDelegatedTokenToReturnProfile()
+    [Theory]
+    [InlineData("-me-agentcard", GraphAgentCardHandlerName)]
+    [InlineData("-me-intask", GraphInTaskHandlerName)]
+    public async Task GraphRoutes_UseTheirDelegatedTokenToReturnProfile(string command, string handlerName)
     {
-        var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-token");
+        var graph = CreateAuthorizationHandler(handlerName, "graph-token");
         var graphClient = new Mock<IGraphProfileClient>(MockBehavior.Strict);
         graphClient
             .Setup(client => client.GetMeAsync("graph-token", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GraphProfile("Ada Lovelace", "ada@example.com"));
         var record = CreateRecord(graph, graphClient);
 
-        var context = await ExecuteMessageAsync(record, "-me", CreateDelegatedIdentity());
+        var context = await ExecuteMessageAsync(record, command, CreateDelegatedIdentity());
         var task = ReadTaskResponse(context);
 
         graph.Verify(handler => handler.SignInUserAsync(
@@ -155,7 +176,7 @@ public class A2AAgentOAuthRouteTests
     [Fact]
     public async Task EchoRoute_DoesNotInvokeAuthorizationHandlers()
     {
-        var graph = CreateAuthorizationHandler(GraphHandlerName, "graph-token");
+        var graph = CreateAuthorizationHandler(GraphInTaskHandlerName, "graph-token");
         var record = CreateRecord(graph, new Mock<IGraphProfileClient>(MockBehavior.Strict));
 
         var context = await ExecuteMessageAsync(record, "hello", CreateDelegatedIdentity());
@@ -172,11 +193,11 @@ public class A2AAgentOAuthRouteTests
     }
 
     [Fact]
-    public async Task GraphRoute_UsesHandlerConfiguredScopeWithoutRouteSpecificClaimCode()
+    public async Task GraphAgentCardRoute_UsesHandlerConfiguredScopeWithoutRouteSpecificClaimCode()
     {
         string delegatedToken = CreateDelegatedToken("custom_scope");
         var authorization = new A2AUserAuthorization(
-            GraphHandlerName,
+            GraphAgentCardHandlerName,
             Mock.Of<IConnections>(),
             new A2AUserAuthorizationSettings
             {
@@ -192,7 +213,7 @@ public class A2AAgentOAuthRouteTests
 
         DefaultHttpContext context = await ExecuteAuthenticatedMessageAsync(
             CreateRecord(authorization, graphClient),
-            "-me",
+            "-me-agentcard",
             delegatedToken);
 
         AgentTask task = ReadTaskResponse(context);
@@ -200,11 +221,11 @@ public class A2AAgentOAuthRouteTests
     }
 
     [Fact]
-    public async Task GraphRoute_HandlerRejectsMissingConfiguredScopeBeforeCallingGraph()
+    public async Task GraphAgentCardRoute_HandlerRejectsMissingConfiguredScopeBeforeCallingGraph()
     {
         string delegatedToken = CreateDelegatedToken("other_scope");
         var authorization = new A2AUserAuthorization(
-            GraphHandlerName,
+            GraphAgentCardHandlerName,
             Mock.Of<IConnections>(),
             new A2AUserAuthorizationSettings
             {
@@ -215,7 +236,7 @@ public class A2AAgentOAuthRouteTests
 
         DefaultHttpContext context = await ExecuteAuthenticatedMessageAsync(
             CreateRecord(authorization, graphClient),
-            "-me",
+            "-me-agentcard",
             delegatedToken);
 
         Assert.Contains(
@@ -238,7 +259,7 @@ public class A2AAgentOAuthRouteTests
                 Mock.Of<IConnections>(),
                 graph)
             {
-                DefaultHandlerName = GraphHandlerName,
+                DefaultHandlerName = graph.Name,
                 AutoSignIn = UserAuthorizationOptions.AutoSignInOff
             }
         };
@@ -282,6 +303,16 @@ public class A2AAgentOAuthRouteTests
         handler.Setup(value => value.ResetStateAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         return handler;
+    }
+
+    private static void AssertGraphSkill(string methodName, string handlerName)
+    {
+        MethodInfo? method = typeof(MyAgent).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(method);
+        A2ASkillAttribute skill = Assert.Single(method.GetCustomAttributes<A2ASkillAttribute>());
+
+        Assert.Equal([handlerName], skill.AutoSignInHandlers);
+        Assert.Empty(method.GetCustomAttributes<A2AMessageRouteAttribute>());
     }
 
     private static void VerifyHandlerNotInvoked(Mock<IUserAuthorization> handler)

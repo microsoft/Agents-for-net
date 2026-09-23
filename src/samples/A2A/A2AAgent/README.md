@@ -16,7 +16,7 @@ OAuth configuration, see the [A2A developer guide](A2A-DEVELOPER-GUIDE.md).
 
 - A .NET SDK that can build `net10.0` projects.
 - The [A2AClient sample](../A2AClient/README.md) or another A2A client.
-- For the authenticated `-me` skill, a Microsoft Entra application configured as
+- For the authenticated Graph profile skills, a Microsoft Entra application configured as
   described in [Configure the authenticated sample](#configure-the-authenticated-sample).
 
 ## What the sample demonstrates
@@ -27,7 +27,8 @@ OAuth configuration, see the [A2A developer guide](A2A-DEVELOPER-GUIDE.md).
 | `-stream` | Streams informative and text updates with a citation. | Anonymous |
 | `-multi` | Starts a task that remains `input-required`; send `end` to complete it. | Anonymous |
 | `-a2a` | Sends a native A2A message through `IA2ATurnContext.Client`. | Anonymous |
-| `-me` | Exchanges the delegated Agent API token for Microsoft Graph `User.Read` and returns the caller's profile. | Delegated OAuth |
+| `-me-agentcard` | Acquires a delegated Agent API token before the request, exchanges it for Microsoft Graph `User.Read`, and returns the caller's profile. | Agent Card OAuth |
+| `-me-intask` | Requests a delegated Agent API token after the task starts, exchanges it for Microsoft Graph `User.Read`, and returns the caller's profile. | In-Task OAuth |
 
 The A2A endpoints are available at `http://localhost:3978/a2a` by default.
 
@@ -51,17 +52,22 @@ without Microsoft Entra configuration.
 
 ## Configure the authenticated sample
 
-The `-me` skill uses a single `graph` `A2AUserAuthorization` handler. The handler:
+The Graph profile skills use two `A2AUserAuthorization` handlers with the same
+Device Code flow, Agent API scope, scope enforcement, and Microsoft Graph OBO
+exchange:
 
-1. returns `TASK_STATE_AUTH_REQUIRED` with a delegated Device Code flow and Agent API scope when the client invokes `-me` without a task credential;
-2. accepts the procured credential as the raw `x-a2a-intask-authorization` header value on the optional in-task authorization extension's `resumeAuth` operation while `Authorization` carries the request-authentication JWT;
-3. can validate the task-scoped delegated JWT against every configured
-   `RequiredScopes` value before OBO; and
-4. exchanges the validated inbound token through `ServiceConnection` for
-   Microsoft Graph `User.Read`.
+- `graph-agentcard` uses `RequestToken`. Its OAuth scheme and the
+  `-me-agentcard` skill requirement are published in the Agent Card. The client
+  acquires the token before sending the request and uses the standard
+  `Authorization` header.
+- `graph-intask` uses `InTask`. Invoking `-me-intask` without a task credential
+  returns `TASK_STATE_AUTH_REQUIRED`; the client acquires the token and calls
+  `resumeAuth` with the raw token in `x-a2a-intask-authorization`. The normal
+  `Authorization` header remains available for the request-authentication JWT.
 
-The in-task flow is discovered at runtime. It does not add an OAuth security
-scheme or security requirement to the Agent Card or the `-me` skill.
+Both handlers validate the delegated JWT against every configured
+`RequiredScopes` value before OBO and exchange the validated Agent API token
+through `ServiceConnection` for Microsoft Graph `User.Read`.
 
 ### Register the Agent API application
 
@@ -94,10 +100,31 @@ The relevant authorization configuration is:
 ```json
 "AgentApplication": {
   "UserAuthorization": {
-    "DefaultHandlerName": "graph",
+    "DefaultHandlerName": "graph-intask",
     "AutoSignin": false,
     "Handlers": {
-      "graph": {
+      "graph-agentcard": {
+        "Assembly": "Microsoft.Agents.Extensions.A2A",
+        "Type": "A2AUserAuthorization",
+        "Settings": {
+          "Mode": "RequestToken",
+          "OAuthFlows": {
+            "DeviceCode": {
+              "DeviceAuthorizationUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/devicecode",
+              "TokenUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token",
+              "Scopes": {
+                "api://botid-{{ClientId}}/access_as_user": "Access the A2A Agent API as the signed-in user."
+              }
+            }
+          },
+          "EnforceRequiredScopes": true,
+          "OBOConnectionName": "ServiceConnection",
+          "OBOScopes": [
+            "User.Read"
+          ]
+        }
+      },
+      "graph-intask": {
         "Assembly": "Microsoft.Agents.Extensions.A2A",
         "Type": "A2AUserAuthorization",
         "Settings": {
@@ -136,13 +163,14 @@ API scope URI is:
 
 Because `RequiredScopes` is omitted, it defaults to every key in
 `OAuthFlows.DeviceCode.Scopes`. `EnforceRequiredScopes` makes
-`A2AUserAuthorization` validate the credential submitted to `resumeAuth` before
-OBO. Every required scope must appear in the token's `scp` claim; for Microsoft
-Entra resource-qualified scope URIs, the handler compares the final permission value such as
-`access_as_user`. The option is disabled by default and does not support opaque
-tokens or application-role validation. In `InTask` mode, enabling it requires
-configured `OBOScopes` so the client-supplied token is validated by the exchange
-before the protected route runs.
+`A2AUserAuthorization` validate the request token for `-me-agentcard` or the
+credential submitted to `resumeAuth` for `-me-intask` before OBO. Every
+required scope must appear in the token's `scp` claim; for Microsoft Entra
+resource-qualified scope URIs, the handler compares the final permission value
+such as `access_as_user`. The option is disabled by default and does not support
+opaque tokens or application-role validation. In `InTask` mode, enabling it
+requires configured `OBOScopes` so the client-supplied token is validated by
+the exchange before the protected route runs.
 
 ### Configure and run the client
 
@@ -158,17 +186,27 @@ the client uses the endpoints advertised by the authorization metadata. The
 Agent Card's scheme name does not select local client configuration; the client
 matches its local provider catalog from the advertised flow and endpoints.
 
-Start the client without `--auth-mode` and send:
+Start the client without `--auth-mode`. To exercise standard Agent Card
+authorization, send:
 
 ```text
--me
+-me-agentcard
 ```
 
-The client matches the advertised skill example, receives the task-scoped OAuth
-flow in the auth-required status, acquires an Agent API token, and calls
-`resumeAuth` with that token in the `x-a2a-intask-authorization` header. The normal
-`Authorization` header remains reserved for the JWT that authenticates the A2A
-request.
+The client matches the advertised skill, acquires the Agent API token from its
+security requirement, and sends the token in the request's `Authorization`
+header.
+
+To exercise the Agents SDK In-Task authorization extension, send:
+
+```text
+-me-intask
+```
+
+The client receives the task-scoped OAuth flow in the auth-required status,
+acquires an Agent API token, and calls `resumeAuth` with that token in the
+`x-a2a-intask-authorization` header. The normal `Authorization` header remains
+reserved for the JWT that authenticates the A2A request.
 
 Expected failures:
 

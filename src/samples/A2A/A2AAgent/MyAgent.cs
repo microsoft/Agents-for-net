@@ -21,7 +21,8 @@ namespace A2AAgent;
 public partial class MyAgent : AgentApplication
 {
     private const string MultiTurnCountKey = "MultiTurnCount";
-    private const string GraphHandlerName = "graph";
+    private const string GraphAgentCardHandlerName = "graph-agentcard";
+    private const string GraphInTaskHandlerName = "graph-intask";
     private readonly IGraphProfileClient _graphClient;
 
     public MyAgent(AgentApplicationOptions options, IGraphProfileClient graphClient) : base(options)
@@ -52,10 +53,17 @@ public partial class MyAgent : AgentApplication
         await turnContext.SendActivityAsync(eoc, cancellationToken: cancellationToken);
     }
 
-    [A2ASkill(name: "Microsoft Graph profile", description: "Reads the delegated caller profile from Microsoft Graph.", tags: "a2a, sample, authentication, graph", examples: "-me", text: "-me", autoSigninHandlers: GraphHandlerName)]
-    private async Task OnGraphAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+    [A2ASkill(name: "Microsoft Graph profile (Agent Card)", description: "Reads the delegated caller profile from Microsoft Graph using Agent Card authorization.", tags: "a2a, sample, authentication, graph, agent-card", examples: "-me-agentcard", text: "-me-agentcard", autoSigninHandlers: GraphAgentCardHandlerName)]
+    private Task OnGraphAgentCardAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        => OnGraphAsync(turnContext, GraphAgentCardHandlerName, cancellationToken);
+
+    [A2ASkill(name: "Microsoft Graph profile (In-Task)", description: "Reads the delegated caller profile from Microsoft Graph using In-Task authorization.", tags: "a2a, sample, authentication, graph, in-task", examples: "-me-intask", text: "-me-intask", autoSigninHandlers: GraphInTaskHandlerName)]
+    private Task OnGraphInTaskAsync(IA2ATurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
+        => OnGraphAsync(turnContext, GraphInTaskHandlerName, cancellationToken);
+
+    private async Task OnGraphAsync(IA2ATurnContext turnContext, string handlerName, CancellationToken cancellationToken)
     {
-        var token = await UserAuthorization.GetTurnTokenAsync(turnContext, GraphHandlerName, cancellationToken).ConfigureAwait(false);
+        var token = await UserAuthorization.GetTurnTokenAsync(turnContext, handlerName, cancellationToken).ConfigureAwait(false);
         var profile = await _graphClient.GetMeAsync(token, cancellationToken).ConfigureAwait(false);
         await CompleteTaskAsync(
             turnContext,

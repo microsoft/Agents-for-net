@@ -54,6 +54,12 @@ Authorization Code flow. `app` requires a Client Credentials flow.
 Changing authentication mode drops any task awaiting continuation so a task is
 not resumed using a different authentication selection.
 
+When connected to the A2AAgent sample, leave authentication in `auto` mode and
+send `-me-agentcard` to test OAuth advertised by the selected Agent Card skill,
+or `-me-intask` to test the optional In-Task authorization extension. Both
+commands return the same Microsoft Graph profile through different token
+transport mechanisms.
+
 ## Configuration
 
 The client loads configuration in this order:
