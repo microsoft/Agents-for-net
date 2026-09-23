@@ -18,6 +18,7 @@ using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -51,13 +52,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task OnTurnError_ShouldSendExceptionActivity()
+        public async Task OnTurnError_ShouldLogExceptionAndSendMessageWithoutStackTraceByDefault()
         {
             var record = UseRecord(null);
             var context = new Mock<ITurnContext>();
-            var exception = new ErrorResponseException("test") { Body = new ErrorResponse() };
+            var exception = CreateExceptionWithStackTrace();
+            IActivity sentActivity = null;
+            object traceValue = null;
 
-            context.Setup(e => e.SendActivityAsync(It.IsAny<Activity>(), It.IsAny<CancellationToken>()))
+            context.Setup(e => e.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .Callback<IActivity, CancellationToken>((activity, _) => sentActivity = activity)
                 .ReturnsAsync(new ResourceResponse())
                 .Verifiable(Times.Once);
             context.Setup(e => e.TraceActivityAsync(
@@ -66,13 +70,85 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<CancellationToken>()))
+                .Callback<string, object, string, string, CancellationToken>((_, value, _, _, _) => traceValue = value)
                 .ReturnsAsync(new ResourceResponse())
                 .Verifiable(Times.Once);
 
             await record.Adapter.OnTurnError(context.Object, exception);
 
+            Assert.Equal("outer message => inner message", sentActivity.Text);
+            Assert.DoesNotContain("Stack Trace:", traceValue.ToString());
+            record.AdapterLogger.Verify(
+                logger => logger.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.Is<Exception>(loggedException => ReferenceEquals(loggedException, exception)),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+                Times.Once);
             Mock.Verify(context);
             record.VerifyMocks();
+        }
+
+
+        [Fact]
+        public async Task OnTurnError_ShouldLogExceptionAndSendMessageWithStackTraceWhenConfigured()
+        {
+            var factory = new Mock<IChannelServiceClientFactory>();
+            var logger = new Mock<ILogger<CloudAdapter>>();
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["CloudAdapterOptions:EmitStackTrace"] = "true"
+                })
+                .Build();
+            var adapter = new CloudAdapter(
+                factory.Object,
+                new ActivityTaskQueue(),
+                logger.Object,
+                config: configuration);
+            var context = new Mock<ITurnContext>();
+            object traceValue = null;
+
+            context.Setup(e => e.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ResourceResponse());
+            context.Setup(e => e.TraceActivityAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback<string, object, string, string, CancellationToken>((_, value, _, _, _) => traceValue = value)
+                .ReturnsAsync(new ResourceResponse());
+
+            await adapter.OnTurnError(context.Object, CreateExceptionWithStackTrace());
+
+            Assert.Contains("Stack Trace:", traceValue.ToString());
+        }
+
+        [Fact]
+        public async Task OnTurnError_ShouldUseCustomErrorHandlerWhenRegistered()
+        {
+            var factory = new Mock<IChannelServiceClientFactory>();
+            var errorHandler = new Mock<ICloudAdapterErrorHandler>();
+            var context = new Mock<ITurnContext>();
+            var exception = new InvalidOperationException("test");
+            errorHandler
+                .Setup(handler => handler.HandleTurnErrorAsync(context.Object, exception))
+                .Returns(Task.CompletedTask)
+                .Verifiable(Times.Once);
+            var adapter = new CloudAdapter(
+                factory.Object,
+                new ActivityTaskQueue(),
+                NullLogger<CloudAdapter>.Instance,
+                errorHandler: errorHandler.Object);
+
+            await adapter.OnTurnError(context.Object, exception);
+
+            errorHandler.Verify();
+            context.Verify(
+                turnContext => turnContext.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
@@ -1075,6 +1151,25 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         #endregion
+
+        private static Exception CreateExceptionWithStackTrace()
+        {
+            try
+            {
+                try
+                {
+                    throw new ArgumentException("inner message");
+                }
+                catch (Exception innerException)
+                {
+                    throw new InvalidOperationException("outer message", innerException);
+                }
+            }
+            catch (Exception exception)
+            {
+                return exception;
+            }
+        }
 
         private static Activity CreateMessageActivity(
             string deliveryMode = DeliveryModes.Normal,

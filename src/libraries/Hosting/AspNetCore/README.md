@@ -13,3 +13,26 @@ ASP.NET Core hosting for agents built with the Microsoft 365 Agents SDK. This pa
 - **Optional integrations:** Host extensions register agent middleware, HTTP or Microsoft 365 attachment downloaders, background activity processing, and request-header propagation.
 
 Authentication enforcement integrates with ASP.NET Core, but this package does not provide a concrete authentication scheme.
+
+## Error handling
+
+`CloudAdapter` logs unhandled exceptions with their full server-side stack traces. Its default error handler sends the exception-message chain to the customer and emits a diagnostic trace activity without a stack trace.
+
+To replace the default handler without deriving from `CloudAdapter`, register an `ICloudAdapterErrorHandler` before the agent services:
+
+```csharp
+builder.Services.AddSingleton<ICloudAdapterErrorHandler, MyErrorHandler>();
+builder.AddAgent<MyAgent>();
+```
+
+Stack traces in diagnostic trace activities are disabled by default. To opt in while developing, add the following setting to `appsettings.Development.json`:
+
+```json
+{
+  "CloudAdapterOptions": {
+    "EmitStackTrace": true
+  }
+}
+```
+
+`EmitStackTrace` does not affect server-side exception logging.
