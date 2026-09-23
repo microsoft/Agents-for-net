@@ -6,23 +6,23 @@ using System;
 namespace Microsoft.Agents.Builder.Adapters
 {
     /// <summary>
-    /// Declares that an <see cref="IChannelAdapter"/> implementation handles inbound requests for a
+    /// Declares that an <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> implementation handles inbound requests for a
     /// specific <c>channelId</c>. Annotated adapters are auto-registered in the
-    /// <see cref="IChannelAdapterRegistry"/> so that shared-endpoint (Tier 2) dispatch and SDK features
+    /// <see cref="Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry"/> so that shared-endpoint (Tier 2) dispatch and SDK features
     /// (proactive messaging, diagnostics) can resolve the correct adapter by channelId.
     /// </summary>
     /// <remarks>
     /// <para>
     /// This attribute operates like <c>Microsoft.Agents.Core.Serialization.ActivityTypeAttribute</c>:
     /// a source generator (<c>ChannelAdapterInitSourceGenerator</c>) emits an assembly-level
-    /// <see cref="ChannelAdapterInitAssemblyAttribute"/> for every annotated adapter, and those
+    /// <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute"/> for every annotated adapter, and those
     /// assembly attributes are read off the loaded assemblies at runtime — so no explicit DI
     /// registration call (such as <c>AddChannelAdapter</c>) is required. Simply reference the
     /// assembly that declares the annotated adapter.
     /// </para>
     /// <para>
-    /// The annotated type must implement <see cref="IChannelAdapter"/> (so it can be resolved through
-    /// <see cref="IChannelAdapterRegistry"/>) and should be public so consuming applications can preload
+    /// The annotated type must implement <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> (so it can be resolved through
+    /// <see cref="Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry"/>) and should be public so consuming applications can preload
     /// its assembly; to also serve shared-endpoint HTTP dispatch it must
     /// implement the host's HTTP adapter contract (<c>IAgentHttpAdapter</c> in
     /// <c>Microsoft.Agents.Hosting.AspNetCore</c>). Both hold for adapters deriving from
@@ -46,7 +46,7 @@ namespace Microsoft.Agents.Builder.Adapters
     public sealed class ChannelAdapterAttribute : Attribute
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelAdapterAttribute"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterAttribute"/> class.
         /// </summary>
         /// <param name="channelId">The <c>channelId</c> this adapter handles (e.g., "msteams", "a2a").</param>
         public ChannelAdapterAttribute(string channelId)

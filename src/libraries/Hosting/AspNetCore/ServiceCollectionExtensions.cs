@@ -19,11 +19,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// Provides extension methods for registering agent-related services, adapters, and middleware with dependency
     /// injection containers.
     /// </summary>
-    /// <remarks>These extension methods operate on <see cref="IServiceCollection"/> (and
+    /// <remarks>These extension methods operate on <see cref="Microsoft.Extensions.DependencyInjection.IServiceCollection"/> (and
     /// <c>IHostApplicationBuilder.Services</c>) to register agents, adapters, options, and supporting
     /// services during application startup, such as those using CloudAdapter and AgentApplication. The
     /// application-builder and request-pipeline APIs (fluent startup, middleware ordering, and endpoint mapping)
-    /// live in <see cref="AgentHostExtensions"/>.</remarks>
+    /// live in <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions"/>.</remarks>
     public static class ServiceCollectionExtensions
     {
         #region IServiceCollection Extensions
@@ -60,7 +60,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>Registers both the agent and its adapter as transient services. Only one instance of
-        /// each agent type is registered. <see cref="AgentApplicationOptions"/> is automatically registered
+        /// each agent type is registered. <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions"/> is automatically registered
         /// if not already present. This method is typically used to configure multi-agent scenarios in
         /// applications that use dependency injection.</remarks>
         /// <typeparam name="TAgent">The type of the agent to register. Must implement the IAgent interface.</typeparam>

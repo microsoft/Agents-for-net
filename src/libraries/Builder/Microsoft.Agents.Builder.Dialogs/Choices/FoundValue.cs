@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Builder.Dialogs.Choices
 {
     /// <summary>This class is internal and should not be used.</summary>
-    /// <remarks>Please use <see cref="FoundChoice"/> instead.</remarks>
+    /// <remarks>Please use <see cref="Microsoft.Agents.Builder.Dialogs.Choices.FoundChoice"/> instead.</remarks>
     public class FoundValue
     {
         /// <summary>

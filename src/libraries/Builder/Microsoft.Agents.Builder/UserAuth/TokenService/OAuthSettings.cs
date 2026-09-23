@@ -42,20 +42,20 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         /// <summary>
         /// Gets or sets the number of milliseconds the prompt waits for the user to authenticate.
-        /// Default is <see cref="DefaultTimeoutValue"/>.
+        /// Default is <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthSettings.DefaultTimeoutValue"/>.
         /// </summary>
         /// <value>The number of milliseconds the prompt waits for the user to authenticate.</value>
         public int? Timeout { get; set; } = (int)DefaultTimeoutValue.TotalMilliseconds;
 
         /// <summary>
-        /// Gets or sets a value indicating whether the <see cref="OAuthPrompt"/> should end upon
-        /// receiving an invalid message.  Generally the <see cref="OAuthPrompt"/> will ignore
+        /// Gets or sets a value indicating whether the <c>Microsoft.Agents.Builder.Dialogs.Prompts.OAuthPrompt</c> should end upon
+        /// receiving an invalid message.  Generally the <c>Microsoft.Agents.Builder.Dialogs.Prompts.OAuthPrompt</c> will ignore
         /// incoming messages from the user during the auth flow, if they are not related to the
-        /// auth flow.  This flag enables ending the <see cref="OAuthPrompt"/> rather than
+        /// auth flow.  This flag enables ending the <c>Microsoft.Agents.Builder.Dialogs.Prompts.OAuthPrompt</c> rather than
         /// ignoring the user's message.  Typically, this flag will be set to 'true', but is 'false'
         /// by default for backwards compatibility.
         /// </summary>
-        /// <value>True if the <see cref="OAuthPrompt"/> should automatically end upon receiving
+        /// <value>True if the <c>Microsoft.Agents.Builder.Dialogs.Prompts.OAuthPrompt</c> should automatically end upon receiving
         /// an invalid message.</value>
         public bool EndOnInvalidMessage { get; set; }
 

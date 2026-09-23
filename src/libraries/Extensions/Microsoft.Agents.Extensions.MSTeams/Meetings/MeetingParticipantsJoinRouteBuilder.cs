@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Meetings;
 /// Provides a builder for configuring routes that handle Teams meeting participants join events.
 /// </summary>
 /// <remarks>
-/// Use <see cref="MeetingParticipantsJoinRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingParticipantsJoinRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
 /// <see cref="Microsoft.Teams.Apps.EventNames.MeetingParticipantJoin"/>.
 /// </remarks>
@@ -28,7 +28,7 @@ public class MeetingParticipantsJoinRouteBuilder : MeetingEventRouteBuilderBase<
     }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="MeetingParticipantsJoinRouteBuilder"/>,
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingParticipantsJoinRouteBuilder"/>,
     /// pre-configured to match the Teams meeting participants join event.
     /// </summary>
     public MeetingParticipantsJoinRouteBuilder() : base()
@@ -40,9 +40,9 @@ public class MeetingParticipantsJoinRouteBuilder : MeetingEventRouteBuilderBase<
     /// Configures the route to use the specified handler for processing meeting participants join events.
     /// </summary>
     /// <param name="handler">An asynchronous delegate that processes the participants join event.
-    /// Receives the turn context, turn state, deserialized <see cref="MeetingParticipantJoinValue"/>,
+    /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Apps.Meetings.MeetingParticipantJoinValue"/>,
     /// and a cancellation token.</param>
-    /// <returns>The current <see cref="MeetingParticipantsJoinRouteBuilder"/> instance for method chaining.</returns>
+    /// <returns>The current <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingParticipantsJoinRouteBuilder"/> instance for method chaining.</returns>
     public MeetingParticipantsJoinRouteBuilder WithHandler(MeetingParticipantsJoinHandler handler)
     {
         _route.Handler = (ctx, ts, ct) =>

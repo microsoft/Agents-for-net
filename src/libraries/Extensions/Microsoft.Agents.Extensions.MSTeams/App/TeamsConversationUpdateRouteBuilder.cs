@@ -9,9 +9,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.App;
 public class TeamsConversationUpdateRouteBuilder : ConversationUpdateRouteBuilderBase<TeamsConversationUpdateRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the <see cref="TeamsConversationUpdateRouteBuilder"/> class.
+    /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsConversationUpdateRouteBuilder"/> class.
     /// </summary>
-    /// <returns>A new <see cref="TeamsConversationUpdateRouteBuilder"/>.</returns>
+    /// <returns>A new <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsConversationUpdateRouteBuilder"/>.</returns>
     public static TeamsConversationUpdateRouteBuilder Create()
     {
         return new TeamsConversationUpdateRouteBuilder();

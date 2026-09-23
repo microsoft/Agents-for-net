@@ -14,21 +14,21 @@ namespace Microsoft.Agents.Core.Telemetry
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <see cref="TelemetryScope"/> starts a new <see cref="System.Diagnostics.Activity"/> from
+    /// <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> starts a new <see cref="System.Diagnostics.Activity"/> from
     /// <see cref="Microsoft.Agents.Core.Telemetry.AgentsTelemetry.ActivitySource"/> when constructed, and stops it when
-    /// disposed. Errors can be recorded via <see cref="SetError"/>, which sets the
+    /// disposed. Errors can be recorded via <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.SetError(System.Exception)"/>, which sets the
     /// activity status to <see cref="System.Diagnostics.ActivityStatusCode.Error"/> and attaches an
     /// <c>exception</c> event following OpenTelemetry semantic conventions.
     /// </para>
     /// <para>
-    /// Derived classes can override <see cref="Callback"/> to enrich the activity with
+    /// Derived classes can override <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.Callback(System.Diagnostics.Activity, System.Double, System.Exception)"/> to enrich the activity with
     /// additional tags or record metrics just before it is stopped.
     /// </para>
     /// <para>
-    /// The <see cref="Wrap(Action)"/>, <see cref="Wrap{T}(Func{T})"/>,
-    /// <see cref="WrapAsync(Func{System.Threading.Tasks.Task})"/>, and <see cref="WrapAsync{T}(Func{System.Threading.Tasks.Task{T}})"/>
+    /// The <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.Wrap(System.Action)"/>, <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.Wrap{T}(System.Func{T})"/>,
+    /// <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.WrapAsync(System.Func{System.Threading.Tasks.Task})"/>, and <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.WrapAsync{T}(System.Func{System.Threading.Tasks.Task{T}})"/>
     /// helper methods execute a delegate within the scope and automatically call
-    /// <see cref="SetError"/> if the delegate throws.
+    /// <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.SetError(System.Exception)"/> if the delegate throws.
     /// </para>
     /// </remarks>
     /// <example>
@@ -46,13 +46,13 @@ namespace Microsoft.Agents.Core.Telemetry
         public ActivityContext? Context => _telemetryActivity?.Context;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TelemetryScope"/> class and starts
-        /// a new <see cref="Activity"/> without an activity link.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> class and starts
+        /// a new <see cref="System.Diagnostics.Activity"/> without an activity link.
         /// </summary>
-        /// <param name="activityName">The operation name for the new <see cref="Activity"/>.</param>
+        /// <param name="activityName">The operation name for the new <see cref="System.Diagnostics.Activity"/>.</param>
         /// <param name="activityKind">
-        /// The <see cref="ActivityKind"/> for the new activity.
-        /// Defaults to <see cref="ActivityKind.Internal"/>.
+        /// The <see cref="System.Diagnostics.ActivityKind"/> for the new activity.
+        /// Defaults to <see cref="System.Diagnostics.ActivityKind.Internal"/>.
         /// </param>
         /// <remarks>
         /// This overload preserves compatibility for callers compiled against earlier versions of the SDK.
@@ -63,7 +63,7 @@ namespace Microsoft.Agents.Core.Telemetry
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TelemetryScope"/> class and starts
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> class and starts
         /// a new <see cref="System.Diagnostics.Activity"/> from <see cref="Microsoft.Agents.Core.Telemetry.AgentsTelemetry.ActivitySource"/>.
         /// </summary>
         /// <param name="activityName">The operation name for the new <see cref="System.Diagnostics.Activity"/>.</param>
@@ -71,7 +71,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// The <see cref="System.Diagnostics.ActivityKind"/> for the new activity.
         /// </param>
         /// <param name="link">
-        /// The <see cref="ActivityLink"/> to associate with the new activity, or <see langword="null"/>
+        /// The <see cref="System.Diagnostics.ActivityLink"/> to associate with the new activity, or <see langword="null"/>
         /// to create the activity without a link.
         /// </param>
         public TelemetryScope(string activityName, ActivityKind activityKind, ActivityLink? link)
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <param name="activity">The <see cref="System.Diagnostics.Activity"/> that is about to be stopped.</param>
         /// <param name="duration">The duration of the activity in milliseconds.</param>
         /// <param name="exception">
-        /// The last exception recorded via <see cref="SetError"/>, or <c>null</c> if no error occurred.
+        /// The last exception recorded via <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.SetError(System.Exception)"/>, or <c>null</c> if no error occurred.
         /// </param>
         /// <remarks>
         /// Override this method in derived classes to enrich the activity with additional tags
@@ -141,14 +141,14 @@ namespace Microsoft.Agents.Core.Telemetry
         }
 
         /// <summary>
-        /// Releases the resources used by this <see cref="TelemetryScope"/>.
+        /// Releases the resources used by this <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/>.
         /// </summary>
         /// <param name="disposing">
         /// <c>true</c> to release managed resources; <c>false</c> when called from a finalizer.
         /// </param>
         /// <remarks>
         /// When <paramref name="disposing"/> is <c>true</c> and an <see cref="System.Diagnostics.Activity"/> is
-        /// active, <see cref="Callback"/> is invoked before the activity is stopped.
+        /// active, <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.Callback(System.Diagnostics.Activity, System.Double, System.Exception)"/> is invoked before the activity is stopped.
         /// Multiple calls are safe; only the first call performs cleanup.
         /// </remarks>
         protected virtual void Dispose(bool disposing)
@@ -173,7 +173,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <param name="action">The action to execute.</param>
         /// <remarks>
         /// If <paramref name="action"/> throws, the exception is recorded via
-        /// <see cref="SetError"/> and then re-thrown.
+        /// <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.SetError(System.Exception)"/> and then re-thrown.
         /// </remarks>
         public void Wrap(Action action)
         {
@@ -192,7 +192,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <returns>The value returned by <paramref name="func"/>.</returns>
         /// <remarks>
         /// If <paramref name="func"/> throws, the exception is recorded via
-        /// <see cref="SetError"/> and then re-thrown.
+        /// <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.SetError(System.Exception)"/> and then re-thrown.
         /// </remarks>
         public T Wrap<T>(Func<T> func)
         {
@@ -214,7 +214,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// <returns>A <see cref="System.Threading.Tasks.Task"/> that represents the asynchronous operation.</returns>
         /// <remarks>
         /// If <paramref name="action"/> throws, the exception is recorded via
-        /// <see cref="SetError"/> and then re-thrown.
+        /// <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.SetError(System.Exception)"/> and then re-thrown.
         /// </remarks>
         public async Task WrapAsync(Func<Task> action)
         {
@@ -237,7 +237,7 @@ namespace Microsoft.Agents.Core.Telemetry
         /// </returns>
         /// <remarks>
         /// If <paramref name="action"/> throws, the exception is recorded via
-        /// <see cref="SetError"/> and then re-thrown.
+        /// <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope.SetError(System.Exception)"/> and then re-thrown.
         /// </remarks>
         public async Task<T> WrapAsync<T>(Func<Task<T>> action)
         {

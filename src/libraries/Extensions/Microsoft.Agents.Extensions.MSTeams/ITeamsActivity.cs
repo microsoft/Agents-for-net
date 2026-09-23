@@ -8,8 +8,8 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Extensions.MSTeams
 {
     /// <summary>
-    /// A Teams-specific <see cref="IActivity"/> that exposes the Teams channel data as a strongly-typed
-    /// <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData"/> instead of the loosely-typed <see cref="IActivity.ChannelData"/>.
+    /// A Teams-specific <see cref="Microsoft.Agents.Core.Models.IActivity"/> that exposes the Teams channel data as a strongly-typed
+    /// <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData"/> instead of the loosely-typed <see cref="Microsoft.Agents.Core.Models.IActivity.ChannelData"/>.
     /// </summary>
     public interface ITeamsActivity : IActivity
     {

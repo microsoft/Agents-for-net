@@ -67,9 +67,9 @@ public class AuthAgent : AgentApplication
     /// <summary>
     /// This method is called to handle the conversation update event when a new member is added to or removed from the conversation.
     /// </summary>
-    /// <param name="turnContext"><see cref="ITurnContext"/></param>
-    /// <param name="turnState"><see cref="ITurnState"/></param>
-    /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
+    /// <param name="turnContext"><see cref="Microsoft.Agents.Builder.ITurnContext"/></param>
+    /// <param name="turnState"><see cref="Microsoft.Agents.Builder.State.ITurnState"/></param>
+    /// <param name="cancellationToken"><see cref="System.Threading.CancellationToken"/></param>
     private async Task WelcomeMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         // In this example, we will send a welcome message to the user when they join the conversation.
@@ -123,9 +123,9 @@ public class AuthAgent : AgentApplication
     /// <summary>
     /// Handles general message loop. 
     /// </summary>
-    /// <param name="turnContext"><see cref="ITurnContext"/></param>
-    /// <param name="turnState"><see cref="ITurnState"/></param>
-    /// <param name="cancellationToken"><see cref="CancellationToken"/></param>
+    /// <param name="turnContext"><see cref="Microsoft.Agents.Builder.ITurnContext"/></param>
+    /// <param name="turnState"><see cref="Microsoft.Agents.Builder.State.ITurnState"/></param>
+    /// <param name="cancellationToken"><see cref="System.Threading.CancellationToken"/></param>
     /// <returns></returns>
     private async Task OnMessageAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {

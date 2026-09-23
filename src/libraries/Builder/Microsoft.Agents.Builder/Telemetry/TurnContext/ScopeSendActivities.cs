@@ -6,7 +6,7 @@ using Microsoft.Agents.Core.Telemetry;
 namespace Microsoft.Agents.Builder.Telemetry.TurnContext
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the sending of activities from within
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the sending of activities from within
     /// a turn context.
     /// </summary>
     /// <remarks>
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Builder.Telemetry.TurnContext
         private readonly ITurnContext _turnContext;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeSendActivities"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.TurnContext.ScopeSendActivities"/> class.
         /// </summary>
         /// <param name="turnContext">The current turn context whose activity supplies the conversation identifier.</param>
         public ScopeSendActivities(ITurnContext turnContext) : base(Constants.ScopeSendActivities)

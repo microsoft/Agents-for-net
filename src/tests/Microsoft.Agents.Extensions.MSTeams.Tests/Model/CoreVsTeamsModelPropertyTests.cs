@@ -20,15 +20,15 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
     /// corresponding Microsoft.Agents.Core.Models type (where one exists), then compares their
     /// JSON-visible property sets.
     ///
-    /// All differences are logged via <see cref="ITestOutputHelper"/>.
+    /// All differences are logged via <see cref="Xunit.Abstractions.ITestOutputHelper"/>.
     ///
     /// ERROR condition: a Teams model has JSON properties not present in the paired Core model,
     /// AND the Core model cannot safely preserve them.  A Core model can safely preserve
     /// Teams-only properties if it has EITHER:
-    ///   (a) a <c>Properties</c> property annotated with <see cref="JsonExtensionDataAttribute"/>
+    ///   (a) a <c>Properties</c> property annotated with <see cref="System.Text.Json.Serialization.JsonExtensionDataAttribute"/>
     ///       (the JSON serializer routes unknown properties there automatically), OR
     ///   (b) a <c>Properties</c> catch-all (<see cref="IDictionary{TKey,TValue}">IDictionary&lt;string,JsonElement&gt;</see>)
-    ///       AND a <see cref="JsonConverter"/> registered in <see cref="ProtocolJsonSerializer.SerializationOptions"/>
+    ///       AND a <see cref="System.Text.Json.Serialization.JsonConverter"/> registered in <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.SerializationOptions"/>
     ///       (the converter routes unknown properties into <c>Properties</c>).
     /// </summary>
     public class CoreVsTeamsModelPropertyTests(ITestOutputHelper output)
@@ -280,8 +280,8 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
         }
 
         /// <summary>
-        /// Returns the JSON names (via <see cref="JsonPropertyNameAttribute"/> or camelCase)
-        /// of all public readable instance properties that are not <see cref="JsonIgnoreAttribute"/>-
+        /// Returns the JSON names (via <see cref="System.Text.Json.Serialization.JsonPropertyNameAttribute"/> or camelCase)
+        /// of all public readable instance properties that are not <see cref="System.Text.Json.Serialization.JsonIgnoreAttribute"/>-
         /// annotated and are not the extension-data catch-all.
         /// </summary>
         private static IReadOnlyDictionary<string, PropertyInfo> GetNamedJsonProperties(Type type)
@@ -322,7 +322,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
 
         /// <summary>
         /// Returns <see langword="true"/> when the type has a <c>Properties</c> property of type
-        /// <c>IDictionary&lt;string, JsonElement&gt;</c> annotated with <see cref="JsonExtensionDataAttribute"/>.
+        /// <c>IDictionary&lt;string, JsonElement&gt;</c> annotated with <see cref="System.Text.Json.Serialization.JsonExtensionDataAttribute"/>.
         /// This allows the JSON serializer to automatically route unknown properties into that dictionary.
         /// </summary>
         private static bool HasJsonExtensionDataCatchAll(Type type)

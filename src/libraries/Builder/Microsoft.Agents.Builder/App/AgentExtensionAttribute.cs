@@ -7,10 +7,10 @@ namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
     /// Base attribute for automatically generating an extension property on an
-    /// <see cref="AgentApplication"/> subclass.
+    /// <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> subclass.
     /// </summary>
     /// <typeparam name="TExtension">
-    /// The <see cref="IAgentExtension"/> type to expose as a generated property.
+    /// The <see cref="Microsoft.Agents.Builder.IAgentExtension"/> type to expose as a generated property.
     /// </typeparam>
     /// <remarks>
     /// <para>

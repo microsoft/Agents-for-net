@@ -1275,8 +1275,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         /// <summary>
-        /// An <see cref="HttpMessageHandler"/> that intercepts connector HTTP calls, enabling tests to cover
-        /// the full <see cref="RestConnectorClient"/> stack without real network I/O.
+        /// An <see cref="System.Net.Http.HttpMessageHandler"/> that intercepts connector HTTP calls, enabling tests to cover
+        /// the full <see cref="Microsoft.Agents.Connector.RestConnectorClient"/> stack without real network I/O.
         /// </summary>
         private class TestHttpHandler : HttpMessageHandler
         {

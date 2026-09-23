@@ -12,14 +12,14 @@ namespace Microsoft.Agents.Builder.Testing
 {
     /// <summary>
     /// A thin test harness that configures an agent using the same DI extension-method style
-    /// as production <c>Program.cs</c>, then produces ready-to-use <see cref="TestFlow"/> instances.
+    /// as production <c>Program.cs</c>, then produces ready-to-use <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> instances.
     /// </summary>
     /// <remarks>
-    /// <para>Pre-registers <see cref="TestAdapter"/> as <see cref="IChannelAdapter"/> singleton.</para>
+    /// <para>Pre-registers <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> as <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> singleton.</para>
     /// <para>Use <c>await using var host = AgentTestHost.Create(...);</c> in async tests (preferred),
     /// or <c>using var host = AgentTestHost.Create(...);</c> in sync contexts.</para>
-    /// <para>Register your agent directly as <see cref="IAgent"/> — do not use <c>AddAgent&lt;T&gt;()</c>,
-    /// which also registers <c>CloudAdapter</c> and conflicts with the pre-registered <see cref="TestAdapter"/>.</para>
+    /// <para>Register your agent directly as <see cref="Microsoft.Agents.Builder.IAgent"/> — do not use <c>AddAgent&lt;T&gt;()</c>,
+    /// which also registers <c>CloudAdapter</c> and conflicts with the pre-registered <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/>.</para>
     /// </remarks>
     public sealed class AgentTestHost : IDisposable, IAsyncDisposable
     {
@@ -32,12 +32,12 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Gets the pre-configured <see cref="TestAdapter"/> shared by all test flows created from this host.
+        /// Gets the pre-configured <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> shared by all test flows created from this host.
         /// </summary>
         public TestAdapter Adapter { get; }
 
         /// <summary>
-        /// Creates and starts a new <see cref="AgentTestHost"/>.
+        /// Creates and starts a new <see cref="Microsoft.Agents.Builder.Testing.AgentTestHost"/>.
         /// </summary>
         /// <param name="configure">
         /// Callback to configure services and options — same style as production <c>Program.cs</c>.
@@ -47,7 +47,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// agents from the root scope, and scoped services captured there will not be disposed
         /// between test turns.
         /// </param>
-        /// <returns>A started <see cref="AgentTestHost"/>. Dispose when the test is done.</returns>
+        /// <returns>A started <see cref="Microsoft.Agents.Builder.Testing.AgentTestHost"/>. Dispose when the test is done.</returns>
         public static AgentTestHost Create(Action<IHostApplicationBuilder> configure)
         {
             AssertionHelpers.ThrowIfNull(configure, nameof(configure));
@@ -71,12 +71,12 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Creates a <see cref="TestFlow"/> wired to the <see cref="IAgent"/> resolved from DI.
-        /// Because <see cref="IAgent"/> is registered as transient, each call produces a new agent instance.
-        /// All flows share the same <see cref="Adapter"/> and its <see cref="TestAdapter.ActiveQueue"/>.
+        /// Creates a <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> wired to the <see cref="Microsoft.Agents.Builder.IAgent"/> resolved from DI.
+        /// Because <see cref="Microsoft.Agents.Builder.IAgent"/> is registered as transient, each call produces a new agent instance.
+        /// All flows share the same <see cref="Microsoft.Agents.Builder.Testing.AgentTestHost.Adapter"/> and its <see cref="Microsoft.Agents.Builder.Testing.TestAdapter.ActiveQueue"/>.
         /// </summary>
         /// <remarks>
-        /// <para>The agent is resolved from the root DI scope. Register <see cref="IAgent"/> and its
+        /// <para>The agent is resolved from the root DI scope. Register <see cref="Microsoft.Agents.Builder.IAgent"/> and its
         /// dependencies as transient or singleton — scoped registrations will behave as singletons
         /// for the lifetime of the host.</para>
         /// </remarks>

@@ -623,7 +623,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         }
 
         /// <summary>
-        /// Helper to create a <see cref="SkillDialogOptions"/> for the skillDialog.
+        /// Helper to create a <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialogOptions"/> for the skillDialog.
         /// </summary>
         /// <param name="conversationState"> The conversation state object.</param>
         /// <param name="mockSkillClient"> The skill client mock.</param>

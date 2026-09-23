@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Builder.Compat
     ///  Middleware to automatically persist state before the end of each turn.
     /// </summary>
     /// <remarks>
-    /// This calls <see cref="IAgentState.SaveChangesAsync(ITurnContext, bool, CancellationToken)"/>
+    /// This calls <see cref="Microsoft.Agents.Builder.State.IAgentState.SaveChangesAsync(Microsoft.Agents.Builder.ITurnContext, System.Boolean, System.Threading.CancellationToken)"/>
     /// on each state object it manages.
     /// </remarks>
     public class AutoSaveStateMiddleware : IMiddleware
@@ -19,9 +19,9 @@ namespace Microsoft.Agents.Builder.Compat
         private readonly bool _autoLoad;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AutoSaveStateMiddleware"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Compat.AutoSaveStateMiddleware"/> class.
         /// </summary>
-        /// <param name="agentStates">initial list of <see cref="AgentState"/> objects to manage.</param>
+        /// <param name="agentStates">initial list of <see cref="Microsoft.Agents.Builder.State.AgentState"/> objects to manage.</param>
         public AutoSaveStateMiddleware(params IAgentState[] agentStates)
         {
             // This is really so back-compat Agents can use the new AgentState methods without having to
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Builder.Compat
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AutoSaveStateMiddleware"/> class with 
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Compat.AutoSaveStateMiddleware"/> class with
         /// a list of state management objects managed by this object.
         /// </summary>
         /// <param name="turnState">The state management objects managed by this object.</param>
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Builder.Compat
         public ITurnState TurnState { get; set; }
 
         /// <summary>
-        /// Before the turn ends, calls <see cref="AgentState.SaveChangesAsync(ITurnContext, bool, CancellationToken)"/>
+        /// Before the turn ends, calls <see cref="Microsoft.Agents.Builder.State.AgentState.SaveChangesAsync(Microsoft.Agents.Builder.ITurnContext, System.Boolean, System.Threading.CancellationToken)"/>
         /// on each state object.
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>
