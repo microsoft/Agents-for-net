@@ -420,10 +420,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="builder">The host application builder.</param>
         /// <param name="connectionsKey">The configuration section path containing connection definitions.</param>
         /// <param name="mapKey">The configuration section path containing the connections map.</param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         /// <remarks>
-        /// This method uses <see cref="CloudAdapter"/> and does not replace an existing
-        /// <see cref="IConnections"/> registration. Call it before <c>AddAgent</c> when custom configuration
+        /// This method uses <see cref="Microsoft.Agents.Hosting.AspNetCore.CloudAdapter"/> and does not replace an existing
+        /// <see cref="Microsoft.Agents.Authentication.IConnections"/> registration. Call it before <c>AddAgent</c> when custom configuration
         /// section paths are required.
         /// </remarks>
         public static IHostApplicationBuilder AddAgentCore(this IHostApplicationBuilder builder, string connectionsKey, string mapKey)
@@ -455,9 +455,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="builder">The host application builder.</param>
         /// <param name="connectionsKey">The configuration section path containing connection definitions.</param>
         /// <param name="mapKey">The configuration section path containing the connections map.</param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         /// <remarks>
-        /// This method does not replace an existing <see cref="IConnections"/> registration. Call it before
+        /// This method does not replace an existing <see cref="Microsoft.Agents.Authentication.IConnections"/> registration. Call it before
         /// <c>AddAgent</c> when custom configuration section paths are required.
         /// </remarks>
         public static IHostApplicationBuilder AddAgentCore<TAdapter>(this IHostApplicationBuilder builder, string connectionsKey, string mapKey) where TAdapter : CloudAdapter

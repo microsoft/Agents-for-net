@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// connections and the connections map.
         /// </summary>
         /// <remarks>
-        /// This method does not replace an existing <see cref="IConnections"/> registration. Call it before
+        /// This method does not replace an existing <see cref="Microsoft.Agents.Authentication.IConnections"/> registration. Call it before
         /// other agent registration methods when custom configuration section paths are required.
         /// </remarks>
         /// <typeparam name="TAdapter">The type of cloud adapter to register. Must inherit from CloudAdapter.</typeparam>
