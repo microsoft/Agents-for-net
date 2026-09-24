@@ -47,7 +47,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <param name="middlewares"></param>
         /// <param name="config"></param>
         /// <param name="hostValidator">Optional shared allowed-hosts validator. When enabled, Activity.ServiceUrl is validated against it.</param>
-        /// <param name="errorHandler">An optional application-provided replacement for the default <see cref="Microsoft.Agents.Builder.IChannelAdapter.OnTurnError"/> handler.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         public CloudAdapter(
             IChannelServiceClientFactory channelServiceClientFactory,
@@ -56,8 +55,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             AdapterOptions options = null,
             Builder.IMiddleware[] middlewares = null,
             IConfiguration config = null,
-            IOutboundHostValidator hostValidator = null,
-            ICloudAdapterErrorHandler errorHandler = null)
+            IOutboundHostValidator hostValidator = null)
             : base(channelServiceClientFactory, logger, hostValidator ?? new OutboundHostValidator(config?.GetSection("OutboundHostValidator")?.Get<OutboundHostValidatorOptions>()))
         {
             _activityTaskQueue = activityTaskQueue ?? throw new ArgumentNullException(nameof(activityTaskQueue));
@@ -71,9 +69,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 }
             }
 
-            OnTurnError = errorHandler == null
-                ? HandleTurnErrorAsync
-                : errorHandler.HandleTurnErrorAsync;
+            OnTurnError = HandleTurnErrorAsync;
         }
 
         private async Task HandleTurnErrorAsync(ITurnContext turnContext, Exception exception)

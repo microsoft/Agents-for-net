@@ -127,31 +127,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public async Task OnTurnError_ShouldUseCustomErrorHandlerWhenRegistered()
-        {
-            var factory = new Mock<IChannelServiceClientFactory>();
-            var errorHandler = new Mock<ICloudAdapterErrorHandler>();
-            var context = new Mock<ITurnContext>();
-            var exception = new InvalidOperationException("test");
-            errorHandler
-                .Setup(handler => handler.HandleTurnErrorAsync(context.Object, exception))
-                .Returns(Task.CompletedTask)
-                .Verifiable(Times.Once);
-            var adapter = new CloudAdapter(
-                factory.Object,
-                new ActivityTaskQueue(),
-                NullLogger<CloudAdapter>.Instance,
-                errorHandler: errorHandler.Object);
-
-            await adapter.OnTurnError(context.Object, exception);
-
-            errorHandler.Verify();
-            context.Verify(
-                turnContext => turnContext.SendActivityAsync(It.IsAny<IActivity>(), It.IsAny<CancellationToken>()),
-                Times.Never);
-        }
-
-        [Fact]
         public async Task ProcessAsync_ShouldThrowWithNullHttpRequest()
         {
             var record = UseRecord(null);
