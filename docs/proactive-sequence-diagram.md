@@ -14,7 +14,7 @@ Shows how agents can initiate messages to users outside the normal request/respo
 
 ## Flow 1: Store Conversation Reference
 
-Before proactive messaging can work, the conversation must be stored during a normal user-initiated turn.
+The `{conversationId}` HTTP endpoints require a conversation stored during an earlier turn. Body-based endpoints and in-code APIs can instead receive a complete `Conversation` directly.
 
 ```mermaid
 sequenceDiagram
