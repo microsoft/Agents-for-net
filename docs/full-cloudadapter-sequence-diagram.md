@@ -1,11 +1,15 @@
 # CloudAdapter Pipeline Sequence Diagram
 
-Shows the interaction between `CloudAdapter.ProcessAsync`, the middleware pipeline, `ITurnContext.SendActivityAsync`, and `IAgent` — including both response paths.
+Shows how `CloudAdapter.ProcessAsync` chooses the HTTP lifetime, runs the Builder middleware pipeline, and routes outgoing activities. The incoming activity type and delivery mode determine whether the HTTP request returns immediately or remains open.
 
-## Response Paths
+## Request Modes
 
-- **Normal delivery**: `HostResponseAsync` returns `false` → response sent via `ConnectorClient` (Azure Bot Service pushes to client)
-- **Stream delivery**: `HostResponseAsync` returns `true` → response queued into `ChannelResponseQueue` → HTTP thread writes SSE events directly to `HttpResponse.Body`
+| Incoming request | HTTP behavior | Outgoing activity behavior |
+|------------------|---------------|----------------------------|
+| Normal activity | Return `202 Accepted` after enqueueing work in `IActivityTaskQueue` | `HostResponseAsync` returns `false`; `ChannelServiceAdapterBase` sends through `IConnectorClient` |
+| `DeliveryMode.Stream` | Keep HTTP open and write Server-Sent Events (SSE) | `HostResponseAsync` queues activities in `ChannelResponseQueue`; `ActivityResponseHandler` writes each activity event |
+| `DeliveryMode.ExpectReplies` | Keep HTTP open and return one JSON response | `HostResponseAsync` queues activities; `ExpectRepliesResponseWriter` buffers them into `ExpectedReplies` |
+| Invoke with neither `Stream` nor `ExpectReplies` | Keep HTTP open and return the final `InvokeResponse` as JSON | `InvokeResponse` is stored in turn stack state; other outgoing activities still use `IConnectorClient` |
 
 ## Diagram
 
@@ -13,87 +17,112 @@ Shows the interaction between `CloudAdapter.ProcessAsync`, the middleware pipeli
 sequenceDiagram
     participant Client
     participant CloudAdapter
-    participant ChannelResponseQueue
-    participant ActivityTaskQueue as IActivityTaskQueue
-    participant ProcessActivity as ProcessActivityAsync
+    participant ResponseQueue as ChannelResponseQueue
+    participant ActivityQueue as IActivityTaskQueue
+    participant HostedService as HostedActivityService
+    participant AdapterBase as ChannelServiceAdapterBase
+    participant TurnContext
     participant MiddlewareSet
     participant Middleware as Middleware[0..N]
     participant IAgent
-    participant TurnContext
-    participant AdapterBase as ChannelServiceAdapterBase
-    participant ConnectorClient
+    participant ConnectorClient as IConnectorClient
     participant HttpResponse
 
     Client->>CloudAdapter: POST /api/messages
 
-    alt DeliveryMode == Stream (SSE)
-        Note over CloudAdapter: Blocking SSE path (Invoke and ExpectReplies are also synchronous but non-SSE)
-        CloudAdapter->>ChannelResponseQueue: StartHandlerForRequest(requestId)
-        CloudAdapter->>HttpResponse: ResponseBegin()<br/>(Content-Type: text/event-stream)
-        CloudAdapter-->>ProcessActivity: fire-and-forget task
+    alt DeliveryMode == Stream
+        Note over CloudAdapter,HttpResponse: Synchronous SSE request
+        CloudAdapter->>ResponseQueue: StartHandlerForRequest(requestId)
+        CloudAdapter->>HttpResponse: ActivityResponseHandler.ResponseBegin()<br/>(200, text/event-stream)
+        CloudAdapter-->>AdapterBase: ProcessActivityAsync(..., agent.OnTurnAsync)<br/>(start without awaiting)
 
-        par Background: agent processing
-            ProcessActivity->>TurnContext: new TurnContext(adapter, activity)
-            ProcessActivity->>AdapterBase: RunPipelineAsync(context, agent.OnTurnAsync)
-            AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, agent.OnTurnAsync)
-
-            loop Middleware chain (recursive)
+        par Agent processing
+            AdapterBase->>TurnContext: new TurnContext(adapter, activity)
+            AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, callback)
+            loop Recursive middleware chain
                 MiddlewareSet->>Middleware: OnTurnAsync(context, next)
                 Middleware->>MiddlewareSet: await next()
             end
-
             MiddlewareSet->>IAgent: OnTurnAsync(context)
-
-            Note over IAgent: Agent does work, sends replies
-
-            IAgent->>TurnContext: SendActivityAsync(activity)
-            TurnContext->>TurnContext: ApplyConversationReference()<br/>Run OnSendActivities callbacks
+            IAgent->>TurnContext: SendActivityAsync(outgoingActivity)
+            TurnContext->>TurnContext: ApplyConversationReference()<br/>run OnSendActivities callbacks
             TurnContext->>AdapterBase: SendActivitiesAsync(activities[])
-
-            AdapterBase->>AdapterBase: HostResponseAsync(incomingActivity, outActivity)
-            Note over AdapterBase: DeliveryMode == Stream → returns true
-            AdapterBase->>ChannelResponseQueue: SendActivitiesAsync(requestId, activities)
-            ChannelResponseQueue-->>AdapterBase: activities queued
-
-        and HTTP thread: consuming response queue
-            CloudAdapter->>ChannelResponseQueue: HandleResponsesAsync(requestId, writer.OnResponse)
-            loop Until queue complete
-                ChannelResponseQueue-->>CloudAdapter: activity
-                CloudAdapter->>HttpResponse: OnResponse() writes SSE event<br/>"event: activity\r\ndata: {...}\r\n\r\n"
-                HttpResponse->>Client: SSE chunk (streamed)
+            AdapterBase->>AdapterBase: HostResponseAsync(incoming, outgoing)
+            Note over AdapterBase: Stream -> true
+            AdapterBase->>ResponseQueue: SendActivitiesAsync(requestId, activities)
+        and HTTP response
+            CloudAdapter->>ResponseQueue: HandleResponsesAsync(requestId,<br/>ActivityResponseHandler.OnResponse)
+            loop Until producer completes
+                ResponseQueue-->>CloudAdapter: outgoing activity
+                CloudAdapter->>HttpResponse: write + flush SSE activity event
+                HttpResponse->>Client: event: activity
             end
         end
 
-        CloudAdapter->>ChannelResponseQueue: CompleteHandlerForRequest(requestId)
-        ChannelResponseQueue-->>CloudAdapter: HandleResponsesAsync returns
-        CloudAdapter->>HttpResponse: ResponseEnd()<br/>(writes invokeResponse event if Invoke)
-        HttpResponse->>Client: stream close
+        AdapterBase-->>CloudAdapter: task completion / InvokeResponse
+        CloudAdapter->>ResponseQueue: CompleteHandlerForRequest(requestId)
+        ResponseQueue-->>CloudAdapter: HandleResponsesAsync returns
+        CloudAdapter->>HttpResponse: ActivityResponseHandler.ResponseEnd()<br/>(optional invokeResponse event)
+        HttpResponse->>Client: stream closes
 
-    else DeliveryMode == Normal (default)
-        Note over CloudAdapter: Fire-and-forget path
-        CloudAdapter->>ActivityTaskQueue: QueueBackgroundActivity(activity)
-        CloudAdapter->>Client: 202 Accepted (immediate return)
+    else Invoke or DeliveryMode == ExpectReplies
+        Note over CloudAdapter,HttpResponse: Synchronous JSON request
+        CloudAdapter->>ResponseQueue: StartHandlerForRequest(requestId)
+        CloudAdapter->>HttpResponse: ExpectRepliesResponseWriter.ResponseBegin()<br/>(no body yet)
+        CloudAdapter-->>AdapterBase: ProcessActivityAsync(..., agent.OnTurnAsync)<br/>(start without awaiting)
 
-        Note over ProcessActivity: Background worker picks up activity
-        ProcessActivity->>TurnContext: new TurnContext(adapter, activity)
-        ProcessActivity->>AdapterBase: RunPipelineAsync(context, agent.OnTurnAsync)
-        AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, agent.OnTurnAsync)
+        par Agent processing
+            AdapterBase->>TurnContext: new TurnContext(adapter, activity)
+            AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, callback)
+            loop Recursive middleware chain
+                MiddlewareSet->>Middleware: OnTurnAsync(context, next)
+                Middleware->>MiddlewareSet: await next()
+            end
+            MiddlewareSet->>IAgent: OnTurnAsync(context)
+            IAgent->>TurnContext: SendActivityAsync(outgoingActivity)
+            TurnContext->>AdapterBase: SendActivitiesAsync(activities[])
 
-        loop Middleware chain (recursive)
+            alt Outgoing activity is InvokeResponse
+                AdapterBase->>TurnContext: store InvokeResponse in StackState
+            else Incoming DeliveryMode == ExpectReplies
+                AdapterBase->>ResponseQueue: SendActivitiesAsync(requestId, activities)
+            else Ordinary Invoke sends another activity
+                AdapterBase->>ConnectorClient: ReplyToActivityAsync or<br/>SendToConversationAsync
+            end
+        and HTTP response
+            CloudAdapter->>ResponseQueue: HandleResponsesAsync(requestId,<br/>ExpectRepliesResponseWriter.OnResponse)
+            Note over CloudAdapter: ExpectReplies activities are buffered<br/>while an ordinary Invoke may queue none
+        end
+
+        AdapterBase-->>CloudAdapter: InvokeResponse result
+        CloudAdapter->>ResponseQueue: CompleteHandlerForRequest(requestId)
+        ResponseQueue-->>CloudAdapter: HandleResponsesAsync returns
+        CloudAdapter->>HttpResponse: ExpectRepliesResponseWriter.ResponseEnd()
+        HttpResponse->>Client: JSON InvokeResponse<br/>(ExpectedReplies body when requested)
+
+    else Normal delivery
+        Note over CloudAdapter,HostedService: Immediate accept + background processing
+        CloudAdapter->>ActivityQueue: QueueBackgroundActivity(activity)
+        CloudAdapter->>Client: 202 Accepted
+
+        HostedService->>ActivityQueue: dequeue activity
+        HostedService->>AdapterBase: ProcessActivityAsync(..., agent.OnTurnAsync)
+        AdapterBase->>TurnContext: new TurnContext(adapter, activity)
+        AdapterBase->>MiddlewareSet: ReceiveActivityWithStatusAsync(context, callback)
+
+        loop Recursive middleware chain
             MiddlewareSet->>Middleware: OnTurnAsync(context, next)
             Middleware->>MiddlewareSet: await next()
         end
 
         MiddlewareSet->>IAgent: OnTurnAsync(context)
-
-        IAgent->>TurnContext: SendActivityAsync(activity)
-        TurnContext->>TurnContext: ApplyConversationReference()<br/>Run OnSendActivities callbacks
+        IAgent->>TurnContext: SendActivityAsync(outgoingActivity)
+        TurnContext->>TurnContext: ApplyConversationReference()<br/>run OnSendActivities callbacks
         TurnContext->>AdapterBase: SendActivitiesAsync(activities[])
-
-        AdapterBase->>AdapterBase: HostResponseAsync(incomingActivity, outActivity)
-        Note over AdapterBase: DeliveryMode == Normal → returns false
-        AdapterBase->>ConnectorClient: ReplyToActivityAsync(activity)
-        ConnectorClient->>Client: POST to serviceUrl/conversations/.../activities
+        AdapterBase->>AdapterBase: HostResponseAsync(incoming, outgoing)
+        Note over AdapterBase: Normal -> false
+        AdapterBase->>ConnectorClient: ReplyToActivityAsync or<br/>SendToConversationAsync
+        ConnectorClient->>Client: POST to serviceUrl conversation endpoint
     end
 ```
 
@@ -104,14 +133,24 @@ sequenceDiagram
 | `CloudAdapter` | `src/libraries/Hosting/AspNetCore/CloudAdapter.cs` |
 | `ChannelResponseQueue` | `src/libraries/Hosting/AspNetCore/ChannelResponseQueue.cs` |
 | `ActivityResponseHandler` (SSE writer) | `src/libraries/Hosting/AspNetCore/ActivityResponseHandler.cs` |
+| `ExpectRepliesResponseWriter` (JSON writer) | `src/libraries/Hosting/AspNetCore/ExpectRepliesResponseWriter.cs` |
+| `IActivityTaskQueue` / `HostedActivityService` | `src/libraries/Hosting/AspNetCore/BackgroundQueue/` |
 | `ChannelServiceAdapterBase` | `src/libraries/Builder/Microsoft.Agents.Builder/ChannelServiceAdapterBase.cs` |
 | `TurnContext` | `src/libraries/Builder/Microsoft.Agents.Builder/TurnContext.cs` |
 | `MiddlewareSet` | `src/libraries/Builder/Microsoft.Agents.Builder/MiddlewareSet.cs` |
 
-## ChannelResponseQueue — Producer/Consumer Bridge
+## ChannelResponseQueue Producer/Consumer Bridge
 
-In the Stream path, `ChannelResponseQueue` acts as a thread-safe bridge between the background agent processing thread and the HTTP response thread:
+In the Stream and ExpectReplies paths, `ChannelResponseQueue` bridges agent processing and the open HTTP response:
 
-- **Producer**: background agent thread calls `SendActivitiesAsync()` → writes activities to an unbounded `Channel<IActivity>`
-- **Consumer**: HTTP request thread calls `HandleResponsesAsync()` → reads activities and passes them to `ActivityResponseHandler.OnResponse()`, which writes SSE events to `HttpResponse.Body`
-- **Completion**: when `ProcessActivityAsync` finishes, `CloudAdapter` calls `CompleteHandlerForRequest()` → closes the channel writer → consumer loop exits → `ResponseEnd()` is called
+- **Producer**: `ChannelServiceAdapterBase.SendActivitiesAsync` calls the `CloudAdapter.HostResponseAsync` override, which writes hosted activities to an unbounded `Channel<IActivity>`.
+- **Consumer**: the HTTP request thread runs `HandleResponsesAsync`, passing activities to either `ActivityResponseHandler.OnResponse` (SSE) or `ExpectRepliesResponseWriter.OnResponse` (buffered JSON).
+- **Completion**: the continuation attached to `ProcessActivityAsync` calls `CompleteHandlerForRequest` after processing ends. The writer is completed, the consumer drains remaining activities, and only then does `ResponseEnd` write the final protocol response.
+
+## Scope and Invariants
+
+- Normal requests are processed later by `HostedActivityService`; synchronous requests call `ProcessActivityAsync` directly.
+- `ChannelAdapter.RunPipelineAsync` calls `MiddlewareSet.ReceiveActivityWithStatusAsync`; middleware recursively calls `next()`, ending at `IAgent.OnTurnAsync`.
+- `ChannelServiceAdapterBase.SendActivitiesAsync` handles `InvokeResponse` and trace activities before consulting `HostResponseAsync`.
+- `HostResponseAsync` returns `true` for both Stream and ExpectReplies. The response writer, not the queue, determines SSE versus JSON formatting.
+- Authentication and connector-client construction are omitted so request lifetime and response routing remain visible.

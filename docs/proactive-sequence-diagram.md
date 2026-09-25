@@ -14,7 +14,7 @@ Shows how agents can initiate messages to users outside the normal request/respo
 
 ## Flow 1: Store Conversation Reference
 
-Before proactive messaging can work, the conversation must be stored during a normal user-initiated turn.
+The `{conversationId}` HTTP endpoints require a conversation stored during an earlier turn. Body-based endpoints and in-code APIs can instead receive a complete `Conversation` directly.
 
 ```mermaid
 sequenceDiagram
@@ -24,6 +24,7 @@ sequenceDiagram
     participant AgentApplication
     participant Proactive
     participant IStorage
+    participant TurnContext
 
     User->>Channel: Send message
     Channel->>ChannelAdapter: POST /api/messages (Activity)
@@ -33,7 +34,9 @@ sequenceDiagram
     Proactive->>IStorage: WriteAsync(key, Conversation)
     IStorage-->>Proactive: stored
     Proactive-->>AgentApplication: conversationId
-    AgentApplication->>Channel: SendActivityAsync("Conversation stored")
+    AgentApplication->>TurnContext: SendActivityAsync("Conversation stored")
+    TurnContext->>ChannelAdapter: SendActivitiesAsync(...)
+    ChannelAdapter->>Channel: Activity
 ```
 
 ## Flow 2: SendActivity via HTTP (with stored conversationId)
@@ -84,6 +87,7 @@ sequenceDiagram
     participant ChannelAdapter
     participant AgentApplication
     participant UserAuthorization
+    participant TurnContext
     participant Channel
 
     ExternalCaller->>HttpProactive: POST /proactive/continue/{conversationId}?key=value
@@ -106,15 +110,18 @@ sequenceDiagram
     alt autoSignInHandlers specified
         Proactive->>UserAuthorization: GetSignedInTokensAsync(turnContext, handlers)
         UserAuthorization-->>Proactive: allAcquired (true/false)
-        alt not all signed in & FailOnUnsignedInConnections
-            Proactive-->>HttpProactive: throw UserNotSignedIn
-        end
     end
 
-    Proactive->>AgentApplication: routeHandler(turnContext, turnState)
-    AgentApplication->>Channel: SendActivityAsync(...)
-    Channel-->>AgentApplication: ResourceResponse
-    Proactive->>Proactive: Save TurnState
+    alt handlers requested, not all signed in,<br/>and FailOnUnsignedInConnections
+        Proactive-->>HttpProactive: throw UserNotSignedIn
+    else token check passes or failure is allowed
+        Proactive->>AgentApplication: routeHandler(turnContext, turnState)
+        AgentApplication->>TurnContext: SendActivityAsync(...)
+        TurnContext->>ChannelAdapter: SendActivitiesAsync(...)
+        ChannelAdapter->>Channel: Activity
+        Channel-->>ChannelAdapter: ResourceResponse
+        Proactive->>Proactive: Save TurnState
+    end
     deactivate ChannelAdapter
     deactivate Proactive
 
@@ -131,8 +138,10 @@ sequenceDiagram
     participant HttpProactive
     participant Proactive
     participant ChannelAdapter
+    participant TurnContext
     participant Channel
     participant IStorage
+    participant Logger
 
     ExternalCaller->>HttpProactive: POST /proactive/create<br/>Body: CreateConversationBody (JSON)
     HttpProactive->>HttpProactive: Extract claims from request or body.AgentClientId
@@ -155,7 +164,13 @@ sequenceDiagram
         Proactive->>ChannelAdapter: ProcessProactiveAsync(identity, activity, callback)
         ChannelAdapter->>Proactive: callback(turnContext)
         Proactive->>Proactive: OnTurnAsync (state + handler)
-        Proactive->>Channel: SendActivityAsync(...)
+        Proactive->>TurnContext: continuation handler sends activity
+        TurnContext->>ChannelAdapter: SendActivitiesAsync(...)
+        ChannelAdapter->>Channel: Activity
+        alt Continuation throws
+            Proactive->>Logger: LogWarning("CreateConversationAsync continue failed")
+            Note over Proactive: Exception is not rethrown from<br/>CreateConversationAsync
+        end
     end
 
     deactivate Proactive
@@ -172,6 +187,7 @@ sequenceDiagram
     participant Proactive
     participant IStorage
     participant ChannelAdapter
+    participant TurnContext
     participant Channel
 
     AgentApplication->>Proactive: ContinueConversationAsync(adapter, conversationId,<br/>handler, tokenHandlers)
@@ -185,8 +201,10 @@ sequenceDiagram
     ChannelAdapter->>Proactive: callback(turnContext)
     Proactive->>Proactive: Load TurnState + token check
     Proactive->>AgentApplication: handler(turnContext, turnState)
-    AgentApplication->>Channel: SendActivityAsync(...)
-    Channel-->>AgentApplication: ResourceResponse
+    AgentApplication->>TurnContext: SendActivityAsync(...)
+    TurnContext->>ChannelAdapter: SendActivitiesAsync(...)
+    ChannelAdapter->>Channel: Activity
+    Channel-->>ChannelAdapter: ResourceResponse
     Proactive->>Proactive: Save TurnState
     deactivate ChannelAdapter
 ```
@@ -209,8 +227,10 @@ sequenceDiagram
 - **Conversation** — A record containing `ConversationReference` + `Claims` (JWT claims for identity reconstruction). Serializable for storage.
 - **ConversationBuilder** — Fluent builder for manually constructing `Conversation` instances without an existing `ITurnContext`.
 - **ProcessProactiveAsync** vs **ContinueConversationAsync** — `Proactive.ContinueConversationAsync` uses `ProcessProactiveAsync` plus `OnTurnAsync` to create a full turn pipeline (middleware, state); `ContinueConversationAsync` (on adapter) is simpler and only provides a TurnContext callback.
+- **Pipeline scope** — `Proactive.OnTurnAsync` loads/saves `ITurnState`, configures turn services, and invokes the registered continuation handler. It does not rerun `AgentApplication` route selection; the route was selected by the HTTP endpoint or caller.
 - **Token Handling** — `[ContinueConversation(autoSignInHandlers: "me")]` automatically retrieves user tokens during proactive turns. If the user hasn't signed in, `UserNotSignedIn` is thrown.
 - **Exception Capture** — Exceptions inside the proactive callback are captured via `ExceptionDispatchInfo` and re-thrown after the adapter completes, since they would otherwise be lost.
+- **Create-and-continue exception behavior** — `CreateConversationAsync` catches and logs exceptions from its optional continuation after the channel conversation has been created. It still returns the new `Conversation`; direct `ContinueConversationAsync` calls rethrow captured handler exceptions.
 - **Query Parameters** — HTTP continue endpoints pass query string values as `Activity.Value` with `ValueType = "application/vnd.microsoft.activity.continueconversation+json"`.
 - **Storage Key** — Conversations are stored under `proactive/conversations/{conversationId}`.
 
