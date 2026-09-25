@@ -206,7 +206,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             AddAsyncAdapterSupport(services);
 
-            services.TryAddSingleton<T>();
+            services.TryAddSingleton<T>(serviceProvider =>
+            {
+                T adapter = ActivatorUtilities.CreateInstance<T>(serviceProvider);
+                ICloudAdapterErrorHandler errorHandler = serviceProvider.GetService<ICloudAdapterErrorHandler>();
+                if (errorHandler != null)
+                {
+                    adapter.OnTurnError = errorHandler.HandleTurnErrorAsync;
+                }
+
+                return adapter;
+            });
             if (typeof(T) != typeof(CloudAdapter))
             {
                 services.TryAddSingleton<CloudAdapter>(sp => sp.GetRequiredService<T>());
