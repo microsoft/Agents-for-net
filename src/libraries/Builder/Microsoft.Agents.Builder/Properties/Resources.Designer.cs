@@ -475,6 +475,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Assembly must be configured for user authorization handler &apos;{0}&apos; because type &apos;{1}&apos; is not defined by Microsoft.Agents.Builder..
+        /// </summary>
+        internal static string UserAuthorizationAssemblyRequired {
+            get {
+                return ResourceManager.GetString("UserAuthorizationAssemblyRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Type &apos;{0}&apos; not found in Assembly &apos;{1}&apos; or is the wrong type for &apos;{2}&apos;..
         /// </summary>
         internal static string UserAuthorizationTypeNotFound {

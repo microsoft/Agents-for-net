@@ -281,6 +281,23 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         }
 
         [Fact]
+        public void NonPublicActivitySubclass_DoesNotGenerateInaccessibleConsumerReference()
+        {
+            var reference = CreateReferencedAssembly("Ext.InternalActivities", """
+                namespace Ext.InternalActivities
+                {
+                    internal class InternalActivity : Microsoft.Agents.Core.Models.Activity
+                    {
+                    }
+                }
+                """);
+
+            var result = RunGenerator(reference);
+
+            Assert.Empty(result.Results.Single().GeneratedSources);
+        }
+
+        [Fact]
         public void GeneratedFile_HasExpectedHintName()
         {
             var reference = CreateReferencedAssembly("Ext.Hint", """
