@@ -1012,6 +1012,18 @@ Add the provider under the top-level `Connections` section:
 }
 ```
 
+`Connections` and `ConnectionsMap` are the default top-level section names. Applications can keep
+the same structure under custom configuration paths by registering those paths before adding the
+agent:
+
+```csharp
+builder
+    .AddAgentCore(
+        connectionsKey: "Agent:Authentication:Connections",
+        mapKey: "Agent:Authentication:ConnectionsMap")
+    .AddAgent<ContosoAgent>();
+```
+
 `Assembly` is the loadable assembly name, not a file path. `Type` should be the fully qualified
 public CLR type name. The assembly must be part of the deployed application.
 
