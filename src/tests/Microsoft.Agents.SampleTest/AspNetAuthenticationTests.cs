@@ -1,0 +1,269 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+#nullable enable
+extern alias AuthenticationSample;
+
+using SampleAspNetExtensions = AuthenticationSample::AspNetExtensions;
+
+using Microsoft.Agents.Authentication;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace Microsoft.Agents.SampleTest
+{
+    public class AspNetAuthenticationTests
+    {
+        private const string Tenant = "11111111-2222-4333-8444-555555555555";
+        private const string OtherTenant = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        private const string Audience = "12345678-1234-4234-8234-123456789abc";
+        private const string Caller = "87654321-4321-4321-8321-cba987654321";
+
+        [Fact]
+        public void StrictModeKeepsStaticIssuerValidation()
+        {
+            var options = CreateBearerOptions();
+            Assert.True(options.TokenValidationParameters.ValidateIssuer);
+            Assert.Null(options.TokenValidationParameters.IssuerValidator);
+            Assert.Contains(AuthenticationConstants.BotFrameworkTokenIssuer, options.TokenValidationParameters.ValidIssuers);
+            Assert.DoesNotContain(PublicIssuer(Tenant), options.TokenValidationParameters.ValidIssuers);
+        }
+
+        [Fact]
+        public async Task StrictModeRejectsRuntimeIssuerButAcceptsConfiguredIssuer()
+        {
+            var key = new SymmetricSecurityKey(new byte[32]);
+            var handler = new JsonWebTokenHandler();
+            var token = CreateSignedToken(handler, key, PublicIssuer(Tenant), Audience, DateTime.UtcNow.AddMinutes(30));
+
+            var strict = CreateBearerOptions().TokenValidationParameters.Clone();
+            strict.IssuerSigningKey = key;
+            Assert.False((await handler.ValidateTokenAsync(token, strict)).IsValid);
+
+            var listed = CreateBearerOptions(validIssuers: [PublicIssuer(Tenant)]).TokenValidationParameters.Clone();
+            listed.IssuerSigningKey = key;
+            Assert.True((await handler.ValidateTokenAsync(token, listed)).IsValid);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void DynamicModeAcceptsCanonicalIssuerWithMatchingTenant(bool isGov)
+        {
+            var options = CreateBearerOptions(dynamic: true, isGov: isGov);
+            var issuer = isGov ? GovIssuer(Tenant) : PublicIssuer(Tenant);
+            Assert.Equal(issuer, ValidateIssuer(options, issuer, Tenant));
+            Assert.Equal($"https://sts.windows.net/{Tenant}/", ValidateIssuer(options, $"https://sts.windows.net/{Tenant}/", Tenant));
+            Assert.Equal(issuer, ValidateIssuer(options, issuer, Tenant.ToUpperInvariant()));
+        }
+
+        [Theory]
+        [InlineData("https://login.microsoftonline.com/common/v2.0")]
+        [InlineData("https://login.microsoftonline.com/organizations/v2.0")]
+        [InlineData("https://evil.example/11111111-2222-4333-8444-555555555555/v2.0")]
+        [InlineData("https://login.microsoftonline.com.evil.example/11111111-2222-4333-8444-555555555555/v2.0")]
+        [InlineData("https://login.microsoftonline.com:444/11111111-2222-4333-8444-555555555555/v2.0")]
+        [InlineData("https://login.microsoftonline.com/11111111-2222-4333-8444-555555555555/v2.0/")]
+        [InlineData("https://login.microsoftonline.com/11111111-2222-4333-8444-555555555555/extra/v2.0")]
+        [InlineData("https://sts.windows.net/11111111-2222-4333-8444-555555555555/v2.0")]
+        [InlineData("https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/v2.0")]
+        [InlineData("http://login.microsoftonline.com/11111111-2222-4333-8444-555555555555/v2.0")]
+        [InlineData("https://login.microsoftonline.com/11111111-2222-4333-8444-555555555555/v2.0?x=1")]
+        public void DynamicModeRejectsNonCanonicalIssuers(string issuer)
+        {
+            var options = CreateBearerOptions(dynamic: true);
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(options, issuer, Tenant));
+        }
+
+        [Fact]
+        public void DynamicModeRejectsMissingMismatchedAndDuplicateTenant()
+        {
+            var options = CreateBearerOptions(dynamic: true);
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(options, PublicIssuer(Tenant), OtherTenant));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(options, PublicIssuer(Tenant), "not-a-guid"));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(options, PublicIssuer(Tenant)));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(options, PublicIssuer(Tenant), Tenant, Tenant));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(options, null, Tenant));
+        }
+
+        [Fact]
+        public void DynamicModeRejectsCrossCloudIssuers()
+        {
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(CreateBearerOptions(dynamic: true), GovIssuer(Tenant), Tenant));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(CreateBearerOptions(dynamic: true, isGov: true), PublicIssuer(Tenant), Tenant));
+        }
+
+        [Fact]
+        public void DynamicModeAlsoValidatesJwtSecurityTokenClaims()
+        {
+            var options = CreateBearerOptions(dynamic: true);
+            var issuer = PublicIssuer(Tenant);
+            var token = new JwtSecurityToken(issuer: issuer, claims: [new Claim("tid", Tenant)]);
+            Assert.Equal(issuer, options.TokenValidationParameters.IssuerValidator!(issuer, token, options.TokenValidationParameters));
+
+            var mismatch = new JwtSecurityToken(issuer: issuer, claims: [new Claim("tid", OtherTenant)]);
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() =>
+                options.TokenValidationParameters.IssuerValidator!(issuer, mismatch, options.TokenValidationParameters));
+        }
+
+        [Fact]
+        public void DynamicModeKeepsExplicitAllowListAndBotServicePolicy()
+        {
+            var options = CreateBearerOptions(dynamic: true, validIssuers: ["https://custom.example/issuer", AuthenticationConstants.BotFrameworkTokenIssuer]);
+            Assert.Equal("https://custom.example/issuer", ValidateIssuer(options, "https://custom.example/issuer"));
+            Assert.Equal(AuthenticationConstants.BotFrameworkTokenIssuer, ValidateIssuer(options, AuthenticationConstants.BotFrameworkTokenIssuer));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(
+                CreateBearerOptions(dynamic: true, handleBotService: false, validIssuers: [AuthenticationConstants.BotFrameworkTokenIssuer]),
+                AuthenticationConstants.BotFrameworkTokenIssuer));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(CreateBearerOptions(dynamic: true, isGov: true), AuthenticationConstants.BotFrameworkTokenIssuer));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(CreateBearerOptions(dynamic: true, botServiceOnly: true), PublicIssuer(Tenant), Tenant));
+        }
+
+        [Fact]
+        public void DynamicModeRequiresMatchingMetadataCloud()
+        {
+            var settings = CreateSettings(dynamic: true);
+            settings.OpenIdMetadataUrl = AuthenticationConstants.GovOpenIdMetadataUrl;
+            Assert.Throws<ArgumentException>(() => new ServiceCollection().AddAgentAspNetAuthentication(settings));
+
+            settings.OpenIdMetadataUrl = "https://example.com/common/v2.0/.well-known/openid-configuration";
+            Assert.Throws<ArgumentException>(() => new ServiceCollection().AddAgentAspNetAuthentication(settings));
+        }
+
+        [Fact]
+        public void DynamicModeRetainsOtherTokenValidationRequirements()
+        {
+            var parameters = CreateBearerOptions(dynamic: true).TokenValidationParameters;
+            Assert.True(parameters.ValidateIssuer);
+            Assert.True(parameters.ValidateAudience);
+            Assert.True(parameters.ValidateLifetime);
+            Assert.True(parameters.ValidateIssuerSigningKey);
+            Assert.True(parameters.RequireSignedTokens);
+            Assert.NotNull(parameters.IssuerSigningKeyValidatorUsingConfiguration);
+            Assert.Contains(Audience, parameters.ValidAudiences);
+        }
+
+        [Fact]
+        public async Task DynamicModeRetainsAllowedCallersCheck()
+        {
+            var options = CreateBearerOptions(dynamic: true);
+            var denied = CreateValidatedContext(options, OtherTenant);
+            await options.Events.OnTokenValidated(denied);
+            Assert.NotNull(denied.Result?.Failure);
+
+            var allowed = CreateValidatedContext(options, Caller);
+            await options.Events.OnTokenValidated(allowed);
+            Assert.Null(allowed.Result?.Failure);
+        }
+
+        [Fact]
+        public async Task DynamicModeRetainsSignatureAudienceAndLifetimeValidation()
+        {
+            var options = CreateBearerOptions(dynamic: true);
+            var key = new SymmetricSecurityKey(new byte[32]);
+            var parameters = options.TokenValidationParameters.Clone();
+            parameters.IssuerSigningKey = key;
+            var handler = new JsonWebTokenHandler();
+            var validToken = CreateSignedToken(handler, key, PublicIssuer(Tenant), Audience, DateTime.UtcNow.AddMinutes(30));
+            Assert.True((await handler.ValidateTokenAsync(validToken, parameters)).IsValid);
+
+            var wrongAudience = parameters.Clone();
+            wrongAudience.ValidAudiences = [OtherTenant];
+            Assert.False((await handler.ValidateTokenAsync(validToken, wrongAudience)).IsValid);
+
+            var wrongKey = parameters.Clone();
+            wrongKey.IssuerSigningKey = new SymmetricSecurityKey(new byte[32].Select(_ => (byte)1).ToArray());
+            Assert.False((await handler.ValidateTokenAsync(validToken, wrongKey)).IsValid);
+
+            var unsignedToken = handler.CreateToken(new SecurityTokenDescriptor
+            {
+                Issuer = PublicIssuer(Tenant),
+                Audience = Audience,
+                Subject = new ClaimsIdentity([new Claim("tid", Tenant)]),
+                Expires = DateTime.UtcNow.AddMinutes(30)
+            });
+            Assert.False((await handler.ValidateTokenAsync(unsignedToken, parameters)).IsValid);
+
+            var expiredToken = handler.CreateToken(new SecurityTokenDescriptor
+            {
+                Issuer = PublicIssuer(Tenant),
+                Audience = Audience,
+                Subject = new ClaimsIdentity([new Claim("tid", Tenant)]),
+                NotBefore = DateTime.UtcNow.AddHours(-2),
+                Expires = DateTime.UtcNow.AddHours(-1),
+                SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+            });
+            Assert.False((await handler.ValidateTokenAsync(expiredToken, parameters)).IsValid);
+        }
+
+        private static string CreateSignedToken(JsonWebTokenHandler handler, SecurityKey key, string issuer, string audience, DateTime expires) =>
+            handler.CreateToken(new SecurityTokenDescriptor
+            {
+                Issuer = issuer,
+                Audience = audience,
+                Subject = new ClaimsIdentity([new Claim("tid", Tenant), new Claim("azp", Caller)]),
+                NotBefore = DateTime.UtcNow.AddMinutes(-1),
+                Expires = expires,
+                SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+            });
+
+        private static string PublicIssuer(string tenant) => $"https://login.microsoftonline.com/{tenant}/v2.0";
+
+        private static string GovIssuer(string tenant) => $"https://login.microsoftonline.us/{tenant}/v2.0";
+
+        private static TokenValidatedContext CreateValidatedContext(JwtBearerOptions options, string caller) => new(
+            new DefaultHttpContext(),
+            new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
+            options)
+        {
+            Principal = new ClaimsPrincipal(new ClaimsIdentity(
+                [new Claim("iss", PublicIssuer(Tenant)), new Claim("tid", Tenant), new Claim("azp", caller)],
+                JwtBearerDefaults.AuthenticationScheme))
+        };
+
+        private static SampleAspNetExtensions.TokenValidationOptions CreateSettings(bool dynamic = false, bool isGov = false) => new()
+        {
+            Audiences = [Audience],
+            AllowDynamicTenantIssuers = dynamic,
+            IsGov = isGov,
+            AllowedCallers = [Caller]
+        };
+
+        private static JwtBearerOptions CreateBearerOptions(bool dynamic = false, bool isGov = false, bool handleBotService = true, bool botServiceOnly = false, IList<string>? validIssuers = null)
+        {
+            var settings = CreateSettings(dynamic, isGov);
+            settings.AzureBotServiceTokenHandling = handleBotService;
+            settings.AzureBotServiceOnly = botServiceOnly;
+            settings.ValidIssuers = validIssuers;
+            var services = new ServiceCollection();
+            SampleAspNetExtensions.AddAgentAspNetAuthentication(services, settings);
+            using var provider = services.BuildServiceProvider();
+            return provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme);
+        }
+
+        private static string ValidateIssuer(JwtBearerOptions options, string? issuer, params string[] tenantIds)
+        {
+            var claims = tenantIds.Select(tenant => new Claim("tid", tenant)).ToList();
+            var token = new JsonWebToken(new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+            {
+                Issuer = issuer,
+                Audience = Audience,
+                Subject = new ClaimsIdentity(claims),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(new byte[32]), SecurityAlgorithms.HmacSha256)
+            }));
+            return options.TokenValidationParameters.IssuerValidator!(issuer!, token, options.TokenValidationParameters);
+        }
+    }
+}

@@ -35,6 +35,31 @@ Samples that don't host an ASP.NET pipeline — the console/worker clients under
 
 A brand-new ASP.NET agent sample needs to do nothing — it gets the helper automatically.
 
+#### Runtime-selected AgentID tenants
+
+The helper validates token issuers against a fixed allow-list by default. If an AgentID blueprint
+instance can be issued in a tenant that is not known when the host starts, opt in explicitly:
+
+```json
+"TokenValidation": {
+  "Audiences": ["<agent-client-id>"],
+  "AllowDynamicTenantIssuers": true,
+  "AllowedCallers": ["<trusted-caller-app-id>"]
+}
+```
+
+In this mode, issuer validation remains enabled. Runtime issuers must use the canonical Entra
+tenant-GUID URL for the configured public or US Government cloud, and that GUID must match the
+token's `tid` claim. Set `IsGov: true` for US Government. Custom metadata authorities outside
+these two clouds are not supported in dynamic mode. Explicit `ValidIssuers` continue to work;
+they are an explicit trust override and should be reviewed separately. Without the opt-in,
+unlisted tenant issuers are rejected as before.
+
+Accepting runtime tenants broadens which signed tokens can reach the agent. Keep `Audiences`
+restricted to this agent, configure `AllowedCallers` to trusted application IDs, and enforce the
+roles or scopes required by each endpoint. Do not use `AllowedCallers: ["*"]` unless all callers
+with a token for this audience are intentionally permitted.
+
 ### `IncludeOtelSampleHelpers` (OpenTelemetry extension)
 
 `Shared/AgentOtelExtension.cs` provides `ConfigureOtelProviders`, an `IHostApplicationBuilder`
