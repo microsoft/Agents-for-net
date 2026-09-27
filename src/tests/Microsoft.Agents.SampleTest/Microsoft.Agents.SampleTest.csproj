@@ -30,7 +30,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
-      <ProjectReference Include="..\..\samples\EmptyAgent\EmptyAgent.csproj" />
+      <ProjectReference Include="..\..\samples\EmptyAgent\EmptyAgent.csproj" Aliases="global,AuthenticationSample" />
       <ProjectReference Include="..\..\samples\SemanticKernel\WeatherAgent\WeatherAgent.csproj" />
       <ProjectReference Include="..\..\samples\A365LoopTest\A365LoopTest.csproj" />
     </ItemGroup>
