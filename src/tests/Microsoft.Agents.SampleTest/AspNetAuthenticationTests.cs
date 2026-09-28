@@ -138,10 +138,23 @@ namespace Microsoft.Agents.SampleTest
             var options = CreateBearerOptions(dynamic: true, validIssuers: ["https://custom.example/issuer", AuthenticationConstants.BotFrameworkTokenIssuer]);
             Assert.Equal("https://custom.example/issuer", ValidateIssuer(options, "https://custom.example/issuer"));
             Assert.Equal(AuthenticationConstants.BotFrameworkTokenIssuer, ValidateIssuer(options, AuthenticationConstants.BotFrameworkTokenIssuer));
+
+            var crossCloudOptions = CreateBearerOptions(dynamic: true, validIssuers:
+            [
+                AuthenticationConstants.GovBotFrameworkTokenIssuer,
+                AuthenticationConstants.ChinaBotFrameworkTokenIssuer
+            ]);
+            Assert.Equal(AuthenticationConstants.GovBotFrameworkTokenIssuer, ValidateIssuer(crossCloudOptions, AuthenticationConstants.GovBotFrameworkTokenIssuer));
+            Assert.Equal(AuthenticationConstants.ChinaBotFrameworkTokenIssuer, ValidateIssuer(crossCloudOptions, AuthenticationConstants.ChinaBotFrameworkTokenIssuer));
+
             Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(
                 CreateBearerOptions(dynamic: true, handleBotService: false, validIssuers: [AuthenticationConstants.BotFrameworkTokenIssuer]),
                 AuthenticationConstants.BotFrameworkTokenIssuer));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(
+                CreateBearerOptions(dynamic: true, handleBotService: false, validIssuers: [AuthenticationConstants.GovBotFrameworkTokenIssuer]),
+                AuthenticationConstants.GovBotFrameworkTokenIssuer));
             Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(CreateBearerOptions(dynamic: true, isGov: true), AuthenticationConstants.BotFrameworkTokenIssuer));
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(CreateBearerOptions(dynamic: true), AuthenticationConstants.GovBotFrameworkTokenIssuer));
             Assert.Throws<SecurityTokenInvalidIssuerException>(() => ValidateIssuer(options, AuthenticationConstants.BotFrameworkTokenIssuer.ToUpperInvariant()));
         }
 

@@ -349,11 +349,8 @@ public static class AspNetExtensions
 
         if (IsBotFrameworkIssuer(issuer))
         {
-            var expectedIssuer = options.IsGov
-                ? AuthenticationConstants.GovBotFrameworkTokenIssuer
-                : AuthenticationConstants.BotFrameworkTokenIssuer;
+            // Defaults are cloud-specific; explicit entries in ValidIssuers retain their existing trust override.
             if (options.AzureBotServiceTokenHandling
-                && string.Equals(issuer, expectedIssuer, StringComparison.Ordinal)
                 && parameters.ValidIssuers?.Contains(issuer) == true)
             {
                 return issuer;
