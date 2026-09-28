@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.JsonWebTokens;
 
@@ -366,17 +367,28 @@ public static class AspNetExtensions
             return issuer;
         }
 
-        if (TryGetCanonicalIssuerTenant(issuer, options.IsGov, out var issuerTenant))
+        if (IsCanonicalEntraIssuer(issuer, options.IsGov))
         {
-            // Inspect every raw claim so missing, duplicate, or conflicting tenant IDs cannot pass.
-            var tenants = token switch
+            // The shared claim helper permits missing tenant IDs and unrecognized issuers for the
+            // existing flow. Dynamic issuers must first have one raw tid and a canonical cloud URL.
+            var claims = token switch
             {
-                JsonWebToken jsonWebToken => jsonWebToken.Claims.Where(claim => claim.Type == "tid").Select(claim => claim.Value).ToList(),
-                System.IdentityModel.Tokens.Jwt.JwtSecurityToken jwtToken => jwtToken.Claims.Where(claim => claim.Type == "tid").Select(claim => claim.Value).ToList(),
+                JsonWebToken jsonWebToken => jsonWebToken.Claims.ToList(),
+                System.IdentityModel.Tokens.Jwt.JwtSecurityToken jwtToken => jwtToken.Claims.ToList(),
                 _ => []
             };
+            var tenants = claims.Where(claim => claim.Type == AuthenticationConstants.TenantIdClaim).ToList();
 
-            if (tenants.Count != 1 || !Guid.TryParseExact(tenants[0], "D", out var tokenTenant) || tokenTenant != issuerTenant)
+            if (tenants.Count != 1
+                || !Guid.TryParseExact(tenants[0].Value, "D", out var tokenTenant)
+                || tokenTenant == Guid.Empty)
+            {
+                throw new SecurityTokenInvalidIssuerException("Token tenant ID does not match its issuer.");
+            }
+
+            var identity = new ClaimsIdentity([new Claim(AuthenticationConstants.IssuerClaim, issuer)]);
+            identity.AddClaims(claims.Where(claim => claim.Type != AuthenticationConstants.IssuerClaim));
+            if (!identity.IsTenantIdIssuerValid())
             {
                 throw new SecurityTokenInvalidIssuerException("Token tenant ID does not match its issuer.");
             }
@@ -387,9 +399,8 @@ public static class AspNetExtensions
         throw new SecurityTokenInvalidIssuerException("Token issuer is not an allowed canonical Entra issuer.");
     }
 
-    private static bool TryGetCanonicalIssuerTenant(string issuer, bool isGov, out Guid tenantId)
+    private static bool IsCanonicalEntraIssuer(string issuer, bool isGov)
     {
-        tenantId = default;
         const string v1Prefix = "https://sts.windows.net/";
         var v2Prefix = isGov ? "https://login.microsoftonline.us/" : "https://login.microsoftonline.com/";
         const string v2Suffix = "/v2.0";
@@ -404,7 +415,9 @@ public static class AspNetExtensions
             tenantText = issuer.Substring(v2Prefix.Length, issuer.Length - v2Prefix.Length - v2Suffix.Length);
         }
 
-        return tenantText?.Length == 36 && Guid.TryParseExact(tenantText, "D", out tenantId) && tenantId != Guid.Empty;
+        return tenantText?.Length == 36
+            && Guid.TryParseExact(tenantText, "D", out var tenantId)
+            && tenantId != Guid.Empty;
     }
 
     /// <summary>

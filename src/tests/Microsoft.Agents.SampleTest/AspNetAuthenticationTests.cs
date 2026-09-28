@@ -130,6 +130,14 @@ namespace Microsoft.Agents.SampleTest
             var mismatch = new JwtSecurityToken(issuer: issuer, claims: [new Claim("tid", OtherTenant)]);
             Assert.Throws<SecurityTokenInvalidIssuerException>(() =>
                 options.TokenValidationParameters.IssuerValidator!(issuer, mismatch, options.TokenValidationParameters));
+
+            var conflictingMappedTenant = new JwtSecurityToken(issuer: issuer, claims:
+            [
+                new Claim("tid", Tenant),
+                new Claim("http://schemas.microsoft.com/identity/claims/tenantid", OtherTenant)
+            ]);
+            Assert.Throws<SecurityTokenInvalidIssuerException>(() =>
+                options.TokenValidationParameters.IssuerValidator!(issuer, conflictingMappedTenant, options.TokenValidationParameters));
         }
 
         [Fact]
