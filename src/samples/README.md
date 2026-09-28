@@ -48,17 +48,18 @@ instance can be issued in a tenant that is not known when the host starts, opt i
 }
 ```
 
-In this mode, issuer validation remains enabled. Runtime issuers must use the canonical Entra
-tenant-GUID URL for the configured public or US Government cloud, and that GUID must match the
-token's `tid` claim. Set `IsGov: true` for US Government. Custom metadata authorities outside
-these two clouds are not supported in dynamic mode. Explicit `ValidIssuers` continue to work;
-they are an explicit trust override and should be reviewed separately. Without the opt-in,
-unlisted tenant issuers are rejected as before.
+In this mode, issuer validation remains enabled. Unlisted runtime issuers must use the canonical
+Entra tenant-GUID URL for the configured public or US Government cloud, and that GUID must match
+the token's `tid` claim. The v1 `sts.windows.net` issuer form is shared by both clouds; for v1
+tokens, the configured cloud's signing keys provide the cloud boundary. Set `IsGov: true` for US
+Government. Custom metadata authorities outside these two clouds are not supported in dynamic
+mode. Explicit `ValidIssuers` retain their previous behavior; they are a trust override and should
+be reviewed separately. Without the opt-in, unlisted tenant issuers are rejected as before.
 
 Accepting runtime tenants broadens which signed tokens can reach the agent. Keep `Audiences`
-restricted to this agent, configure `AllowedCallers` to trusted application IDs, and enforce the
-roles or scopes required by each endpoint. Do not use `AllowedCallers: ["*"]` unless all callers
-with a token for this audience are intentionally permitted.
+restricted to this agent and enforce the roles or scopes required by each endpoint. Dynamic mode
+requires `AllowedCallers` to list specific trusted application IDs; missing, empty, or wildcard
+lists are rejected at startup. It cannot be combined with `AzureBotServiceOnly`.
 
 ### `IncludeOtelSampleHelpers` (OpenTelemetry extension)
 

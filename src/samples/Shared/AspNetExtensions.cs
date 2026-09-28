@@ -187,6 +187,18 @@ public static class AspNetExtensions
 
         if (validationOptions.AllowDynamicTenantIssuers)
         {
+            if (validationOptions.AllowedCallers == null
+                || validationOptions.AllowedCallers.Count == 0
+                || validationOptions.AllowedCallers.Any(c => string.IsNullOrWhiteSpace(c) || c.Equals("*", StringComparison.Ordinal)))
+            {
+                throw new ArgumentException($"{nameof(TokenValidationOptions)}:{nameof(TokenValidationOptions.AllowedCallers)} must contain specific caller App IDs when dynamic tenant issuers are enabled.");
+            }
+
+            if (validationOptions.AzureBotServiceOnly)
+            {
+                throw new ArgumentException($"{nameof(TokenValidationOptions)}:{nameof(TokenValidationOptions.AzureBotServiceOnly)} cannot be combined with {nameof(TokenValidationOptions.AllowDynamicTenantIssuers)}.");
+            }
+
             var expectedHost = validationOptions.IsGov ? "login.microsoftonline.us" : "login.microsoftonline.com";
             if (!Uri.TryCreate(validationOptions.OpenIdMetadataUrl, UriKind.Absolute, out var metadataUrl)
                 || metadataUrl.Scheme != Uri.UriSchemeHttps
@@ -257,7 +269,7 @@ public static class AspNetExtensions
                     JsonWebToken token = new(parts[1]);
                     string issuer = token.Issuer;
 
-                    if (validationOptions.AzureBotServiceTokenHandling 
+                    if (validationOptions.AzureBotServiceTokenHandling
                         && IsBotFrameworkIssuer(issuer))
                     {
                         // Use the Azure Bot authority for this configuration manager
@@ -341,7 +353,7 @@ public static class AspNetExtensions
                 ? AuthenticationConstants.GovBotFrameworkTokenIssuer
                 : AuthenticationConstants.BotFrameworkTokenIssuer;
             if (options.AzureBotServiceTokenHandling
-                && string.Equals(issuer, expectedIssuer, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(issuer, expectedIssuer, StringComparison.Ordinal)
                 && parameters.ValidIssuers?.Contains(issuer) == true)
             {
                 return issuer;
@@ -351,13 +363,15 @@ public static class AspNetExtensions
         }
 
         var isConfiguredIssuer = parameters.ValidIssuers?.Contains(issuer) == true;
-        if (!isConfiguredIssuer && options.AzureBotServiceOnly)
+        if (isConfiguredIssuer)
         {
-            throw new SecurityTokenInvalidIssuerException("Entra issuers are not allowed in Azure Bot Service-only mode.");
+            // Explicitly trusted issuers retain the same allow-list and post-validation checks as strict mode.
+            return issuer;
         }
 
         if (TryGetCanonicalIssuerTenant(issuer, options.IsGov, out var issuerTenant))
         {
+            // Inspect every raw claim so missing, duplicate, or conflicting tenant IDs cannot pass.
             var tenants = token switch
             {
                 JsonWebToken jsonWebToken => jsonWebToken.Claims.Where(claim => claim.Type == "tid").Select(claim => claim.Value).ToList(),
@@ -373,12 +387,6 @@ public static class AspNetExtensions
             return issuer;
         }
 
-        if (isConfiguredIssuer)
-        {
-            // An explicitly configured issuer retains the existing allow-list behavior.
-            return issuer;
-        }
-
         throw new SecurityTokenInvalidIssuerException("Token issuer is not an allowed canonical Entra issuer.");
     }
 
@@ -390,11 +398,11 @@ public static class AspNetExtensions
         const string v2Suffix = "/v2.0";
 
         string? tenantText = null;
-        if (issuer.StartsWith(v1Prefix, StringComparison.OrdinalIgnoreCase) && issuer.EndsWith("/", StringComparison.Ordinal))
+        if (issuer.StartsWith(v1Prefix, StringComparison.Ordinal) && issuer.EndsWith("/", StringComparison.Ordinal))
         {
             tenantText = issuer.Substring(v1Prefix.Length, issuer.Length - v1Prefix.Length - 1);
         }
-        else if (issuer.StartsWith(v2Prefix, StringComparison.OrdinalIgnoreCase) && issuer.EndsWith(v2Suffix, StringComparison.Ordinal))
+        else if (issuer.StartsWith(v2Prefix, StringComparison.Ordinal) && issuer.EndsWith(v2Suffix, StringComparison.Ordinal))
         {
             tenantText = issuer.Substring(v2Prefix.Length, issuer.Length - v2Prefix.Length - v2Suffix.Length);
         }
@@ -435,8 +443,9 @@ public static class AspNetExtensions
         /// Allows canonical Entra issuers from runtime-selected tenants when their tenant GUID matches the
         /// token's <c>tid</c> claim. Disabled by default; issuer validation stays enabled in both modes.
         /// Supported only for public and US Government Entra metadata authorities. Configure
-        /// <see cref="AspNetExtensions.TokenValidationOptions.AllowedCallers"/> and enforce required roles or scopes
-        /// when accepting callers from multiple tenants.
+        /// <see cref="AspNetExtensions.TokenValidationOptions.AllowedCallers"/> with specific App IDs; unrestricted
+        /// callers and <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceOnly"/> are rejected at startup.
+        /// Enforce required roles or scopes when accepting callers from multiple tenants.
         /// </summary>
         public bool AllowDynamicTenantIssuers { get; set; } = false;
 
