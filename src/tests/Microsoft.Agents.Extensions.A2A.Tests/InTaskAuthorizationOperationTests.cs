@@ -169,6 +169,33 @@ public class InTaskAuthorizationOperationTests
             });
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("text/plain")]
+    public async Task HttpBinding_NonJsonContentTypeReturnsEmpty415BeforeScopeHandlerOrAuthorizationMutation(
+        string contentType)
+    {
+        var result = await ExecuteHttpBindingAsync(contentType);
+
+        Assert.Equal(StatusCodes.Status415UnsupportedMediaType, result.Context.Response.StatusCode);
+        Assert.Equal(0, result.Context.Response.Body.Length);
+        Assert.Equal(0, result.ScopeCalls);
+        Assert.Equal(0, result.HandlerCalls);
+        Assert.Equal(0, result.AuthorizationMutations);
+    }
+
+    [Fact]
+    public async Task HttpBinding_ApplicationJsonInvokesScopeAndHandler()
+    {
+        var result = await ExecuteHttpBindingAsync("application/json");
+
+        Assert.Equal(StatusCodes.Status200OK, result.Context.Response.StatusCode);
+        Assert.True(result.Context.Response.Body.Length > 0);
+        Assert.Equal(1, result.ScopeCalls);
+        Assert.Equal(1, result.HandlerCalls);
+        Assert.Equal(1, result.AuthorizationMutations);
+    }
+
     [Fact]
     public async Task DisposingOldScope_DoesNotRemoveReplacementWithSameRequestId()
     {
@@ -307,6 +334,79 @@ public class InTaskAuthorizationOperationTests
         Assert.Equal("A2A.AspNetCore", typeof(A2AJsonRpcProcessor).Assembly.GetName().Name);
     }
 
+    private static async Task<HttpBindingResult> ExecuteHttpBindingAsync(string contentType)
+    {
+        var operationBuilder = new A2AOperationCatalogBuilder();
+        var standard = operationBuilder.AddStandardA2AOperations();
+        var resumeAuth = InTaskAuthorizationOperation.AddOperation(operationBuilder);
+        var operations = operationBuilder.Build();
+        var scopeCalls = 0;
+        var handlerCalls = 0;
+        var authorizationMutations = 0;
+        var requestHandler = Mock.Of<IA2ARequestHandler>();
+        var handlers = new A2AOperationHandlerCatalogBuilder()
+            .AddStandardA2AHandlers(standard)
+            .Map(
+                resumeAuth,
+                (
+                    A2AOperationContext operationContext,
+                    ResumeAuthRequest request,
+                    CancellationToken cancellationToken) =>
+                {
+                    handlerCalls++;
+                    authorizationMutations++;
+                    return ValueTask.FromResult(new AgentTask
+                    {
+                        Id = request.TaskId,
+                        ContextId = request.ContextId,
+                        Status = new global::A2A.TaskStatus { State = TaskState.Completed },
+                    });
+                })
+            .Build(operations);
+        var httpBuilder = new A2AHttpOperationBindingBuilder()
+            .AddStandardA2AHttpBindings(standard);
+        InTaskAuthorizationOperation.AddHttpBinding(httpBuilder, resumeAuth);
+        var httpBindings = httpBuilder.Build();
+
+        ValueTask<A2ARequestScope> CreateScopeAsync(
+            HttpContext httpContext,
+            CancellationToken cancellationToken)
+        {
+            scopeCalls++;
+            return ValueTask.FromResult(new A2ARequestScope(
+                new A2AOperationContext(requestHandler),
+                static () => ValueTask.CompletedTask));
+        }
+
+        var requestBody = JsonSerializer.Serialize(new ResumeAuthRequest
+        {
+            TaskId = "body-task-must-not-win",
+            ContextId = "http-context",
+            AuthorizationRequestId = "http-authorization",
+        });
+        var context = CreateHttpContext(requestBody);
+        context.Request.ContentType = contentType;
+        context.Request.RouteValues["taskId"] = "route-task";
+
+        var appBuilder = WebApplication.CreateBuilder();
+        appBuilder.Services.AddLogging();
+        await using var app = appBuilder.Build();
+        app.MapHttpA2A(CreateScopeAsync, handlers, httpBindings, "/a2a");
+        context.RequestServices = app.Services;
+        var endpoint = ((IEndpointRouteBuilder)app).DataSources
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Single(endpoint => endpoint.RoutePattern.RawText == "/a2a/tasks/{taskId}:resumeAuth");
+
+        await endpoint.RequestDelegate!(context);
+
+        return new HttpBindingResult(
+            context,
+            scopeCalls,
+            handlerCalls,
+            authorizationMutations);
+    }
+
     private static DefaultHttpContext CreateHttpContext(string requestContent = "")
     {
         var context = new DefaultHttpContext();
@@ -343,4 +443,10 @@ public class InTaskAuthorizationOperationTests
         ResumeAuthRequest Request,
         string Authorization,
         string DelegatedToken);
+
+    private sealed record HttpBindingResult(
+        DefaultHttpContext Context,
+        int ScopeCalls,
+        int HandlerCalls,
+        int AuthorizationMutations);
 }

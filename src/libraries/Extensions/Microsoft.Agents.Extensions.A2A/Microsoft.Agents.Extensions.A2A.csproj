@@ -26,9 +26,8 @@
 	<ItemGroup>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
-		<PackageReference Include="System.Text.Json" Condition="'$(A2ADotNetRepoRoot)' == ''" />
 		<PackageReference Include="Microsoft.Extensions.Http" />
-		<PackageReference Include="A2A.AspNetCore" Condition="'$(A2ADotNetRepoRoot)' == ''" />
+		<PackageReference Include="A2A.AspNetCore" />
 		<PackageReference Include="Azure.Storage.Blobs" />
 	</ItemGroup>
 
@@ -38,7 +37,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
-	  <ProjectReference Include="$(A2ADotNetRepoRoot)\src\A2A.AspNetCore\A2A.AspNetCore.csproj" Condition="'$(A2ADotNetRepoRoot)' != ''" />
 	  <ProjectReference Include="..\..\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
 	</ItemGroup>
 

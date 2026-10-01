@@ -57,6 +57,12 @@ internal static class InTaskAuthorizationOperation
         HttpContext context,
         CancellationToken cancellationToken)
     {
+        if (!context.Request.HasJsonContentType())
+        {
+            throw new A2AHttpBindingException(
+                Results.StatusCode(StatusCodes.Status415UnsupportedMediaType));
+        }
+
         ResumeAuthRequest request;
         try
         {

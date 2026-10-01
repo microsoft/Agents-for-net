@@ -150,7 +150,7 @@
     <!-- A365 -->
     <PackageVersion Include="Microsoft.Agents.A365.Notifications" Version="1.1.14-preview" />
     <!-- A2A -->
-    <PackageVersion Include="A2A.AspNetCore" Version="1.0.0-preview2" />
+    <PackageVersion Include="A2A.AspNetCore" Version="1.0.0-design1-poc.1" />
     <PackageVersion Include="A2A" Version="1.0.0-preview2" />
   </ItemGroup>
 </Project>

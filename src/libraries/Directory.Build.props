@@ -1,5 +1,4 @@
 <Project>
-	<Import Project="..\A2A.Local.props" />
 	<PropertyGroup>
 		<!-- Enabled Documentation for Libs folder-->
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>

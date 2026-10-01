@@ -18,41 +18,43 @@ configuration patterns, see the
 
 ## Local unified-operations POC
 
-This branch automatically references the reviewed sibling
-`a2aproject\a2a-dotnet` checkout when present. `src\A2A.Local.props` shares this
-selection with the combined sample test project; `A2ADotNetRepoRoot` can select
-another checkout explicitly. Normal package references remain in place when
-no local checkout is selected, but the currently pinned package predates the
-server operation APIs and cannot build this POC until a compatible release is
-adopted.
+This branch consumes the unpublished `A2A.AspNetCore`
+`1.0.0-design1-poc.1` package, which transitively consumes `A2A`
+`1.0.0-design1-poc.1`. Before restoring, provide a NuGet configuration whose
+package source mapping resolves `A2A` and `A2A.AspNetCore` from a local feed
+containing both POC packages. Do not add the feed path to the repository.
 
 Validate the server integration from the repository root:
 
 ```powershell
-dotnet test src\tests\Microsoft.Agents.Extensions.A2A.Tests\Microsoft.Agents.Extensions.A2A.Tests.csproj --framework net8.0
-dotnet build src\libraries\Extensions\Microsoft.Agents.Extensions.A2A\Microsoft.Agents.Extensions.A2A.csproj
+$nugetConfig = "<path-to-local-poc-nuget-config>"
+# RESTORESOURCES overrides --configfile when set.
+Remove-Item Env:RESTORESOURCES -ErrorAction SilentlyContinue
+dotnet restore src\tests\Microsoft.Agents.Extensions.A2A.Tests\Microsoft.Agents.Extensions.A2A.Tests.csproj --configfile $nugetConfig
+dotnet test src\tests\Microsoft.Agents.Extensions.A2A.Tests\Microsoft.Agents.Extensions.A2A.Tests.csproj --framework net8.0 --no-restore
+dotnet build src\libraries\Extensions\Microsoft.Agents.Extensions.A2A\Microsoft.Agents.Extensions.A2A.csproj --no-restore
 ```
 
-The unchanged A2AClient sample still builds separately against the package API.
-The combined `Microsoft.Agents.Samples.A2A.Tests` project must not load that
-client alongside this POC's local A2A assembly: the client calls
+The unchanged A2AClient sample continues to consume `A2A`
+`1.0.0-preview2`. The combined `Microsoft.Agents.Samples.A2A.Tests` project
+must not load that client alongside the Design 1 server package: the client calls
 `SendMessageConfiguration.PushNotificationConfig`, which the local API replaced
-with `TaskPushNotificationConfig`. Recompiling the unchanged client against
-the local project also fails. With local references selected, the existing test
-project builds its unchanged client tests in a separate `obj\client` directory
-and `CplTests.Samples.A2A.Client` output directory, and runs them in a separate
-test process against the package. Server tests keep the local project graph.
-No additional project or client source changes are needed:
+with `TaskPushNotificationConfig`. The test project therefore restores and
+builds its unchanged client tests in a separate `obj\client` directory and
+`CplTests.Samples.A2A.Client` output directory, then runs them in a separate
+test process against preview2. The outer Restore phase prepares both partitions;
+subsequent Build and VSTest phases do not restore:
 
 ```powershell
-dotnet test src\tests\Microsoft.Agents.Samples.A2A.Tests\Microsoft.Agents.Samples.A2A.Tests.csproj --framework net10.0
+dotnet restore src\tests\Microsoft.Agents.Samples.A2A.Tests\Microsoft.Agents.Samples.A2A.Tests.csproj --configfile $nugetConfig
+dotnet build src\tests\Microsoft.Agents.Samples.A2A.Tests\Microsoft.Agents.Samples.A2A.Tests.csproj --framework net10.0 --no-restore
+dotnet test src\tests\Microsoft.Agents.Samples.A2A.Tests\Microsoft.Agents.Samples.A2A.Tests.csproj --framework net10.0 --no-build --no-restore
 ```
 
-This command reports both partitions (248 client tests and 17 server tests),
-and a failing partition fails the command. Test filters are inherited by both
-partitions. Without local references, the ordinary combined package graph is
-retained. The split can be removed when client and server dependencies share a
-compatible API; disabling local references alone cannot build this POC.
+The final test command reports both partitions (248 client tests and 17 server
+tests), and a failing partition fails the command. Test filters are inherited by
+both partitions. The split can be removed when client and server dependencies
+share a compatible API.
 
 ## API organization
 

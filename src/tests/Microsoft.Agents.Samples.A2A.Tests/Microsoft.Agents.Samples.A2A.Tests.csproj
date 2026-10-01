@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
-  <Import Project="..\..\A2A.Local.props" />
 
   <PropertyGroup>
     <TargetFrameworks>net10.0</TargetFrameworks>
@@ -27,7 +26,7 @@
     <Compile Remove="Properties\\**" />
     <EmbeddedResource Remove="Properties\\**" />
     <None Remove="Properties\\**" />
-    <Compile Remove="A2AClient\**" Condition="'$(A2ADotNetRepoRoot)' != '' and '$(A2ASampleTestPartition)' != 'Client'" />
+    <Compile Remove="A2AClient\**" Condition="'$(A2ASampleTestPartition)' != 'Client'" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,7 +42,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.A2A\Microsoft.Agents.Extensions.A2A.csproj" Condition="'$(A2ASampleTestPartition)' != 'Client'" />
     <ProjectReference Include="..\..\samples\A2A\A2AAgent\A2AAgent.csproj" Aliases="A2AAgentSample" Condition="'$(A2ASampleTestPartition)' != 'Client'" />
-    <ProjectReference Include="..\..\samples\A2A\A2AClient\A2AClient.csproj" Condition="'$(A2ADotNetRepoRoot)' == '' or '$(A2ASampleTestPartition)' == 'Client'" />
+    <ProjectReference Include="..\..\samples\A2A\A2AClient\A2AClient.csproj" Condition="'$(A2ASampleTestPartition)' == 'Client'" />
   </ItemGroup>
 
   <ItemGroup>
@@ -61,22 +60,22 @@
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
-  <!-- Restore separately so the nested build evaluates the partition's generated NuGet imports. -->
-  <Target Name="RestorePackagedA2AClientTests"
-          Condition="'$(TargetFramework)' == 'net10.0' and '$(A2ADotNetRepoRoot)' != '' and '$(A2ASampleTestPartition)' != 'Client'">
-    <Exec Command="dotnet restore &quot;$(MSBuildProjectFullPath)&quot; -p:A2ASampleTestPartition=Client"
-          Condition="'$(VSTestNoBuild)' != 'true'" />
+  <!-- Restore the isolated preview2 client graph only as part of the explicit outer Restore phase. -->
+  <Target Name="RestorePackagedA2AClientTests" AfterTargets="Restore"
+          Condition="'$(A2ASampleTestPartition)' != 'Client'">
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Restore"
+             Properties="A2ASampleTestPartition=Client" />
   </Target>
 
-  <Target Name="BuildPackagedA2AClientTests" AfterTargets="Build" DependsOnTargets="RestorePackagedA2AClientTests"
-          Condition="'$(TargetFramework)' == 'net10.0' and '$(A2ADotNetRepoRoot)' != '' and '$(A2ASampleTestPartition)' != 'Client'">
+  <Target Name="BuildPackagedA2AClientTests" AfterTargets="Build"
+          Condition="'$(TargetFramework)' == 'net10.0' and '$(A2ASampleTestPartition)' != 'Client'">
     <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Build"
              Properties="A2ASampleTestPartition=Client" />
   </Target>
 
-  <!-- One project, two isolated test processes: the local server and packaged client APIs are incompatible. -->
-  <Target Name="RunPackagedA2AClientTests" BeforeTargets="VSTest" DependsOnTargets="RestorePackagedA2AClientTests"
-          Condition="'$(TargetFramework)' == 'net10.0' and '$(A2ADotNetRepoRoot)' != '' and '$(A2ASampleTestPartition)' != 'Client'">
+  <!-- One project, two isolated test processes: the Design 1 server and preview2 client APIs are incompatible. -->
+  <Target Name="RunPackagedA2AClientTests" BeforeTargets="VSTest"
+          Condition="'$(TargetFramework)' == 'net10.0' and '$(A2ASampleTestPartition)' != 'Client'">
     <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="VSTest"
              Properties="A2ASampleTestPartition=Client" />
   </Target>
