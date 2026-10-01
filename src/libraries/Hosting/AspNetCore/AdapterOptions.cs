@@ -20,8 +20,13 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public int ShutdownTimeoutSeconds { get; set; } = 60;
 
         /// <summary>
-        /// Gets or sets a value indicating whether stack traces should be emitted in OnTurnError output.
+        /// Gets or sets a value indicating whether stack traces should be emitted in
+        /// <see cref="Microsoft.Agents.Builder.IChannelAdapter.OnTurnError"/> trace output.
         /// </summary>
+        /// <remarks>
+        /// Stack traces are emitted only when this value is <see langword="true"/>.
+        /// The default value is <see langword="false"/>.
+        /// </remarks>
         public bool EmitStackTrace { get; set; } = false;
 
     }

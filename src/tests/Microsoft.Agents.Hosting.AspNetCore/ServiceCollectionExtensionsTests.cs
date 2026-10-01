@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.Adapters;
@@ -49,6 +50,31 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             };
 
             Assert.Equal(expected, services);
+        }
+
+        [Fact]
+        public async Task AddCloudAdapter_ShouldUseRegisteredErrorHandler()
+        {
+            var services = new ServiceCollection();
+            var channelServiceClientFactory = new Mock<IChannelServiceClientFactory>();
+            var errorHandler = new Mock<ICloudAdapterErrorHandler>();
+            var turnContext = new Mock<ITurnContext>();
+            var exception = new InvalidOperationException("test");
+            errorHandler
+                .Setup(handler => handler.HandleTurnErrorAsync(turnContext.Object, exception))
+                .Returns(Task.CompletedTask)
+                .Verifiable(Times.Once);
+            services.AddSingleton(channelServiceClientFactory.Object);
+            services.AddSingleton(errorHandler.Object);
+            services.AddLogging();
+            services.AddCloudAdapter();
+
+            using var provider = services.BuildServiceProvider();
+            var adapter = provider.GetRequiredService<CloudAdapter>();
+
+            await adapter.OnTurnError(turnContext.Object, exception);
+
+            errorHandler.Verify();
         }
 
         [Fact]
