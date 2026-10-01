@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Core.Models;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
@@ -52,15 +53,14 @@ internal sealed class InTaskAuthorizationContext
 
     public string AuthorizationRequestId { get; init; }
 
+    internal string DelegatedAccessToken { get; init; }
+
     internal IDictionary<string, TokenResponse> TokenResponses { get; } =
         new Dictionary<string, TokenResponse>(System.StringComparer.Ordinal);
 }
 
-internal sealed class ResumeAuthEventValue
+[JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
+[JsonSerializable(typeof(ResumeAuthRequest))]
+internal partial class InTaskAuthorizationJsonContext : JsonSerializerContext
 {
-    [JsonPropertyName("accessToken")]
-    public string AccessToken { get; init; }
-
-    [JsonPropertyName("message")]
-    public Message Message { get; init; }
 }

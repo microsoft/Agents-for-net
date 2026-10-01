@@ -18,7 +18,9 @@ using Microsoft.Agents.Extensions.A2A.ProtocolExtensions;
 using Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -28,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Security.Claims;
@@ -1083,7 +1086,9 @@ public class A2AAdapterTests
     {
         var connections = Mock.Of<IConnections>();
         var routed = 0;
-        JsonElement? resumeEventValue = null;
+        var resumeEventSeen = false;
+        object resumeEventValue = null;
+        JsonElement? resumeEventMessage = null;
         var record = UseRecord(record =>
         {
             var firstAuthorization = CreateInTaskAuthorization("first", record.Storage, connections);
@@ -1121,8 +1126,10 @@ public class A2AAdapterTests
             if (activity.IsType(ActivityTypes.Event)
                 && string.Equals(activity.Name, InTaskAuthorizationExtension.ResumeAuthEventName, StringComparison.Ordinal))
             {
-                resumeEventValue = JsonSerializer.SerializeToElement(
-                    activity.Value,
+                resumeEventSeen = true;
+                resumeEventValue = activity.Value;
+                resumeEventMessage = JsonSerializer.SerializeToElement(
+                    activity.ChannelData,
                     A2AJsonUtilities.DefaultOptions);
             }
         }));
@@ -1155,17 +1162,26 @@ public class A2AAdapterTests
             context.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
             context.Request.Headers.Authorization = "Bearer agent-jwt";
             context.Request.Headers["x-a2a-intask-authorization"] = token;
+            context.Request.Headers.Authorization = "Bearer request-jwt";
             AuthenticateContext(context, "agent-jwt");
 
-            IResult result;
             if (useHttpJson)
             {
-                result = await ((IA2AHttpAdapter)record.Adapter).ResumeAuthAsync(
-                    context.Request,
-                    context.Response,
+                var httpRequest = new ResumeAuthRequest
+                {
+                    TaskId = "body-task-must-not-win",
+                    ContextId = resumeParameters.ContextId,
+                    AuthorizationRequestId = resumeParameters.AuthorizationRequestId,
+                };
+                var body = JsonSerializer.Serialize(httpRequest);
+                Assert.DoesNotContain(token, body, StringComparison.Ordinal);
+                context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(body));
+                context.Request.ContentType = "application/json";
+                await ExecuteHttpResumeAuthAsync(
+                    record.Adapter,
                     record.Agent,
+                    context,
                     initialTask.Id,
-                    resumeParameters,
                     CancellationToken.None);
             }
             else
@@ -1177,13 +1193,13 @@ public class A2AAdapterTests
                     Params = JsonSerializer.SerializeToElement(resumeParameters),
                 };
                 context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request)));
-                result = await record.Adapter.ProcessJsonRpcAsync(
+                var result = await record.Adapter.ProcessJsonRpcAsync(
                     context.Request,
                     context.Response,
                     record.Agent,
                     CancellationToken.None);
+                await result.ExecuteAsync(context);
             }
-            await result.ExecuteAsync(context);
             return context;
         }
 
@@ -1205,7 +1221,7 @@ public class A2AAdapterTests
         resumeParameters.ContextId = contextId;
 
         var firstResumeContext = await ResumeAsync("first-token");
-        var secondAuthTask = ReadTaskResponse(firstResumeContext);
+        var secondAuthTask = ReadTaskResponse(firstResumeContext, useHttpJson);
         Assert.Equal(TaskState.AuthRequired, secondAuthTask.Status.State);
         Assert.Equal(0, routed);
         resumeParameters.AuthorizationRequestId = secondAuthTask.Status.Message.Metadata[InTaskAuthorizationExtension.Uri]
@@ -1219,13 +1235,14 @@ public class A2AAdapterTests
         Assert.True(
             !resumeResponseJson.Contains("\"error\"", StringComparison.Ordinal),
             $"{resumeResponseJson} Routed: {routed}");
-        var completedTask = ReadTaskResponse(resumeContext);
+        var completedTask = ReadTaskResponse(resumeContext, useHttpJson);
         Assert.Equal(TaskState.Completed, completedTask.Status.State);
         Assert.Equal("Tokens: first-token, second-token", completedTask.Status.Message.Parts[0].Text);
         Assert.Equal(1, routed);
-        Assert.True(resumeEventValue.HasValue);
-        Assert.Equal("second-token", resumeEventValue.Value.GetProperty("accessToken").GetString());
-        var resumeMessage = resumeEventValue.Value.GetProperty("message");
+        Assert.True(resumeEventSeen);
+        Assert.Null(resumeEventValue);
+        Assert.True(resumeEventMessage.HasValue);
+        var resumeMessage = resumeEventMessage.Value;
         Assert.Equal(initialTask.Id, resumeMessage.GetProperty("taskId").GetString());
         Assert.Equal(initialTask.ContextId, resumeMessage.GetProperty("contextId").GetString());
         Assert.Equal(
@@ -1538,10 +1555,15 @@ public class A2AAdapterTests
             });
     }
 
-    private static AgentTask ReadTaskResponse(DefaultHttpContext context)
+    private static AgentTask ReadTaskResponse(DefaultHttpContext context, bool isHttpJson = false)
     {
         context.Response.Body.Seek(0, SeekOrigin.Begin);
         var json = new StreamReader(context.Response.Body).ReadToEnd();
+        if (isHttpJson)
+        {
+            return ProtocolJsonSerializer.ToObject<AgentTask>(json);
+        }
+
         var response = ProtocolJsonSerializer.ToObject<JsonRpcResponse>(json);
         if (response.Result == null)
         {
@@ -1550,6 +1572,32 @@ public class A2AAdapterTests
         var result = response.Result.AsObject();
         return ProtocolJsonSerializer.ToObject<AgentTask>(
             result.TryGetPropertyValue("id", out _) ? result : result.GetAt(0).Value);
+    }
+
+    private static async Task ExecuteHttpResumeAuthAsync(
+        A2AAdapter adapter,
+        IAgent agent,
+        DefaultHttpContext context,
+        string taskId,
+        CancellationToken cancellationToken)
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddLogging();
+        builder.Services.AddSingleton(adapter);
+        builder.Services.AddSingleton(agent);
+
+        await using var app = builder.Build();
+        app.MapA2AHttp(requireAuth: false, path: "/a2a");
+        context.RequestServices = app.Services;
+        context.Request.RouteValues["taskId"] = taskId;
+        var endpoint = ((IEndpointRouteBuilder)app).DataSources
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Single(candidate =>
+                candidate.RoutePattern.RawText == "/a2a/tasks/{taskId}:resumeAuth");
+
+        cancellationToken.ThrowIfCancellationRequested();
+        await endpoint.RequestDelegate!(context);
     }
 
     private static DefaultHttpContext CreateHttpContext(string requestContent = null)
