@@ -170,6 +170,39 @@ public class InTaskAuthorizationOperationTests
     }
 
     [Fact]
+    public async Task DisposingOldScope_DoesNotRemoveReplacementWithSameRequestId()
+    {
+        var adapter = new A2AAdapter(new InMemoryTaskStore(), NullLoggerFactory.Instance);
+        var httpContext = CreateHttpContext();
+        var agent = Mock.Of<IAgent>();
+        await using var firstScope = await adapter.CreateRequestScopeAsync(
+            httpContext, agent, CancellationToken.None);
+        var duplicateHttpContext = CreateHttpContext();
+        duplicateHttpContext.TraceIdentifier = httpContext.TraceIdentifier;
+        await using var duplicateScope = await adapter.CreateRequestScopeAsync(
+            duplicateHttpContext, agent, CancellationToken.None);
+        Assert.Same(
+            firstScope.Context.Features.GetRequired<AgentRequestContext>(),
+            duplicateScope.Context.Features.GetRequired<AgentRequestContext>());
+
+        await firstScope.DisposeAsync();
+        await using var replacementScope = await adapter.CreateRequestScopeAsync(
+            httpContext, agent, CancellationToken.None);
+        Assert.NotSame(
+            firstScope.Context.Features.GetRequired<AgentRequestContext>(),
+            replacementScope.Context.Features.GetRequired<AgentRequestContext>());
+
+        await duplicateScope.DisposeAsync();
+
+        var turnContext = new TurnContext(
+            adapter, new Activity { RequestId = httpContext.TraceIdentifier });
+        Assert.Empty(await adapter.SendActivitiesAsync(turnContext, [], CancellationToken.None));
+        await replacementScope.DisposeAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            adapter.SendActivitiesAsync(turnContext, [], CancellationToken.None));
+    }
+
+    [Fact]
     public async Task CreateRequestScopeAsync_ProvidesRequestSpecificServerAndAgentContextFeature()
     {
         var adapter = new A2AAdapter(new InMemoryTaskStore(), NullLoggerFactory.Instance);

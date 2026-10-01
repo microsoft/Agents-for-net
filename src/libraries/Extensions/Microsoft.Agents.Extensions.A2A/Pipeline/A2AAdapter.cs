@@ -121,14 +121,9 @@ internal class A2AAdapter : ChannelAdapter
         };
     }
 
-    /// <inheritdoc/>
-    public Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
-    {
-        // Default to JsonRpc
-        return ProcessJsonRpcAsync(httpRequest, httpResponse, agent, cancellationToken);
-    }
-
-    /// <inheritdoc/>
+    /// <summary>
+    /// Creates a JSON-RPC result whose execution owns the request scope.
+    /// </summary>
     public async Task<IResult> ProcessJsonRpcAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
     {
         return await global::A2A.AspNetCore.A2AJsonRpcProcessor.ProcessRequestAsync(
@@ -139,7 +134,9 @@ internal class A2AAdapter : ChannelAdapter
             cancellationToken).ConfigureAwait(false);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Writes the composed Agent Card to the HTTP response.
+    /// </summary>
     public async Task ProcessAgentCardAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string pathPrefix, CancellationToken cancellationToken = default)
     {
         var agentCard = new A2AProtocolAgentCard()
@@ -468,10 +465,8 @@ internal class A2AAdapter : ChannelAdapter
 
     private static void RemoveAgentContext(AgentRequestContext context)
     {
-        foreach (var entry in _a2aAgentContext.Where(entry => ReferenceEquals(entry.Value, context)).ToList())
-        {
-            _a2aAgentContext.TryRemove(entry.Key, out _);
-        }
+        // A reused trace ID may now belong to a newer scope; remove only the original context.
+        _a2aAgentContext.TryRemove(new KeyValuePair<string, AgentRequestContext>(context.RequestId, context));
     }
 
     private static void ApplyActivatedExtensions(AgentRequestContext context, HttpResponse response)

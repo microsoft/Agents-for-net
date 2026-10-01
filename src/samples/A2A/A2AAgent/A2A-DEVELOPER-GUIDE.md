@@ -442,9 +442,12 @@ calls `resumeAuth`. The standard `Authorization` header continues to carry the
 JWT that authenticates the A2A request; the acquired user token is sent
 separately as the raw `x-a2a-intask-authorization` header value.
 
-The A2A extension converts `resumeAuth` to an event Activity whose value
-contains both the access token and the raw A2A message, then resumes the normal
-`AgentApplication.UserAuthorization` pipeline. A route with multiple
+The A2A extension reads the delegated token from
+`x-a2a-intask-authorization` and stores it in request-scoped
+`InTaskAuthorizationContext`, available only through turn services. It converts
+`resumeAuth` to an event Activity with a null `Activity.Value` and the raw A2A
+message in `ChannelData`, neither of which contains the token, then resumes the
+normal `AgentApplication.UserAuthorization` pipeline. A route with multiple
 `autoSigninHandlers` can complete the handlers separately, allowing multiple
 tokens during one A2A task.
 

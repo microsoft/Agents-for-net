@@ -37,8 +37,10 @@ sequenceDiagram
     Client->>Endpoint: resumeAuth(taskId, contextId, requestId)<br/>Authorization: Bearer endpoint JWT<br/>x-a2a-intask-authorization: raw user token
     Endpoint->>Adapter: ResumeAuthAsync / resumeAuth
     Adapter->>Adapter: Verify extension, parameters,<br/>Task state, and context ID
-    Adapter->>Adapter: Create Event Activity<br/>Value = ResumeAuthEventValue(token, raw Message)
+    Adapter->>Adapter: Read x-a2a-intask-authorization<br/>Store delegated token in request-scoped InTaskAuthorizationContext
+    Adapter->>Adapter: Create Event Activity<br/>Value = null; raw Message in ChannelData (no token)
     Adapter->>App: RunPipelineAsync(resumeAuth Event)
+    Note over Adapter,App: InTaskAuthorizationContext is available through turn services, not Activity.Value
     App->>UA: Continue auto sign-in
     UA->>A2AUA: SignInUserAsync(handler)
     A2AUA->>A2AUA: Validate authorization request ID
@@ -84,7 +86,7 @@ sequenceDiagram
 | --- | --- |
 | `A2AAdapter` (`resumeAuth` validation and Event Activity conversion) | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/Pipeline/A2AAdapter.cs` |
 | `InTaskAuthorizationExtension` (extension URI and token header) | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/ProtocolExtensions/InTaskAuthorization/InTaskAuthorizationExtension.cs` |
-| `ResumeAuthEventValue` and request context models | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/ProtocolExtensions/InTaskAuthorization/InTaskAuthorizationModels.cs` |
+| `ResumeAuthRequest` and request-scoped `InTaskAuthorizationContext` (delegated token exposed through turn services only) | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/ProtocolExtensions/InTaskAuthorization/InTaskAuthorizationModels.cs` |
 | `A2AUserAuthorization` (auth-required response, token validation, and OBO) | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/Authorization/A2AUserAuthorization.cs` |
 | `UserAuthorization` (per-handler turn-token cache) | `src/libraries/Builder/Microsoft.Agents.Builder/App/UserAuth/UserAuthorization.cs` |
 
@@ -93,6 +95,10 @@ sequenceDiagram
 - The endpoint JWT and user token are logically separate credentials.
 - The `x-a2a-intask-authorization` value is the raw token, without a `Bearer`
   prefix.
+- The adapter keeps the delegated token in request-scoped
+  `InTaskAuthorizationContext`, exposed to authorization through turn services.
+  The resume event's `Activity.Value` is null; neither the Activity nor the raw
+  A2A message in `ChannelData` contains the token.
 - A task can request additional handlers sequentially, allowing more than one
   user token during the task.
 - Opaque user tokens are supported when application-specific validation or

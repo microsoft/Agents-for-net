@@ -1160,7 +1160,6 @@ public class A2AAdapterTests
         {
             var context = CreateHttpContext(string.Empty);
             context.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
-            context.Request.Headers.Authorization = "Bearer agent-jwt";
             context.Request.Headers["x-a2a-intask-authorization"] = token;
             context.Request.Headers.Authorization = "Bearer request-jwt";
             AuthenticateContext(context, "agent-jwt");

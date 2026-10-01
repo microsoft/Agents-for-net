@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <A2ADotNetRepoCandidate>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\a2aproject\a2a-dotnet'))</A2ADotNetRepoCandidate>
+    <A2ADotNetRepoRoot Condition="'$(A2ADotNetRepoRoot)' == '' and Exists('$(A2ADotNetRepoCandidate)\src\A2A\A2A.csproj')">$(A2ADotNetRepoCandidate)</A2ADotNetRepoRoot>
+  </PropertyGroup>
+</Project>
