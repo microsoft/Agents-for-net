@@ -383,15 +383,12 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
         if (turnContext.Activity?.IsType(ActivityTypes.Event) == true
             && string.Equals(turnContext.Activity.Name, InTaskAuthorizationExtension.ResumeAuthEventName, StringComparison.Ordinal))
         {
-            var resumeValue = turnContext.Activity.Value switch
+            var delegatedAccessToken = turnContext.Services
+                .Get<InTaskAuthorizationContext>()
+                ?.DelegatedAccessToken;
+            if (!string.IsNullOrEmpty(delegatedAccessToken))
             {
-                ResumeAuthEventValue value => value,
-                JsonElement element => element.Deserialize<ResumeAuthEventValue>(A2AJsonUtilities.DefaultOptions),
-                _ => null,
-            };
-            if (!string.IsNullOrEmpty(resumeValue?.AccessToken))
-            {
-                return CreateTokenResponse(resumeValue.AccessToken);
+                return CreateTokenResponse(delegatedAccessToken);
             }
         }
 

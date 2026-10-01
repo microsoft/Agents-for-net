@@ -17,6 +17,11 @@ internal sealed class InTaskAuthorizationExtension : IA2AProtocolExtension
     public const string Uri = "https://schemas.microsoft.com/agents/a2a/extensions/in-task-authorization/v1";
 
     /// <summary>
+    /// The stable transport-neutral operation identity for resume authorization.
+    /// </summary>
+    public const string ResumeAuthOperationId = Uri + "#resumeAuth";
+
+    /// <summary>
     /// The JSON-RPC operation used to resume an interrupted authorization flow.
     /// </summary>
     public const string ResumeAuthOperation = "resumeAuth";
