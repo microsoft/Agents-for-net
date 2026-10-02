@@ -34,7 +34,7 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 
 ## Architecture
 
-The SDK is organized into layered libraries under `src/libraries/`. See `doc/architecture.md` for a architecture overview.
+The SDK is organized into layered libraries under `src/libraries/`. See `docs/architecture.md` for an architecture overview.
 
 ### Agent Pattern
 
