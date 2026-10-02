@@ -61,6 +61,33 @@ namespace Microsoft.Agents.Extensions.A2A.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to EnforceRequiredScopes requires at least one non-empty RequiredScopes value..
+        /// </summary>
+        internal static string AuthorizationRequiredScopesMissing {
+            get {
+                return ResourceManager.GetString("AuthorizationRequiredScopesMissing", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to RequiredScopes enforcement for handler &apos;{0}&apos; requires a delegated JWT with an scp claim..
+        /// </summary>
+        internal static string AuthorizationDelegatedJwtRequired {
+            get {
+                return ResourceManager.GetString("AuthorizationDelegatedJwtRequired", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The token for handler &apos;{0}&apos; is missing required scope(s): {1}..
+        /// </summary>
+        internal static string AuthorizationRequiredScopesNotGranted {
+            get {
+                return ResourceManager.GetString("AuthorizationRequiredScopesNotGranted", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Unexpected request token for handler &apos;{0}&apos;..
         /// </summary>
         internal static string UnexpectedRequestToken {

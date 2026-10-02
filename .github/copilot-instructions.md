@@ -34,7 +34,7 @@ dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
 
 ## Architecture
 
-The SDK is organized into layered libraries under `src/libraries/`. See `doc/architecture.md` for a architecture overview.
+The SDK is organized into layered libraries under `src/libraries/`. See `docs/architecture.md` for an architecture overview.
 
 ### Agent Pattern
 
@@ -83,6 +83,13 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 - Route builders accept `autoSignInHandlers` and route attributes accept `signInHandlers` parameter for per-route OAuth/SSO flows; Teams SSO and OBO via Azure Bot Token Service are supported
 - Feedback is the FeedbackLoop feature in `AgentApplication`; use `AgentApplication.OnFeedbackLoop()` or `[FeedbackLoopRoute]` rather than treating it as an MSTeams-specific feature.
 - Adaptive Cards support is handled by AgentApplication.AdaptiveCards
+
+### AgentExtension boundaries
+
+- Keep protocol-, channel-, and feature-specific implementation inside its AgentExtension project.
+- Do not add AgentExtension-specific behavior to Agents SDK Core, Builder, or Hosting.
+- Changes outside the extension project must provide a general-purpose extensibility capability.
+- Pull requests making such changes must explain why the extension cannot use existing extensibility points and identify the related Core documentation updates.
 
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
 - This is the older Teams Extension and should not be used.

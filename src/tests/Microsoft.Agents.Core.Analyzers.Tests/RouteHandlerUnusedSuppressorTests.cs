@@ -26,8 +26,37 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
                 {
                 }
 
+                [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = true)]
+                public sealed class RouteHandlerTypeAttribute : Attribute
+                {
+                    public RouteHandlerTypeAttribute(Type handlerType)
+                    {
+                    }
+                }
+
                 [AttributeUsage(AttributeTargets.Method)]
                 public class MessageRouteAttribute : Attribute, IRouteAttribute
+                {
+                }
+            }
+
+            namespace Microsoft.Agents.Extensions
+            {
+                using Microsoft.Agents.Builder.App;
+
+                [AttributeUsage(AttributeTargets.Method)]
+                [RouteHandlerType(typeof(Action))]
+                public class SkillAttribute : Attribute
+                {
+                }
+
+                [RouteHandlerType(typeof(Action))]
+                public class SkillBaseAttribute : Attribute
+                {
+                }
+
+                [AttributeUsage(AttributeTargets.Method)]
+                public class DerivedSkillAttribute : SkillBaseAttribute
                 {
                 }
             }
@@ -91,6 +120,69 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var diags = await GetSuppressedAwareDiagnosticsAsync(source);
             var diag = Assert.Single(diags, d => d.Id == "IDE0051");
             Assert.True(diag.IsSuppressed);
+        }
+
+        [Fact]
+        public async Task RouteHandlerTypeMethod_Ide0051_IsSuppressed()
+        {
+            const string source = """
+                using Microsoft.Agents.Extensions;
+
+                namespace MyApp
+                {
+                    public class MyAgent
+                    {
+                        [Skill]
+                        private void HandleSkill() { }
+                    }
+                }
+                """;
+
+            var diags = await GetSuppressedAwareDiagnosticsAsync(source);
+            var diag = Assert.Single(diags, d => d.Id == "IDE0051");
+            Assert.True(diag.IsSuppressed);
+        }
+
+        [Fact]
+        public async Task InheritedRouteHandlerTypeMethod_Ide0051_IsSuppressed()
+        {
+            const string source = """
+                using Microsoft.Agents.Extensions;
+
+                namespace MyApp
+                {
+                    public class MyAgent
+                    {
+                        [DerivedSkill]
+                        private void HandleSkill() { }
+                    }
+                }
+                """;
+
+            var diags = await GetSuppressedAwareDiagnosticsAsync(source);
+            var diag = Assert.Single(diags, d => d.Id == "IDE0051");
+            Assert.True(diag.IsSuppressed);
+        }
+
+        [Fact]
+        public async Task UnrelatedMethodAttribute_Ide0051_IsNotSuppressed()
+        {
+            const string source = """
+                using System;
+
+                namespace MyApp
+                {
+                    public class MyAgent
+                    {
+                        [Obsolete]
+                        private void TrulyUnused() { }
+                    }
+                }
+                """;
+
+            var diags = await GetSuppressedAwareDiagnosticsAsync(source);
+            var diag = Assert.Single(diags, d => d.Id == "IDE0051");
+            Assert.False(diag.IsSuppressed);
         }
 
         [Fact]

@@ -9,6 +9,10 @@
 *.userosscache
 *.sln.docstates
 target/
+/.worktrees/
+/docs/superpowers/
+/docs/plans/
+/.superpowers/
 
 # Cake
 /.cake
