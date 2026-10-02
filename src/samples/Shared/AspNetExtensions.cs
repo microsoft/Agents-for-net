@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.JsonWebTokens;
 
@@ -185,6 +186,33 @@ public static class AspNetExtensions
             validationOptions.OpenIdMetadataUrl = validationOptions.IsGov ? AuthenticationConstants.GovOpenIdMetadataUrl : AuthenticationConstants.PublicOpenIdMetadataUrl;
         }
 
+        if (validationOptions.AllowDynamicTenantIssuers)
+        {
+            if (validationOptions.AllowedCallers == null
+                || validationOptions.AllowedCallers.Count == 0
+                || validationOptions.AllowedCallers.Any(c => string.IsNullOrWhiteSpace(c) || c.Equals("*", StringComparison.Ordinal)))
+            {
+                throw new ArgumentException($"{nameof(TokenValidationOptions)}:{nameof(TokenValidationOptions.AllowedCallers)} must contain specific caller App IDs when dynamic tenant issuers are enabled.");
+            }
+
+            if (validationOptions.AzureBotServiceOnly)
+            {
+                throw new ArgumentException($"{nameof(TokenValidationOptions)}:{nameof(TokenValidationOptions.AzureBotServiceOnly)} cannot be combined with {nameof(TokenValidationOptions.AllowDynamicTenantIssuers)}.");
+            }
+
+            var expectedHost = validationOptions.IsGov ? "login.microsoftonline.us" : "login.microsoftonline.com";
+            if (!Uri.TryCreate(validationOptions.OpenIdMetadataUrl, UriKind.Absolute, out var metadataUrl)
+                || metadataUrl.Scheme != Uri.UriSchemeHttps
+                || !string.Equals(metadataUrl.Host, expectedHost, StringComparison.OrdinalIgnoreCase)
+                || !metadataUrl.IsDefaultPort
+                || !string.IsNullOrEmpty(metadataUrl.UserInfo)
+                || !string.IsNullOrEmpty(metadataUrl.Query)
+                || !string.IsNullOrEmpty(metadataUrl.Fragment))
+            {
+                throw new ArgumentException($"{nameof(TokenValidationOptions)}:{nameof(TokenValidationOptions.OpenIdMetadataUrl)} must use the configured Entra cloud when dynamic tenant issuers are enabled.");
+            }
+        }
+
         var openIdMetadataRefresh = validationOptions.OpenIdMetadataRefresh ?? BaseConfigurationManager.DefaultAutomaticRefreshInterval;
 
         _ = services.AddAuthentication(options =>
@@ -206,6 +234,12 @@ public static class AspNetExtensions
                 ValidateIssuerSigningKey = true,
                 RequireSignedTokens = true,
             };
+
+            if (validationOptions.AllowDynamicTenantIssuers)
+            {
+                options.TokenValidationParameters.IssuerValidator = (issuer, token, parameters) =>
+                    ValidateDynamicIssuer(issuer, token, parameters, validationOptions);
+            }
 
             // Using Microsoft.IdentityModel.Validators
             options.TokenValidationParameters.EnableAadSigningKeyIssuerValidation();
@@ -236,7 +270,7 @@ public static class AspNetExtensions
                     JsonWebToken token = new(parts[1]);
                     string issuer = token.Issuer;
 
-                    if (validationOptions.AzureBotServiceTokenHandling 
+                    if (validationOptions.AzureBotServiceTokenHandling
                         && IsBotFrameworkIssuer(issuer))
                     {
                         // Use the Azure Bot authority for this configuration manager
@@ -307,6 +341,85 @@ public static class AspNetExtensions
         });
     }
 
+    private static string ValidateDynamicIssuer(string issuer, SecurityToken token, TokenValidationParameters parameters, TokenValidationOptions options)
+    {
+        if (string.IsNullOrEmpty(issuer) || token == null)
+        {
+            throw new SecurityTokenInvalidIssuerException("Token issuer is missing or invalid.");
+        }
+
+        if (IsBotFrameworkIssuer(issuer))
+        {
+            // Defaults are cloud-specific; explicit entries in ValidIssuers retain their existing trust override.
+            if (options.AzureBotServiceTokenHandling
+                && parameters.ValidIssuers?.Contains(issuer) == true)
+            {
+                return issuer;
+            }
+
+            throw new SecurityTokenInvalidIssuerException("Azure Bot Service issuer is not enabled or allowed.");
+        }
+
+        var isConfiguredIssuer = parameters.ValidIssuers?.Contains(issuer) == true;
+        if (isConfiguredIssuer)
+        {
+            // Explicitly trusted issuers retain the same allow-list and post-validation checks as strict mode.
+            return issuer;
+        }
+
+        if (IsCanonicalEntraIssuer(issuer, options.IsGov))
+        {
+            // The shared claim helper permits missing tenant IDs and unrecognized issuers for the
+            // existing flow. Dynamic issuers must first have one raw tid and a canonical cloud URL.
+            var claims = token switch
+            {
+                JsonWebToken jsonWebToken => jsonWebToken.Claims.ToList(),
+                System.IdentityModel.Tokens.Jwt.JwtSecurityToken jwtToken => jwtToken.Claims.ToList(),
+                _ => []
+            };
+            var tenants = claims.Where(claim => claim.Type == AuthenticationConstants.TenantIdClaim).ToList();
+
+            if (tenants.Count != 1
+                || !Guid.TryParseExact(tenants[0].Value, "D", out var tokenTenant)
+                || tokenTenant == Guid.Empty)
+            {
+                throw new SecurityTokenInvalidIssuerException("Token tenant ID does not match its issuer.");
+            }
+
+            var identity = new ClaimsIdentity([new Claim(AuthenticationConstants.IssuerClaim, issuer)]);
+            identity.AddClaims(claims.Where(claim => claim.Type != AuthenticationConstants.IssuerClaim));
+            if (!identity.IsTenantIdIssuerValid())
+            {
+                throw new SecurityTokenInvalidIssuerException("Token tenant ID does not match its issuer.");
+            }
+
+            return issuer;
+        }
+
+        throw new SecurityTokenInvalidIssuerException("Token issuer is not an allowed canonical Entra issuer.");
+    }
+
+    private static bool IsCanonicalEntraIssuer(string issuer, bool isGov)
+    {
+        const string v1Prefix = "https://sts.windows.net/";
+        var v2Prefix = isGov ? "https://login.microsoftonline.us/" : "https://login.microsoftonline.com/";
+        const string v2Suffix = "/v2.0";
+
+        string? tenantText = null;
+        if (issuer.StartsWith(v1Prefix, StringComparison.Ordinal) && issuer.EndsWith("/", StringComparison.Ordinal))
+        {
+            tenantText = issuer.Substring(v1Prefix.Length, issuer.Length - v1Prefix.Length - 1);
+        }
+        else if (issuer.StartsWith(v2Prefix, StringComparison.Ordinal) && issuer.EndsWith(v2Suffix, StringComparison.Ordinal))
+        {
+            tenantText = issuer.Substring(v2Prefix.Length, issuer.Length - v2Prefix.Length - v2Suffix.Length);
+        }
+
+        return tenantText?.Length == 36
+            && Guid.TryParseExact(tenantText, "D", out var tenantId)
+            && tenantId != Guid.Empty;
+    }
+
     /// <summary>
     /// Settings that control JWT bearer token validation for Azure Bot Service and agent-to-agent requests.
     /// Read from the <c>TokenValidation</c> configuration section by <see cref="AspNetExtensions.AddAgentAspNetAuthentication(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration, System.String)"/>.
@@ -335,6 +448,16 @@ public static class AspNetExtensions
         /// See also <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceOnly"/> to default this to just the BotFramework issuer.
         /// </summary>
         public IList<string>? ValidIssuers { get; set; }
+
+        /// <summary>
+        /// Allows canonical Entra issuers from runtime-selected tenants when their tenant GUID matches the
+        /// token's <c>tid</c> claim. Disabled by default; issuer validation stays enabled in both modes.
+        /// Supported only for public and US Government Entra metadata authorities. Configure
+        /// <see cref="AspNetExtensions.TokenValidationOptions.AllowedCallers"/> with specific App IDs; unrestricted
+        /// callers and <see cref="AspNetExtensions.TokenValidationOptions.AzureBotServiceOnly"/> are rejected at startup.
+        /// Enforce required roles or scopes when accepting callers from multiple tenants.
+        /// </summary>
+        public bool AllowDynamicTenantIssuers { get; set; } = false;
 
         /// <summary>
         /// Set to <c>true</c> for Azure Government (USGov) cloud deployments.  Defaults to <c>false</c> (Public cloud).
