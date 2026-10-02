@@ -258,8 +258,16 @@ namespace Microsoft.Agents.Builder.App.UserAuth
             var signInState = await GetSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
             string? activeFlowName = signInState.ActiveHandler;
             bool flowContinuation = activeFlowName != null;
-            bool autoSignIn = forceAuto || (_startSignIn != null && await _startSignIn(turnContext, cancellationToken));
 
+            if (flowContinuation && turnContext.Activity.IsType(ActivityTypes.EndOfConversation))
+            {
+                await _dispatcher.ResetStateAsync(turnContext, activeFlowName, cancellationToken).ConfigureAwait(false);
+                await DeleteSignInStateAsync(turnContext, cancellationToken).ConfigureAwait(false);
+                await turnState.SaveStateAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
+                return false;
+            }
+
+            bool autoSignIn = forceAuto || (_startSignIn != null && await _startSignIn(turnContext, cancellationToken));
             if (autoSignIn || flowContinuation)
             {
                 // Auth flow hasn't start yet.

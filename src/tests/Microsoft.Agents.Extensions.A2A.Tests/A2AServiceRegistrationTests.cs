@@ -3,6 +3,7 @@
 
 using Microsoft.Agents.Builder.Adapters;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.DependencyInjection;

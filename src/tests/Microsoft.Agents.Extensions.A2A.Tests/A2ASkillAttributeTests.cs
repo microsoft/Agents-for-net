@@ -4,6 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Storage;
 
 namespace Microsoft.Agents.Extensions.A2A.Tests
 {
@@ -372,9 +378,53 @@ namespace Microsoft.Agents.Extensions.A2A.Tests
 
             // Assert
             Assert.NotNull(attributeUsage);
-            Assert.Equal(AttributeTargets.Class, attributeUsage.ValidOn);
+            Assert.Equal(AttributeTargets.Method, attributeUsage.ValidOn);
             Assert.True(attributeUsage.Inherited);
             Assert.True(attributeUsage.AllowMultiple);
+        }
+
+        [Fact]
+        public void Skill_FluentRegistration_RecordsDescriptionRouteAndHandlers()
+        {
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)null));
+            var extension = new A2AAgentExtension(app);
+            A2ARouteHandler handler = (_, _, _) => Task.CompletedTask;
+
+            extension.Skill("weather", skill => skill
+                .WithName("Weather")
+                .WithDescription("Gets the current weather.")
+                .WithTags("weather", "forecast")
+                .WithExamples("What is the weather?")
+                .WithInputModes("text")
+                .WithOutputModes("text")
+                .OnMessage("-weather", handler, autoSigninHandlers: ["request"], rank: 42, isAgenticOnly: true));
+
+            var registration = Assert.Single(extension.SkillRegistrations);
+            Assert.Equal("weather", registration.Id);
+            Assert.Equal("Weather", registration.Name);
+            Assert.Equal("Gets the current weather.", registration.Description);
+            Assert.Equal(["weather", "forecast"], registration.Tags);
+            Assert.Equal(["What is the weather?"], registration.Examples);
+            Assert.Equal(["text"], registration.InputModes);
+            Assert.Equal(["text"], registration.OutputModes);
+            Assert.NotNull(registration.RouteSelector);
+            Assert.Same(handler, registration.Handler);
+            Assert.Equal((ushort)42, registration.Rank);
+            Assert.True(registration.IsAgenticOnly);
+            Assert.Equal(["request"], registration.AutoSignInHandlers);
+        }
+
+        [Fact]
+        public void Skill_WhitespacePaddedHandlerNames_NormalizesRegistration()
+        {
+            var app = new AgentApplication(new AgentApplicationOptions((IStorage)null));
+            var extension = new A2AAgentExtension(app);
+
+            extension.Skill("weather", skill => skill
+                .OnMessage("-weather", (_, _, _) => Task.CompletedTask, autoSigninHandlers: [" request ", "\tprofile\r\n"]));
+
+            var registration = Assert.Single(extension.SkillRegistrations);
+            Assert.Equal(["request", "profile"], registration.AutoSignInHandlers);
         }
 
         [Fact]
