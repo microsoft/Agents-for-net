@@ -28,7 +28,8 @@ When working on streaming message delivery, read `docs/streaming-response-sequen
 |---------|----------|--------------|
 | Teams | 1000ms | StreamId from first response |
 | WebChat / DirectLine | 500ms | Pre-generated GUID |
-| DeliveryMode.Stream (A2A) | 100ms | Pre-generated GUID |
+| DeliveryMode.Stream (SSE transport) | 100ms | Pre-generated GUID |
+| M365 Copilot with DeliveryMode.Stream | 100ms | Pre-generated GUID; includes keep-alive and timeout fallback |
 | Other / ExpectReplies | N/A | Non-streaming fallback |
 
 ## Error Scenarios
@@ -36,6 +37,7 @@ When working on streaming message delivery, read `docs/streaming-response-sequen
 - **ContentStreamNotAllowed** → user canceled on client; returns `UserCancelled`
 - **BadArgument + "streaming api is not enabled"** → disables streaming for this turn (does not cancel)
 - **Other errors** → cancels stream; returns `Error`
+- **M365 Copilot** → while the queue is empty, sends an inactivity notice after 35 seconds from stream start or the last informative update; at 1 minute 45 seconds it stops streaming and falls back to normal final delivery
 
 ## Related Source Files
 
