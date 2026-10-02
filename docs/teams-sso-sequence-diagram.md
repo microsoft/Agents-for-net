@@ -86,8 +86,8 @@ sequenceDiagram
     activate TokenService
     TokenService-->>UserAuthorization: TokenResponse (200)
     deactivate TokenService
+    UserAuthorization->>UserAuthorization: Mark FlowState complete<br/>and persist it
     UserAuthorization->>UserAuthorization: Set Turn Token
-    UserAuthorization->>UserAuthorization: Delete FlowState
     UserAuthorization->>UserAuthorization: Async Proactive(Continuation Activity)
     UserAuthorization-->>AgentApplication: SignIn (complete)
     deactivate UserAuthorization
@@ -181,8 +181,8 @@ sequenceDiagram
     activate TokenService
     TokenService-->>UserAuthorization: TokenResponse (200)
     deactivate TokenService
+    UserAuthorization->>UserAuthorization: Mark FlowState complete<br/>and persist it
     UserAuthorization->>UserAuthorization: Set Turn Token
-    UserAuthorization->>UserAuthorization: Delete FlowState
     UserAuthorization->>UserAuthorization: Async Proactive(Continuation Activity)
     UserAuthorization-->>AgentApplication: SignIn (complete)
     deactivate UserAuthorization
@@ -274,3 +274,9 @@ sequenceDiagram
 | Token Service Client | `src/libraries/Client/Microsoft.Agents.Connector/` |
 | AgentApplication (SignIn orchestration) | `src/libraries/Builder/Microsoft.Agents.Builder/App/AgentApplication.cs` |
 
+## Accuracy Notes
+
+- A successful token exchange sets `FlowState.FlowStarted = false` and writes the state record. Terminal failures and explicit reset/sign-out paths delete the persisted flow-state record.
+- A Teams consent-required response is `412`. Teams obtains consent and retries `signin/tokenExchange`; it is not the same flow as the `signin/verifyState` magic-code invoke.
+- The proactive continuation replays the original activity in a new turn because the current turn is an Invoke with a response-time requirement.
+- The diagrams collapse `UserAuthorizationDispatcher`, `AzureBotUserAuthorization`, `OAuthFlow`, and `IUserTokenClient` into `UserAuthorization` and `TokenService`. See `oauth-internal-sequence-diagram.md` for those boundaries.
