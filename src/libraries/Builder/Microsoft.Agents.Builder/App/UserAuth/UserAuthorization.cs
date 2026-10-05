@@ -481,6 +481,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         private static string GetStorageKey(ITurnContext turnContext)
         {
+            var keyProvider = turnContext.Services.Get<IUserAuthorizationStateKeyProvider>();
+            if (keyProvider != null)
+            {
+                return keyProvider.GetKey(turnContext);
+            }
+
             // This key is used since per conversation, a user can only have one active flow at a time.
             var channelId = turnContext.Activity.ChannelId?.Channel ?? throw new InvalidOperationException("invalid activity-missing ChannelId");
             var userId = turnContext.Activity.From?.Id ?? throw new InvalidOperationException("invalid activity-missing From.Id");

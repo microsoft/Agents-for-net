@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.A2A.Errors;
@@ -169,7 +170,14 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
 
         try
         {
-            return await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+            var canBindUserState = _settings.Mode != A2AUserAuthorizationMode.InTask
+                || (exchangeScopes?.Count ?? _settings.OBOScopes?.Count ?? 0) > 0;
+            var response = await HandleOBO(turnContext, tokenResponse, exchangeConnection, exchangeScopes, cancellationToken).ConfigureAwait(false);
+            if (canBindUserState)
+            {
+                await BindUserStateAsync(turnContext, token, cancellationToken).ConfigureAwait(false);
+            }
+            return response;
         }
         catch (Exception)
         {
@@ -178,6 +186,34 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
                 await SignOutUserAsync(turnContext, cancellationToken).ConfigureAwait(false);
             }
             throw;
+        }
+    }
+
+    private static async Task BindUserStateAsync(
+        ITurnContext turnContext,
+        string token,
+        CancellationToken cancellationToken)
+    {
+        var userId = A2AUserIdentity.GetUserIdFromTrustedToken(token);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return;
+        }
+
+        var activityUserId = turnContext.Activity.From?.Id;
+        if (!string.IsNullOrEmpty(activityUserId)
+            && !string.Equals(activityUserId, userId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("A2A OAuth identity does not match the user identity already bound to this turn.");
+        }
+
+        turnContext.Activity.From ??= new ChannelAccount { Role = RoleTypes.User };
+        turnContext.Activity.From.Id = userId;
+
+        var turnState = turnContext.Services.Get<ITurnState>();
+        if (turnState != null && !turnState.User.IsLoaded())
+        {
+            await turnState.User.LoadAsync(turnContext, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
     }
 
