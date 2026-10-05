@@ -1,11 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.State
 {
@@ -20,15 +17,6 @@ namespace Microsoft.Agents.Builder.State
     public class UserState(IStorage storage) : AgentState(storage, ScopeName)
     {
         public static readonly string ScopeName = "user";
-
-        /// <inheritdoc/>
-        public override Task LoadAsync(ITurnContext turnContext, bool force = false, CancellationToken cancellationToken = default)
-        {
-            return string.Equals(turnContext.Activity.ChannelId?.Channel, Channels.A2A, StringComparison.Ordinal)
-                && string.IsNullOrEmpty(turnContext.Activity.From?.Id)
-                ? Task.CompletedTask
-                : base.LoadAsync(turnContext, force, cancellationToken);
-        }
 
         /// <summary>
         /// Gets the key to use when reading and writing state to and from storage.

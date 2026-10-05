@@ -8,6 +8,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Adapters;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -532,6 +533,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             context.Services.Set(a2aContext);
             context.Services.Set<IUserAuthorizationStateKeyProvider>(
                 new A2AUserAuthorizationStateKeyProvider(a2aContext.TaskId));
+            context.Services.Set<IAgentStateLoadPolicy>(A2AStateLoadPolicy.Instance);
         }
         if (a2aEventQueue != null)
         {
@@ -568,6 +570,17 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             var channelId = turnContext.Activity.ChannelId?.Channel
                 ?? throw new InvalidOperationException("invalid activity-missing ChannelId");
             return $"oauth/{channelId}/{taskId}/userAuthorizationState";
+        }
+    }
+
+    private sealed class A2AStateLoadPolicy : IAgentStateLoadPolicy
+    {
+        public static readonly A2AStateLoadPolicy Instance = new();
+
+        public bool ShouldLoad(ITurnContext turnContext, IAgentState agentState)
+        {
+            return agentState.Name != UserState.ScopeName
+                || !string.IsNullOrEmpty(turnContext.Activity.From?.Id);
         }
     }
 

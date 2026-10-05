@@ -1408,6 +1408,85 @@ public class A2AAdapterTests
         Assert.Equal("authorized:True", completedTask.Status.Message.Parts[0].Text);
     }
 
+    [Fact]
+    public async Task ResumeAuthAsync_WithDifferentDelegatedIdentity_DoesNotRunProtectedRoute()
+    {
+        var initialToken = CreateDelegatedToken("tenant-route", "user-a");
+        var resumeToken = CreateDelegatedToken("tenant-route", "user-b");
+        IList<string> oboScopes = ["User.Read"];
+        var accessTokenProvider = new Mock<IAccessTokenProvider>();
+        accessTokenProvider
+            .As<IOBOExchange>()
+            .Setup(provider => provider.AcquireTokenOnBehalfOf(oboScopes, resumeToken))
+            .ReturnsAsync(new TokenResponse
+            {
+                Token = "trusted-downstream-token",
+                Expiration = DateTimeOffset.UtcNow.AddMinutes(30),
+            });
+        IAccessTokenProvider configuredProvider = accessTokenProvider.Object;
+        var connections = new Mock<IConnections>();
+        connections
+            .Setup(value => value.TryGetConnection("user-state-obo", out configuredProvider))
+            .Returns(true);
+        var routeRan = false;
+        var record = UseRecord(record =>
+        {
+            var authorization = CreateInTaskAuthorization(
+                "request",
+                record.Storage,
+                connections.Object,
+                "user-state-obo",
+                oboScopes);
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections.Object,
+                    authorization)
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                },
+            };
+            var agent = new TestApplication(options);
+            var extension = new A2AAgentExtension(agent);
+            agent.RegisteredExtensions.Add(extension);
+            extension.Skill("protected", skill => skill
+                .OnMessage("Hello", async (context, state, cancellationToken) =>
+                {
+                    routeRan = true;
+                    await context.SendActivityAsync("protected", cancellationToken: cancellationToken);
+                }, autoSigninHandlers: ["request"]));
+            return agent;
+        });
+
+        var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("route-oauth-identity-switch")));
+        initialContext.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+        var initialIdentity = new ClaimsIdentity(
+            new JwtSecurityTokenHandler().ReadJwtToken(initialToken).Claims,
+            authenticationType: "Bearer");
+        AuthenticateContext(initialContext, initialToken, initialIdentity);
+        var initialResult = await record.Adapter.ProcessJsonRpcAsync(
+            initialContext.Request,
+            initialContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await initialResult.ExecuteAsync(initialContext);
+
+        var initialTask = ReadTaskResponse(initialContext);
+        var resumeContext = CreateResumeAuthContext(initialTask, resumeToken);
+
+        var resumeResult = await record.Adapter.ProcessJsonRpcAsync(
+            resumeContext.Request,
+            resumeContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await resumeResult.ExecuteAsync(resumeContext);
+
+        Assert.False(routeRan);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

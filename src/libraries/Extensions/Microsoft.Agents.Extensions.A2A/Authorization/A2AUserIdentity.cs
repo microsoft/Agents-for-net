@@ -27,13 +27,13 @@ internal static class A2AUserIdentity
             ?? identity.FindFirst(MappedObjectIdClaim)?.Value;
         if (!string.IsNullOrEmpty(tenantId) && !string.IsNullOrEmpty(objectId))
         {
-            return $"oauth:{issuer ?? "entra"}:{tenantId}:{objectId}";
+            return $"oauth:{Encode(issuer ?? "entra")}:{Encode(tenantId)}:{Encode(objectId)}";
         }
 
         var subject = identity.FindFirst("sub")?.Value
             ?? identity.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return !string.IsNullOrEmpty(issuer) && !string.IsNullOrEmpty(subject)
-            ? $"oauth:{issuer}:{subject}"
+            ? $"oauth:{Encode(issuer)}:{Encode(subject)}"
             : null;
     }
 
@@ -53,6 +53,11 @@ internal static class A2AUserIdentity
         {
             return null;
         }
+    }
+
+    private static string Encode(string value)
+    {
+        return Uri.EscapeDataString(value);
     }
 
     private static bool IsDelegated(ClaimsIdentity identity)

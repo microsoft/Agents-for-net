@@ -267,6 +267,14 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 return false;
             }
 
+            if (flowContinuation
+                && string.IsNullOrEmpty(turnContext.Activity.From?.Id)
+                && !string.IsNullOrEmpty(signInState.ContinuationActivity?.From?.Id))
+            {
+                turnContext.Activity.From ??= new ChannelAccount { Role = RoleTypes.User };
+                turnContext.Activity.From.Id = signInState.ContinuationActivity.From.Id;
+            }
+
             bool autoSignIn = forceAuto || (_startSignIn != null && await _startSignIn(turnContext, cancellationToken));
             if (autoSignIn || flowContinuation)
             {

@@ -21,14 +21,18 @@ OAuth user ID to `Activity.From.Id`. User state then uses the normal
 channel-and-user storage key:
 
 ```text
-a2a/users/oauth:{issuer}:{tenant-id}:{object-id}
+a2a/users/oauth:{encoded-issuer}:{encoded-tenant-id}:{encoded-object-id}
 ```
 
 If tenant and object ID claims are unavailable, the identity can fall back to:
 
 ```text
-a2a/users/oauth:{issuer}:{subject}
+a2a/users/oauth:{encoded-issuer}:{encoded-subject}
 ```
+
+Each identity component is percent-encoded independently before the key is
+composed so delimiters within claim values cannot make distinct identities
+produce the same storage key.
 
 The identity must be authenticated and have evidence that it represents a
 delegated user. The extension recognizes delegated scope claims (`scp`,
@@ -44,7 +48,8 @@ This produces the following behavior:
 | Authenticated application-only request | Unavailable |
 | In-task token returned without trusted validation | Unavailable |
 | In-task delegated JWT validated by a successful OBO exchange | Loaded before the protected route runs |
-| Validated token without a derivable delegated identity, including an opaque token | Unavailable |
+| Exchanged JWT without a derivable delegated identity | Unavailable |
+| Opaque in-task token with OBO scopes configured | OBO cannot complete; the task remains authorization-required |
 
 ## Request-token authorization
 
@@ -117,9 +122,10 @@ token to the route, but it does not use the token to bind user state.
 When OBO scopes are configured, a successful OBO exchange establishes trusted
 validation of the supplied token. The handler then derives the user ID from
 the original delegated JWT, assigns it to `Activity.From.Id`, and loads user
-state before replaying the protected route. If the token is opaque or otherwise
-does not contain a derivable delegated identity, the authorization flow can
-still complete, but user state remains unavailable.
+state before replaying the protected route. An exchanged JWT without a
+derivable delegated identity can complete authorization without making user
+state available. An opaque token is non-exchangeable, so it cannot complete
+the OBO path and the task remains authorization-required.
 
 ```mermaid
 sequenceDiagram
