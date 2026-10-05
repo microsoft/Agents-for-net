@@ -17,10 +17,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -87,6 +89,17 @@ public class A2AAgentStartupTests
         using Activity? activity = source.StartActivity("test-operation");
 
         Assert.NotNull(activity);
+    }
+
+    [Fact]
+    public void ConfigureBuilder_CollectsA2AMetrics()
+    {
+        using WebApplication app = BuildApp(Environments.Development, configureTokenValidation: false);
+        _ = app.Services.GetRequiredService<MeterProvider>();
+        using var meter = new Meter("A2A");
+        Counter<long> counter = meter.CreateCounter<long>("test-counter");
+
+        Assert.True(counter.Enabled);
     }
 
     [Fact]
