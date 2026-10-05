@@ -17,8 +17,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -71,6 +73,20 @@ public class A2AAgentStartupTests
 
         Assert.True(A2AAgentStartup.ShouldEnableTokenValidation(configuration, new StubEnvironment(Environments.Production)));
         Assert.False(A2AAgentStartup.ShouldEnableTokenValidation(configuration, new StubEnvironment(Environments.Development)));
+    }
+
+    [Theory]
+    [InlineData("A2A")]
+    [InlineData("A2A.AspNetCore")]
+    public void ConfigureBuilder_CollectsA2ATraces(string sourceName)
+    {
+        using WebApplication app = BuildApp(Environments.Development, configureTokenValidation: false);
+        _ = app.Services.GetRequiredService<TracerProvider>();
+        using var source = new ActivitySource(sourceName);
+
+        using Activity? activity = source.StartActivity("test-operation");
+
+        Assert.NotNull(activity);
     }
 
     [Fact]
