@@ -394,8 +394,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 if (turnContext.Activity.IsType(ActivityTypes.Invoke)
                     && (turnContext.Activity.Name == SignInConstants.TokenExchangeOperationName || turnContext.Activity.Name == SignInConstants.VerifyStateOperationName))
                 {
-                    _app.Logger.LogWarning("UserAuthorization: Received Invoke:{Invoke.Name} but an OAuthFlow is not active for user '{User.Id}' using handler '{Handler.Name}'", 
-                        turnContext.Activity.Name, turnContext.Activity.From.Id, handlerName ?? DefaultHandlerName);
+                    _app.Logger.LogWarning("UserAuthorization: Received Invoke:{Invoke.Name} but an OAuthFlow is not active using handler '{Handler.Name}'",
+                        turnContext.Activity.Name, handlerName ?? DefaultHandlerName);
 
                     // This would mean we've received an OAuth related request, but we aren't in an active flow.
                     // For Invoke activities, set the InvokeResponse since the user won't seen any sent activities.
