@@ -60,11 +60,11 @@ public partial class MyAgent : AgentApplication
         }
         else if (inMessage?.MessageId.StartsWith("tck-input-required") == true)
         {
-            await updater.RequireInputAsync(null!, cancellationToken);
+            await updater.RequireInputAsync(null!, cancellationToken: cancellationToken);
         }
         else if (inMessage?.MessageId.StartsWith("tck-complete-task") == true)
         {
-            await updater.CompleteAsync(updater.NewAgentMessage("Hello from TCK"), cancellationToken);
+            await updater.CompleteAsync(updater.NewAgentMessage("Hello from TCK"), cancellationToken: cancellationToken);
         }
         else if (inMessage?.MessageId.StartsWith("tck-message-response") == true)
         {
