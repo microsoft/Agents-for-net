@@ -186,11 +186,13 @@ public static class A2AServiceExtensions
 
     private static RouteGroupBuilder MapJsonRpcMethods(this RouteGroupBuilder routeGroup, string prefixPath = "")
     {
-        routeGroup.MapA2A(
-            CreateRequestScopeAsync,
-            Dispatch.Handlers,
-            Dispatch.JsonRpcBindings,
-            prefixPath)
+        var operationGroup = routeGroup.MapGroup("");
+        operationGroup.AddEndpointFilter(UseRequestContextAsync);
+        operationGroup.MapA2A(
+            A2AAdapter.RequestHandlerProxy,
+            prefixPath,
+            Dispatch.Registry,
+            Dispatch.JsonRpcBindings)
             .WithMetadata(new AcceptsMetadata(["application/json"]))
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status200OK, contentTypes: ["text/event-stream"]))
             .WithMetadata(new ProducesResponseTypeMetadata(StatusCodes.Status202Accepted));
@@ -198,39 +200,32 @@ public static class A2AServiceExtensions
         return routeGroup;
     }
 
-    private static ValueTask<A2ARequestScope> CreateRequestScopeAsync(
-        HttpContext context,
-        CancellationToken cancellationToken)
+    private static async ValueTask<object?> UseRequestContextAsync(
+        EndpointFilterInvocationContext invocationContext,
+        EndpointFilterDelegate next)
     {
-        var adapter = context.RequestServices.GetRequiredService<A2AAdapter>();
-        var agent = context.RequestServices.GetRequiredService<IAgent>();
-        return adapter.CreateRequestScopeAsync(context, agent, cancellationToken);
+        var adapter = invocationContext.HttpContext.RequestServices.GetRequiredService<A2AAdapter>();
+        var agent = invocationContext.HttpContext.RequestServices.GetRequiredService<IAgent>();
+        using var scope = adapter.BeginRequest(invocationContext.HttpContext, agent);
+        return await next(invocationContext).ConfigureAwait(false);
     }
 
     private static A2AEndpointDispatch CreateDispatch()
     {
-        var operationBuilder = new A2AOperationCatalogBuilder();
-        var standard = operationBuilder.AddStandardA2AOperations();
+        var operationBuilder = new A2ACustomOperationRegistryBuilder();
         var resumeAuth = InTaskAuthorizationOperation.AddOperation(operationBuilder);
-        var operations = operationBuilder.Build();
+        var registry = operationBuilder.Build();
 
-        var handlers = new A2AOperationHandlerCatalogBuilder()
-            .AddStandardA2AHandlers(standard)
-            .Map(resumeAuth, A2AAdapter.ResumeAuthAsync)
-            .Build(operations);
-
-        var jsonRpcBuilder = new A2AJsonRpcOperationBindingBuilder()
-            .AddStandardA2AJsonRpcBindings(standard);
+        var jsonRpcBuilder = new A2AJsonRpcCustomOperationBuilder();
         InTaskAuthorizationOperation.AddJsonRpcBinding(jsonRpcBuilder, resumeAuth);
 
-        var httpBuilder = new A2AHttpOperationBindingBuilder()
-            .AddStandardA2AHttpBindings(standard);
+        var httpBuilder = new A2AHttpCustomOperationBuilder();
         InTaskAuthorizationOperation.AddHttpBinding(httpBuilder, resumeAuth);
 
         return new A2AEndpointDispatch(
-            handlers,
-            jsonRpcBuilder.Build(operations),
-            httpBuilder.Build());
+            registry,
+            jsonRpcBuilder.Build(registry),
+            httpBuilder.Build(registry));
     }
 
     /// <summary>
@@ -266,17 +261,19 @@ public static class A2AServiceExtensions
             $"{prefixPath}/card",
             async (HttpRequest request, HttpResponse response, [FromServices] A2AAdapter adapter, [FromServices] IAgent agent, CancellationToken cancellationToken) =>
                 await adapter.ProcessAgentCardAsync(request, response, agent, prefixPath, cancellationToken));
-        routeGroup.MapHttpA2A(
-            CreateRequestScopeAsync,
-            Dispatch.Handlers,
-            Dispatch.HttpBindings,
-            prefixPath);
+        var operationGroup = routeGroup.MapGroup("");
+        operationGroup.AddEndpointFilter(UseRequestContextAsync);
+        operationGroup.MapHttpA2A(
+            A2AAdapter.RequestHandlerProxy,
+            prefixPath,
+            Dispatch.Registry,
+            Dispatch.HttpBindings);
 
         return routeGroup;
     }
 }
 
 internal sealed record A2AEndpointDispatch(
-    A2AOperationHandlerCatalog Handlers,
-    A2AJsonRpcOperationBindings JsonRpcBindings,
-    A2AHttpOperationBindings HttpBindings);
+    A2ACustomOperationRegistry Registry,
+    A2AJsonRpcCustomOperationBindings JsonRpcBindings,
+    A2AHttpCustomOperationBindings HttpBindings);

@@ -3,10 +3,10 @@
 
 using A2A;
 using A2A.AspNetCore;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,31 +17,33 @@ internal static class InTaskAuthorizationOperation
     private static readonly A2AOperationId OperationId =
         new(InTaskAuthorizationExtension.ResumeAuthOperationId);
 
-    internal static A2AOperation<ResumeAuthRequest, AgentTask> AddOperation(
-        A2AOperationCatalogBuilder builder)
+    internal static A2ACustomOperation<ResumeAuthRequest, AgentTask> AddOperation(
+        A2ACustomOperationRegistryBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        return builder.DefineUnary<ResumeAuthRequest, AgentTask>(
+        return builder.Map<ResumeAuthRequest, AgentTask>(
             OperationId,
+            A2AAdapter.ResumeAuthAsync,
+            InTaskAuthorizationJsonContext.Default.ResumeAuthRequest,
+            (System.Text.Json.Serialization.Metadata.JsonTypeInfo<AgentTask>)
+                A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(AgentTask)),
             ValidateRequest);
     }
 
     internal static void AddJsonRpcBinding(
-        A2AJsonRpcOperationBindingBuilder builder,
-        A2AOperation<ResumeAuthRequest, AgentTask> operation)
+        A2AJsonRpcCustomOperationBuilder builder,
+        A2ACustomOperation<ResumeAuthRequest, AgentTask> operation)
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(operation);
         builder.Map(
             InTaskAuthorizationExtension.ResumeAuthOperation,
-            operation,
-            InTaskAuthorizationJsonContext.Default.ResumeAuthRequest,
-            GetA2ATypeInfo<AgentTask>());
+            operation);
     }
 
     internal static void AddHttpBinding(
-        A2AHttpOperationBindingBuilder builder,
-        A2AOperation<ResumeAuthRequest, AgentTask> operation)
+        A2AHttpCustomOperationBuilder builder,
+        A2ACustomOperation<ResumeAuthRequest, AgentTask> operation)
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(operation);
@@ -49,8 +51,7 @@ internal static class InTaskAuthorizationOperation
             HttpMethods.Post,
             "/tasks/{taskId}:resumeAuth",
             operation,
-            BindHttpRequestAsync,
-            GetA2ATypeInfo<AgentTask>());
+            BindHttpRequestAsync);
     }
 
     private static async ValueTask<ResumeAuthRequest> BindHttpRequestAsync(
@@ -92,7 +93,4 @@ internal static class InTaskAuthorizationOperation
                 A2AErrorCode.InvalidParams);
         }
     }
-
-    private static JsonTypeInfo<T> GetA2ATypeInfo<T>() =>
-        (JsonTypeInfo<T>)A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(T));
 }
