@@ -15,7 +15,7 @@ OAuth configuration, see the [A2A developer guide](A2A-DEVELOPER-GUIDE.md).
 ## Prerequisites
 
 - A .NET SDK that can build `net10.0` projects.
-- The [A2AClient sample](../A2AClient/README.md) or another A2A client.
+- The [A2ACli sample](../A2ACli/README.md) or another A2A client.
 - For the authenticated Graph profile skills, a Microsoft Entra application configured as
   described in [Configure the authenticated sample](#configure-the-authenticated-sample).
 
@@ -43,7 +43,7 @@ dotnet run --project src\samples\A2A\A2AAgent\A2AAgent.csproj
 In another terminal, start the sample client:
 
 ```powershell
-dotnet run --project src\samples\A2A\A2AClient\A2AClient.csproj -- --agent http://localhost:3978/a2a
+dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- --agent http://localhost:3978/a2a
 ```
 
 Send ordinary text, `-stream`, or `-multi`. The shipped placeholders leave token
@@ -154,7 +154,7 @@ In `OAuthFlows.DeviceCode.Scopes`, `{{ClientId}}` is the application (client)
 ID of the **A2AAgent's Entra app registration**. It is
 the same app registration where `access_as_user` is defined under **Expose an
 API**, and the same ID used by `TokenValidation:Audiences`. It is not the
-A2AClient's client ID or a Microsoft Graph application ID. The resulting Agent
+A2ACli's client ID or a Microsoft Graph application ID. The resulting Agent
 API scope URI is:
 `api://botid-<A2AAgent-client-id>/access_as_user`.
 
@@ -174,7 +174,7 @@ the exchange before the protected route runs.
 
 ### Configure and run the client
 
-Configure the [A2AClient sample](../A2AClient/README.md) with:
+Configure the [A2ACli sample](../A2ACli/README.md) with:
 
 - `Authentication:Providers:entra:Registrations:delegated:ClientId` set to the
   Agent API client ID.
@@ -218,5 +218,5 @@ Expected failures:
 ## Further reading
 
 - [Develop A2A agents with the Microsoft 365 Agents SDK](A2A-DEVELOPER-GUIDE.md)
-- [A2AClient sample](../A2AClient/README.md)
+- [A2ACli sample](../A2ACli/README.md)
 - [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
