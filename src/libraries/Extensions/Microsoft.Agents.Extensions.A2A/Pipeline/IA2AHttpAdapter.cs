@@ -75,7 +75,7 @@ internal interface IA2AHttpAdapter : IAgentHttpAdapter
     /// <summary>
     /// Resumes a task-scoped authorization request.
     /// </summary>
-    Task<IResult> ResumeAuthAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string taskId, ResumeAuthRequest request, CancellationToken cancellationToken = default);
+    Task<IResult> AuthResponseAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, string taskId, AuthResponseRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sends an A2A message and returns a streaming result.

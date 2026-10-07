@@ -62,7 +62,7 @@ exchange:
   `Authorization` header.
 - `graph-intask` uses `InTask`. Invoking `-me-intask` without a task credential
   returns `TASK_STATE_AUTH_REQUIRED`; the client acquires the token and calls
-  `resumeAuth` with the raw token in `x-a2a-intask-authorization`. The normal
+  `auth-response` with the raw token in `x-a2a-intask-authorization`. The normal
   `Authorization` header remains available for the request-authentication JWT.
 
 Both handlers validate the delegated JWT against every configured
@@ -164,7 +164,7 @@ API scope URI is:
 Because `RequiredScopes` is omitted, it defaults to every key in
 `OAuthFlows.DeviceCode.Scopes`. `EnforceRequiredScopes` makes
 `A2AUserAuthorization` validate the request token for `-me-agentcard` or the
-credential submitted to `resumeAuth` for `-me-intask` before OBO. Every
+credential submitted to `auth-response` for `-me-intask` before OBO. Every
 required scope must appear in the token's `scp` claim; for Microsoft Entra
 resource-qualified scope URIs, the handler compares the final permission value
 such as `access_as_user`. The option is disabled by default and does not support
@@ -204,7 +204,7 @@ To exercise the Agents SDK In-Task authorization extension, send:
 ```
 
 The client receives the task-scoped OAuth flow in the auth-required status,
-acquires an Agent API token, and calls `resumeAuth` with that token in the
+acquires an Agent API token, and calls `auth-response` with that token in the
 `x-a2a-intask-authorization` header. The normal `Authorization` header remains
 reserved for the JWT that authenticates the A2A request.
 

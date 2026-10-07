@@ -2,7 +2,11 @@
 
 Shows how an A2A task requests a user token after the task has started. The
 standard `Authorization` header continues to authenticate the A2A request,
-while `x-a2a-intask-authorization` carries the raw user token for `resumeAuth`.
+while `x-a2a-intask-authorization` carries the raw user token for `auth-response`.
+These headers intentionally use different value formats. The standard
+`Authorization` header uses the `Bearer` authentication scheme. The
+`x-a2a-intask-authorization` header contains only the user token, without the
+scheme name.
 
 ## Diagram
 
@@ -34,11 +38,11 @@ sequenceDiagram
     Client->>OAuth: Run advertised OAuth flow
     OAuth-->>Client: User access token
 
-    Client->>Endpoint: resumeAuth(taskId, contextId, requestId)<br/>Authorization: Bearer endpoint JWT<br/>x-a2a-intask-authorization: raw user token
-    Endpoint->>Adapter: ResumeAuthAsync / resumeAuth
+    Client->>Endpoint: auth-response(taskId, contextId, requestId)<br/>Authorization: Bearer endpoint JWT<br/>x-a2a-intask-authorization: raw user token
+    Endpoint->>Adapter: AuthResponseAsync / auth-response
     Adapter->>Adapter: Verify extension, parameters,<br/>Task state, and context ID
-    Adapter->>Adapter: Create Event Activity<br/>Value = ResumeAuthEventValue(token, raw Message)
-    Adapter->>App: RunPipelineAsync(resumeAuth Event)
+    Adapter->>Adapter: Create Event Activity<br/>Value = AuthResponseEventValue(token, raw Message)
+    Adapter->>App: RunPipelineAsync(auth-response Event)
     App->>UA: Continue auto sign-in
     UA->>A2AUA: SignInUserAsync(handler)
     A2AUA->>A2AUA: Validate authorization request ID
@@ -60,7 +64,7 @@ sequenceDiagram
         A2AUA-->>Adapter: Send another authorization-required Activity
         Adapter->>Store: Save next TASK_STATE_AUTH_REQUIRED
         Adapter-->>Client: Auth-required Task for next handler
-        Note over Client,Adapter: Repeat OAuth acquisition and resumeAuth for the next handler
+        Note over Client,Adapter: Repeat OAuth acquisition and auth-response for the next handler
     end
 
     UA-->>App: Sign-in complete
@@ -82,16 +86,17 @@ sequenceDiagram
 
 | Component | Location |
 | --- | --- |
-| `A2AAdapter` (`resumeAuth` validation and Event Activity conversion) | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/Pipeline/A2AAdapter.cs` |
+| `A2AAdapter` (`auth-response` validation and Event Activity conversion) | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/Pipeline/A2AAdapter.cs` |
 | `InTaskAuthorizationExtension` (extension URI and token header) | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/ProtocolExtensions/InTaskAuthorization/InTaskAuthorizationExtension.cs` |
-| `ResumeAuthEventValue` and request context models | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/ProtocolExtensions/InTaskAuthorization/InTaskAuthorizationModels.cs` |
+| `AuthResponseEventValue` and request context models | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/ProtocolExtensions/InTaskAuthorization/InTaskAuthorizationModels.cs` |
 | `A2AUserAuthorization` (auth-required response, token validation, and OBO) | `src/libraries/Extensions/Microsoft.Agents.Extensions.A2A/Authorization/A2AUserAuthorization.cs` |
 | `UserAuthorization` (per-handler turn-token cache) | `src/libraries/Builder/Microsoft.Agents.Builder/App/UserAuth/UserAuthorization.cs` |
 
 ## Important Behavior
 
 - The endpoint JWT and user token are logically separate credentials.
-- The `x-a2a-intask-authorization` value is the raw token, without a `Bearer`
+- `Bearer` in the diagram belongs only to the standard `Authorization` header.
+  The `x-a2a-intask-authorization` value is the raw token without a `Bearer`
   prefix.
 - A task can request additional handlers sequentially, allowing more than one
   user token during the task.

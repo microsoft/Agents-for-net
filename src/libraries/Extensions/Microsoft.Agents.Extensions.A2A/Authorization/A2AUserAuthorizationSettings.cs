@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Extensions.A2A.Authorization;
 /// <para>
 /// In <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.RequestToken"/> mode, the handler supplies the validated
 /// inbound request token to the AgentApplication authorization pipeline. In
-/// <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.InTask"/> mode, a <c>resumeAuth</c>
+/// <see cref="Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode.InTask"/> mode, an <c>auth-response</c>
 /// request supplies the delegated token through the <c>x-a2a-intask-authorization</c> header while the standard
 /// HTTP <c>Authorization</c> header remains available for request authentication.
 /// </para>

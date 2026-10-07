@@ -32,7 +32,7 @@ internal sealed class InTaskOAuth2Scheme
     public OAuthFlows Flows { get; set; }
 }
 
-internal sealed class ResumeAuthRequest
+internal sealed class AuthResponseRequest
 {
     [JsonPropertyName("taskId")]
     public string TaskId { get; set; }
@@ -56,7 +56,7 @@ internal sealed class InTaskAuthorizationContext
         new Dictionary<string, TokenResponse>(System.StringComparer.Ordinal);
 }
 
-internal sealed class ResumeAuthEventValue
+internal sealed class AuthResponseEventValue
 {
     [JsonPropertyName("accessToken")]
     public string AccessToken { get; init; }
