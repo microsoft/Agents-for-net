@@ -78,7 +78,7 @@ internal sealed class A2AInTaskAuthorizationClient
                 authorization.AuthorizationRequest.RequiredScopes);
             string token = await _accessTokenProvider.GetAccessTokenAsync(authentication, cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("The OAuth flow did not return an access token.");
-            var resumeRequest = new ResumeAuthRequest
+            var authResponseRequest = new AuthResponseRequest
             {
                 TaskId = task.Id,
                 ContextId = task.ContextId,
@@ -86,8 +86,8 @@ internal sealed class A2AInTaskAuthorizationClient
             };
 
             using var request = _isJsonRpc
-                ? CreateJsonRpcRequest(resumeRequest, token)
-                : CreateHttpJsonRequest(resumeRequest, token);
+                ? CreateJsonRpcRequest(authResponseRequest, token)
+                : CreateHttpJsonRequest(authResponseRequest, token);
             using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             using JsonDocument document = await JsonDocument.ParseAsync(
@@ -97,13 +97,13 @@ internal sealed class A2AInTaskAuthorizationClient
                 ? jsonRpcResult
                 : document.RootElement;
             task = result.Deserialize<AgentTask>(A2AJsonUtilities.DefaultOptions)
-                ?? throw new InvalidOperationException("The resumeAuth response did not contain an A2A task.");
+                ?? throw new InvalidOperationException("The auth-response result did not contain an A2A task.");
         }
 
         return task;
     }
 
-    private HttpRequestMessage CreateJsonRpcRequest(ResumeAuthRequest request, string token)
+    private HttpRequestMessage CreateJsonRpcRequest(AuthResponseRequest request, string token)
     {
         var message = new HttpRequestMessage(HttpMethod.Post, _interfaceUri)
         {
@@ -111,7 +111,7 @@ internal sealed class A2AInTaskAuthorizationClient
             {
                 jsonrpc = "2.0",
                 id = Guid.NewGuid().ToString("N"),
-                method = "resumeAuth",
+                method = "auth-response",
                 @params = request,
             }, options: A2AJsonUtilities.DefaultOptions),
         };
@@ -119,12 +119,12 @@ internal sealed class A2AInTaskAuthorizationClient
         return message;
     }
 
-    private HttpRequestMessage CreateHttpJsonRequest(ResumeAuthRequest request, string token)
+    private HttpRequestMessage CreateHttpJsonRequest(AuthResponseRequest request, string token)
     {
         var baseUri = _interfaceUri.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
             ? _interfaceUri
             : new Uri($"{_interfaceUri.AbsoluteUri}/", UriKind.Absolute);
-        var requestUri = new Uri(baseUri, $"tasks/{Uri.EscapeDataString(request.TaskId)}:resumeAuth");
+        var requestUri = new Uri(baseUri, $"tasks/{Uri.EscapeDataString(request.TaskId)}:auth-response");
         A2AAgentOrigin.EnsureCredentialTarget(A2AAgentOrigin.FromAgentUrl(_interfaceUri), requestUri);
         var message = new HttpRequestMessage(HttpMethod.Post, requestUri)
         {
@@ -164,7 +164,7 @@ internal sealed class A2AInTaskAuthorizationClient
         public OAuthFlows Flows { get; init; } = new();
     }
 
-    private sealed class ResumeAuthRequest
+    private sealed class AuthResponseRequest
     {
         [JsonPropertyName("taskId")]
         public string TaskId { get; init; } = string.Empty;

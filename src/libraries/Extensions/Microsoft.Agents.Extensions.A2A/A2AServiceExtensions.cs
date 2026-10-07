@@ -237,8 +237,8 @@ public static class A2AServiceExtensions
         routeGroup.MapPost($"{prefixPath}/tasks/{{id}}:cancel", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>
             adapter.CancelTaskAsync(request, response, agent, id, cancellationToken));
 
-        routeGroup.MapPost($"{prefixPath}/tasks/{{id}}:resumeAuth", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromBody] ResumeAuthRequest resumeRequest, CancellationToken cancellationToken) =>
-            adapter.ResumeAuthAsync(request, response, agent, id, resumeRequest, cancellationToken));
+        routeGroup.MapPost($"{prefixPath}/tasks/{{id}}:auth-response", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, [FromBody] AuthResponseRequest authResponseRequest, CancellationToken cancellationToken) =>
+            adapter.AuthResponseAsync(request, response, agent, id, authResponseRequest, cancellationToken));
 
         // /v1/tasks/{id}:subscribe endpoint
         routeGroup.MapGet($"{prefixPath}/tasks/{{id}}:subscribe", (HttpRequest request, HttpResponse response, IA2AHttpAdapter adapter, IAgent agent, string id, CancellationToken cancellationToken) =>

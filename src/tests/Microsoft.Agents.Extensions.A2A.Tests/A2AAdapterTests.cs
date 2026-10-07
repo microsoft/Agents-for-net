@@ -550,7 +550,7 @@ public class A2AAdapterTests
         var extension = Assert.Single(agentCard.Capabilities.Extensions);
         Assert.Equal(InTaskAuthorizationExtension.Uri, extension.Uri);
         Assert.False(extension.Required);
-        Assert.Equal("resumeAuth", extension.Params!.Value.GetProperty("operations").GetProperty("jsonRpc").GetString());
+        Assert.Equal("auth-response", extension.Params!.Value.GetProperty("operations").GetProperty("jsonRpc").GetString());
         Assert.False(extension.Params.Value.TryGetProperty("credentialHeader", out _));
         Assert.DoesNotContain(agentCard.SecuritySchemes.Values, scheme => scheme.OAuth2SecurityScheme != null);
         Assert.Null(agentCard.SecurityRequirements);
@@ -1079,7 +1079,7 @@ public class A2AAdapterTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task ResumeAuthAsync_WithMatchingRequest_ReplaysOriginalActivity(bool useHttpJson)
+    public async Task AuthResponseAsync_WithMatchingRequest_ReplaysOriginalActivity(bool useHttpJson)
     {
         var connections = Mock.Of<IConnections>();
         var routed = 0;
@@ -1119,7 +1119,7 @@ public class A2AAdapterTests
         record.Adapter.Use(new CaptureActivityMiddleware(activity =>
         {
             if (activity.IsType(ActivityTypes.Event)
-                && string.Equals(activity.Name, InTaskAuthorizationExtension.ResumeAuthEventName, StringComparison.Ordinal))
+                && string.Equals(activity.Name, InTaskAuthorizationExtension.AuthResponseEventName, StringComparison.Ordinal))
             {
                 resumeEventValue = JsonSerializer.SerializeToElement(
                     activity.Value,
@@ -1142,7 +1142,7 @@ public class A2AAdapterTests
             [$"oauth/{Channels.A2A}/{initialTask.Id}/userAuthorizationState"],
             CancellationToken.None);
         Assert.NotEmpty(signInState);
-        var resumeParameters = new ResumeAuthRequest
+        var resumeParameters = new AuthResponseRequest
         {
             TaskId = initialTask.Id,
             ContextId = initialTask.ContextId,
@@ -1160,7 +1160,7 @@ public class A2AAdapterTests
             IResult result;
             if (useHttpJson)
             {
-                result = await ((IA2AHttpAdapter)record.Adapter).ResumeAuthAsync(
+                result = await ((IA2AHttpAdapter)record.Adapter).AuthResponseAsync(
                     context.Request,
                     context.Response,
                     record.Agent,
@@ -1173,7 +1173,7 @@ public class A2AAdapterTests
                 var request = new JsonRpcRequest
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Method = InTaskAuthorizationExtension.ResumeAuthOperation,
+                    Method = InTaskAuthorizationExtension.AuthResponseOperation,
                     Params = JsonSerializer.SerializeToElement(resumeParameters),
                 };
                 context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request)));
