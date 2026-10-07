@@ -553,7 +553,7 @@ public class A2AAdapterTests
         var extension = Assert.Single(agentCard.Capabilities.Extensions);
         Assert.Equal(InTaskAuthorizationExtension.Uri, extension.Uri);
         Assert.False(extension.Required);
-        Assert.Equal("resumeAuth", extension.Params!.Value.GetProperty("operations").GetProperty("jsonRpc").GetString());
+        Assert.Equal("auth-response", extension.Params!.Value.GetProperty("operations").GetProperty("jsonRpc").GetString());
         Assert.False(extension.Params.Value.TryGetProperty("credentialHeader", out _));
         Assert.DoesNotContain(agentCard.SecuritySchemes.Values, scheme => scheme.OAuth2SecurityScheme != null);
         Assert.Null(agentCard.SecurityRequirements);
@@ -1082,7 +1082,7 @@ public class A2AAdapterTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task ResumeAuthAsync_WithMatchingRequest_ReplaysOriginalActivity(bool useHttpJson)
+    public async Task AuthResponseAsync_WithMatchingRequest_ReplaysOriginalActivity(bool useHttpJson)
     {
         var connections = Mock.Of<IConnections>();
         var routed = 0;
@@ -1124,7 +1124,7 @@ public class A2AAdapterTests
         record.Adapter.Use(new CaptureActivityMiddleware(activity =>
         {
             if (activity.IsType(ActivityTypes.Event)
-                && string.Equals(activity.Name, InTaskAuthorizationExtension.ResumeAuthEventName, StringComparison.Ordinal))
+                && string.Equals(activity.Name, InTaskAuthorizationExtension.AuthResponseEventName, StringComparison.Ordinal))
             {
                 resumeEventSeen = true;
                 resumeEventValue = activity.Value;
@@ -1149,7 +1149,7 @@ public class A2AAdapterTests
             [$"oauth/{Channels.A2A}/{initialTask.Id}/userAuthorizationState"],
             CancellationToken.None);
         Assert.NotEmpty(signInState);
-        var resumeParameters = new ResumeAuthRequest
+        var resumeParameters = new AuthResponseRequest
         {
             TaskId = initialTask.Id,
             ContextId = initialTask.ContextId,
@@ -1167,7 +1167,7 @@ public class A2AAdapterTests
 
             if (useHttpJson)
             {
-                var httpRequest = new ResumeAuthRequest
+                var httpRequest = new AuthResponseRequest
                 {
                     TaskId = "body-task-must-not-win",
                     ContextId = resumeParameters.ContextId,
@@ -1177,7 +1177,7 @@ public class A2AAdapterTests
                 Assert.DoesNotContain(token, body, StringComparison.Ordinal);
                 context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(body));
                 context.Request.ContentType = "application/json";
-                await ExecuteHttpResumeAuthAsync(
+                await ExecuteHttpAuthResponseAsync(
                     record.Adapter,
                     record.Agent,
                     context,
@@ -1189,7 +1189,7 @@ public class A2AAdapterTests
                 var request = new JsonRpcRequest
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Method = InTaskAuthorizationExtension.ResumeAuthOperation,
+                    Method = InTaskAuthorizationExtension.AuthResponseOperation,
                     Params = JsonSerializer.SerializeToElement(resumeParameters),
                 };
                 context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request)));
@@ -1574,7 +1574,7 @@ public class A2AAdapterTests
             result.TryGetPropertyValue("id", out _) ? result : result.GetAt(0).Value);
     }
 
-    private static async Task ExecuteHttpResumeAuthAsync(
+    private static async Task ExecuteHttpAuthResponseAsync(
         A2AAdapter adapter,
         IAgent agent,
         DefaultHttpContext context,
@@ -1594,7 +1594,7 @@ public class A2AAdapterTests
             .SelectMany(source => source.Endpoints)
             .OfType<RouteEndpoint>()
             .Single(candidate =>
-                candidate.RoutePattern.RawText == "/a2a/tasks/{taskId}:resumeAuth");
+                candidate.RoutePattern.RawText == "/a2a/tasks/{taskId}:auth-response");
 
         cancellationToken.ThrowIfCancellationRequested();
         await endpoint.RequestDelegate!(context);

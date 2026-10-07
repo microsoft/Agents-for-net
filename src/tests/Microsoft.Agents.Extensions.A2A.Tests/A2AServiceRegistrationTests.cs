@@ -37,7 +37,7 @@ public class A2AServiceRegistrationTests
     }
 
     [Fact]
-    public async Task EndpointOverloads_MapStandardAndResumeAuthThroughUpstreamBindings()
+    public async Task EndpointOverloads_MapStandardAndAuthResponseThroughUpstreamBindings()
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddLogging();
@@ -54,7 +54,7 @@ public class A2AServiceRegistrationTests
 
         Assert.Contains("/json-rpc", routes);
         Assert.Contains("/http-json/message:send", routes);
-        Assert.Contains("/http-json/tasks/{taskId}:resumeAuth", routes);
+        Assert.Contains("/http-json/tasks/{taskId}:auth-response", routes);
         Assert.Equal("A2A.AspNetCore", typeof(A2AJsonRpcProcessor).Assembly.GetName().Name);
     }
 }

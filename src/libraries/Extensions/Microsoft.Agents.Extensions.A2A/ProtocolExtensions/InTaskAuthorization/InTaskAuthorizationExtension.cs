@@ -19,17 +19,17 @@ internal sealed class InTaskAuthorizationExtension : IA2AProtocolExtension
     /// <summary>
     /// The stable transport-neutral operation identity for resume authorization.
     /// </summary>
-    public const string ResumeAuthOperationId = Uri + "#resumeAuth";
+    public const string AuthResponseOperationId = Uri + "#auth-response";
 
     /// <summary>
     /// The JSON-RPC operation used to resume an interrupted authorization flow.
     /// </summary>
-    public const string ResumeAuthOperation = "resumeAuth";
+    public const string AuthResponseOperation = "auth-response";
 
     /// <summary>
     /// The Activity event name used to route a resume request through AgentApplication.
     /// </summary>
-    public const string ResumeAuthEventName = Uri + "/resumeAuth";
+    public const string AuthResponseEventName = Uri + "/auth-response";
 
     /// <summary>
     /// The request header carrying the delegated access token for a resume request.
@@ -49,8 +49,8 @@ internal sealed class InTaskAuthorizationExtension : IA2AProtocolExtension
             {
                 operations = new
                 {
-                    jsonRpc = ResumeAuthOperation,
-                    httpJson = "POST /tasks/{taskId}:resumeAuth",
+                    jsonRpc = AuthResponseOperation,
+                    httpJson = "POST /tasks/{taskId}:auth-response",
                 },
             }),
         };

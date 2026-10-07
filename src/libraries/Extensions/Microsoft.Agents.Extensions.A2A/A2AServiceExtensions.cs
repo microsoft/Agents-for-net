@@ -213,14 +213,14 @@ public static class A2AServiceExtensions
     private static A2AEndpointDispatch CreateDispatch()
     {
         var operationBuilder = new A2ACustomOperationRegistryBuilder();
-        var resumeAuth = InTaskAuthorizationOperation.AddOperation(operationBuilder);
+        var authResponse = InTaskAuthorizationOperation.AddOperation(operationBuilder);
         var registry = operationBuilder.Build();
 
         var jsonRpcBuilder = new A2AJsonRpcCustomOperationBuilder();
-        InTaskAuthorizationOperation.AddJsonRpcBinding(jsonRpcBuilder, resumeAuth);
+        InTaskAuthorizationOperation.AddJsonRpcBinding(jsonRpcBuilder, authResponse);
 
         var httpBuilder = new A2AHttpCustomOperationBuilder();
-        InTaskAuthorizationOperation.AddHttpBinding(httpBuilder, resumeAuth);
+        InTaskAuthorizationOperation.AddHttpBinding(httpBuilder, authResponse);
 
         return new A2AEndpointDispatch(
             registry,

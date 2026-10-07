@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using A2A;
@@ -271,7 +271,7 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
         }
 
         if (turnContext.Activity?.IsType(ActivityTypes.Event) == true
-            && string.Equals(turnContext.Activity.Name, InTaskAuthorizationExtension.ResumeAuthEventName, StringComparison.Ordinal))
+            && string.Equals(turnContext.Activity.Name, InTaskAuthorizationExtension.AuthResponseEventName, StringComparison.Ordinal))
         {
             ValidateResumeRequest(task, resume);
 
@@ -346,7 +346,7 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             || task.Status.Message?.Metadata == null
             || !task.Status.Message.Metadata.TryGetValue(InTaskAuthorizationExtension.Uri, out JsonElement metadata))
         {
-            throw new InvalidOperationException("The resumeAuth request does not match an authorization-required task.");
+            throw new InvalidOperationException("The auth-response request does not match an authorization-required task.");
         }
 
         var request = metadata.Deserialize<InTaskAuthorizationRequest>(A2AJsonUtilities.DefaultOptions);
@@ -355,7 +355,7 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             resume.AuthorizationRequestId,
             StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("The resumeAuth request does not match the active authorization request.");
+            throw new InvalidOperationException("The auth-response request does not match the active authorization request.");
         }
     }
 
@@ -381,7 +381,7 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
     private TokenResponse CreateTokenResponse(ITurnContext turnContext)
     {
         if (turnContext.Activity?.IsType(ActivityTypes.Event) == true
-            && string.Equals(turnContext.Activity.Name, InTaskAuthorizationExtension.ResumeAuthEventName, StringComparison.Ordinal))
+            && string.Equals(turnContext.Activity.Name, InTaskAuthorizationExtension.AuthResponseEventName, StringComparison.Ordinal))
         {
             var delegatedAccessToken = turnContext.Services
                 .Get<InTaskAuthorizationContext>()

@@ -15,16 +15,16 @@ namespace Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization
 internal static class InTaskAuthorizationOperation
 {
     private static readonly A2AOperationId OperationId =
-        new(InTaskAuthorizationExtension.ResumeAuthOperationId);
+        new(InTaskAuthorizationExtension.AuthResponseOperationId);
 
-    internal static A2ACustomOperation<ResumeAuthRequest, AgentTask> AddOperation(
+    internal static A2ACustomOperation<AuthResponseRequest, AgentTask> AddOperation(
         A2ACustomOperationRegistryBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        return builder.Map<ResumeAuthRequest, AgentTask>(
+        return builder.Map<AuthResponseRequest, AgentTask>(
             OperationId,
-            A2AAdapter.ResumeAuthAsync,
-            InTaskAuthorizationJsonContext.Default.ResumeAuthRequest,
+            A2AAdapter.AuthResponseAsync,
+            InTaskAuthorizationJsonContext.Default.AuthResponseRequest,
             (System.Text.Json.Serialization.Metadata.JsonTypeInfo<AgentTask>)
                 A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(AgentTask)),
             ValidateRequest);
@@ -32,64 +32,64 @@ internal static class InTaskAuthorizationOperation
 
     internal static void AddJsonRpcBinding(
         A2AJsonRpcCustomOperationBuilder builder,
-        A2ACustomOperation<ResumeAuthRequest, AgentTask> operation)
+        A2ACustomOperation<AuthResponseRequest, AgentTask> operation)
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(operation);
         builder.Map(
-            InTaskAuthorizationExtension.ResumeAuthOperation,
+            InTaskAuthorizationExtension.AuthResponseOperation,
             operation);
     }
 
     internal static void AddHttpBinding(
         A2AHttpCustomOperationBuilder builder,
-        A2ACustomOperation<ResumeAuthRequest, AgentTask> operation)
+        A2ACustomOperation<AuthResponseRequest, AgentTask> operation)
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(operation);
         builder.Map(
             HttpMethods.Post,
-            "/tasks/{taskId}:resumeAuth",
+            "/tasks/{taskId}:auth-response",
             operation,
             BindHttpRequestAsync);
     }
 
-    private static async ValueTask<ResumeAuthRequest> BindHttpRequestAsync(
+    private static async ValueTask<AuthResponseRequest> BindHttpRequestAsync(
         HttpContext context,
         CancellationToken cancellationToken)
     {
-        ResumeAuthRequest request;
+        AuthResponseRequest request;
         try
         {
             request = await JsonSerializer.DeserializeAsync(
                 context.Request.Body,
-                InTaskAuthorizationJsonContext.Default.ResumeAuthRequest,
+                InTaskAuthorizationJsonContext.Default.AuthResponseRequest,
                 cancellationToken).ConfigureAwait(false)
-                ?? throw new JsonException("The resumeAuth request body is required.");
+                ?? throw new JsonException("The auth-response request body is required.");
         }
         catch (JsonException exception)
         {
             throw new A2AException(
-                "Invalid resumeAuth request body.",
+                "Invalid auth-response request body.",
                 exception,
                 A2AErrorCode.InvalidParams);
         }
 
         request.TaskId = context.Request.RouteValues["taskId"]?.ToString()
             ?? throw new A2AException(
-                "The resumeAuth task ID route value is required.",
+                "The auth-response task ID route value is required.",
                 A2AErrorCode.InvalidParams);
         return request;
     }
 
-    private static void ValidateRequest(ResumeAuthRequest request)
+    private static void ValidateRequest(AuthResponseRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.TaskId)
             || string.IsNullOrWhiteSpace(request.ContextId)
             || string.IsNullOrWhiteSpace(request.AuthorizationRequestId))
         {
             throw new A2AException(
-                "resumeAuth requires taskId, contextId, and authorizationRequestId.",
+                "auth-response requires taskId, contextId, and authorizationRequestId.",
                 A2AErrorCode.InvalidParams);
         }
     }

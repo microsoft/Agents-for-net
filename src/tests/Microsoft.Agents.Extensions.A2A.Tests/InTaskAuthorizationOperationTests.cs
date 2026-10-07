@@ -19,13 +19,13 @@ public class InTaskAuthorizationOperationTests
         var registry = builder.Build();
 
         Assert.Equal(
-            InTaskAuthorizationExtension.ResumeAuthOperationId,
+            InTaskAuthorizationExtension.AuthResponseOperationId,
             operation.Id.Value);
         Assert.NotNull(registry);
     }
 
     [Fact]
-    public void AddJsonRpcBinding_UsesResumeAuthMethod()
+    public void AddJsonRpcBinding_UsesAuthResponseMethod()
     {
         var operationBuilder = new A2ACustomOperationRegistryBuilder();
         var operation = InTaskAuthorizationOperation.AddOperation(operationBuilder);
@@ -38,7 +38,7 @@ public class InTaskAuthorizationOperationTests
     }
 
     [Fact]
-    public void AddHttpBinding_UsesResumeAuthRoute()
+    public void AddHttpBinding_UsesAuthResponseRoute()
     {
         var operationBuilder = new A2ACustomOperationRegistryBuilder();
         var operation = InTaskAuthorizationOperation.AddOperation(operationBuilder);

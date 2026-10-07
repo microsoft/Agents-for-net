@@ -318,7 +318,7 @@ If a task enters `TASK_STATE_AUTH_REQUIRED`, the client:
 1. Resolves the request through the shared local provider catalog using the
    advertised flow, metadata URL, and endpoints.
 1. Acquires the requested token.
-1. Calls `resumeAuth`.
+1. Calls `auth-response`.
 1. Sends the raw token in `x-a2a-intask-authorization`.
 1. Repeats the process when the task returns another distinct authorization
    request.

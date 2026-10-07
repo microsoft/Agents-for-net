@@ -33,7 +33,7 @@ internal sealed class InTaskOAuth2Scheme
     public OAuthFlows Flows { get; set; }
 }
 
-internal sealed class ResumeAuthRequest
+internal sealed class AuthResponseRequest
 {
     [JsonPropertyName("taskId")]
     public string TaskId { get; set; }
@@ -60,7 +60,7 @@ internal sealed class InTaskAuthorizationContext
 }
 
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
-[JsonSerializable(typeof(ResumeAuthRequest))]
+[JsonSerializable(typeof(AuthResponseRequest))]
 internal partial class InTaskAuthorizationJsonContext : JsonSerializerContext
 {
 }
