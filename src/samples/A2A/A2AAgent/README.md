@@ -50,6 +50,14 @@ Send ordinary text, `-stream`, or `-multi`. The shipped placeholders leave token
 validation disabled during local development, so the anonymous scenarios work
 without Microsoft Entra configuration.
 
+## View telemetry
+
+The sample exports Agents SDK and `a2a-dotnet` traces, metrics, and logs over
+OTLP. Run the standalone
+[.NET Aspire dashboard](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/dashboard/standalone)
+before starting the agent to inspect telemetry from the `A2A` and
+`A2A.AspNetCore` activity sources.
+
 ## Configure the authenticated sample
 
 The Graph profile skills use two `A2AUserAuthorization` handlers with the same
