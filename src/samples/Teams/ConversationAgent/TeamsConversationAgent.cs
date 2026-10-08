@@ -17,7 +17,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Linq;
 
 namespace ConversationAgent;
 
@@ -107,7 +106,7 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options, ILo
             new CardAction(type: ActionTypes.MessageBack, title: "Mention Me", text: "mentionme"),
             new CardAction(type: ActionTypes.MessageBack, title: "Delete Card", text: "delete"),
             new CardAction(type: ActionTypes.MessageBack, title: "Send Targeted", text: "targeted"),
-            new CardAction(type: ActionTypes.MessageBack, title: "Quoted Reply", text: "quotedreply"),
+            new CardAction(type: ActionTypes.ImBack, title: "Quoted Reply", value: "quotedreply"),
             new CardAction(type: ActionTypes.MessageBack, title: "Custom Feedback", text: "customfeedback")
         ]
     };
@@ -120,6 +119,27 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options, ILo
     [TeamsMessageRoute]
     public static async Task SendWelcomeCardAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
+        if (turnContext.Activity.IsRecipientTargeted()) {
+            // this is an agent-targeted message.
+            TeamsActivity response = new()
+            {
+                Type = ActivityTypes.Message,
+                Text = string.Join("\n", new[]
+                {
+                    "🔒 **Private response**",
+                    "",
+                    "Your original private message appears in the Prompt Preview above this message.",
+                    "Only you can see this response."
+                })
+            };
+
+            response.WithTargetedRecipient(turnContext.Activity.From);
+
+            // TeamsTurnContext adds the TargetedMessageInfoEntity which enables the prompt-preview.
+            await turnContext.SendActivityAsync(response, cancellationToken);
+            return;
+        }
+        // a normal message from the conversation
         var card = NewCard("Welcome!");
         card.Buttons.Add(new CardAction
         {
@@ -173,17 +193,6 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options, ILo
         reply.AddQuotedReply(messageId, "This response includes a quoted reply to your message.");
 
         await turnContext.SendActivityAsync(reply, cancellationToken);
-    }
-
-    [TeamsMessageRoute("promptpreview")]
-    public static async Task SendPromptPreviewAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
-    {
-        var response = Activity.CreateMessageActivity()
-            .WithText("This targeted response includes Prompt Preview metadata for your slash command.")
-            .WithTargetedRecipient(turnContext.Activity.From);
-
-        // TeamsTurnContext adds TargetedMessageInfoEntity when the incoming slash command is targeted.
-        await turnContext.SendActivityAsync(response, cancellationToken);
     }
 
     [TeamsMessageRoute("update")]
