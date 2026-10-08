@@ -6,7 +6,7 @@ The A2A samples live under `src\samples\A2A`.
 | --- | --- | --- |
 | [A2AAgent](A2AAgent/README.md) | `src\samples\A2A\A2AAgent\A2AAgent.csproj` | Hosts the A2A sample agent and demonstrates anonymous routes plus delegated OBO to Microsoft Graph. |
 | [A2ATCKAgent](A2ATCKAgent/README.md) | `src\samples\A2A\A2ATCKAgent\A2ATCKAgent.csproj` | Hosts the endpoint used for A2A TCK compatibility testing. |
-| [A2AClient](A2AClient/README.md) | `src\samples\A2A\A2AClient\A2AClient.csproj` | Interactive console client that predicts a skill from Agent Card metadata and selects anonymous, delegated, or application authentication for that skill. |
+| [A2ACli](A2ACli/README.md) | `src\samples\A2A\A2ACli\A2ACli.csproj` | Interactive console client that predicts a skill from Agent Card metadata and selects anonymous, delegated, or application authentication for that skill. |
 
 ## Quick start
 
@@ -19,14 +19,14 @@ The A2A samples live under `src\samples\A2A`.
 1. In another terminal, start the interactive client:
 
    ```powershell
-   dotnet run --project src\samples\A2A\A2AClient\A2AClient.csproj -- --agent http://localhost:3978/a2a
+   dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- --agent http://localhost:3978/a2a
    ```
 
 1. Send a normal message to verify the anonymous echo flow.
 
 1. For Microsoft Entra ID setup and authenticated route testing, follow:
    - [A2AAgent setup and route behavior](A2AAgent/README.md)
-   - [A2AClient auth modes and manual commands](A2AClient/README.md)
+   - [A2ACli auth modes and manual commands](A2ACli/README.md)
 
 ## Manual authentication scenarios
 
