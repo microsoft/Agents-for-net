@@ -28,6 +28,7 @@
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />
     <PackageVersion Include="Microsoft.Identity.Client" Version="$(Microsoft_IdentityClient_PkgVer)" />
     <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="$(Microsoft_IdentityClient_PkgVer)" />
+    <PackageVersion Include="Microsoft.Identity.Client.Broker" Version="$(Microsoft_IdentityClient_PkgVer)" />
     <PackageVersion Include="Microsoft.IdentityModel.Abstractions" Version="$(Microsoft_IdentityModel_PkgVer)" />
     <PackageVersion Include="Microsoft.IdentityModel.LoggingExtensions" Version="$(Microsoft_IdentityModel_PkgVer)" />
     <PackageVersion Include="Microsoft.IdentityModel.Validators" Version="$(Microsoft_IdentityModel_PkgVer)" />

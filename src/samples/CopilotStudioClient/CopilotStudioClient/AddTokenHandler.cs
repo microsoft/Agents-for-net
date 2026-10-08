@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Identity.Client.Extensions.Msal;
 using Microsoft.Identity.Client;
 using Microsoft.Agents.CopilotStudio.Client;
+using Microsoft.Identity.Client.Broker;
 
 namespace CopilotStudioClientSample
 {
@@ -31,7 +32,9 @@ namespace CopilotStudioClientSample
             IPublicClientApplication app = PublicClientApplicationBuilder.Create(settings.AppClientId)
                  .WithAuthority(AadAuthorityAudience.AzureAdMyOrg)
                  .WithTenantId(settings.TenantId)
-                 .WithRedirectUri("http://localhost")
+                 .WithDefaultRedirectUri()
+                 .WithBroker(new BrokerOptions(BrokerOptions.OperatingSystems.Windows | BrokerOptions.OperatingSystems.OSX))
+                 .WithParentActivityOrWindow(GetConsoleOrTerminalWindow)
                  .Build();
 
             string currentDir = Path.Combine(AppContext.BaseDirectory, "mcs_client_console");
@@ -81,6 +84,39 @@ namespace CopilotStudioClientSample
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authResponse.AccessToken);
             }
             return await base.SendAsync(request, cancellationToken);
+        }
+
+
+        enum GetAncestorFlags
+        {
+            GetParent = 1,
+            GetRoot = 2,
+            /// <summary>
+            /// Retrieves the owned root window by walking the chain of parent and owner windows returned by GetParent.
+            /// </summary>
+            GetRootOwner = 3
+        }
+
+        /// <summary>
+        /// Retrieves the handle to the ancestor of the specified window.
+        /// </summary>
+        /// <param name="hwnd">A handle to the window whose ancestor is to be retrieved.
+        /// If this parameter is the desktop window, the function returns NULL. </param>
+        /// <param name="flags">The ancestor to be retrieved.</param>
+        /// <returns>The return value is the handle to the ancestor window.</returns>
+        [DllImport("user32.dll", ExactSpelling = true)]
+        static extern IntPtr GetAncestor(IntPtr hwnd, GetAncestorFlags flags);
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
+        // This is your window handle!
+        public IntPtr GetConsoleOrTerminalWindow()
+        {
+            IntPtr consoleHandle = GetConsoleWindow();
+            IntPtr handle = GetAncestor(consoleHandle, GetAncestorFlags.GetRootOwner);
+
+            return handle;
         }
     }
 }
