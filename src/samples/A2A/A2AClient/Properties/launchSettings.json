@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "A2AClient": {
-      "commandName": "Project",
-      "commandLineArgs": "--agent http://localhost:3978/a2a"
-    }
-  }
-}

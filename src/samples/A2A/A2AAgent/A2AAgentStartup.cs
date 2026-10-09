@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +27,11 @@ internal static class A2AAgentStartup
     internal static void ConfigureBuilder(WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ConfigureOtelProviders();
+        builder.Services.AddOpenTelemetry()
+            .WithMetrics(metrics => metrics.AddMeter("A2A"))
+            .WithTracing(tracing => tracing.AddSource("A2A", "A2A.AspNetCore"));
 
         builder.AddAgentDefaults()
             .AddAgent<MyAgent>()
