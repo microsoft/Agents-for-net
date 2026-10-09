@@ -486,14 +486,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 var operation = subscribe ? "subscribe" : string.IsNullOrEmpty(conversationId) ? "createConversation" : "executeTurn";
                 var resolved = await ConversationEndpointDiscovery.ResolveAsync(
                     discoveryUri, operation, conversationId,
-                    (request, cancellationToken) =>
-                    {
-                        if (accessToken != null)
-                        {
-                            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                        }
-                        return SendRequestAsync(request, cancellationToken);
-                    }, ct).ConfigureAwait(false);
+                    (request, cancellationToken) => SendRequestAsync(request, cancellationToken, accessToken),
+                    ct).ConfigureAwait(false);
                 if (string.IsNullOrEmpty(Settings.DirectConnectUrl))
                 {
                     _discoveredDirectConnectUri = resolved.DirectConnectUri;
@@ -521,7 +515,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
             return PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: subscribe);
         }
 
-        private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage req, CancellationToken ct)
+        private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage req, CancellationToken ct, string? accessToken = null)
         {
             HttpClient? httpClient;
             if (string.IsNullOrEmpty(_httpClientName))
@@ -538,11 +532,10 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 throw new ArgumentException("Unable to create a connection to Copilot Studio Server");
             }
 
-            if (_tokenProviderFunction != null)
+            if (accessToken == null && _tokenProviderFunction != null)
             {
                 // Set the access token header when its provided via an external token provider. 
                 // If not done here the expectation is that the Token will be provided by an httpclient handler.
-                string accessToken = string.Empty;
                 if (req?.RequestUri != null)
                 {
                     accessToken = await _tokenProviderFunction(req.RequestUri.ToString());
@@ -553,11 +546,11 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 }
 
                 AssertionHelpers.ThrowIfNull(req!, nameof(req));
+            }
 
-                if (!string.IsNullOrEmpty(accessToken))
-                {
-                    req!.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                }
+            if (!string.IsNullOrEmpty(accessToken))
+            {
+                req!.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             }
 
             if (Settings.EnableDiagnostics)

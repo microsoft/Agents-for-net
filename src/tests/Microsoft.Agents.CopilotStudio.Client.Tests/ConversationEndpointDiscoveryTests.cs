@@ -202,6 +202,32 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         }
 
         [Fact]
+        public async Task DiscoveryUsesPrecomputedTokenWithoutReacquiringIt()
+        {
+            var tokenRequests = new List<string>();
+            var client = Client(Settings(), new Handler((request, ct) =>
+            {
+                Assert.Equal("Bearer", request.Headers.Authorization?.Scheme);
+                if (request.Method == HttpMethod.Get)
+                {
+                    Assert.Equal("discovery-token", request.Headers.Authorization?.Parameter);
+                    return Task.FromResult(DiscoveryResponse());
+                }
+                Assert.Equal("operation-token", request.Headers.Authorization?.Parameter);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"activities\":[]}") });
+            }), url =>
+            {
+                Assert.DoesNotContain(url, tokenRequests);
+                tokenRequests.Add(url);
+                return Task.FromResult(url == DiscoveryUri.AbsoluteUri ? "discovery-token" : "operation-token");
+            });
+
+            await DrainAsync(client.StartConversationAsync());
+
+            Assert.Equal(new[] { DiscoveryUri.AbsoluteUri, Root() + "?api-version=create-version&extra=1" }, tokenRequests);
+        }
+
+        [Fact]
         public async Task HandlerAuthenticationReusesPersistedDirectUrl()
         {
             var discoveryCalls = 0;
