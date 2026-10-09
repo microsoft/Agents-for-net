@@ -21,7 +21,7 @@ This is a general list only. Each Sample has a more detailed ReadMe.md that incl
 ## Clone and build
 
 1. Clone the repro to your development workstation.
-1. Open the src\Microsoft.Agents.SDK.sln project using Visual Studio.
+1. Open the src\Microsoft.Agents.SDK.slnx project using Visual Studio.
 1. Build
 
 This should restore and build the SDK.
