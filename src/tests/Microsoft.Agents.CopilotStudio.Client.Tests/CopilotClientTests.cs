@@ -135,6 +135,14 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         {
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
+                if (request.Method == HttpMethod.Get)
+                {
+                    var root = request.RequestUri.GetLeftPart(UriPartial.Authority) + "/copilotstudio/dataverse-backed/authenticated/bots/test-bot/conversations";
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent("{\"createConversation\":\"" + root + "?api-version=2022-03-01-preview\",\"executeTurn\":\"" + root + "/{conversationId}?api-version=2022-03-01-preview\",\"continueTurn\":\"" + root + "/{conversationId}/continue?api-version=2022-03-01-preview\"}")
+                    });
+                }
                 var content = new StringContent("data: {\"type\": \"message\", \"conversation\": {\"id\": \"test-convo\"}}");
                 content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/event-stream"); 
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
