@@ -13,7 +13,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
 {
     internal static class ConversationEndpointDiscovery
     {
-        internal static async Task<(Uri OperationUri, Uri DirectConnectUri)> ResolveAsync(
+        internal static async Task<(Uri OperationUri, Uri DirectConnectUri, ConversationEndpoints Endpoints)> ResolveAsync(
             Uri discoveryUri,
             string operation,
             string? conversationId,
@@ -34,10 +34,10 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
             var endpoints = ProtocolJsonSerializer.ToObject<ConversationEndpoints>(json)
                 ?? throw new JsonException("Conversation endpoint discovery returned an empty response.");
             endpoints.Validate(discoveryUri);
-            return (endpoints.GetUri(operation, conversationId), new Uri(endpoints.CreateConversation!));
+            return (endpoints.GetUri(operation, conversationId), new Uri(endpoints.CreateConversation!), endpoints);
         }
 
-        private sealed class ConversationEndpoints
+        internal sealed class ConversationEndpoints
         {
             [JsonPropertyName("createConversation")]
             public string? CreateConversation { get; set; }

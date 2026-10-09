@@ -89,7 +89,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public async Task ClientPersistsDiscoveredCreateUrlAndThenUsesDirectConnection(bool agentic)
+        public async Task ClientPersistsDiscoveredCreateUrlAndReusesDiscoveredOperationUrls(bool agentic)
         {
             var requests = new List<(HttpMethod Method, string Url, string Token)>();
             var handler = new Handler((request, ct) =>
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
             Assert.Equal(3, requests.Count);
             Assert.Equal((HttpMethod.Get, DiscoveryUri.AbsoluteUri, "caller-token"), requests[0]);
             Assert.Equal((HttpMethod.Post, Root(agentic) + "?api-version=create-version&extra=1", "caller-token"), requests[1]);
-            Assert.Equal((HttpMethod.Post, PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(client.Settings, "conversation/a ?#%").AbsoluteUri, "caller-token"), requests[2]);
+            Assert.Equal((HttpMethod.Post, Root(agentic) + "/conversation%2Fa%20%3F%23%25?api-version=execute-version&extra=2", "caller-token"), requests[2]);
         }
 
         [Theory]
@@ -371,6 +371,37 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
         }
 
         [Fact]
+        public async Task SubscribeAfterStartRejectsOperationNotAdvertisedByDiscovery()
+        {
+            var postCalls = 0;
+            var client = Client(Settings(), new Handler((request, ct) =>
+            {
+                if (request.Method == HttpMethod.Get)
+                {
+                    return Task.FromResult(DiscoveryResponse(subscribe: false));
+                }
+                postCalls++;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"activities\":[]}") });
+            }));
+
+            await DrainAsync(client.StartConversationAsync());
+            Assert.Equal(Root() + "?api-version=create-version&extra=1", client.Settings.DirectConnectUrl);
+
+            async Task Subscribe()
+            {
+#pragma warning disable CS0618 // Exercise the existing internal-only subscription surface.
+                await foreach (var item in client.SubscribeAsync("id/one", "last-event", CancellationToken.None))
+#pragma warning restore CS0618
+                {
+                    Assert.NotNull(item);
+                }
+            }
+
+            await Assert.ThrowsAsync<NotSupportedException>(Subscribe);
+            Assert.Equal(1, postCalls);
+        }
+
+        [Fact]
         public async Task InvocationHeadersStillTrackConversationButDiscoveryHeadersDoNotOverrideSettings()
         {
             var settings = Settings();
@@ -388,7 +419,7 @@ namespace Microsoft.Agents.CopilotStudio.Client.Tests
                 }
                 if (calls == 3)
                 {
-                    Assert.Equal(Root() + "/returned-conversation?api-version=2022-03-01-preview", request.RequestUri.AbsoluteUri);
+                    Assert.Equal(Root() + "/returned-conversation?api-version=execute-version&extra=2", request.RequestUri.AbsoluteUri);
                 }
                 var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"activities\":[]}") };
                 response.Headers.Add(CopilotStudioHeaderNames.D2EConversationId, "returned-conversation");

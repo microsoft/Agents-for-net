@@ -68,6 +68,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         public ConnectionSettings Settings;
 
         private readonly SemaphoreSlim _discoveryGate = new(1, 1);
+        private Uri? _discoveredDirectConnectUri;
+        private volatile ConversationEndpointDiscovery.ConversationEndpoints? _discoveredEndpoints;
 
 
         /// <summary>
@@ -445,9 +447,14 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
         private async Task<Uri> ResolveConnectionUrlAsync(string? conversationId, bool subscribe, CancellationToken ct)
         {
-            if (!string.IsNullOrEmpty(Settings.DirectConnectUrl) || Settings.CopilotAgentType == AgentType.Prebuilt)
+            if (Settings.CopilotAgentType == AgentType.Prebuilt)
             {
                 return PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: subscribe);
+            }
+
+            if (!string.IsNullOrEmpty(Settings.DirectConnectUrl))
+            {
+                return ResolveConfiguredConnectionUrl(conversationId, subscribe);
             }
 
             await _discoveryGate.WaitAsync(ct).ConfigureAwait(false);
@@ -456,9 +463,13 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 // If several threads are trying to resolve the connection URL at the same time, only one of them should perform the discovery
                 // and set the DirectConnectUrl in the settingsThe others should wait for the first one to complete
                 // and then use the updated settings.
-                if (!string.IsNullOrEmpty(Settings.DirectConnectUrl) || Settings.CopilotAgentType == AgentType.Prebuilt)
+                if (Settings.CopilotAgentType == AgentType.Prebuilt)
                 {
                     return PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: subscribe);
+                }
+                if (!string.IsNullOrEmpty(Settings.DirectConnectUrl))
+                {
+                    return ResolveConfiguredConnectionUrl(conversationId, subscribe);
                 }
 
                 var discoveryUri = PowerPlatformEnvironment.GetConversationEndpointsDiscoveryUrl(Settings);
@@ -485,6 +496,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     }, ct).ConfigureAwait(false);
                 if (string.IsNullOrEmpty(Settings.DirectConnectUrl))
                 {
+                    _discoveredDirectConnectUri = resolved.DirectConnectUri;
+                    _discoveredEndpoints = resolved.Endpoints;
                     Settings.DirectConnectUrl = resolved.DirectConnectUri.AbsoluteUri;
                 }
                 return resolved.OperationUri;
@@ -493,6 +506,19 @@ namespace Microsoft.Agents.CopilotStudio.Client
             {
                 _discoveryGate.Release();
             }
+        }
+
+        private Uri ResolveConfiguredConnectionUrl(string? conversationId, bool subscribe)
+        {
+            var discoveredEndpoints = _discoveredEndpoints;
+            if (discoveredEndpoints != null &&
+                string.Equals(Settings.DirectConnectUrl, _discoveredDirectConnectUri?.AbsoluteUri, StringComparison.Ordinal))
+            {
+                var operation = subscribe ? "subscribe" : string.IsNullOrEmpty(conversationId) ? "createConversation" : "executeTurn";
+                return discoveredEndpoints.GetUri(operation, conversationId);
+            }
+
+            return PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: subscribe);
         }
 
         private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage req, CancellationToken ct)
