@@ -67,21 +67,6 @@
               "description": "Open a custom feedback dialog from response feedback buttons"
             }
           ]
-        },
-        {
-          "scopes": [
-            "team",
-            "groupChat"
-          ],
-          "triggers": [
-            "slash"
-          ],
-          "commands": [
-            {
-              "title": "promptpreview",
-              "description": "Send a targeted response with Prompt Preview"
-            }
-          ]
         }
       ]
     }
