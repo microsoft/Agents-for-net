@@ -214,15 +214,6 @@ namespace Microsoft.Agents.Connector.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Targeted activities can only be sent in a group chat or channel..
-        /// </summary>
-        internal static string TeamsTargetedRequiresGroupChat {
-            get {
-                return ResourceManager.GetString("TeamsTargetedRequiresGroupChat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The Token Service was unable to exchange the token.  Check OAuth Connection configuration for &apos;{0}&apos; on the Azure Bot and try again.  The response is &apos;{1}&apos;.
         /// </summary>
         internal static string TokenServiceExchangeErrorResponse {

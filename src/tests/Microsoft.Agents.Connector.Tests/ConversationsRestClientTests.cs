@@ -1109,7 +1109,7 @@ namespace Microsoft.Agents.Connector.Tests
         // Targeted activity query parameter tests
 
         [Fact]
-        public async Task SendToConversationAsync_TeamsChannel_TargetedActivity_AppendsIsTargetedQueryParam()
+        public async Task SendToConversationAsync_TeamsChannel_NonGroupTargetedActivity_AppendsIsTargetedQueryParam()
         {
             var conversationsClient = UseConversation();
             HttpRequestMessage capturedRequest = null;
@@ -1125,7 +1125,7 @@ namespace Microsoft.Agents.Connector.Tests
 
             var activity = new Activity
             {
-                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
+                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = false },
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             };
             activity.MakeTargetedActivity(new ChannelAccount { Id = "user-id" });
@@ -1165,7 +1165,7 @@ namespace Microsoft.Agents.Connector.Tests
         }
 
         [Fact]
-        public async Task ReplyToActivityAsync_TeamsChannel_TargetedActivity_AppendsIsTargetedQueryParam()
+        public async Task ReplyToActivityAsync_TeamsChannel_NonGroupTargetedActivity_AppendsIsTargetedQueryParam()
         {
             var conversationsClient = UseConversation();
             HttpRequestMessage capturedRequest = null;
@@ -1182,7 +1182,7 @@ namespace Microsoft.Agents.Connector.Tests
             var activity = new Activity
             {
                 Id = "test-id",
-                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = true },
+                Conversation = new ConversationAccount { Id = "conversation-id", IsGroup = false },
                 ReplyToId = "reply-id",
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             };
