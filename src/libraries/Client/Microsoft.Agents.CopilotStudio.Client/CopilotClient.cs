@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.CopilotStudio.Client.Discovery;
@@ -66,6 +66,8 @@ namespace Microsoft.Agents.CopilotStudio.Client
         /// The connection settings for Copilot Studio.
         /// </summary>
         public ConnectionSettings Settings;
+
+        private readonly SemaphoreSlim _discoveryGate = new(1, 1);
 
 
         /// <summary>
@@ -139,7 +141,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
 
                 _ = startRequest ?? throw new ArgumentNullException(nameof(startRequest));
 
-                Uri uriStart = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, null);
+                Uri uriStart = await ResolveConnectionUrlAsync(null, false, cancellationToken).ConfigureAwait(false);
                 HttpRequestMessage req = new()
                 {
                     Method = HttpMethod.Post,
@@ -241,7 +243,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
         {
             _ = conversationId ?? throw new ArgumentNullException(nameof(conversationId), "A valid Conversation Id is required to use this method.");
 
-            Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: true);
+            Uri uriExecute = await ResolveConnectionUrlAsync(conversationId, true, cancellationToken).ConfigureAwait(false);
 
             var qbody = new SubscribeRequest();
             
@@ -289,7 +291,7 @@ namespace Microsoft.Agents.CopilotStudio.Client
                 else
                     localConversationId = _conversationId;
 
-                Uri uriExecute = PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, localConversationId);
+                Uri uriExecute = await ResolveConnectionUrlAsync(localConversationId, false, ct).ConfigureAwait(false);
                 ExecuteTurnRequest qbody = new() { Activity = (Activity)request_activity };
                 HttpRequestMessage qreq = new()
                 {
@@ -441,7 +443,59 @@ namespace Microsoft.Agents.CopilotStudio.Client
             }
         }
 
-        private async Task<HttpResponseMessage> SetupAndExecutePostRequest(HttpRequestMessage req, CancellationToken ct)
+        private async Task<Uri> ResolveConnectionUrlAsync(string? conversationId, bool subscribe, CancellationToken ct)
+        {
+            if (!string.IsNullOrEmpty(Settings.DirectConnectUrl) || Settings.CopilotAgentType == AgentType.Prebuilt)
+            {
+                return PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: subscribe);
+            }
+
+            await _discoveryGate.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                // If several threads are trying to resolve the connection URL at the same time, only one of them should perform the discovery
+                // and set the DirectConnectUrl in the settingsThe others should wait for the first one to complete
+                // and then use the updated settings.
+                if (!string.IsNullOrEmpty(Settings.DirectConnectUrl) || Settings.CopilotAgentType == AgentType.Prebuilt)
+                {
+                    return PowerPlatformEnvironment.GetCopilotStudioConnectionUrl(Settings, conversationId, createSubscribeLink: subscribe);
+                }
+
+                var discoveryUri = PowerPlatformEnvironment.GetConversationEndpointsDiscoveryUrl(Settings);
+                string? accessToken = null;
+                if (_tokenProviderFunction != null)
+                {
+                    accessToken = await _tokenProviderFunction(discoveryUri.AbsoluteUri).ConfigureAwait(false);
+                    if (string.IsNullOrEmpty(accessToken))
+                    {
+                        throw new InvalidOperationException("A non-empty access token is required for conversation endpoint discovery.");
+                    }
+                }
+
+                var operation = subscribe ? "subscribe" : string.IsNullOrEmpty(conversationId) ? "createConversation" : "executeTurn";
+                var resolved = await ConversationEndpointDiscovery.ResolveAsync(
+                    discoveryUri, operation, conversationId,
+                    (request, cancellationToken) =>
+                    {
+                        if (accessToken != null)
+                        {
+                            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                        }
+                        return SendRequestAsync(request, cancellationToken);
+                    }, ct).ConfigureAwait(false);
+                if (string.IsNullOrEmpty(Settings.DirectConnectUrl))
+                {
+                    Settings.DirectConnectUrl = resolved.DirectConnectUri.AbsoluteUri;
+                }
+                return resolved.OperationUri;
+            }
+            finally
+            {
+                _discoveryGate.Release();
+            }
+        }
+
+        private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage req, CancellationToken ct)
         {
             HttpClient? httpClient;
             if (string.IsNullOrEmpty(_httpClientName))
@@ -496,14 +550,22 @@ namespace Microsoft.Agents.CopilotStudio.Client
                     string error = await resp.Content.ReadAsStringAsync();
 #endif
                     _logger.LogError("Error: {Error}", error);
+                    resp.Dispose();
                     throw new HttpRequestException($"Error sending request: {resp.StatusCode}. {error}");
                 }
+                resp.Dispose();
                 throw new HttpRequestException($"Error sending request: {resp.StatusCode}");
             }
             else
             {
                 _logger.LogInformation("Request sent successfully");
             }
+            return resp;
+        }
+
+        private async Task<HttpResponseMessage> SetupAndExecutePostRequest(HttpRequestMessage req, CancellationToken ct)
+        {
+            HttpResponseMessage resp = await SendRequestAsync(req, ct).ConfigureAwait(false);
 
             // Check for the experimental URL header in the response headers
             if (resp.Headers.TryGetValues(CopilotStudioHeaderNames.D2EExperimentalUrl, out var values))
