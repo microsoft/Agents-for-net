@@ -5,7 +5,7 @@ This document will cover the tools you need and how to setup this project locall
 ## Prerequisites
 
 1. Windows Desktop.
-1. Visual Studio 2022 +
+1. Visual Studio 2026 version 18.9 or later
     1. .net 8 +
     1. Asp.net workload
 
