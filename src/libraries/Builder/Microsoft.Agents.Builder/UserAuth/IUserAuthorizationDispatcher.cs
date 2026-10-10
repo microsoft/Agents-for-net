@@ -19,6 +19,18 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <exception cref="System.InvalidOperationException">When cannot find the class with given name</exception>
         IUserAuthorization Get(string handlerName);
 
+        /// <summary>
+        /// Determines whether a user authorization handler with the specified name is configured.
+        /// </summary>
+        /// <param name="handlerName">The name of the user authorization handler.</param>
+        /// <returns><see langword="true"/> if the handler is configured; otherwise, <see langword="false"/>.</returns>
+        bool Contains(string handlerName);
+
+        /// <summary>
+        /// Validates deterministic configuration for the configured user authorization handlers.
+        /// </summary>
+        void ValidateConfiguration();
+
         bool TryGet(string handlerName, out IUserAuthorization handler);
 
         /// <summary>
