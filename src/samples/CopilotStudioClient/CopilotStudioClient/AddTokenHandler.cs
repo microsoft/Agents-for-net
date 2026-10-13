@@ -33,7 +33,7 @@ namespace CopilotStudioClientSample
                  .WithAuthority(AadAuthorityAudience.AzureAdMyOrg)
                  .WithTenantId(settings.TenantId)
                  .WithDefaultRedirectUri()
-                 .WithBroker(new BrokerOptions(BrokerOptions.OperatingSystems.Windows | BrokerOptions.OperatingSystems.OSX | BrokerOptions.OperatingSystems.Linux))
+                 .WithBroker(new BrokerOptions(BrokerOptions.OperatingSystems.Windows))
                  .WithParentActivityOrWindow(GetConsoleOrTerminalWindow)
                  .Build();
 
