@@ -67,7 +67,7 @@ public sealed class TerminalChatApplicationTests
     public void ReadmeKeyboardShortcuts_IncludeF5SaveActivities()
     {
         string repositoryRoot = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".."));
         string readme = File.ReadAllText(
             Path.Combine(
                 repositoryRoot,
