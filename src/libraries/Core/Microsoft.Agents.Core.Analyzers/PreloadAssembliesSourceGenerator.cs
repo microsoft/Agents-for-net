@@ -128,6 +128,7 @@ namespace Microsoft.Agents.Core.Analyzers
                 else if (member is INamedTypeSymbol type
                     && type.TypeKind == TypeKind.Class
                     && !type.IsAbstract
+                    && IsExternallyAccessible(type)
                     && baseTypes.Any(baseType => type.InheritsFrom(baseType)))
                 {
                     var name = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);

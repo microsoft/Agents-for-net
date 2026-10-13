@@ -25,8 +25,9 @@ namespace Microsoft.Agents.Builder.Adapters
     /// <see cref="Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry"/>) and should be public so consuming applications can preload
     /// its assembly; to also serve shared-endpoint HTTP dispatch it must
     /// implement the host's HTTP adapter contract (<c>IAgentHttpAdapter</c> in
-    /// <c>Microsoft.Agents.Hosting.AspNetCore</c>). Both hold for adapters deriving from
-    /// <c>CloudAdapter</c> or <c>ChannelAdapter</c>. It does <b>not</b> need to derive from
+    /// <c>Microsoft.Agents.Hosting.AspNetCore</c>). <c>CloudAdapter</c> implements both contracts;
+    /// a type deriving directly from <c>ChannelAdapter</c> must implement the host contract separately
+    /// when it participates in HTTP dispatch. It does <b>not</b> need to derive from
     /// <c>CloudAdapter</c> — the default Activity Protocol adapter (CloudAdapter) remains the registry
     /// default and is not annotated.
     /// </para>
@@ -38,7 +39,7 @@ namespace Microsoft.Agents.Builder.Adapters
     ///
     /// // A dedicated-protocol adapter that also participates in the registry:
     /// [ChannelAdapter("a2a")]
-    /// public class A2AAdapter : ChannelAdapter, IAgentHttpAdapter { }
+    /// internal class DedicatedProtocolAdapter : ChannelAdapter, IAgentHttpAdapter { }
     /// </code>
     /// </example>
     /// </remarks>

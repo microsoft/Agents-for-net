@@ -157,6 +157,10 @@
     <value>AgentApplication.UserAuthorization requires AgentApplicationOptions.Adapter set.</value>
     <comment>Raised when when initializing AgentApplication.</comment>
   </data>
+  <data name="UserAuthorizationAssemblyRequired" xml:space="preserve">
+    <value>Assembly must be configured for user authorization handler '{0}' because type '{1}' is not defined by Microsoft.Agents.Builder.</value>
+    <comment>0 is the handler name, 1 is the configured external handler type.</comment>
+  </data>
 	<data name="UserAuthorizationTypeNotFound" xml:space="preserve">
     <value>Type '{0}' not found in Assembly '{1}' or is the wrong type for '{2}'.</value>
     <comment>0 is requested Type, 1 is assembly name, 2 is the type being saught </comment>

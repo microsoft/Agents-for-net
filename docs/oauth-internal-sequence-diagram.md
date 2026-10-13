@@ -216,7 +216,7 @@ sequenceDiagram
         Disp-->>UA: SignInResponse { Status=Error, Cause }
         UA->>Disp: ResetStateAsync(context, handlerName)
         UA->>UA: DeleteSignInStateAsync()
-        Note over UA: Invoke turn — InvokeResponse is ensured; _userSignInFailureHandler may still run (sent activities aren’t user-visible)
+        Note over UA: InvokeResponse is ensured.<br/>The failure handler may still run because sent activities are not user-visible.
         UA-->>App: false
     end
     deactivate ABUA
@@ -317,7 +317,13 @@ sequenceDiagram
 
 - **AutoSignIn**: If enabled (default), `StartOrContinueSignInUserAsync` is called every turn before route matching. If the user has a cached token, this is a fast path (single Token Service call).
 - **Continuation Activity**: When a multi-turn flow starts, the original user message is banked. After sign-in completes on a different turn (Invoke), the banked activity is replayed via `ProcessProactiveAsync`.
-- **Invoke Response Codes**: `200` = success, `412` = consent required (Teams retries with consent), `400` = critical failure (Teams stops), `404` = invalid magic code, `500` = retriable error.
+- **Two continuation protocols**: `signin/tokenExchange` exchanges a Teams SSO token; after a `412` consent response Teams retries `signin/tokenExchange`. `signin/verifyState` carries a magic code from an interactive sign-in page.
+- **Invoke Response Codes**: `200` = success, `412` = token exchange requires consent (Teams retries after consent), `400` = critical token-exchange failure (Teams stops), `404` = invalid magic code, `500` = retriable magic-code lookup error.
 - **Timeout**: `OAuthSettings.Timeout` (default from `OAuthSettings.DefaultTimeoutValue`). After expiry, `signin/tokenExchange` invokes return `400`; other invokes return `200` with no body.
 - **InvalidSignInRetryMax**: Non-tokenExchange continuations (e.g., bad magic codes) are retried up to this limit before throwing `AuthExceptionReason.InvalidSignIn`.
 - **OBO**: Performed after every successful token acquisition (BeginFlow cached token, ContinueFlow token, GetRefreshedUserToken). Uses `IConnections` to resolve an `IOBOExchange` provider.
+- **Flow-state lifetime**: successful completion sets `FlowStarted = false` and persists the record. Timeout, cancellation, sign-in failure, token-exchange exceptions, reset, and sign-out delete the record.
+
+## Scope
+
+These diagrams show the Azure Bot Token Service implementation. Other `IUserAuthorization` implementations can use different token acquisition mechanisms while still participating in the app-level `UserAuthorization` state machine.

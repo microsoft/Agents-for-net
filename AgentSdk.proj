@@ -1,7 +1,7 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build"
     xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <ItemGroup>
-        <ProjectToBuild Include="src\Microsoft.Agents.SDK.sln" />
+        <ProjectToBuild Include="src\Microsoft.Agents.SDK.slnx" />
     </ItemGroup>
     <Target Name="Clean">
         <MSBuild Projects="@(ProjectToBuild)" Targets="Clean" />
