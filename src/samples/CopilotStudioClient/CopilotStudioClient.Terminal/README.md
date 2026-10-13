@@ -2,6 +2,8 @@
 
 `CopilotStudioClient.Terminal` is an interactive terminal sample for Microsoft Copilot Studio conversations. It renders a borderless, glyph-led conversation timeline in the terminal, uses adaptive colors to separate message types and diagnostics, and keeps persistent navigation available while also journaling every inbound and outbound `Activity` for inspection. Protocol-interpretation diagnostics appear inline in Chat, while the source `Activity` remains inspectable in Activities.
 
+Note: this tool uses assets from [Terminal.Gui](https://github.com/tui-cs/Terminal.Gui) which is not a MSFT product. See the [Terminal.Gui license](https://github.com/tui-cs/Terminal.Gui?tab=MIT-1-ov-file)
+
 ## What it shows
 
 - **Chat**: messages, streaming status, streaming responses, suggested actions, attachments, and adaptive-card `Action.OpenUrl` links.

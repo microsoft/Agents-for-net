@@ -46,6 +46,7 @@
     <Project Path="samples/A365LoopTest/A365LoopTest.csproj" />
     <Project Path="samples/AgenticAI/AgenticAI.csproj" />
     <Project Path="samples/CopilotStudioAgentConnector/CopilotStudioAgentConnector.csproj" />
+    <Project Path="samples/CopilotStudioClient/CopilotStudioClient.Terminal/CopilotStudioClient.Terminal.csproj" />
     <Project Path="samples/CopilotStudioEchoSkill/CopilotStudioEchoSkill.csproj" />
     <Project Path="samples/DialogAgent/DialogAgent.csproj" />
     <Project Path="samples/EmptyAgent/EmptyAgent.csproj" />
