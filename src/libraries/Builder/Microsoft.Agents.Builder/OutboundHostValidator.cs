@@ -4,6 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder
 {
@@ -59,6 +63,12 @@ namespace Microsoft.Agents.Builder
         public bool IncludeDefaultMicrosoftHosts { get; set; } = true;
 
         /// <summary>
+        /// Gets or sets a value indicating whether allowlisted hosts may target private, loopback, link-local,
+        /// or unique-local network addresses. Defaults to <see langword="false"/>.
+        /// </summary>
+        public bool AllowPrivateNetworkAddresses { get; set; } = false;
+
+        /// <summary>
         /// Gets or sets the additional allowed host suffixes. An entry matches a request host when the host equals the
         /// entry or is a subdomain of it (e.g. <c>contoso.com</c> matches <c>contoso.com</c> and <c>files.contoso.com</c>).
         /// A leading <c>*.</c> is accepted and ignored (treated as a suffix).
@@ -85,6 +95,8 @@ namespace Microsoft.Agents.Builder
         };
 
         private readonly bool _enabled;
+        private readonly bool _allowPrivateNetworkAddresses;
+        private readonly IHostAddressResolver _hostAddressResolver;
         private readonly string[] _suffixes;
 
         /// <summary>
@@ -92,9 +104,16 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="options">The allowed-hosts options. When <see langword="null"/>, enforcement is disabled.</param>
         public OutboundHostValidator(OutboundHostValidatorOptions options)
+            : this(options, new DnsHostAddressResolver())
+        {
+        }
+
+        internal OutboundHostValidator(OutboundHostValidatorOptions options, IHostAddressResolver hostAddressResolver)
         {
             options ??= new OutboundHostValidatorOptions();
             _enabled = options.Enabled;
+            _allowPrivateNetworkAddresses = options.AllowPrivateNetworkAddresses;
+            _hostAddressResolver = hostAddressResolver ?? throw new ArgumentNullException(nameof(hostAddressResolver));
 
             var suffixes = new List<string>();
             if (options.IncludeDefaultMicrosoftHosts)
@@ -144,6 +163,12 @@ namespace Microsoft.Agents.Builder
                 return false;
             }
 
+            if ((uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                || !string.IsNullOrEmpty(uri.UserInfo))
+            {
+                return false;
+            }
+
             var host = uri.Host;
             if (string.IsNullOrEmpty(host))
             {
@@ -155,11 +180,47 @@ namespace Microsoft.Agents.Builder
                 if (string.Equals(host, suffix, StringComparison.OrdinalIgnoreCase)
                     || host.EndsWith("." + suffix, StringComparison.OrdinalIgnoreCase))
                 {
+                    if (!_allowPrivateNetworkAddresses
+                        && (uri.IsLoopback
+                            || (IPAddress.TryParse(uri.IdnHost, out var address)
+                                && OutboundHostAddressValidation.IsBlockedAddress(address))))
+                    {
+                        return false;
+                    }
+
                     return true;
                 }
             }
 
             return false;
+        }
+
+        internal async Task<bool> IsAllowedAsync(
+            Uri uri,
+            CancellationToken cancellationToken,
+            IHostAddressResolver hostAddressResolver = null)
+        {
+            hostAddressResolver ??= _hostAddressResolver;
+
+            if (!_enabled)
+            {
+                return true;
+            }
+
+            if (!IsAllowed(uri))
+            {
+                return false;
+            }
+
+            if (_allowPrivateNetworkAddresses || IPAddress.TryParse(uri.IdnHost, out _))
+            {
+                return true;
+            }
+
+            return await OutboundHostAddressValidation.AreAddressesAllowedAsync(
+                uri.IdnHost,
+                hostAddressResolver,
+                cancellationToken).ConfigureAwait(false);
         }
 
         private static string Normalize(string host)
@@ -198,6 +259,79 @@ namespace Microsoft.Agents.Builder
             }
 
             return string.IsNullOrWhiteSpace(host) ? null : host;
+        }
+    }
+
+    internal interface IHostAddressResolver
+    {
+        Task<IPAddress[]> GetHostAddressesAsync(string hostNameOrAddress, CancellationToken cancellationToken);
+    }
+
+    internal sealed class DnsHostAddressResolver : IHostAddressResolver
+    {
+        public async Task<IPAddress[]> GetHostAddressesAsync(string hostNameOrAddress, CancellationToken cancellationToken)
+        {
+#if NET8_0_OR_GREATER
+            return await Dns.GetHostAddressesAsync(hostNameOrAddress, cancellationToken).ConfigureAwait(false);
+#else
+            cancellationToken.ThrowIfCancellationRequested();
+            var addresses = await Dns.GetHostAddressesAsync(hostNameOrAddress).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            return addresses;
+#endif
+        }
+    }
+
+    internal static class OutboundHostAddressValidation
+    {
+        public static async Task<bool> AreAddressesAllowedAsync(
+            string host,
+            IHostAddressResolver hostAddressResolver,
+            CancellationToken cancellationToken)
+        {
+            IPAddress[] addresses;
+            try
+            {
+                addresses = await hostAddressResolver.GetHostAddressesAsync(host, cancellationToken).ConfigureAwait(false);
+            }
+            catch (SocketException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+
+            return addresses.Length > 0 && addresses.All(address => !IsBlockedAddress(address));
+        }
+
+        public static bool IsBlockedAddress(IPAddress address)
+        {
+            if (address.IsIPv4MappedToIPv6)
+            {
+                address = address.MapToIPv4();
+            }
+
+            if (IPAddress.Any.Equals(address)
+                || IPAddress.IPv6Any.Equals(address)
+                || IPAddress.IsLoopback(address))
+            {
+                return true;
+            }
+
+            var bytes = address.GetAddressBytes();
+            if (address.AddressFamily == AddressFamily.InterNetwork)
+            {
+                return bytes[0] == 10
+                    || (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+                    || (bytes[0] == 192 && bytes[1] == 168)
+                    || (bytes[0] == 169 && bytes[1] == 254);
+            }
+
+            return address.AddressFamily == AddressFamily.InterNetworkV6
+                && ((bytes[0] & 0xFE) == 0xFC
+                    || (bytes[0] == 0xFE && (bytes[1] & 0xC0) == 0x80));
         }
     }
 }

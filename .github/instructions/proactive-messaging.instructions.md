@@ -14,7 +14,7 @@ When working on proactive messaging, conversation continuation, or proactive HTT
 
 ## Key Design Points
 
-- **Conversation storage is required** for HTTP-triggered proactive flows. `Proactive.StoreConversationAsync` persists `Conversation` (Claims + ConversationReference) to `IStorage` under key `proactive/conversations/{conversationId}`.
+- **Conversation storage is required for `{conversationId}` HTTP routes**, which resolve the target from `IStorage`. Body-based HTTP routes and in-code overloads can receive a complete `Conversation` directly. `Proactive.StoreConversationAsync` persists `Conversation` (Claims + ConversationReference) under key `proactive/conversations/{conversationId}`.
 - **Two invocation styles**: HTTP endpoints (via `MapAgentProactiveEndpoints`) for external triggers, and in-code `Proactive.ContinueConversationAsync` / `Proactive.SendActivityAsync` for agent-initiated scenarios.
 - **SendActivity** is fire-and-send — it creates a minimal turn to deliver a single activity. **ContinueConversation** creates a full turn with TurnState, middleware, and optional token handling.
 - **ProcessProactiveAsync** on the adapter creates the full turn pipeline (state, middleware). This differs from the simpler `ContinueConversationAsync` on the adapter which only provides a raw TurnContext callback.

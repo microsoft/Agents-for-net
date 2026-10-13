@@ -14,6 +14,17 @@ namespace Microsoft.Agents.CopilotStudio.Client.Discovery
         /// </summary>
         static readonly string ApiVersion = "2022-03-01-preview";
 
+        internal static Uri GetConversationEndpointsDiscoveryUrl(ConnectionSettings settings)
+        {
+            // Reuse cloud and environment resolution without retaining the legacy invocation path.
+            var builder = new UriBuilder(GetCopilotStudioConnectionUrl(settings, null))
+            {
+                Path = $"/copilotstudio/agents/{Uri.EscapeDataString(settings.SchemaName!)}/conversation-endpoints",
+                Query = string.Empty
+            };
+            return builder.Uri;
+        }
+
         /// <summary>
         /// Gets the Power Platform API connection URL for the given settings.
         /// </summary>

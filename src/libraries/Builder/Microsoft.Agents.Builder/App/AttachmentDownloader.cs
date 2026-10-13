@@ -14,12 +14,25 @@ namespace Microsoft.Agents.Builder.App
     public class AttachmentDownloader : IInputFileDownloader
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IOutboundHostValidator _hostValidator;
+        private readonly AttachmentDownloadHttpClient? _validatedHttpClient;
 
         public AttachmentDownloader(IHttpClientFactory httpClientFactory, IOutboundHostValidator hostValidator = null)
+            : this(httpClientFactory, hostValidator, new DnsHostAddressResolver(), validatedHttpClient: null)
+        {
+        }
+
+        internal AttachmentDownloader(
+            IHttpClientFactory httpClientFactory,
+            IOutboundHostValidator hostValidator,
+            IHostAddressResolver hostAddressResolver,
+            HttpClient validatedHttpClient)
         {
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-            _hostValidator = hostValidator;
+            _validatedHttpClient = hostValidator?.Enabled == true
+                ? validatedHttpClient == null
+                    ? new AttachmentDownloadHttpClient(hostValidator, hostAddressResolver)
+                    : new AttachmentDownloadHttpClient(hostValidator, hostAddressResolver, validatedHttpClient)
+                : null;
         }
 
         public async Task<IList<InputFile>> DownloadFilesAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken = default)
@@ -38,7 +51,7 @@ namespace Microsoft.Agents.Builder.App
 
             foreach (Attachment attachment in turnContext.Activity.Attachments)
             {
-                InputFile? file = await DownloadFileAsync(attachment);
+                InputFile? file = await DownloadFileAsync(attachment, cancellationToken);
                 if (file != null)
                 {
                     files.Add(file);
@@ -48,48 +61,62 @@ namespace Microsoft.Agents.Builder.App
             return files;
         }
 
-        private async Task<InputFile?> DownloadFileAsync(Attachment attachment)
+        private async Task<InputFile?> DownloadFileAsync(Attachment attachment, CancellationToken cancellationToken)
         {
             string? name = attachment.Name;
-
-            using var httpClient = _httpClientFactory.CreateClient(nameof(AttachmentDownloader));
 
             if (attachment.ContentUrl != null && (attachment.ContentUrl.StartsWith("https://") || attachment.ContentUrl.StartsWith("http://localhost")))
             {
                 // Determine where the file is hosted.
                 var remoteFileUrl = attachment.ContentUrl;
 
-                // Shared allowed-hosts control (opt-in, disabled by default). Restrict the outbound
-                // server-side request to allowed hosts to mitigate SSRF against internal resources.
-                if (_hostValidator != null && _hostValidator.Enabled && !_hostValidator.IsAllowed(remoteFileUrl))
+                HttpResponseMessage response;
+                if (_validatedHttpClient != null)
                 {
-                    return null;
+                    response = await _validatedHttpClient.SendAsync(
+                        new Uri(remoteFileUrl),
+                        configureInitialRequest: null,
+                        cancellationToken).ConfigureAwait(false);
+                    if (response == null)
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    using var httpClient = _httpClientFactory.CreateClient(nameof(AttachmentDownloader));
+                    using HttpRequestMessage request = new(HttpMethod.Get, remoteFileUrl);
+                    response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 }
 
-                using HttpRequestMessage request = new(HttpMethod.Get, remoteFileUrl);
-                HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
-
-                // Failed to download file
-                if (!response.IsSuccessStatusCode)
+                using (response)
                 {
-                    return null;
+                    // Failed to download file
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return null;
+                    }
+
+                    // Convert to a buffer
+#if NET8_0_OR_GREATER
+                    byte[] content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+#else
+                    byte[] content = await response.Content.ReadAsByteArrayAsync();
+#endif
+
+                    // Fixup content type
+                    string contentType = response.Content.Headers.ContentType.MediaType;
+                    if (contentType.StartsWith("image/"))
+                    {
+                        contentType = "image/png";
+                    }
+
+                    return new InputFile(new BinaryData(content), contentType)
+                    {
+                        ContentUrl = attachment.ContentUrl,
+                        Filename = name
+                    };
                 }
-
-                // Convert to a buffer
-                byte[] content = await response.Content.ReadAsByteArrayAsync();
-
-                // Fixup content type
-                string contentType = response.Content.Headers.ContentType.MediaType;
-                if (contentType.StartsWith("image/"))
-                {
-                    contentType = "image/png";
-                }
-
-                return new InputFile(new BinaryData(content), contentType)
-                {
-                    ContentUrl = attachment.ContentUrl,
-                    Filename = name
-                };
             }
             else
             {

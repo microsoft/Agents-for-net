@@ -1,4 +1,4 @@
-﻿
+
 # Teams Conversation Bot
 
 This Agent has been created using [Microsoft 365 Agents SDK](https://github.com/microsoft/agents). This sample shows how to incorporate basic conversational flow into a Teams application. It also illustrates a few of the Teams specific calls you can make from your bot.
@@ -82,9 +82,12 @@ You can interact with this bot in Teams by sending it a message, or selecting a 
 4. **QuotedReply**
    - **Result:** The bot replies with a `quotedReply` entity that references the incoming message.
    - **Valid Scopes:** personal, group chat, team chat
-5. **PromptPreview**
-   - **Result:** The bot sends a targeted response containing Prompt Preview metadata for the incoming targeted slash command.
-   - **Valid Scopes:** group chat, team chat
+5. **TargetedMessages:**
+   - **Result:** The bot sends a separate targeted message to each member, visible only to that member.
+   - **Valid Scopes:** personal (user-to-user) chat, group chat, team chat
+5. **PromptPreview** _(Type `/` in the Teams compose box and select this agent)_
+   - **Result:** The bot sends a targeted response containing Prompt Preview metadata.
+   - **Valid Scopes:** personal (user-to-user) chat, group chat, team chat
    - **Usage:** Select `promptpreview` from the Teams slash-command picker. This requires the dev-preview manifest included with the sample.
 6. **CustomFeedback**
    - **Result:** The agent sends a response with thumbs-up and thumbs-down buttons. Selecting either button opens a custom feedback dialog.
