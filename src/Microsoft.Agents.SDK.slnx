@@ -1,0 +1,125 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Libraries/" />
+  <Folder Name="/Libraries/Authentication/">
+    <Project Path="libraries/Authentication/Authentication.EntraAuthSidecar/Microsoft.Agents.Authentication.EntraAuthSidecar.csproj" />
+    <Project Path="libraries/Authentication/Authentication.Msal/Microsoft.Agents.Authentication.Msal.csproj" />
+  </Folder>
+  <Folder Name="/Libraries/Builder/">
+    <Project Path="libraries/Builder/Microsoft.Agents.Builder.Dialogs/Microsoft.Agents.Builder.Dialogs.csproj" />
+    <Project Path="libraries/Builder/Microsoft.Agents.Builder.Testing/Microsoft.Agents.Builder.Testing.csproj" />
+    <Project Path="libraries/Builder/Microsoft.Agents.Builder/Microsoft.Agents.Builder.csproj" />
+  </Folder>
+  <Folder Name="/Libraries/Client/">
+    <Project Path="libraries/Client/Microsoft.Agents.Client/Microsoft.Agents.Client.csproj" />
+    <Project Path="libraries/Client/Microsoft.Agents.Connector/Microsoft.Agents.Connector.csproj" />
+    <Project Path="libraries/Client/Microsoft.Agents.CopilotStudio.Client/Microsoft.Agents.CopilotStudio.Client.csproj" />
+  </Folder>
+  <Folder Name="/Libraries/Core/">
+    <Project Path="libraries/Core/Microsoft.Agents.Authentication/Microsoft.Agents.Authentication.csproj" />
+    <Project Path="libraries/Core/Microsoft.Agents.Core.Analyzers/Microsoft.Agents.Core.Analyzers.csproj" />
+    <Project Path="libraries/Core/Microsoft.Agents.Core/Microsoft.Agents.Core.csproj" />
+  </Folder>
+  <Folder Name="/Libraries/Extensions/">
+    <Project Path="libraries/Extensions/Microsoft.Agents.Extensions.A2A/Microsoft.Agents.Extensions.A2A.csproj" />
+    <Project Path="libraries/Extensions/Microsoft.Agents.Extensions.MSTeams.Analyzers/Microsoft.Agents.Extensions.MSTeams.Analyzers.csproj" />
+    <Project Path="libraries/Extensions/Microsoft.Agents.Extensions.MSTeams/Microsoft.Agents.Extensions.MSTeams.csproj" />
+    <Project Path="libraries/Extensions/Microsoft.Agents.Extensions.SharePoint/Microsoft.Agents.Extensions.SharePoint.csproj" />
+    <Project Path="libraries/Extensions/Microsoft.Agents.Extensions.Slack/Microsoft.Agents.Extensions.Slack.csproj" />
+    <Project Path="libraries/Extensions/Microsoft.Agents.Extensions.Teams/Microsoft.Agents.Extensions.Teams.csproj" />
+  </Folder>
+  <Folder Name="/Libraries/Hosting/">
+    <Project Path="libraries/Hosting/AspNetCore/Microsoft.Agents.Hosting.AspNetCore.csproj" />
+    <Project Path="libraries/Hosting/DirectLine.NamedPipes/Microsoft.Agents.Hosting.DirectLine.NamedPipes.csproj" />
+  </Folder>
+  <Folder Name="/Libraries/Storage/">
+    <Project Path="libraries/Storage/Microsoft.Agents.Storage.Blobs/Microsoft.Agents.Storage.Blobs.csproj" />
+    <Project Path="libraries/Storage/Microsoft.Agents.Storage.CosmosDb/Microsoft.Agents.Storage.CosmosDb.csproj" />
+    <Project Path="libraries/Storage/Microsoft.Agents.Storage.Transcript/Microsoft.Agents.Storage.Transcript.csproj" />
+    <Project Path="libraries/Storage/Microsoft.Agents.Storage/Microsoft.Agents.Storage.csproj" />
+  </Folder>
+  <Folder Name="/Samples/">
+    <Project Path="samples/A365LoopTest/A365LoopTest.csproj" />
+    <Project Path="samples/AgenticAI/AgenticAI.csproj" />
+    <Project Path="samples/CopilotStudioAgentConnector/CopilotStudioAgentConnector.csproj" />
+    <Project Path="samples/CopilotStudioEchoSkill/CopilotStudioEchoSkill.csproj" />
+    <Project Path="samples/DialogAgent/DialogAgent.csproj" />
+    <Project Path="samples/EmptyAgent/EmptyAgent.csproj" />
+    <Project Path="samples/HandlingAttachments/HandlingAttachments.csproj" />
+    <Project Path="samples/MultiAgent/MultiAgent.csproj" />
+    <Project Path="samples/NamedPipeAgent/NamedPipeAgent.csproj" />
+    <Project Path="samples/Proactive/Proactive.csproj" />
+    <Project Path="samples/SlackAgent/SlackAgent.csproj" />
+    <Project Path="samples/StreamingMessageAgent/StreamingMessageAgent.csproj" />
+    <Project Path="samples/TelemetryAgent/TelemetryAgent.csproj" />
+  </Folder>
+  <Folder Name="/Samples/A2A/">
+    <Project Path="samples/A2A/A2AAgent/A2AAgent.csproj" />
+    <Project Path="samples/A2A/A2ACli/A2ACli.csproj" />
+    <Project Path="samples/A2A/A2ATCKAgent/A2ATCKAgent.csproj" />
+  </Folder>
+  <Folder Name="/Samples/AgentToAgent/">
+    <Project Path="samples/AgentToAgent/Agent1/Agent1.csproj" />
+    <Project Path="samples/AgentToAgent/Agent2/Agent2.csproj" />
+    <Project Path="samples/AgentToAgent/StreamingAgent1/StreamingAgent1.csproj" />
+  </Folder>
+  <Folder Name="/Samples/Authorization/">
+    <Project Path="samples/Authorization/AutoSignIn/AutoSignIn.csproj" />
+    <Project Path="samples/Authorization/OBOAuthorization/OBOAuthorization.csproj" />
+    <Project Path="samples/Authorization/OutlookUAM/OutlookUAM.csproj" />
+    <Project Path="samples/Authorization/SidecarAuth/SidecarAuth.csproj" />
+  </Folder>
+  <Folder Name="/Samples/Compat/" />
+  <Folder Name="/Samples/Compat/SkillDialog/">
+    <Project Path="samples/Compat/SkillsDialog/DialogRootBot/DialogRootBot.csproj" />
+    <Project Path="samples/Compat/SkillsDialog/DialogSkillBot/DialogSkillBot.csproj" />
+  </Folder>
+  <Folder Name="/Samples/CopilotStudioClient/">
+    <Project Path="samples/CopilotStudioClient/CopilotStudioClient/CopilotStudioClient.csproj" />
+    <Project Path="samples/CopilotStudioClient/CopilotStudioSubscriberClient/CopilotStudioSubscriberClient.csproj" />
+    <Project Path="samples/CopilotStudioClient/EvalClient/EvalClient.csproj" />
+    <Project Path="samples/CopilotStudioClient/OrchestratedClient/OrchestratedClient.csproj" />
+  </Folder>
+  <Folder Name="/Samples/SemanticKernel/">
+    <Project Path="samples/SemanticKernel/WeatherAgent/WeatherAgent.csproj" />
+  </Folder>
+  <Folder Name="/Samples/Teams/">
+    <Project Path="samples/Teams/ConversationAgent/ConversationAgent.csproj" />
+    <Project Path="samples/Teams/MessageExtensions/MessageExtensions.csproj" />
+    <Project Path="samples/Teams/TaskModules/TaskModules.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="../scripts/TeamsApiDrift/Microsoft.Agents.TeamsApiDrift.csproj" />
+    <Project Path="tests/Microsoft.Agents.Authentication.EntraAuthSidecar.Tests/Microsoft.Agents.Authentication.EntraAuthSidecar.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Authentication.Msal.Tests/Microsoft.Agents.Authentication.Msal.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Authentication.Tests/Microsoft.Agents.Authentication.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Builder.Dialogs.Tests/Microsoft.Agents.Builder.Dialogs.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Builder.Testing.Tests/Microsoft.Agents.Builder.Testing.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Builder.Tests/Microsoft.Agents.Builder.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Client.Tests/Microsoft.Agents.Client.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Connector.Tests/Microsoft.Agents.Connector.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.CopilotStudio.Client.Tests/Microsoft.Agents.CopilotStudio.Client.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Core.Analyzers.Tests/Microsoft.Agents.Core.Analyzers.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Core.Telemetry.Tests/Microsoft.Agents.Core.Telemetry.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Core.Tests/Microsoft.Agents.Core.HeaderPropagation.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Extensions.A2A.Tests/Microsoft.Agents.Extensions.A2A.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests/Microsoft.Agents.Extensions.MSTeams.Analyzers.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Extensions.MSTeams.Tests/Microsoft.Agents.Extensions.MSTeams.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Extensions.SharePoint.Tests/Microsoft.Agents.Extensions.SharePoint.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Extensions.Slack.Tests/Microsoft.Agents.Extensions.Slack.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Extensions.Teams.Tests/Microsoft.Agents.Extensions.Teams.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Hosting.AspNetCore/Microsoft.Agents.Hosting.AspNetCore.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Hosting.DirectLine.NamedPipes/Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Model.Tests/Microsoft.Agents.Model.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Samples.A2A.Tests/Microsoft.Agents.Samples.A2A.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.SampleTest/Microsoft.Agents.SampleTest.csproj" />
+    <Project Path="tests/Microsoft.Agents.State.Tests/Microsoft.Agents.State.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Storage.Tests/Microsoft.Agents.Storage.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.TeamsApiDrift.Tests/Microsoft.Agents.TeamsApiDrift.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.TestSupport/Microsoft.Agents.TestSupport.csproj" />
+  </Folder>
+</Solution>
