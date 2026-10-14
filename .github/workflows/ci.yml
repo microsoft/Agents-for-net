@@ -65,7 +65,7 @@ jobs:
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     - name: Package
-      run: dotnet pack --no-build --no-restore -c debug src/Microsoft.Agents.SDK.sln 
+      run: dotnet pack --no-build --no-restore -c debug src/Microsoft.Agents.SDK.slnx
 
     - name: Test in net8
       run: dotnet test --no-build --no-restore -c debug ./src/ -f net8.0

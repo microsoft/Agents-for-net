@@ -11,7 +11,7 @@ This is the Microsoft 365 Agents SDK for .NET — a framework for building enter
 
 ```bash
 # Build entire solution
-dotnet build src/Microsoft.Agents.SDK.sln
+dotnet build src/Microsoft.Agents.SDK.slnx
 
 # Build via top-level project (includes all libraries)
 dotnet build AgentSdk.proj
@@ -29,7 +29,7 @@ dotnet test src/tests/Microsoft.Agents.Core.Tests/
 dotnet test --filter "FullyQualifiedName~Namespace.ClassName.MethodName"
 
 # Create NuGet packages
-dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
+dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.slnx
 ```
 
 ## Architecture

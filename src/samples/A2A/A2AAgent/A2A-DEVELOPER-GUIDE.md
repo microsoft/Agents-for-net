@@ -530,7 +530,7 @@ fail explicitly instead of falling back to an arbitrary choice.
 ## Design history and further reading
 
 - [A2AAgent sample](README.md)
-- [A2AClient sample](../A2AClient/README.md)
+- [A2ACli sample](../A2ACli/README.md)
 - [Request-token OAuth and OBO design](https://github.com/microsoft/Agents-for-net/issues/981)
 - [Agent Card generation and skill correlation design](https://github.com/microsoft/Agents-for-net/issues/1010)
 - [A2A protocol specification](https://a2a-protocol.org/latest/specification/)

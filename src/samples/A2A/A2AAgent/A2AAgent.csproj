@@ -5,6 +5,7 @@
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<IncludeOtelSampleHelpers>true</IncludeOtelSampleHelpers>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -19,6 +20,23 @@
 		<ProjectReference Include="..\..\..\libraries\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
 		<ProjectReference Include="..\..\..\libraries\Extensions\Microsoft.Agents.Extensions.A2A\Microsoft.Agents.Extensions.A2A.csproj" />
 		<ProjectReference Include="..\..\..\libraries\Hosting\AspNetCore\Microsoft.Agents.Hosting.AspNetCore.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- OpenTelemetry packages - versions managed centrally -->
+		<PackageReference Include="OpenTelemetry" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Process" />
+
+		<!-- OpenTelemetry Exporters -->
+		<PackageReference Include="OpenTelemetry.Exporter.Console" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+
+		<!-- Azure Monitor (Application Insights) Exporter -->
+		<PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -3,6 +3,7 @@
 *.props text eol=lf
 *.targets text eol=lf
 *.sln text eol=lf
+*.slnx text eol=lf
 *.md text eol=lf
 *.txt text eol=lf
 *.json text eol=lf

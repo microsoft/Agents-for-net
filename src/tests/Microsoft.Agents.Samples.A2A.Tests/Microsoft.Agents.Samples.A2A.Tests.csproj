@@ -23,6 +23,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Moq" />
+    <PackageReference Include="OpenTelemetry" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
@@ -33,7 +34,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.A2A\Microsoft.Agents.Extensions.A2A.csproj" />
     <ProjectReference Include="..\..\samples\A2A\A2AAgent\A2AAgent.csproj" Aliases="A2AAgentSample" />
-    <ProjectReference Include="..\..\samples\A2A\A2AClient\A2AClient.csproj" />
+    <ProjectReference Include="..\..\samples\A2A\A2ACli\A2ACli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

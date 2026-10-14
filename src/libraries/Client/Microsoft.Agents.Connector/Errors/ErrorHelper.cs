@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Errors;
@@ -59,6 +59,5 @@ namespace Microsoft.Agents.Connector.Errors
         internal static readonly AgentErrorDefinition TokenServiceGetSignInUrlUnexpected = new AgentErrorDefinition(-50524, Properties.Resources.TokenServiceGetSignInUrlUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50524");
         internal static readonly AgentErrorDefinition TokenServiceGetSignInResourceUnexpected = new AgentErrorDefinition(-50525, Properties.Resources.TokenServiceGetSignInResourceUnexpected, "https://aka.ms/M365AgentsErrorCodes/#-50525");
         internal static readonly AgentErrorDefinition TokenServiceExchangeErrorResponse = new AgentErrorDefinition(-50526, Properties.Resources.TokenServiceExchangeErrorResponse, "https://aka.ms/M365AgentsErrorCodes/#-50526");
-        internal static readonly AgentErrorDefinition TeamsTargetedRequiresGroupChat = new AgentErrorDefinition(-50527, Properties.Resources.TeamsTargetedRequiresGroupChat, "https://aka.ms/M365AgentsErrorCodes/#-50527");
     }
 }
