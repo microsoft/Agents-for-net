@@ -119,6 +119,7 @@
     <PackageVersion Include="Microsoft.Graph.Core" Version="4.0.1" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="Terminal.Gui" Version="2.5.0" />
     <!-- To override older version in AdaptiveCards -->
     <!-- Semantic Kernel Samples -->
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.Core" Version="1.73.0" />

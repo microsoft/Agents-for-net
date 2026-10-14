@@ -46,7 +46,6 @@
     <Project Path="samples/A365LoopTest/A365LoopTest.csproj" />
     <Project Path="samples/AgenticAI/AgenticAI.csproj" />
     <Project Path="samples/CopilotStudioAgentConnector/CopilotStudioAgentConnector.csproj" />
-    <Project Path="samples/CopilotStudioClient/CopilotStudioClient.Terminal/CopilotStudioClient.Terminal.csproj" />
     <Project Path="samples/CopilotStudioEchoSkill/CopilotStudioEchoSkill.csproj" />
     <Project Path="samples/DialogAgent/DialogAgent.csproj" />
     <Project Path="samples/EmptyAgent/EmptyAgent.csproj" />
@@ -80,6 +79,7 @@
     <Project Path="samples/Compat/SkillsDialog/DialogSkillBot/DialogSkillBot.csproj" />
   </Folder>
   <Folder Name="/Samples/CopilotStudioClient/">
+    <Project Path="samples/CopilotStudioClient/CopilotStudioClient.Terminal/CopilotStudioClient.Terminal.csproj" />
     <Project Path="samples/CopilotStudioClient/CopilotStudioClient/CopilotStudioClient.csproj" />
     <Project Path="samples/CopilotStudioClient/CopilotStudioSubscriberClient/CopilotStudioSubscriberClient.csproj" />
     <Project Path="samples/CopilotStudioClient/EvalClient/EvalClient.csproj" />
