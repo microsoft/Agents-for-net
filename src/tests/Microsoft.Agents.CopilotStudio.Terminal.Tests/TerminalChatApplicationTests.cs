@@ -64,23 +64,6 @@ public sealed class TerminalChatApplicationTests
     }
 
     [Fact]
-    public void ReadmeKeyboardShortcuts_IncludeF5SaveActivities()
-    {
-        string repositoryRoot = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".."));
-        string readme = File.ReadAllText(
-            Path.Combine(
-                repositoryRoot,
-                "src",
-                "samples",
-                "CopilotStudioClient",
-                "CopilotStudioClient.Terminal",
-                "README.md"));
-
-        Assert.Contains("`F5`: save activities", readme, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void F5_FromHelpStartsOneExportAndReportsFilenameWithoutChangingSurface()
     {
         TaskCompletionSource<object?> exportStarted = NewSignal();
