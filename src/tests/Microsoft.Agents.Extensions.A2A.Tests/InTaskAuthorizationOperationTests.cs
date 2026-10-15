@@ -15,12 +15,13 @@ public class InTaskAuthorizationOperationTests
     {
         var builder = new A2ACustomOperationRegistryBuilder();
 
-        var operation = InTaskAuthorizationOperation.AddOperation(builder);
+        var registration = InTaskAuthorizationOperation.AddOperation(builder);
         var registry = builder.Build();
 
         Assert.Equal(
             InTaskAuthorizationExtension.AuthResponseOperationId,
-            operation.Id.Value);
+            registration.Operation.Id.Value);
+        Assert.Equal(InTaskAuthorizationExtension.Uri, registration.Extension.Uri);
         Assert.NotNull(registry);
     }
 
@@ -28,11 +29,11 @@ public class InTaskAuthorizationOperationTests
     public void AddJsonRpcBinding_UsesAuthResponseMethod()
     {
         var operationBuilder = new A2ACustomOperationRegistryBuilder();
-        var operation = InTaskAuthorizationOperation.AddOperation(operationBuilder);
+        var registration = InTaskAuthorizationOperation.AddOperation(operationBuilder);
         var registry = operationBuilder.Build();
         var bindingBuilder = new A2AJsonRpcCustomOperationBuilder();
 
-        InTaskAuthorizationOperation.AddJsonRpcBinding(bindingBuilder, operation);
+        InTaskAuthorizationOperation.AddJsonRpcBinding(bindingBuilder, registration.Operation);
 
         Assert.NotNull(bindingBuilder.Build(registry));
     }
@@ -41,11 +42,11 @@ public class InTaskAuthorizationOperationTests
     public void AddHttpBinding_UsesAuthResponseRoute()
     {
         var operationBuilder = new A2ACustomOperationRegistryBuilder();
-        var operation = InTaskAuthorizationOperation.AddOperation(operationBuilder);
+        var registration = InTaskAuthorizationOperation.AddOperation(operationBuilder);
         var registry = operationBuilder.Build();
         var bindingBuilder = new A2AHttpCustomOperationBuilder();
 
-        InTaskAuthorizationOperation.AddHttpBinding(bindingBuilder, operation);
+        InTaskAuthorizationOperation.AddHttpBinding(bindingBuilder, registration.Operation);
 
         Assert.NotNull(bindingBuilder.Build(registry));
     }

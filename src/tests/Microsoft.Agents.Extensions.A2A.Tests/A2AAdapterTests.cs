@@ -44,6 +44,8 @@ namespace Microsoft.Agents.Extensions.A2A.Tests;
 
 public class A2AAdapterTests
 {
+    private const string A2AExtensionsHeader = "A2A-Extensions";
+
     private readonly Mock<ITaskStore> _mockTaskStore;
     private readonly ILoggerFactory _mockLogger;
     private readonly Mock<IStorage> _mockStorage;
@@ -554,10 +556,53 @@ public class A2AAdapterTests
         Assert.Equal(InTaskAuthorizationExtension.Uri, extension.Uri);
         Assert.False(extension.Required);
         Assert.Equal("auth-response", extension.Params!.Value.GetProperty("operations").GetProperty("jsonRpc").GetString());
+        Assert.Equal(
+            "POST /tasks/{taskId}:auth-response",
+            extension.Params.Value.GetProperty("operations").GetProperty("httpJson").GetString());
         Assert.False(extension.Params.Value.TryGetProperty("credentialHeader", out _));
         Assert.DoesNotContain(agentCard.SecuritySchemes.Values, scheme => scheme.OAuth2SecurityScheme != null);
         Assert.Null(agentCard.SecurityRequirements);
         Assert.Null(Assert.Single(agentCard.Skills).SecurityRequirements);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithInTaskAuthorization_RestoresExtensionRemovedByCardHandler()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:Mode"] = "InTask",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:DeviceAuthorizationUrl"] = "https://login.example.com/devicecode",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:TokenUrl"] = "https://login.example.com/token",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:Scopes:agent.read"] = "Access the agent",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "agent.read",
+        }));
+        var agent = new TestAgentApplicationRemovingExtensions(new AgentApplicationOptions(_mockStorage.Object));
+
+        var agentCard = await ProcessAgentCardAsync(adapter, agent);
+
+        var extension = Assert.Single(agentCard.Capabilities.Extensions);
+        Assert.Equal(InTaskAuthorizationExtension.Uri, extension.Uri);
+    }
+
+    [Fact]
+    public async Task ProcessAgentCard_WithInTaskAuthorization_RejectsConflictingExtensionFromCardHandler()
+    {
+        var adapter = CreateAdapter(CreateConfiguration(new Dictionary<string, string>
+        {
+            ["AgentApplication:UserAuthorization:Handlers:request:Type"] = "A2AUserAuthorization",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:Mode"] = "InTask",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:DeviceAuthorizationUrl"] = "https://login.example.com/devicecode",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:TokenUrl"] = "https://login.example.com/token",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:Scopes:agent.read"] = "Access the agent",
+            ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "agent.read",
+        }));
+        var agent = new TestAgentApplicationWithConflictingExtension(new AgentApplicationOptions(_mockStorage.Object));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ProcessAgentCardAsync(adapter, agent));
+
+        Assert.Contains(InTaskAuthorizationExtension.Uri, exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -865,7 +910,13 @@ public class A2AAdapterTests
             var agent = new TestApplication(options);
             agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
             {
-                await context.SendActivityAsync($"Echo: {context.Activity.Text}", cancellationToken: ct);
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = $"Echo: {context.Activity.Text}",
+                    },
+                    cancellationToken: ct);
             });
             return agent;
         });
@@ -933,7 +984,13 @@ public class A2AAdapterTests
             agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
             {
                 var token = await agent.UserAuthorization.GetTurnTokenAsync(context, "request", ct);
-                await context.SendActivityAsync($"Token: {token}", cancellationToken: ct);
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = $"Token: {token}",
+                    },
+                    cancellationToken: ct);
             });
             return agent;
         });
@@ -951,6 +1008,7 @@ public class A2AAdapterTests
     public async Task ProcessJsonRpcMessageSendAsync_WithInTaskAuthorization_ReturnsAuthRequired()
     {
         var connections = Mock.Of<IConnections>();
+        A2ARequestContext activation = null;
         var record = UseRecord(record =>
         {
             var authorization = new A2AUserAuthorization(
@@ -993,16 +1051,19 @@ public class A2AAdapterTests
                 .OnMessage("Hello", (_, _, _) => throw new InvalidOperationException("Protected route must not run before authorization."), autoSigninHandlers: ["request"]));
             return agent;
         });
+        record.Adapter.Use(new CaptureTurnContextMiddleware(context =>
+        {
+            activation = context.Services.Get<RequestContext>()?.ExtensionActivation;
+        }));
 
         var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-in-task")));
-        context.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+        context.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
 
-        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
-        await result.ExecuteAsync(context);
+        await ExecuteJsonRpcAsync(record.Adapter, record.Agent, context, CancellationToken.None);
 
         var task = ReadTaskResponse(context);
         Assert.Equal(TaskState.AuthRequired, task.Status.State);
-        Assert.Equal(InTaskAuthorizationExtension.Uri, context.Response.Headers[A2AProtocolExtensionRequest.HeaderName]);
+        Assert.Equal(InTaskAuthorizationExtension.Uri, context.Response.Headers[A2AExtensionsHeader]);
         var request = task.Status.Message.Metadata[InTaskAuthorizationExtension.Uri]
             .GetProperty("authorizationRequest");
         Assert.False(string.IsNullOrWhiteSpace(request.GetProperty("id").GetString()));
@@ -1010,6 +1071,8 @@ public class A2AAdapterTests
             "https://login.example.com/devicecode",
             request.GetProperty("oauth2").GetProperty("flows").GetProperty("deviceCode").GetProperty("deviceAuthorizationUrl").GetString());
         Assert.Equal("agent.read", request.GetProperty("requiredScopes")[0].GetString());
+        Assert.NotNull(activation);
+        Assert.Contains(InTaskAuthorizationExtension.Uri, activation.ActivatedExtensions);
     }
 
     [Fact]
@@ -1017,6 +1080,7 @@ public class A2AAdapterTests
     {
         var connections = Mock.Of<IConnections>();
         IActivity endOfConversation = null;
+        A2ARequestContext cancelActivation = null;
         var record = UseRecord(record =>
         {
             var authorization = CreateInTaskAuthorization("request", record.Storage, connections);
@@ -1046,9 +1110,16 @@ public class A2AAdapterTests
                 endOfConversation = activity;
             }
         }));
+        record.Adapter.Use(new CaptureTurnContextMiddleware(context =>
+        {
+            if (context.Activity.IsType(ActivityTypes.EndOfConversation))
+            {
+                cancelActivation = context.Services.Get<RequestContext>()?.ExtensionActivation;
+            }
+        }));
 
         var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-in-task")));
-        initialContext.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+        initialContext.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
         var initialResult = await record.Adapter.ProcessJsonRpcAsync(
             initialContext.Request,
             initialContext.Response,
@@ -1066,6 +1137,7 @@ public class A2AAdapterTests
             Method = A2AMethods.CancelTask,
             Params = JsonSerializer.SerializeToElement(new CancelTaskRequest { Id = initialTask.Id }),
         }));
+        cancelContext.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
         var cancelResult = await record.Adapter.ProcessJsonRpcAsync(
             cancelContext.Request,
             cancelContext.Response,
@@ -1076,6 +1148,8 @@ public class A2AAdapterTests
         Assert.Equal(TaskState.Canceled, ReadTaskResponse(cancelContext).Status.State);
         Assert.NotNull(endOfConversation);
         Assert.Equal(EndOfConversationCodes.UserCancelled, endOfConversation.Code);
+        Assert.NotNull(cancelActivation);
+        Assert.Contains(InTaskAuthorizationExtension.Uri, cancelActivation.ActivatedExtensions);
         Assert.Empty(await record.Storage.ReadAsync<object>([storageKey], CancellationToken.None));
     }
 
@@ -1089,6 +1163,7 @@ public class A2AAdapterTests
         var resumeEventSeen = false;
         object resumeEventValue = null;
         JsonElement? resumeEventMessage = null;
+        A2ARequestContext resumeActivation = null;
         var record = UseRecord(record =>
         {
             var firstAuthorization = CreateInTaskAuthorization("first", record.Storage, connections);
@@ -1133,9 +1208,17 @@ public class A2AAdapterTests
                     A2AJsonUtilities.DefaultOptions);
             }
         }));
+        record.Adapter.Use(new CaptureTurnContextMiddleware(context =>
+        {
+            if (context.Activity.IsType(ActivityTypes.Event)
+                && string.Equals(context.Activity.Name, InTaskAuthorizationExtension.AuthResponseEventName, StringComparison.Ordinal))
+            {
+                resumeActivation = context.Services.Get<RequestContext>()?.ExtensionActivation;
+            }
+        }));
 
         var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("context-in-task")));
-        initialContext.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+        initialContext.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
 
         var initialResult = await record.Adapter.ProcessJsonRpcAsync(initialContext.Request, initialContext.Response, record.Agent, CancellationToken.None);
         await initialResult.ExecuteAsync(initialContext);
@@ -1156,10 +1239,13 @@ public class A2AAdapterTests
             AuthorizationRequestId = authorizationRequestId,
         };
 
-        async Task<DefaultHttpContext> ResumeAsync(string token)
+        async Task<DefaultHttpContext> ResumeAsync(string token, bool activateExtension = true)
         {
             var context = CreateHttpContext(string.Empty);
-            context.Request.Headers[A2AProtocolExtensionRequest.HeaderName] = InTaskAuthorizationExtension.Uri;
+            if (activateExtension)
+            {
+                context.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
+            }
             context.Request.Headers.Authorization = "Bearer agent-jwt";
             context.Request.Headers["x-a2a-intask-authorization"] = token;
             context.Request.Headers.Authorization = "Bearer request-jwt";
@@ -1202,6 +1288,30 @@ public class A2AAdapterTests
             }
             return context;
         }
+
+        var unactivatedResumeContext = await ResumeAsync("unactivated-token", activateExtension: false);
+        unactivatedResumeContext.Response.Body.Seek(0, SeekOrigin.Begin);
+        using (var unactivatedResponse = JsonDocument.Parse(unactivatedResumeContext.Response.Body))
+        {
+            var root = unactivatedResponse.RootElement;
+            var error = root.TryGetProperty("error", out var jsonRpcError) ? jsonRpcError : root;
+            Assert.True(
+                error.TryGetProperty("code", out var code),
+                $"Expected an A2A error code in: {root.GetRawText()}");
+            if (useHttpJson)
+            {
+                Assert.Equal(StatusCodes.Status400BadRequest, code.GetInt32());
+                Assert.Equal(
+                    "EXTENSION_SUPPORT_REQUIRED",
+                    error.GetProperty("details")[0].GetProperty("reason").GetString());
+            }
+            else
+            {
+                Assert.Equal(-32008, code.GetInt32());
+            }
+        }
+        Assert.False(resumeEventSeen);
+        Assert.Equal(0, routed);
 
         var contextId = resumeParameters.ContextId;
         resumeParameters.ContextId = "wrong-context";
@@ -1248,12 +1358,15 @@ public class A2AAdapterTests
         Assert.Equal(
             InTaskAuthorizationExtension.Uri,
             resumeMessage.GetProperty("extensions")[0].GetString());
+        Assert.NotNull(resumeActivation);
+        Assert.Contains(InTaskAuthorizationExtension.Uri, resumeActivation.ActivatedExtensions);
     }
 
     [Fact]
     public async Task ProcessJsonRpcMessageStreamAsync()
     {
         // Arrange
+        A2ARequestContext activation = null;
         var record = UseRecord((record) =>
         {
             var options = new TestApplicationOptions(record.Storage);
@@ -1266,6 +1379,10 @@ public class A2AAdapterTests
 
             return agent;
         });
+        record.Adapter.Use(new CaptureTurnContextMiddleware(context =>
+        {
+            activation = context.Services.Get<RequestContext>()?.ExtensionActivation;
+        }));
 
         var jsonRpcRequest = new JsonRpcRequest
         {
@@ -1286,6 +1403,7 @@ public class A2AAdapterTests
         };
 
         var context = CreateHttpContext(JsonSerializer.Serialize(jsonRpcRequest));
+        context.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
 
         // Act
 
@@ -1301,6 +1419,8 @@ public class A2AAdapterTests
         var streamText = reader.ReadToEnd();
         Assert.NotEmpty(streamText);
         Assert.Contains("Echo: Hello", streamText);
+        Assert.NotNull(activation);
+        Assert.Contains(InTaskAuthorizationExtension.Uri, activation.ActivatedExtensions);
     }
 
     [Fact]
@@ -1508,6 +1628,33 @@ public class A2AAdapterTests
         }
     }
 
+    private sealed class TestAgentApplicationRemovingExtensions(AgentApplicationOptions options)
+        : AgentApplication(options), IAgentCardHandler
+    {
+        public Task<A2AProtocolAgentCard> GetAgentCard(A2AProtocolAgentCard defaultCard)
+        {
+            defaultCard.Capabilities.Extensions = [];
+            return Task.FromResult(defaultCard);
+        }
+    }
+
+    private sealed class TestAgentApplicationWithConflictingExtension(AgentApplicationOptions options)
+        : AgentApplication(options), IAgentCardHandler
+    {
+        public Task<A2AProtocolAgentCard> GetAgentCard(A2AProtocolAgentCard defaultCard)
+        {
+            defaultCard.Capabilities.Extensions =
+            [
+                new global::A2A.AgentExtension
+                {
+                    Uri = InTaskAuthorizationExtension.Uri,
+                    Description = "Conflicting declaration.",
+                },
+            ];
+            return Task.FromResult(defaultCard);
+        }
+    }
+
     #endregion
 
     private static JsonRpcRequest CreateSendMessageRequest(string contextId)
@@ -1600,6 +1747,29 @@ public class A2AAdapterTests
         await endpoint.RequestDelegate!(context);
     }
 
+    private static async Task ExecuteJsonRpcAsync(
+        A2AAdapter adapter,
+        IAgent agent,
+        DefaultHttpContext context,
+        CancellationToken cancellationToken)
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddLogging();
+        builder.Services.AddSingleton(adapter);
+        builder.Services.AddSingleton(agent);
+
+        await using var app = builder.Build();
+        app.MapA2AJsonRpc(requireAuth: false, path: "/a2a");
+        context.RequestServices = app.Services;
+        var endpoint = ((IEndpointRouteBuilder)app).DataSources
+            .SelectMany(source => source.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Single(candidate => candidate.RoutePattern.RawText == "/a2a");
+
+        cancellationToken.ThrowIfCancellationRequested();
+        await endpoint.RequestDelegate!(context);
+    }
+
     private static DefaultHttpContext CreateHttpContext(string requestContent = null)
     {
         var context = new DefaultHttpContext();
@@ -1646,6 +1816,18 @@ public class A2AAdapterTests
             CancellationToken cancellationToken = default)
         {
             capture(turnContext.Activity);
+            await next(cancellationToken);
+        }
+    }
+
+    private sealed class CaptureTurnContextMiddleware(Action<ITurnContext> capture) : Microsoft.Agents.Builder.IMiddleware
+    {
+        public async Task OnTurnAsync(
+            ITurnContext turnContext,
+            NextDelegate next,
+            CancellationToken cancellationToken = default)
+        {
+            capture(turnContext);
             await next(cancellationToken);
         }
     }

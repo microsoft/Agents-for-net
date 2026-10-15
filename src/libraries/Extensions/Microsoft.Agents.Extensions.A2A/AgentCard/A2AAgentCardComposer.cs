@@ -10,12 +10,12 @@ using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Extensions.A2A.Authorization;
 using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Agents.Extensions.A2A.Routing;
-using Microsoft.Agents.Extensions.A2A.ProtocolExtensions;
 using Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.A2A.AgentCard;
@@ -29,7 +29,10 @@ internal sealed class A2AAgentCardComposer
         _configuration = configuration;
     }
 
-    public async Task<A2AProtocolAgentCard> ComposeAsync(A2AProtocolAgentCard hostDefaults, IAgent agent)
+    public async Task<A2AProtocolAgentCard> ComposeAsync(
+        A2AProtocolAgentCard hostDefaults,
+        IAgent agent,
+        A2AExtensionRegistration inTaskAuthorization)
     {
         ArgumentNullException.ThrowIfNull(hostDefaults);
         ArgumentNullException.ThrowIfNull(agent);
@@ -53,7 +56,6 @@ internal sealed class A2AAgentCardComposer
         var authorizationsByHandler = authorizations.ToDictionary(metadata => metadata.HandlerName, StringComparer.OrdinalIgnoreCase);
 
         AddInlineSchemes(hostDefaults, authorizations);
-        AddProtocolExtensions(hostDefaults, authorizations);
         if (_configuration != null)
         {
             AddGlobalRequirement(hostDefaults, authorizationsByHandler);
@@ -65,6 +67,7 @@ internal sealed class A2AAgentCardComposer
             hostDefaults = await agentCardHandler.GetAgentCard(hostDefaults).ConfigureAwait(false);
         }
 
+        AddProtocolExtensions(hostDefaults, authorizations, inTaskAuthorization);
         ValidateCard(hostDefaults);
         return hostDefaults;
     }
@@ -128,7 +131,8 @@ internal sealed class A2AAgentCardComposer
 
     private static void AddProtocolExtensions(
         A2AProtocolAgentCard agentCard,
-        IReadOnlyList<A2AAuthorizationMetadata> authorizations)
+        IReadOnlyList<A2AAuthorizationMetadata> authorizations,
+        A2AExtensionRegistration inTaskAuthorization)
     {
         if (!authorizations.Any(authorization => authorization.Mode == A2AUserAuthorizationMode.InTask))
         {
@@ -136,10 +140,24 @@ internal sealed class A2AAgentCardComposer
         }
 
         agentCard.Capabilities.Extensions ??= [];
-        IA2AProtocolExtension extension = new InTaskAuthorizationExtension();
-        if (!agentCard.Capabilities.Extensions.Any(candidate => string.Equals(candidate.Uri, extension.Uri, StringComparison.Ordinal)))
+        var declarations = agentCard.Capabilities.Extensions
+            .Where(candidate => string.Equals(candidate.Uri, inTaskAuthorization.Uri, StringComparison.Ordinal))
+            .ToArray();
+        if (declarations.Length == 0)
         {
-            agentCard.Capabilities.Extensions.Add(extension.CreateAgentCardExtension());
+            agentCard.Capabilities.Extensions.Add(inTaskAuthorization.ToAgentExtension());
+            return;
+        }
+
+        if (declarations.Length != 1
+            || (declarations[0].Description ?? string.Empty) != (inTaskAuthorization.Description ?? string.Empty)
+            || declarations[0].Required.GetValueOrDefault() != inTaskAuthorization.Required.GetValueOrDefault()
+            || declarations[0].Params.HasValue != inTaskAuthorization.Params.HasValue
+            || (declarations[0].Params.HasValue
+                && !JsonElement.DeepEquals(declarations[0].Params.Value, inTaskAuthorization.Params!.Value)))
+        {
+            throw new InvalidOperationException(
+                $"Agent Card extension declaration '{inTaskAuthorization.Uri}' does not match the registered extension.");
         }
     }
 

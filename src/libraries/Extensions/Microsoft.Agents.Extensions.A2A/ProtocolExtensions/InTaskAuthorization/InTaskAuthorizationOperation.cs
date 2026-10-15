@@ -17,17 +17,20 @@ internal static class InTaskAuthorizationOperation
     private static readonly A2AOperationId OperationId =
         new(InTaskAuthorizationExtension.AuthResponseOperationId);
 
-    internal static A2ACustomOperation<AuthResponseRequest, AgentTask> AddOperation(
+    internal static InTaskAuthorizationRegistration AddOperation(
         A2ACustomOperationRegistryBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        return builder.Map<AuthResponseRequest, AgentTask>(
+        var extension = builder.RegisterExtension(InTaskAuthorizationExtension.CreateAgentCardExtension());
+        var operation = builder.Map<AuthResponseRequest, AgentTask>(
+            extension,
             OperationId,
             A2AAdapter.AuthResponseAsync,
             InTaskAuthorizationJsonContext.Default.AuthResponseRequest,
             (System.Text.Json.Serialization.Metadata.JsonTypeInfo<AgentTask>)
                 A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(AgentTask)),
             ValidateRequest);
+        return new InTaskAuthorizationRegistration(extension, operation);
     }
 
     internal static void AddJsonRpcBinding(
@@ -94,3 +97,7 @@ internal static class InTaskAuthorizationOperation
         }
     }
 }
+
+internal sealed record InTaskAuthorizationRegistration(
+    A2AExtensionRegistration Extension,
+    A2ACustomOperation<AuthResponseRequest, AgentTask> Operation);

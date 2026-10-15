@@ -303,8 +303,8 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             return null;
         }
 
-        var extensionRequest = turnContext.Services.Get<A2AProtocolExtensionRequest>();
-        if (extensionRequest?.IsActivated(InTaskAuthorizationExtension.Uri) != true)
+        var requestContext = turnContext.Services.Get<RequestContext>();
+        if (requestContext?.ExtensionActivation?.ActivatedExtensions.Contains(InTaskAuthorizationExtension.Uri) != true)
         {
             throw new A2AException("The in-task authorization extension must be activated for this operation.", A2AErrorCode.UnsupportedOperation);
         }

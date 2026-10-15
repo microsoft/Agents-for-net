@@ -213,19 +213,20 @@ public static class A2AServiceExtensions
     private static A2AEndpointDispatch CreateDispatch()
     {
         var operationBuilder = new A2ACustomOperationRegistryBuilder();
-        var authResponse = InTaskAuthorizationOperation.AddOperation(operationBuilder);
+        var inTaskAuthorization = InTaskAuthorizationOperation.AddOperation(operationBuilder);
         var registry = operationBuilder.Build();
 
         var jsonRpcBuilder = new A2AJsonRpcCustomOperationBuilder();
-        InTaskAuthorizationOperation.AddJsonRpcBinding(jsonRpcBuilder, authResponse);
+        InTaskAuthorizationOperation.AddJsonRpcBinding(jsonRpcBuilder, inTaskAuthorization.Operation);
 
         var httpBuilder = new A2AHttpCustomOperationBuilder();
-        InTaskAuthorizationOperation.AddHttpBinding(httpBuilder, authResponse);
+        InTaskAuthorizationOperation.AddHttpBinding(httpBuilder, inTaskAuthorization.Operation);
 
         return new A2AEndpointDispatch(
             registry,
             jsonRpcBuilder.Build(registry),
-            httpBuilder.Build(registry));
+            httpBuilder.Build(registry),
+            inTaskAuthorization);
     }
 
     /// <summary>
@@ -276,4 +277,5 @@ public static class A2AServiceExtensions
 internal sealed record A2AEndpointDispatch(
     A2ACustomOperationRegistry Registry,
     A2AJsonRpcCustomOperationBindings JsonRpcBindings,
-    A2AHttpCustomOperationBindings HttpBindings);
+    A2AHttpCustomOperationBindings HttpBindings,
+    InTaskAuthorizationRegistration InTaskAuthorization);
