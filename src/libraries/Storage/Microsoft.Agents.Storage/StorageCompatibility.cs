@@ -97,11 +97,6 @@ namespace Microsoft.Agents.Storage
             return _storage.WriteAsync(changes, cancellationToken);
         }
 
-        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class
-        {
-            return WriteAsync(changes, options: null, cancellationToken);
-        }
-
         public async Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));

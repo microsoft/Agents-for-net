@@ -314,7 +314,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
                 {
                     { key, state }
                 };
-            await _storage.WriteAsync(items, cancellationToken).ConfigureAwait(false);
+            await _storage.WriteAsync(items, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
         }
 
         private async Task ResetFlowStateAsync(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)

@@ -46,11 +46,11 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
-        public async Task StorageCompatibility_AsV2_WriteAsync_UpsertWithoutOptions_Succeeds()
+        public async Task StorageCompatibility_AsV2_WriteAsync_UpsertWithDefaultOptions_Succeeds()
         {
             var storageV2 = StorageCompatibility.AsV2(new FakeStorage());
 
-            var results = await storageV2.WriteAsync(new Dictionary<string, PocoItem>() { ["item"] = new PocoItem() { Id = "1" } }, CancellationToken.None);
+            var results = await storageV2.WriteAsync(new Dictionary<string, PocoItem>() { ["item"] = new PocoItem() { Id = "1" } }, new StorageWriteOptions(), CancellationToken.None);
 
             Assert.Equal(StorageOperationStatus.Succeeded, results["item"].Status);
             Assert.Null(results["item"].Version);
@@ -90,6 +90,7 @@ namespace Microsoft.Agents.Storage.Tests
 
             var results = await storageV2.WriteAsync(
                 new Dictionary<string, PocoStoreItem>() { ["item"] = new PocoStoreItem() { Id = "1" } },
+                new StorageWriteOptions(),
                 CancellationToken.None);
 
             Assert.Equal(StorageOperationStatus.Succeeded, results["item"].Status);

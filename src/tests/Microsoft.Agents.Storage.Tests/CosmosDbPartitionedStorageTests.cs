@@ -234,9 +234,27 @@ namespace Microsoft.Agents.Storage.Tests
                 { "key3", new CosmosDbPartitionedStorage.DocumentStoreItem { ETag = "ETag" } },
             };
 
-            await _storage.WriteAsync((IDictionary<string, object>)changes);
+            await _storage.WriteAsync(changes);
 
             _container.Verify(e => e.UpsertItemAsync(It.IsAny<CosmosDbPartitionedStorage.DocumentStoreItem>(), It.IsAny<PartitionKey>(), It.IsAny<ItemRequestOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task WriteAsyncV2_WithoutOptions_PreservesPayloadETag()
+        {
+            InitStorage();
+            var failure = new CosmosException("stale version", HttpStatusCode.PreconditionFailed, 0, "0", 0);
+            _container.Setup(e => e.UpsertItemAsync(
+                    It.IsAny<DocumentStoreItem>(), It.IsAny<PartitionKey>(),
+                    It.Is<ItemRequestOptions>(options => options.IfMatchEtag == "stale"),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(failure);
+            IStorageV2 storage = _storage;
+
+            Assert.Same(failure, await Assert.ThrowsAsync<CosmosException>(() =>
+                storage.WriteAsync(new Dictionary<string, object> { ["key"] = new StoreItem { ETag = "stale" } })));
+            Assert.Same(failure, await Assert.ThrowsAsync<CosmosException>(() =>
+                storage.WriteAsync(new Dictionary<string, StoreItem> { ["key"] = new StoreItem { ETag = "stale" } })));
         }
 
         [Fact]
@@ -308,7 +326,7 @@ namespace Microsoft.Agents.Storage.Tests
                 { "key", null },
             };
 
-            var results = await _storage.WriteAsync(changes, CancellationToken.None);
+            var results = await _storage.WriteAsync(changes, new StorageWriteOptions(), CancellationToken.None);
 
             Assert.Single(results);
             Assert.Equal(StorageOperationStatus.Succeeded, results["key"].Status);

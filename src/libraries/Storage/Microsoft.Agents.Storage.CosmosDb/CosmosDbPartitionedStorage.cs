@@ -344,12 +344,6 @@ namespace Microsoft.Agents.Storage.CosmosDb
         }
 
         //<inheritdoc/>
-        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class
-        {
-            return WriteAsync(changes, options: null, cancellationToken);
-        }
-
-        //<inheritdoc/>
         public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));

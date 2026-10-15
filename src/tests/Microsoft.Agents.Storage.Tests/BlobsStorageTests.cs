@@ -101,7 +101,7 @@ namespace Microsoft.Agents.Storage.Tests
                 //{ "key6", "value1" },
             };
 
-            await _storage.WriteAsync((IDictionary<string, object>)changes);
+            await _storage.WriteAsync(changes);
 
             _client.Verify(
                 e => e.UploadAsync(
@@ -319,7 +319,7 @@ namespace Microsoft.Agents.Storage.Tests
             InitStorage();
 
             _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new RequestFailedException((int)HttpStatusCode.NotFound, "not found"));
+                .ThrowsAsync(new RequestFailedException((int)HttpStatusCode.NotFound, "not found", BlobErrorCode.BlobNotFound.ToString(), null));
 
             _client.Setup(e => e.UploadAsync(
                     It.IsAny<Stream>(),
@@ -339,6 +339,107 @@ namespace Microsoft.Agents.Storage.Tests
 
             Assert.Equal(StorageOperationStatus.Conflict, results["key"].Status);
             Assert.Null(results["key"].Version);
+        }
+
+        [Fact]
+        public async Task WriteAsyncV2_WithoutOptions_PreservesPayloadETag()
+        {
+            InitStorage();
+            _client.Setup(e => e.UploadAsync(
+                    It.IsAny<Stream>(), It.IsAny<BlobHttpHeaders>(), It.IsAny<IDictionary<string, string>>(),
+                    It.Is<BlobRequestConditions>(conditions => conditions.IfMatch == new ETag("stale")),
+                    It.IsAny<IProgress<long>>(), It.IsAny<AccessTier?>(),
+                    It.IsAny<StorageTransferOptions>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new RequestFailedException(412, "stale version"));
+            IStorageV2 storage = _storage;
+
+            await Assert.ThrowsAsync<EtagException>(() =>
+                storage.WriteAsync(new Dictionary<string, object> { ["key"] = new StoreItem { ETag = "stale" } }));
+            await Assert.ThrowsAsync<EtagException>(() =>
+                storage.WriteAsync(new Dictionary<string, StoreItem> { ["key"] = new StoreItem { ETag = "stale" } }));
+        }
+
+        [Fact]
+        public async Task WriteAsyncV2_AfterContainerCreationFailure_RetriesCreation()
+        {
+            var container = new Mock<BlobContainerClient>();
+            var failure = new RequestFailedException(503, "unavailable");
+            container.SetupSequence(e => e.CreateIfNotExistsAsync(
+                    It.IsAny<PublicAccessType>(), It.IsAny<IDictionary<string, string>>(),
+                    It.IsAny<BlobContainerEncryptionScopeOptions>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(failure)
+                .ReturnsAsync((Response<BlobContainerInfo>)null);
+            container.Setup(e => e.GetBlobClient(It.IsAny<string>())).Returns(_client.Object);
+            _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new RequestFailedException(404, "not found", BlobErrorCode.BlobNotFound.ToString(), null));
+            IStorageV2 storage = new BlobsStorage(container.Object);
+            var changes = new Dictionary<string, object> { ["key"] = new StoreItem() };
+
+            Assert.Same(failure, await Assert.ThrowsAsync<RequestFailedException>(() =>
+                storage.WriteAsync(changes, new StorageWriteOptions())));
+            var result = await storage.WriteAsync(changes, new StorageWriteOptions());
+            Assert.Equal(StorageOperationStatus.Succeeded, result["key"].Status);
+            await storage.WriteAsync(changes, new StorageWriteOptions());
+            container.Verify(e => e.CreateIfNotExistsAsync(
+                It.IsAny<PublicAccessType>(), It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobContainerEncryptionScopeOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Theory]
+        [InlineData(StorageWriteMode.Upsert, false)]
+        [InlineData(StorageWriteMode.CreateOnly, false)]
+        [InlineData(StorageWriteMode.Replace, false)]
+        [InlineData(StorageWriteMode.Upsert, true)]
+        [InlineData(StorageWriteMode.CreateOnly, true)]
+        [InlineData(StorageWriteMode.Replace, true)]
+        public async Task WriteAsyncV2_ContainerNotFound_Throws(StorageWriteMode mode, bool duringUpload)
+        {
+            InitStorage();
+            var failure = new RequestFailedException(404, "missing container", BlobErrorCode.ContainerNotFound.ToString(), null);
+            if (duringUpload)
+            {
+                var properties = BlobsModelFactory.BlobProperties(eTag: new ETag("\"version\""));
+                _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(Response.FromValue(properties, Mock.Of<Response>()));
+                if (mode == StorageWriteMode.CreateOnly)
+                {
+                    _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                        .ThrowsAsync(new RequestFailedException(404, "not found", BlobErrorCode.BlobNotFound.ToString(), null));
+                }
+                _client.Setup(e => e.UploadAsync(
+                        It.IsAny<Stream>(), It.IsAny<BlobHttpHeaders>(), It.IsAny<IDictionary<string, string>>(),
+                        It.IsAny<BlobRequestConditions>(), It.IsAny<IProgress<long>>(), It.IsAny<AccessTier?>(),
+                        It.IsAny<StorageTransferOptions>(), It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(failure);
+            }
+            else
+            {
+                _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(failure);
+            }
+
+            Assert.Same(failure, await Assert.ThrowsAsync<RequestFailedException>(() => _storage.WriteAsync(
+                new Dictionary<string, object> { ["key"] = new StoreItem() },
+                new StorageWriteOptions { Mode = mode })));
+        }
+
+        [Fact]
+        public async Task WriteAsyncV2_BlobNotFound_ReturnsNotFound()
+        {
+            InitStorage();
+            var properties = BlobsModelFactory.BlobProperties(eTag: new ETag("\"version\""));
+            _client.Setup(e => e.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Response.FromValue(properties, Mock.Of<Response>()));
+            _client.Setup(e => e.UploadAsync(
+                    It.IsAny<Stream>(), It.IsAny<BlobHttpHeaders>(), It.IsAny<IDictionary<string, string>>(),
+                    It.IsAny<BlobRequestConditions>(), It.IsAny<IProgress<long>>(), It.IsAny<AccessTier?>(),
+                    It.IsAny<StorageTransferOptions>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new RequestFailedException(404, "not found", BlobErrorCode.BlobNotFound.ToString(), null));
+
+            var result = await _storage.WriteAsync(new Dictionary<string, object> { ["key"] = new StoreItem() },
+                new StorageWriteOptions { Mode = StorageWriteMode.Replace });
+
+            Assert.Equal(StorageOperationStatus.NotFound, result["key"].Status);
         }
 
         [Fact]

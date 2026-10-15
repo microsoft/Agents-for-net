@@ -273,12 +273,6 @@ namespace Microsoft.Agents.Storage
         }
 
         //<inheritdoc/>
-        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class
-        {
-            return WriteAsync(changes, options: null, cancellationToken);
-        }
-
-        //<inheritdoc/>
         public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
         {
             AssertionHelpers.ThrowIfNull(changes, nameof(changes));
@@ -427,8 +421,15 @@ namespace Microsoft.Agents.Storage
             {
                 var hasETag = state.TryGetPropertyValue(ETagPropertyName, out var etagValue);
                 var typeProps = state.RemoveTypeInfoProperties();
-                var value = state.Deserialize(type, _stateJsonSerializer);
-                state.SetTypeInfoProperties(typeProps);
+                object value;
+                try
+                {
+                    value = state.Deserialize(type, _stateJsonSerializer);
+                }
+                finally
+                {
+                    state.SetTypeInfoProperties(typeProps);
+                }
 
                 if (value is IStoreItem storeItem)
                 {

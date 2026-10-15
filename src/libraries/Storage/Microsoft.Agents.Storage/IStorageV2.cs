@@ -28,17 +28,9 @@ namespace Microsoft.Agents.Storage
         /// </summary>
         /// <typeparam name="TValue">The value type to write.</typeparam>
         /// <param name="changes">The keyed items to write.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
-        Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class;
-
-        /// <summary>
-        /// Writes typed items to storage and returns an explicit result for each requested write.
-        /// </summary>
-        /// <typeparam name="TValue">The value type to write.</typeparam>
-        /// <param name="changes">The keyed items to write.</param>
-        /// <param name="options">Optional settings for the write operation.</param>
+        /// <param name="options">Settings for the write operation. Pass default settings explicitly for an unconditional upsert.
+        /// Concurrency is controlled by <see cref="Microsoft.Agents.Storage.StorageWriteOptions.ExpectedVersion"/>, not the payload's
+        /// <see cref="Microsoft.Agents.Storage.IStoreItem.ETag"/>. Calls without options use the legacy write contract.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>

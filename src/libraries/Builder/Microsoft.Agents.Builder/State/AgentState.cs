@@ -268,7 +268,7 @@ namespace Microsoft.Agents.Builder.State
                             }
                             else
                             {
-                                writeResults = await _storage.WriteAsync(readOnlyChanges, cancellationToken).ConfigureAwait(false);
+                                writeResults = await _storage.WriteAsync(readOnlyChanges, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
                             }
 
                             var writeResult = writeResults[key];

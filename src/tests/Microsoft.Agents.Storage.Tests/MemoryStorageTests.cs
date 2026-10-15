@@ -3,6 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -21,6 +24,32 @@ namespace Microsoft.Agents.Storage.Tests
         public void Dispose()
         {
             storage = new MemoryStorage();
+        }
+
+        [Fact]
+        public async Task ReadAsync_AfterDeserializationFailure_PreservesStoredTypeMetadata()
+        {
+            var backing = new Dictionary<string, JsonObject>();
+            IStorage storage = new MemoryStorage(dictionary: backing);
+            await storage.WriteAsync(new Dictionary<string, object> { ["item"] = new ThrowsOnRead() });
+            await Assert.ThrowsAsync<JsonException>(() => storage.ReadAsync(["item"]));
+            Assert.Equal(typeof(ThrowsOnRead).FullName, backing["item"]["$type"].GetValue<string>());
+            Assert.StartsWith(typeof(ThrowsOnRead).Assembly.GetName().Name, backing["item"]["$typeAssembly"].GetValue<string>());
+            var original = backing["item"].ToJsonString();
+            await Assert.ThrowsAsync<JsonException>(() => storage.ReadAsync(["item"]));
+            await Assert.ThrowsAsync<JsonException>(() => storage.ReadAsync<ThrowsOnRead>(["item"]));
+            await Assert.ThrowsAsync<JsonException>(() => ((IStorageV2)storage).ReadAsync(new List<string> { "item" }));
+            Assert.Equal(original, backing["item"].ToJsonString());
+        }
+
+        public sealed class ThrowsOnRead
+        {
+            public string Name { get; } = "x";
+
+            public ThrowsOnRead() { }
+
+            [JsonConstructor]
+            public ThrowsOnRead(string name) => throw new JsonException("boom");
         }
 
         [Fact]
@@ -122,6 +151,27 @@ namespace Microsoft.Agents.Storage.Tests
         }
 
         [Fact]
+        public async Task WriteAsync_WithoutOptions_PreservesLegacyETagChecks()
+        {
+            var memory = new MemoryStorage();
+            IStorageV2 storageV2 = memory;
+            await memory.WriteAsync(new Dictionary<string, object> { ["item"] = new StoreItem { Topic = "initial", ETag = "*" } });
+            var stale = (await memory.ReadAsync<StoreItem>(["item"]))["item"];
+            await memory.WriteAsync(new Dictionary<string, StoreItem> { ["item"] = new StoreItem { Topic = "newer", ETag = "*" } });
+            stale.Topic = "stale";
+
+            await Assert.ThrowsAsync<EtagException>(() =>
+                storageV2.WriteAsync(new Dictionary<string, object> { ["item"] = stale }));
+            await Assert.ThrowsAsync<EtagException>(() =>
+                storageV2.WriteAsync(new Dictionary<string, StoreItem> { ["item"] = stale }));
+            Assert.Equal("newer", (await memory.ReadAsync<StoreItem>(["item"]))["item"].Topic);
+
+            var result = await storageV2.WriteAsync(new Dictionary<string, StoreItem> { ["item"] = stale }, new StorageWriteOptions());
+            Assert.Equal(StorageOperationStatus.Succeeded, result["item"].Status);
+            Assert.Equal("stale", (await memory.ReadAsync<StoreItem>(["item"]))["item"].Topic);
+        }
+
+        [Fact]
         public async Task MemoryStorageV2_ReadAsync_ReturnsExplicitResults()
         {
             IStorageV2 storageV2 = new MemoryStorage();
@@ -131,6 +181,7 @@ namespace Microsoft.Agents.Storage.Tests
                 {
                     ["existing"] = new PocoItem() { Id = "1", Count = 7 },
                 },
+                new StorageWriteOptions(),
                 cancellationToken: CancellationToken.None);
 
             var readResults = await storageV2.ReadAsync(
@@ -187,7 +238,7 @@ namespace Microsoft.Agents.Storage.Tests
             IStorageV2 secondStorage = new MemoryStorage(dictionary: dictionary);
 
             var initialWrite = await firstStorage.WriteAsync(
-                new Dictionary<string, object> { ["item"] = new PocoItem { Id = "initial" } });
+                new Dictionary<string, object> { ["item"] = new PocoItem { Id = "initial" } }, new StorageWriteOptions());
             var initialVersion = initialWrite["item"].Version;
 
             var firstUpdate = await firstStorage.WriteAsync(
@@ -212,6 +263,7 @@ namespace Microsoft.Agents.Storage.Tests
                 {
                     ["item"] = new PocoItem() { Id = "1", Count = 1 },
                 },
+                new StorageWriteOptions(),
                 cancellationToken: CancellationToken.None);
 
             var replaceWrite = await storageV2.WriteAsync(
@@ -246,6 +298,7 @@ namespace Microsoft.Agents.Storage.Tests
                 {
                     ["item"] = new PocoItem() { Id = "1" },
                 },
+                new StorageWriteOptions(),
                 cancellationToken: CancellationToken.None);
 
             var conditionalDelete = await storageV2.DeleteAsync(

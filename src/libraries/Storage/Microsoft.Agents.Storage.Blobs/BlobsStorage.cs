@@ -350,7 +350,8 @@ namespace Microsoft.Agents.Storage.Blobs
                     };
                 }
                 catch (RequestFailedException ex)
-                    when (ex.Status == (int)HttpStatusCode.NotFound)
+                    when (ex.Status == (int)HttpStatusCode.NotFound
+                    && ex.ErrorCode == BlobErrorCode.BlobNotFound.ToString())
                 {
                     results[change.Key] = new StorageWriteResult()
                     {
@@ -361,12 +362,6 @@ namespace Microsoft.Agents.Storage.Blobs
             }
 
             return results;
-        }
-
-        //<inheritdoc/>
-        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class
-        {
-            return WriteAsync(changes, options: null, cancellationToken);
         }
 
         //<inheritdoc/>
@@ -490,9 +485,10 @@ namespace Microsoft.Agents.Storage.Blobs
 
         private async Task EnsureContainerExistsAsync(CancellationToken cancellationToken)
         {
-            if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
+            if (Volatile.Read(ref _checkForContainerExistence) == 1)
             {
                 await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                Interlocked.Exchange(ref _checkForContainerExistence, 0);
             }
         }
 
@@ -532,7 +528,8 @@ namespace Microsoft.Agents.Storage.Blobs
                 return response.Value;
             }
             catch (RequestFailedException ex)
-                when ((HttpStatusCode)ex.Status == HttpStatusCode.NotFound)
+                when ((HttpStatusCode)ex.Status == HttpStatusCode.NotFound
+                && ex.ErrorCode == BlobErrorCode.BlobNotFound.ToString())
             {
                 return null;
             }
