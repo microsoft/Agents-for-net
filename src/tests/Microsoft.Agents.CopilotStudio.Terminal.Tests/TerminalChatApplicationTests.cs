@@ -18,6 +18,7 @@ using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
 
 [Collection("TerminalGui")]
+[Trait("Category", "UXRequired")]
 public sealed class TerminalChatApplicationTests
 {
     [Theory]

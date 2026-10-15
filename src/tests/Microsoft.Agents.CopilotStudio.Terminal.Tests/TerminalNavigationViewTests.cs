@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 [Collection("TerminalGui")]
+[Trait("Category", "UXRequired")]
 public sealed class TerminalNavigationViewTests
 {
     [Fact]

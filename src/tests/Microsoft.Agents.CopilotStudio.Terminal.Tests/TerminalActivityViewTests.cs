@@ -8,6 +8,7 @@ using Terminal.Gui.Drawing;
 using Terminal.Gui.Views;
 
 [Collection("TerminalGui")]
+[Trait("Category", "UXRequired")]
 public sealed class TerminalActivityViewTests
 {
     [Theory]
