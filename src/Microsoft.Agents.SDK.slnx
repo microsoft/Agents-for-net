@@ -79,6 +79,7 @@
     <Project Path="samples/Compat/SkillsDialog/DialogSkillBot/DialogSkillBot.csproj" />
   </Folder>
   <Folder Name="/Samples/CopilotStudioClient/">
+    <Project Path="samples/CopilotStudioClient/CopilotStudioClient.Terminal/CopilotStudioClient.Terminal.csproj" />
     <Project Path="samples/CopilotStudioClient/CopilotStudioClient/CopilotStudioClient.csproj" />
     <Project Path="samples/CopilotStudioClient/CopilotStudioSubscriberClient/CopilotStudioSubscriberClient.csproj" />
     <Project Path="samples/CopilotStudioClient/EvalClient/EvalClient.csproj" />
@@ -103,6 +104,7 @@
     <Project Path="tests/Microsoft.Agents.Client.Tests/Microsoft.Agents.Client.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Connector.Tests/Microsoft.Agents.Connector.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.CopilotStudio.Client.Tests/Microsoft.Agents.CopilotStudio.Client.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.CopilotStudio.Terminal.Tests/Microsoft.Agents.CopilotStudio.Terminal.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Core.Analyzers.Tests/Microsoft.Agents.Core.Analyzers.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Core.Telemetry.Tests/Microsoft.Agents.Core.Telemetry.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Core.Tests/Microsoft.Agents.Core.HeaderPropagation.Tests.csproj" />
