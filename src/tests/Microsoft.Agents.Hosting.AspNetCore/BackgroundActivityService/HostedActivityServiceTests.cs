@@ -245,6 +245,84 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
+        public async Task ExecuteAsync_ProactiveWithAgentType_ShouldUseRequestedAgent()
+        {
+            var services = new ServiceCollection();
+            services.AddTransient<IAgent, DefaultAgent>();
+            services.AddTransient<OtherAgent>();
+
+            await using var provider = services.BuildServiceProvider();
+            var queue = new ActivityTaskQueue();
+            var adapter = new Mock<IChannelAdapter>();
+            var callbackTarget = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            adapter
+                .Setup(a => a.ProcessProactiveAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<IActivity>(),
+                    It.IsAny<string>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback<ClaimsIdentity, IActivity, string, AgentCallbackHandler, CancellationToken>((_, _, _, callback, _) => callbackTarget.TrySetResult(callback.Target))
+                .Returns(Task.CompletedTask);
+
+            var configuration = new ConfigurationBuilder().Build();
+            var service = new HostedActivityService(
+                provider,
+                configuration,
+                queue,
+                Mock.Of<ILogger<HostedActivityService>>(),
+                new HostedActivityServiceOptions(configuration) { UseScopedServices = false });
+
+            queue.QueueBackgroundActivity(new ClaimsIdentity(), adapter.Object, new Activity(), proactive: true, agentType: typeof(OtherAgent));
+
+            await service.StartAsync(CancellationToken.None);
+            var target = await callbackTarget.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await service.StopAsync(CancellationToken.None);
+
+            Assert.IsType<OtherAgent>(target);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_ProactiveWithoutResolvableAgent_ShouldLogErrorAndNotProcess()
+        {
+            var services = new ServiceCollection();
+            await using var provider = services.BuildServiceProvider();
+            var queue = new ActivityTaskQueue();
+            var adapter = new Mock<IChannelAdapter>();
+            var logger = new Mock<ILogger<HostedActivityService>>();
+            var errorLogged = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
+            logger
+                .Setup(e => e.Log(LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()))
+                .Callback(new InvocationAction(invocation => errorLogged.TrySetResult((Exception)invocation.Arguments[3])));
+
+            var configuration = new ConfigurationBuilder().Build();
+            var service = new HostedActivityService(
+                provider,
+                configuration,
+                queue,
+                logger.Object,
+                new HostedActivityServiceOptions(configuration) { UseScopedServices = false });
+
+            queue.QueueBackgroundActivity(new ClaimsIdentity(), adapter.Object, new Activity(), proactive: true, agentType: typeof(OtherAgent));
+
+            await service.StartAsync(CancellationToken.None);
+            var exception = await errorLogged.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            await service.StopAsync(CancellationToken.None);
+
+            Assert.IsType<InvalidOperationException>(exception);
+            adapter.Verify(a => a.ProcessProactiveAsync(
+                It.IsAny<ClaimsIdentity>(),
+                It.IsAny<IActivity>(),
+                It.IsAny<string>(),
+                It.IsAny<AgentCallbackHandler>(),
+                It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public void Constructor_WithHostedOptions_UsesHostedShutdownTimeout()
         {
             var config = new ConfigurationBuilder().Build();
@@ -410,6 +488,22 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 collector.Resolved.Enqueue(probe);
             }
 
+            public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class DefaultAgent : IAgent
+        {
+            public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class OtherAgent : IAgent
+        {
             public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
             {
                 return Task.CompletedTask;

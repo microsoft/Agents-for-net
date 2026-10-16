@@ -273,22 +273,9 @@ namespace Microsoft.Agents.Storage
         }
 
         //<inheritdoc/>
-        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class
-        {
-            return WriteAsync(changes, options: null, cancellationToken);
-        }
-
-        //<inheritdoc/>
         public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
         {
-            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-
-            Dictionary<string, object> changesAsObject = new(changes.Count);
-            foreach (var change in changes)
-            {
-                changesAsObject.Add(change.Key, change.Value);
-            }
-
+            var changesAsObject = StorageCompatibility.ValidateAndCopyWriteChanges(changes);
             return WriteCoreAsync(changesAsObject, options, cancellationToken);
         }
 
@@ -423,12 +410,13 @@ namespace Microsoft.Agents.Storage
                 return null;
             }
 
+            // Deserialization and returned JSON must never mutate the backing document.
+            state = (JsonObject)state.DeepClone();
             if (state.GetTypeInfo(out var type))
             {
-                var hasETag = state.TryGetPropertyValue(ETagPropertyName, out var etagValue);
-                var typeProps = state.RemoveTypeInfoProperties();
+                state.TryGetPropertyValue(ETagPropertyName, out var etagValue);
+                state.RemoveTypeInfo();
                 var value = state.Deserialize(type, _stateJsonSerializer);
-                state.SetTypeInfoProperties(typeProps);
 
                 if (value is IStoreItem storeItem)
                 {

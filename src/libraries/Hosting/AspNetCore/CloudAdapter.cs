@@ -261,8 +261,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             // DeliveryModes.Normal can be pushed to the Queue which allows the calling request to continue without blocking.
             if (continuationActivity.DeliveryMode == null || continuationActivity.DeliveryMode == DeliveryModes.Normal)
             {
-                // Queue the activity to be processed by the ActivityBackgroundService
-                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, continuationActivity, proactive: true, proactiveAudience: audience);
+                // Queue the activity to be processed by the ActivityBackgroundService.  The agent type is included so
+                // the background service resolves the same agent when multiple agents are hosted.
+                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, continuationActivity, proactive: true, proactiveAudience: audience, agentType: agent?.GetType());
                 return Task.CompletedTask;
             }
 

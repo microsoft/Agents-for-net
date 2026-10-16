@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -42,6 +42,7 @@ namespace Microsoft.Agents.Storage.Blobs
         // If a JsonSerializer is not provided during construction, this will be the default JsonSerializer.
         private readonly BlobContainerClient _containerClient;
         private int _checkForContainerExistence;
+        private readonly SemaphoreSlim _containerInitializationLock = new(1, 1);
         private readonly StorageTransferOptions _storageTransferOptions;
 
         /// <summary>
@@ -117,7 +118,14 @@ namespace Microsoft.Agents.Storage.Blobs
             {
                 var blobName = GetBlobName(key);
                 var blobClient = _containerClient.GetBlobClient(blobName);
-                await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await blobClient.DeleteAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                catch (RequestFailedException exception) when (IsBlobNotFound(exception))
+                {
+                    // A missing item is an idempotent delete; a missing container must propagate.
+                }
             }
         }
 
@@ -142,13 +150,13 @@ namespace Microsoft.Agents.Storage.Blobs
                     items.Add(key, blobState.Value);
                 }
                 catch (RequestFailedException ex)
-                    when ((HttpStatusCode)ex.Status == HttpStatusCode.NotFound)
+                    when (IsBlobNotFound(ex))
                 {
                     continue;
                 }
                 catch (AggregateException ex)
                     when (ex.InnerException is RequestFailedException iex
-                    && (HttpStatusCode)iex.Status == HttpStatusCode.NotFound)
+                    && IsBlobNotFound(iex))
                 {
                     continue;
                 }
@@ -199,7 +207,7 @@ namespace Microsoft.Agents.Storage.Blobs
                     };
                 }
                 catch (RequestFailedException ex)
-                    when ((HttpStatusCode)ex.Status == HttpStatusCode.NotFound)
+                    when (IsBlobNotFound(ex))
                 {
                     results[key] = new StorageReadResult()
                     {
@@ -209,7 +217,7 @@ namespace Microsoft.Agents.Storage.Blobs
                 }
                 catch (AggregateException ex)
                     when (ex.InnerException is RequestFailedException iex
-                    && (HttpStatusCode)iex.Status == HttpStatusCode.NotFound)
+                    && IsBlobNotFound(iex))
                 {
                     results[key] = new StorageReadResult()
                     {
@@ -350,7 +358,7 @@ namespace Microsoft.Agents.Storage.Blobs
                     };
                 }
                 catch (RequestFailedException ex)
-                    when (ex.Status == (int)HttpStatusCode.NotFound)
+                    when (IsBlobNotFound(ex))
                 {
                     results[change.Key] = new StorageWriteResult()
                     {
@@ -364,22 +372,9 @@ namespace Microsoft.Agents.Storage.Blobs
         }
 
         //<inheritdoc/>
-        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class
-        {
-            return WriteAsync(changes, options: null, cancellationToken);
-        }
-
-        //<inheritdoc/>
         public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
         {
-            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
-
-            Dictionary<string, object> changesAsObject = new(changes.Count);
-            foreach (var change in changes)
-            {
-                changesAsObject.Add(change.Key, change.Value);
-            }
-
+            var changesAsObject = StorageCompatibility.ValidateAndCopyWriteChanges(changes);
             return WriteCoreAsync(changesAsObject, options, cancellationToken);
         }
 
@@ -424,8 +419,12 @@ namespace Microsoft.Agents.Storage.Blobs
 
                 try
                 {
-                    await blobClient.DeleteIfExistsAsync(conditions: BuildDeleteConditions(currentVersion), cancellationToken: cancellationToken).ConfigureAwait(false);
+                    await blobClient.DeleteAsync(conditions: BuildDeleteConditions(currentVersion), cancellationToken: cancellationToken).ConfigureAwait(false);
                     results[key] = new StorageDeleteResult() { Key = key, Status = StorageOperationStatus.Succeeded, Version = currentVersion };
+                }
+                catch (RequestFailedException exception) when (IsBlobNotFound(exception))
+                {
+                    results[key] = new StorageDeleteResult() { Key = key, Status = StorageOperationStatus.NotFound };
                 }
                 catch (RequestFailedException ex)
                     when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
@@ -490,9 +489,23 @@ namespace Microsoft.Agents.Storage.Blobs
 
         private async Task EnsureContainerExistsAsync(CancellationToken cancellationToken)
         {
-            if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
+            if (Volatile.Read(ref _checkForContainerExistence) == 0)
             {
-                await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            await _containerInitializationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (_checkForContainerExistence == 1)
+                {
+                    await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                    Volatile.Write(ref _checkForContainerExistence, 0);
+                }
+            }
+            finally
+            {
+                _containerInitializationLock.Release();
             }
         }
 
@@ -524,6 +537,12 @@ namespace Microsoft.Agents.Storage.Blobs
             return await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
         }
 
+        private static bool IsBlobNotFound(RequestFailedException exception)
+        {
+            return exception.Status == (int)HttpStatusCode.NotFound
+                && exception.ErrorCode == BlobErrorCode.BlobNotFound.ToString();
+        }
+
         private static async Task<BlobProperties> TryGetBlobPropertiesAsync(BlobClient blobClient, CancellationToken cancellationToken)
         {
             try
@@ -532,7 +551,7 @@ namespace Microsoft.Agents.Storage.Blobs
                 return response.Value;
             }
             catch (RequestFailedException ex)
-                when ((HttpStatusCode)ex.Status == HttpStatusCode.NotFound)
+                when (IsBlobNotFound(ex))
             {
                 return null;
             }

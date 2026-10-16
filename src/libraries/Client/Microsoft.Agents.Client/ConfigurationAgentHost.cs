@@ -262,7 +262,7 @@ namespace Microsoft.Agents.Client
                 { GetAgentConversationStorageKey(agentConversationId), channelConversationReference }
             };
 
-            await _storage.WriteAsync(changes, cancellationToken).ConfigureAwait(false);
+            await _storage.WriteAsync(changes, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
 
             return agentConversationId;
         }
@@ -304,7 +304,7 @@ namespace Microsoft.Agents.Client
                         await _storage.WriteAsync(new Dictionary<string, object>
                         {
                             { agentConversationsKey, agentConversations }
-                        }, cancellationToken).ConfigureAwait(false);
+                        }, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
                     }
                 }
             }

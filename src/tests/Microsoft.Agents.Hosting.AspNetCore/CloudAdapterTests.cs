@@ -461,6 +461,28 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         }
 
         [Fact]
+        public async Task ProcessProactiveAsync_WithAgent_NormalDelivery_ShouldQueueAgentType()
+        {
+            var queue = new Mock<IActivityTaskQueue>();
+            var adapter = new CloudAdapter(new Mock<IChannelServiceClientFactory>().Object, queue.Object);
+            var agent = new ActivityHandler();
+            var identity = new ClaimsIdentity();
+            var activity = CreateMessageActivity(DeliveryModes.Normal);
+
+            await adapter.ProcessProactiveAsync(identity, activity, agent, CancellationToken.None, "audience");
+
+            queue.Verify(q => q.QueueBackgroundActivity(
+                identity,
+                adapter,
+                activity,
+                true,
+                "audience",
+                typeof(ActivityHandler),
+                null,
+                null), Times.Once);
+        }
+
+        [Fact]
         public async Task ProcessAsync_CreateConversationNormalDelivery()
         {
             var turnDone = new EventWaitHandle(false, EventResetMode.AutoReset);
