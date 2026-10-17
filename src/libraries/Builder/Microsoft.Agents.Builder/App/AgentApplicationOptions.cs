@@ -189,6 +189,37 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
+        /// Validates configuration-backed options that can be checked without performing I/O.
+        /// </summary>
+        internal void Validate()
+        {
+            if (Connections is ConfigurationConnections configurationConnections)
+            {
+                configurationConnections.ValidateConfiguration();
+            }
+
+            UserAuthorization?.Validate();
+
+            if (StartTypingTimer)
+            {
+                if (TypingOptions == null)
+                {
+                    throw new ArgumentNullException(nameof(TypingOptions));
+                }
+
+                TypingOptions.Validate();
+            }
+
+            if (AdaptiveCards?.ActionSubmitFilter is string actionSubmitFilter
+                && string.IsNullOrWhiteSpace(actionSubmitFilter))
+            {
+                throw new ArgumentException(
+                    $"{nameof(AdaptiveCardsOptions.ActionSubmitFilter)} must not be empty when configured.",
+                    nameof(AdaptiveCards.ActionSubmitFilter));
+            }
+        }
+
+        /// <summary>
         /// The IChannelAdapter to use in cases on proactive.
         /// </summary>
         /// <remarks>

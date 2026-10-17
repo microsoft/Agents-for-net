@@ -64,6 +64,29 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
 
         public string Name { get; private set; }
 
+        /// <summary>
+        /// Validates the Azure Bot OAuth settings without accessing external services.
+        /// </summary>
+        internal void ValidateConfiguration()
+        {
+            ValidateConfiguration(Name, _settings.AzureBotOAuthConnectionName);
+        }
+
+        /// <summary>
+        /// Validates an Azure Bot OAuth connection name from a configured handler.
+        /// </summary>
+        /// <param name="handlerName">The authorization handler name.</param>
+        /// <param name="connectionName">The Azure Bot OAuth connection name.</param>
+        internal static void ValidateConfiguration(string handlerName, string connectionName)
+        {
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ArgumentException(
+                    $"User authorization handler '{handlerName}' requires a non-empty '{nameof(OAuthSettings.AzureBotOAuthConnectionName)}' setting.",
+                    nameof(connectionName));
+            }
+        }
+
         protected override OBOSettings GetOBOSettings()
         {
             return _settings;

@@ -26,5 +26,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Gets or sets the maximum number of seconds to wait for task processing during shutdown.
         /// </summary>
         public int ShutdownTimeoutSeconds { get; set; } = 60;
+
+        /// <summary>
+        /// Validates configuration values that are used by the hosted task service.
+        /// </summary>
+        internal void Validate()
+        {
+            if (ShutdownTimeoutSeconds < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ShutdownTimeoutSeconds), "Shutdown timeout must not be negative.");
+            }
+        }
     }
 }

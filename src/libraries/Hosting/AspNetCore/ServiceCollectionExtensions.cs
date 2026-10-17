@@ -10,6 +10,7 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
 
@@ -49,6 +50,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 services.AddSingleton<AgentApplicationOptions>();
             }
+
+            services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, AgentConfigurationValidationHostedService>());
             return services;
         }
 

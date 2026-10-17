@@ -67,12 +67,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 _startSignIn = (context, cancellationToken) => Task.FromResult(true);
             }
 
-            DefaultHandlerName = _options.DefaultHandlerName ?? _dispatcher.Default.Name;
-
-            if (!_dispatcher.TryGet(DefaultHandlerName, out _))
-            {
-                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationDefaultHandlerNotFound, null, DefaultHandlerName);
-            }
+            DefaultHandlerName = _options.GetDefaultHandlerName();
         }
 
         [Obsolete("Use Task<string> GetTurnTokenAsync(ITurnContext, string) instead")]

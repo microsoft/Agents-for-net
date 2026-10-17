@@ -37,5 +37,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Agent's dependency graph to the root scope, sharing one instance across turns for the lifetime of the process.
         /// </remarks>
         public bool UseScopedServices { get; set; } = true;
+
+        /// <summary>
+        /// Validates configuration values that are used by the hosted activity service.
+        /// </summary>
+        internal void Validate()
+        {
+            if (ShutdownTimeoutSeconds < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ShutdownTimeoutSeconds), "Shutdown timeout must not be negative.");
+            }
+        }
     }
 }
