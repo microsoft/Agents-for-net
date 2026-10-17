@@ -200,7 +200,6 @@ internal static class A2AActivity
 
         var user = new ChannelAccount
         {
-            Id = conversationId,
             Role = RoleTypes.User,
         };
 

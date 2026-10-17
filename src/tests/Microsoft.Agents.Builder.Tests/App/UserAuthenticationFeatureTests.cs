@@ -13,6 +13,7 @@ using Microsoft.Agents.Builder.UserAuth.TokenService;
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
@@ -383,6 +384,38 @@ namespace Microsoft.Agents.Builder.Tests.App
 
             // assert
             Assert.False(signInComplete);
+        }
+
+        [Fact]
+        public async Task Test_InactiveOAuthInvokeWarning_DoesNotLogUserId()
+        {
+            var logger = new Mock<ILogger>();
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory
+                .Setup(factory => factory.CreateLogger(It.IsAny<string>()))
+                .Returns(logger.Object);
+
+            var storage = new MemoryStorage();
+            var options = new TestApplicationOptions(storage)
+            {
+                LoggerFactory = loggerFactory.Object,
+                UserAuthorization = new UserAuthorizationOptions(loggerFactory.Object, storage, MockConnections.Object, MockGraph.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff
+                }
+            };
+            var app = new TestApplication(options);
+            var turnContext = MockTurnContext();
+            turnContext.Activity.Type = ActivityTypes.Invoke;
+            turnContext.Activity.Name = SignInConstants.TokenExchangeOperationName;
+            var turnState = await TurnStateConfig.GetTurnStateWithConversationStateAsync(turnContext);
+
+            await app.UserAuthorization.StartOrContinueSignInUserAsync(turnContext, turnState);
+
+            var warning = Assert.Single(logger.Invocations, invocation =>
+                invocation.Method.Name == nameof(ILogger.Log)
+                && invocation.Arguments[0] is LogLevel.Warning);
+            Assert.DoesNotContain(turnContext.Activity.From.Id, warning.Arguments[2].ToString());
         }
 
         [Fact]

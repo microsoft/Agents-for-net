@@ -43,6 +43,7 @@ public class A2AActivityTests
         Assert.Equal(message, activity.ChannelData);
         Assert.Equal(RoleTypes.Agent, activity.Recipient.Role);
         Assert.Equal(RoleTypes.User, activity.From.Role);
+        Assert.Null(activity.From.Id);
     }
 
     [Fact]

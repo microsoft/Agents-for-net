@@ -189,6 +189,12 @@ namespace Microsoft.Agents.Builder.State
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
+            var loadPolicy = turnContext.Services.Get<IAgentStateLoadPolicy>();
+            if (loadPolicy != null && !loadPolicy.ShouldLoad(turnContext, this))
+            {
+                return;
+            }
+
             var storageKey = GetStorageKey(turnContext);
 
             if (ShouldLoad(turnContext, storageKey, force))
