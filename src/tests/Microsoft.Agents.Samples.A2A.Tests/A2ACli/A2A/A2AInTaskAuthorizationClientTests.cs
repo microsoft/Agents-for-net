@@ -63,7 +63,7 @@ public class A2AInTaskAuthorizationClientTests
             Assert.Single(handler.Request.Headers.GetValues("x-a2a-intask-authorization")));
         Assert.False(handler.Request.Headers.Contains("A2A-InTask-Authorization"));
         using var body = JsonDocument.Parse(handler.Body!);
-        Assert.Equal("resumeAuth", body.RootElement.GetProperty("method").GetString());
+        Assert.Equal("auth-response", body.RootElement.GetProperty("method").GetString());
         Assert.Equal("task-1", body.RootElement.GetProperty("params").GetProperty("taskId").GetString());
     }
 

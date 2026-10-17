@@ -253,33 +253,33 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         return A2AHttpProcessor.SendMessageAsync(GetA2AServerForAgent(agentContext), Logger, sendParams, cancellationToken);
     }
 
-    Task<IResult> IA2AHttpAdapter.ResumeAuthAsync(
+    Task<IResult> IA2AHttpAdapter.AuthResponseAsync(
         HttpRequest httpRequest,
         HttpResponse response,
         IAgent agent,
         string taskId,
-        ResumeAuthRequest request,
+        AuthResponseRequest request,
         CancellationToken cancellationToken)
-        => ResumeAuthAsync(httpRequest, response, agent, taskId, request, cancellationToken);
+        => AuthResponseAsync(httpRequest, response, agent, taskId, request, cancellationToken);
 
-    private Task<IResult> ResumeAuthAsync(
+    private Task<IResult> AuthResponseAsync(
         HttpRequest httpRequest,
         HttpResponse response,
         IAgent agent,
         string taskId,
-        ResumeAuthRequest request,
+        AuthResponseRequest request,
         CancellationToken cancellationToken)
     {
         request.TaskId = taskId;
         var agentContext = CreateAgentRequestContext(httpRequest, agent);
         ApplyActivatedExtensions(agentContext, response);
-        return A2AHttpProcessor.ResumeAuthAsync(
+        return A2AHttpProcessor.AuthResponseAsync(
             Logger,
             async ct =>
             {
                 try
                 {
-                    SetResumeAuthorization(agentContext, request);
+                    SetInTaskAuthorization(agentContext, request);
                     return await ResumeTaskAsync(agentContext, request, ct).ConfigureAwait(false);
                 }
                 finally
@@ -381,7 +381,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 context,
                 eventQueue,
                 agentContext.ExtensionRequest,
-                agentContext.ResumeAuthorization,
+                agentContext.InTaskAuthorization,
                 agentContext,
                 cancellationToken).ConfigureAwait(false);
         }
@@ -445,7 +445,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 agentContext.CurrentContext,
                 agentContext.EventQueue,
                 agentContext.ExtensionRequest,
-                agentContext.ResumeAuthorization,
+                agentContext.InTaskAuthorization,
                 agentContext,
                 cancellationToken);
         }
@@ -472,7 +472,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 agentContext.CurrentContext,
                 agentContext.EventQueue,
                 agentContext.ExtensionRequest,
-                agentContext.ResumeAuthorization,
+                agentContext.InTaskAuthorization,
                 agentContext,
                 cancellationToken).ConfigureAwait(false);
             return;
@@ -508,7 +508,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         RequestContext a2aContext,
         AgentEventQueue a2aEventQueue,
         A2AProtocolExtensionRequest extensionRequest,
-        InTaskAuthorizationContext resumeAuthorization,
+        InTaskAuthorizationContext inTaskAuthorization,
         AgentRequestContext agentRequestContext,
         CancellationToken cancellationToken)
     {
@@ -530,9 +530,9 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         {
             context.Services.Set(extensionRequest);
         }
-        if (resumeAuthorization != null)
+        if (inTaskAuthorization != null)
         {
-            context.Services.Set(resumeAuthorization);
+            context.Services.Set(inTaskAuthorization);
         }
         context.Services.Set(new A2AClient(context));
 
@@ -572,16 +572,16 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         JsonElement? parameters,
         CancellationToken cancellationToken)
     {
-        if (!string.Equals(method, InTaskAuthorizationExtension.ResumeAuthOperation, StringComparison.Ordinal))
+        if (!string.Equals(method, InTaskAuthorizationExtension.AuthResponseOperation, StringComparison.Ordinal))
         {
             return null;
         }
 
         try
         {
-            var request = parameters?.Deserialize<ResumeAuthRequest>(A2AJsonUtilities.DefaultOptions)
-                ?? throw new A2AException("Invalid resumeAuth parameters.", A2AErrorCode.InvalidParams);
-            SetResumeAuthorization(agentContext, request);
+            var request = parameters?.Deserialize<AuthResponseRequest>(A2AJsonUtilities.DefaultOptions)
+                ?? throw new A2AException("Invalid auth-response parameters.", A2AErrorCode.InvalidParams);
+            SetInTaskAuthorization(agentContext, request);
             var result = await agentContext.Adapter.ResumeTaskAsync(agentContext, request, cancellationToken).ConfigureAwait(false);
             return new JsonRpcResponseResult(JsonRpcResponse.CreateJsonRpcResponse(requestId, result));
         }
@@ -593,7 +593,7 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
 
     private async Task<AgentTask> ResumeTaskAsync(
         AgentRequestContext agentContext,
-        ResumeAuthRequest request,
+        AuthResponseRequest request,
         CancellationToken cancellationToken)
     {
         var task = await _taskStore.GetTaskAsync(request.TaskId, cancellationToken).ConfigureAwait(false)
@@ -602,11 +602,11 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
             || !string.Equals(task.ContextId, request.ContextId, StringComparison.Ordinal))
         {
             throw new A2AException(
-                "The resumeAuth request does not match an authorization-required task.",
+                "The auth-response request does not match an authorization-required task.",
                 A2AErrorCode.InvalidParams);
         }
 
-        var message = CreateResumeMessage(request).Message;
+        var message = CreateAuthResponseMessage(request).Message;
         var requestContext = new RequestContext
         {
             Message = message,
@@ -619,10 +619,10 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         var eventQueue = new AgentEventQueue();
         var activity = A2AActivity.ActivityFromMessage(agentContext.RequestId, task.Id, message);
         activity.Type = ActivityTypes.Event;
-        activity.Name = InTaskAuthorizationExtension.ResumeAuthEventName;
-        activity.Value = new ResumeAuthEventValue
+        activity.Name = InTaskAuthorizationExtension.AuthResponseEventName;
+        activity.Value = new AuthResponseEventValue
         {
-            AccessToken = GetResumeAccessToken(agentContext.HttpRequest),
+            AccessToken = GetInTaskAccessToken(agentContext.HttpRequest),
             Message = message,
         };
         var execution = ExecuteAndCompleteAsync(
@@ -679,32 +679,32 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
         }
     }
 
-    private static void SetResumeAuthorization(
+    private static void SetInTaskAuthorization(
         AgentRequestContext context,
-        ResumeAuthRequest resumeRequest)
+        AuthResponseRequest authResponseRequest)
     {
         if (!context.ExtensionRequest.IsActivated(InTaskAuthorizationExtension.Uri))
         {
             throw new A2AException("The in-task authorization extension must be activated.", A2AErrorCode.UnsupportedOperation);
         }
-        if (string.IsNullOrWhiteSpace(resumeRequest.TaskId)
-            || string.IsNullOrWhiteSpace(resumeRequest.ContextId)
-            || string.IsNullOrWhiteSpace(resumeRequest.AuthorizationRequestId))
+        if (string.IsNullOrWhiteSpace(authResponseRequest.TaskId)
+            || string.IsNullOrWhiteSpace(authResponseRequest.ContextId)
+            || string.IsNullOrWhiteSpace(authResponseRequest.AuthorizationRequestId))
         {
             throw new A2AException(
-                "resumeAuth requires taskId, contextId, and authorizationRequestId.",
+                "auth-response requires taskId, contextId, and authorizationRequestId.",
                 A2AErrorCode.InvalidParams);
         }
 
-        context.ResumeAuthorization = new InTaskAuthorizationContext
+        context.InTaskAuthorization = new InTaskAuthorizationContext
         {
-            TaskId = resumeRequest.TaskId,
-            ContextId = resumeRequest.ContextId,
-            AuthorizationRequestId = resumeRequest.AuthorizationRequestId,
+            TaskId = authResponseRequest.TaskId,
+            ContextId = authResponseRequest.ContextId,
+            AuthorizationRequestId = authResponseRequest.AuthorizationRequestId,
         };
     }
 
-    private static SendMessageRequest CreateResumeMessage(ResumeAuthRequest request)
+    private static SendMessageRequest CreateAuthResponseMessage(AuthResponseRequest request)
     {
         return new SendMessageRequest
         {
@@ -713,12 +713,12 @@ internal class A2AAdapter : ChannelAdapter, IA2AHttpAdapter
                 TaskId = request.TaskId,
                 ContextId = request.ContextId,
                 Extensions = [InTaskAuthorizationExtension.Uri],
-                Parts = [new Part { Data = JsonSerializer.SerializeToElement(new { resumeAuth = true }) }],
+                Parts = [new Part { Data = JsonSerializer.SerializeToElement(new { authResponse = true }) }],
             },
         };
     }
 
-    private static string GetResumeAccessToken(HttpRequest request)
+    private static string GetInTaskAccessToken(HttpRequest request)
     {
         var values = request.Headers[InTaskAuthorizationExtension.TokenHeader];
         if (values.Count != 1 || string.IsNullOrWhiteSpace(values[0]))
@@ -759,7 +759,7 @@ class AgentRequestContext : IAgentHandler
     public ILogger Logger { get; }
     public HttpRequest HttpRequest { get; }
     public A2AProtocolExtensionRequest ExtensionRequest { get; }
-    public InTaskAuthorizationContext ResumeAuthorization { get; set; }
+    public InTaskAuthorizationContext InTaskAuthorization { get; set; }
     public RequestContext CurrentContext { get; private set; }
 
     public AgentRequestContext(HttpRequest httpRequest, A2AAdapter adapter, IAgent agent, ILogger logger)

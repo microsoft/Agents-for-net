@@ -438,11 +438,11 @@ in-task authorization extension. Set the handler mode to `InTask`:
 When a route needs the handler, the task transitions to
 `TASK_STATE_AUTH_REQUIRED` and publishes the handler's `OAuthFlows` and
 `RequiredScopes` in task status metadata. The client acquires the token and
-calls `resumeAuth`. The standard `Authorization` header continues to carry the
+calls `auth-response`. The standard `Authorization` header continues to carry the
 JWT that authenticates the A2A request; the acquired user token is sent
 separately as the raw `x-a2a-intask-authorization` header value.
 
-The A2A extension converts `resumeAuth` to an event Activity whose value
+The A2A extension converts `auth-response` to an event Activity whose value
 contains both the access token and the raw A2A message, then resumes the normal
 `AgentApplication.UserAuthorization` pipeline. A route with multiple
 `autoSigninHandlers` can complete the handlers separately, allowing multiple
@@ -458,7 +458,7 @@ and a downstream OBO exchange must support the supplied token.
 
 | Setting | Meaning | When omitted |
 | --- | --- | --- |
-| `Mode` | `RequestToken` uses the credential associated with the A2A request. `InTask` emits an auth-required task status and accepts the acquired credential through `resumeAuth`. | Defaults to `RequestToken`. |
+| `Mode` | `RequestToken` uses the credential associated with the A2A request. `InTask` emits an auth-required task status and accepts the acquired credential through `auth-response`. | Defaults to `RequestToken`. |
 | `SecuritySchemeName` | Identifies the Agent Card scheme used by a `RequestToken` handler. With `OAuthFlows`, the handler defines that scheme inline. Without `OAuthFlows`, it references an existing scheme contributed through configuration or `IAgentCardHandler`. | With inline `OAuthFlows`, defaults to the handler name. Without inline flows, the handler contributes no Agent Card security metadata. |
 | `OAuthFlows` | Defines one OAuth flow. In `RequestToken` mode it can define an inline Agent Card scheme. In `InTask` mode it is returned in auth-required task metadata. | In `RequestToken` mode, an explicit `SecuritySchemeName` references an existing Agent Card scheme. |
 | `RequiredScopes` | Scopes placed in a generated Agent Card requirement for `RequestToken`, or in auth-required task metadata for `InTask`. When `EnforceRequiredScopes` is enabled, the same list is validated against the delegated JWT's `scp` claim before OBO. | Defaults to all scope keys advertised by `OAuthFlows`. An explicit empty array disables inferred requirements. |

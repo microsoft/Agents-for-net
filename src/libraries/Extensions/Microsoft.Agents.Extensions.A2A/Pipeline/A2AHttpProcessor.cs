@@ -45,8 +45,8 @@ internal static class A2AHttpProcessor
             return new JsonRpcResponseResult(JsonRpcResponse.CreateJsonRpcResponse(new JsonRpcId("http"), result));
         }, cancellationToken: cancellationToken);
 
-    internal static Task<IResult> ResumeAuthAsync(ILogger logger, Func<CancellationToken, Task<AgentTask>> operation, CancellationToken cancellationToken)
-        => WithExceptionHandlingAsync(logger, "ResumeAuth", async ct =>
+    internal static Task<IResult> AuthResponseAsync(ILogger logger, Func<CancellationToken, Task<AgentTask>> operation, CancellationToken cancellationToken)
+        => WithExceptionHandlingAsync(logger, "AuthResponse", async ct =>
         {
             var result = await operation(ct).ConfigureAwait(false);
             return new JsonRpcResponseResult(JsonRpcResponse.CreateJsonRpcResponse(new JsonRpcId("http"), result));
