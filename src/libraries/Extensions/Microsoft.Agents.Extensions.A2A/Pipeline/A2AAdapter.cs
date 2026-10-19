@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// customization or replacement point.
 /// </remarks>
 [ChannelAdapter(Channels.A2A)]
-internal class A2AAdapter : ChannelAdapter, IA2ARequestHandler
+internal class A2AAdapter : ChannelAdapter
 {
     private readonly ITaskStore _taskStore;
     private readonly ChannelEventNotifier _a2aNotifier;
@@ -136,7 +136,7 @@ internal class A2AAdapter : ChannelAdapter, IA2ARequestHandler
         try
         {
             var result = await global::A2A.AspNetCore.A2AJsonRpcProcessor.ProcessRequestAsync(
-                this,
+                CurrentRequestHandler,
                 httpRequest,
                 A2AServiceExtensions.Dispatch.Registry,
                 A2AServiceExtensions.Dispatch.JsonRpcBindings,
@@ -274,72 +274,6 @@ internal class A2AAdapter : ChannelAdapter, IA2ARequestHandler
 
     internal static IA2ARequestHandler RequestHandlerProxy { get; } = new CurrentRequestHandlerProxy();
 
-    Task<SendMessageResponse> IA2ARequestHandler.SendMessageAsync(
-        SendMessageRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.SendMessageAsync(request, requestContext, cancellationToken);
-
-    IAsyncEnumerable<StreamResponse> IA2ARequestHandler.SendStreamingMessageAsync(
-        SendMessageRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.SendStreamingMessageAsync(request, requestContext, cancellationToken);
-
-    Task<AgentTask> IA2ARequestHandler.GetTaskAsync(
-        GetTaskRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.GetTaskAsync(request, requestContext, cancellationToken);
-
-    Task<ListTasksResponse> IA2ARequestHandler.ListTasksAsync(
-        ListTasksRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.ListTasksAsync(request, requestContext, cancellationToken);
-
-    Task<AgentTask> IA2ARequestHandler.CancelTaskAsync(
-        CancelTaskRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.CancelTaskAsync(request, requestContext, cancellationToken);
-
-    IAsyncEnumerable<StreamResponse> IA2ARequestHandler.SubscribeToTaskAsync(
-        SubscribeToTaskRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.SubscribeToTaskAsync(request, requestContext, cancellationToken);
-
-    Task<TaskPushNotificationConfig> IA2ARequestHandler.CreateTaskPushNotificationConfigAsync(
-        TaskPushNotificationConfig config,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.CreateTaskPushNotificationConfigAsync(config, requestContext, cancellationToken);
-
-    Task<TaskPushNotificationConfig> IA2ARequestHandler.GetTaskPushNotificationConfigAsync(
-        GetTaskPushNotificationConfigRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.GetTaskPushNotificationConfigAsync(request, requestContext, cancellationToken);
-
-    Task<ListTaskPushNotificationConfigsResponse> IA2ARequestHandler.ListTaskPushNotificationConfigsAsync(
-        ListTaskPushNotificationConfigsRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.ListTaskPushNotificationConfigsAsync(request, requestContext, cancellationToken);
-
-    Task IA2ARequestHandler.DeleteTaskPushNotificationConfigAsync(
-        DeleteTaskPushNotificationConfigRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.DeleteTaskPushNotificationConfigAsync(request, requestContext, cancellationToken);
-
-    Task<A2AProtocolAgentCard> IA2ARequestHandler.GetExtendedAgentCardAsync(
-        GetExtendedAgentCardRequest request,
-        A2ARequestContext? requestContext,
-        CancellationToken cancellationToken) =>
-        CurrentRequestHandler.GetExtendedAgentCardAsync(request, requestContext, cancellationToken);
-
     private sealed class RequestContextScope(
         AgentRequestContext context,
         AgentRequestContext? previousContext,
@@ -355,8 +289,8 @@ internal class A2AAdapter : ChannelAdapter, IA2ARequestHandler
 
     private sealed class CurrentRequestHandlerProxy : IA2ARequestHandler
     {
-        private static IA2ARequestHandler Current =>
-            _currentAdapter.Value
+        private static A2AServerWithoutExtendedAgentCard Current =>
+            _currentAdapter.Value?.CurrentRequestHandler
                 ?? throw new InvalidOperationException("An A2A request context is not active.");
 
         public Task<SendMessageResponse> SendMessageAsync(

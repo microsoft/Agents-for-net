@@ -1424,16 +1424,11 @@ public class A2AAdapterTests
     }
 
     [Theory]
-    [InlineData(false, false, false)]
-    [InlineData(false, false, true)]
-    [InlineData(false, true, false)]
-    [InlineData(false, true, true)]
-    [InlineData(true, false, false)]
-    [InlineData(true, false, true)]
-    [InlineData(true, true, false)]
-    [InlineData(true, true, true)]
-    public async Task RequestHandler_SendMessage_PreservesRequestContext(
-        bool useProxy,
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task RequestHandlerProxy_SendMessage_PreservesRequestContext(
         bool streaming,
         bool negotiated)
     {
@@ -1464,7 +1459,7 @@ public class A2AAdapterTests
             },
         };
         using var scope = record.Adapter.BeginRequest(CreateHttpContext(string.Empty), record.Agent);
-        IA2ARequestHandler handler = useProxy ? A2AAdapter.RequestHandlerProxy : record.Adapter;
+        var handler = A2AAdapter.RequestHandlerProxy;
 
         if (streaming)
         {
