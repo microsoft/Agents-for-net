@@ -1423,6 +1423,65 @@ public class A2AAdapterTests
         Assert.Contains(InTaskAuthorizationExtension.Uri, activation.ActivatedExtensions);
     }
 
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task RequestHandler_SendMessage_PreservesRequestContext(
+        bool useProxy,
+        bool streaming,
+        bool negotiated)
+    {
+        var turnExecuted = false;
+        A2ARequestContext observedContext = null;
+        var record = UseRecord(record =>
+        {
+            var agent = new TestApplication(new TestApplicationOptions(record.Storage));
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                observedContext = context.Services.Get<RequestContext>()?.ExtensionActivation;
+                turnExecuted = true;
+                await context.SendActivityAsync(
+                    new Activity { Type = ActivityTypes.EndOfConversation, Text = "Done" },
+                    cancellationToken: ct);
+            });
+            return agent;
+        });
+        var requestContext = negotiated
+            ? await A2AServiceExtensions.Dispatch.Registry.NegotiateExtensionsAsync([InTaskAuthorizationExtension.Uri])
+            : null;
+        var request = new SendMessageRequest
+        {
+            Message = new Message
+            {
+                ContextId = "context-forwarding",
+                Parts = [new Part { Text = "Hello" }],
+            },
+        };
+        using var scope = record.Adapter.BeginRequest(CreateHttpContext(string.Empty), record.Agent);
+        IA2ARequestHandler handler = useProxy ? A2AAdapter.RequestHandlerProxy : record.Adapter;
+
+        if (streaming)
+        {
+            await foreach (var response in handler.SendStreamingMessageAsync(request, requestContext, CancellationToken.None))
+            {
+                Assert.NotNull(response);
+            }
+        }
+        else
+        {
+            Assert.NotNull(await handler.SendMessageAsync(request, requestContext, CancellationToken.None));
+        }
+
+        Assert.True(turnExecuted);
+        Assert.Same(requestContext, observedContext);
+    }
+
     [Fact]
     public async Task ProcessJsonRpcGetExtendedAgentCardAsync_WhenUnsupported_ReturnsUnsupportedOperation()
     {

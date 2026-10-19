@@ -122,7 +122,7 @@ namespace Microsoft.Agents.Authentication.Properties {
                 return ResourceManager.GetString("Error_MissingAuthenticationConfig", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to The token response provider returned a null response or a response without a token..
         /// </summary>
