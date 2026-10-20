@@ -58,6 +58,42 @@ flowchart LR
 - Channel replies normally use `Microsoft.Agents.Connector`. Synchronous `Invoke`, `ExpectReplies`, and `DeliveryMode.Stream` responses can instead be returned by the host on the inbound HTTP response.
 - Authentication is split between the abstractions/configuration package (`Microsoft.Agents.Authentication`) and providers such as `Microsoft.Agents.Authentication.Msal`.
 
+### Proactive Validation
+
+`AgentApplication.Proactive` delegates conversation and creation validation to the selected adapter
+through `IProactiveAdapterValidator`. `ChannelAdapter` implements this optional contract with virtual
+`ValidateConversation(ClaimsIdentity, ConversationReference)` and
+`ValidateCreateConversation(CreateConversationOptions)` methods. Its default rules require the
+identity and addressing needed by the shared proactive flow, but do not require Activity Protocol
+credentials, a service URL, or an OAuth scope.
+
+`ChannelServiceAdapterBase` adds the Activity Protocol requirements: channel, agent/user addressing,
+service URL, and the incoming `aud` claim used to select credentials for authenticated delivery.
+The incoming audience is not necessarily the audience of the outbound access token. Its inherited
+continuation paths and its create-conversation implementation invoke validation before creating
+clients or running application callbacks. Custom adapters overriding these execution methods must
+also invoke their validation hooks.
+
+For compatibility, adapters implementing `IChannelAdapter` directly without
+`IProactiveAdapterValidator` retain the legacy Activity Protocol validation in the proactive
+helpers through an internal compatibility path owned by `ChannelServiceAdapterBase`.
+`IChannelAdapter` itself is unchanged. Existing public `ProactiveValidationExtensions.Validate`
+overloads are obsolete forwarding wrappers that retain their behavior; the SDK does not call them.
+They are not the validation policy for every transport.
+
+Anonymous Activity Protocol proactive delivery is **opt-in**: set `AllowAnonymousProactive` on the
+`ChannelServiceAdapterBase` instance and supply an enabled `IOutboundHostValidator` through its
+constructor. The validator must permit the destination. Only an empty, unauthenticated identity
+selects anonymous delivery; a non-anonymous identity missing `aud` is rejected, and token failures
+do not fall back to anonymous. Anonymous creation uses `ConversationParameters.Agent.Id` for
+addressing instead of inventing an audience claim. Direct proactive calls that previously bypassed
+the helper's validation now enforce the adapter's rules too.
+
+This option does not change HTTP endpoint authorization or mean that Azure Bot Service accepts
+anonymous traffic. Keep proactive trigger authorization separate from delivery authentication,
+and permit anonymous delivery only to trusted receivers that support it. Private or loopback
+destinations also require the outbound validator's explicit private-network opt-in.
+
 ## Package Dependency Graph
 
 Every arrow below means **the package at the tail has a project reference to the package at the arrowhead**. Transitive dependencies and analyzer-only references are omitted unless they explain an important boundary.

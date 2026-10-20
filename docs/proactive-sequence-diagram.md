@@ -12,6 +12,21 @@ Shows how agents can initiate messages to users outside the normal request/respo
 - **ChannelAdapter** — Adapter that creates turn contexts and sends activities to the channel.
 - **Channel** — The upstream channel (Teams, WebChat, DirectLine, etc.).
 
+## Validation Ownership
+
+Before sending, continuing, or creating a conversation, `Proactive` uses the selected adapter's
+`IProactiveAdapterValidator` implementation. `ChannelAdapter` supplies transport-neutral validation
+hooks, and `ChannelServiceAdapterBase` supplies Activity Protocol validation. Direct inherited
+continuation calls also invoke those hooks before running middleware or application code.
+Adapters implementing only `IChannelAdapter` keep the previous validation through an internal
+compatibility path in `ChannelServiceAdapterBase`; `IChannelAdapter` itself is unchanged.
+The public validation extensions are obsolete compatibility wrappers, not SDK-internal entry points.
+
+Anonymous outbound Activity Protocol delivery requires explicit `AllowAnonymousProactive` opt-in
+and an enabled outbound host validator permitting the destination. This does not allow anonymous
+access to the proactive HTTP endpoints. See [Proactive validation](architecture.md#proactive-validation)
+for the adapter contract and authentication boundaries.
+
 ## Flow 1: Store Conversation Reference
 
 The `{conversationId}` HTTP endpoints require a conversation stored during an earlier turn. Body-based endpoints and in-code APIs can instead receive a complete `Conversation` directly.

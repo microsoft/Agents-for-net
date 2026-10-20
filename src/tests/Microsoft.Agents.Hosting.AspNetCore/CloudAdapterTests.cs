@@ -379,8 +379,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
                 return agent;
             });
 
-            var activity = CreateMessageActivity(DeliveryModes.ExpectReplies, text: "user message", activityId: "1", fromId: fromId);
-            var context = CreateHttpContext(activity);
+            var activity = CreateMessageActivity(DeliveryModes.ExpectReplies, text: "user message", activityId: "1", fromId: fromId, serviceUrl: TestServiceUrl);
+            var context = CreateHttpContext(activity, AgentClaims.CreateIdentity("appid"));
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
@@ -407,6 +407,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             var proactiveReference = new ConversationReference()
             {
+                ChannelId = Channels.Test,
                 ServiceUrl = "https://madeup.com",
                 Conversation = new(id: Guid.NewGuid().ToString()),
                 ActivityId = Guid.NewGuid().ToString(),
@@ -439,7 +440,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             // ExpectReplies outer delivery isolates the outer response from the proactive one for easier assertions
             var activity = CreateMessageActivity(DeliveryModes.ExpectReplies, text: "user message", activityId: "1", fromId: fromId);
-            var context = CreateHttpContext(activity);
+            var context = CreateHttpContext(activity, AgentClaims.CreateIdentity("appid"));
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
@@ -578,7 +579,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var handler = SetupConnectorClient(record, responses);
 
             var activity = CreateMessageActivity(DeliveryModes.Normal, conversationId: initialConversationId, text: "user message", activityId: "1", serviceUrl: serviceUrl);
-            var context = CreateHttpContext(activity);
+            var context = CreateHttpContext(activity, AgentClaims.CreateIdentity("appid"));
 
             await record.Service.StartAsync(CancellationToken.None);
             await Task.Run(async () =>
@@ -637,8 +638,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
             // First request: start sign-in (returns empty ExpectedReplies while waiting for code)
             var fromId = Guid.NewGuid().ToString();
-            var activity = CreateMessageActivity(DeliveryModes.ExpectReplies, text: "-signin", activityId: "1", fromId: fromId);
-            var context = CreateHttpContext(activity);
+            var activity = CreateMessageActivity(DeliveryModes.ExpectReplies, text: "-signin", activityId: "1", fromId: fromId, serviceUrl: TestServiceUrl);
+            var context = CreateHttpContext(activity, AgentClaims.CreateIdentity("appid"));
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
@@ -648,8 +649,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             Assert.Empty(expectedReplies.Activities);
 
             // Second request: submit auth code (response should include the token)
-            var activity2 = CreateMessageActivity(DeliveryModes.ExpectReplies, conversationId: activity.Conversation.Id, text: "123456", activityId: "2", fromId: fromId);
-            context = CreateHttpContext(activity2);
+            var activity2 = CreateMessageActivity(DeliveryModes.ExpectReplies, conversationId: activity.Conversation.Id, text: "123456", activityId: "2", fromId: fromId, serviceUrl: TestServiceUrl);
+            context = CreateHttpContext(activity2, AgentClaims.CreateIdentity("appid"));
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
@@ -1221,7 +1222,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             return handler;
         }
 
-        private static DefaultHttpContext CreateHttpContext(Activity activity = null)
+        private static DefaultHttpContext CreateHttpContext(Activity activity = null, ClaimsIdentity identity = null)
         {
             var content = activity == null ? "" : ProtocolJsonSerializer.ToJson(activity);
             var context = new DefaultHttpContext();
@@ -1229,6 +1230,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             context.Request.Method = HttpMethods.Post;
             context.Response.StatusCode = 0;
             context.Response.Body = new MemoryStream();
+            if (identity != null)
+            {
+                context.User = new ClaimsPrincipal(identity);
+            }
             return context;
         }
 

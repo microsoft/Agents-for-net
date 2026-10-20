@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -64,6 +64,109 @@ namespace Microsoft.Agents.Builder
         /// Gets the validator used to restrict outbound service URLs.
         /// </summary>
         protected IOutboundHostValidator HostValidator { get; }
+
+        /// <summary>
+        /// Gets or sets whether proactive operations may use an empty, unauthenticated identity.
+        /// </summary>
+        /// <remarks>
+        /// Defaults to <see langword="false"/>. Anonymous proactive delivery also requires an enabled
+        /// <see cref="Microsoft.Agents.Builder.ChannelServiceAdapterBase.HostValidator"/> that permits the destination.
+        /// This does not allow anonymous HTTP triggers or make Azure Bot Service accept unauthenticated requests.
+        /// </remarks>
+        public bool AllowAnonymousProactive { get; set; }
+
+        /// <inheritdoc/>
+        public override void ValidateConversation(ClaimsIdentity identity, ConversationReference reference)
+        {
+            base.ValidateConversation(identity, reference);
+            ValidateConversationReference(reference);
+            ValidateOutboundServiceUrl(reference.ServiceUrl, nameof(ConversationReference.ServiceUrl));
+            ValidateProactiveIdentity(identity);
+        }
+
+        /// <inheritdoc/>
+        public override void ValidateCreateConversation(CreateConversationOptions options)
+        {
+            base.ValidateCreateConversation(options);
+            ValidateCreateConversationOptions(options);
+            ValidateOutboundServiceUrl(options.ServiceUrl, nameof(CreateConversationOptions.ServiceUrl));
+            ValidateProactiveIdentity(options.Identity);
+        }
+
+        internal static void ValidateCreateConversationOptions(CreateConversationOptions options)
+        {
+            if (string.IsNullOrWhiteSpace(options.ChannelId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.ChannelId));
+            }
+            if (string.IsNullOrWhiteSpace(options.ServiceUrl))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.ServiceUrl));
+            }
+            if (string.IsNullOrWhiteSpace(options.Scope))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.Scope));
+            }
+            if (options.Parameters == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.Parameters));
+            }
+            ValidateConversationParameters(options.Parameters);
+        }
+
+        internal static void ValidateLegacyConversation(Conversation conversation, bool validateConversation = true)
+        {
+            if (conversation.Reference == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationInstance, null, nameof(Conversation.Reference));
+            }
+            ValidateConversationReference(conversation.Reference, validateConversation);
+
+            // Legacy validation checks claim presence, not the adapter's authentication policy.
+            if (conversation.Claims == null || !conversation.Claims.TryGetValue("aud", out _))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationInstance, null, "aud claim is required in Claims");
+            }
+        }
+
+        internal static void ValidateConversationParameters(ConversationParameters parameters)
+        {
+            if (string.IsNullOrWhiteSpace(parameters.Agent?.Id))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationParametersInstance, null, $"{nameof(ConversationParameters.Agent)}.{nameof(ConversationParameters.Agent.Id)}");
+            }
+        }
+
+        internal static void ValidateConversationReference(ConversationReference reference, bool validateConversation = true)
+        {
+            if (string.IsNullOrWhiteSpace(reference.ChannelId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, nameof(ConversationReference.ChannelId));
+            }
+            if (string.IsNullOrWhiteSpace(reference.Agent?.Id))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.Agent)}.{nameof(ConversationReference.Agent.Id)}");
+            }
+            if (string.IsNullOrWhiteSpace(reference.User?.Id))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.User)}.{nameof(ConversationReference.User.Id)}");
+            }
+            if (string.IsNullOrWhiteSpace(reference.ServiceUrl))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, nameof(ConversationReference.ServiceUrl));
+            }
+            if (validateConversation)
+            {
+                if (reference.Conversation == null)
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, nameof(ConversationReference.Conversation));
+                }
+                if (string.IsNullOrWhiteSpace(reference.Conversation.Id))
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.Conversation)}.{nameof(ConversationReference.Conversation.Id)}");
+                }
+            }
+        }
 
         /// <inheritdoc/>
         public override async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
@@ -172,11 +275,19 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNullOrWhiteSpace(channelId, nameof(channelId));
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(identity);
+            var agentId = useAnonymousAuthCallback ? parameters.Agent?.Id : identity.GetIncomingAudience();
 
-            var reference = ConversationReferenceBuilder.Create(identity.GetIncomingAudience(), channelId, serviceUrl)
-                .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(identity.GetIncomingAudience(), role: RoleTypes.User))
+            var reference = ConversationReferenceBuilder.Create(agentId, channelId, serviceUrl)
+                .WithUser(parameters.Members?.Count > 0 ? parameters.Members[0] : new ChannelAccount(agentId, role: RoleTypes.User))
                 .Build();
-            ValidateOutboundServiceUrl(reference.ServiceUrl, nameof(serviceUrl));
+            ValidateCreateConversation(new CreateConversationOptions
+            {
+                Identity = identity,
+                ChannelId = channelId,
+                ServiceUrl = reference.ServiceUrl,
+                Audience = audience,
+                Parameters = parameters
+            });
 
             // Create the initial TurnContext with the create conversation activity, so that we can create the connector client
             // with the correct context and then make the create conversation call.
@@ -225,7 +336,7 @@ namespace Microsoft.Agents.Builder
             }
 
             ValidateContinuationActivity(continuationActivity);
-            ValidateOutboundServiceUrl(continuationActivity.ServiceUrl, nameof(continuationActivity.ServiceUrl));
+            ValidateConversation(claimsIdentity, continuationActivity.GetConversationReference());
 
             bool useAnonymousAuthCallback = AgentClaims.AllowAnonymous(claimsIdentity);
 
@@ -301,6 +412,21 @@ namespace Microsoft.Agents.Builder
 
             // If there are any results they will have been left on the TurnContext. 
             return ProcessTurnResults(context);
+        }
+
+        private void ValidateProactiveIdentity(ClaimsIdentity identity)
+        {
+            if (AgentClaims.AllowAnonymous(identity))
+            {
+                if (!AllowAnonymousProactive || HostValidator?.Enabled != true)
+                {
+                    throw new InvalidOperationException("Anonymous proactive delivery requires AllowAnonymousProactive and an enabled outbound host validator.");
+                }
+            }
+            else if (string.IsNullOrWhiteSpace(identity.GetIncomingAudience()))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationInstance, null, "aud claim is required in Claims");
+            }
         }
 
         private void ValidateOutboundServiceUrl(string serviceUrl, string parameterName)

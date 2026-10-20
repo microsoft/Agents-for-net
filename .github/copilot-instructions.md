@@ -135,6 +135,13 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
 - Verify that each referenced type or member still exists at that location and that member references use the current signature.
 - If a symbol cannot be referenced from the documenting project because of assembly or target-framework constraints, use fully qualified `<c>` text instead of an unresolved `cref`.
 
+### Compatibility Design Debt
+- Use `// COMPAT(next-major):` to mark compatibility-driven design compromises that should be reconsidered at a major release.
+- Place the marker at the owning contract or compatibility seam. Include the current compatibility constraint, the candidate redesign, and affected consumers or migration work. Continuation comment lines should provide enough context to create a tracking issue later.
+- An issue is not required initially. Add its link to the marker when one exists; do not insert placeholder issue references or create issues solely to add a marker.
+- Review these markers during major-release planning. They identify redesign candidates, not permission to break compatibility in a non-major release.
+- This is maintainer-facing tracking. Do not add `[Obsolete]` solely to flag design debt; use it when consumers should migrate away from an API.
+
 ### Testing
 - **xUnit** (v2.9.3 and v3.0.1), **Moq** for mocking.
 - Test projects are under `src/tests/` and may target both .NET 8.0 and .NET Framework 4.8.
