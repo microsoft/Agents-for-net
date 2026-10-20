@@ -555,7 +555,8 @@ internal class A2AAdapter : ChannelAdapter
         CancellationToken cancellationToken)
     {
         _ = operationContext.GetRequiredFeature<HttpContext>();
-        var extensionActivation = operationContext.GetRequiredFeature<A2ARequestContext>();
+        var extensionActivation = operationContext.ExtensionActivation
+            ?? throw new InvalidOperationException("An A2A extension activation context is not available.");
         var agentContext = _currentAgentContext.Value
             ?? throw new InvalidOperationException("An A2A request context is not active.");
         SetInTaskAuthorization(agentContext, request);

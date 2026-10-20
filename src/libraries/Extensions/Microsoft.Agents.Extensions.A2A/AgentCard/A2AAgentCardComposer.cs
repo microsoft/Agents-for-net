@@ -15,7 +15,6 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.A2A.AgentCard;
@@ -67,7 +66,7 @@ internal sealed class A2AAgentCardComposer
             hostDefaults = await agentCardHandler.GetAgentCard(hostDefaults).ConfigureAwait(false);
         }
 
-        AddProtocolExtensions(hostDefaults, authorizations, inTaskAuthorization);
+        hostDefaults = AddProtocolExtensions(hostDefaults, authorizations, inTaskAuthorization);
         ValidateCard(hostDefaults);
         return hostDefaults;
     }
@@ -129,36 +128,17 @@ internal sealed class A2AAgentCardComposer
         }
     }
 
-    private static void AddProtocolExtensions(
+    private static A2AProtocolAgentCard AddProtocolExtensions(
         A2AProtocolAgentCard agentCard,
         IReadOnlyList<A2AAuthorizationMetadata> authorizations,
         A2AExtensionRegistration inTaskAuthorization)
     {
         if (!authorizations.Any(authorization => authorization.Mode == A2AUserAuthorizationMode.InTask))
         {
-            return;
+            return agentCard;
         }
 
-        agentCard.Capabilities.Extensions ??= [];
-        var declarations = agentCard.Capabilities.Extensions
-            .Where(candidate => string.Equals(candidate.Uri, inTaskAuthorization.Uri, StringComparison.Ordinal))
-            .ToArray();
-        if (declarations.Length == 0)
-        {
-            agentCard.Capabilities.Extensions.Add(inTaskAuthorization.ToAgentExtension());
-            return;
-        }
-
-        if (declarations.Length != 1
-            || (declarations[0].Description ?? string.Empty) != (inTaskAuthorization.Description ?? string.Empty)
-            || declarations[0].Required.GetValueOrDefault() != inTaskAuthorization.Required.GetValueOrDefault()
-            || declarations[0].Params.HasValue != inTaskAuthorization.Params.HasValue
-            || (declarations[0].Params.HasValue
-                && !JsonElement.DeepEquals(declarations[0].Params.Value, inTaskAuthorization.Params!.Value)))
-        {
-            throw new InvalidOperationException(
-                $"Agent Card extension declaration '{inTaskAuthorization.Uri}' does not match the registered extension.");
-        }
+        return inTaskAuthorization.EnsureAgentCardDeclaration(agentCard);
     }
 
     private void AddGlobalRequirement(A2AProtocolAgentCard agentCard, Dictionary<string, A2AAuthorizationMetadata> authorizations)
