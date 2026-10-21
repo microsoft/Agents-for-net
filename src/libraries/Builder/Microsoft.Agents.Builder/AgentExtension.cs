@@ -18,6 +18,19 @@ namespace Microsoft.Agents.Builder
         public virtual ChannelId ChannelId { get; set; } = string.Empty;
 #endif
 
+        /// <summary>
+        /// Adapts a turn context to the specialized context exposed by this extension.
+        /// </summary>
+        /// <param name="turnContext">The current turn context, including its activity and turn-scoped services.</param>
+        /// <returns>The extension's context wrapper, or the original context when no adaptation is needed.</returns>
+        /// <remarks>
+        /// The default implementation returns <paramref name="turnContext"/> unchanged.
+        /// Continuation handlers with specialized context parameters use this hook for extensions registered
+        /// on <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> that match the current channel.
+        /// Wrappers must preserve the underlying turn's services and activity.
+        /// </remarks>
+        public virtual ITurnContext WrapTurnContext(ITurnContext turnContext) => turnContext;
+
         [Obsolete("This method is deprecated. Please use the overload that includes the 'isAgenticOnly' parameter.")]
         public void AddRoute(AgentApplication agentApplication, RouteSelector routeSelector, RouteHandler routeHandler, bool isInvokeRoute = false, ushort rank = RouteRank.Unspecified, string[] autoSignInHandlers = null)
         {

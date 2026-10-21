@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using A2A;
@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -46,7 +48,25 @@ public static class A2AServiceExtensions
     /// <param name="services">The service collection to receive the A2A adapter services.</param>
     public static void AddA2AAdapter(this IServiceCollection services)
     {
-        services.TryAddSingleton(sp => ActivatorUtilities.CreateInstance<A2AAdapter>(sp));
+        if (services.Any(service => service.ServiceType == typeof(A2AAdapter)))
+        {
+            return;
+        }
+
+        services.AddA2AAgent<A2AAdapter.AgentHandlerProxy>(new global::A2A.AgentCard
+        {
+            Capabilities = new AgentCapabilities { Streaming = true, PushNotifications = true },
+            DefaultInputModes = ["application/json"],
+            DefaultOutputModes = ["application/json"],
+            Skills = [],
+        });
+        services.TryAddSingleton(sp => new A2AAdapter(
+            sp.GetRequiredService<ITaskStore>(),
+            sp.GetRequiredService<ILoggerFactory>(),
+            sp.GetRequiredService<ChannelEventNotifier>(),
+            sp.GetService<A2AAdapterOptions>(),
+            sp.GetService<IConfiguration>(),
+            (A2AServer)sp.GetRequiredService<IA2ARequestHandler>()));
     }
 
     /// <summary>
@@ -206,8 +226,22 @@ public static class A2AServiceExtensions
     {
         var adapter = invocationContext.HttpContext.RequestServices.GetRequiredService<A2AAdapter>();
         var agent = invocationContext.HttpContext.RequestServices.GetRequiredService<IAgent>();
-        using var scope = adapter.BeginRequest(invocationContext.HttpContext, agent);
-        return await next(invocationContext).ConfigureAwait(false);
+        var scope = adapter.BeginRequest(invocationContext.HttpContext, agent);
+        try
+        {
+            var result = await next(invocationContext).ConfigureAwait(false);
+            if (result is IResult httpResult)
+            {
+                return new A2AAdapter.RequestScopedResult(httpResult, scope);
+            }
+            scope.Dispose();
+            return result;
+        }
+        catch
+        {
+            scope.Dispose();
+            throw;
+        }
     }
 
     private static A2AEndpointDispatch CreateDispatch()

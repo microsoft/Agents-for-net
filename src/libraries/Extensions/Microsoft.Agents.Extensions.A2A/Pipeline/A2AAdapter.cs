@@ -48,10 +48,13 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 internal class A2AAdapter : ChannelAdapter
 {
     private readonly ITaskStore _taskStore;
+    private readonly A2AServer _server;
+    private readonly bool _supportsPushNotifications;
     private readonly ChannelEventNotifier _a2aNotifier;
     private static readonly ConcurrentDictionary<string, AgentRequestContext> _a2aAgentContext = new();
     private static readonly AsyncLocal<AgentRequestContext> _currentAgentContext = new();
     private static readonly AsyncLocal<A2AAdapter> _currentAdapter = new();
+    private static readonly AsyncLocal<ITurnContext> _currentTurn = new();
     private static readonly A2AServerOptions _a2aServerOptions = new();
     private static readonly string _assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
     private readonly ILoggerFactory _loggerFactory;
@@ -86,13 +89,15 @@ internal class A2AAdapter : ChannelAdapter
     /// <param name="a2aNotifier">The optional notifier for A2A channel events.</param>
     /// <param name="options">The optional A2A adapter options.</param>
     /// <param name="configuration">The optional configuration used to compose Agent Cards.</param>
+    /// <param name="server">The shared server used for task execution and push delivery.</param>
     /// <exception cref="ArgumentNullException"><paramref name="taskStore"/> is <see langword="null"/>.</exception>
     public A2AAdapter(
         ITaskStore taskStore,
         ILoggerFactory loggerFactory,
         ChannelEventNotifier a2aNotifier = null,
         A2AAdapterOptions options = null,
-        IConfiguration configuration = null)
+        IConfiguration configuration = null,
+        A2AServer server = null)
         : base(loggerFactory.CreateLogger<A2AAdapter>())
     {
         AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
@@ -114,6 +119,9 @@ internal class A2AAdapter : ChannelAdapter
         _a2aServerLogger = loggerFactory.CreateLogger<A2AServer>();
         _agentCardCacheControl = $"public, max-age={(long)Math.Ceiling(adapterOptions.AgentCardCacheMaxAge.TotalSeconds)}";
         _configuration = configuration;
+        _supportsPushNotifications = server != null;
+        _server = server ?? new A2AServerWithoutExtendedAgentCard(
+            new AgentHandlerProxy(), _taskStore, _a2aNotifier, _a2aServerLogger, _a2aServerOptions);
 
         OnTurnError = (turnContext, exception) =>
         {
@@ -175,6 +183,7 @@ internal class A2AAdapter : ChannelAdapter
             {
                 ExtendedAgentCard = false,
                 Streaming = true,
+                PushNotifications = _supportsPushNotifications,
             },
             SupportedInterfaces = [],
         };
@@ -262,15 +271,21 @@ internal class A2AAdapter : ChannelAdapter
         return _a2aAgentContext.GetOrAdd(agentContext.RequestId, agentContext);
     }
 
-    private A2AServerWithoutExtendedAgentCard GetA2AServerForAgent(AgentRequestContext agentContext)
-    {
-        return new A2AServerWithoutExtendedAgentCard(agentContext, _taskStore, _a2aNotifier, _a2aServerLogger, _a2aServerOptions);
-    }
+    private A2AServer CurrentRequestHandler => _server;
 
-    private A2AServerWithoutExtendedAgentCard CurrentRequestHandler =>
-        GetA2AServerForAgent(
-            _currentAgentContext.Value
-                ?? throw new InvalidOperationException("An A2A request context is not active."));
+    internal sealed class AgentHandlerProxy : IAgentHandler
+    {
+        public AgentHandlerProxy() { }
+
+        private static AgentRequestContext Current => _currentAgentContext.Value
+            ?? throw new InvalidOperationException("An A2A request context is not active.");
+
+        public Task ExecuteAsync(RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
+            => Current.ExecuteAsync(context, eventQueue, cancellationToken);
+
+        public Task CancelAsync(RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
+            => Current.CancelAsync(context, eventQueue, cancellationToken);
+    }
 
     internal static IA2ARequestHandler RequestHandlerProxy { get; } = new CurrentRequestHandlerProxy();
 
@@ -279,6 +294,12 @@ internal class A2AAdapter : ChannelAdapter
         AgentRequestContext? previousContext,
         A2AAdapter? previousAdapter) : IDisposable
     {
+        public void Activate()
+        {
+            _currentAgentContext.Value = context;
+            _currentAdapter.Value = context.Adapter;
+        }
+
         public void Dispose()
         {
             _currentAgentContext.Value = previousContext;
@@ -289,7 +310,7 @@ internal class A2AAdapter : ChannelAdapter
 
     private sealed class CurrentRequestHandlerProxy : IA2ARequestHandler
     {
-        private static A2AServerWithoutExtendedAgentCard Current =>
+        private static A2AServer Current =>
             _currentAdapter.Value?.CurrentRequestHandler
                 ?? throw new InvalidOperationException("An A2A request context is not active.");
 
@@ -336,12 +357,13 @@ internal class A2AAdapter : ChannelAdapter
             Current.GetExtendedAgentCardAsync(request, requestContext, cancellationToken);
     }
 
-    private sealed class RequestScopedResult(IResult result, IDisposable scope) : IResult
+    internal sealed class RequestScopedResult(IResult result, IDisposable scope) : IResult
     {
         public async Task ExecuteAsync(HttpContext httpContext)
         {
             using (scope)
             {
+                (scope as RequestContextScope)?.Activate();
                 await result.ExecuteAsync(httpContext).ConfigureAwait(false);
             }
         }
@@ -459,23 +481,37 @@ internal class A2AAdapter : ChannelAdapter
         AgentCallbackHandler callback,
         CancellationToken cancellationToken)
     {
-        var agentContext = _currentAgentContext.Value;
-        if (agentContext != null)
+        AssertionHelpers.ThrowIfNull(continuationActivity, nameof(continuationActivity));
+        AssertionHelpers.ThrowIfNull(callback, nameof(callback));
+        ValidateConversation(claimsIdentity, continuationActivity.GetConversationReference());
+
+        var currentTurn = _currentTurn.Value;
+        if (currentTurn?.Adapter == this
+            && currentTurn.Services.Get<RequestContext>() is { } currentContext
+            && currentContext.TaskId == continuationActivity.Conversation?.Id)
         {
             await ProcessActivityWithA2AAuthenticationAsync(
                 claimsIdentity,
-                agentContext.Authentication,
+                currentTurn.Services.Get<A2ARequestAuthentication>(),
                 continuationActivity,
                 callback,
-                agentContext.CurrentContext,
-                agentContext.EventQueue,
-                agentContext.InTaskAuthorization,
-                agentContext,
+                currentContext,
+                currentTurn.Services.Get<AgentEventQueue>(),
+                currentTurn.Services.Get<InTaskAuthorizationContext>(),
+                _currentAgentContext.Value,
                 cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        await base.ProcessProactiveAsync(claimsIdentity, continuationActivity, audience, callback, cancellationToken).ConfigureAwait(false);
+        await _server.ContinueTaskAsync(
+            continuationActivity.Conversation.Id,
+            async (continuation, ct) =>
+            {
+                await ProcessActivityWithA2AAuthenticationAsync(
+                    claimsIdentity, null, continuationActivity, callback,
+                    continuation.RequestContext, continuation.EventQueue, null, null, ct).ConfigureAwait(false);
+            },
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -508,7 +544,7 @@ internal class A2AAdapter : ChannelAdapter
         AgentRequestContext agentRequestContext,
         CancellationToken cancellationToken)
     {
-        var context = new TurnContext(this, activity, claimsIdentity);
+        using var context = new TurnContext(this, activity, claimsIdentity);
         context.Services.Set<ITaskStore>(_taskStore);
         if (authentication != null)
         {
@@ -529,7 +565,9 @@ internal class A2AAdapter : ChannelAdapter
         context.Services.Set(new A2AClient(context));
 
         var previousContext = _currentAgentContext.Value;
-        _currentAgentContext.Value = agentRequestContext ?? previousContext;
+        var previousTurn = _currentTurn.Value;
+        _currentAgentContext.Value = agentRequestContext;
+        _currentTurn.Value = context;
         try
         {
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -538,6 +576,7 @@ internal class A2AAdapter : ChannelAdapter
         finally
         {
             _currentAgentContext.Value = previousContext;
+            _currentTurn.Value = previousTurn;
         }
     }
 
@@ -704,17 +743,29 @@ internal class A2AAdapter : ChannelAdapter
     /// <inheritdoc/>
     public override Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
     {
-        if (!_a2aAgentContext.TryGetValue(turnContext.Activity.RequestId, out var agentContext)
-            && (agentContext = _currentAgentContext.Value) == null)
+        if (turnContext.Services.Get<RequestContext>() == null || turnContext.Services.Get<AgentEventQueue>() == null)
         {
             throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
-                ErrorHelper.AgentRequestContextMissing,
-                null,
-                turnContext.Activity.RequestId);
+                ErrorHelper.AgentRequestContextMissing, null, turnContext.Activity.RequestId);
         }
-
-        return agentContext.SendActivitiesAsync(turnContext, activities, cancellationToken);
+        return AgentRequestContext.SendActivitiesAsync(turnContext, activities, Logger, cancellationToken);
     }
+
+    /// <inheritdoc/>
+    public override Task CreateConversationAsync(string agentAppId, string channelId, string serviceUrl, string audience, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("A2A proactive messaging can only continue an existing task.");
+
+    /// <inheritdoc/>
+    public override Task<ConversationReference> CreateConversationAsync(ClaimsIdentity identity, string channelId, string serviceUrl, string audience, ConversationParameters parameters, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("A2A proactive messaging can only continue an existing task.");
+
+    /// <inheritdoc/>
+    public override Task<ResourceResponse> UpdateActivityAsync(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken)
+        => throw new NotSupportedException("A2A does not support updating an activity.");
+
+    /// <inheritdoc/>
+    public override Task DeleteActivityAsync(ITurnContext turnContext, ConversationReference reference, CancellationToken cancellationToken)
+        => throw new NotSupportedException("A2A does not support deleting an activity.");
     #endregion
 }
 
@@ -774,13 +825,13 @@ class AgentRequestContext : IAgentHandler
         await Adapter.ExecuteAgentCancelTaskAsync(RequestId, Identity, Authentication, Agent, context, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken)
+    public static async Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, ILogger logger, CancellationToken cancellationToken)
     {
         foreach (var activity in activities)
         {
-            if (Logger.IsEnabled(LogLevel.Debug))
+            if (logger.IsEnabled(LogLevel.Debug))
             {
-                Log.LogResponse(Logger, turnContext.Activity.Conversation.Id, ProtocolJsonSerializer.ToJson(activity));
+                Log.LogResponse(logger, turnContext.Activity.Conversation.Id, ProtocolJsonSerializer.ToJson(activity));
             }
 
             var entity = activity.GetStreamingEntity();
@@ -798,24 +849,25 @@ class AgentRequestContext : IAgentHandler
             }
             else
             {
-                Adapter.Logger.LogDebug("A2AResponseHandler.OnResponse: Unhandled Activity Type: {ActivityType}", activity.Type);
+                logger.LogDebug("A2AResponseHandler.OnResponse: Unhandled Activity Type: {ActivityType}", activity.Type);
             }
         }
 
         return [];
     }
 
-    private static Message GetIncomingMessage(ITurnContext turnContext)
-        => A2AActivity.GetMessage(turnContext.Activity)
-            ?? throw new InvalidOperationException("The A2A message is unavailable.");
+    private static RequestContext GetResponseContext(ITurnContext turnContext)
+        => turnContext.Services.Get<RequestContext>()
+            ?? throw new InvalidOperationException("The A2A request context is unavailable.");
 
-    private async Task OnMessageResponse(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
+    private static async Task OnMessageResponse(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
     {
-        var incomingMessage = GetIncomingMessage(turnContext);
+        var incomingMessage = GetResponseContext(turnContext);
+        var eventQueue = turnContext.Services.Get<AgentEventQueue>();
         var state = activity.GetA2ATaskState();
         var response = A2AActivity.MessageFromActivity(incomingMessage.ContextId, incomingMessage.TaskId, activity);
 
-        await EventQueue.EnqueueStatusUpdateAsync(new TaskStatusUpdateEvent
+        await eventQueue.EnqueueStatusUpdateAsync(new TaskStatusUpdateEvent
         {
             TaskId = incomingMessage.TaskId,
             ContextId = incomingMessage.ContextId,
@@ -828,15 +880,16 @@ class AgentRequestContext : IAgentHandler
         }, cancellationToken);
     }
 
-    private async Task OnStreamingResponse(ITurnContext turnContext, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)
+    private static async Task OnStreamingResponse(ITurnContext turnContext, IActivity activity, StreamInfo entity, CancellationToken cancellationToken = default)
     {
-        var incomingMessage = GetIncomingMessage(turnContext);
+        var incomingMessage = GetResponseContext(turnContext);
+        var eventQueue = turnContext.Services.Get<AgentEventQueue>();
         var isInformative = entity.StreamType == StreamTypes.Informative;
 
         if (isInformative)
         {
             // Informative is a Status update with a Message
-            await EventQueue.EnqueueStatusUpdateAsync(new TaskStatusUpdateEvent
+            await eventQueue.EnqueueStatusUpdateAsync(new TaskStatusUpdateEvent
             {
                 TaskId = incomingMessage.TaskId,
                 ContextId = incomingMessage.ContextId,
@@ -853,7 +906,7 @@ class AgentRequestContext : IAgentHandler
             // This is using entity.StreamId for the artifactId.
             var artifact = A2AActivity.CreateArtifact(activity, artifactId: entity.StreamId);
 
-            await EventQueue.EnqueueArtifactUpdateAsync(new TaskArtifactUpdateEvent
+            await eventQueue.EnqueueArtifactUpdateAsync(new TaskArtifactUpdateEvent
             {
                 TaskId = incomingMessage.TaskId,
                 ContextId = incomingMessage.ContextId,
@@ -864,9 +917,10 @@ class AgentRequestContext : IAgentHandler
         }
     }
 
-    private async Task OnEndOfConversationResponse(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
+    private static async Task OnEndOfConversationResponse(ITurnContext turnContext, IActivity activity, CancellationToken cancellationToken = default)
     {
-        var incomingMessage = GetIncomingMessage(turnContext);
+        var incomingMessage = GetResponseContext(turnContext);
+        var eventQueue = turnContext.Services.Get<AgentEventQueue>();
 
         // Set optional EOC Value as an Artifact.
         if (activity.Value != null)
@@ -877,7 +931,7 @@ class AgentRequestContext : IAgentHandler
                 description: "Task completion result",
                 mediaType: "application/json");
 
-            await EventQueue.EnqueueArtifactUpdateAsync(new TaskArtifactUpdateEvent
+            await eventQueue.EnqueueArtifactUpdateAsync(new TaskArtifactUpdateEvent
             {
                 TaskId = incomingMessage.TaskId,
                 ContextId = incomingMessage.ContextId,
@@ -907,7 +961,7 @@ class AgentRequestContext : IAgentHandler
         }
         var response = A2AActivity.MessageFromActivity(incomingMessage.ContextId, incomingMessage.TaskId, statusMessage);
 
-        await EventQueue.EnqueueStatusUpdateAsync(new TaskStatusUpdateEvent
+        await eventQueue.EnqueueStatusUpdateAsync(new TaskStatusUpdateEvent
         {
             TaskId = incomingMessage.TaskId,
             ContextId = incomingMessage.ContextId,

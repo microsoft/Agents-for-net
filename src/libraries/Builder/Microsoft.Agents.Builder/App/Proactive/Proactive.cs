@@ -174,23 +174,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             ExceptionDispatchInfo exceptionInfo = null;
             ResourceResponse response = null;
-            await adapter.ContinueConversationAsync(conversation.Identity, conversation.Reference, async (turnContext, ct) =>
+            try
             {
-                try
+                await adapter.ContinueConversationAsync(conversation.Identity, conversation.Reference, async (turnContext, ct) =>
                 {
-                    response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
-                    // results in the exception being lost.  Capture the exception info here to re-throw
-                    // after ContinueConversationAsync completes.
-                    telemetryScope.SetError(ex);
-                    exceptionInfo = ExceptionDispatchInfo.Capture(ex);
-                }
-            }, cancellationToken).ConfigureAwait(false);
-
-            exceptionInfo?.Throw();
+                    try
+                    {
+                        response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Preserve the send failure even if the adapter subsequently fails delivery.
+                        telemetryScope.SetError(ex);
+                        exceptionInfo = ExceptionDispatchInfo.Capture(ex);
+                    }
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                exceptionInfo?.Throw();
+            }
 
             return response;
         }
@@ -311,7 +314,10 @@ namespace Microsoft.Agents.Builder.App.Proactive
             // If token handlers were not explicitly provided, check for ContinueConversationAttribute on the handler method to get them.
             if (autoSignInHandlers == null || autoSignInHandlers.Length == 0)
             {
-                var attribute = continuationHandler.GetMethodInfo().GetCustomAttribute<ContinueConversationAttribute>(true);
+                var handlerMethod = continuationHandler.Target is ContinueConversationHandler boundHandler
+                    ? boundHandler.Method
+                    : continuationHandler.GetMethodInfo();
+                var attribute = handlerMethod.GetCustomAttribute<ContinueConversationAttribute>(true);
                 if (attribute != null)
                 {
                     autoSignInHandlers = RouteAttributeHelper.DelimitedToList(attribute.TokenHandlers);
@@ -322,23 +328,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
             using var telemetryScope = new ScopeContinueConversation(conversationId, continuationActivity, createActivityLink(conversation));
             ExceptionDispatchInfo exceptionInfo = null;
 
-            await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
+            try
             {
-                try
+                await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
                 {
-                    await OnTurnAsync(turnContext, continuationHandler, tokenHandlers: autoSignInHandlers, ct).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
-                    // results in the exception being lost.  Capture the exception info here to re-throw
-                    // after ProcessProactiveAsync completes.
-                    telemetryScope.SetError(ex);
-                    exceptionInfo = ExceptionDispatchInfo.Capture(ex);
-                }
-            }, cancellationToken).ConfigureAwait(false);
-
-            exceptionInfo?.Throw();
+                    try
+                    {
+                        await OnTurnAsync(turnContext, continuationHandler, tokenHandlers: autoSignInHandlers, ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Preserve the callback failure even if the adapter subsequently fails delivery.
+                        telemetryScope.SetError(ex);
+                        exceptionInfo = ExceptionDispatchInfo.Capture(ex);
+                    }
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                exceptionInfo?.Throw();
+            }
         }
 
         /// <summary>

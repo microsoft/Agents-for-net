@@ -81,6 +81,24 @@ helpers through an internal compatibility path owned by `ChannelServiceAdapterBa
 overloads are obsolete forwarding wrappers that retain their behavior; the SDK does not call them.
 They are not the validation policy for every transport.
 
+Proactive HTTP handlers resolve the adapter using the supplied or stored conversation's channel,
+just like the channel-aware in-code APIs. They do not force the application's default adapter.
+Callback failures take precedence over subsequent adapter delivery failures, preserving the original
+application exception even when a transport rejects an empty output.
+
+`[ContinueConversation]` handlers may take `ITurnContext` or a specialized context supplied by a
+registered `AgentExtension`. Proactive routes are bound outside protocol-specific route builders,
+so Builder provides the general-purpose `AgentExtension.WrapTurnContext(ITurnContext)` hook rather
+than knowing extension context types. Binding preserves the original method's sign-in metadata.
+Already-compatible contexts are passed through; otherwise only matching-channel extensions can
+adapt the context, and an unavailable context type throws explicitly. `IAgentExtension` and
+`IChannelAdapter` are unchanged.
+
+The A2A extension implements continuation inside its adapter using the upstream task continuation
+pipeline. It requires an existing nonterminal task and a registered task push destination. It supplies
+the real task context and event queue without fabricating an incoming message. No A2A-specific
+validation, task state, or push delivery logic lives in Builder or Hosting.
+
 Anonymous Activity Protocol proactive delivery is **opt-in**: set `AllowAnonymousProactive` on the
 `ChannelServiceAdapterBase` instance and supply an enabled `IOutboundHostValidator` through its
 constructor. The validator must permit the destination. Only an empty, unauthenticated identity

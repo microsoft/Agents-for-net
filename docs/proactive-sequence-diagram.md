@@ -27,6 +27,16 @@ and an enabled outbound host validator permitting the destination. This does not
 access to the proactive HTTP endpoints. See [Proactive validation](architecture.md#proactive-validation)
 for the adapter contract and authentication boundaries.
 
+HTTP handlers select the adapter from the conversation's channel through the same registry as the
+in-code APIs. In particular, an A2A task reference reaches the A2A adapter rather than CloudAdapter.
+The A2A adapter continues an existing nonterminal task using registered push delivery, while retaining
+the active queue for same-task continuations (including sign-in replay).
+
+`[ContinueConversation]` handlers can declare a specialized turn context, such as `IA2ATurnContext`.
+The registered channel extension supplies that wrapper through `AgentExtension.WrapTurnContext`;
+Builder retains the original method's token-handler metadata and has no dependency on A2A.
+The wrapper exposes the same activity and turn-scoped services as the underlying turn.
+
 ## Flow 1: Store Conversation Reference
 
 The `{conversationId}` HTTP endpoints require a conversation stored during an earlier turn. Body-based endpoints and in-code APIs can instead receive a complete `Conversation` directly.

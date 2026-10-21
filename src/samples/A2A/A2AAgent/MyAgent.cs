@@ -1,9 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
@@ -22,6 +23,7 @@ namespace A2AAgent;
 public partial class MyAgent : AgentApplication
 {
     private const string MultiTurnCountKey = "MultiTurnCount";
+    private const string ProactiveCountKey = "ProactiveCount";
     private const string GraphAgentCardHandlerName = "graph-agentcard";
     private const string GraphInTaskHandlerName = "graph-intask";
     private readonly IGraphProfileClient _graphClient;
@@ -33,6 +35,47 @@ public partial class MyAgent : AgentApplication
         {
             UserAuthorization.OnUserSignInFailure(OnUserSignInFailureAsync);
         }
+
+    }
+
+    [A2ASkill(name: "Stored proactive task", description: "Stores the conversation for /proactive/sendactivity/{taskId}. Start the client with push notifications.", tags: "a2a, sample, proactive", examples: "-proactive-store", text: "-proactive-store")]
+    private Task OnStoredProactiveAsync(IA2ATurnContext context, ITurnState state, CancellationToken ct)
+        => StartProactiveAsync(context, storeConversation: true, ct);
+
+    [A2ASkill(name: "Proactive task", description: "Returns an unstored conversation for /proactive/continue. Start the client with push notifications.", tags: "a2a, sample, proactive", examples: "-proactive", text: "-proactive")]
+    private Task OnProactiveAsync(IA2ATurnContext context, ITurnState state, CancellationToken ct)
+        => StartProactiveAsync(context, storeConversation: false, ct);
+
+    private async Task StartProactiveAsync(IA2ATurnContext context, bool storeConversation, CancellationToken ct)
+    {
+        var conversation = new Conversation(context);
+        if (storeConversation)
+        {
+            await Proactive.StoreConversationAsync(conversation, ct);
+        }
+
+        await context.SendActivityAsync(new Activity
+        {
+            Type = ActivityTypes.Message,
+            Text = storeConversation
+                ? $"Stored task {context.Client.RequestContext.TaskId}. POST an Activity to /proactive/sendactivity/{context.Client.RequestContext.TaskId}."
+                : $"Task {context.Client.RequestContext.TaskId}. POST the supplied Conversation data to /proactive/continue.",
+            InputHint = InputHints.ExpectingInput,
+            Value = conversation,
+        }, cancellationToken: ct);
+    }
+
+    [ContinueConversation]
+    private async Task OnContinueConversationAsync(IA2ATurnContext context, ITurnState state, CancellationToken ct)
+    {
+        var count = state.Conversation.GetValue<int>(ProactiveCountKey) + 1;
+        state.Conversation.SetValue(ProactiveCountKey, count);
+        await context.SendActivityAsync(new Activity
+        {
+            Type = ActivityTypes.Message,
+            Text = $"Proactive continuation {count}",
+            Value = new { taskId = context.Client.RequestContext.TaskId },
+        }, cancellationToken: ct);
     }
 
     [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response", examples: "-stream", text: "-stream")]

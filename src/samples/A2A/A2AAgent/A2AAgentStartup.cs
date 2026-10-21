@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using A2A;
 using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
@@ -8,8 +9,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,6 +48,12 @@ internal static class A2AAgentStartup
         // that state survives Agent restarts, and operate correctly
         // in a cluster of Agent instances.
         builder.Services.AddSingleton<IStorage, MemoryStorage>();
+
+        builder.Services.AddSingleton(new PushNotificationUrlOptions
+        {
+            AllowedHosts = ["localhost", "127.0.0.1", "::1"],
+            AllowLoopback = builder.Environment.IsDevelopment(),
+        });
     }
 
     internal static void ConfigureApplication(WebApplication app)
@@ -66,6 +71,7 @@ internal static class A2AAgentStartup
         // Graph profile routes opt in through autoSignInHandlers,
         // and the echo, multi-turn, streaming, and direct A2A routes remain anonymous.
         app.MapA2AApplicationEndpoints(requireAuth: false);
+        app.MapAgentProactiveEndpoints<MyAgent>(requireAuth: !app.Environment.IsDevelopment());
     }
 
     /// <summary>

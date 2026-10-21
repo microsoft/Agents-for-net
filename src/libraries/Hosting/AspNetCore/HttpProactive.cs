@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 {
     internal class HttpProactive
     {
-        public static async Task SendActivityWithConversationIdAsync<TAgent>(HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string conversationId, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
+        public static async Task SendActivityWithConversationIdAsync<TAgent>(HttpRequest httpRequest, HttpResponse httpResponse, TAgent agent, string conversationId, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
         {
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}'", "SendActivityWithConversationIdAsync", typeof(TAgent).Name))
             {
@@ -38,14 +38,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                         Log.WithConversationIdAndBody(logger, conversationId, ProtocolJsonSerializer.ToJson(activity));
 
-                        return new Result(StatusCodes.Status200OK, await Proactive.SendActivityAsync(adapter, conversation, activity, cancellationToken).ConfigureAwait(false));
+                        return new Result(StatusCodes.Status200OK, await agent.Proactive.SendActivityAsync(conversation, activity, cancellationToken).ConfigureAwait(false));
                     },
                     logger,
                     cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public static async Task SendActivityWithConversationAsync<TAgent>(HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
+        public static async Task SendActivityWithConversationAsync<TAgent>(HttpRequest httpRequest, HttpResponse httpResponse, TAgent agent, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
         {
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}'", "SendActivityWithConversationAsync", typeof(TAgent).Name))
             {
@@ -59,14 +59,14 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                         Log.WithBody(logger, ProtocolJsonSerializer.ToJson(body));
 
-                        return new Result(StatusCodes.Status200OK, await Proactive.SendActivityAsync(adapter, body.Conversation, body.Activity, cancellationToken).ConfigureAwait(false));
+                        return new Result(StatusCodes.Status200OK, await agent.Proactive.SendActivityAsync(body.Conversation, body.Activity, cancellationToken).ConfigureAwait(false));
                     },
                     logger,
                     cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public static async Task ContinueConversationWithConversationIdAsync<TAgent>(ContinueConversationRoute<TAgent> continueRoute, HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, string conversationId, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
+        public static async Task ContinueConversationWithConversationIdAsync<TAgent>(ContinueConversationRoute<TAgent> continueRoute, HttpRequest httpRequest, HttpResponse httpResponse, TAgent agent, string conversationId, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
         {
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}' using `{Route}`", "ContinueConversationWithConversationIdAsync", typeof(TAgent).Name, continueRoute.ToString()))
             {
@@ -89,7 +89,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         }
 
                         await agent.Proactive.ContinueConversationAsync(
-                            adapter,
                             conversation,
                             continueRoute.RouteHandler(agent),
                             continueRoute.TokenHandlers,
@@ -103,7 +102,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        public static async Task ContinueConversationWithConversationAsync<TAgent>(ContinueConversationRoute<TAgent> continueRoute, HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
+        public static async Task ContinueConversationWithConversationAsync<TAgent>(ContinueConversationRoute<TAgent> continueRoute, HttpRequest httpRequest, HttpResponse httpResponse, TAgent agent, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
         {
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}' using `{Route}`", "ContinueConversationWithConversationAsync", typeof(TAgent).Name, continueRoute.ToString()))
             {
@@ -128,7 +127,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         }
 
                         await agent.Proactive.ContinueConversationAsync(
-                            adapter,
                             conversation,
                             continueRoute.RouteHandler(agent),
                             continueRoute.TokenHandlers,
@@ -142,7 +140,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             }
         }
 
-        public static async Task CreateConversationAsync<TAgent>(ContinueConversationRoute<TAgent> continueRoute, HttpRequest httpRequest, HttpResponse httpResponse, IChannelAdapter adapter, TAgent agent, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
+        public static async Task CreateConversationAsync<TAgent>(ContinueConversationRoute<TAgent> continueRoute, HttpRequest httpRequest, HttpResponse httpResponse, TAgent agent, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
         {
             using (logger.BeginScope("Proactive request `{Request}` with agent '{Agent}' using `{Route}`", "CreateConversationAsync", typeof(TAgent).Name, continueRoute.ToString()))
             {
@@ -187,7 +185,6 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
                         // Execute the conversation creation
                         var newConversation = await agent.Proactive.CreateConversationAsync(
-                            adapter,
                             createOptions,
                             body.ContinueConversation ? continueRoute.RouteHandler(agent) : null,
                             continueRoute.TokenHandlers,
@@ -215,7 +212,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         private static async Task Execute<TAgent>(HttpResponse httpResponse, Func<Task<Result>> action, ILogger<HttpProactive> logger, CancellationToken cancellationToken) where TAgent : AgentApplication
         {
-            try 
+            try
             {
                 var result = await action().ConfigureAwait(false);
 
@@ -250,7 +247,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 httpResponse.StatusCode = StatusCodes.Status404NotFound;
                 await httpResponse.WriteAsJsonAsync(body, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when(ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
+            catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException || ex is ArgumentNullException)
             {
                 var body = ErrorBody(ex.Message, ex.HResult, ex.HelpLink);
                 Log.Error(logger, ProtocolJsonSerializer.ToJson(body));
@@ -274,7 +271,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 return new { error = new { message, helpLink } };
             }
-            
+
             return new { error = new { code = hresult.Value.ToString(), message, helpLink } };
         }
     }
@@ -312,7 +309,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         public static partial void Error(ILogger logger, string body);
     }
 
-    record Result(int StatusCode, object Body = null) {}
+    record Result(int StatusCode, object Body = null) { }
 
     class SendToConversationBody
     {

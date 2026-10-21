@@ -31,6 +31,7 @@
     <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core.Analyzers\Microsoft.Agents.Core.Analyzers.csproj" />
     <!-- Runtime reference to Core so we can pass Entity and related types to the test compilation -->
     <ProjectReference Include="..\..\libraries\Core\Microsoft.Agents.Core\Microsoft.Agents.Core.csproj" />
+    <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder\Microsoft.Agents.Builder.csproj" />
   </ItemGroup>
 
 </Project>
