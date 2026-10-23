@@ -1,0 +1,44 @@
+// ITK instruction wire format from a2aproject/a2a-itk/protos/instruction.proto.
+// Copyright The Agent2Agent Authors. Licensed under the Apache License, Version 2.0.
+syntax = "proto3";
+
+package itk;
+option csharp_namespace = "AgentsA2AItk.Protocol";
+
+message Instruction {
+  oneof step {
+    CallAgent call_agent = 1;
+    ReturnResponse return_response = 2;
+    SeriesOfSteps steps = 3;
+  }
+}
+
+message SendMessageBehavior {}
+message PushNotificationBehavior { string url = 1; }
+message ResubscribeBehavior {}
+
+message CallAgent {
+  string transport = 1;
+  string agent_card_uri = 2;
+  Instruction instruction = 3;
+  bool streaming = 4;
+  oneof behavior {
+    SendMessageBehavior send_message = 5;
+    PushNotificationBehavior push_notification = 6;
+    ResubscribeBehavior resubscribe = 7;
+  }
+}
+
+message ReturnResponse {
+  string response = 1;
+  bool hold_task = 2;
+}
+
+message SeriesOfSteps {
+  repeated Instruction instructions = 1;
+  enum ResponseGenerator {
+    RESPONSE_GENERATOR_UNSPECIFIED = 0;
+    RESPONSE_GENERATOR_CONCAT = 1;
+  }
+  ResponseGenerator response_generator = 2;
+}
