@@ -178,7 +178,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// from the inbound Activity and returns the channel-specific adapter when one is registered;
         /// otherwise returns the default Activity Protocol adapter (CloudAdapter).
         /// </summary>
-        /// <remarks>Only reached when <see cref="IChannelAdapterRegistry.HasChannelSpecificAdapters"/> is true.</remarks>
+        /// <remarks>Only reached when <see cref="Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry.HasChannelSpecificAdapters"/> is true.</remarks>
         internal static async ValueTask<IAgentHttpAdapter> ResolveAdapterAsync(
             IChannelAdapterRegistry registry,
             IAgentHttpAdapter defaultAdapter,
@@ -202,10 +202,10 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <summary>
         /// Extracts the top-level <c>channelId</c> from a buffered JSON request body without deserializing
         /// the Activity. Enables request buffering so the resolved adapter can re-read the full body in
-        /// <see cref="IAgentHttpAdapter.ProcessAsync"/>.
+        /// <see cref="Microsoft.Agents.Hosting.AspNetCore.IAgentHttpAdapter.ProcessAsync(Microsoft.AspNetCore.Http.HttpRequest, Microsoft.AspNetCore.Http.HttpResponse, Microsoft.Agents.Builder.IAgent, System.Threading.CancellationToken)"/>.
         /// </summary>
         /// <remarks>
-        /// The body is scanned incrementally in bounded chunks with a streaming <see cref="Utf8JsonReader"/>,
+        /// The body is scanned incrementally in bounded chunks with a streaming <see cref="System.Text.Json.Utf8JsonReader"/>,
         /// stopping as soon as the top-level <c>channelId</c> is found (or the root object closes). This avoids
         /// materializing the full payload into a second buffer and avoids sizing an allocation on the
         /// client-supplied <c>Content-Length</c>. Cancellation is propagated; only body-inspection failures
@@ -245,7 +245,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
 
         /// <summary>
         /// Reads <paramref name="body"/> in bounded chunks and scans for the top-level <c>channelId</c> using a
-        /// resumable <see cref="Utf8JsonReader"/>, without materializing the entire body.
+        /// resumable <see cref="System.Text.Json.Utf8JsonReader"/>, without materializing the entire body.
         /// </summary>
         private static async ValueTask<string> ScanChannelIdAsync(System.IO.Stream body, CancellationToken cancellationToken)
         {
@@ -484,7 +484,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <remarks>The root endpoint provides a simple informational response containing the name and
         /// version of the calling assembly. This can be useful for diagnostics or verifying deployment
         /// details.</remarks>
-        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="WebApplication"/>) to which the root endpoint will be mapped.</param>
+        /// <param name="endpoints">The endpoint route builder (e.g. the <see cref="Microsoft.AspNetCore.Builder.WebApplication"/>) to which the root endpoint will be mapped.</param>
         public static IEndpointConventionBuilder MapAgentRootEndpoint(this IEndpointRouteBuilder endpoints)
         {
             var assemblyName = System.Reflection.Assembly.GetCallingAssembly().GetName().Name;

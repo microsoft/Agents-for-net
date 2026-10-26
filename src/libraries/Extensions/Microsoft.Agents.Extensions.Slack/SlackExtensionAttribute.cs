@@ -7,12 +7,12 @@ using System;
 namespace Microsoft.Agents.Extensions.Slack;
 
 /// <summary>
-/// Marks an <see cref="AgentApplication"/> subclass to automatically receive a
-/// generated <c>Slack</c> property of type <see cref="SlackAgentExtension"/>.
+/// Marks an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> subclass to automatically receive a
+/// generated <c>Slack</c> property of type <see cref="Microsoft.Agents.Extensions.Slack.SlackAgentExtension"/>.
 /// </summary>
 /// <remarks>
 /// The decorated class must be declared as <c>partial</c>. When the class is compiled, a source
-/// generator creates a companion partial class that exposes a <see cref="SlackAgentExtension"/>
+/// generator creates a companion partial class that exposes a <see cref="Microsoft.Agents.Extensions.Slack.SlackAgentExtension"/>
 /// through a <c>Slack</c> property. The extension is lazily initialized and registered with the
 /// application on first access.
 /// <code>

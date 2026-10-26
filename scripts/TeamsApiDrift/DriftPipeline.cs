@@ -25,7 +25,22 @@ public static class FindingClassifier
 {
     public static FindingsResult Classify(ApiComparison comparison, UsageManifest manifest, CapabilityDocument capabilities)
     {
-        var findings = comparison.Changes.Select(change => CreateFinding(change, manifest, capabilities)).ToArray();
+        if (manifest.CompatibilityReviews is null)
+        {
+            throw new InvalidDataException("compatibilityReviews must be an array.");
+        }
+        foreach (var review in manifest.CompatibilityReviews)
+        {
+            if (review is null || string.IsNullOrWhiteSpace(review.FromVersion) || string.IsNullOrWhiteSpace(review.ToVersion) ||
+                string.IsNullOrWhiteSpace(review.UpstreamSymbol) || string.IsNullOrWhiteSpace(review.Kind) ||
+                string.IsNullOrWhiteSpace(review.Reason) || review.TargetFrameworks is null ||
+                review.TargetFrameworks.Count == 0 || review.TargetFrameworks.Any(string.IsNullOrWhiteSpace) ||
+                review.TargetFrameworks.Distinct(StringComparer.Ordinal).Count() != review.TargetFrameworks.Count)
+            {
+                throw new InvalidDataException("Every compatibility review must specify versions, an upstream symbol, a change kind, distinct target frameworks, and a non-empty reason.");
+            }
+        }
+        var findings = comparison.Changes.Select(change => CreateFinding(change, comparison, manifest, capabilities)).ToArray();
         return new FindingsResult(
             1,
             PackageConstants.PackageId,
@@ -39,7 +54,7 @@ public static class FindingClassifier
             findings);
     }
 
-    private static Finding CreateFinding(ApiChange change, UsageManifest manifest, CapabilityDocument capabilities)
+    private static Finding CreateFinding(ApiChange change, ApiComparison comparison, UsageManifest manifest, CapabilityDocument capabilities)
     {
         var usages = manifest.Usages.Where(usage => usage.UpstreamSymbol == change.Symbol &&
             (change.Member is null || usage.Members.Count == 0 || usage.Members.Contains(change.Member, StringComparer.Ordinal))).ToArray();
@@ -78,6 +93,18 @@ public static class FindingClassifier
 
         var exposure = usages.Any(usage => usage.Exposure == "publicly-exposed") ? "publicly-exposed" :
             usages.FirstOrDefault()?.Exposure ?? "unknown";
+        var review = classification is "blocking" or "required"
+            ? manifest.CompatibilityReviews.FirstOrDefault(item =>
+                item.FromVersion == comparison.FromVersion && item.ToVersion == comparison.ToVersion &&
+                item.UpstreamSymbol == change.Symbol && item.Member == change.Member && item.Kind == change.Kind &&
+                item.Before == change.Before && item.After == change.After &&
+                item.TargetFrameworks.Order(StringComparer.Ordinal).SequenceEqual(change.TargetFrameworks.Order(StringComparer.Ordinal)))
+            : null;
+        if (review is not null)
+        {
+            classification = "no-action";
+            category = "reviewed-compatible";
+        }
         return new Finding(
             change.Id,
             classification,
@@ -91,8 +118,10 @@ public static class FindingClassifier
             change.Before,
             change.After,
             change.TargetFrameworks,
-            change.Evidence.Concat(usages.Length > 0 ? ["dependency-usage"] : []).Concat(capability.Value is not null ? ["teams-capabilities"] : []).Distinct().ToArray(),
-            RecommendedAction(classification, category, change));
+            change.Evidence.Concat(usages.Length > 0 ? ["dependency-usage"] : [])
+                .Concat(capability.Value is not null ? ["teams-capabilities"] : [])
+                .Concat(review is not null ? ["compatibility-review"] : []).Distinct().ToArray(),
+            review is null ? RecommendedAction(classification, category, change) : $"Reviewed compatibility change: {review.Reason}");
     }
 
     internal static KeyValuePair<string?, Capability?> MatchCapability(string symbol, CapabilityDocument document)

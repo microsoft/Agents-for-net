@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Core.Errors
     /// information.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="ErrorResponseException"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Errors.ErrorResponseException"/> class.
     /// </remarks>
     /// <param name="message">The exception message.</param>
     /// <param name="innerException">Inner exception.</param>

@@ -33,7 +33,7 @@ When working on streaming message delivery, read `docs/streaming-response-sequen
 | Teams | 1000ms | StreamId from first response |
 | M365 Copilot | 1000ms | StreamId from first response |
 | WebChat / DirectLine | 500ms | Pre-generated GUID |
-| DeliveryMode.Stream (A2A) | 100ms | Pre-generated GUID |
+| DeliveryMode.Stream (other channels, SSE transport) | 100ms | Pre-generated GUID |
 | Other / ExpectReplies | N/A | Non-streaming fallback |
 
 ## Error Scenarios
@@ -43,6 +43,7 @@ The following service errors are Teams-specific and are handled by `TeamsStreami
 - **ContentStreamNotAllowed** → user canceled on client; returns `UserCancelled`
 - **BadArgument + "streaming api is not enabled"** → disables streaming for this turn (does not cancel)
 - **ContentStreamNotAllowed + exceeded streaming time** → updates the existing activity and falls back to non-streaming
+- **M365 Copilot** → while the queue is empty, sends an inactivity notice after 35 seconds from the last successful send; at 1 minute 45 seconds it stops streaming and falls back to normal final delivery
 
 WebChat, DirectLine, `DeliveryMode.Stream`, and other errors are treated as transport failures; the stream is canceled and returns `Error`.
 

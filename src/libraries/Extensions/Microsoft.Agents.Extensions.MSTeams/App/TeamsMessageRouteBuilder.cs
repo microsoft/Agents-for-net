@@ -10,9 +10,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.App;
 public class TeamsMessageRouteBuilder : MessageRouteBuilderBase<TeamsMessageRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the <see cref="TeamsMessageRouteBuilder"/> class.
+    /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsMessageRouteBuilder"/> class.
     /// </summary>
-    /// <returns>A new <see cref="TeamsMessageRouteBuilder"/>.</returns>
+    /// <returns>A new <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsMessageRouteBuilder"/>.</returns>
     public static TeamsMessageRouteBuilder Create()
     {
         return new TeamsMessageRouteBuilder();

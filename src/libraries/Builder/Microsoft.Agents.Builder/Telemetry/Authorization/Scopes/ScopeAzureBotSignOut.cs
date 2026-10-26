@@ -8,7 +8,7 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Builder.Telemetry.Authorization.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeAuthorizationRequest"/> that traces an Azure Bot Framework
+    /// A <see cref="Microsoft.Agents.Builder.Telemetry.Authorization.Scopes.ScopeAuthorizationRequest"/> that traces an Azure Bot Framework
     /// OAuth sign-out operation.
     /// </summary>
     internal class ScopeAzureBotSignOut : ScopeAuthorizationRequest

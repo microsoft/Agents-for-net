@@ -7,7 +7,7 @@ using System;
 namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the creation of a user-token client
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the creation of a user-token client
     /// used to manage OAuth user tokens.
     /// </summary>
     /// <remarks>
@@ -18,7 +18,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         private readonly string _tokenServiceEndpoint;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeCreateUserTokenClient"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeCreateUserTokenClient"/> class.
         /// </summary>
         /// <param name="tokenServiceEndpoint">The endpoint of the token service.</param>
         public ScopeCreateUserTokenClient(string tokenServiceEndpoint) : base(Constants.ScopeCreateUserTokenClient)

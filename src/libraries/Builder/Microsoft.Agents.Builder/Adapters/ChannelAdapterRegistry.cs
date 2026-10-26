@@ -11,20 +11,20 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Microsoft.Agents.Builder.Adapters
 {
     /// <summary>
-    /// Default <see cref="IChannelAdapterRegistry"/> implementation.
+    /// Default <see cref="Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry"/> implementation.
     /// </summary>
     /// <remarks>
     /// Channel-specific adapters are discovered from two sources and merged at construction:
     /// <list type="number">
-    /// <item>Attribute-based discovery — <see cref="ChannelAdapterInitAssemblyAttribute"/> instances
-    /// (emitted by the source generator for every <see cref="ChannelAdapterAttribute"/>) read off the
+    /// <item>Attribute-based discovery — <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute"/> instances
+    /// (emitted by the source generator for every <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterAttribute"/>) read off the
     /// loaded assemblies.</item>
-    /// <item>Explicit <see cref="ChannelAdapterRegistration"/> descriptors registered in DI, which take
+    /// <item>Explicit <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterRegistration"/> descriptors registered in DI, which take
     /// precedence over discovered registrations for the same channelId.</item>
     /// </list>
     /// Adapter instances are resolved lazily and cached (one instance per adapter type) using the service
     /// provider — an adapter type registered in DI resolves to its DI singleton; otherwise it is created
-    /// via <see cref="ActivatorUtilities"/> so that annotated adapters do not require an explicit DI
+    /// via <see cref="Microsoft.Extensions.DependencyInjection.ActivatorUtilities"/> so that annotated adapters do not require an explicit DI
     /// registration.
     /// </remarks>
     internal sealed class ChannelAdapterRegistry : IChannelAdapterRegistry

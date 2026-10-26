@@ -69,7 +69,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="expires">The DateTime the exchange expires.  Typically this would be stored after the BeginFlowAsync and used here.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>An <see cref="OAuthFlowResult"/> describing the outcome of this turn.</returns>
+        /// <returns>An <see cref="Microsoft.Agents.Builder.UserAuth.TokenService.OAuthFlowResult"/> describing the outcome of this turn.</returns>
         /// <remarks>If successful, the result indicates whether the exchange is still
         /// active after the turn has been processed.
         /// <para>The prompt generally continues to receive the user's replies until it accepts the
@@ -135,7 +135,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         /// <param name="signInResource"></param>
         /// <param name="promptFactory">Creates signin prompt</param>
         /// <param name="cancellationToken">CancellationToken.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the result of the asynchronous operation.</returns>
         private async Task SendOAuthCardAsync(ITurnContext turnContext, SignInResource signInResource, Func<Task<IActivity>>? promptFactory, CancellationToken cancellationToken)
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));

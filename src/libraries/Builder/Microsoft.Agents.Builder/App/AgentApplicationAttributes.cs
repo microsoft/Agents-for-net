@@ -15,8 +15,8 @@ namespace Microsoft.Agents.Builder.App
     /// <remarks>
     /// Decorate a method with this attribute to register it as a handler for activities of the specified type.
     /// Provide either <paramref name="type"/> for an exact match or <paramref name="typeRegex"/> for a pattern match; they are mutually exclusive.
-    /// When neither is provided the route matches any activity type and defaults to <see cref="RouteRank.Last"/>.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// When neither is provided the route matches any activity type and defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/>.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// // Match by exact type
     /// [ActivityRoute(ActivityTypes.Event)]
@@ -40,10 +40,10 @@ namespace Microsoft.Agents.Builder.App
     /// }
     /// </code>
     /// </remarks>
-    /// <param name="type">The exact activity <see cref="IActivity.Type"/> to match, e.g. <see cref="ActivityTypes"/>. Mutually exclusive with <paramref name="typeRegex"/>.</param>
-    /// <param name="typeRegex">A regular expression pattern matched against <see cref="IActivity.Type"/>. Mutually exclusive with <paramref name="type"/>.</param>
+    /// <param name="type">The exact activity <see cref="Microsoft.Agents.Core.Models.IActivity.Type"/> to match, e.g. <see cref="Microsoft.Agents.Core.Models.ActivityTypes"/>. Mutually exclusive with <paramref name="typeRegex"/>.</param>
+    /// <param name="typeRegex">A regular expression pattern matched against <see cref="Microsoft.Agents.Core.Models.IActivity.Type"/>. Mutually exclusive with <paramref name="type"/>.</param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. When no type filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-type routes take priority.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. When no type filter is specified, defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/> so specific-type routes take priority.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -68,11 +68,11 @@ namespace Microsoft.Agents.Builder.App
     }
 
     /// <summary>
-    /// Attribute to define a route that handles <see cref="ActivityTypes.InstallationUpdate"/> activities.
+    /// Attribute to define a route that handles <see cref="Microsoft.Agents.Core.Models.ActivityTypes.InstallationUpdate"/> activities.
     /// </summary>
     /// <remarks>
     /// Decorate a method with this attribute to register it as a handler for installation update activities.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// [InstallationUpdateRoute]
     /// public async Task OnInstallationUpdateAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -82,7 +82,7 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -104,7 +104,7 @@ namespace Microsoft.Agents.Builder.App
     /// Decorate a method with this attribute to register it as a handler for message activities.
     /// Provide <paramref name="text"/> for an exact match, <paramref name="textRegex"/> for a pattern match, or neither to match any message.
     /// <paramref name="text"/> and <paramref name="textRegex"/> are mutually exclusive.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// // Match any message
     /// [MessageRoute]
@@ -129,9 +129,9 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="text">The exact message text to match (case-insensitive). Mutually exclusive with <paramref name="textRegex"/>. When both are omitted, all messages are matched.</param>
-    /// <param name="textRegex">A regular expression pattern matched against <see cref="IActivity.Text"/>. Mutually exclusive with <paramref name="text"/>.</param>
+    /// <param name="textRegex">A regular expression pattern matched against <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/>. Mutually exclusive with <paramref name="text"/>.</param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. When no text filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-text routes take priority.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. When no text filter is specified, defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/> so specific-text routes take priority.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Builder.App
     /// Decorate a method with this attribute to register it as a handler for event activities.
     /// Provide <paramref name="name"/> for an exact match, <paramref name="nameRegex"/> for a pattern match, or neither to match any event.
     /// <paramref name="name"/> and <paramref name="nameRegex"/> are mutually exclusive.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// // Match any event
     /// [EventRoute]
@@ -187,10 +187,10 @@ namespace Microsoft.Agents.Builder.App
     /// }
     /// </code>
     /// </remarks>
-    /// <param name="name">The exact event name to match (case-insensitive), e.g. <see cref="IActivity.Name"/>. Mutually exclusive with <paramref name="nameRegex"/>. When both are omitted, all events are matched.</param>
-    /// <param name="nameRegex">A regular expression pattern matched against <see cref="IActivity.Name"/>. Mutually exclusive with <paramref name="name"/>.</param>
+    /// <param name="name">The exact event name to match (case-insensitive), e.g. <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/>. Mutually exclusive with <paramref name="nameRegex"/>. When both are omitted, all events are matched.</param>
+    /// <param name="nameRegex">A regular expression pattern matched against <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/>. Mutually exclusive with <paramref name="name"/>.</param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. When no name filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-name routes take priority.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. When no name filter is specified, defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/> so specific-name routes take priority.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -222,7 +222,7 @@ namespace Microsoft.Agents.Builder.App
     /// Decorate a method with this attribute to register it as a handler for invoke activities.
     /// Provide <paramref name="name"/> for an exact match, <paramref name="nameRegex"/> for a pattern match, or neither to match any invoke.
     /// <paramref name="name"/> and <paramref name="nameRegex"/> are mutually exclusive.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// // Match any invoke
     /// [InvokeRoute]
@@ -246,10 +246,10 @@ namespace Microsoft.Agents.Builder.App
     /// }
     /// </code>
     /// </remarks>
-    /// <param name="name">The exact invoke name to match (case-insensitive), e.g. <see cref="IActivity.Name"/>. Mutually exclusive with <paramref name="nameRegex"/>. When both are omitted, all invokes are matched.</param>
-    /// <param name="nameRegex">A regular expression pattern matched against <see cref="IActivity.Name"/>. Mutually exclusive with <paramref name="name"/>.</param>
+    /// <param name="name">The exact invoke name to match (case-insensitive), e.g. <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/>. Mutually exclusive with <paramref name="nameRegex"/>. When both are omitted, all invokes are matched.</param>
+    /// <param name="nameRegex">A regular expression pattern matched against <see cref="Microsoft.Agents.Core.Models.IActivity.Name"/>. Mutually exclusive with <paramref name="name"/>.</param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. When no name filter is specified, defaults to <see cref="RouteRank.Last"/> so specific-name routes take priority.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. When no name filter is specified, defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/> so specific-name routes take priority.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -279,10 +279,10 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     /// <remarks>
     /// Decorate a method with this attribute to register it as a handler for conversation update activities.
-    /// When <paramref name="eventName"/> is provided, it is matched against <see cref="ConversationUpdateEvents"/> values.
+    /// When <paramref name="eventName"/> is provided, it is matched against <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/> values.
     /// When omitted, all conversation update activities are matched.
-    /// Use <see cref="MembersAddedRouteAttribute"/> or <see cref="MembersRemovedRouteAttribute"/> for the common member events.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// Use <see cref="Microsoft.Agents.Builder.App.MembersAddedRouteAttribute"/> or <see cref="Microsoft.Agents.Builder.App.MembersRemovedRouteAttribute"/> for the common member events.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// // Match any conversation update
     /// [ConversationUpdateRoute]
@@ -293,14 +293,14 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="eventName">
-    /// A <see cref="ConversationUpdateEvents"/> value to match. Only <see cref="ConversationUpdateEvents.MembersAdded"/>
-    /// and <see cref="ConversationUpdateEvents.MembersRemoved"/> receive specific matching logic; any other value
+    /// A <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents"/> value to match. Only <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents.MembersAdded"/>
+    /// and <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents.MembersRemoved"/> receive specific matching logic; any other value
     /// matches all <c>conversationUpdate</c> activities. When omitted, all conversation update activities are matched
-    /// and the route defaults to <see cref="RouteRank.Last"/>.
-    /// Prefer <see cref="MembersAddedRouteAttribute"/> or <see cref="MembersRemovedRouteAttribute"/> for member events.
+    /// and the route defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Last"/>.
+    /// Prefer <see cref="Microsoft.Agents.Builder.App.MembersAddedRouteAttribute"/> or <see cref="Microsoft.Agents.Builder.App.MembersRemovedRouteAttribute"/> for member events.
     /// </param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -328,8 +328,8 @@ namespace Microsoft.Agents.Builder.App
     /// Attribute to define a route that handles conversation update activities when members are added.
     /// </summary>
     /// <remarks>
-    /// Decorate a method with this attribute to register it as a handler for the <see cref="ConversationUpdateEvents.MembersAdded"/> event.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// Decorate a method with this attribute to register it as a handler for the <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents.MembersAdded"/> event.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// [MembersAddedRoute]
     /// public async Task OnMembersAddedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -345,7 +345,7 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -364,8 +364,8 @@ namespace Microsoft.Agents.Builder.App
     /// Attribute to define a route that handles conversation update activities when members are removed.
     /// </summary>
     /// <remarks>
-    /// Decorate a method with this attribute to register it as a handler for the <see cref="ConversationUpdateEvents.MembersRemoved"/> event.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// Decorate a method with this attribute to register it as a handler for the <see cref="Microsoft.Agents.Builder.App.ConversationUpdateEvents.MembersRemoved"/> event.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// [MembersRemovedRoute]
     /// public async Task OnMembersRemovedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -375,7 +375,7 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -395,7 +395,7 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     /// <remarks>
     /// Decorate a method with this attribute to register it as a handler for activities where reactions have been added to a message.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// [MessageReactionsAddedRoute]
     /// public async Task OnReactionsAddedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -405,7 +405,7 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -425,7 +425,7 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     /// <remarks>
     /// Decorate a method with this attribute to register it as a handler for activities where reactions have been removed from a message.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// [MessageReactionsRemovedRoute]
     /// public async Task OnReactionsRemovedAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -435,7 +435,7 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -455,7 +455,7 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     /// <remarks>
     /// Decorate a method with this attribute to register it as a handler for <c>handoff/action</c> invoke activities.
-    /// The method must match the <see cref="HandoffHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.HandoffHandler"/> delegate signature.
     /// <code>
     /// [HandoffRoute]
     /// public async Task OnHandoffAsync(ITurnContext turnContext, ITurnState turnState, string continuation, CancellationToken cancellationToken)
@@ -465,7 +465,7 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(HandoffHandler))]
@@ -486,7 +486,7 @@ namespace Microsoft.Agents.Builder.App
     /// <remarks>
     /// Decorate a method with this attribute to register it as a handler for <c>message/submitAction</c> invoke activities
     /// where <c>actionName</c> is <c>feedback</c>.
-    /// The method must match the <see cref="FeedbackLoopHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.FeedbackLoopHandler"/> delegate signature.
     /// <code>
     /// [FeedbackLoopRoute]
     /// public async Task OnFeedbackAsync(ITurnContext turnContext, ITurnState turnState, FeedbackData feedbackData, CancellationToken cancellationToken)
@@ -496,7 +496,7 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(FeedbackLoopHandler))]
@@ -516,7 +516,7 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     /// <remarks>
     /// Decorate a method with this attribute to register it as a handler for <c>endOfConversation</c> activities.
-    /// The method must match the <see cref="RouteHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate signature.
     /// <code>
     /// [EndOfConversationRoute]
     /// public async Task OnEndOfConversationAsync(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -526,7 +526,7 @@ namespace Microsoft.Agents.Builder.App
     /// </code>
     /// </remarks>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(RouteHandler))]
@@ -547,21 +547,21 @@ namespace Microsoft.Agents.Builder.App
     public static class RouteAttributeHelper
     {
         /// <summary>
-        /// Returns the first handler delegate <see cref="Type"/> declared on a route attribute class via
-        /// <see cref="RouteHandlerTypeAttribute"/>, or <see langword="null"/> when none is declared.
+        /// Returns the first handler delegate <see cref="System.Type"/> declared on a route attribute class via
+        /// <see cref="Microsoft.Agents.Builder.App.RouteHandlerTypeAttribute"/>, or <see langword="null"/> when none is declared.
         /// </summary>
-        /// <param name="attributeType">The route attribute <see cref="Type"/> to inspect.</param>
+        /// <param name="attributeType">The route attribute <see cref="System.Type"/> to inspect.</param>
         public static Type? GetDeclaredHandlerType(Type? attributeType)
         {
             return attributeType?.GetCustomAttribute<RouteHandlerTypeAttribute>(inherit: true)?.HandlerType;
         }
 
         /// <summary>
-        /// Returns all handler delegate <see cref="Type"/> values declared on a route attribute class via
-        /// one or more <see cref="RouteHandlerTypeAttribute"/> applications. A method decorated with the
+        /// Returns all handler delegate <see cref="System.Type"/> values declared on a route attribute class via
+        /// one or more <see cref="Microsoft.Agents.Builder.App.RouteHandlerTypeAttribute"/> applications. A method decorated with the
         /// attribute is valid if it matches any of them. Returns an empty array when none are declared.
         /// </summary>
-        /// <param name="attributeType">The route attribute <see cref="Type"/> to inspect.</param>
+        /// <param name="attributeType">The route attribute <see cref="System.Type"/> to inspect.</param>
         public static Type[] GetDeclaredHandlerTypes(Type? attributeType)
         {
             if (attributeType == null)
@@ -604,21 +604,21 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
-        /// Selects the first handler delegate <see cref="Type"/> declared on <paramref name="attributeType"/> via
-        /// <see cref="RouteHandlerTypeAttribute"/> whose <c>Invoke</c> signature matches <paramref name="method"/>,
+        /// Selects the first handler delegate <see cref="System.Type"/> declared on <paramref name="attributeType"/> via
+        /// <see cref="Microsoft.Agents.Builder.App.RouteHandlerTypeAttribute"/> whose <c>Invoke</c> signature matches <paramref name="method"/>,
         /// then creates a bound delegate of that type. This lets a single route attribute accept more than one
         /// handler signature (for example <c>ActionExecuteHandler</c> or <c>ActionExecuteInvokeHandler</c>),
         /// resolving the concrete delegate from the decorated method at registration time.
         /// </summary>
         /// <remarks>
         /// Open/unbound generic declared handler types (for example <c>typeof(FetchHandler&lt;&gt;)</c>) are skipped,
-        /// matching the analyzer behavior; use <see cref="InvokeGenericWithHandler"/> for those. When no declared
+        /// matching the analyzer behavior; use <see cref="Microsoft.Agents.Builder.App.RouteAttributeHelper.InvokeGenericWithHandler(Microsoft.Agents.Builder.App.AgentApplication, System.Reflection.MethodInfo, System.Type, System.Int32, System.Object)"/> for those. When no declared
         /// handler matches, an exception is thrown — though the MAA002 analyzer normally surfaces the mismatch at
         /// compile time before this code runs.
         /// </remarks>
         /// <param name="app">The agent application to bind the delegate to for instance methods.</param>
         /// <param name="method">The decorated method to wrap as a delegate.</param>
-        /// <param name="attributeType">The route attribute <see cref="Type"/> declaring the candidate handler types.</param>
+        /// <param name="attributeType">The route attribute <see cref="System.Type"/> declaring the candidate handler types.</param>
         /// <returns>A delegate of the matching declared handler type, bound to <paramref name="app"/> for instance methods.</returns>
         public static Delegate CreateMatchingHandlerDelegate(AgentApplication app, MethodInfo method, Type attributeType)
         {

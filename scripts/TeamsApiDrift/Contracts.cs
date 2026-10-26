@@ -58,7 +58,19 @@ public sealed class UsageManifest
     public string SourceRoot { get; set; } = PackageConstants.SourceRoot;
     public List<UsageEntry> Usages { get; set; } = [];
     public SourceReview? SourceReview { get; set; }
+    public List<CompatibilityReview> CompatibilityReviews { get; set; } = [];
 }
+
+public sealed record CompatibilityReview(
+    string FromVersion,
+    string ToVersion,
+    string UpstreamSymbol,
+    string? Member,
+    string Kind,
+    string? Before,
+    string? After,
+    IReadOnlyList<string> TargetFrameworks,
+    string Reason);
 
 public sealed class UsageEntry
 {

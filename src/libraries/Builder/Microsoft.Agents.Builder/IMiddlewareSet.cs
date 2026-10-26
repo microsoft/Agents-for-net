@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="middleware">The middleware to add.</param>
         /// <returns>The updated middleware set.</returns>
-        /// <see cref="IChannelAdapter.Use(IMiddleware)"/>
+        /// <see cref="Microsoft.Agents.Builder.IChannelAdapter.Use(Microsoft.Agents.Builder.IMiddleware)"/>
         IMiddlewareSet Use(IMiddleware middleware);
 
         /// <summary>

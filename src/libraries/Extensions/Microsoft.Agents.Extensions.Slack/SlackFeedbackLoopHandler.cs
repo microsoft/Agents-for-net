@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.Slack;
 
 /// <summary>
-/// Represents a Slack-aware feedback loop handler for an <see cref="AgentApplication"/> route.
+/// Represents a Slack-aware feedback loop handler for an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> route.
 /// </summary>
 /// <param name="turnContext">A Slack-specific turn context for the current turn.</param>
 /// <param name="turnState">The turn state object that stores arbitrary data for this turn.</param>

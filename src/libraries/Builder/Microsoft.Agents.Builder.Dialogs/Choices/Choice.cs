@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
     public class Choice
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="Choice"/> class to add a choice to a choice prompt.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Choices.Choice"/> class to add a choice to a choice prompt.
         /// </summary>
         /// <param name="value">The value to return when the choice is selected.</param>
         public Choice(string value = null)

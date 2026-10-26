@@ -234,12 +234,12 @@ public static class MetadataValidator
 
         if (usageRelevant.Count > 0)
         {
-            var fresh = git.MetadataChangeIsFresh(usageRelevant, manifestPath);
+            var changedInBranch = git.MetadataChangedInBranch(manifestPath);
             var substantiveUpdate = !SemanticEqual(baseManifest.Usages, currentManifest.Usages);
             var explicitReview = ReviewChanged(baseManifest.SourceReview, currentManifest.SourceReview, UsageReviewOutcome);
-            if (!fresh || (!substantiveUpdate && !explicitReview))
+            if (!changedInBranch || (!substantiveUpdate && !explicitReview))
             {
-                Add(findings, UsageReviewRule, manifestPath, $"{usageRelevant.Count} Teams API usage-related source file(s) changed without a fresh usage-manifest update or non-impact review.", "Update usages, or update sourceReview with outcome \"no-usage-metadata-change\" and a specific reason.", string.Join(", ", usageRelevant.Take(4)));
+                Add(findings, UsageReviewRule, manifestPath, $"{usageRelevant.Count} Teams API usage-related source file(s) changed without a usage-manifest update or non-impact review in this branch.", "Update usages, or update sourceReview with outcome \"no-usage-metadata-change\" and a specific reason.", string.Join(", ", usageRelevant.Take(4)));
             }
         }
 
@@ -248,13 +248,13 @@ public static class MetadataValidator
         var affectedSymbols = baseSymbols.SymmetricExcept(currentSymbols).Order(StringComparer.Ordinal).ToArray();
         if (affectedSymbols.Length > 0 && usageRelevant.Count > 0)
         {
-            var fresh = git.MetadataChangeIsFresh(usageRelevant, capabilitiesPath);
-            var targetedUpdate = fresh && affectedSymbols.All(symbol =>
+            var changedInBranch = git.MetadataChangedInBranch(capabilitiesPath);
+            var targetedUpdate = changedInBranch && affectedSymbols.All(symbol =>
                 !string.Equals(CapabilityFingerprint(baseCapabilities, symbol), CapabilityFingerprint(currentCapabilities, symbol), StringComparison.Ordinal));
             var explicitReview = ReviewChanged(baseCapabilities.SourceReview, currentCapabilities.SourceReview, CapabilitiesReviewOutcome);
-            if (!targetedUpdate && !(fresh && explicitReview))
+            if (!targetedUpdate && !(changedInBranch && explicitReview))
             {
-                Add(findings, CapabilitiesReviewRule, capabilitiesPath, $"Teams API usage symbols changed without a targeted capability update or fresh non-impact review: {string.Join(", ", affectedSymbols)}.", "Update the affected capability mapping, or update sourceReview with outcome \"no-capability-metadata-change\" and a specific reason.", string.Join(", ", affectedSymbols.Take(4)));
+                Add(findings, CapabilitiesReviewRule, capabilitiesPath, $"Teams API usage symbols changed without a targeted capability update or non-impact review in this branch: {string.Join(", ", affectedSymbols)}.", "Update the affected capability mapping, or update sourceReview with outcome \"no-capability-metadata-change\" and a specific reason.", string.Join(", ", affectedSymbols.Take(4)));
             }
         }
     }
@@ -295,16 +295,14 @@ internal sealed class GitChangeSet
 {
     private readonly GitRepository _repository;
 
-    private GitChangeSet(GitRepository repository, string @base, HashSet<string> workingFiles, HashSet<string> changedFiles)
+    private GitChangeSet(GitRepository repository, string @base, HashSet<string> changedFiles)
     {
         _repository = repository;
         Base = @base;
-        WorkingFiles = workingFiles;
         ChangedFiles = changedFiles;
     }
 
     public string Base { get; }
-    public HashSet<string> WorkingFiles { get; }
     public HashSet<string> ChangedFiles { get; }
 
     public static GitChangeSet? TryCreate(string root, string? explicitBaseRef)
@@ -328,7 +326,7 @@ internal sealed class GitChangeSet
         var working = repository.NullList("diff", "--name-only", "--no-renames", "-z", "HEAD");
         working.UnionWith(repository.NullList("ls-files", "--others", "--exclude-standard", "-z"));
         committed.UnionWith(working);
-        return new GitChangeSet(repository, mergeBase, working, committed);
+        return new GitChangeSet(repository, mergeBase, committed);
     }
 
     public string? ReadBaseFile(string path) => _repository.Text("show", $"{Base}:{Paths.Normalize(path)}");
@@ -347,26 +345,8 @@ internal sealed class GitChangeSet
         }
     }
 
-    public bool MetadataChangeIsFresh(IReadOnlyCollection<string> sourceFiles, string metadataFile)
-    {
-        var normalizedSources = sourceFiles.Select(Paths.Normalize).ToArray();
-        var normalizedMetadata = Paths.Normalize(metadataFile);
-        if (normalizedSources.Any(WorkingFiles.Contains)) return WorkingFiles.Contains(normalizedMetadata);
-        if (WorkingFiles.Contains(normalizedMetadata)) return true;
-
-        var sourceCommit = LatestCommit(normalizedSources);
-        var metadataCommit = LatestCommit([normalizedMetadata]);
-        return sourceCommit is not null && metadataCommit is not null &&
-            (sourceCommit == metadataCommit || _repository.Succeeds("merge-base", "--is-ancestor", sourceCommit, metadataCommit));
-    }
-
-    private string? LatestCommit(IReadOnlyCollection<string> files)
-    {
-        var arguments = new List<string> { "log", "-1", "--format=%H", $"{Base}..HEAD", "--" };
-        arguments.AddRange(files);
-        var commit = _repository.Text(arguments.ToArray())?.Trim();
-        return string.IsNullOrWhiteSpace(commit) ? null : commit;
-    }
+    public bool MetadataChangedInBranch(string metadataFile)
+        => ChangedFiles.Contains(Paths.Normalize(metadataFile));
 
     private static string ResolveBaseRef(GitRepository repository, string? explicitBaseRef)
     {

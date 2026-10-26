@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.Dialogs
 {
     /// <summary>
-    /// Provides context for a step in a <see cref="WaterfallDialog"/>.
+    /// Provides context for a step in a <see cref="Microsoft.Agents.Builder.Dialogs.WaterfallDialog"/>.
     /// </summary>
-    /// <remarks>The <see cref="DialogContext.Context"/> property contains the <see cref="ITurnContext"/>
+    /// <remarks>The <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.Context"/> property contains the <see cref="Microsoft.Agents.Builder.ITurnContext"/>
     /// for the current turn.</remarks>
     public class WaterfallStepContext : DialogContext
     {
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         private bool _nextCalled;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="WaterfallStepContext"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.WaterfallStepContext"/> class.
         /// </summary>
         /// <param name= "parentWaterfall">The parent of the waterfall dialog.</param>
         /// <param name= "dc">The dialog's context.</param>
@@ -100,7 +100,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>In the next step of the waterfall, the <see cref="Result"/> property of the
+        /// <remarks>In the next step of the waterfall, the <see cref="Microsoft.Agents.Builder.Dialogs.WaterfallStepContext.Result"/> property of the
         /// waterfall step context will contain the value of the <paramref name="result"/>.</remarks>
         public async Task<DialogTurnResult> NextAsync(object result = null, CancellationToken cancellationToken = default)
         {

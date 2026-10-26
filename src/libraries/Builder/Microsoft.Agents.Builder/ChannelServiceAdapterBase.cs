@@ -52,7 +52,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Initializes an adapter without channel-specific streaming response factories.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.ChannelServiceAdapterBase"/> class without channel-specific streaming response factories.
         /// </summary>
         /// <param name="channelServiceClientFactory">The channel service client factory.</param>
         /// <param name="logger">The logger used by the adapter.</param>
@@ -64,7 +64,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Initializes an adapter with channel-specific streaming response factories.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.ChannelServiceAdapterBase"/> class with channel-specific streaming response factories.
         /// </summary>
         /// <param name="channelServiceClientFactory">The channel service client factory.</param>
         /// <param name="logger">The logger used by the adapter.</param>
@@ -78,7 +78,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Initializes an adapter with outbound service URL validation.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.ChannelServiceAdapterBase"/> class with outbound service URL validation.
         /// </summary>
         /// <param name="channelServiceClientFactory">The channel service client factory.</param>
         /// <param name="logger">The logger used by the adapter.</param>

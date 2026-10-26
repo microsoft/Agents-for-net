@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.MSTeams;
 
 /// <summary>
-/// Provides Teams-specific helpers for working with the current <see cref="ITurnContext"/>.
+/// Provides Teams-specific helpers for working with the current <see cref="Microsoft.Agents.Builder.ITurnContext"/>.
 /// </summary>
 public interface ITeamsTurnContext : ITurnContext
 {
     /// <summary>
-    /// Gets the current <see cref="ITeamsActivity"/>, exposing the Activity as a strongly-typed
-    /// <see cref="ITeamsActivity"/> instead of <see cref="IActivity"/>.
+    /// Gets the current <see cref="Microsoft.Agents.Extensions.MSTeams.ITeamsActivity"/>, exposing the Activity as a strongly-typed
+    /// <see cref="Microsoft.Agents.Extensions.MSTeams.ITeamsActivity"/> instead of <see cref="Microsoft.Agents.Core.Models.IActivity"/>.
     /// </summary>
     new ITeamsActivity Activity { get; }
 
@@ -76,35 +76,35 @@ public interface ITeamsTurnContext : ITurnContext
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a <see cref="GraphServiceClient"/> authenticated with a delegated (user) token for the signed-in user
+    /// Creates a <see cref="Microsoft.Graph.GraphServiceClient"/> authenticated with a delegated (user) token for the signed-in user
     /// of the current turn.
     /// </summary>
     /// <remarks>Requires that user authorization is configured for the agent and the user is signed in. The returned
     /// client makes requests to Microsoft Graph on behalf of the user.</remarks>
     /// <param name="handlerName">The name of the sign-in handler to use for token acquisition. If null, the default handler is used.</param>
     /// <param name="graphBaseUrl">The base URL for the Microsoft Graph API. Defaults to "https://graph.microsoft.com/v1.0".</param>
-    /// <returns>A <see cref="GraphServiceClient"/> authenticated with a delegated user token.</returns>
+    /// <returns>A <see cref="Microsoft.Graph.GraphServiceClient"/> authenticated with a delegated user token.</returns>
     GraphServiceClient GetGraphClient(string handlerName = null, string graphBaseUrl = "https://graph.microsoft.com/v1.0");
 
     /// <summary>
-    /// Creates a <see cref="GraphServiceClient"/> authenticated with an <b>app-only</b> (application) token, using the
+    /// Creates a <see cref="Microsoft.Graph.GraphServiceClient"/> authenticated with an <b>app-only</b> (application) token, using the
     /// token connection resolved for the current turn.
     /// </summary>
-    /// <remarks>Unlike <see cref="GetGraphClient(string, string)"/>, this method uses application permissions, so the
+    /// <remarks>Unlike <see cref="Microsoft.Agents.Extensions.MSTeams.ITeamsTurnContext.GetGraphClient(System.String, System.String)"/>, this method uses application permissions, so the
     /// caller must specify the target resource in the request path (for example <c>client.Users["{userId}"]...</c>).
     /// No configuration beyond the agent's existing token connection is required.</remarks>
     /// <param name="graphBaseUrl">The base URL for the Microsoft Graph API. Defaults to "https://graph.microsoft.com/v1.0".</param>
-    /// <returns>A <see cref="GraphServiceClient"/> authenticated with an app-only token.</returns>
+    /// <returns>A <see cref="Microsoft.Graph.GraphServiceClient"/> authenticated with an app-only token.</returns>
     GraphServiceClient GetAppGraphClient(string graphBaseUrl = "https://graph.microsoft.com/v1.0");
 
     /// <summary>
-    /// Creates a <see cref="GraphServiceClient"/> authenticated with an <b>app-only</b> (application) token, using the
+    /// Creates a <see cref="Microsoft.Graph.GraphServiceClient"/> authenticated with an <b>app-only</b> (application) token, using the
     /// named token connection.
     /// </summary>
     /// <remarks>The returned client uses application permissions, so the caller must specify the target resource in
     /// the request path (for example <c>client.Users["{userId}"]...</c>).</remarks>
     /// <param name="connectionName">The name of the token connection whose credentials acquire the app-only token. Cannot be null or empty.</param>
     /// <param name="graphBaseUrl">The base URL for the Microsoft Graph API. Defaults to "https://graph.microsoft.com/v1.0".</param>
-    /// <returns>A <see cref="GraphServiceClient"/> authenticated with an app-only token.</returns>
+    /// <returns>A <see cref="Microsoft.Graph.GraphServiceClient"/> authenticated with an app-only token.</returns>
     GraphServiceClient GetAppGraphClientForConnection(string connectionName, string graphBaseUrl = "https://graph.microsoft.com/v1.0");
 }

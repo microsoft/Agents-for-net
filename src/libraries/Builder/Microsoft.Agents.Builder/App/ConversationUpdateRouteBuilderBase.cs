@@ -12,10 +12,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Provides the generic base builder for routing conversation update activities in an <see cref="AgentApplication"/>.
+    /// Provides the generic base builder for routing conversation update activities in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Derive from <see cref="ConversationUpdateRouteBuilderBase{TBuilder}"/> to create specialized conversation
+    /// Derive from <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteBuilderBase{TBuilder}"/> to create specialized conversation
     /// update route builders while preserving fluent chaining on the concrete builder type. This base class supplies
     /// the shared conversation update matching behavior, including update-event filters, custom selectors, channel
     /// constraints, and agentic routing support.

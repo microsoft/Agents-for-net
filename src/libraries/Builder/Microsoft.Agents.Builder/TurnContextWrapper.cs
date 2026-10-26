@@ -12,10 +12,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// Provides a base wrapper around an <see cref="ITurnContext"/> instance.
+    /// Provides a base wrapper around an <see cref="Microsoft.Agents.Builder.ITurnContext"/> instance.
     /// </summary>
     /// <remarks>
-    /// This class delegates all <see cref="ITurnContext"/> members to an inner turn context,
+    /// This class delegates all <see cref="Microsoft.Agents.Builder.ITurnContext"/> members to an inner turn context,
     /// allowing derived types to extend turn-context behavior without reimplementing the
     /// underlying operations.
     /// </remarks>
@@ -84,7 +84,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TurnContextWrapper"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.TurnContextWrapper"/> class.
         /// </summary>
         /// <param name="turnContext">The inner turn context to wrap.</param>
         protected TurnContextWrapper(ITurnContext turnContext)

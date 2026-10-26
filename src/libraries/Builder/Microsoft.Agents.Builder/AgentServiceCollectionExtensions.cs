@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Builder
         /// Applies service registrations declared by referenced Agents SDK extensions.
         /// </summary>
         /// <remarks>
-        /// Extension assemblies opt in with <see cref="AgentServiceRegistrationAttribute"/>.
+        /// Extension assemblies opt in with <see cref="Microsoft.Agents.Builder.AgentServiceRegistrationAttribute"/>.
         /// Registrations are applied at most once per service collection.
         /// </remarks>
         /// <param name="services">The service collection to configure.</param>

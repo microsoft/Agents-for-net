@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
     public class HostedTaskServiceOptions
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="HostedTaskServiceOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue.HostedTaskServiceOptions"/> class.
         /// </summary>
         /// <param name="configuration">The application configuration.</param>
         public HostedTaskServiceOptions(IConfiguration configuration)
@@ -26,5 +26,16 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
         /// Gets or sets the maximum number of seconds to wait for task processing during shutdown.
         /// </summary>
         public int ShutdownTimeoutSeconds { get; set; } = 60;
+
+        /// <summary>
+        /// Validates configuration values that are used by the hosted task service.
+        /// </summary>
+        internal void Validate()
+        {
+            if (ShutdownTimeoutSeconds < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ShutdownTimeoutSeconds), "Shutdown timeout must not be negative.");
+            }
+        }
     }
 }

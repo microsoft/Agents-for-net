@@ -16,13 +16,13 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
 {
     /// <summary>
     /// Provides a concrete builder for routing Adaptive Card <c>Action.Execute</c> invoke activities in an
-    /// <see cref="AgentApplication"/>.
+    /// <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
     /// Routes built from this builder match invoke activities named <c>adaptiveCard/action</c> whose
-    /// <c>Action.Verb</c> matches the configured verb or verb pattern. When neither <see cref="WithVerb(string)"/>
-    /// nor <see cref="WithVerb(Regex)"/> is called the route matches any verb. A custom selector supplied via
-    /// <see cref="WithSelector(RouteSelector)"/> is additive to the basic route matching (channel, activity type,
+    /// <c>Action.Verb</c> matches the configured verb or verb pattern. When neither <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder.WithVerb(System.String)"/>
+    /// nor <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder.WithVerb(System.Text.RegularExpressions.Regex)"/> is called the route matches any verb. A custom selector supplied via
+    /// <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder.WithSelector(Microsoft.Agents.Builder.App.RouteSelector)"/> is additive to the basic route matching (channel, activity type,
     /// invoke name, and verb).
     /// </remarks>
     public class ActionExecuteRouteBuilder : RouteBuilderBase<ActionExecuteRouteBuilder>
@@ -33,9 +33,9 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         private Regex _verbPattern;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="ActionExecuteRouteBuilder"/> class.
+        /// Creates a new instance of the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder"/> class.
         /// </summary>
-        /// <returns>A new <see cref="ActionExecuteRouteBuilder"/>.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder"/>.</returns>
         public static ActionExecuteRouteBuilder Create()
         {
             return new ActionExecuteRouteBuilder();
@@ -50,7 +50,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to match only Action.Execute activities whose verb equals the specified value.
         /// </summary>
         /// <param name="verb">The verb to match. Comparison is exact.</param>
-        /// <returns>The current <see cref="ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
         public ActionExecuteRouteBuilder WithVerb(string verb)
         {
             AssertionHelpers.ThrowIfNullOrWhiteSpace(verb, nameof(verb));
@@ -68,7 +68,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to match Action.Execute activities whose verb matches the specified pattern.
         /// </summary>
         /// <param name="verbPattern">A regular expression used to match the verb.</param>
-        /// <returns>The current <see cref="ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
         public ActionExecuteRouteBuilder WithVerb(Regex verbPattern)
         {
             AssertionHelpers.ThrowIfNull(verbPattern, nameof(verbPattern));
@@ -89,7 +89,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// <param name="selector">The route selector that defines additional criteria for matching requests to the route. The supplied
         /// selector does not need to validate base route properties like ChannelId, Agentic, activity type, invoke
         /// name, or verb.</param>
-        /// <returns>The current <see cref="ActionExecuteRouteBuilder"/> instance with the specified selector applied.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder"/> instance with the specified selector applied.</returns>
         public override ActionExecuteRouteBuilder WithSelector(RouteSelector selector)
         {
             AssertionHelpers.ThrowIfNull(selector, nameof(selector));
@@ -107,7 +107,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to handle Action.Execute events using the specified handler.
         /// </summary>
         /// <param name="handler">The handler to invoke when a matching Action.Execute activity is received. Cannot be null.</param>
-        /// <returns>The current <see cref="ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
         public ActionExecuteRouteBuilder WithHandler(ActionExecuteHandler handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         /// Configures the route to handle Action.Execute events using the specified handler.
         /// </summary>
         /// <param name="handler">The handler to invoke when a matching Action.Execute activity is received. Cannot be null.</param>
-        /// <returns>The current <see cref="ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
+        /// <returns>The current <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteRouteBuilder"/> instance for method chaining.</returns>
         public ActionExecuteRouteBuilder WithHandler(ActionExecuteValueHandler handler)
         {
             AssertionHelpers.ThrowIfNull(handler, nameof(handler));

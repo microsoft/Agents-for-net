@@ -17,11 +17,11 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Extensions.MSTeams;
 
 /// <summary>
-/// Provides extension methods for configuring the Teams <see cref="ApiClient"/> within an agents's turn context.
+/// Provides extension methods for configuring the Teams <see cref="Microsoft.Teams.Apps.Clients.ApiClient"/> within an agents's turn context.
 /// </summary>
 /// <remarks>
 /// These extension methods enable integration with the Teams API by associating an ApiClient
-/// instance with the <see cref="ITurnContext"/>. This allows agent developers to access Teams-specific functionality during a
+/// instance with the <see cref="Microsoft.Agents.Builder.ITurnContext"/>. This allows agent developers to access Teams-specific functionality during a
 /// conversation turn. The methods support both direct configuration and configuration via an AgentApplication
 /// instance.<br/><br/>
 /// This creates HttpClients named "TeamsHttpClientFactory".

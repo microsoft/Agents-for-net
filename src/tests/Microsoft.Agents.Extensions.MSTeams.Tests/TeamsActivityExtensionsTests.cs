@@ -30,6 +30,17 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
             Assert.Null(channelId);
         }
 
+        [Theory]
+        [Trait("Category", "TeamsApiBoundary")]
+        [InlineData("""{"settings":{}}""")]
+        [InlineData("""{"settings":{"selectedChannel":null}}""")]
+        public void TeamsGetSelectedChannelId_ShouldReturnNullOnMissingSelectedChannel(string channelData)
+        {
+            IActivity activity = new Activity { ChannelData = JsonSerializer.Deserialize<JsonElement>(channelData) };
+
+            Assert.Null(activity.TeamsGetSelectedChannelId());
+        }
+
         [Fact]
         public void TeamsGetMeetingInfo_ShouldReturnMeetingId()
         {

@@ -21,8 +21,8 @@ namespace Microsoft.Agents.Storage
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activities are successfully sent, the task result contains
         /// the items read, indexed by key.</remarks>
-        /// <seealso cref="Microsoft.Agents.Storage.IStorage.DeleteAsync(string[], System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Storage.IStorage.WriteAsync(System.Collections.Generic.IDictionary{string, object}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.DeleteAsync(System.String[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.WriteAsync(System.Collections.Generic.IDictionary{System.String, System.Object}, System.Threading.CancellationToken)"/>
         Task<IDictionary<string, object>> ReadAsync(string[] keys, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -44,8 +44,8 @@ namespace Microsoft.Agents.Storage
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="Microsoft.Agents.Storage.IStorage.DeleteAsync(string[], System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Storage.IStorage.ReadAsync(string[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.DeleteAsync(System.String[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.ReadAsync(System.String[], System.Threading.CancellationToken)"/>
         Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -65,8 +65,8 @@ namespace Microsoft.Agents.Storage
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <seealso cref="Microsoft.Agents.Storage.IStorage.ReadAsync(string[], System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Storage.IStorage.WriteAsync(System.Collections.Generic.IDictionary{string, object}, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.ReadAsync(System.String[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Storage.IStorage.WriteAsync(System.Collections.Generic.IDictionary{System.String, System.Object}, System.Threading.CancellationToken)"/>
         Task DeleteAsync(string[] keys, CancellationToken cancellationToken = default);
     }
 

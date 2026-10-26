@@ -524,8 +524,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .Returns(activity)
                 .Verifiable(Times.Exactly(7));
             _context.SetupGet(e => e.Services)
-                .Returns([])
-                .Verifiable(Times.Exactly(1));
+                .Returns([]);
             _context.SetupGet(e => e.StackState)
                 .Returns([]);
 
@@ -623,7 +622,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         }
 
         /// <summary>
-        /// Helper to create a <see cref="SkillDialogOptions"/> for the skillDialog.
+        /// Helper to create a <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialogOptions"/> for the skillDialog.
         /// </summary>
         /// <param name="conversationState"> The conversation state object.</param>
         /// <param name="mockSkillClient"> The skill client mock.</param>

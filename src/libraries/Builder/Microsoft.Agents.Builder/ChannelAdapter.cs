@@ -186,7 +186,7 @@ namespace Microsoft.Agents.Builder
         /// <para>When the turn is initiated by a user activity (reactive messaging), the
         /// callback method will be a reference to the Agent's
         /// <see cref="Microsoft.Agents.Builder.IAgent.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/> method. When the turn is
-        /// initiated by a call to <see cref="Microsoft.Agents.Builder.ChannelAdapter.ContinueConversationAsync(string, Microsoft.Agents.Core.Models.ConversationReference, Microsoft.Agents.Builder.AgentCallbackHandler, System.Threading.CancellationToken)"/>
+        /// initiated by a call to <see cref="Microsoft.Agents.Builder.ChannelAdapter.ContinueConversationAsync(System.String, Microsoft.Agents.Core.Models.ConversationReference, Microsoft.Agents.Builder.AgentCallbackHandler, System.Threading.CancellationToken)"/>
         /// (proactive messaging), the callback method is the callback method that was provided in the call.</para>
         /// </remarks>
         protected virtual async Task RunPipelineAsync(ITurnContext turnContext, AgentCallbackHandler callback, CancellationToken cancellationToken)

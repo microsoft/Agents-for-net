@@ -9,7 +9,7 @@ using System;
 namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the creation of a new proactive
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the creation of a new proactive
     /// conversation.
     /// </summary>
     /// <remarks>
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         private readonly CreateConversationOptions _options;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeCreateConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Proactive.Scopes.ScopeCreateConversation"/> class.
         /// </summary>
         /// <param name="options">The options used to create the conversation.</param>
         public ScopeCreateConversation(CreateConversationOptions options) : base(Constants.ScopeCreateConversation)

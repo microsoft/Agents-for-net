@@ -8,7 +8,7 @@ using System;
 namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the proactive continuation of an
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the proactive continuation of an
     /// existing conversation.
     /// </summary>
     /// <remarks>
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         private readonly IActivity _activity;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeContinueConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Proactive.Scopes.ScopeContinueConversation"/> class.
         /// </summary>
         /// <param name="conversationId">The identifier of the conversation being continued.</param>
         /// <param name="activity">The continuation activity used to resume the conversation.</param>

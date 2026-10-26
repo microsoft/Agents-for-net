@@ -52,7 +52,7 @@ sequenceDiagram
 | Teams | `TeamsStreamingResponse` | 1000 ms | First response `Activity.Id` | Teams-specific errors and feedback metadata |
 | M365 Copilot (`msteams:COPILOT`) | `M365CopilotStreamingResponse` | 1000 ms | First response `Activity.Id` | Teams behavior plus 35-second idle notice and 105-second streaming cutoff |
 | WebChat / DirectLine | `StreamingResponse` | 500 ms | Pre-generated GUID | Full accumulated text per update |
-| `DeliveryModes.Stream` | `StreamingResponse` | 100 ms | Pre-generated GUID | Activity Protocol streaming over the host transport |
+| `DeliveryModes.Stream` (other channels) | `StreamingResponse` | 100 ms | Pre-generated GUID | Activity Protocol streaming over the host transport |
 | Slack | `SlackStreamingResponse` | 200 ms | Slack stream plus local GUID | Appends text deltas through Slack `chat.*Stream` APIs |
 | Other / `ExpectReplies` | `StreamingResponse` | N/A | N/A | Buffers and sends one normal final message |
 
@@ -265,6 +265,8 @@ sequenceDiagram
 
 For unsupported channels and `DeliveryMode.ExpectReplies`, informative updates are ignored, text is buffered,
 and no interval loop starts.
+
+If no text, `FinalMessage`, or prior updates exist, `EndStreamAsync` sends nothing.
 
 ```mermaid
 sequenceDiagram

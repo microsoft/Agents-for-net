@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
         public TParams Parameters { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Query{TParams}"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.Query{TParams}"/> class.
         /// </summary>
         /// <param name="count">Number of items to return in the result set.</param>
         /// <param name="skip">Number of items to skip in the result set.</param>

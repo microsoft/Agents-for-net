@@ -49,6 +49,10 @@ apply in addition to these when a changed file matches their `applyTo` globs.
 - **Serialization:** `System.Text.Json` correctness — missing converters, incorrect
   `JsonPropertyName` attributes, wire-format breaking changes, `ProtocolJsonSerializer` misuse.
   (See `serialization-extension.instructions.md` for details.)
+- **XML documentation references:** For `<see>` and `<seealso>` references added or modified by the
+  pull request, verify that each `cref` uses a fully qualified symbol name and resolves to the
+  current type, member, and signature. Do not report unchanged references elsewhere, including
+  unchanged references in a changed file.
 - **Multi-target compatibility:** APIs used that do not exist in `netstandard2.0` (core libraries
   multi-target `net8.0` and `netstandard2.0`).
 - **Performance (with proportional impact):** unbounded collections in per-turn paths (after

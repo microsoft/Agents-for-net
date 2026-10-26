@@ -7,7 +7,7 @@ using System;
 namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the deletion of a stored proactive
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the deletion of a stored proactive
     /// conversation reference.
     /// </summary>
     /// <remarks>
@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         private readonly string _conversationId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeDeleteConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Proactive.Scopes.ScopeDeleteConversation"/> class.
         /// </summary>
         /// <param name="conversationId">The identifier of the stored conversation to delete.</param>
         public ScopeDeleteConversation(string conversationId) : base(Constants.ScopeDeleteConversation)

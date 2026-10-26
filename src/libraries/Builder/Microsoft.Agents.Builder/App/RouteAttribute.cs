@@ -24,11 +24,11 @@ namespace Microsoft.Agents.Builder.App
     /// </summary>
     /// <remarks>
     /// This attribute is obsolete. Use the specific route attributes instead:
-    /// <see cref="ActivityRouteAttribute"/>, <see cref="MessageRouteAttribute"/>, <see cref="EventRouteAttribute"/>,
-    /// <see cref="ConversationUpdateRouteAttribute"/>, <see cref="MembersAddedRouteAttribute"/>,
-    /// <see cref="MembersRemovedRouteAttribute"/>, <see cref="MessageReactionsAddedRouteAttribute"/>,
-    /// <see cref="MessageReactionsRemovedRouteAttribute"/>, <see cref="HandoffRouteAttribute"/>,
-    /// <see cref="FeedbackLoopRouteAttribute"/>.
+    /// <see cref="Microsoft.Agents.Builder.App.ActivityRouteAttribute"/>, <see cref="Microsoft.Agents.Builder.App.MessageRouteAttribute"/>, <see cref="Microsoft.Agents.Builder.App.EventRouteAttribute"/>,
+    /// <see cref="Microsoft.Agents.Builder.App.ConversationUpdateRouteAttribute"/>, <see cref="Microsoft.Agents.Builder.App.MembersAddedRouteAttribute"/>,
+    /// <see cref="Microsoft.Agents.Builder.App.MembersRemovedRouteAttribute"/>, <see cref="Microsoft.Agents.Builder.App.MessageReactionsAddedRouteAttribute"/>,
+    /// <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteAttribute"/>, <see cref="Microsoft.Agents.Builder.App.HandoffRouteAttribute"/>,
+    /// <see cref="Microsoft.Agents.Builder.App.FeedbackLoopRouteAttribute"/>.
     /// </remarks>
     [Obsolete("Use specific route attributes: ActivityRouteAttribute, MessageRouteAttribute, EventRouteAttribute, ConversationUpdateRouteAttribute, MembersAddedRouteAttribute, MembersRemovedRouteAttribute, MessageReactionsAddedRouteAttribute, MessageReactionsRemovedRouteAttribute, HandoffRouteAttribute, FeedbackLoopRouteAttribute.")]
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]

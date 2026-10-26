@@ -11,7 +11,7 @@ using Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport;
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
-    /// Boundary condition tests for <see cref="NamedPipeTransport"/>:
+    /// Boundary condition tests for <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.NamedPipeTransport"/>:
     /// cancellation, pipe closure during read/write, dispose semantics,
     /// and ReadSingleAsync behavior.
     /// </summary>

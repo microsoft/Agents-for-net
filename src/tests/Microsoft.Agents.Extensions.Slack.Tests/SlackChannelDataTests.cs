@@ -10,8 +10,8 @@ using Xunit;
 namespace Microsoft.Agents.Extensions.Slack.Tests;
 
 /// <summary>
-/// Tests for <see cref="SlackChannelData"/>, <see cref="EventEnvelope"/>,
-/// and <see cref="EventContent"/> deserialization
+/// Tests for <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackChannelData"/>, <see cref="Microsoft.Agents.Extensions.Slack.Api.EventEnvelope"/>,
+/// and <see cref="Microsoft.Agents.Extensions.Slack.Api.EventContent"/> deserialization
 /// and path-navigation helpers.
 ///
 /// Test JSON payloads mirror the real Slack Events API examples shown at
@@ -23,7 +23,7 @@ public class SlackChannelDataTests
 
     /// <summary>
     /// SlackChannelData wrapping a Slack "message" event callback.
-    /// The envelope is keyed "SlackMessage" per <see cref="SlackChannelData"/>'s
+    /// The envelope is keyed "SlackMessage" per <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackChannelData"/>'s
     /// [JsonPropertyName("SlackMessage")] attribute.
     /// </summary>
     private const string MessageEventJson = """
@@ -81,7 +81,7 @@ public class SlackChannelDataTests
     /// <summary>
     /// SlackChannelData wrapping a Slack "reaction_removed" event callback.
     /// This event type has a nested <c>item</c> object within the event content —
-    /// a key test case for <see cref="EventContent.Get{T}"/> path navigation.
+    /// a key test case for <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.Get{T}(System.String)"/> path navigation.
     /// </summary>
     private const string ReactionRemovedEventJson = """
         {
@@ -643,6 +643,34 @@ public class SlackChannelDataTests
         var cd = Deserialize(json);
         Assert.Null(cd.Envelope);
         Assert.Equal("C456ABC", cd.Channel);
+    }
+
+    [Theory]
+    [InlineData("{\"channel\":{\"id\":\"C_OBJECT\",\"name\":\"directmessage\"},\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_OBJECT")]
+    [InlineData("{\"channel\":\"C_STRING\",\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_STRING")]
+    [InlineData("{\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_CONTAINER")]
+    [InlineData("{\"channel\":null,\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_CONTAINER")]
+    [InlineData("{\"channel\":{},\"container\":{\"channel_id\":\"C_CONTAINER\"}}", "C_CONTAINER")]
+    [InlineData("{\"type\":\"shortcut\"}", null)]
+    [InlineData("{\"channel\":null}", null)]
+    [InlineData("{\"channel\":{}}", null)]
+    public void Channel_FromPayload_ResolvesChannelShapes(string payload, string expectedChannel)
+    {
+        var channelData = Deserialize("{\"Payload\":" + payload + "}");
+
+        Assert.NotNull(channelData.Payload);
+        Assert.Equal(expectedChannel, channelData.Channel);
+    }
+
+    [Theory]
+    [InlineData("123")]
+    [InlineData("false")]
+    [InlineData("[]")]
+    [InlineData("{\"id\":123}")]
+    [InlineData("{\"id\":[]}")]
+    public void ActionPayload_Deserialize_InvalidChannel_Throws(string channel)
+    {
+        Assert.Throws<JsonException>(() => Deserialize("{\"Payload\":{\"channel\":" + channel + "}}"));
     }
 
     [Fact]

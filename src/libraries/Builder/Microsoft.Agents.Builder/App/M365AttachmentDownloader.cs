@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
@@ -23,8 +23,7 @@ namespace Microsoft.Agents.Builder.App
         private readonly M365AttachmentDownloaderOptions _options;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
-        private readonly IOutboundHostValidator _hostValidator;
-
+        private readonly AttachmentDownloadHttpClient? _validatedHttpClient;
 
         /// <summary>
         /// Creates the M365AttachmentDownloader
@@ -32,9 +31,20 @@ namespace Microsoft.Agents.Builder.App
         /// <param name="options">The options</param>
         /// <param name="connections"></param>
         /// <param name="httpClientFactory"></param>
-        /// <param name="hostValidator">Optional shared allowed-hosts validator. When enabled, the download URL is validated before the token-bearing request is made.</param>
+        /// <param name="hostValidator">Optional shared allowed-hosts validator. When enabled, every download and redirect URL is validated before a request is made.</param>
         /// <exception cref="System.ArgumentException"></exception>
         public M365AttachmentDownloader(IConnections connections, IHttpClientFactory httpClientFactory, M365AttachmentDownloaderOptions options = null, IOutboundHostValidator hostValidator = null)
+            : this(connections, httpClientFactory, options, hostValidator, new DnsHostAddressResolver(), validatedHttpClient: null)
+        {
+        }
+
+        internal M365AttachmentDownloader(
+            IConnections connections,
+            IHttpClientFactory httpClientFactory,
+            M365AttachmentDownloaderOptions options,
+            IOutboundHostValidator hostValidator,
+            IHostAddressResolver hostAddressResolver,
+            HttpClient validatedHttpClient)
         {
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
@@ -42,7 +52,11 @@ namespace Microsoft.Agents.Builder.App
             _options = options ?? new();
             _connections = connections;
             _httpClientFactory = httpClientFactory;
-            _hostValidator = hostValidator;
+            _validatedHttpClient = hostValidator?.Enabled == true
+                ? validatedHttpClient == null
+                    ? new AttachmentDownloadHttpClient(hostValidator, hostAddressResolver)
+                    : new AttachmentDownloadHttpClient(hostValidator, hostAddressResolver, validatedHttpClient)
+                : null;
         }
 
         /// <inheritdoc />
@@ -85,7 +99,7 @@ namespace Microsoft.Agents.Builder.App
 
             foreach (Attachment attachment in attachments)
             {
-                InputFile? file = await DownloadFileAsync(attachment, accessToken);
+                InputFile? file = await DownloadFileAsync(attachment, accessToken, cancellationToken);
                 if (file != null)
                 {
                     files.Add(file);
@@ -95,8 +109,7 @@ namespace Microsoft.Agents.Builder.App
             return files;
         }
 
-
-        private async Task<InputFile?> DownloadFileAsync(Attachment attachment, string accessToken)
+        private async Task<InputFile?> DownloadFileAsync(Attachment attachment, string accessToken, CancellationToken cancellationToken)
         {
             string? name = attachment.Name;
 
@@ -114,42 +127,54 @@ namespace Microsoft.Agents.Builder.App
                     downloadUrl = value.ToString();
                 }
 
-                // Shared allowed-hosts control (opt-in, disabled by default). The actual fetched URL is
-                // attachment.Content.downloadUrl (attacker-controllable), not attachment.ContentUrl. When enabled,
-                // never issue this token-bearing request to a host outside the allowlist.
-                if (_hostValidator != null && _hostValidator.Enabled && !_hostValidator.IsAllowed(downloadUrl))
+                HttpResponseMessage response;
+                if (_validatedHttpClient != null)
                 {
-                    return null;
+                    response = await _validatedHttpClient.SendAsync(
+                        new Uri(downloadUrl),
+                        request => request.Headers.Add("Authorization", $"Bearer {accessToken}"),
+                        cancellationToken).ConfigureAwait(false);
+                    if (response == null)
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    using var httpClient = _httpClientFactory.CreateClient(nameof(M365AttachmentDownloader));
+                    using HttpRequestMessage request = new(HttpMethod.Get, downloadUrl);
+                    request.Headers.Add("Authorization", $"Bearer {accessToken}");
+                    response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 }
 
-                using var httpClient = _httpClientFactory.CreateClient(nameof(M365AttachmentDownloader));
-                
-                using HttpRequestMessage request = new(HttpMethod.Get, downloadUrl);
-                request.Headers.Add("Authorization", $"Bearer {accessToken}");
-
-                using HttpResponseMessage response = await httpClient.SendAsync(request).ConfigureAwait(false);
-
-                // Failed to download file
-                if (!response.IsSuccessStatusCode)
+                using (response)
                 {
-                    return null;
+                    // Failed to download file
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return null;
+                    }
+
+                    // Convert to a buffer
+#if NET8_0_OR_GREATER
+                    byte[] content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+#else
+                    byte[] content = await response.Content.ReadAsByteArrayAsync();
+#endif
+
+                    // Fixup content type
+                    string contentType = response.Content.Headers.ContentType.MediaType;
+                    if ((bool)(contentType?.StartsWith("image/")))
+                    {
+                        contentType = "image/png";
+                    }
+
+                    return new InputFile(new BinaryData(content), contentType)
+                    {
+                        ContentUrl = attachment.ContentUrl,
+                        Filename = name
+                    };
                 }
-
-                // Convert to a buffer
-                byte[] content = await response.Content.ReadAsByteArrayAsync();
-
-                // Fixup content type
-                string contentType = response.Content.Headers.ContentType.MediaType;
-                if ((bool)(contentType?.StartsWith("image/")))
-                {
-                    contentType = "image/png";
-                }
-
-                return new InputFile(new BinaryData(content), contentType)
-                {
-                    ContentUrl = attachment.ContentUrl,
-                    Filename = name
-                };
             }
             else
             {

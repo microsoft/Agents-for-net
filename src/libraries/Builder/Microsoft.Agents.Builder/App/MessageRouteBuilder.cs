@@ -7,12 +7,12 @@ using System;
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Provides a concrete builder for routing message activities in an <see cref="AgentApplication"/>.
+    /// Provides a concrete builder for routing message activities in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="MessageRouteBuilder"/> when you need a message route that uses the standard
-    /// <see cref="RouteHandler"/> delegate. This type inherits the message-specific matching behavior from
-    /// <see cref="MessageRouteBuilderBase{TBuilder}"/>, including filtering by message text, regular expression,
+    /// Use <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilder"/> when you need a message route that uses the standard
+    /// <see cref="Microsoft.Agents.Builder.App.RouteHandler"/> delegate. This type inherits the message-specific matching behavior from
+    /// <see cref="Microsoft.Agents.Builder.App.MessageRouteBuilderBase{TBuilder}"/>, including filtering by message text, regular expression,
     /// channel, and agentic routing options.
     /// </remarks>
     public class MessageRouteBuilder : MessageRouteBuilderBase<MessageRouteBuilder>

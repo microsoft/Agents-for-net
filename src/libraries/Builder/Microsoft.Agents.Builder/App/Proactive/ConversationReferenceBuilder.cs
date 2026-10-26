@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Sets the service URL for the reference and returns the current builder instance.
         /// </summary>
-        /// <param name="serviceUrl">The service URL to associate with the reference. If null, a default will be provided in <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationReferenceBuilder.Build"/>.</param>
+        /// <param name="serviceUrl">The service URL to associate with the reference. If null, a default will be provided in <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationReferenceBuilder.Build()"/>.</param>
         /// <returns>The current <see cref="Microsoft.Agents.Builder.App.Proactive.ConversationReferenceBuilder"/> instance with the updated service URL.</returns>
         public ConversationReferenceBuilder WithServiceUrl(string serviceUrl)
         {

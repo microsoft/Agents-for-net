@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core;
@@ -22,12 +22,13 @@ namespace Microsoft.Agents.Storage.CosmosDb
     /// <summary>
     /// Implements an CosmosDB based storage provider using partitioning for an Agent.
     /// </summary>
-    public class CosmosDbPartitionedStorage : IStorage, IDisposable
+    public class CosmosDbPartitionedStorage : IStorageV2, IDisposable
     {
         private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
         private readonly JsonSerializerOptions _serializerOptions;
 
         private Container _container;
+        private readonly SemaphoreSlim _initializationLock = new(1, 1);
         private readonly CosmosDbPartitionedStorageOptions _cosmosDbStorageOptions;
         private CosmosClient _client;
         private bool _compatibilityModePartitionKey;
@@ -75,7 +76,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
             }
 
             // Ensure Initialization has been run
-            await InitializeAsync().ConfigureAwait(false);
+            await InitializeAsync(cancellationToken).ConfigureAwait(false);
 
             var storeItems = new Dictionary<string, object>(keys.Length);
 
@@ -127,12 +128,10 @@ namespace Microsoft.Agents.Storage.CosmosDb
                 }
                 catch (CosmosException exception)
                 {
-                    // When an item is not found a CosmosException is thrown, but we want to
-                    // return an empty collection so in this instance we catch and do not rethrow.
-                    // Throw for any other exception.
                     if (exception.StatusCode == HttpStatusCode.NotFound)
                     {
-                        break;
+                        await EnsureContainerAvailableAsync(cancellationToken).ConfigureAwait(false);
+                        continue;
                     }
 
                     throw;
@@ -157,6 +156,51 @@ namespace Microsoft.Agents.Storage.CosmosDb
             return values;
         }
 
+        //<inheritdoc/>
+        public async Task<IReadOnlyDictionary<string, StorageReadResult>> ReadAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            if (keys.Count == 0)
+            {
+                return new Dictionary<string, StorageReadResult>();
+            }
+
+            await InitializeAsync(cancellationToken).ConfigureAwait(false);
+
+            using var telemetryScope = new ScopeRead(keys.Count);
+
+            Dictionary<string, StorageReadResult> results = new(keys.Count);
+            foreach (var key in keys)
+            {
+                AssertionHelpers.ThrowIfNullOrWhiteSpace(key, nameof(key));
+
+                try
+                {
+                    var documentStoreItem = await ReadDocumentStoreItemAsync(key, cancellationToken).ConfigureAwait(false);
+                    results[key] = new StorageReadResult()
+                    {
+                        Key = documentStoreItem.RealId,
+                        Status = StorageOperationStatus.Succeeded,
+                        Value = DeserializeDocument(documentStoreItem.Document, documentStoreItem.ETag),
+                        Version = documentStoreItem.ETag,
+                    };
+                }
+                catch (CosmosException exception)
+                    when (exception.StatusCode == HttpStatusCode.NotFound)
+                {
+                    await EnsureContainerAvailableAsync(cancellationToken).ConfigureAwait(false);
+                    results[key] = new StorageReadResult()
+                    {
+                        Key = key,
+                        Status = StorageOperationStatus.NotFound,
+                    };
+                }
+            }
+
+            return results;
+        }
+
         /// <inheritdoc/>
         public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
@@ -171,7 +215,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
             using var telemetryScope = new ScopeWrite(changes.Count);
 
             // Ensure Initialization has been run
-            await InitializeAsync().ConfigureAwait(false);
+            await InitializeAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (var change in changes)
             {
@@ -232,7 +276,79 @@ namespace Microsoft.Agents.Storage.CosmosDb
             {
                 changesAsObject.Add(change.Key, change.Value);
             }
-            return WriteAsync(changesAsObject, cancellationToken);
+            return WriteAsync((IDictionary<string, object>)changesAsObject, cancellationToken);
+        }
+
+        //<inheritdoc/>
+        private async Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteCoreAsync(Dictionary<string, object> changes, StorageWriteOptions options, CancellationToken cancellationToken)
+        {
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            if (changes.Count == 0)
+            {
+                return new Dictionary<string, StorageWriteResult>();
+            }
+
+            options ??= new StorageWriteOptions();
+            ValidateExpectedVersion(options.ExpectedVersion, nameof(options));
+
+            using var telemetryScope = new ScopeWrite(changes.Count);
+
+            await InitializeAsync(cancellationToken).ConfigureAwait(false);
+
+            Dictionary<string, StorageWriteResult> results = new(changes.Count);
+            foreach (var change in changes)
+            {
+                var documentChange = CreateDocumentStoreItem(change.Key, change.Value);
+                try
+                {
+                    var response = await WriteItemAsync(documentChange, options.Mode, options.ExpectedVersion, cancellationToken).ConfigureAwait(false);
+                    results[change.Key] = new StorageWriteResult()
+                    {
+                        Key = change.Key,
+                        Status = StorageOperationStatus.Succeeded,
+                        Version = response.Resource?.ETag,
+                    };
+                }
+                catch (CosmosException exception)
+                    when (exception.StatusCode == HttpStatusCode.Conflict)
+                {
+                    results[change.Key] = new StorageWriteResult()
+                    {
+                        Key = change.Key,
+                        Status = StorageOperationStatus.Conflict,
+                    };
+                }
+                catch (CosmosException exception)
+                    when (exception.StatusCode == HttpStatusCode.PreconditionFailed)
+                {
+                    results[change.Key] = new StorageWriteResult()
+                    {
+                        Key = change.Key,
+                        Status = StorageOperationStatus.ConditionNotMet,
+                        Version = null,
+                    };
+                }
+                catch (CosmosException exception)
+                    when (exception.StatusCode == HttpStatusCode.NotFound)
+                {
+                    await EnsureContainerAvailableAsync(cancellationToken).ConfigureAwait(false);
+                    results[change.Key] = new StorageWriteResult()
+                    {
+                        Key = change.Key,
+                        Status = StorageOperationStatus.NotFound,
+                    };
+                }
+            }
+
+            return results;
+        }
+
+        //<inheritdoc/>
+        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
+        {
+            var changesAsObject = StorageCompatibility.ValidateAndCopyWriteChanges(changes);
+            return WriteCoreAsync(changesAsObject, options, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -248,7 +364,7 @@ namespace Microsoft.Agents.Storage.CosmosDb
 
             using var telemetryScope = new ScopeDelete(keys.Length);
 
-            await InitializeAsync().ConfigureAwait(false);
+            await InitializeAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (var key in keys)
             {
@@ -264,17 +380,96 @@ namespace Microsoft.Agents.Storage.CosmosDb
                 }
                 catch (CosmosException exception)
                 {
-                    // If we get a 404 status then the item we tried to delete was not found
-                    // To maintain consistency with other storage providers, we ignore this and return.
-                    // Any other exceptions are thrown.
                     if (exception.StatusCode == HttpStatusCode.NotFound)
                     {
-                        return;
+                        await EnsureContainerAvailableAsync(cancellationToken).ConfigureAwait(false);
+                        continue;
                     }
 
                     throw;
                 }
             }
+        }
+
+        //<inheritdoc/>
+        public Task<IReadOnlyDictionary<string, StorageDeleteResult>> DeleteAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken = default)
+        {
+            return DeleteAsync(keys, options: null, cancellationToken);
+        }
+
+        //<inheritdoc/>
+        public async Task<IReadOnlyDictionary<string, StorageDeleteResult>> DeleteAsync(IReadOnlyList<string> keys, StorageDeleteOptions options, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            if (keys.Count == 0)
+            {
+                return new Dictionary<string, StorageDeleteResult>();
+            }
+
+            options ??= new StorageDeleteOptions();
+            ValidateExpectedVersion(options.ExpectedVersion, nameof(options));
+
+            using var telemetryScope = new ScopeDelete(keys.Count);
+
+            await InitializeAsync(cancellationToken).ConfigureAwait(false);
+
+            Dictionary<string, StorageDeleteResult> results = new(keys.Count);
+            foreach (var key in keys)
+            {
+                AssertionHelpers.ThrowIfNullOrWhiteSpace(key, nameof(key));
+
+                try
+                {
+                    var existingItem = await ReadDocumentStoreItemAsync(key, cancellationToken).ConfigureAwait(false);
+
+                    if (!VersionMatches(options.ExpectedVersion, existingItem.ETag))
+                    {
+                        results[key] = new StorageDeleteResult()
+                        {
+                            Key = key,
+                            Status = StorageOperationStatus.ConditionNotMet,
+                            Version = existingItem.ETag,
+                        };
+                        continue;
+                    }
+
+                    await _container.DeleteItemAsync<DocumentStoreItem>(
+                            id: existingItem.Id,
+                            partitionKey: GetPartitionKey(existingItem.PartitionKey),
+                            requestOptions: new ItemRequestOptions() { IfMatchEtag = existingItem.ETag },
+                            cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
+
+                    results[key] = new StorageDeleteResult()
+                    {
+                        Key = key,
+                        Status = StorageOperationStatus.Succeeded,
+                        Version = existingItem.ETag,
+                    };
+                }
+                catch (CosmosException exception)
+                    when (exception.StatusCode == HttpStatusCode.NotFound)
+                {
+                    await EnsureContainerAvailableAsync(cancellationToken).ConfigureAwait(false);
+                    results[key] = new StorageDeleteResult()
+                    {
+                        Key = key,
+                        Status = StorageOperationStatus.NotFound,
+                    };
+                }
+                catch (CosmosException exception)
+                    when (exception.StatusCode == HttpStatusCode.PreconditionFailed)
+                {
+                    results[key] = new StorageDeleteResult()
+                    {
+                        Key = key,
+                        Status = StorageOperationStatus.ConditionNotMet,
+                    };
+                }
+            }
+
+            return results;
         }
 
         /// <summary>
@@ -310,6 +505,100 @@ namespace Microsoft.Agents.Storage.CosmosDb
             _disposed = true;
         }
 
+        private DocumentStoreItem CreateDocumentStoreItem(string key, object value)
+        {
+            var document = value == null ? new JsonObject() : JsonObject.Create(JsonSerializer.SerializeToElement(value, _serializerOptions));
+            document.Remove("eTag");
+            if (value != null)
+            {
+                document.AddTypeInfo(value);
+            }
+
+            return new DocumentStoreItem
+            {
+                Id = CosmosDbKeyEscape.EscapeKey(key, _cosmosDbStorageOptions.KeySuffix, _cosmosDbStorageOptions.CompatibilityMode),
+                RealId = key,
+                Document = document,
+            };
+        }
+
+        private object DeserializeDocument(JsonObject document, string etag)
+        {
+            object item;
+            if (document.GetTypeInfo(out var type))
+            {
+                var typeProps = document.RemoveTypeInfoProperties();
+                item = document.Deserialize(type, _serializerOptions);
+                document.SetTypeInfoProperties(typeProps);
+            }
+            else
+            {
+                item = document.Deserialize<object>(_serializerOptions);
+            }
+
+            if (item == null)
+            {
+                throw new InvalidDataException("Unexpected response content.  Unable to deserialize.");
+            }
+
+            if (item is IStoreItem storeItem)
+            {
+                storeItem.ETag = etag;
+            }
+
+            return item;
+        }
+
+        private async Task<DocumentStoreItem> ReadDocumentStoreItemAsync(string key, CancellationToken cancellationToken)
+        {
+            var escapedKey = CosmosDbKeyEscape.EscapeKey(key, _cosmosDbStorageOptions.KeySuffix, _cosmosDbStorageOptions.CompatibilityMode);
+            var response = await _container.ReadItemAsync<DocumentStoreItem>(
+                    escapedKey,
+                    GetPartitionKey(escapedKey),
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return response.Resource;
+        }
+
+        private static bool VersionMatches(string expectedVersion, string currentVersion)
+        {
+            return expectedVersion == null || expectedVersion == currentVersion;
+        }
+
+        private static void ValidateExpectedVersion(string expectedVersion, string parameterName)
+        {
+            if (expectedVersion != null && expectedVersion.Length == 0)
+            {
+                throw new ArgumentException("ExpectedVersion cannot be empty.", parameterName);
+            }
+        }
+
+        private Task<ItemResponse<DocumentStoreItem>> WriteItemAsync(DocumentStoreItem documentChange, StorageWriteMode mode, string expectedVersion, CancellationToken cancellationToken)
+        {
+            var partitionKey = GetPartitionKey(documentChange.PartitionKey);
+            if (mode == StorageWriteMode.CreateOnly)
+            {
+                return _container.CreateItemAsync(documentChange, partitionKey, cancellationToken: cancellationToken);
+            }
+
+            if (mode == StorageWriteMode.Replace)
+            {
+                return _container.ReplaceItemAsync(
+                    documentChange,
+                    documentChange.Id,
+                    partitionKey,
+                    expectedVersion != null ? new ItemRequestOptions() { IfMatchEtag = expectedVersion } : null,
+                    cancellationToken);
+            }
+
+            return _container.UpsertItemAsync(
+                documentChange,
+                partitionKey,
+                expectedVersion != null ? new ItemRequestOptions() { IfMatchEtag = expectedVersion } : null,
+                cancellationToken);
+        }
+
         private PartitionKey GetPartitionKey(string key)
         {
             if (_compatibilityModePartitionKey)
@@ -323,70 +612,68 @@ namespace Microsoft.Agents.Storage.CosmosDb
         /// <summary>
         /// Connects to the CosmosDB database and creates / gets the container.
         /// </summary>
-        private async Task InitializeAsync()
+        private async Task InitializeAsync(CancellationToken cancellationToken)
         {
-            if (_container == null)
+            await _initializationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
+                if (_container != null)
+                {
+                    return;
+                }
+
                 var cosmosClientOptions = _cosmosDbStorageOptions.CosmosClientOptions ?? new CosmosClientOptions();
                 cosmosClientOptions.Serializer = new CosmosJsonSerializer(_serializerOptions);
-
                 if (_client == null)
                 {
-                    var assemblyName = this.GetType().Assembly.GetName();
+                    var assemblyName = GetType().Assembly.GetName();
                     cosmosClientOptions.ApplicationName = string.Concat(assemblyName.Name, " ", assemblyName.Version.ToString());
-
-                    if (_cosmosDbStorageOptions.TokenCredential != null)
-                    {
-                        _client = new CosmosClient(
-                            _cosmosDbStorageOptions.CosmosDbEndpoint,
-                            _cosmosDbStorageOptions.TokenCredential,
-                            cosmosClientOptions
-                        );
-                    }
-                    else
-                    {
-                        _client = new CosmosClient(
-                            _cosmosDbStorageOptions.CosmosDbEndpoint,
-                            _cosmosDbStorageOptions.AuthKey,
-                            cosmosClientOptions
-                        );
-                    }
+                    _client = _cosmosDbStorageOptions.TokenCredential != null
+                        ? new CosmosClient(_cosmosDbStorageOptions.CosmosDbEndpoint,
+                            _cosmosDbStorageOptions.TokenCredential, cosmosClientOptions)
+                        : new CosmosClient(_cosmosDbStorageOptions.CosmosDbEndpoint,
+                            _cosmosDbStorageOptions.AuthKey, cosmosClientOptions);
                 }
 
-                if (_container == null)
+                if (!_cosmosDbStorageOptions.CompatibilityMode)
                 {
-                    if (!_cosmosDbStorageOptions.CompatibilityMode)
-                    {
-                        await CreateContainerIfNotExistsAsync().ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        try
-                        {
-                            _container = _client.GetContainer(_cosmosDbStorageOptions.DatabaseId, _cosmosDbStorageOptions.ContainerId);
-
-                            // This will throw if the container does not exist. 
-                            var readContainer = await _container.ReadContainerAsync().ConfigureAwait(false);
-
-                            // Containers created with CosmosDbStorage had no partition key set, so the default was '/_partitionKey'.
-                            var partitionKeyPath = readContainer.Resource.PartitionKeyPath;
-                            if (partitionKeyPath == "/_partitionKey")
-                            {
-                                _compatibilityModePartitionKey = true;
-                            }
-                            else if (partitionKeyPath != DocumentStoreItem.PartitionKeyPath)
-                            {
-                                // We are not supporting custom Partition Key Paths
-                                throw new InvalidOperationException($"Custom Partition Key Paths are not supported. {_cosmosDbStorageOptions.ContainerId} has a custom Partition Key Path of {partitionKeyPath}.");
-                            }
-                        }
-                        catch (CosmosException)
-                        {
-                            await CreateContainerIfNotExistsAsync().ConfigureAwait(false);
-                        }
-                    }
+                    await CreateContainerIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
+                    return;
                 }
+
+                // Publish the container only after its existence and partition key are verified.
+                var container = _client.GetContainer(_cosmosDbStorageOptions.DatabaseId, _cosmosDbStorageOptions.ContainerId);
+                ContainerResponse readContainer;
+                try
+                {
+                    readContainer = await container.ReadContainerAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                catch (CosmosException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+                {
+                    await CreateContainerIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+
+                string partitionKeyPath = readContainer.Resource.PartitionKeyPath;
+                if (partitionKeyPath != "/_partitionKey" && partitionKeyPath != DocumentStoreItem.PartitionKeyPath)
+                {
+                    throw new InvalidOperationException($"Custom Partition Key Paths are not supported. {_cosmosDbStorageOptions.ContainerId} has a custom Partition Key Path of {partitionKeyPath}.");
+                }
+
+                _compatibilityModePartitionKey = partitionKeyPath == "/_partitionKey";
+                _container = container;
             }
+            finally
+            {
+                _initializationLock.Release();
+            }
+        }
+
+        private async Task EnsureContainerAvailableAsync(CancellationToken cancellationToken)
+        {
+            // Cosmos uses 404 for both missing items and missing parent containers/databases.
+            // Only report an item-level NotFound if the parent container is still available.
+            await _container.ReadContainerAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         private static void ValidateOptions(CosmosDbPartitionedStorageOptions cosmosDbStorageOptions, bool validateClientRelated = true)
@@ -430,13 +717,13 @@ namespace Microsoft.Agents.Storage.CosmosDb
             }
         }
 
-        private async Task CreateContainerIfNotExistsAsync()
+        private async Task CreateContainerIfNotExistsAsync(CancellationToken cancellationToken)
         {
             var containerResponse = await _client
                 .GetDatabase(_cosmosDbStorageOptions.DatabaseId)
                 .DefineContainer(_cosmosDbStorageOptions.ContainerId, DocumentStoreItem.PartitionKeyPath)
                 .WithIndexingPolicy().WithAutomaticIndexing(false).WithIndexingMode(IndexingMode.None).Attach()
-                .CreateIfNotExistsAsync(_cosmosDbStorageOptions.ContainerThroughput)
+                .CreateIfNotExistsAsync(_cosmosDbStorageOptions.ContainerThroughput, cancellationToken)
                 .ConfigureAwait(false);
 
             _container = containerResponse.Container;

@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Builder
     /// </remarks>
     /// <exception cref="System.ArgumentNullException"></exception>
     /// <exception cref="System.ArgumentException"></exception>
-    /// <exception cref="System.InvalidOperationException">Thrown when an instance of <see cref="IAccessTokenProvider"/> is not found via <see cref="IConnections"/>.</exception>
+    /// <exception cref="System.InvalidOperationException">Thrown when an instance of <see cref="Microsoft.Agents.Authentication.IAccessTokenProvider"/> is not found via <see cref="Microsoft.Agents.Authentication.IConnections"/>.</exception>
     public class RestChannelServiceClientFactory : IChannelServiceClientFactory
     {
         private readonly string _tokenServiceEndpoint;
@@ -192,6 +192,7 @@ namespace Microsoft.Agents.Builder
                                 return agenticTokenProvider.GetAgenticInstanceTokenAsync(
                                     turnContext.Activity.GetAgenticTenantId(),
                                     turnContext.Activity.GetAgenticInstanceId(),
+                                    null,
                                     cancellationToken);
                             }
 

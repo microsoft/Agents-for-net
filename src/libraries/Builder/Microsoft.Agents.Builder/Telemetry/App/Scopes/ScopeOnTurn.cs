@@ -8,13 +8,13 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the full execution of a single agent turn.
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the full execution of a single agent turn.
     /// </summary>
     /// <remarks>
     /// Tags the <see cref="System.Diagnostics.Activity"/> with activity metadata (type, name, channel,
     /// conversation, activity ID) and authorization outcome. On successful completion, increments
-    /// <see cref="Metrics.TurnCount"/> and records <see cref="Metrics.TurnDuration"/>; on error,
-    /// increments <see cref="Metrics.TurnErrorCount"/> instead. Call <see cref="Share"/> to supply
+    /// <see cref="Microsoft.Agents.Builder.Telemetry.App.Metrics.TurnCount"/> and records <see cref="Microsoft.Agents.Builder.Telemetry.App.Metrics.TurnDuration"/>; on error,
+    /// increments <see cref="Microsoft.Agents.Builder.Telemetry.App.Metrics.TurnErrorCount"/> instead. Call <see cref="Microsoft.Agents.Builder.Telemetry.App.Scopes.ScopeOnTurn.Share(System.Boolean, System.Boolean)"/> to supply
     /// the route-authorization and route-match results after they are known.
     /// </remarks>
     internal class ScopeOnTurn : TelemetryScope

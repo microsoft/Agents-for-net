@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Builder
 
 
         /// <summary>
-        /// Creates an instance of an <see cref="ArrayBufferWriter{T}"/>, in which data can be written to,
+        /// Creates an instance of an <see cref="System.Buffers.ArrayBufferWriter{T}"/>, in which data can be written to,
         /// with the default initial capacity.
         /// </summary>
         public LocalArrayBufferWriter()
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Creates an instance of an <see cref="ArrayBufferWriter{T}"/>, in which data can be written to,
+        /// Creates an instance of an <see cref="System.Buffers.ArrayBufferWriter{T}"/>, in which data can be written to,
         /// with an initial capacity specified.
         /// </summary>
         /// <param name="initialCapacity">The minimum capacity with which to initialize the underlying buffer.</param>
@@ -50,12 +50,12 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Returns the data written to the underlying buffer so far, as a <see cref="ReadOnlyMemory{T}"/>.
+        /// Returns the data written to the underlying buffer so far, as a <see cref="System.ReadOnlyMemory{T}"/>.
         /// </summary>
         public ReadOnlyMemory<T> WrittenMemory => _buffer.AsMemory(0, _index);
 
         /// <summary>
-        /// Returns the data written to the underlying buffer so far, as a <see cref="ReadOnlySpan{T}"/>.
+        /// Returns the data written to the underlying buffer so far, as a <see cref="System.ReadOnlySpan{T}"/>.
         /// </summary>
         public ReadOnlySpan<T> WrittenSpan => _buffer.AsSpan(0, _index);
 
@@ -79,14 +79,14 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <remarks>
         /// <para>
-        /// You must reset or clear the <see cref="ArrayBufferWriter{T}"/> before trying to re-use it.
+        /// You must reset or clear the <see cref="System.Buffers.ArrayBufferWriter{T}"/> before trying to re-use it.
         /// </para>
         /// <para>
-        /// The <see cref="ResetWrittenCount"/> method is faster since it only sets to zero the writer's index
-        /// while the <see cref="Clear"/> method additionally zeroes the content of the underlying buffer.
+        /// The <see cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.ResetWrittenCount()"/> method is faster since it only sets to zero the writer's index
+        /// while the <see cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.Clear()"/> method additionally zeroes the content of the underlying buffer.
         /// </para>
         /// </remarks>
-        /// <seealso cref="ResetWrittenCount"/>
+        /// <seealso cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.ResetWrittenCount()"/>
         public void Clear()
         {
             Debug.Assert(_buffer.Length >= _index);
@@ -99,17 +99,17 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <remarks>
         /// <para>
-        /// You must reset or clear the <see cref="ArrayBufferWriter{T}"/> before trying to re-use it.
+        /// You must reset or clear the <see cref="System.Buffers.ArrayBufferWriter{T}"/> before trying to re-use it.
         /// </para>
         /// <para>
-        /// If you reset the writer using the <see cref="ResetWrittenCount"/> method, the underlying buffer will not be cleared.
+        /// If you reset the writer using the <see cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.ResetWrittenCount()"/> method, the underlying buffer will not be cleared.
         /// </para>
         /// </remarks>
-        /// <seealso cref="Clear"/>
+        /// <seealso cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.Clear()"/>
         public void ResetWrittenCount() => _index = 0;
 
         /// <summary>
-        /// Notifies <see cref="IBufferWriter{T}"/> that <paramref name="count"/> amount of data was written to the output <see cref="Span{T}"/>/<see cref="Memory{T}"/>
+        /// Notifies <see cref="System.Buffers.IBufferWriter{T}"/> that <paramref name="count"/> amount of data was written to the output <see cref="System.Span{T}"/>/<see cref="System.Memory{T}"/>
         /// </summary>
         /// <exception cref="System.ArgumentException">
         /// Thrown when <paramref name="count"/> is negative.
@@ -132,7 +132,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Returns a <see cref="Memory{T}"/> to write to that is at least the requested length (specified by <paramref name="sizeHint"/>).
+        /// Returns a <see cref="System.Memory{T}"/> to write to that is at least the requested length (specified by <paramref name="sizeHint"/>).
         /// If no <paramref name="sizeHint"/> is provided (or it's equal to <code>0</code>), some non-empty buffer is returned.
         /// </summary>
         /// <exception cref="System.ArgumentException">
@@ -140,7 +140,7 @@ namespace Microsoft.Agents.Builder
         /// </exception>
         /// <remarks>
         /// <para>
-        /// This will never return an empty <see cref="Memory{T}"/>.
+        /// This will never return an empty <see cref="System.Memory{T}"/>.
         /// </para>
         /// <para>
         /// There is no guarantee that successive calls will return the same buffer or the same-sized buffer.
@@ -149,10 +149,10 @@ namespace Microsoft.Agents.Builder
         /// You must request a new buffer after calling Advance to continue writing more data and cannot write to a previously acquired buffer.
         /// </para>
         /// <para>
-        /// If you reset the writer using the <see cref="ResetWrittenCount"/> method, this method may return a non-cleared <see cref="Memory{T}"/>.
+        /// If you reset the writer using the <see cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.ResetWrittenCount()"/> method, this method may return a non-cleared <see cref="System.Memory{T}"/>.
         /// </para>
         /// <para>
-        /// If you clear the writer using the <see cref="Clear"/> method, this method will return a <see cref="Memory{T}"/> with its content zeroed.
+        /// If you clear the writer using the <see cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.Clear()"/> method, this method will return a <see cref="System.Memory{T}"/> with its content zeroed.
         /// </para>
         /// </remarks>
         public Memory<T> GetMemory(int sizeHint = 0)
@@ -163,7 +163,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Returns a <see cref="Span{T}"/> to write to that is at least the requested length (specified by <paramref name="sizeHint"/>).
+        /// Returns a <see cref="System.Span{T}"/> to write to that is at least the requested length (specified by <paramref name="sizeHint"/>).
         /// If no <paramref name="sizeHint"/> is provided (or it's equal to <code>0</code>), some non-empty buffer is returned.
         /// </summary>
         /// <exception cref="System.ArgumentException">
@@ -171,7 +171,7 @@ namespace Microsoft.Agents.Builder
         /// </exception>
         /// <remarks>
         /// <para>
-        /// This will never return an empty <see cref="Span{T}"/>.
+        /// This will never return an empty <see cref="System.Span{T}"/>.
         /// </para>
         /// <para>
         /// There is no guarantee that successive calls will return the same buffer or the same-sized buffer.
@@ -180,10 +180,10 @@ namespace Microsoft.Agents.Builder
         /// You must request a new buffer after calling Advance to continue writing more data and cannot write to a previously acquired buffer.
         /// </para>
         /// <para>
-        /// If you reset the writer using the <see cref="ResetWrittenCount"/> method, this method may return a non-cleared <see cref="Span{T}"/>.
+        /// If you reset the writer using the <see cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.ResetWrittenCount()"/> method, this method may return a non-cleared <see cref="System.Span{T}"/>.
         /// </para>
         /// <para>
-        /// If you clear the writer using the <see cref="Clear"/> method, this method will return a <see cref="Span{T}"/> with its content zeroed.
+        /// If you clear the writer using the <see cref="Microsoft.Agents.Builder.LocalArrayBufferWriter{T}.Clear()"/> method, this method will return a <see cref="System.Span{T}"/> with its content zeroed.
         /// </para>
         /// </remarks>
         public Span<T> GetSpan(int sizeHint = 0)

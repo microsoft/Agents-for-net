@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Debugging
     public class SourceContext
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SourceContext"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Debugging.SourceContext"/> class.
         /// </summary>
         public SourceContext()
         {

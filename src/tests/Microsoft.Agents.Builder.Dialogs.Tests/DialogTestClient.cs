@@ -22,18 +22,18 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         private readonly TestAdapter _testAdapter;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogTestClient"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient"/> class.
         /// </summary>
         /// <param name="channelId">
-        /// The channelId (see <see cref="Channels"/>) to be used for the test.
-        /// Use <see cref="Channels.Test"/> if you are uncertain of the channel you are targeting.
+        /// The channelId (see <see cref="Microsoft.Agents.Core.Models.Channels"/>) to be used for the test.
+        /// Use <see cref="Microsoft.Agents.Core.Models.Channels.Test"/> if you are uncertain of the channel you are targeting.
         /// Otherwise, it is recommended that you use the id for the channel(s) your bot will be using.
         /// Consider writing a test case for each channel.
         /// </param>
         /// <param name="targetDialog">The dialog to be tested. This will be the root dialog for the test client.</param>
         /// <param name="initialDialogOptions">(Optional) additional argument(s) to pass to the dialog being started.</param>
         /// <param name="middlewares">(Optional) A list of middlewares to be added to the test adapter.</param>
-        /// <param name="conversationState">(Optional) A <see cref="ConversationState"/> to use in the test client.</param>
+        /// <param name="conversationState">(Optional) A <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient.ConversationState"/> to use in the test client.</param>
         /// <param name="contextClaims">(Optional) Claims to use for TurnContext.Identity</param>
         public DialogTestClient(string channelId, Dialog targetDialog, object initialDialogOptions = null, IEnumerable<IMiddleware> middlewares = null, ConversationState conversationState = null, ClaimsIdentity contextClaims = null)
         {
@@ -50,13 +50,13 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogTestClient"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient"/> class.
         /// </summary>
-        /// <param name="testAdapter">The <see cref="TestAdapter"/> to use.</param>
+        /// <param name="testAdapter">The <see cref="Microsoft.Agents.Builder.Testing.TestAdapter"/> to use.</param>
         /// <param name="targetDialog">The dialog to be tested. This will be the root dialog for the test client.</param>
         /// <param name="initialDialogOptions">(Optional) additional argument(s) to pass to the dialog being started.</param>
         /// <param name="middlewares">(Optional) A list of middlewares to be added to the test adapter.</param>
-        /// <param name="conversationState">(Optional) A <see cref="ConversationState"/> to use in the test client.</param>
+        /// <param name="conversationState">(Optional) A <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient.ConversationState"/> to use in the test client.</param>
         public DialogTestClient(TestAdapter testAdapter, Dialog targetDialog, object initialDialogOptions = null, IEnumerable<IMiddleware> middlewares = null, ConversationState conversationState = null, ClaimsIdentity contextClaims = null)
         {
             ConversationState = conversationState ?? new ConversationState(new MemoryStorage());
@@ -69,35 +69,35 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         }
 
         /// <summary>
-        /// Gets a reference for the <see cref="DialogContext"/>.
+        /// Gets a reference for the <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient.DialogContext"/>.
         /// </summary>
         /// <value>
-        /// A reference for the <see cref="DialogContext"/>.
+        /// A reference for the <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient.DialogContext"/>.
         /// </value>
         /// <remarks>
-        /// This property will be null until at least one activity is sent to <see cref="DialogTestClient"/>.
+        /// This property will be null until at least one activity is sent to <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient"/>.
         /// </remarks>
         public DialogContext DialogContext { get; private set; }
 
         /// <summary>
-        /// Gets the latest <see cref="DialogTurnResult"/> for the dialog being tested.
+        /// Gets the latest <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient.DialogTurnResult"/> for the dialog being tested.
         /// </summary>
-        /// <value>A <see cref="DialogTurnResult"/> instance with the result of the last turn.</value>
+        /// <value>A <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient.DialogTurnResult"/> instance with the result of the last turn.</value>
         public DialogTurnResult DialogTurnResult { get; private set; }
 
         /// <summary>
-        /// Gets the latest <see cref="ConversationState"/> for <see cref="DialogTestClient"/>.
+        /// Gets the latest <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient.ConversationState"/> for <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient"/>.
         /// </summary>
-        /// <value>A <see cref="ConversationState"/> instance for the current test client.</value>
+        /// <value>A <see cref="Microsoft.Agents.Builder.Dialogs.Tests.DialogTestClient.ConversationState"/> instance for the current test client.</value>
         public ConversationState ConversationState { get; }
 
         /// <summary>
-        /// Sends an <see cref="Activity"/> to the target dialog.
+        /// Sends an <see cref="Microsoft.Agents.Core.Models.Activity"/> to the target dialog.
         /// </summary>
         /// <param name="activity">The activity to send.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        /// <typeparam name="T">An <see cref="Activity"/> derived type.</typeparam>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the result of the asynchronous operation.</returns>
+        /// <typeparam name="T">An <see cref="Microsoft.Agents.Core.Models.Activity"/> derived type.</typeparam>
         public virtual async Task<T> SendActivityAsync<T>(Activity activity, CancellationToken cancellationToken = default)
             where T : Activity
         {
@@ -110,8 +110,8 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         /// </summary>
         /// <param name="text">The text of the message to send.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-        /// <typeparam name="T">An <see cref="Activity"/> derived type.</typeparam>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the result of the asynchronous operation.</returns>
+        /// <typeparam name="T">An <see cref="Microsoft.Agents.Core.Models.Activity"/> derived type.</typeparam>
         public virtual async Task<T> SendActivityAsync<T>(string text, CancellationToken cancellationToken = default)
             where T : Activity
         {
@@ -123,7 +123,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
         /// Gets the next bot response.
         /// </summary>
         /// <returns>The next activity in the queue; or null, if the queue is empty.</returns>
-        /// <typeparam name="T">An <see cref="Activity"/> derived type.</typeparam>
+        /// <typeparam name="T">An <see cref="Microsoft.Agents.Core.Models.Activity"/> derived type.</typeparam>
         public virtual T GetNextReply<T>()
             where T : Activity
         {

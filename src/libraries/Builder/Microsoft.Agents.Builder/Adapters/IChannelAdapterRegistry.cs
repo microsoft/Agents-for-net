@@ -7,20 +7,20 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Builder.Adapters
 {
     /// <summary>
-    /// Registry of <see cref="IChannelAdapter"/> instances keyed by <c>channelId</c>.
+    /// Registry of <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> instances keyed by <c>channelId</c>.
     /// Lets SDK features and developers resolve the correct adapter for a given channel — for example to
     /// send proactive messages or continue a conversation — without needing to know adapter types.
     /// </summary>
     /// <remarks>
     /// <para>
     /// The interface lives in the Builder layer so it can be surfaced through
-    /// <see cref="AgentApplicationOptions.ChannelAdapterRegistry"/>. The default implementation also lives
+    /// <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.ChannelAdapterRegistry"/>. The default implementation also lives
     /// in the Builder layer and is populated from adapters annotated with the
     /// <c>[ChannelAdapter("channelId")]</c> attribute and adapters registered explicitly through DI.
     /// </para>
     /// <para>
     /// Shared-endpoint (Tier 2) HTTP dispatch also consults the registry, casting resolved adapters to the
-    /// host's HTTP adapter contract. It is only consulted when <see cref="HasChannelSpecificAdapters"/> is
+    /// host's HTTP adapter contract. It is only consulted when <see cref="Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry.HasChannelSpecificAdapters"/> is
     /// <see langword="true"/> — preserving current performance for the common single-adapter case.
     /// </para>
     /// </remarks>

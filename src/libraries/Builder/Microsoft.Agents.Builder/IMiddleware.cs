@@ -8,8 +8,8 @@ namespace Microsoft.Agents.Builder
 {
     /// <summary>
     /// Encapsulates an asynchronous method that calls the next
-    /// <see cref="IMiddleware"/>.<see cref="IMiddleware.OnTurnAsync"/>
-    /// or <see cref="IAgent"/>.<see cref="IAgent.OnTurnAsync"/> method in the middleware pipeline.
+    /// <see cref="Microsoft.Agents.Builder.IMiddleware"/>.<see cref="Microsoft.Agents.Builder.IMiddleware.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.NextDelegate, System.Threading.CancellationToken)"/>
+    /// or <see cref="Microsoft.Agents.Builder.IAgent"/>.<see cref="Microsoft.Agents.Builder.IAgent.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/> method in the middleware pipeline.
     /// </summary>
     /// <param name="cancellationToken">A cancellation token that can be used by other objects
     /// or threads to receive notice of cancellation.</param>
@@ -19,8 +19,8 @@ namespace Microsoft.Agents.Builder
     /// <summary>
     /// Represents middleware that can operate on incoming activities.
     /// </summary>
-    /// <remarks>A <see cref="IChannelAdapter"/> passes incoming activities from the user's
-    /// channel to the middleware's <see cref="OnTurnAsync(ITurnContext, NextDelegate, CancellationToken)"/>
+    /// <remarks>A <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> passes incoming activities from the user's
+    /// channel to the middleware's <see cref="Microsoft.Agents.Builder.IMiddleware.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.NextDelegate, System.Threading.CancellationToken)"/>
     /// method.
     /// <para>You can add middleware objects to your adapter’s middleware collection. The
     /// adapter processes and directs incoming activities in through the Agent middleware

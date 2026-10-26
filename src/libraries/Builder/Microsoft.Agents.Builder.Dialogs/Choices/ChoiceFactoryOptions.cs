@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
     public class ChoiceFactoryOptions
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChoiceFactoryOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Choices.ChoiceFactoryOptions"/> class.
         /// </summary>
         public ChoiceFactoryOptions()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChoiceFactoryOptions"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Choices.ChoiceFactoryOptions"/> class.
         /// Refer to the code in the ConfirmPrompt for an example of usage.
         /// </summary>
         /// <param name="inlineSeparator">The inline separator value.</param>

@@ -17,9 +17,9 @@ using Xunit;
 namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 {
     /// <summary>
-    /// End-to-end tests for Tier 2 dispatch resolution (<see cref="AgentEndpointExtensions.ResolveAdapterAsync"/>),
+    /// End-to-end tests for Tier 2 dispatch resolution (<see cref="Microsoft.Agents.Hosting.AspNetCore.AgentEndpointExtensions.ResolveAdapterAsync(Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry, Microsoft.Agents.Hosting.AspNetCore.IAgentHttpAdapter, Microsoft.AspNetCore.Http.HttpRequest, System.Threading.CancellationToken)"/>),
     /// which peeks the inbound Activity's channelId, looks it up in the registry, casts the resolved
-    /// <see cref="IChannelAdapter"/> to <see cref="IAgentHttpAdapter"/>, and falls back to the default adapter.
+    /// <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> to <see cref="Microsoft.Agents.Hosting.AspNetCore.IAgentHttpAdapter"/>, and falls back to the default adapter.
     /// </summary>
     public class Tier2ResolveAdapterTests
     {

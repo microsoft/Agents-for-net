@@ -7,7 +7,7 @@ namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
 /// An A2A-specific <see cref="IActivity"/> that exposes the A2A channel data as a strongly-typed
-/// <see cref="A2A.Message"/> instead of the loosely-typed <see cref="IActivity.ChannelData"/>.
+/// <c>Message</c> instead of the loosely-typed <see cref="IActivity.ChannelData"/>.
 /// </summary>
 public interface IA2AActivity : IActivity
 {

@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private readonly OAuthFlow _flow;
         private readonly ILogger _logger;
         private readonly OAuthSettings _settings;
-        private readonly IStorage _storage;
+        private readonly IStorageV2 _storage;
 
         /// <summary>
         /// Required constructor for UserAuthorizationDispatcher.
@@ -57,12 +57,35 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _storage = StorageCompatibility.AsV2(storage ?? throw new ArgumentNullException(nameof(storage)));
             _flow = new OAuthFlow(settings);
             _logger = logger ?? NullLogger<ILogger>.Instance;
         }
 
         public string Name { get; private set; }
+
+        /// <summary>
+        /// Validates the Azure Bot OAuth settings without accessing external services.
+        /// </summary>
+        internal void ValidateConfiguration()
+        {
+            ValidateConfiguration(Name, _settings.AzureBotOAuthConnectionName);
+        }
+
+        /// <summary>
+        /// Validates an Azure Bot OAuth connection name from a configured handler.
+        /// </summary>
+        /// <param name="handlerName">The authorization handler name.</param>
+        /// <param name="connectionName">The Azure Bot OAuth connection name.</param>
+        internal static void ValidateConfiguration(string handlerName, string connectionName)
+        {
+            if (string.IsNullOrWhiteSpace(connectionName))
+            {
+                throw new ArgumentException(
+                    $"User authorization handler '{handlerName}' requires a non-empty '{nameof(OAuthSettings.AzureBotOAuthConnectionName)}' setting.",
+                    nameof(connectionName));
+            }
+        }
 
         protected override OBOSettings GetOBOSettings()
         {
@@ -303,18 +326,18 @@ namespace Microsoft.Agents.Builder.UserAuth.TokenService
         private async Task<FlowState> GetFlowStateAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             var key = GetStorageKey(turnContext);
-            var items = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
-            return items.TryGetValue(key, out object value) ? (FlowState)value : new FlowState();
+            var results = await _storage.ReadAsync([key], cancellationToken).ConfigureAwait(false);
+            return results[key].Status == StorageOperationStatus.Succeeded && results[key].Value is FlowState value ? value : new FlowState();
         }
 
         private async Task SaveFlowStateAsync(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)
         {
             var key = GetStorageKey(turnContext);
-            var items = new Dictionary<string, object>()
+            var items = new Dictionary<string, FlowState>()
                 {
                     { key, state }
                 };
-            await _storage.WriteAsync(items, cancellationToken).ConfigureAwait(false);
+            await _storage.WriteAsync(items, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
         }
 
         private async Task ResetFlowStateAsync(ITurnContext turnContext, FlowState state, CancellationToken cancellationToken)

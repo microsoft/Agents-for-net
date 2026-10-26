@@ -12,7 +12,7 @@ namespace Microsoft.Agents.Core.Models
     {
         /// <summary>
         /// The URI prefix for the named pipe transport. Activities whose
-        /// <see cref="IActivity.ServiceUrl"/> starts with this value are delivered
+        /// <see cref="Microsoft.Agents.Core.Models.IActivity.ServiceUrl"/> starts with this value are delivered
         /// over a local named pipe rather than HTTP.
         /// </summary>
         public const string NamedPipeUriPrefix = "urn:botframework:namedpipe:";

@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 
 /// <summary>
 /// Attribute to define a route that handles Teams file consent accept invocations.
-/// The decorated method must match the <see cref="FileConsentHandler"/> delegate signature —
+/// The decorated method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentHandler"/> delegate signature —
 /// the third parameter must be <see cref="Microsoft.Teams.Apps.Files.FileConsentValue"/>.
 /// </summary>
 /// <remarks>
@@ -24,10 +24,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.FileConsents;
 ///     await httpClient.PutAsync(response.UploadInfo.UploadUrl, fileContent, cancellationToken);
 /// }
 /// </code>
-/// Alternatively, <see cref="FileConsent.OnAccept"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsent.OnAccept(Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(FileConsentHandler))]
@@ -48,7 +48,7 @@ public class TeamsFileConsentAcceptRouteAttribute(bool isAgenticOnly = false, us
 
 /// <summary>
 /// Attribute to define a route that handles Teams file consent decline invocations.
-/// The decorated method must match the <see cref="FileConsentHandler"/> delegate signature —
+/// The decorated method must match the <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentHandler"/> delegate signature —
 /// the third parameter must be <see cref="Microsoft.Teams.Apps.Files.FileConsentValue"/>.
 /// </summary>
 /// <remarks>
@@ -60,10 +60,10 @@ public class TeamsFileConsentAcceptRouteAttribute(bool isAgenticOnly = false, us
 ///     return turnContext.SendActivityAsync("File upload was declined.", cancellationToken: cancellationToken);
 /// }
 /// </code>
-/// Alternatively, <see cref="FileConsent.OnDecline"/> can be used to register the handler via the fluent API.
+/// Alternatively, <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsent.OnDecline(Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentHandler, System.String[], System.UInt16)"/> can be used to register the handler via the fluent API.
 /// </remarks>
 /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+/// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
 /// <param name="signInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = true)]
 [RouteHandlerType(typeof(FileConsentHandler))]

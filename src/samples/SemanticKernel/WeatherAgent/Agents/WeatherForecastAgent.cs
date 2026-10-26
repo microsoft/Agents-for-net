@@ -35,9 +35,9 @@ public class WeatherForecastAgent
         """;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WeatherForecastAgent"/> class.
+    /// Initializes a new instance of the <see cref="WeatherAgent.Agents.WeatherForecastAgent"/> class.
     /// </summary>
-    /// <param name="kernel">An instance of <see cref="Kernel"/> for interacting with an LLM.</param>
+    /// <param name="kernel">An instance of <see cref="Microsoft.SemanticKernel.Kernel"/> for interacting with an LLM.</param>
     public WeatherForecastAgent(Kernel kernel, IServiceProvider service)
     {
         this._kernel = kernel;
@@ -66,7 +66,7 @@ public class WeatherForecastAgent
     /// Invokes the agent with the given input and returns the response.
     /// </summary>
     /// <param name="input">A message to process.</param>
-    /// <returns>An instance of <see cref="WeatherForecastAgentResponse"/></returns>
+    /// <returns>An instance of <see cref="WeatherAgent.Agents.WeatherForecastAgentResponse"/></returns>
     public async Task<WeatherForecastAgentResponse> InvokeAgentAsync(string input, ChatHistory chatHistory)
     {
         ArgumentNullException.ThrowIfNull(chatHistory);

@@ -10,8 +10,8 @@ namespace Microsoft.Agents.Builder
     /// Represents an Agent that can receive incoming Activities.
     /// </summary>
     /// <remarks>
-    /// A <see cref="IChannelAdapter"/> passes incoming Activities from the channel
-    /// to the Agent's <see cref="OnTurnAsync(ITurnContext, CancellationToken)"/> method
+    /// A <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> passes incoming Activities from the channel
+    /// to the Agent's <see cref="Microsoft.Agents.Builder.IAgent.OnTurnAsync(Microsoft.Agents.Builder.ITurnContext, System.Threading.CancellationToken)"/> method
     /// after the Middleware registered with the Adapter have executed.
     /// </remarks>
     /// <seealso cref="Microsoft.Agents.Builder.AgentCallbackHandler"/>

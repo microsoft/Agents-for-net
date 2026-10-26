@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.Testing
 {
     /// <summary>
-    /// Validates agent replies using an <see cref="IChatClient"/> (AI model).
+    /// Validates agent replies using an <see cref="Microsoft.Extensions.AI.IChatClient"/> (AI model).
     /// The model is asked a yes/no question about the reply text; "yes" passes, "no" fails.
     /// </summary>
     public class SemanticValidator : IResponseValidator
@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Builder.Testing
         private readonly string _assertionPrompt;
 
         /// <summary>
-        /// Initializes a new instance of <see cref="SemanticValidator"/>.
+        /// Initializes a new instance of <see cref="Microsoft.Agents.Builder.Testing.SemanticValidator"/>.
         /// </summary>
         /// <param name="chatClient">The AI client to use for evaluation.</param>
         /// <param name="assertionPrompt">A yes/no question about the agent reply, e.g. "Does this echo the user's message?"</param>

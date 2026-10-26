@@ -23,8 +23,8 @@ namespace Microsoft.Agents.SampleTest
 {
     /// <summary>
     /// Demonstrates how to test an agent that uses Semantic Kernel and produces
-    /// variable (AI-generated) responses, using <see cref="AgentTestHost"/> and
-    /// a custom <see cref="IResponseValidator"/> backed by Azure OpenAI.
+    /// variable (AI-generated) responses, using <see cref="Microsoft.Agents.Builder.Testing.AgentTestHost"/> and
+    /// a custom <see cref="Microsoft.Agents.Builder.Testing.IResponseValidator"/> backed by Azure OpenAI.
     ///
     /// <para>
     /// This test is skipped in CI. To run it manually, set the following
@@ -39,20 +39,20 @@ namespace Microsoft.Agents.SampleTest
     public class WeatherAgentTest
     {
         /// <summary>
-        /// An <see cref="IResponseValidator"/> that handles both plain-text and Adaptive Card
+        /// An <see cref="Microsoft.Agents.Builder.Testing.IResponseValidator"/> that handles both plain-text and Adaptive Card
         /// replies from the WeatherAgent sample. It extracts a string representation of the reply content,
         /// then asks an Azure OpenAI chat model a yes/no question to semantically validate it.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This demonstrates how to implement <see cref="IResponseValidator"/> for agents whose
+        /// This demonstrates how to implement <see cref="Microsoft.Agents.Builder.Testing.IResponseValidator"/> for agents whose
         /// responses are non-deterministic. The same Azure OpenAI deployment used by the agent
         /// under test can be reused here — it acts as a judge, not a generator.
         /// </para>
         /// <para>
         /// Content extraction rules:
         /// <list type="bullet">
-        ///   <item>If <see cref="IActivity.Text"/> is non-empty, use it directly.</item>
+        ///   <item>If <see cref="Microsoft.Agents.Core.Models.IActivity.Text"/> is non-empty, use it directly.</item>
         ///   <item>If the reply has an Adaptive Card attachment, use <c>attachment.Content.ToString()</c>.
         ///         The <c>Content</c> property is already the raw JSON string produced by the LLM —
         ///         do not re-serialize it.</item>
@@ -147,7 +147,7 @@ namespace Microsoft.Agents.SampleTest
 
         /// <summary>
         /// Sends a weather question to <c>MyAgent</c> and validates the response using
-        /// an AI-backed <see cref="IResponseValidator"/>.
+        /// an AI-backed <see cref="Microsoft.Agents.Builder.Testing.IResponseValidator"/>.
         ///
         /// <para>
         /// Run manually by setting the three environment variables listed below and
@@ -237,7 +237,7 @@ namespace Microsoft.Agents.SampleTest
 
         /// <summary>
         /// Reads a required environment variable, throwing a descriptive
-        /// <see cref="InvalidOperationException"/> if it is not set.
+        /// <see cref="System.InvalidOperationException"/> if it is not set.
         /// </summary>
         private static string GetRequiredEnvVar(string name) =>
             Environment.GetEnvironmentVariable(name)

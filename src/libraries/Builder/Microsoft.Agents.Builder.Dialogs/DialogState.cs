@@ -13,18 +13,18 @@ namespace Microsoft.Agents.Builder.Dialogs
     public class DialogState
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogState"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogState"/> class.
         /// </summary>
         /// <remarks>The new instance is created with an empty dialog stack.</remarks>
         /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.Stack"/>
-        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogSet(Microsoft.Agents.Builder.State.IStatePropertyAccessor{Microsoft.Agents.Builder.Dialogs.DialogState})"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogSet.DialogSet(Microsoft.Agents.Builder.State.IStatePropertyAccessor{Microsoft.Agents.Builder.Dialogs.DialogState})"/>
         public DialogState()
             : this(null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogState"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogState"/> class.
         /// </summary>
         /// <param name="stack">The state information to initialize the stack with.</param>
         /// <remarks>The new instance has a dialog stack that is populated using the information

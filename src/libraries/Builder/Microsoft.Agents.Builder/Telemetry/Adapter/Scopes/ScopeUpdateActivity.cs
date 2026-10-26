@@ -9,19 +9,19 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces an update to an existing activity
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces an update to an existing activity
     /// through the channel adapter.
     /// </summary>
     /// <remarks>
     /// Records the activity identifier and conversation identifier as span tags and
-    /// increments the <see cref="Metrics.ActivitiesUpdated"/> counter.
+    /// increments the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Metrics.ActivitiesUpdated"/> counter.
     /// </remarks>
     internal class ScopeUpdateActivity : TelemetryScope
     {
         private readonly IActivity _activity;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeUpdateActivity"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeUpdateActivity"/> class.
         /// </summary>
         /// <param name="activity">The activity being updated.</param>
         public ScopeUpdateActivity(IActivity activity) : base(Constants.ScopeUpdateActivity)

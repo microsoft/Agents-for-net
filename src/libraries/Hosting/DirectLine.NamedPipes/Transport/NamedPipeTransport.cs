@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
 {
     /// <summary>
-    /// Thin async wrapper over a <see cref="PipeStream"/> for reading and writing byte buffers.
+    /// Thin async wrapper over a <see cref="System.IO.Pipes.PipeStream"/> for reading and writing byte buffers.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="NamedPipeTransport"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.NamedPipeTransport"/> class.
     /// </remarks>
     /// <param name="stream">The underlying pipe stream.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is null.</exception>
@@ -58,7 +58,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
 
         /// <summary>
         /// Performs a single read operation, returning up to <paramref name="buffer"/> length bytes.
-        /// Unlike <see cref="ReadExactAsync"/>, this does not loop — it returns after one
+        /// Unlike <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.NamedPipeTransport.ReadExactAsync(System.Memory{System.Byte}, System.Int32, System.Threading.CancellationToken)"/>, this does not loop — it returns after one
         /// underlying read. May block until data arrives or the pipe disconnects.
         /// </summary>
         /// <returns>Number of bytes read (0 means pipe disconnected).</returns>

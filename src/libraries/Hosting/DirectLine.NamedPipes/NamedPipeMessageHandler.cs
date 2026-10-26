@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
 {
     /// <summary>
-    /// Custom <see cref="HttpMessageHandler"/> that intercepts outgoing HTTP requests destined for
+    /// Custom <see cref="System.Net.Http.HttpMessageHandler"/> that intercepts outgoing HTTP requests destined for
     /// the named pipe service URL (urn:botframework:namedpipe:*) and routes them
     /// back through the named pipe protocol instead of making an actual HTTP call.
     /// </summary>
@@ -23,7 +23,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
     /// back to DirectLineFlex through the named pipe, without any HTTP roundtrip.
     /// </remarks>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="NamedPipeMessageHandler"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.NamedPipeMessageHandler"/> class.
     /// </remarks>
     /// <param name="logger">The logger instance.</param>
     internal sealed class NamedPipeMessageHandler(ILogger<NamedPipeMessageHandler> logger) : HttpMessageHandler
@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
         }
 
         /// <summary>
-        /// Send a request through the named pipe. Invoked by <see cref="PipeRoutingDelegatingHandler"/>.
+        /// Send a request through the named pipe. Invoked by <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.PipeRoutingDelegatingHandler"/>.
         /// </summary>
         /// <param name="request">The HTTP request to route.</param>
         /// <param name="cancellationToken">A cancellation token.</param>

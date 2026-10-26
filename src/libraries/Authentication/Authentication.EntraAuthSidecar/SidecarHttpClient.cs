@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
     /// Handles URL construction, query parameter building, response parsing, and error handling.
     /// </summary>
     /// <remarks>
-    /// Creates a new <see cref="SidecarHttpClient"/> instance.
+    /// Creates a new <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient"/> instance.
     /// </remarks>
     /// <param name="httpClient">The underlying HTTP client.</param>
     /// <param name="baseUrl">
@@ -29,11 +29,11 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
     /// </param>
     /// <param name="logger">Optional logger for diagnostic output.</param>
     /// <param name="requestTimeout">
-    /// Per-attempt request timeout. Defaults to <see cref="DefaultTimeout"/> (30 seconds) when not specified.
+    /// Per-attempt request timeout. Defaults to <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient.DefaultTimeout"/> (30 seconds) when not specified.
     /// </param>
     /// <param name="retryCount">
     /// Number of retry attempts for transient failures (5xx, 408, 429, network/timeout). Defaults to
-    /// <see cref="DefaultRetryCount"/> (3). A value of 0 disables retries.
+    /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient.DefaultRetryCount"/> (3). A value of 0 disables retries.
     /// </param>
     /// <param name="retryBackoffBase">
     /// Base delay for the exponential retry backoff (base, base*2, base*4, ...). Defaults to 2 seconds.
@@ -42,13 +42,13 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
     internal class SidecarHttpClient(HttpClient httpClient, string baseUrl, ILogger logger = null, TimeSpan? requestTimeout = null, int retryCount = 3, TimeSpan? retryBackoffBase = null)
     {
         /// <summary>
-        /// The <see cref="IHttpClientFactory"/> logical client name used for the sidecar client.
+        /// The <see cref="System.Net.Http.IHttpClientFactory"/> logical client name used for the sidecar client.
         /// </summary>
         internal const string HttpClientName = "EntraSidecarClient";
 
         /// <summary>
         /// Default request timeout applied to sidecar clients that are not created through the
-        /// configured named <see cref="IHttpClientFactory"/> client.
+        /// configured named <see cref="System.Net.Http.IHttpClientFactory"/> client.
         /// </summary>
         internal static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -271,6 +272,60 @@ public sealed class DriftPipelineTests
         Assert.Equal("no-action", Assert.Single(FindingClassifier.Classify(comparison, Manifest(), Capabilities()).Findings).Classification);
     }
 
+    [Theory]
+    [InlineData("internal-only")]
+    [InlineData("publicly-exposed")]
+    public void ClassifyAcknowledgesAnExactlyReviewedCompatibilityChange(string exposure)
+    {
+        var manifest = ReviewedManifest();
+        manifest.Usages[0].Exposure = exposure;
+
+        var result = FindingClassifier.Classify(ReviewedComparison(), manifest, Capabilities());
+
+        var finding = Assert.Single(result.Findings);
+        Assert.Equal("no-action", finding.Classification);
+        Assert.Equal("reviewed-compatible", finding.Category);
+        Assert.Equal(0, result.Summary.Blocking);
+        Assert.Equal(0, result.Summary.Required);
+        Assert.Equal(1, result.Summary.NoAction);
+        Assert.Contains("compatibility-review", finding.Evidence);
+        Assert.Contains("The getter already handles null.", finding.RecommendedAction, StringComparison.Ordinal);
+        Assert.Contains("The getter already handles null.", DeterministicReportRenderer.Render(result), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("fromVersion", "\"0.9.0\"")]
+    [InlineData("toVersion", "\"3.0.0\"")]
+    [InlineData("upstreamSymbol", "\"Contoso.Other\"")]
+    [InlineData("member", "\"Other\"")]
+    [InlineData("member", "null")]
+    [InlineData("kind", "\"member-signature-changed\"")]
+    [InlineData("before", "\"different\"")]
+    [InlineData("after", "\"different\"")]
+    [InlineData("targetFrameworks", "[\"net10.0\"]")]
+    [InlineData("targetFrameworks", "[\"net8.0\", \"net10.0\"]")]
+    public void ClassifyDoesNotReuseReviewForADifferentChange(string field, string value)
+    {
+        var result = FindingClassifier.Classify(ReviewedComparison(), ReviewedManifest(field, value), Capabilities());
+
+        Assert.Equal("required", Assert.Single(result.Findings).Classification);
+        Assert.Equal(1, result.Summary.Required);
+    }
+
+    [Theory]
+    [InlineData("fromVersion", "\"\"")]
+    [InlineData("toVersion", "\" \"")]
+    [InlineData("upstreamSymbol", "\"\"")]
+    [InlineData("kind", "\"\"")]
+    [InlineData("reason", "\" \"")]
+    [InlineData("targetFrameworks", "[]")]
+    [InlineData("targetFrameworks", "[\"net8.0\", \"net8.0\"]")]
+    public void ClassifyRejectsIncompleteCompatibilityReviews(string field, string value)
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            FindingClassifier.Classify(ReviewedComparison(), ReviewedManifest(field, value), Capabilities()));
+    }
+
     [Fact]
     public void UsageValidationFindsMissingSymbolMemberExposureVersionAndPath()
     {
@@ -414,6 +469,41 @@ public sealed class DriftPipelineTests
     }
 
     private static ApiMemberModel Member(string name) => new($"method:{name}:System.Void {name}()", name, "method", "public", $"System.Void {name}()", false);
+    private static ApiComparison ReviewedComparison() => Comparison(new ApiChange(
+        "MTAPI-0001", "nullability-changed", "Contoso.Used", "Value",
+        "System.String Value [nullability:010001]", "System.String Value [nullability:010002]",
+        "potentially-breaking", ["net8.0"], ["normalized-api-model"]));
+
+    private static UsageManifest ReviewedManifest(string? field = null, string? value = null)
+    {
+        var json = JsonNode.Parse("""
+            {
+              "declaredVersion": "2.0.0",
+              "usages": [
+                { "upstreamSymbol": "Contoso.Used", "members": ["Value"], "exposure": "internal-only" }
+              ],
+              "compatibilityReviews": [
+                {
+                  "fromVersion": "1.0.0",
+                  "toVersion": "2.0.0",
+                  "upstreamSymbol": "Contoso.Used",
+                  "member": "Value",
+                  "kind": "nullability-changed",
+                  "before": "System.String Value [nullability:010001]",
+                  "after": "System.String Value [nullability:010002]",
+                  "targetFrameworks": ["net8.0"],
+                  "reason": "The getter already handles null."
+                }
+              ]
+            }
+            """)!;
+        if (field is not null)
+        {
+            json["compatibilityReviews"]![0]![field] = JsonNode.Parse(value!);
+        }
+        return json.Deserialize<UsageManifest>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+    }
+
     private static string TemporaryDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), $"teams-api-drift-{Guid.NewGuid():N}");

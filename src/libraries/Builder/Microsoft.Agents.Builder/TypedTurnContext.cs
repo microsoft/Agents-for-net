@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Builder
         private readonly ITurnContext _innerTurnContext;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TypedTurnContext{T}"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.TypedTurnContext{T}"/> class.
         /// </summary>
         /// <param name="innerTurnContext">The inner turn context.</param>
         public TypedTurnContext(ITurnContext innerTurnContext)
@@ -28,7 +28,7 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <summary>
-        /// Gets the inner  context's activity, cast to the type parameter of this <see cref="TypedTurnContext{T}"/>.
+        /// Gets the inner  context's activity, cast to the type parameter of this <see cref="Microsoft.Agents.Builder.TypedTurnContext{T}"/>.
         /// </summary>
         /// <value>The inner context's activity.</value>
         T ITurnContext<T>.Activity => (T)_innerTurnContext.Activity;
@@ -61,7 +61,7 @@ namespace Microsoft.Agents.Builder
         /// Gets a value indicating whether at least one response was sent for the current turn.
         /// </summary>
         /// <value><c>true</c> if at least one response was sent for the current turn; otherwise, <c>false</c>.</value>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         public bool Responded => _innerTurnContext.Responded;
 
         public IStreamingResponse StreamingResponse => _innerTurnContext.StreamingResponse;
@@ -76,10 +76,10 @@ namespace Microsoft.Agents.Builder
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <para>Not all channels support this operation. For channels that don\'t, this call may throw an exception.</para>
-        /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         public Task DeleteActivityAsync(string activityId, CancellationToken cancellationToken = default(CancellationToken))
             => _innerTurnContext.DeleteActivityAsync(activityId, cancellationToken);
 
@@ -90,13 +90,13 @@ namespace Microsoft.Agents.Builder
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        /// <remarks>The conversation reference's <see cref="ConversationReference.ActivityId"/>
+        /// <remarks>The conversation reference's <see cref="Microsoft.Agents.Core.Models.ConversationReference.ActivityId"/>
         /// indicates the activity in the conversation to delete.
         /// <para>Not all channels support this operation. For channels that don't, this call may throw an exception.</para></remarks>
-        /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
-        /// <seealso cref="DeleteActivityAsync(string, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(System.String, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
         public Task DeleteActivityAsync(ConversationReference conversationReference, CancellationToken cancellationToken = default(CancellationToken))
             => _innerTurnContext.DeleteActivityAsync(conversationReference, cancellationToken);
 
@@ -105,15 +105,15 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="handler">The handler to add to the context object.</param>
         /// <returns>The updated context object.</returns>
-        /// <remarks>When the context's <see cref="DeleteActivityAsync(string, CancellationToken)"/> is called,
+        /// <remarks>When the context's <see cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(System.String, System.Threading.CancellationToken)"/> is called,
         /// the adapter calls the registered handlers in the order in which they were
         /// added to the context object.
         /// </remarks>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
-        /// <seealso cref="DeleteActivityAsync(string, CancellationToken)"/>
-        /// <seealso cref="DeleteActivityHandler"/>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="OnUpdateActivity(UpdateActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(System.String, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.DeleteActivityHandler"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnUpdateActivity(Microsoft.Agents.Builder.UpdateActivityHandler)"/>
         public ITurnContext OnDeleteActivity(DeleteActivityHandler handler)
             => _innerTurnContext.OnDeleteActivity(handler);
 
@@ -122,17 +122,17 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="handler">The handler to add to the context object.</param>
         /// <returns>The updated context object.</returns>
-        /// <remarks>When the context's <see cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        /// or <see cref="SendActivitiesAsync(IActivity[], CancellationToken)"/> method is called,
+        /// <remarks>When the context's <see cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// or <see cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/> method is called,
         /// the adapter calls the registered handlers in the order in which they were
         /// added to the context object.
         /// </remarks>
-        /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="SendActivitiesHandler"/>
-        /// <seealso cref="OnUpdateActivity(UpdateActivityHandler)"/>
-        /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivityAsync(System.String, System.String, System.String, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.SendActivitiesHandler"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnUpdateActivity(Microsoft.Agents.Builder.UpdateActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
         public ITurnContext OnSendActivities(SendActivitiesHandler handler)
             => _innerTurnContext.OnSendActivities(handler);
 
@@ -141,14 +141,14 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="handler">The handler to add to the context object.</param>
         /// <returns>The updated context object.</returns>
-        /// <remarks>When the context's <see cref="UpdateActivityAsync(IActivity, CancellationToken)"/> is called,
+        /// <remarks>When the context's <see cref="Microsoft.Agents.Builder.TypedTurnContext{T}.UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/> is called,
         /// the adapter calls the registered handlers in the order in which they were
         /// added to the context object.
         /// </remarks>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="UpdateActivityHandler"/>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="OnDeleteActivity(DeleteActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.UpdateActivityHandler"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnDeleteActivity(Microsoft.Agents.Builder.DeleteActivityHandler)"/>
         public ITurnContext OnUpdateActivity(UpdateActivityHandler handler)
             => _innerTurnContext.OnUpdateActivity(handler);
 
@@ -160,13 +160,13 @@ namespace Microsoft.Agents.Builder
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activities are successfully sent, the task result contains
-        /// an array of <see cref="ResourceResponse"/> objects containing the IDs that
+        /// an array of <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/> objects containing the IDs that
         /// the receiving channel assigned to the activities.</remarks>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivityAsync(System.String, System.String, System.String, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
         public Task<ResourceResponse[]> SendActivitiesAsync(IActivity[] activities, CancellationToken cancellationToken = default(CancellationToken))
             => _innerTurnContext.SendActivitiesAsync(activities, cancellationToken);
 
@@ -178,13 +178,13 @@ namespace Microsoft.Agents.Builder
         /// channel.</param>
         /// <param name="inputHint">Optional, indicates whether your bot is accepting,
         /// expecting, or ignoring user input after the message is delivered to the client.
-        /// <see cref="InputHints"/> defines the possible values.
-        /// Default is <see cref="InputHints.AcceptingInput"/>.</param>
+        /// <see cref="Microsoft.Agents.Core.Models.InputHints"/> defines the possible values.
+        /// Default is <see cref="Microsoft.Agents.Core.Models.InputHints.AcceptingInput"/>.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activity is successfully sent, the task result contains
-        /// a <see cref="ResourceResponse"/> object that contains the ID that the receiving
+        /// a <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/> object that contains the ID that the receiving
         /// channel assigned to the activity.
         /// <para>See the channel's documentation for limits imposed upon the contents of
         /// <paramref name="textReplyToSend"/>.</para>
@@ -192,11 +192,11 @@ namespace Microsoft.Agents.Builder
         /// rate, volume, pronunciation, and pitch, specify <paramref name="speak"/> in
         /// Speech Synthesis Markup Language (SSML) format.</para>
         /// </remarks>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="SendActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
         public Task<ResourceResponse> SendActivityAsync(string textReplyToSend, string speak = null, string inputHint = InputHints.AcceptingInput, CancellationToken cancellationToken = default(CancellationToken))
             => _innerTurnContext.SendActivityAsync(textReplyToSend, speak, inputHint, cancellationToken);
 
@@ -208,13 +208,13 @@ namespace Microsoft.Agents.Builder
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activity is successfully sent, the task result contains
-        /// a <see cref="ResourceResponse"/> object containing the ID that the receiving
+        /// a <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/> object containing the ID that the receiving
         /// channel assigned to the activity.</remarks>
-        /// <seealso cref="OnSendActivities(SendActivitiesHandler)"/>
-        /// <seealso cref="SendActivityAsync(string, string, string, CancellationToken)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="UpdateActivityAsync(IActivity, CancellationToken)"/>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnSendActivities(Microsoft.Agents.Builder.SendActivitiesHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivityAsync(System.String, System.String, System.String, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.UpdateActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
         public Task<ResourceResponse> SendActivityAsync(IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
             => _innerTurnContext.SendActivityAsync(activity, cancellationToken);
 
@@ -226,14 +226,14 @@ namespace Microsoft.Agents.Builder
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the activity is successfully sent, the task result contains
-        /// a <see cref="ResourceResponse"/> object containing the ID that the receiving
+        /// a <see cref="Microsoft.Agents.Core.Models.ResourceResponse"/> object containing the ID that the receiving
         /// channel assigned to the activity.
         /// <para>Before calling this, set the ID of the replacement activity to the ID
         /// of the activity to replace.</para>
         /// <para>Not all channels support this operation. For channels that don't, this call may throw an exception.</para></remarks>
-        /// <seealso cref="OnUpdateActivity(UpdateActivityHandler)"/>
-        /// <seealso cref="SendActivitiesAsync(IActivity[], CancellationToken)"/>
-        /// <seealso cref="DeleteActivityAsync(ConversationReference, CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.OnUpdateActivity(Microsoft.Agents.Builder.UpdateActivityHandler)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.SendActivitiesAsync(Microsoft.Agents.Core.Models.IActivity[], System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.TypedTurnContext{T}.DeleteActivityAsync(Microsoft.Agents.Core.Models.ConversationReference, System.Threading.CancellationToken)"/>
         public Task<ResourceResponse> UpdateActivityAsync(IActivity activity, CancellationToken cancellationToken = default(CancellationToken))
             => _innerTurnContext.UpdateActivityAsync(activity, cancellationToken);
 

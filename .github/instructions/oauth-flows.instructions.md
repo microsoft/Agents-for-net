@@ -16,11 +16,11 @@ When working on OAuth, token exchange, or user sign-in code, reference these seq
 
 ## Key Design Points
 
-- Sign-in is a **multi-turn operation** — flow state is stored between turns and deleted on completion or failure.
+- Sign-in is a **multi-turn operation** — flow state is stored between turns. Successful completion marks the flow inactive and persists it; terminal failures and reset/sign-out paths delete it.
 - The Token Service Client **caches successful tokens** from `GetTokenOrSignInResource`.
 - If **OBO** is configured, OBO is performed on the token returned by Token Service prior to setting the Turn Token.
 - A **Continuation Activity** is stored when sign-in starts and replayed proactively after successful token acquisition.
-- **ConsentRequired** (412) triggers Teams to prompt the user, followed by a `signin/verifyState` invoke with a magic code.
+- **ConsentRequired** (412) triggers Teams to prompt the user, followed by another `signin/tokenExchange` invoke. `signin/verifyState` is the separate interactive magic-code completion path.
 - Non-consent exchange failures return **400** — Teams will NOT retry.
 
 ## Related Source Files

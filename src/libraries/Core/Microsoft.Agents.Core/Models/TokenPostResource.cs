@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Core.Models
     public class TokenPostResource
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TokenPostResource"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.TokenPostResource"/> class.
         /// </summary>
         public TokenPostResource()
         {

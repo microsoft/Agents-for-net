@@ -11,14 +11,14 @@ namespace Microsoft.Agents.Builder
     /// <remarks>
     /// <para>
     /// This contract lets an extension register its required services when the host calls
-    /// <see cref="AgentServiceCollectionExtensions.AddAgentExtensionServices(IServiceCollection)"/>.
+    /// <see cref="Microsoft.Agents.Builder.AgentServiceCollectionExtensions.AddAgentExtensionServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)"/>.
     /// ASP.NET Core hosting calls that method from <c>AddAgentCore</c>; other hosts can call it directly.
     /// The application therefore only needs to reference the extension package rather than invoke a
     /// package-specific service-registration method.
     /// </para>
     /// <para>
     /// An extension opts in by implementing this interface and adding an assembly-level
-    /// <see cref="AgentServiceRegistrationAttribute"/>:
+    /// <see cref="Microsoft.Agents.Builder.AgentServiceRegistrationAttribute"/>:
     /// </para>
     /// <code>
     /// [assembly: AgentServiceRegistration(typeof(MyExtensionRegistrar))]
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Builder
     /// <para>
     /// Registrar types must be public, concrete, and have a public parameterless constructor so consuming
     /// applications can preload and instantiate them. A registrar is invoked at most once for each
-    /// <see cref="IServiceCollection"/> instance. Registrars should use the
+    /// <see cref="Microsoft.Extensions.DependencyInjection.IServiceCollection"/> instance. Registrars should use the
     /// <c>Microsoft.Extensions.DependencyInjection.Extensions</c> <c>TryAdd</c> methods when application
     /// registrations should take precedence, and must not build or resolve a service provider while
     /// registrations are being configured.

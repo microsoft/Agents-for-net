@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the creation of a connector client
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the creation of a connector client
     /// used to communicate with the channel service.
     /// </summary>
     /// <remarks>
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         private readonly bool _isAgenticRequest;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeCreateConnectorClient"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeCreateConnectorClient"/> class.
         /// </summary>
         /// <param name="serviceUrl">The channel service URL the client will connect to.</param>
         /// <param name="scopes">The auth scopes requested for the client, or <c>null</c>.</param>

@@ -9,12 +9,12 @@ using System.Reflection;
 namespace Microsoft.Agents.Builder.Adapters
 {
     /// <summary>
-    /// Assembly-level attribute that points at an <see cref="IChannelAdapter"/> implementation annotated
-    /// with a <see cref="ChannelAdapterAttribute"/>, together with the <c>channelId</c> it handles.
+    /// Assembly-level attribute that points at an <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> implementation annotated
+    /// with a <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterAttribute"/>, together with the <c>channelId</c> it handles.
     /// </summary>
     /// <remarks>
     /// One instance is emitted by the <c>ChannelAdapterInitSourceGenerator</c> for each
-    /// <c>[ChannelAdapter]</c> declaration in an assembly. At <see cref="IChannelAdapterRegistry"/>
+    /// <c>[ChannelAdapter]</c> declaration in an assembly. At <see cref="Microsoft.Agents.Builder.Adapters.IChannelAdapterRegistry"/>
     /// construction these attributes are read off the loaded assemblies and their adapters registered, so
     /// adapter authors do not need to call an explicit DI registration method and the runtime never has to
     /// scan every type to find channel adapters. Follows the same discovery pattern as
@@ -24,9 +24,9 @@ namespace Microsoft.Agents.Builder.Adapters
     public sealed class ChannelAdapterInitAssemblyAttribute : Attribute
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelAdapterInitAssemblyAttribute"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute"/> class.
         /// </summary>
-        /// <param name="adapterType">The annotated adapter type. Must implement <see cref="IChannelAdapter"/>.</param>
+        /// <param name="adapterType">The annotated adapter type. Must implement <see cref="Microsoft.Agents.Builder.IChannelAdapter"/>.</param>
         /// <param name="channelId">The <c>channelId</c> the adapter handles.</param>
         public ChannelAdapterInitAssemblyAttribute(Type adapterType, string channelId)
         {
@@ -41,10 +41,10 @@ namespace Microsoft.Agents.Builder.Adapters
         public string ChannelId { get; }
 
         /// <summary>
-        /// Reads every <see cref="ChannelAdapterInitAssemblyAttribute"/> off the currently loaded assemblies
-        /// and projects them to <see cref="ChannelAdapterRegistration"/> descriptors. Malformed
+        /// Reads every <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute"/> off the currently loaded assemblies
+        /// and projects them to <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterRegistration"/> descriptors. Malformed
         /// registrations (missing type or channelId, or an adapter that does not implement
-        /// <see cref="IChannelAdapter"/>) are ignored so one bad declaration cannot break discovery for
+        /// <see cref="Microsoft.Agents.Builder.IChannelAdapter"/>) are ignored so one bad declaration cannot break discovery for
         /// everything else.
         /// </summary>
         internal static IReadOnlyList<ChannelAdapterRegistration> GetRegistrations()

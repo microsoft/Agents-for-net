@@ -18,8 +18,8 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar
     {
         /// <summary>
         /// Registers the Entra SDK Sidecar as the connection-level token provider,
-        /// replacing MSAL for token acquisition. This registers <see cref="SidecarAuth"/>
-        /// as both <see cref="IAccessTokenProvider"/> and <see cref="IAgenticTokenProvider"/>.
+        /// replacing MSAL for token acquisition. This registers <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarAuth"/>
+        /// as both <see cref="Microsoft.Agents.Authentication.IAccessTokenProvider"/> and <see cref="Microsoft.Agents.Authentication.IAgenticTokenProvider"/>.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <param name="configuration">Application configuration containing the sidecar settings section.</param>

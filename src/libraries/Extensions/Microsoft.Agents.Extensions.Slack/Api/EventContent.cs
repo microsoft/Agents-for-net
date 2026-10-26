@@ -12,8 +12,8 @@ namespace Microsoft.Agents.Extensions.Slack.Api;
 /// <summary>
 /// Represents the inner <c>event</c> object from a Slack Events API callback payload.
 /// Slack calls this the "event content"; the full payload is preserved as a
-/// <see cref="JsonObject"/> so any field from any event type can be accessed via
-/// <see cref="SlackModel.Get{T}"/> using the same snake_case names shown in the Slack docs.
+/// <see cref="System.Text.Json.Nodes.JsonObject"/> so any field from any event type can be accessed via
+/// <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.Get{T}(System.String)"/> using the same snake_case names shown in the Slack docs.
 /// See https://docs.slack.dev/reference/events
 /// </summary>
 [JsonConverter(typeof(EventContentConverter))]
@@ -78,7 +78,7 @@ public class EventContent : SlackModel
 
 /// <summary>
 /// Deserializes the Slack <c>event</c> JSON object in its entirety into a
-/// <see cref="JsonObject"/> so no field is lost regardless of event type.
+/// <see cref="System.Text.Json.Nodes.JsonObject"/> so no field is lost regardless of event type.
 /// </summary>
 internal sealed class EventContentConverter : JsonConverter<EventContent>
 {

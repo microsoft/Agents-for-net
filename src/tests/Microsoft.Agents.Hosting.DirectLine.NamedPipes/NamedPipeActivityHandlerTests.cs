@@ -18,9 +18,9 @@ using Moq;
 namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
-    /// Tests for <see cref="NamedPipeActivityHandler"/>: per-stream ContentType handling, 415
+    /// Tests for <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.NamedPipeActivityHandler"/>: per-stream ContentType handling, 415
     /// rejection of non-JSON primary bodies, and surfacing of attachment ContentType onto
-    /// <see cref="Activity.Attachments"/>.
+    /// <see cref="Microsoft.Agents.Core.Models.Activity.Attachments"/>.
     /// </summary>
     public class NamedPipeActivityHandlerTests
     {

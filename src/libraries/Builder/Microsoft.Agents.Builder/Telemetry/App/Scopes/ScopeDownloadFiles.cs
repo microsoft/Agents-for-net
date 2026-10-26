@@ -7,7 +7,7 @@ using System;
 namespace Microsoft.Agents.Builder.Telemetry.App.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces the downloading of file attachments
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces the downloading of file attachments
     /// during a turn.
     /// </summary>
     /// <remarks>

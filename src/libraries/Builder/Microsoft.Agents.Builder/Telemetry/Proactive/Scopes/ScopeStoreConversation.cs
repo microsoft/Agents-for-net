@@ -8,7 +8,7 @@ using System.Diagnostics;
 namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces storage of a conversation reference for
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces storage of a conversation reference for
     /// later proactive use.
     /// </summary>
     /// <remarks>
@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         private readonly string _conversationId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeStoreConversation"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Proactive.Scopes.ScopeStoreConversation"/> class.
         /// </summary>
         /// <param name="conversationId">The identifier of the conversation being stored.</param>
         public ScopeStoreConversation(string conversationId) : base(Constants.ScopeStoreConversation)

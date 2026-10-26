@@ -10,6 +10,7 @@ using Microsoft.Agents.Core.Validation;
 using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -105,39 +106,39 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 }
             }
 
-            OnTurnError = async (turnContext, exception) =>
+            OnTurnError = HandleTurnErrorAsync;
+        }
+
+        private async Task HandleTurnErrorAsync(ITurnContext turnContext, Exception exception)
+        {
+            // Log any leaked exception from the application.
+            StringBuilder sbError = new StringBuilder(1024);
+            int iLevel = 0;
+            StringBuilder lastErrorMessage = new(1024);
+            exception.GetExceptionDetail(sbError, iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: _adapterOptions.EmitStackTrace); // ExceptionParser
+            if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
             {
-                // Log any leaked exception from the application.
-                StringBuilder sbError = new StringBuilder(1024);
-                int iLevel = 0;
-                StringBuilder lastErrorMessage = new(1024);
-                exception.GetExceptionDetail(sbError, iLevel, lastErrorMsg: lastErrorMessage, includeStackTrace: _adapterOptions.EmitStackTrace); // ExceptionParser
-                if (exception is ErrorResponseException errorResponse && errorResponse.Body != null)
-                {
-                    sbError.Append(Environment.NewLine);
-                    sbError.Append(errorResponse.Body.ToString());
-                }
-                string resolvedErrorMessage = sbError.ToString();
+                sbError.Append(Environment.NewLine);
+                sbError.Append(errorResponse.Body.ToString());
+            }
+            string resolvedErrorMessage = sbError.ToString();
 
-                // Writing formatted exception message to log with error codes and help links. 
-#pragma warning disable CA2254 // Template should be a static expression
-                Logger.LogError(resolvedErrorMessage);
-#pragma warning restore CA2254 // Template should be a static expression
+            // Pass the exception separately so server-side logging retains its stack trace regardless of outbound trace settings.
+            Logger.LogError(exception, "Unhandled exception during turn processing. {ExceptionDetails}", resolvedErrorMessage);
 
-                if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
+            if (exception is not OperationCanceledException) // Do not try to send another message if the response has been canceled.
+            {
+                try
                 {
-                    try
-                    {
-                        await turnContext.SendActivityAsync(MessageFactory.Text(lastErrorMessage.ToString()), CancellationToken.None);
-                        await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
-                    }
-                    catch
-                    {
-                        System.Diagnostics.Trace.WriteLine($"Unable to send error Activity for: {lastErrorMessage}");
-                    }
+                    await turnContext.SendActivityAsync(MessageFactory.Text(lastErrorMessage.ToString()), CancellationToken.None); // Includes only the exception messages.
+                    await turnContext.TraceActivityAsync("OnTurnError Trace", resolvedErrorMessage, "https://www.botframework.com/schemas/error", "TurnError");
                 }
-                sbError.Clear();
-            };
+                catch
+                {
+                    System.Diagnostics.Trace.WriteLine($"Unable to send error Activity for: {lastErrorMessage}");
+                }
+            }
+            sbError.Clear();
         }
 
         /// <summary>
@@ -297,8 +298,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             // DeliveryModes.Normal can be pushed to the Queue which allows the calling request to continue without blocking.
             if (continuationActivity.DeliveryMode == null || continuationActivity.DeliveryMode == DeliveryModes.Normal)
             {
-                // Queue the activity to be processed by the ActivityBackgroundService
-                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, continuationActivity, proactive: true, proactiveAudience: audience);
+                // Queue the activity to be processed by the ActivityBackgroundService.  The agent type is included so
+                // the background service resolves the same agent when multiple agents are hosted.
+                _activityTaskQueue.QueueBackgroundActivity(claimsIdentity, this, continuationActivity, proactive: true, proactiveAudience: audience, agentType: agent?.GetType());
                 return Task.CompletedTask;
             }
 

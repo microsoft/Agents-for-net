@@ -7,14 +7,14 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Builder.Telemetry.Authorization.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeAuthorizationRequest"/> that traces an Azure Bot Framework
+    /// A <see cref="Microsoft.Agents.Builder.Telemetry.Authorization.Scopes.ScopeAuthorizationRequest"/> that traces an Azure Bot Framework
     /// OAuth sign-in operation.
     /// </summary>
     internal class ScopeAzureBotSignIn : ScopeAuthorizationRequest
     {
         private readonly ITurnContext _turnContext;
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeAzureBotSignIn"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Authorization.Scopes.ScopeAzureBotSignIn"/> class.
         /// </summary>
         /// <param name="authHandlerId">The identifier of the authentication handler processing the request.</param>
         /// <param name="exchangeConnection">The OAuth connection name, or <c>null</c>.</param>

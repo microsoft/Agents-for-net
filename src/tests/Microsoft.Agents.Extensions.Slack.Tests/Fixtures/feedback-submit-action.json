@@ -1,0 +1,65 @@
+{
+  "type": "invoke",
+  "name": "message/submitAction",
+  "channelId": "slack",
+  "value": {
+    "actionName": "feedback",
+    "actionValue": {
+      "reaction": "positive_feedback"
+    },
+    "replyToId": "1700000000.000000"
+  },
+  "channelData": {
+    "Payload": {
+      "type": "block_actions",
+      "team": {
+        "id": "T0LOCALDEV01",
+        "domain": "localdev"
+      },
+      "user": {
+        "id": "U0LOCALDEV02",
+        "username": "localdev-sender",
+        "name": "localdev-sender",
+        "team_id": "T0LOCALDEV01"
+      },
+      "api_app_id": "A0LOCALDEV01",
+      "token": "localdev-slack-verification-token",
+      "container": {
+        "type": "message",
+        "message_ts": "1700000000.000100",
+        "channel_id": "D0LOCALDEV01",
+        "is_ephemeral": false,
+        "thread_ts": "1700000000.000000"
+      },
+      "trigger_id": "1000.2000.localdev",
+      "channel": {
+        "id": "D0LOCALDEV01",
+        "name": "directmessage"
+      },
+      "message": {
+        "user": "U0LOCALDEV01",
+        "type": "message",
+        "ts": "1700000000.000100",
+        "bot_id": "B0LOCALDEV01",
+        "app_id": "A0LOCALDEV01",
+        "text": "localdev streamed response",
+        "team": "T0LOCALDEV01",
+        "thread_ts": "1700000000.000000"
+      },
+      "actions": [
+        {
+          "block_id": "feedback-block",
+          "action_id": "feedback",
+          "type": "feedback_buttons",
+          "text": {
+            "type": "plain_text",
+            "text": "positive"
+          },
+          "value": "positive_feedback",
+          "action_ts": "1700000001.000000"
+        }
+      ],
+      "action_ts": "1700000001.000000"
+    }
+  }
+}

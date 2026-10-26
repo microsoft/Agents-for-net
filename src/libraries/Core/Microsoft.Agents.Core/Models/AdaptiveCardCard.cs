@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Core.Models
 {
     /// <summary> A card that carries a raw Adaptive Card JSON payload. </summary>
     /// <remarks>
-    /// The JSON is stored verbatim in <see cref="Content"/> and unpacked into the attachment as nested
+    /// The JSON is stored verbatim in <see cref="Microsoft.Agents.Core.Models.AdaptiveCardCard.Content"/> and unpacked into the attachment as nested
     /// JSON when the activity is serialized.
     /// </remarks>
     public class AdaptiveCardCard : Card

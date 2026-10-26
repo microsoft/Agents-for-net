@@ -7,17 +7,17 @@ namespace Microsoft.Agents.Builder.Adapters
 {
     /// <summary>
     /// A single declarative channel-adapter registration: the <c>channelId</c> the adapter handles and
-    /// the CLR adapter type that handles it. Built from <see cref="ChannelAdapterAttribute"/> (via the
-    /// source-generated <see cref="ChannelAdapterInitAssemblyAttribute"/>) or supplied explicitly through
+    /// the CLR adapter type that handles it. Built from <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterAttribute"/> (via the
+    /// source-generated <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterInitAssemblyAttribute"/>) or supplied explicitly through
     /// dependency injection.
     /// </summary>
     public sealed class ChannelAdapterRegistration
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelAdapterRegistration"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Adapters.ChannelAdapterRegistration"/> class.
         /// </summary>
         /// <param name="channelId">The <c>channelId</c> this adapter handles (e.g., "msteams", "a2a").</param>
-        /// <param name="adapterType">The adapter CLR type. Must implement <see cref="IChannelAdapter"/>.</param>
+        /// <param name="adapterType">The adapter CLR type. Must implement <see cref="Microsoft.Agents.Builder.IChannelAdapter"/>.</param>
         public ChannelAdapterRegistration(string channelId, Type adapterType)
         {
             ChannelId = channelId;
@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Builder.Adapters
         /// <summary>The <c>channelId</c> this adapter handles (e.g., "msteams", "a2a").</summary>
         public string ChannelId { get; }
 
-        /// <summary>The adapter CLR type. Must implement <see cref="IChannelAdapter"/>.</summary>
+        /// <summary>The adapter CLR type. Must implement <see cref="Microsoft.Agents.Builder.IChannelAdapter"/>.</summary>
         public Type AdapterType { get; }
     }
 }

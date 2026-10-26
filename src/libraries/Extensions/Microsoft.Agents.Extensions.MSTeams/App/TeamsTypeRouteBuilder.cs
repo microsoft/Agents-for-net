@@ -10,9 +10,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.App;
 public class TeamsTypeRouteBuilder : TypeRouteBuilderBase<TeamsTypeRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the <see cref="TeamsTypeRouteBuilder"/> class.
+    /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsTypeRouteBuilder"/> class.
     /// </summary>
-    /// <returns>A new <see cref="TeamsTypeRouteBuilder"/>.</returns>
+    /// <returns>A new <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsTypeRouteBuilder"/>.</returns>
     public static TeamsTypeRouteBuilder Create()
     {
         return new TeamsTypeRouteBuilder();

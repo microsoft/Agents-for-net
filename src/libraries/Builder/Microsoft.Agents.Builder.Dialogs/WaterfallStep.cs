@@ -11,6 +11,6 @@ namespace Microsoft.Agents.Builder.Dialogs
     /// </summary>
     /// <param name="stepContext">The WaterfallStepContext for this waterfall dialog.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A <see cref="Task"/> of <see cref="DialogTurnResult"/> representing the asynchronous operation.</returns>
+    /// <returns>A <see cref="System.Threading.Tasks.Task"/> of <see cref="Microsoft.Agents.Builder.Dialogs.DialogTurnResult"/> representing the asynchronous operation.</returns>
     public delegate Task<DialogTurnResult> WaterfallStep(WaterfallStepContext stepContext, CancellationToken cancellationToken);
 }

@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
     /// </summary>
     /// <param name="text">The input text.</param>
     /// <param name="locale">Optional, identifies the locale of the input text.</param>
-    /// <returns>The list of the found <see cref="Token"/> objects.</returns>
+    /// <returns>The list of the found <see cref="Microsoft.Agents.Builder.Dialogs.Choices.Token"/> objects.</returns>
     public delegate List<Token> TokenizerFunction(string text, string locale = null);
 
     /// <summary>
@@ -20,9 +20,9 @@ namespace Microsoft.Agents.Builder.Dialogs.Choices
     public class Tokenizer
     {
         /// <summary>
-        /// Gets the default <see cref="TokenizerFunction"/> implementation.
+        /// Gets the default <see cref="Microsoft.Agents.Builder.Dialogs.Choices.TokenizerFunction"/> implementation.
         /// </summary>
-        /// <value>The default <see cref="TokenizerFunction"/> implementation.</value>
+        /// <value>The default <see cref="Microsoft.Agents.Builder.Dialogs.Choices.TokenizerFunction"/> implementation.</value>
         public static TokenizerFunction DefaultTokenizer => DefaultTokenizerImpl;
 
         /// <summary>

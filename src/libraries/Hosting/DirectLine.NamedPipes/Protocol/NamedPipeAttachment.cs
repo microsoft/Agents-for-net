@@ -6,15 +6,15 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol
     /// <summary>
     /// Represents a binary stream that travels alongside a request or response payload
     /// (e.g. an attachment uploaded by a DirectLine client). On the wire each attachment
-    /// is described by an entry in <see cref="RequestPayload.Streams"/> /
-    /// <see cref="ResponsePayload.Streams"/> at index &gt; 0, and its bytes are delivered
-    /// as a separately-identified <see cref="PayloadTypes.Stream"/> frame sequence.
+    /// is described by an entry in <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.RequestPayload.Streams"/> /
+    /// <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.ResponsePayload.Streams"/> at index &gt; 0, and its bytes are delivered
+    /// as a separately-identified <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.PayloadTypes.Stream"/> frame sequence.
     /// </summary>
     internal sealed class NamedPipeAttachment
     {
         /// <summary>
         /// Gets or sets the wire identifier (GUID, "D" format) that links this attachment to
-        /// its <see cref="PayloadDescription"/> on the request/response payload.
+        /// its <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.PayloadDescription"/> on the request/response payload.
         /// </summary>
         public string Id { get; set; } = string.Empty;
 

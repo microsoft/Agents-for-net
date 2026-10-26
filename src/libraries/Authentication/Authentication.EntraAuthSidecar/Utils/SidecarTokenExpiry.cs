@@ -20,7 +20,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Utils
 
         /// <summary>
         /// Resolves the absolute expiry of a sidecar-issued token. Prefers the token's own JWT
-        /// <c>exp</c> claim; falls back to <see cref="FallbackLifetime"/> from now when the token is
+        /// <c>exp</c> claim; falls back to <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.Utils.SidecarTokenExpiry.FallbackLifetime"/> from now when the token is
         /// opaque or carries no readable expiry.
         /// </summary>
         /// <param name="token">The raw access token returned by the sidecar.</param>

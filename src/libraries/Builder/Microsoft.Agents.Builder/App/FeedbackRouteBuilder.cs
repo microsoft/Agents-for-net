@@ -4,12 +4,12 @@
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Provides a concrete builder for routing feedback loop invoke activities in an <see cref="AgentApplication"/>.
+    /// Provides a concrete builder for routing feedback loop invoke activities in an <see cref="Microsoft.Agents.Builder.App.AgentApplication"/>.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="FeedbackRouteBuilder"/> when you need a feedback route that uses the standard
-    /// <see cref="FeedbackLoopHandler"/> delegate. This type inherits the shared feedback loop selection behavior
-    /// from <see cref="FeedbackRouteBuilderBase{TBuilder}"/>.
+    /// Use <see cref="Microsoft.Agents.Builder.App.FeedbackRouteBuilder"/> when you need a feedback route that uses the standard
+    /// <see cref="Microsoft.Agents.Builder.App.FeedbackLoopHandler"/> delegate. This type inherits the shared feedback loop selection behavior
+    /// from <see cref="Microsoft.Agents.Builder.App.FeedbackRouteBuilderBase{TBuilder}"/>.
     /// </remarks>
     public class FeedbackRouteBuilder : FeedbackRouteBuilderBase<FeedbackRouteBuilder>
     {

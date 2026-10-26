@@ -9,7 +9,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
 {
     /// <summary>
     /// Tests that cover the wire-protocol boundary conditions enforced by
-    /// <see cref="HeaderSerializer"/>. The on-wire payload-length field is six
+    /// <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.HeaderSerializer"/>. The on-wire payload-length field is six
     /// ASCII digits, which mathematically caps any single frame at 999,999 bytes.
     /// </summary>
     public class HeaderSerializerBoundaryTests

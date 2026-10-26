@@ -8,7 +8,7 @@ using System;
 namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
 {
     /// <summary>
-    /// A <see cref="TelemetryScope"/> that traces sending an activity proactively to an
+    /// A <see cref="Microsoft.Agents.Core.Telemetry.TelemetryScope"/> that traces sending an activity proactively to an
     /// existing conversation.
     /// </summary>
     /// <remarks>
@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Proactive.Scopes
         private readonly IActivity _activity;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeSendActivity"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Proactive.Scopes.ScopeSendActivity"/> class.
         /// </summary>
         /// <param name="conversationId">The identifier of the conversation receiving the activity.</param>
         /// <param name="activity">The activity being sent proactively.</param>

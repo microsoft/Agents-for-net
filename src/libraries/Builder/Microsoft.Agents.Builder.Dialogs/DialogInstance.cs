@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 namespace Microsoft.Agents.Builder.Dialogs
 {
     /// <summary>
-    /// Contains state information associated with a <see cref="Dialog"/> on a dialog stack.
+    /// Contains state information associated with a <see cref="Microsoft.Agents.Builder.Dialogs.Dialog"/> on a dialog stack.
     /// </summary>
     [DebuggerDisplay("{Id}")]
     public class DialogInstance

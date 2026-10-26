@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -148,6 +150,40 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         internal IStorage Storage { get; set; }
 
         /// <summary>
+        /// Validates the configured default authorization handler.
+        /// </summary>
+        internal void Validate()
+        {
+            Dispatcher.ValidateConfiguration();
+
+            if (!string.IsNullOrEmpty(DefaultHandlerName) && !Dispatcher.Contains(DefaultHandlerName))
+            {
+                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(
+                    ErrorHelper.UserAuthorizationDefaultHandlerNotFound,
+                    null,
+                    DefaultHandlerName);
+            }
+        }
+
+        /// <summary>
+        /// Gets the default handler name after resolving the handler used at runtime.
+        /// </summary>
+        internal string GetDefaultHandlerName()
+        {
+            var handlerName = DefaultHandlerName ?? Dispatcher.Default.Name;
+
+            if (!Dispatcher.TryGet(handlerName, out _))
+            {
+                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(
+                    ErrorHelper.UserAuthorizationDefaultHandlerNotFound,
+                    null,
+                    handlerName);
+            }
+
+            return handlerName;
+        }
+
+        /// <summary>
         /// The default user authorization handler name to use for AutoSignIn.  If not specified, the first handler defined is
         /// used if Auto SignIn is enabled.
         /// </summary>
@@ -164,7 +200,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
         public AutoSignInSelector? AutoSignIn { get; set; }
 
         /// <summary>
-        /// Optional sign in failure message.  This is only used if the <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure"/> is not set.
+        /// Optional sign in failure message.  This is only used if the <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization.OnUserSignInFailure(Microsoft.Agents.Builder.App.UserAuth.AuthorizationFailure)"/> is not set.
         /// </summary>
         public Func<string, SignInResponse, IActivity[]> SignInFailedMessage { get; set; } = 
             (flowName, response) => [MessageFactory.Text(string.Format("Sign in for '{0}' completed without a token. Status={1}/{2}", flowName, response.Cause, response.Error?.Message))];

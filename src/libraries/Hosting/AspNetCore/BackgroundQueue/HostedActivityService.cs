@@ -196,6 +196,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                 var turnServices = turnScope?.ServiceProvider ?? _serviceProvider;
                 var agent = turnServices.GetService(activityWithClaims.AgentType ?? typeof(IAgent));
                 agent ??= turnServices.GetService(typeof(IAgent));
+                if (agent is not IAgent)
+                {
+                    throw new InvalidOperationException(
+                        $"Unable to resolve an IAgent for type '{(activityWithClaims.AgentType ?? typeof(IAgent)).FullName}'. Ensure the agent is registered with the service collection.");
+                }
 
                 HeaderPropagationContext.HeadersFromRequest = activityWithClaims.Headers;
                 activityWithClaims.TelemetryActivity?.Start();

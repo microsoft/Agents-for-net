@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Builder.App
     /// Use <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder"/> to create and configure routes that respond to activities of type 'messageReaction'
     /// where reactions have been removed. Removed reactions are in <see cref="Microsoft.Agents.Core.Models.Activity.ReactionsRemoved"/> property of the activity."/>
     /// This builder allows matching event activities by name or regular expression, and supports channelId and agentic routing scenarios.
-    /// Instances are created via the <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder.Create"/> method and further configured using <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder.WithHandler(Microsoft.Agents.Builder.App.RouteHandler)"/>.<br/><br/>
+    /// Instances are created via the <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder.Create()"/> method and further configured using <see cref="Microsoft.Agents.Builder.App.MessageReactionsRemovedRouteBuilder.WithHandler(Microsoft.Agents.Builder.App.RouteHandler)"/>.<br/><br/>
     /// Example usage:<br/><br/>
     /// <code>
     /// var route = MessageReactionsRemovedRouteBuilder.Create()

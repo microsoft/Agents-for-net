@@ -9,21 +9,21 @@ namespace Microsoft.Agents.Extensions.Slack.Api;
 
 /// <summary>
 /// Base class for Slack model objects that expose dot-notation path navigation via
-/// <see cref="Get{T}"/> and <see cref="TryGet{T}"/>.
+/// <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.Get{T}(System.String)"/> and <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.TryGet{T}(System.String, out T)"/>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Subclasses that are plain POCOs (e.g. <see cref="SlackResponse"/>, <see cref="EventEnvelope"/>)
-/// rely on the default <see cref="GetData"/> implementation, which lazily serializes the instance
-/// to a <see cref="JsonObject"/> on first use so every field — including <c>[JsonExtensionData]</c>
+/// Subclasses that are plain POCOs (e.g. <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackResponse"/>, <see cref="Microsoft.Agents.Extensions.Slack.Api.EventEnvelope"/>)
+/// rely on the default <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.GetData()"/> implementation, which lazily serializes the instance
+/// to a <see cref="System.Text.Json.Nodes.JsonObject"/> on first use so every field — including <c>[JsonExtensionData]</c>
 /// catch-alls — is reachable by path. Subclasses that are themselves backed by a
-/// <see cref="JsonObject"/> (e.g. <see cref="EventContent"/>) override <see cref="GetData"/> to
+/// <see cref="System.Text.Json.Nodes.JsonObject"/> (e.g. <see cref="Microsoft.Agents.Extensions.Slack.Api.EventContent"/>) override <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.GetData()"/> to
 /// return that object directly, avoiding redundant serialization.
 /// </para>
 /// <para>
 /// Subclasses whose JSON field names differ from their C# property names (e.g.
-/// <see cref="EventEnvelope"/> maps <c>"event_content"</c> → <c>"event"</c>) override
-/// <see cref="NormalizePath"/> to remap the alias before navigation.
+/// <see cref="Microsoft.Agents.Extensions.Slack.Api.EventEnvelope"/> maps <c>"event_content"</c> → <c>"event"</c>) override
+/// <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackModel.NormalizePath(System.String)"/> to remap the alias before navigation.
 /// </para>
 /// </remarks>
 public abstract class SlackModel
@@ -35,11 +35,11 @@ public abstract class SlackModel
     private JsonObject _lazyData;
 
     /// <summary>
-    /// Returns the <see cref="JsonObject"/> used for path navigation.
+    /// Returns the <see cref="System.Text.Json.Nodes.JsonObject"/> used for path navigation.
     /// The default implementation lazily serializes this instance via
     /// <c>JsonSerializer.SerializeToNode</c>, making every property and
     /// <c>[JsonExtensionData]</c> field addressable. Override when the subclass is already
-    /// backed by a <see cref="JsonObject"/> to return it directly.
+    /// backed by a <see cref="System.Text.Json.Nodes.JsonObject"/> to return it directly.
     /// </summary>
     protected virtual JsonObject GetData()
         => _lazyData ??= (JsonObject)JsonSerializer.SerializeToNode(this, GetType());

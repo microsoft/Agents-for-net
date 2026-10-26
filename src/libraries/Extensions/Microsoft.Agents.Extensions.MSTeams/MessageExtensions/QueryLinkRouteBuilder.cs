@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.MessageExtensions;
 /// Provides a builder for configuring query link routes in an AgentApplication.
 /// </summary>
 /// <remarks>
-/// Use <see cref="QueryLinkRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Invoke"/> with a name of
 /// <see cref="Microsoft.Teams.Apps.InvokeNames.MessageExtensionQueryLink"/>.
 /// </remarks>
@@ -27,9 +27,9 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
     }
 
     /// <summary>
-    /// Creates a new instance of the <see cref="QueryLinkRouteBuilder"/> class.
+    /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkRouteBuilder"/> class.
     /// </summary>
-    /// <returns>A new <see cref="QueryLinkRouteBuilder"/>.</returns>
+    /// <returns>A new <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkRouteBuilder"/>.</returns>
     public static QueryLinkRouteBuilder Create()
     {
         return new QueryLinkRouteBuilder();
@@ -60,7 +60,7 @@ public class QueryLinkRouteBuilder : RouteBuilderBase<QueryLinkRouteBuilder>
     /// maintaining consistency with the route's initial setup.</remarks>
     /// <param name="isInvoke">A value indicating whether the route should be treated as an Invoke route. The parameter is ignored, as the
     /// route is always configured for Invoke routing.</param>
-    /// <returns>The current instance of <see cref="QueryLinkRouteBuilder"/> with Invoke routing enabled.</returns>
+    /// <returns>The current instance of <see cref="Microsoft.Agents.Extensions.MSTeams.MessageExtensions.QueryLinkRouteBuilder"/> with Invoke routing enabled.</returns>
     public override QueryLinkRouteBuilder AsInvoke(bool isInvoke = true)
     {
         return this;

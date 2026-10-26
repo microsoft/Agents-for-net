@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// Decorate a method with this attribute to register it as a handler for Adaptive Card Action.Execute events.
     /// Provide <paramref name="verb"/> for an exact match, <paramref name="verbRegex"/> for a pattern match, or
     /// neither to match any verb. <paramref name="verb"/> and <paramref name="verbRegex"/> are mutually exclusive.
-    /// The method must match the <see cref="ActionExecuteHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionExecuteHandler"/> delegate signature.
     /// <code>
     /// [ActionExecuteRoute("doStuff")]
     /// public async Task&lt;AdaptiveCardInvokeResponse&gt; OnDoStuffAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="verb">The exact verb to match. Mutually exclusive with <paramref name="verbRegex"/>. When both are omitted, all verbs are matched.</param>
     /// <param name="verbRegex">A regular expression pattern matched against the Action.Execute verb. Mutually exclusive with <paramref name="verb"/>.</param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(ActionExecuteHandler))]
@@ -74,7 +74,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// neither to match any Action.Submit message. <paramref name="verb"/> and <paramref name="verbRegex"/> are
     /// mutually exclusive. When a verb is matched, the activity value field configured by the
     /// <c>actionSubmitFilter</c> option (defaults to <c>verb</c>) is used.
-    /// The method must match the <see cref="ActionSubmitHandler"/> delegate signature.
+    /// The method must match the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.ActionSubmitHandler"/> delegate signature.
     /// <code>
     /// [ActionSubmitRoute("ok")]
     /// public async Task OnOkAsync(ITurnContext turnContext, ITurnState turnState, object data, CancellationToken cancellationToken)
@@ -86,7 +86,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="verb">The exact verb to match. Mutually exclusive with <paramref name="verbRegex"/>. When both are omitted, all Action.Submit messages are matched.</param>
     /// <param name="verbRegex">A regular expression pattern matched against the Action.Submit filter field. Mutually exclusive with <paramref name="verb"/>.</param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(ActionSubmitHandler))]
@@ -125,7 +125,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// Decorate a method with this attribute to register it as a handler for Adaptive Card search events.
     /// Provide <paramref name="dataset"/> for an exact match, <paramref name="datasetRegex"/> for a pattern match, or
     /// neither to match any dataset. <paramref name="dataset"/> and <paramref name="datasetRegex"/> are mutually
-    /// exclusive. The method must match the <see cref="SearchHandler"/> delegate signature.
+    /// exclusive. The method must match the <see cref="Microsoft.Agents.Builder.App.AdaptiveCards.SearchHandler"/> delegate signature.
     /// <code>
     /// [SearchRoute("npm")]
     /// public async Task&lt;IList&lt;AdaptiveCardsSearchResult&gt;&gt; OnNpmSearchAsync(ITurnContext turnContext, ITurnState turnState, Query&lt;AdaptiveCardsSearchParams&gt; query, CancellationToken cancellationToken)
@@ -137,7 +137,7 @@ namespace Microsoft.Agents.Builder.App.AdaptiveCards
     /// <param name="dataset">The exact dataset to match. Mutually exclusive with <paramref name="datasetRegex"/>. When both are omitted, all datasets are matched.</param>
     /// <param name="datasetRegex">A regular expression pattern matched against the search dataset. Mutually exclusive with <paramref name="dataset"/>.</param>
     /// <param name="isAgenticOnly">When <see langword="true"/>, the route only fires for agentic turns. Defaults to <see langword="false"/>.</param>
-    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="RouteRank.Unspecified"/>.</param>
+    /// <param name="rank">Route evaluation order. Lower values run first. Defaults to <see cref="Microsoft.Agents.Builder.App.RouteRank.Unspecified"/>.</param>
     /// <param name="autoSignInHandlers">A comma/space/semicolon-delimited list of OAuth sign-in handler names, or the name of an instance or static method on the agent class matching <c>Func&lt;ITurnContext, string[]&gt;</c>.</param>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
     [RouteHandlerType(typeof(SearchHandler))]

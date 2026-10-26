@@ -6,16 +6,16 @@ using Microsoft.Agents.Builder;
 namespace Microsoft.Agents.Extensions.A2A;
 
 /// <summary>
-/// Provides A2A-specific helpers for working with the current <see cref="ITurnContext"/>.
+/// Provides A2A-specific helpers for working with the current <see cref="Microsoft.Agents.Builder.ITurnContext"/>.
 /// </summary>
 /// <remarks>
-/// Exposes the current turn's <see cref="Activity"/> as a strongly-typed <see cref="IA2AActivity"/>
-/// and provides direct access to the underlying A2A primitives via <see cref="Client"/>.
+/// Exposes the current turn's <see cref="Microsoft.Agents.Extensions.A2A.IA2ATurnContext.Activity"/> as a strongly-typed <see cref="Microsoft.Agents.Extensions.A2A.IA2AActivity"/>
+/// and provides direct access to the underlying A2A primitives via <see cref="Microsoft.Agents.Extensions.A2A.IA2ATurnContext.Client"/>.
 /// </remarks>
 public interface IA2ATurnContext : ITurnContext
 {
     /// <summary>
-    /// Gets the current turn's activity as a strongly-typed <see cref="IA2AActivity"/>.
+    /// Gets the current turn's activity as a strongly-typed <see cref="Microsoft.Agents.Extensions.A2A.IA2AActivity"/>.
     /// </summary>
     new IA2AActivity Activity { get; }
 

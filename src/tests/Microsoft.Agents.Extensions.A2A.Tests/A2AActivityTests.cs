@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -42,6 +43,7 @@ public class A2AActivityTests
         Assert.Equal(message, activity.ChannelData);
         Assert.Equal(RoleTypes.Agent, activity.Recipient.Role);
         Assert.Equal(RoleTypes.User, activity.From.Role);
+        Assert.Null(activity.From.Id);
     }
 
     [Fact]
@@ -223,5 +225,13 @@ public class A2AActivityTests
         Assert.Equal(Channels.M365CopilotSubChannel, idValue.ToString());
         Assert.True(productInfo.ToJsonElements().TryGetValue("type", out var typeValue));
         Assert.Equal(EntityTypes.ProductInfo, typeValue.ToString());
+    }
+
+    [Fact]
+    public void MessageFromActivity_WithNoActivity_ReturnsNoMessage()
+    {
+        var message = A2AActivity.MessageFromActivity("context123", "task123", null);
+
+        Assert.Null(message);
     }
 }

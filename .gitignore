@@ -9,6 +9,10 @@
 *.userosscache
 *.sln.docstates
 target/
+/.worktrees/
+/docs/superpowers/
+/docs/plans/
+/.superpowers/
 
 # Cake
 /.cake
@@ -218,6 +222,9 @@ appsettings.*.json
 # JetBrains Rider
 *.sln.iml
 .idea
+
+# Local agent worktrees
+/.worktrees/
 
 # Mac files
 .DS_Store

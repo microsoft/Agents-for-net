@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder.Testing
 {
     /// <summary>
-    /// Represents a method the <see cref="TestFlow"/> can call to validate an activity.
+    /// Represents a method the <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> can call to validate an activity.
     /// </summary>
     /// <param name="expected">The expected activity from the bot or adapter.</param>
     /// <param name="actual">The actual activity from the bot or adapter.</param>
@@ -24,7 +24,7 @@ namespace Microsoft.Agents.Builder.Testing
     /// </summary>
     /// <remarks>You can use this class to mimic input from a a user or a channel to validate
     /// that the bot or adapter responds as expected.</remarks>
-    /// <seealso cref="TestAdapter"/>
+    /// <seealso cref="Microsoft.Agents.Builder.Testing.TestAdapter"/>
     public class TestFlow
     {
         private readonly TestAdapter _adapter;
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Builder.Testing
         private AgentCallbackHandler _callback;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TestFlow"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> class.
         /// </summary>
         /// <param name="adapter">The test adapter to use.</param>
         /// <param name="callback">The bot turn processing logic to test.</param>
@@ -44,7 +44,7 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TestFlow"/> class from an existing flow.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> class from an existing flow.
         /// </summary>
         /// <param name="task">The exchange to add to the exchanges in the existing flow.</param>
         /// <param name="flow">The flow to build up from. This provides the test adapter to use,
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TestFlow"/> class from an existing flow.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> class from an existing flow.
         /// </summary>
         /// <param name="getTask">The exchange to add to the exchanges in the existing flow.</param>
         /// <param name="flow">The flow to build up from. This provides the test adapter to use,
@@ -70,7 +70,7 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TestFlow"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> class.
         /// </summary>
         /// <param name="adapter">The test adapter to use.</param>
         /// <param name="bot">The bot containing the turn processing logic to test.</param>
@@ -92,8 +92,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// Adds a message activity from the user to the bot.
         /// </summary>
         /// <param name="userSays">The text of the message to send.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends a new message activity from the user to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends a new message activity from the user to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         public TestFlow Send(string userSays)
         {
             if (userSays == null)
@@ -114,7 +114,7 @@ namespace Microsoft.Agents.Builder.Testing
         /// <summary>
         /// Creates a conversation update activity and process it the activity.
         /// </summary>
-        /// <returns>A new <see cref="TestFlow"/> object.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</returns>
         public TestFlow SendConversationUpdate()
         {
             return new TestFlow(
@@ -144,10 +144,10 @@ namespace Microsoft.Agents.Builder.Testing
         /// Creates a conversation update activity with explicit members added and processes it.
         /// </summary>
         /// <param name="membersAdded">
-        /// Members to add. Pass <c>null</c> to use the default user (<see cref="TestAdapter.Conversation"/>.User).
+        /// Members to add. Pass <c>null</c> to use the default user (<see cref="Microsoft.Agents.Builder.Testing.TestAdapter.Conversation"/>.User).
         /// Must not be empty — an empty list silently prevents OnMembersAdded from firing.
         /// </param>
-        /// <returns>A new <see cref="TestFlow"/> object.</returns>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="membersAdded"/> is an empty collection.</exception>
         public TestFlow SendConversationUpdate(IEnumerable<ChannelAccount> membersAdded)
         {
@@ -181,8 +181,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// Adds an activity from the user to the bot.
         /// </summary>
         /// <param name="userActivity">The activity to send.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends a new activity from the user to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends a new activity from the user to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         public TestFlow Send(IActivity userActivity)
         {
             if (userActivity == null)
@@ -205,8 +205,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// Adds a delay in the conversation.
         /// </summary>
         /// <param name="ms">The delay length in milliseconds.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends a delay to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends a delay to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         public TestFlow Delay(uint ms)
         {
             return new TestFlow(
@@ -224,8 +224,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// Adds a delay in the conversation.
         /// </summary>
         /// <param name="timespan">The delay length in TimeSpan.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends a delay to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends a delay to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         public TestFlow Delay(TimeSpan timespan)
         {
             return new TestFlow(
@@ -245,8 +245,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="expected">The expected text of a message from the bot.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReply(string expected, string description = null, uint timeout = 3000)
         {
@@ -259,8 +259,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="expected">The part of the expected text of a message from the bot.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReplyContains(string expected, string description = null, uint timeout = 3000)
         {
@@ -291,8 +291,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="expected">The expected activity from the bot.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReply(Activity expected, [CallerMemberName] string description = null, uint timeout = 3000)
         {
@@ -306,8 +306,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="equalityComparer">The equality parameter which compares two activities.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReply(IActivity expected, IEqualityComparer<IActivity> equalityComparer, [CallerMemberName] string description = null, uint timeout = 3000)
         {
@@ -353,8 +353,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// This activity should throw an exception if validation fails.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
 #pragma warning disable CA1801 // Review unused parameters (we can't remove this withouth breaking binary compat)
         public TestFlow AssertReply(Action<IActivity> validateActivity, [CallerMemberName] string description = null, uint timeout = 3000)
 #pragma warning restore CA1801 // Review unused parameters
@@ -384,8 +384,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// </summary>
         /// <param name="description">A message to send if the turn still responds.</param>
         /// <param name="timeout">The amount of time in milliseconds within which no response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         [Obsolete("Use AssertNoMoreReplies instead. AssertNoMoreReplies has a cleaner parameter order and a shorter default timeout appropriate for 'done' assertions.")]
         public TestFlow AssertNoReply([CallerMemberName] string description = null, uint timeout = 3000)
         {
@@ -415,7 +415,7 @@ namespace Microsoft.Agents.Builder.Testing
 
         /// <summary>
         /// Asserts that no further reply arrives within <paramref name="timeout"/> milliseconds.
-        /// If a reply does arrive, throws <see cref="InvalidOperationException"/>.
+        /// If a reply does arrive, throws <see cref="System.InvalidOperationException"/>.
         /// </summary>
         /// <param name="description">Optional label included in the error message when a reply unexpectedly arrives.</param>
         /// <param name="timeout">Milliseconds to wait. Defaults to 1000ms — sufficient for agents that have already finished replying.</param>
@@ -446,7 +446,7 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Dequeues the next activity and asserts it is a typing indicator (<see cref="ActivityTypes.Typing"/>).
+        /// Dequeues the next activity and asserts it is a typing indicator (<see cref="Microsoft.Agents.Core.Models.ActivityTypes.Typing"/>).
         /// Chain this before the reply assertions to match the agent's send order.
         /// </summary>
         /// <param name="description">Optional label included in the error message on failure.</param>
@@ -519,7 +519,7 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Asserts the next reply satisfies an <see cref="IResponseValidator"/>.
+        /// Asserts the next reply satisfies an <see cref="Microsoft.Agents.Builder.Testing.IResponseValidator"/>.
         /// Exceptions from the validator propagate as-is (no wrapping).
         /// </summary>
         /// <param name="validator">The validator to run against the reply.</param>
@@ -534,14 +534,14 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Shortcut for calling <see cref="Send(string)"/> followed by <see cref="AssertReply(string, string, uint)"/>.
+        /// Shortcut for calling <see cref="Microsoft.Agents.Builder.Testing.TestFlow.Send(System.String)"/> followed by <see cref="Microsoft.Agents.Builder.Testing.TestFlow.AssertReply(System.String, System.String, System.UInt32)"/>.
         /// </summary>
         /// <param name="userSays">The text of the message to send.</param>
         /// <param name="expected">The expected text of a message from the bot.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, string expected, string description = null, uint timeout = 3000)
         {
@@ -552,14 +552,14 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Shortcut for calling <see cref="Send(string)"/> followed by <see cref="AssertReply(Activity, string, uint)"/>.
+        /// Shortcut for calling <see cref="Microsoft.Agents.Builder.Testing.TestFlow.Send(System.String)"/> followed by <see cref="Microsoft.Agents.Builder.Testing.TestFlow.AssertReply(Microsoft.Agents.Core.Models.Activity, System.String, System.UInt32)"/>.
         /// </summary>
         /// <param name="userSays">The text of the message to send.</param>
         /// <param name="expected">The expected activity from the bot.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, Activity expected, string description = null, uint timeout = 3000)
         {
@@ -570,15 +570,15 @@ namespace Microsoft.Agents.Builder.Testing
         }
 
         /// <summary>
-        /// Shortcut for calling <see cref="Send(string)"/> followed by AssertReply(Action{Activity}, string, uint).
+        /// Shortcut for calling <see cref="Microsoft.Agents.Builder.Testing.TestFlow.Send(System.String)"/> followed by AssertReply(Action{Activity}, string, uint).
         /// </summary>
         /// <param name="userSays">The text of the message to send.</param>
         /// <param name="validateActivity">A validation method to apply to an activity from the bot.
         /// This activity should throw an exception if validation fails.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(string userSays, Action<IActivity> validateActivity, string description = null, uint timeout = 3000)
         {
@@ -590,15 +590,15 @@ namespace Microsoft.Agents.Builder.Testing
 
         /// <summary>
         /// Shortcut for adding an arbitrary exchange between the user and bot.
-        /// Each activity with a <see cref="Activity.From"/>.<see cref="ChannelAccount.Role"/> equals to "bot"
-        /// will be processed with the <see cref="AssertReply(Activity, string, uint)"/> method.
+        /// Each activity with a <see cref="Microsoft.Agents.Core.Models.Activity.From"/>.<see cref="Microsoft.Agents.Core.Models.ChannelAccount.Role"/> equals to "bot"
+        /// will be processed with the <see cref="Microsoft.Agents.Builder.Testing.TestFlow.AssertReply(Microsoft.Agents.Core.Models.Activity, System.String, System.UInt32)"/> method.
         /// Every other activity will be processed as user's message via the Send(Activity) method.
         /// </summary>
         /// <param name="activities">The list of activities to test.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(IEnumerable<Activity> activities, [CallerMemberName] string description = null, uint timeout = 3000)
         {
@@ -615,16 +615,16 @@ namespace Microsoft.Agents.Builder.Testing
 
         /// <summary>
         /// Shortcut for adding an arbitrary exchange between the user and bot.
-        /// Each activity with a <see cref="Activity.From"/>.<see cref="ChannelAccount.Role"/> equals to "bot"
-        /// will be processed with the <see cref="AssertReply(Activity, string, uint)"/> method.
+        /// Each activity with a <see cref="Microsoft.Agents.Core.Models.Activity.From"/>.<see cref="Microsoft.Agents.Core.Models.ChannelAccount.Role"/> equals to "bot"
+        /// will be processed with the <see cref="Microsoft.Agents.Builder.Testing.TestFlow.AssertReply(Microsoft.Agents.Core.Models.Activity, System.String, System.UInt32)"/> method.
         /// Every other activity will be processed as user's message via the Send(Activity) method.
         /// </summary>
         /// <param name="activities">The list of activities to test.</param>
         /// <param name="validateReply">The delegate to call to validate responses from the bot.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this exchange to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow Test(IEnumerable<Activity> activities, ValidateReply validateReply, [CallerMemberName] string description = null, uint timeout = 3000)
         {
@@ -651,8 +651,8 @@ namespace Microsoft.Agents.Builder.Testing
         /// <param name="candidates">The set of acceptable messages.</param>
         /// <param name="description">A message to send if the actual response is not as expected.</param>
         /// <param name="timeout">The amount of time in milliseconds within which a response is expected.</param>
-        /// <returns>A new <see cref="TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
-        /// <remarks>This method does not modify the original <see cref="TestFlow"/> object.</remarks>
+        /// <returns>A new <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object that appends this assertion to the modeled exchange.</returns>
+        /// <remarks>This method does not modify the original <see cref="Microsoft.Agents.Builder.Testing.TestFlow"/> object.</remarks>
         /// <exception cref="System.Exception">The bot did not respond as expected.</exception>
         public TestFlow AssertReplyOneOf(string[] candidates, string description = null, uint timeout = 3000)
         {

@@ -8,44 +8,44 @@ using Microsoft.Agents.Core.Models;
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
-    /// Contains settings to pass to a <see cref="Prompt{T}"/> when the prompt is started.
+    /// Contains settings to pass to a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.Prompt{T}"/> when the prompt is started.
     /// </summary>
     public class PromptOptions
     {
         /// <summary>
-        /// Gets or sets the initial prompt to send the user as an <see cref="Activity"/>.
+        /// Gets or sets the initial prompt to send the user as an <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
         /// <value>
-        /// The initial prompt to send the user as and <see cref="Activity"/>.
+        /// The initial prompt to send the user as and <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </value>
         public IActivity Prompt { get; set; }
 
         /// <summary>
-        /// Gets or sets the retry prompt to send the user as and <see cref="Activity"/>.
+        /// Gets or sets the retry prompt to send the user as and <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </summary>
         /// <value>
-        /// The retry prompt to send the user as an <see cref="Activity"/>.
+        /// The retry prompt to send the user as an <see cref="Microsoft.Agents.Core.Models.Activity"/>.
         /// </value>
         public IActivity RetryPrompt { get; set; }
 
         /// <summary>
-        /// Gets or sets a list of choices for the user to choose from, for use with a <see cref="ChoicePrompt"/>.
+        /// Gets or sets a list of choices for the user to choose from, for use with a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.ChoicePrompt"/>.
         /// </summary>
         /// <value>The list of available choices.</value>
         public IList<Choice> Choices { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="ListStyle"/> for a <see cref="ChoicePrompt"/>.
+        /// Gets or sets the <see cref="Microsoft.Agents.Builder.Dialogs.Choices.ListStyle"/> for a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.ChoicePrompt"/>.
         /// </summary>
         /// <value>The list style to use when presenting a choice prompt.</value>
         /// <remarks>
-        /// This property can be used to override or set the value of <see cref="ChoicePrompt.Style"/> property
-        /// when the prompt is started using <see cref="DialogContext.PromptAsync"/>.
+        /// This property can be used to override or set the value of <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.ChoicePrompt.Style"/> property
+        /// when the prompt is started using <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>.
         /// </remarks>
         public ListStyle? Style { get; set; }
 
         /// <summary>
-        /// Gets or sets additional options for use with any <see cref="PromptValidator{T}"/> attached to the prompt.
+        /// Gets or sets additional options for use with any <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptValidator{T}"/> attached to the prompt.
         /// </summary>
         /// <value>Additional options for use with a prompt validator.</value>
         public object Validations { get; set; }

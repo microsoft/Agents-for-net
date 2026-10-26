@@ -11,7 +11,7 @@ This is the Microsoft 365 Agents SDK for .NET — a framework for building enter
 
 ```bash
 # Build entire solution
-dotnet build src/Microsoft.Agents.SDK.sln
+dotnet build src/Microsoft.Agents.SDK.slnx
 
 # Build via top-level project (includes all libraries)
 dotnet build AgentSdk.proj
@@ -29,12 +29,12 @@ dotnet test src/tests/Microsoft.Agents.Core.Tests/
 dotnet test --filter "FullyQualifiedName~Namespace.ClassName.MethodName"
 
 # Create NuGet packages
-dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.sln
+dotnet pack --no-build -c Debug src/Microsoft.Agents.SDK.slnx
 ```
 
 ## Architecture
 
-The SDK is organized into layered libraries under `src/libraries/`. See `doc/architecture.md` for a architecture overview.
+The SDK is organized into layered libraries under `src/libraries/`. See `docs/architecture.md` for an architecture overview.
 
 ### Agent Pattern
 
@@ -84,6 +84,13 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 - Feedback is the FeedbackLoop feature in `AgentApplication`; use `AgentApplication.OnFeedbackLoop()` or `[FeedbackLoopRoute]` rather than treating it as an MSTeams-specific feature.
 - Adaptive Cards support is handled by AgentApplication.AdaptiveCards
 
+### AgentExtension boundaries
+
+- Keep protocol-, channel-, and feature-specific implementation inside its AgentExtension project.
+- Do not add AgentExtension-specific behavior to Agents SDK Core, Builder, or Hosting.
+- Changes outside the extension project must provide a general-purpose extensibility capability.
+- Pull requests making such changes must explain why the extension cannot use existing extensibility points and identify the related Core documentation updates.
+
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
 - This is the older Teams Extension and should not be used.
 
@@ -122,6 +129,11 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
 
 ### Nullability
 - Libraries use `<Nullable>annotations</Nullable>` (annotations only, warnings not enforced).
+
+### XML Documentation
+- When adding or editing XML documentation comments, use fully qualified symbol names, including namespaces and containing types, in every `<see cref="...">` and `<seealso cref="...">` reference.
+- Verify that each referenced type or member still exists at that location and that member references use the current signature.
+- If a symbol cannot be referenced from the documenting project because of assembly or target-framework constraints, use fully qualified `<c>` text instead of an unresolved `cref`.
 
 ### Testing
 - **xUnit** (v2.9.3 and v3.0.1), **Moq** for mocking.

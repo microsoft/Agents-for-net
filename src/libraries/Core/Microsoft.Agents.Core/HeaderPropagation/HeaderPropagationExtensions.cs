@@ -9,7 +9,7 @@ public static class HeaderPropagationExtensions
 {
     /// <summary>
     /// Loads incoming request headers based on a list of headers to propagate into the HttpClient,
-    /// then applies any dynamically resolved headers from registered <see cref="IHeaderValueProvider"/> instances.
+    /// then applies any dynamically resolved headers from registered <see cref="Microsoft.Agents.Core.HeaderPropagation.IHeaderValueProvider"/> instances.
     /// </summary>
     /// <param name="httpClient">The <see cref="System.Net.Http.HttpClient"/>.</param>
     public static void AddHeaderPropagation(this HttpClient httpClient)

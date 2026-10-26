@@ -92,7 +92,7 @@ namespace Microsoft.Agents.Core.Models
         /// <see cref="Microsoft.Agents.Core.Models.CardAction.Title"/> and sets the <see cref="Microsoft.Agents.Core.Models.CardAction.Type"/> to
         /// <see cref="Microsoft.Agents.Core.Models.ActionTypes.ImBack"/>.
         /// </remarks>
-        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.SuggestedActions(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.CardAction}, string, string, string)"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.SuggestedActions(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.CardAction}, System.String, System.String, System.String)"/>
         public static IActivity SuggestedActions(IEnumerable<string> actions, string text = null, string ssml = null, string inputHint = null)
         {
             return SuggestedActions(actions, text, ssml, inputHint, null);
@@ -131,7 +131,7 @@ namespace Microsoft.Agents.Core.Models
         /// <see cref="Microsoft.Agents.Core.Models.CardAction.Title"/> and sets the <see cref="Microsoft.Agents.Core.Models.CardAction.Type"/> to
         /// <see cref="Microsoft.Agents.Core.Models.ActionTypes.ImBack"/>.
         /// </remarks>
-        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.SuggestedActions(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.CardAction}, string, string, string, System.Collections.Generic.IList{string})"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.SuggestedActions(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.CardAction}, System.String, System.String, System.String, System.Collections.Generic.IList{System.String})"/>
         public static IActivity SuggestedActions(IEnumerable<string> actions, string text = null, string ssml = null, string inputHint = null, IList<string> toList = default)
         {
             actions = actions ?? throw new ArgumentNullException(nameof(actions));
@@ -246,8 +246,8 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>A message activity containing the attachment.</returns>
         /// <exception cref="System.ArgumentNullException">
         /// <paramref name="attachment"/> is <c>null</c>.</exception>
-        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, string, string, string)"/>
-        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Carousel(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, string, string, string)"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, System.String, System.String, System.String)"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Carousel(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, System.String, System.String, System.String)"/>
         public static IActivity Attachment(Attachment attachment, string text = null, string ssml = null, string inputHint = null)
         {
             attachment = attachment ?? throw new ArgumentNullException(nameof(attachment));
@@ -269,8 +269,8 @@ namespace Microsoft.Agents.Core.Models
         /// <returns>A message activity containing the attachment.</returns>
         /// <exception cref="System.ArgumentNullException">
         /// <paramref name="attachments"/> is <c>null</c>.</exception>
-        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Carousel(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, string, string, string)"/>
-        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(Microsoft.Agents.Core.Models.Attachment, string, string, string)"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Carousel(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, System.String, System.String, System.String)"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(Microsoft.Agents.Core.Models.Attachment, System.String, System.String, System.String)"/>
         public static IActivity Attachment(IEnumerable<Attachment> attachments, string text = null, string ssml = null, string inputHint = null)
         {
             attachments = attachments ?? throw new ArgumentNullException(nameof(attachments));
@@ -328,7 +328,7 @@ namespace Microsoft.Agents.Core.Models
         /// await context.SendActivity(activity);
         /// </code>
         /// </example>
-        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, string, string, string)"/>
+        /// <seealso cref="Microsoft.Agents.Core.Models.MessageFactory.Attachment(System.Collections.Generic.IEnumerable{Microsoft.Agents.Core.Models.Attachment}, System.String, System.String, System.String)"/>
         public static IActivity Carousel(IEnumerable<Attachment> attachments, string text = null, string ssml = null, string inputHint = null)
         {
             attachments = attachments ?? throw new ArgumentNullException(nameof(attachments));

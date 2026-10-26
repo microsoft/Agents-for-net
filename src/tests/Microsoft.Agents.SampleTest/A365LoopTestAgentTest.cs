@@ -29,7 +29,7 @@ namespace Microsoft.Agents.SampleTest
     ///
     /// <para>
     /// The agent requires agentic user authentication. These tests mock
-    /// <see cref="IConnections"/> and <see cref="IUserAuthorization"/> so that
+    /// <see cref="Microsoft.Agents.Authentication.IConnections"/> and <see cref="Microsoft.Agents.Builder.UserAuth.IUserAuthorization"/> so that
     /// <c>UserAuthorization.GetTurnTokenAsync</c> returns a simulated token without
     /// real Azure AD infrastructure.
     /// </para>
@@ -40,7 +40,7 @@ namespace Microsoft.Agents.SampleTest
         private const string AgenticHandlerName = "agentic";
 
         /// <summary>
-        /// Creates a mock <see cref="IUserAuthorization"/> named "agentic" that immediately
+        /// Creates a mock <see cref="Microsoft.Agents.Builder.UserAuth.IUserAuthorization"/> named "agentic" that immediately
         /// returns a fake token on sign-in (no multi-turn OAuth flow).
         /// </summary>
         private static IUserAuthorization CreateMockAgenticHandler()
@@ -68,8 +68,8 @@ namespace Microsoft.Agents.SampleTest
         }
 
         /// <summary>
-        /// Creates a mock <see cref="IConnections"/> that returns a mock
-        /// <see cref="IAccessTokenProvider"/> implementing <see cref="IAgenticTokenProvider"/>.
+        /// Creates a mock <see cref="Microsoft.Agents.Authentication.IConnections"/> that returns a mock
+        /// <see cref="Microsoft.Agents.Authentication.IAccessTokenProvider"/> implementing <see cref="Microsoft.Agents.Authentication.IAgenticTokenProvider"/>.
         /// </summary>
         private static IConnections CreateMockConnections()
         {
@@ -110,7 +110,7 @@ namespace Microsoft.Agents.SampleTest
         }
 
         /// <summary>
-        /// Creates the <see cref="AgentTestHost"/> with the real <c>A365LoopTest.MyAgent</c>,
+        /// Creates the <see cref="Microsoft.Agents.Builder.Testing.AgentTestHost"/> with the real <c>A365LoopTest.MyAgent</c>,
         /// configured with mocked authentication so handlers can call GetTurnTokenAsync.
         /// </summary>
         private static AgentTestHost CreateHost()

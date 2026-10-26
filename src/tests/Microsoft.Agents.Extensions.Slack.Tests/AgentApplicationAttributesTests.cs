@@ -5,6 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Storage;
 using Moq;
 using System.Collections.Generic;
@@ -272,6 +273,23 @@ public class AgentApplicationAttributesTests
         Assert.Equal("OnFeedback", app.calls[0]);
     }
 
+    [Fact]
+    public async Task SlackFeedbackLoopRoute_FiresForSerializedFeedbackActivity()
+    {
+        var app = new FeedbackLoopRouteApp(new AgentApplicationOptions((IStorage)null));
+        var activity = ProtocolJsonSerializer.ToObject<Activity>(SlackActivityTests.FeedbackActivityJson);
+        var turnContext = CreateTurnContext(activity);
+        Assert.Equal("1700000000.000000", ProtocolJsonSerializer.ToObject<FeedbackData>(activity.Value).ReplyToId);
+
+        await app.OnTurnAsync(turnContext.Object, CancellationToken.None);
+
+        Assert.Equal("OnFeedback", Assert.Single(app.calls));
+        Assert.Equal("positive_feedback", Assert.Single(app.feedback).ActionValue.Reaction);
+        var channelData = Assert.Single(app.channelData);
+        Assert.Equal("D0LOCALDEV01", channelData.Channel);
+        Assert.Equal("1700000000.000000", channelData.ThreadTs);
+    }
+
     // ---------------------------------------------------------------------------
     // Native handler signature support (RouteHandler / FeedbackLoopHandler)
     // ---------------------------------------------------------------------------
@@ -422,9 +440,17 @@ class MembersRemovedRouteApp(AgentApplicationOptions options) : AgentApplication
 class FeedbackLoopRouteApp(AgentApplicationOptions options) : AgentApplication(options)
 {
     public List<string> calls = [];
+    public List<FeedbackData> feedback = [];
+    public List<Api.SlackChannelData> channelData = [];
 
     [SlackFeedbackLoopRoute]
-    public Task OnFeedback(ISlackTurnContext ctx, ITurnState state, FeedbackData data, CancellationToken ct) { calls.Add("OnFeedback"); return Task.CompletedTask; }
+    public Task OnFeedback(ISlackTurnContext ctx, ITurnState state, FeedbackData data, CancellationToken ct)
+    {
+        calls.Add("OnFeedback");
+        feedback.Add(data);
+        channelData.Add(ctx.Activity.ChannelData);
+        return Task.CompletedTask;
+    }
 }
 
 class ActivityRouteNativeApp(AgentApplicationOptions options) : AgentApplication(options)

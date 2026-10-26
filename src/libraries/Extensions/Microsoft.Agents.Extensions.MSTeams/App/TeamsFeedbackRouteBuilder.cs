@@ -12,9 +12,9 @@ namespace Microsoft.Agents.Extensions.MSTeams.App;
 public class TeamsFeedbackRouteBuilder : FeedbackRouteBuilderBase<TeamsFeedbackRouteBuilder>
 {
     /// <summary>
-    /// Creates a new instance of the <see cref="TeamsFeedbackRouteBuilder"/> class.
+    /// Creates a new instance of the <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsFeedbackRouteBuilder"/> class.
     /// </summary>
-    /// <returns>A new <see cref="TeamsFeedbackRouteBuilder"/>.</returns>
+    /// <returns>A new <see cref="Microsoft.Agents.Extensions.MSTeams.App.TeamsFeedbackRouteBuilder"/>.</returns>
     public static TeamsFeedbackRouteBuilder Create()
     {
         return new TeamsFeedbackRouteBuilder();

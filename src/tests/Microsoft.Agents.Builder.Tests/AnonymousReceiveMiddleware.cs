@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Builder.Tests
         private readonly Func<ITurnContext, NextDelegate, CancellationToken, Task> _toCall;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AnonymousReceiveMiddleware"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Tests.AnonymousReceiveMiddleware"/> class.
         /// </summary>
         /// <param name="anonymousMethod">The method to use as the middleware's process
         /// request handler.</param>
@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.Tests
         }
 
         /// <summary>
-        /// Uses the method provided in the <see cref="AnonymousReceiveMiddleware"/> to
+        /// Uses the method provided in the <see cref="Microsoft.Agents.Builder.Tests.AnonymousReceiveMiddleware"/> to
         /// process an incoming activity.
         /// </summary>
         /// <param name="turnContext">The context object for this turn.</param>

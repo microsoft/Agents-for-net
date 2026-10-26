@@ -21,7 +21,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         /// Serialize a header to its 48-byte ASCII wire representation.
         /// </summary>
         /// <param name="header">The header to serialize.</param>
-        /// <param name="buffer">A buffer of at least <see cref="HeaderSize"/> bytes.</param>
+        /// <param name="buffer">A buffer of at least <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.HeaderSerializer.HeaderSize"/> bytes.</param>
         /// <exception cref="ArgumentException">Thrown when buffer is too small.</exception>
         public static void Serialize(Header header, Span<byte> buffer)
         {
@@ -49,7 +49,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport
         /// <summary>
         /// Deserialize a 48-byte ASCII header from the wire.
         /// </summary>
-        /// <param name="buffer">A buffer containing at least <see cref="HeaderSize"/> bytes.</param>
+        /// <param name="buffer">A buffer containing at least <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Transport.HeaderSerializer.HeaderSize"/> bytes.</param>
         /// <returns>The deserialized header.</returns>
         /// <exception cref="ArgumentException">Thrown when buffer is too small.</exception>
         /// <exception cref="FormatException">Thrown when the header data is malformed.</exception>

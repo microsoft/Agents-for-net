@@ -13,12 +13,12 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Model
     public class SidecarConnectionSettings : ConnectionSettingsBase
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SidecarConnectionSettings"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.Model.SidecarConnectionSettings"/> class.
         /// </summary>
         public SidecarConnectionSettings() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SidecarConnectionSettings"/> class from configuration.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.Model.SidecarConnectionSettings"/> class from configuration.
         /// </summary>
         /// <param name="configurationSection">Configuration section with sidecar connection settings.</param>
         public SidecarConnectionSettings(IConfigurationSection configurationSection)
@@ -48,7 +48,7 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.Model
         /// Optional base URL of the Entra ID Agent Container (sidecar).
         /// Resolution order: <c>SIDECAR_URL</c> environment variable &gt; this setting &gt; default.
         /// Regardless of how it is resolved, the host must be a loopback/private address unless
-        /// <see cref="BypassLocalNetworkRestriction"/> is set.
+        /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.Model.SidecarConnectionSettings.BypassLocalNetworkRestriction"/> is set.
         /// </summary>
         public string SidecarBaseUrl { get; set; }
 

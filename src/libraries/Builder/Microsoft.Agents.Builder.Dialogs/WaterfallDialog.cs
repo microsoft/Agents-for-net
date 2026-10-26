@@ -25,7 +25,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         private readonly List<WaterfallStep> _steps;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="WaterfallDialog"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.WaterfallDialog"/> class.
         /// </summary>
         /// <param name="dialogId">The dialog ID.</param>
         /// <param name="actions">Optional actions to be defined by the caller.</param>
@@ -58,11 +58,11 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// Called when the waterfall dialog is started and pushed onto the dialog stack.
         /// </summary>
-        /// <param name="dc">The <see cref="DialogContext"/> for the current turn of conversation.</param>
+        /// <param name="dc">The <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> for the current turn of conversation.</param>
         /// <param name="options">Optional, initial information to pass to the dialog.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default)
@@ -97,10 +97,10 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// Called when the waterfall dialog is _continued_, where it is the active dialog and the
         /// user replies with a new activity.
         /// </summary>
-        /// <param name="dc">The <see cref="DialogContext"/> for the current turn of conversation.</param>
+        /// <param name="dc">The <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> for the current turn of conversation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog. The result may also contain a
         /// return value.</remarks>
@@ -127,7 +127,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// of the value returned is dependent on the child dialog.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         public override async Task<DialogTurnResult> ResumeDialogAsync(DialogContext dc, DialogReason reason, object result, CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(dc, nameof(dc));
@@ -206,7 +206,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// Executes a step of the waterfall dialog.
         /// </summary>
-        /// <param name="dc">The <see cref="DialogContext"/> for the current turn of conversation.</param>
+        /// <param name="dc">The <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> for the current turn of conversation.</param>
         /// <param name="index">The index of the current waterfall step to execute.</param>
         /// <param name="reason">The reason the waterfall step is being executed.</param>
         /// <param name="result">Result returned by a dialog called in the previous waterfall step.</param>

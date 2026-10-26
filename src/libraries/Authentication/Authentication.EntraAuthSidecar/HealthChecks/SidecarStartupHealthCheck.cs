@@ -67,9 +67,9 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
         /// startup via its <c>/healthz</c> endpoint.
         /// </summary>
         /// <remarks>
-        /// If a <see cref="SidecarHttpClient"/> has been registered (for example via
-        /// <see cref="SidecarServiceCollectionExtensions.AddSidecarConnections"/>) it is reused;
-        /// otherwise one is created using <see cref="IHttpClientFactory"/> and the resolved base URL.
+        /// If a <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient"/> has been registered (for example via
+        /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarServiceCollectionExtensions.AddSidecarConnections(Microsoft.Extensions.DependencyInjection.IServiceCollection, Microsoft.Extensions.Configuration.IConfiguration, System.String)"/>) it is reused;
+        /// otherwise one is created using <see cref="System.Net.Http.IHttpClientFactory"/> and the resolved base URL.
         /// </remarks>
         /// <param name="services">The service collection.</param>
         /// <param name="failOnUnreachable">
@@ -77,16 +77,16 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
         /// When <c>false</c> (the default), a warning is logged and startup continues.
         /// </param>
         /// <param name="sidecarBaseUrl">
-        /// Optional sidecar base URL used only when no <see cref="SidecarHttpClient"/> is registered. When
+        /// Optional sidecar base URL used only when no <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient"/> is registered. When
         /// null, resolves from the <c>SIDECAR_URL</c> environment variable, then falls back to the default.
         /// </param>
         /// <param name="bypassLocalNetworkRestriction">
         /// When <c>true</c>, disables the loopback/private-address safety check on the resolved URL.
-        /// <b>UNSAFE</b>; see <see cref="SidecarHttpClient.ValidateBaseUrl"/>. Only used when no
-        /// <see cref="SidecarHttpClient"/> is already registered.
+        /// <b>UNSAFE</b>; see <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient.ValidateBaseUrl(System.String, System.Boolean)"/>. Only used when no
+        /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient"/> is already registered.
         /// </param>
         /// <param name="timeout">
-        /// Optional probe timeout. Defaults to <see cref="SidecarHttpClient.DefaultTimeout"/>.
+        /// Optional probe timeout. Defaults to <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient.DefaultTimeout"/>.
         /// </param>
         /// <returns>The service collection for chaining.</returns>
         public static IServiceCollection AddSidecarStartupProbe(
@@ -141,13 +141,13 @@ namespace Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks
         /// </summary>
         /// <remarks>
         /// This is equivalent to <c>builder.Services.AddSidecarStartupProbe(...)</c>. See
-        /// <see cref="AddSidecarStartupProbe(IServiceCollection, bool, string, bool, TimeSpan?)"/> for parameter details.
+        /// <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.HealthChecks.SidecarStartupProbeExtensions.AddSidecarStartupProbe(Microsoft.Extensions.DependencyInjection.IServiceCollection, System.Boolean, System.String, System.Boolean, System.TimeSpan?)"/> for parameter details.
         /// </remarks>
         /// <param name="builder">The host application builder.</param>
         /// <param name="failOnUnreachable">When <c>true</c>, an unreachable sidecar throws and prevents startup. Defaults to <c>false</c>.</param>
-        /// <param name="sidecarBaseUrl">Optional sidecar base URL used only when no <see cref="SidecarHttpClient"/> is registered.</param>
+        /// <param name="sidecarBaseUrl">Optional sidecar base URL used only when no <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient"/> is registered.</param>
         /// <param name="bypassLocalNetworkRestriction">When <c>true</c>, disables the loopback/private-address safety check. <b>UNSAFE</b>.</param>
-        /// <param name="timeout">Optional probe timeout. Defaults to <see cref="SidecarHttpClient.DefaultTimeout"/>.</param>
+        /// <param name="timeout">Optional probe timeout. Defaults to <see cref="Microsoft.Agents.Authentication.EntraAuthSidecar.SidecarHttpClient.DefaultTimeout"/>.</param>
         /// <returns>The same host application builder for chaining.</returns>
         public static IHostApplicationBuilder AddSidecarStartupProbe(
             this IHostApplicationBuilder builder,

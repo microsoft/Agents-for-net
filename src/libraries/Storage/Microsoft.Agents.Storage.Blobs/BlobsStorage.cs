@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -32,14 +32,17 @@ namespace Microsoft.Agents.Storage.Blobs
     /// property value to the blob's ETag upon read. Afterward, an <see cref="Azure.Storage.Blobs.Models.BlobRequestConditions"/> with the ETag value
     /// will be generated during Write. New entities start with a null ETag.
     /// </remarks>
-    public class BlobsStorage : IStorage
+    public class BlobsStorage : IStorageV2
     {
+        private const string ETagPropertyName = "ETag";
+
         private static readonly JsonSerializerOptions DefaultJsonSerializerOptions = ProtocolJsonSerializer.SerializationOptions;
         private readonly JsonSerializerOptions _serializerOptions;
 
         // If a JsonSerializer is not provided during construction, this will be the default JsonSerializer.
         private readonly BlobContainerClient _containerClient;
         private int _checkForContainerExistence;
+        private readonly SemaphoreSlim _containerInitializationLock = new(1, 1);
         private readonly StorageTransferOptions _storageTransferOptions;
 
         /// <summary>
@@ -109,11 +112,20 @@ namespace Microsoft.Agents.Storage.Blobs
 
             using var telemetryScope = new ScopeDelete(keys.Length);
 
+            await EnsureContainerExistsAsync(cancellationToken).ConfigureAwait(false);
+
             foreach (var key in keys)
             {
                 var blobName = GetBlobName(key);
                 var blobClient = _containerClient.GetBlobClient(blobName);
-                await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await blobClient.DeleteAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                catch (RequestFailedException exception) when (IsBlobNotFound(exception))
+                {
+                    // A missing item is an idempotent delete; a missing container must propagate.
+                }
             }
         }
 
@@ -124,11 +136,7 @@ namespace Microsoft.Agents.Storage.Blobs
 
             using var telemetryScope = new ScopeRead(keys.Length);
 
-            // this should only happen once - assuming this is a singleton
-            if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
-            {
-                await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
+            await EnsureContainerExistsAsync(cancellationToken).ConfigureAwait(false);
 
             var items = new Dictionary<string, object>();
 
@@ -138,16 +146,17 @@ namespace Microsoft.Agents.Storage.Blobs
                 var blobClient = _containerClient.GetBlobClient(blobName);
                 try
                 {
-                    items.Add(key, await InnerReadBlobAsync(blobClient, cancellationToken).ConfigureAwait(false));
+                    var blobState = await InnerReadBlobAsync(blobClient, cancellationToken).ConfigureAwait(false);
+                    items.Add(key, blobState.Value);
                 }
                 catch (RequestFailedException ex)
-                    when ((HttpStatusCode)ex.Status == HttpStatusCode.NotFound)
+                    when (IsBlobNotFound(ex))
                 {
                     continue;
                 }
                 catch (AggregateException ex)
                     when (ex.InnerException is RequestFailedException iex
-                    && (HttpStatusCode)iex.Status == HttpStatusCode.NotFound)
+                    && IsBlobNotFound(iex))
                 {
                     continue;
                 }
@@ -171,6 +180,56 @@ namespace Microsoft.Agents.Storage.Blobs
             return values;
         }
 
+        //<inheritdoc/>
+        public async Task<IReadOnlyDictionary<string, StorageReadResult>> ReadAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            using var telemetryScope = new ScopeRead(keys.Count);
+
+            await EnsureContainerExistsAsync(cancellationToken).ConfigureAwait(false);
+
+            Dictionary<string, StorageReadResult> results = new(keys.Count);
+            foreach (var key in keys)
+            {
+                AssertionHelpers.ThrowIfNullOrWhiteSpace(key, nameof(key));
+
+                var blobClient = _containerClient.GetBlobClient(GetBlobName(key));
+                try
+                {
+                    var blobState = await ReadBlobStateAsync(blobClient, cancellationToken).ConfigureAwait(false);
+                    results[key] = new StorageReadResult()
+                    {
+                        Key = key,
+                        Status = StorageOperationStatus.Succeeded,
+                        Value = blobState.Value,
+                        Version = blobState.Version,
+                    };
+                }
+                catch (RequestFailedException ex)
+                    when (IsBlobNotFound(ex))
+                {
+                    results[key] = new StorageReadResult()
+                    {
+                        Key = key,
+                        Status = StorageOperationStatus.NotFound,
+                    };
+                }
+                catch (AggregateException ex)
+                    when (ex.InnerException is RequestFailedException iex
+                    && IsBlobNotFound(iex))
+                {
+                    results[key] = new StorageReadResult()
+                    {
+                        Key = key,
+                        Status = StorageOperationStatus.NotFound,
+                    };
+                }
+            }
+
+            return results;
+        }
+
         /// <inheritdoc/>
         public async Task WriteAsync(IDictionary<string, object> changes, CancellationToken cancellationToken = default)
         {
@@ -184,11 +243,7 @@ namespace Microsoft.Agents.Storage.Blobs
 
             using var telemetryScope = new ScopeWrite(changes.Count);
 
-            // this should only happen once - assuming this is a singleton
-            if (Interlocked.CompareExchange(ref _checkForContainerExistence, 0, 1) == 1)
-            {
-                await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            }
+            await EnsureContainerExistsAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (var keyValuePair in changes)
             {
@@ -204,22 +259,11 @@ namespace Microsoft.Agents.Storage.Blobs
                 var blobReference = _containerClient.GetBlobClient(blobName);
                 try
                 {
-                    var newState = newValue != null ? JsonObject.Create(JsonSerializer.SerializeToElement(newValue, _serializerOptions)) : null;
+                    var newState = CreateState(newValue);
 
                     if (newState != null)
                     {
-                        using var memoryStream = new MemoryStream();
-
-                        // Retain type info
-                        newState.AddTypeInfo(newValue);
-
-                        JsonSerializer.Serialize(memoryStream, newState, _serializerOptions);
-                        memoryStream.Seek(0, SeekOrigin.Begin);
-
-                        var blobHttpHeaders = new BlobHttpHeaders();
-                        blobHttpHeaders.ContentType = "application/json";
-
-                        await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
+                        await UploadStateAsync(blobReference, newState, accessCondition, cancellationToken).ConfigureAwait(false);
                     }
                 }
                 catch (RequestFailedException ex)
@@ -248,7 +292,148 @@ namespace Microsoft.Agents.Storage.Blobs
             {
                 changesAsObject.Add(change.Key, change.Value);
             }
-            return WriteAsync(changesAsObject, cancellationToken);
+            return WriteAsync((IDictionary<string, object>)changesAsObject, cancellationToken);
+        }
+
+        //<inheritdoc/>
+        private async Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteCoreAsync(Dictionary<string, object> changes, StorageWriteOptions options, CancellationToken cancellationToken)
+        {
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            options ??= new StorageWriteOptions();
+            ValidateExpectedVersion(options.ExpectedVersion, nameof(options));
+
+            using var telemetryScope = new ScopeWrite(changes.Count);
+
+            await EnsureContainerExistsAsync(cancellationToken).ConfigureAwait(false);
+
+            Dictionary<string, StorageWriteResult> results = new(changes.Count);
+            foreach (var change in changes)
+            {
+                var blobClient = _containerClient.GetBlobClient(GetBlobName(change.Key));
+                var properties = await TryGetBlobPropertiesAsync(blobClient, cancellationToken).ConfigureAwait(false);
+                var currentVersion = properties?.ETag.ToString();
+
+                if (options.Mode == StorageWriteMode.CreateOnly && properties != null)
+                {
+                    results[change.Key] = new StorageWriteResult() { Key = change.Key, Status = StorageOperationStatus.Conflict, Version = currentVersion };
+                    continue;
+                }
+
+                if (options.Mode == StorageWriteMode.Replace && properties == null)
+                {
+                    results[change.Key] = new StorageWriteResult() { Key = change.Key, Status = StorageOperationStatus.NotFound };
+                    continue;
+                }
+
+                if (!VersionMatches(options.ExpectedVersion, currentVersion))
+                {
+                    results[change.Key] = new StorageWriteResult() { Key = change.Key, Status = StorageOperationStatus.ConditionNotMet, Version = currentVersion };
+                    continue;
+                }
+
+                var requestConditions = BuildWriteConditions(options.Mode, options.ExpectedVersion, currentVersion);
+
+                try
+                {
+                    var response = await UploadStateAsync(blobClient, CreateState(change.Value), requestConditions, cancellationToken).ConfigureAwait(false);
+                    results[change.Key] = new StorageWriteResult()
+                    {
+                        Key = change.Key,
+                        Status = StorageOperationStatus.Succeeded,
+                        Version = response?.Value.ETag.ToString(),
+                    };
+                }
+                catch (RequestFailedException ex)
+                    when (ex.Status == (int)HttpStatusCode.PreconditionFailed
+                    || (options.Mode == StorageWriteMode.CreateOnly
+                    && ex.Status == (int)HttpStatusCode.Conflict
+                    && ex.ErrorCode == BlobErrorCode.BlobAlreadyExists.ToString()))
+                {
+                    results[change.Key] = new StorageWriteResult()
+                    {
+                        Key = change.Key,
+                        Status = options.Mode == StorageWriteMode.CreateOnly ? StorageOperationStatus.Conflict : StorageOperationStatus.ConditionNotMet,
+                        Version = currentVersion,
+                    };
+                }
+                catch (RequestFailedException ex)
+                    when (IsBlobNotFound(ex))
+                {
+                    results[change.Key] = new StorageWriteResult()
+                    {
+                        Key = change.Key,
+                        Status = StorageOperationStatus.NotFound,
+                    };
+                }
+            }
+
+            return results;
+        }
+
+        //<inheritdoc/>
+        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
+        {
+            var changesAsObject = StorageCompatibility.ValidateAndCopyWriteChanges(changes);
+            return WriteCoreAsync(changesAsObject, options, cancellationToken);
+        }
+
+        //<inheritdoc/>
+        public Task<IReadOnlyDictionary<string, StorageDeleteResult>> DeleteAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken = default)
+        {
+            return DeleteAsync(keys, options: null, cancellationToken);
+        }
+
+        //<inheritdoc/>
+        public async Task<IReadOnlyDictionary<string, StorageDeleteResult>> DeleteAsync(IReadOnlyList<string> keys, StorageDeleteOptions options, CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(keys, nameof(keys));
+
+            options ??= new StorageDeleteOptions();
+            ValidateExpectedVersion(options.ExpectedVersion, nameof(options));
+
+            using var telemetryScope = new ScopeDelete(keys.Count);
+
+            await EnsureContainerExistsAsync(cancellationToken).ConfigureAwait(false);
+
+            Dictionary<string, StorageDeleteResult> results = new(keys.Count);
+            foreach (var key in keys)
+            {
+                AssertionHelpers.ThrowIfNullOrWhiteSpace(key, nameof(key));
+
+                var blobClient = _containerClient.GetBlobClient(GetBlobName(key));
+                var properties = await TryGetBlobPropertiesAsync(blobClient, cancellationToken).ConfigureAwait(false);
+                var currentVersion = properties?.ETag.ToString();
+
+                if (properties == null)
+                {
+                    results[key] = new StorageDeleteResult() { Key = key, Status = StorageOperationStatus.NotFound };
+                    continue;
+                }
+
+                if (!VersionMatches(options.ExpectedVersion, currentVersion))
+                {
+                    results[key] = new StorageDeleteResult() { Key = key, Status = StorageOperationStatus.ConditionNotMet, Version = currentVersion };
+                    continue;
+                }
+
+                try
+                {
+                    await blobClient.DeleteAsync(conditions: BuildDeleteConditions(currentVersion), cancellationToken: cancellationToken).ConfigureAwait(false);
+                    results[key] = new StorageDeleteResult() { Key = key, Status = StorageOperationStatus.Succeeded, Version = currentVersion };
+                }
+                catch (RequestFailedException exception) when (IsBlobNotFound(exception))
+                {
+                    results[key] = new StorageDeleteResult() { Key = key, Status = StorageOperationStatus.NotFound };
+                }
+                catch (RequestFailedException ex)
+                    when (ex.Status == (int)HttpStatusCode.PreconditionFailed)
+                {
+                    results[key] = new StorageDeleteResult() { Key = key, Status = StorageOperationStatus.ConditionNotMet, Version = currentVersion };
+                }
+            }
+
+            return results;
         }
 
         private static string GetBlobName(string key)
@@ -261,7 +446,123 @@ namespace Microsoft.Agents.Storage.Blobs
             return HttpUtility.UrlEncode(key);
         }
 
-        private async Task<object> InnerReadBlobAsync(BlobClient blobReference, CancellationToken cancellationToken)
+        private static BlobRequestConditions BuildDeleteConditions(string currentVersion)
+        {
+            return currentVersion == null ? null : new BlobRequestConditions() { IfMatch = new ETag(currentVersion) };
+        }
+
+        private static BlobRequestConditions BuildWriteConditions(StorageWriteMode mode, string expectedVersion, string currentVersion)
+        {
+            if (mode == StorageWriteMode.CreateOnly)
+            {
+                return new BlobRequestConditions() { IfNoneMatch = ETag.All };
+            }
+
+            if (expectedVersion != null)
+            {
+                return new BlobRequestConditions() { IfMatch = new ETag(expectedVersion) };
+            }
+
+            if (mode == StorageWriteMode.Replace && currentVersion != null)
+            {
+                return new BlobRequestConditions() { IfMatch = new ETag(currentVersion) };
+            }
+
+            return null;
+        }
+
+        private JsonObject CreateState(object value, string version = null)
+        {
+            var state = value != null ? JsonObject.Create(JsonSerializer.SerializeToElement(value, _serializerOptions)) : null;
+            if (state != null)
+            {
+                if (version != null)
+                {
+                    state[ETagPropertyName] = version;
+                }
+
+                state.AddTypeInfo(value);
+            }
+
+            return state;
+        }
+
+        private async Task EnsureContainerExistsAsync(CancellationToken cancellationToken)
+        {
+            if (Volatile.Read(ref _checkForContainerExistence) == 0)
+            {
+                return;
+            }
+
+            await _containerInitializationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (_checkForContainerExistence == 1)
+                {
+                    await _containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                    Volatile.Write(ref _checkForContainerExistence, 0);
+                }
+            }
+            finally
+            {
+                _containerInitializationLock.Release();
+            }
+        }
+
+        private static bool VersionMatches(string expectedVersion, string currentVersion)
+        {
+            return expectedVersion == null || expectedVersion == currentVersion;
+        }
+
+        private static void ValidateExpectedVersion(string expectedVersion, string parameterName)
+        {
+            if (expectedVersion != null && expectedVersion.Length == 0)
+            {
+                throw new ArgumentException("ExpectedVersion cannot be empty.", parameterName);
+            }
+        }
+
+        private async Task<Response<BlobContentInfo>> UploadStateAsync(BlobClient blobReference, JsonObject state, BlobRequestConditions accessCondition, CancellationToken cancellationToken)
+        {
+            if (state == null)
+            {
+                return null;
+            }
+
+            using var memoryStream = new MemoryStream();
+            JsonSerializer.Serialize(memoryStream, state, _serializerOptions);
+            memoryStream.Seek(0, SeekOrigin.Begin);
+
+            var blobHttpHeaders = new BlobHttpHeaders() { ContentType = "application/json" };
+            return await blobReference.UploadAsync(memoryStream, conditions: accessCondition, transferOptions: _storageTransferOptions, cancellationToken: cancellationToken, httpHeaders: blobHttpHeaders).ConfigureAwait(false);
+        }
+
+        private static bool IsBlobNotFound(RequestFailedException exception)
+        {
+            return exception.Status == (int)HttpStatusCode.NotFound
+                && exception.ErrorCode == BlobErrorCode.BlobNotFound.ToString();
+        }
+
+        private static async Task<BlobProperties> TryGetBlobPropertiesAsync(BlobClient blobClient, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var response = await blobClient.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                return response.Value;
+            }
+            catch (RequestFailedException ex)
+                when (IsBlobNotFound(ex))
+            {
+                return null;
+            }
+        }
+
+        private async Task<(object Value, string Version)> ReadBlobStateAsync(BlobClient blobReference, CancellationToken cancellationToken)
+        {
+            return await InnerReadBlobAsync(blobReference, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<(object Value, string Version)> InnerReadBlobAsync(BlobClient blobReference, CancellationToken cancellationToken)
         {
             var i = 0;
             while (true)
@@ -270,6 +571,7 @@ namespace Microsoft.Agents.Storage.Blobs
                 {
                     using BlobDownloadInfo download = await blobReference.DownloadAsync(cancellationToken).ConfigureAwait(false);
                     object item = null;
+                    var version = download.Details.ETag.ToString();
 
                     using (var sr = new StreamReader(download.Content))
                     {
@@ -296,10 +598,10 @@ namespace Microsoft.Agents.Storage.Blobs
 
                     if (item is IStoreItem storeItem)
                     {
-                        storeItem.ETag = (await blobReference.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false))?.Value?.ETag.ToString();
+                        storeItem.ETag = version;
                     }
 
-                    return item;
+                    return (item, version);
                 }
                 catch (RequestFailedException ex)
                     when ((HttpStatusCode)ex.Status == HttpStatusCode.PreconditionFailed)

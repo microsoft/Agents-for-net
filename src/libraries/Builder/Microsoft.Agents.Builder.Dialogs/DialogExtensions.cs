@@ -16,7 +16,7 @@ using Microsoft.Agents.Client.Compat;
 namespace Microsoft.Agents.Builder.Dialogs
 {
     /// <summary>
-    /// Provides extension methods for <see cref="Dialog"/> and derived classes.
+    /// Provides extension methods for <see cref="Microsoft.Agents.Builder.Dialogs.Dialog"/> and derived classes.
     /// </summary>
     public static class DialogExtensions
     {
@@ -32,7 +32,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <param name="state">AgentState to use for state.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         public static async Task<DialogTurnResult> RunAsync(this Dialog dialog, ITurnContext turnContext, AgentState state, CancellationToken cancellationToken)
         {
             var dialogState = state.GetValue<DialogState>("DialogState", () => new DialogState());

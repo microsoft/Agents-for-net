@@ -7,8 +7,8 @@ using Microsoft.Agents.Extensions.Slack.Api;
 namespace Microsoft.Agents.Extensions.Slack
 {
     /// <summary>
-    /// A Slack-specific <see cref="IActivity"/> that exposes the Slack channel data as a strongly-typed
-    /// <see cref="SlackChannelData"/> instead of the loosely-typed <see cref="IActivity.ChannelData"/>.
+    /// A Slack-specific <see cref="Microsoft.Agents.Core.Models.IActivity"/> that exposes the Slack channel data as a strongly-typed
+    /// <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackChannelData"/> instead of the loosely-typed <see cref="Microsoft.Agents.Core.Models.IActivity.ChannelData"/>.
     /// </summary>
     public interface ISlackActivity : IActivity
     {

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
 		<ComponentAreaName>CplTests.SharePoint</ComponentAreaName>
@@ -16,7 +16,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-      <PackageReference Include="Microsoft.NET.Test.Sdk" />
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="coverlet.collector" />
 		<PackageReference Include="Moq" />
 		<PackageReference Include="xunit" />
       <PackageReference Include="xunit.runner.visualstudio">

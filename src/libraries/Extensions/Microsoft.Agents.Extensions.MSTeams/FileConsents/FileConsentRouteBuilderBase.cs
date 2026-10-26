@@ -24,7 +24,7 @@ public abstract class FileConsentRouteBuilderBase<TBuilder> : RouteBuilderBase<T
     protected string Action { get; set; }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="FileConsentRouteBuilderBase{TBuilder}"/>,
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.MSTeams.FileConsents.FileConsentRouteBuilderBase{TBuilder}"/>,
     /// pre-configured as an Invoke route.
     /// </summary>
     protected FileConsentRouteBuilderBase() : base()

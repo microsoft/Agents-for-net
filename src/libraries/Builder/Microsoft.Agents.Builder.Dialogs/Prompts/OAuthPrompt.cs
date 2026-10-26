@@ -46,10 +46,10 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
     ///
     /// ## Prompt Usage
     ///
-    /// When used with your Agent's <see cref="DialogSet"/> you can simply add a new instance of the prompt as a named
-    /// dialog using <see cref="DialogSet.Add(Dialog)"/>. You can then start the prompt from a waterfall step using either
-    /// <see cref="DialogContext.BeginDialogAsync(string, object, CancellationToken)"/> or
-    /// <see cref="DialogContext.PromptAsync(string, PromptOptions, CancellationToken)"/>. The user
+    /// When used with your Agent's <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> you can simply add a new instance of the prompt as a named
+    /// dialog using <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet.Add(Microsoft.Agents.Builder.Dialogs.Dialog)"/>. You can then start the prompt from a waterfall step using either
+    /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/> or
+    /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>. The user
     /// will be prompted to signin as needed and their access token will be passed as an argument to
     /// the callers next waterfall step.
     /// </remarks>
@@ -65,14 +65,14 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         private readonly OAuthFlow _dialogOAuthFlow;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OAuthPrompt"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.OAuthPrompt"/> class.
         /// </summary>
         /// <param name="dialogId">The ID to assign to this prompt.</param>
         /// <param name="settings">Additional OAuth settings to use with this instance of the prompt.</param>
-        /// <param name="validator">Optional, a <see cref="PromptValidator{FoundChoice}"/> that contains additional,
+        /// <param name="validator">Optional, a <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.PromptValidator{FoundChoice}"/> that contains additional,
         /// custom validation for this prompt.</param>
         /// <remarks>The value of <paramref name="dialogId"/> must be unique within the
-        /// <see cref="DialogSet"/> or <see cref="ComponentDialog"/> to which the prompt is added.</remarks>
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogSet"/> or <see cref="Microsoft.Agents.Builder.Dialogs.ComponentDialog"/> to which the prompt is added.</remarks>
         public OAuthPrompt(string dialogId, OAuthPromptSettings settings, PromptValidator<TokenResponse> validator = null)
             : base(dialogId)
         {
@@ -106,7 +106,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="options">Optional, additional information to pass to the prompt being started.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the prompt is still
         /// active after the turn has been processed by the prompt.</remarks>
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext dc, object options = null, CancellationToken cancellationToken = default)
@@ -166,7 +166,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
         /// <param name="dc">The dialog context for the current turn of conversation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task"/> representing the asynchronous operation.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.
         /// <para>The prompt generally continues to receive the user's replies until it accepts the

@@ -19,7 +19,7 @@ using Microsoft.Extensions.Configuration;
 namespace DialogRootBot.Dialogs
 {
     /// <summary>
-    /// The main dialog for this bot. It uses a <see cref="SkillDialog"/> to call skills.
+    /// The main dialog for this bot. It uses a <see cref="Microsoft.Agents.Builder.Dialogs.SkillDialog"/> to call skills.
     /// </summary>
     public class MainDialog : ComponentDialog
     {

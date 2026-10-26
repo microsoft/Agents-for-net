@@ -16,7 +16,7 @@ namespace Microsoft.Agents.Builder.State
     ///
     /// State properties are created within a state management scope, and the Agents SDK
     /// defines these scopes:
-    /// <see cref="ConversationState"/>, <see cref="UserState"/>, and <see cref="PrivateConversationState"/>.
+    /// <see cref="Microsoft.Agents.Builder.State.ConversationState"/>, <see cref="Microsoft.Agents.Builder.State.UserState"/>, and <see cref="Microsoft.Agents.Builder.State.PrivateConversationState"/>.
     ///
     /// You can define additional scopes for your Agent.
     /// </remarks>
@@ -66,7 +66,7 @@ namespace Microsoft.Agents.Builder.State
         /// </summary>
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>This method clears the state cache. Call
-        /// <see cref="SaveChangesAsync(ITurnContext, bool, CancellationToken)"/> to persist this
+        /// <see cref="Microsoft.Agents.Builder.State.IAgentState.SaveChangesAsync(Microsoft.Agents.Builder.ITurnContext, System.Boolean, System.Threading.CancellationToken)"/> to persist this
         /// change in the storage layer.
         /// </remarks>
         void ClearState();

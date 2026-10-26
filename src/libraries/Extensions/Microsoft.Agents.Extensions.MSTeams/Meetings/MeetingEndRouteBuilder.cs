@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Meetings;
 /// Provides a builder for configuring routes that handle Teams meeting end events.
 /// </summary>
 /// <remarks>
-/// Use <see cref="MeetingEndRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingEndRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
 /// <see cref="Microsoft.Teams.Apps.EventNames.MeetingEnd"/>.
 /// </remarks>
@@ -27,7 +27,7 @@ public class MeetingEndRouteBuilder : MeetingEventRouteBuilderBase<MeetingEndRou
     }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="MeetingEndRouteBuilder"/>,
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingEndRouteBuilder"/>,
     /// pre-configured to match the Teams meeting end event.
     /// </summary>
     public MeetingEndRouteBuilder() : base()
@@ -41,7 +41,7 @@ public class MeetingEndRouteBuilder : MeetingEventRouteBuilderBase<MeetingEndRou
     /// <param name="handler">An asynchronous delegate that processes the meeting end event.
     /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Apps.Clients.MeetingDetails"/>,
     /// and a cancellation token.</param>
-    /// <returns>The current <see cref="MeetingEndRouteBuilder"/> instance for method chaining.</returns>
+    /// <returns>The current <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingEndRouteBuilder"/> instance for method chaining.</returns>
     public MeetingEndRouteBuilder WithHandler(MeetingEndHandler handler)
     {
         _route.Handler = (ctx, ts, ct) =>

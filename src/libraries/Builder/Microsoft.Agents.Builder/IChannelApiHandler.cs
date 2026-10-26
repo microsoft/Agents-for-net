@@ -15,7 +15,7 @@ namespace Microsoft.Agents.Builder
     /// </summary>
     /// <remarks>
     /// These endpoints are defined by Azure Bot Service.  The client for this API is
-    /// in <see cref="RestConnectorClient"/>.  This is primarily used for communicating with
+    /// in <see cref="Microsoft.Agents.Connector.RestConnectorClient"/>.  This is primarily used for communicating with
     /// Azure Bot Service, Teams, and Agent-to-Agent.
     /// </remarks>
     /// <remarks>This is not normally something implemented by an Agent developer unless there

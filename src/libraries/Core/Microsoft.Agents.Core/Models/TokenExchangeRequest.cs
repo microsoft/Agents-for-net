@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Core.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TokenExchangeRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.TokenExchangeRequest"/> class.
         /// </summary>
         /// <param name="uri">URI.</param>
         /// <param name="token">Token.</param>

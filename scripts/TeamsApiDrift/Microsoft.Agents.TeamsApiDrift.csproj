@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="NuGet.Frameworks" />
     <PackageReference Include="NuGet.Protocol" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Microsoft.Agents.TeamsApiDrift.Tests" />

@@ -11,7 +11,7 @@ namespace Microsoft.Agents.Core.Serialization
     /// </summary>
     /// <remarks>
     /// <para>
-    /// At least one discriminator (<see cref="Type"/>, <see cref="ChannelId"/>, or <see cref="Name"/>)
+    /// At least one discriminator (<see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute.Type"/>, <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute.ChannelId"/>, or <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute.Name"/>)
     /// must be set. Discriminators are combined with AND: an Activity matches only when every set
     /// discriminator equals the corresponding field on the wire (case-insensitive). Unset
     /// discriminators are wildcards.
@@ -20,10 +20,10 @@ namespace Microsoft.Agents.Core.Serialization
     /// A single subclass may be annotated multiple times to match more than one shape. When several
     /// registrations match, the most specific one (the greatest number of set discriminators) wins.
     /// Annotated subclasses are auto-registered at assembly load time (a source generator emits an
-    /// <see cref="ActivityTypeInitAssemblyAttribute"/> per annotated class), so no manual registration
+    /// <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeInitAssemblyAttribute"/> per annotated class), so no manual registration
     /// call is needed. For matching logic that these declarative discriminators cannot express, register
-    /// an imperative <see cref="ActivityTypeResolver"/> via
-    /// <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.RegisterActivityTypeResolver"/>.
+    /// an imperative <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeResolver"/> via
+    /// <see cref="Microsoft.Agents.Core.Serialization.ProtocolJsonSerializer.RegisterActivityTypeResolver(Microsoft.Agents.Core.Serialization.ActivityTypeResolver)"/>.
     /// </para>
     /// <example>
     /// <code>
@@ -45,15 +45,15 @@ namespace Microsoft.Agents.Core.Serialization
     public sealed class ActivityTypeAttribute : Attribute
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActivityTypeAttribute"/> class.
-        /// Set at least one of <see cref="Type"/>, <see cref="ChannelId"/>, or <see cref="Name"/>.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute"/> class.
+        /// Set at least one of <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute.Type"/>, <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute.ChannelId"/>, or <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute.Name"/>.
         /// </summary>
         public ActivityTypeAttribute()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActivityTypeAttribute"/> class that matches
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeAttribute"/> class that matches
         /// the given activity <c>type</c> string.
         /// </summary>
         /// <param name="type">The activity type string (e.g., "message", "event", "x-myCustomType").</param>

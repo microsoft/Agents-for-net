@@ -36,11 +36,11 @@ public class SlackApi
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SlackApi"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackApi"/> class.
     /// </summary>
     /// <param name="httpClientFactory">The factory used to create named HTTP clients for Slack requests.</param>
     /// <param name="onCallAsync">
-    /// An optional callback invoked on every <see cref="CallAsync"/> before the request is sent. This is used to
+    /// An optional callback invoked on every <see cref="Microsoft.Agents.Extensions.Slack.Api.SlackApi.CallAsync(System.String, System.Object, System.String, System.Threading.CancellationToken)"/> before the request is sent. This is used to
     /// notify the turn that a message is being delivered out-of-band (bypassing the send pipeline), for example to
     /// reset the per-turn typing timer interval so the typing indicator timing stays consistent.
     /// </param>

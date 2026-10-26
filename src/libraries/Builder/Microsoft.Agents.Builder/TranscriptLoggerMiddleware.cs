@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// Middleware for logging incoming and outgoing activities to an <see cref="ITranscriptStore"/>.
+    /// Middleware for logging incoming and outgoing activities to an <see cref="Microsoft.Agents.Storage.Transcript.ITranscriptStore"/>.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="TranscriptLoggerMiddleware"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.TranscriptLoggerMiddleware"/> class.
     /// </remarks>
     /// <param name="transcriptLogger">The conversation store to use.</param>
     public class TranscriptLoggerMiddleware(ITranscriptLogger transcriptLogger) : IMiddleware

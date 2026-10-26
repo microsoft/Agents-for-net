@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         private readonly IList<IActivity> _activities;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeWriteResponse"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Scopes.ScopeWriteResponse"/> class.
         /// </summary>
         /// <param name="activities">The outgoing activities being sent.</param>
         public ScopeWriteResponse(IList<IActivity>? activities = null) : base(Constants.ScopeWriteResponse)
@@ -31,7 +31,7 @@ namespace Microsoft.Agents.Builder.Telemetry.Adapter.Scopes
         /// <inheritdoc />
         /// <remarks>
         /// Tags the span with the activity count and conversation identifier, and
-        /// increments <see cref="Metrics.ActivitiesSent"/> once per activity.
+        /// increments <see cref="Microsoft.Agents.Builder.Telemetry.Adapter.Metrics.ActivitiesSent"/> once per activity.
         /// </remarks>
         protected override void Callback(System.Diagnostics.Activity telemetryActivity, double duration, Exception? error)
         {

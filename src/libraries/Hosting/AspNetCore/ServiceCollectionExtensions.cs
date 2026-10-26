@@ -10,6 +10,7 @@ using Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
 
@@ -19,11 +20,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
     /// Provides extension methods for registering agent-related services, adapters, and middleware with dependency
     /// injection containers.
     /// </summary>
-    /// <remarks>These extension methods operate on <see cref="IServiceCollection"/> (and
+    /// <remarks>These extension methods operate on <see cref="Microsoft.Extensions.DependencyInjection.IServiceCollection"/> (and
     /// <c>IHostApplicationBuilder.Services</c>) to register agents, adapters, options, and supporting
     /// services during application startup, such as those using CloudAdapter and AgentApplication. The
     /// application-builder and request-pipeline APIs (fluent startup, middleware ordering, and endpoint mapping)
-    /// live in <see cref="AgentHostExtensions"/>.</remarks>
+    /// live in <see cref="Microsoft.Agents.Hosting.AspNetCore.AgentHostExtensions"/>.</remarks>
     public static class ServiceCollectionExtensions
     {
         #region IServiceCollection Extensions
@@ -49,6 +50,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 services.AddSingleton<AgentApplicationOptions>();
             }
+
+            services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, AgentConfigurationValidationHostedService>());
             return services;
         }
 
@@ -60,7 +63,7 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// </code>
         /// </summary>
         /// <remarks>Registers both the agent and its adapter as transient services. Only one instance of
-        /// each agent type is registered. <see cref="AgentApplicationOptions"/> is automatically registered
+        /// each agent type is registered. <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions"/> is automatically registered
         /// if not already present. This method is typically used to configure multi-agent scenarios in
         /// applications that use dependency injection.</remarks>
         /// <typeparam name="TAgent">The type of the agent to register. Must implement the IAgent interface.</typeparam>
@@ -128,6 +131,43 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                 services.AddSingleton<IConnections, ConfigurationConnections>();
             }
 
+            return AddAgentCoreServices<TAdapter>(services);
+        }
+
+        /// <summary>
+        /// Adds core services required for Agent functionality, including the specified cloud adapter, to
+        /// the application's dependency injection container, using custom configuration section paths for
+        /// connections and the connections map.
+        /// </summary>
+        /// <remarks>
+        /// This method does not replace an existing <see cref="Microsoft.Agents.Authentication.IConnections"/> registration. Call it before
+        /// other agent registration methods when custom configuration section paths are required.
+        /// </remarks>
+        /// <typeparam name="TAdapter">The type of cloud adapter to register. Must inherit from CloudAdapter.</typeparam>
+        /// <param name="services">The service collection to which the agent core services will be added.</param>
+        /// <param name="connectionsKey">The configuration section path containing connection definitions.</param>
+        /// <param name="mapKey">The configuration section path containing the connections map.</param>
+        /// <returns>The same service collection to allow for method chaining.</returns>
+        public static IServiceCollection AddAgentCore<TAdapter>(this IServiceCollection services, string connectionsKey, string mapKey) where TAdapter : CloudAdapter
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionsKey);
+            ArgumentException.ThrowIfNullOrWhiteSpace(mapKey);
+
+            if (!services.Any(x => x.ServiceType == typeof(IConnections)))
+            {
+                services.AddSingleton<IConnections>(serviceProvider =>
+                    new ConfigurationConnections(
+                        serviceProvider,
+                        serviceProvider.GetRequiredService<IConfiguration>(),
+                        connectionsKey,
+                        mapKey));
+            }
+
+            return AddAgentCoreServices<TAdapter>(services);
+        }
+
+        private static IServiceCollection AddAgentCoreServices<TAdapter>(IServiceCollection services) where TAdapter : CloudAdapter
+        {
             if (!services.Any(x => x.ServiceType == typeof(IChannelServiceClientFactory)))
             {
                 // Add factory for ConnectorClient and UserTokenClient creation
@@ -169,7 +209,17 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         {
             AddAsyncAdapterSupport(services);
 
-            services.TryAddSingleton<T>();
+            services.TryAddSingleton<T>(serviceProvider =>
+            {
+                T adapter = ActivatorUtilities.CreateInstance<T>(serviceProvider);
+                ICloudAdapterErrorHandler errorHandler = serviceProvider.GetService<ICloudAdapterErrorHandler>();
+                if (errorHandler != null)
+                {
+                    adapter.OnTurnError = errorHandler.HandleTurnErrorAsync;
+                }
+
+                return adapter;
+            });
             if (typeof(T) != typeof(CloudAdapter))
             {
                 services.TryAddSingleton<CloudAdapter>(sp => sp.GetRequiredService<T>());

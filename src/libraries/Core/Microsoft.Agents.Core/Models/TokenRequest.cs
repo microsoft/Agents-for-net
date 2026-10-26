@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Core.Models
         public TokenRequest() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TokenRequest"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Core.Models.TokenRequest"/> class.
         /// </summary>
         /// <param name="provider">The provider to request a user token
         /// from.</param>

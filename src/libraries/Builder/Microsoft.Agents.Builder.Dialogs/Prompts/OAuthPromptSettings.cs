@@ -7,7 +7,7 @@ using Microsoft.Agents.Builder.UserAuth.TokenService;
 namespace Microsoft.Agents.Builder.Dialogs.Prompts
 {
     /// <summary>
-    /// Contains settings for an <see cref="OAuthPrompt"/>.
+    /// Contains settings for an <see cref="Microsoft.Agents.Builder.Dialogs.Prompts.OAuthPrompt"/>.
     /// </summary>
     public class OAuthPromptSettings : OAuthSettings
     {

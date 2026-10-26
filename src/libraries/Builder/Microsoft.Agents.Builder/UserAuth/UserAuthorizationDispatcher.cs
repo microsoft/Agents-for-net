@@ -68,16 +68,17 @@ namespace Microsoft.Agents.Builder.UserAuth
         /// <code>
         /// "UserAuthorization": {
         ///   "graph": {
-        ///     "Assembly": null,  // Optional, defaults to OAuthAuthentication Assembly
-        ///     "Type": null,      // Optional, defaults to OAuthAuthentication Type
-        ///     "Settings": {      // Settings are Type specific, for OAuthAuthentication, any OAuthSettings property.
+        ///     "Assembly": null,  // Optional only for handlers defined by Microsoft.Agents.Builder
+        ///     "Type": null,      // Optional, defaults to AzureBotUserAuthorization
+        ///     "Settings": {      // Settings are specific to the configured handler type.
         ///     }
         ///   }
         /// }
         /// </code>
         /// <remarks>
-        /// <see cref="OAuthAuthentication"/> is the default <see cref="IUserAuthorization"/> unless type loading is specified.  The `Settings`
-        /// node for the defaults is properties in <see cref="OAuthSettings"/>.  This User Authentication is performed with
+        /// <see cref="AzureBotUserAuthorization"/> is the default <see cref="IUserAuthorization"/> unless type loading is specified.
+        /// Handlers defined outside Microsoft.Agents.Builder must specify their assembly. The `Settings`
+        /// node for the default contains properties from <see cref="OAuthSettings"/>. This user authentication is performed with
         /// the Azure Bot Token Service using `OAuth Connections` defined on the Azure Bot.
         /// </remarks>
         /// <param name="sp"></param>
@@ -92,8 +93,14 @@ namespace Microsoft.Agents.Builder.UserAuth
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _connections = sp.GetService<IConnections>();
 
-            var configDict = configuration.GetSection(configKey).Get<Dictionary<string, UserAuthorizationDefinition>>();
-            _userAuthHandlers = new(configDict, StringComparer.OrdinalIgnoreCase);
+            var handlersSection = configuration.GetSection(configKey);
+            if (!handlersSection.Exists() || !handlersSection.GetChildren().Any())
+            {
+                throw ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.NoUserAuthorizationHandlers, null);
+            }
+
+            var configDict = handlersSection.Get<Dictionary<string, UserAuthorizationDefinition>>();
+            _userAuthHandlers = new(configDict ?? [], StringComparer.OrdinalIgnoreCase);
 
             if (_userAuthHandlers.Count == 0)
             {
@@ -175,6 +182,34 @@ namespace Microsoft.Agents.Builder.UserAuth
             }
 
             return GetHandlerInstance(handleName.Trim());
+        }
+
+        /// <inheritdoc/>
+        public bool Contains(string handlerName)
+        {
+            return !string.IsNullOrEmpty(handlerName)
+                && _userAuthHandlers.ContainsKey(handlerName.Trim());
+        }
+
+        /// <inheritdoc/>
+        public void ValidateConfiguration()
+        {
+            foreach (var handler in _userAuthHandlers)
+            {
+                var definition = handler.Value;
+                if (definition.Instance is AzureBotUserAuthorization azureBotUserAuthorization)
+                {
+                    azureBotUserAuthorization.ValidateConfiguration();
+                    continue;
+                }
+
+                if (definition.Constructor?.DeclaringType == typeof(AzureBotUserAuthorization))
+                {
+                    AzureBotUserAuthorization.ValidateConfiguration(
+                        handler.Key,
+                        definition.Settings?.GetValue<string>(nameof(OAuthSettings.AzureBotOAuthConnectionName)));
+                }
+            }
         }
 
         public bool TryGet(string handlerName, out IUserAuthorization handler)

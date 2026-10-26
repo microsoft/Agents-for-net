@@ -14,7 +14,7 @@ namespace Microsoft.Agents.Model.Tests
     public class EntitySchemaValidationTest
     {
         /// <summary>
-        /// Ensures that <see cref="GeoCoordinates"/> class can be serialized and deserialized properly.
+        /// Ensures that <see cref="Microsoft.Agents.Core.Models.GeoCoordinates"/> class can be serialized and deserialized properly.
         /// </summary>
         [Fact]
         public void EntityTests_GeoCoordinatesSerializationDeserializationTest()
@@ -34,7 +34,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that <see cref="Mention"/> class can be serialized and deserialized properly.
+        /// Ensures that <see cref="Microsoft.Agents.Core.Models.Mention"/> class can be serialized and deserialized properly.
         /// </summary>
         [Fact]
         public void EntityTests_MentionSerializationDeserializationTest()
@@ -53,7 +53,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that <see cref="Place"/> class can be serialized and deserialized properly.
+        /// Ensures that <see cref="Microsoft.Agents.Core.Models.Place"/> class can be serialized and deserialized properly.
         /// </summary>
         [Fact]
         public void EntityTests_PlaceSerializationDeserializationTest()

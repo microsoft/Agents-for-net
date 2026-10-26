@@ -9,14 +9,14 @@ namespace Microsoft.Agents.Builder.Dialogs
     /// Result returned to the caller of one of the various stack manipulation methods.
     /// </summary>
     /// <remarks>
-    /// Use <see cref="DialogContext.EndDialogAsync(object, System.Threading.CancellationToken)"/>
-    /// to end a <see cref="Dialog"/> and return a result to the calling context.
+    /// Use <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(System.Object, System.Threading.CancellationToken)"/>
+    /// to end a <see cref="Microsoft.Agents.Builder.Dialogs.Dialog"/> and return a result to the calling context.
     /// </remarks>
     [DebuggerDisplay("[DialogTurnStatus.{Status}]{Result ?? string.Empty}")]
     public class DialogTurnResult
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogTurnResult"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogTurnResult"/> class.
         /// </summary>
         /// <param name="status">The status of the stack.</param>
         /// <param name="result">The result return by the dialog.</param>
@@ -41,7 +41,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// - The Agent calls `DialogContext.BeginDialogAsync()` to start a new dialog and the dialog ends immediately.
         /// - The Agent calls `DialogContext.ContinueDialogAsync()` and a dialog that was active ends.
         ///
-        /// In all cases where it's populated, <see cref="DialogContext.ActiveDialog"/> will be `null`.
+        /// In all cases where it's populated, <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.ActiveDialog"/> will be `null`.
         /// </summary>
         /// <value>
         /// The result returned by a dialog that was just ended.

@@ -12,14 +12,14 @@ using System.Security;
 namespace Microsoft.Agents.Extensions.MSTeams
 {
     /// <summary>
-    /// A Teams-specific <see cref="Activity"/> that surfaces the Teams channel payload as a
+    /// A Teams-specific <see cref="Microsoft.Agents.Core.Models.Activity"/> that surfaces the Teams channel payload as a
     /// strongly-typed <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelData"/>.
     /// </summary>
     /// <remarks>
     /// The <c>[ActivityType(ChannelId = "msteams")]</c> annotation auto-registers this type (via the
-    /// generated <see cref="ActivityTypeInitAssemblyAttribute"/>), so any inbound Activity whose
-    /// <see cref="Activity.ChannelId"/> is <c>"msteams"</c> deserializes to <see cref="TeamsActivity"/>.
-    /// The typed <see cref="ChannelData"/> shadow reads through the base <see cref="Activity.ChannelData"/>
+    /// generated <see cref="Microsoft.Agents.Core.Serialization.ActivityTypeInitAssemblyAttribute"/>), so any inbound Activity whose
+    /// <see cref="Microsoft.Agents.Core.Models.Activity.ChannelId"/> is <c>"msteams"</c> deserializes to <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsActivity"/>.
+    /// The typed <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsActivity.ChannelData"/> shadow reads through the base <see cref="Microsoft.Agents.Core.Models.Activity.ChannelData"/>
     /// (which the deserializer populates as raw JSON), so both the base and typed views stay in sync.
     /// </remarks>
     [ActivityType(ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams)]

@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Client
     /// the Send/Reply from the other Agent.
     ///
     /// This implementation will send a custom Event to the Adapter, and the AgentApplication can add a route for
-    /// <see cref="AdapterChannelResponseHandler.ChannelReplyEventName"/>.  The Event Activity.Value will be an instance of <see cref="Microsoft.Agents.Client.AdapterChannelResponseHandler.ChannelReply"/>.
+    /// <see cref="Microsoft.Agents.Client.AdapterChannelResponseHandler.ChannelReplyEventName"/>.  The Event Activity.Value will be an instance of <see cref="Microsoft.Agents.Client.AdapterChannelResponseHandler.ChannelReply"/>.
     /// </remarks>
     /// <remarks>
     /// This implementation does not handle any of the other Connector API endpoints.

@@ -10,7 +10,7 @@ namespace Microsoft.Agents.Extensions.MSTeams.Meetings;
 /// Provides a builder for configuring routes that handle Teams meeting start events.
 /// </summary>
 /// <remarks>
-/// Use <see cref="MeetingStartRouteBuilder"/> to create and configure routes that respond to Activity Type of
+/// Use <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingStartRouteBuilder"/> to create and configure routes that respond to Activity Type of
 /// <see cref="Microsoft.Agents.Core.Models.ActivityTypes.Event"/> with a name of
 /// <see cref="Microsoft.Teams.Apps.EventNames.MeetingStart"/>.
 /// </remarks>
@@ -27,7 +27,7 @@ public class MeetingStartRouteBuilder : MeetingEventRouteBuilderBase<MeetingStar
     }
 
     /// <summary>
-    /// Initializes a new instance of <see cref="MeetingStartRouteBuilder"/>,
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingStartRouteBuilder"/>,
     /// pre-configured to match the Teams meeting start event.
     /// </summary>
     public MeetingStartRouteBuilder() : base()
@@ -41,7 +41,7 @@ public class MeetingStartRouteBuilder : MeetingEventRouteBuilderBase<MeetingStar
     /// <param name="handler">An asynchronous delegate that processes the meeting start event.
     /// Receives the turn context, turn state, deserialized <see cref="Microsoft.Teams.Apps.Clients.MeetingDetails"/>,
     /// and a cancellation token.</param>
-    /// <returns>The current <see cref="MeetingStartRouteBuilder"/> instance for method chaining.</returns>
+    /// <returns>The current <see cref="Microsoft.Agents.Extensions.MSTeams.Meetings.MeetingStartRouteBuilder"/> instance for method chaining.</returns>
     public MeetingStartRouteBuilder WithHandler(MeetingStartHandler handler)
     {
         _route.Handler = (ctx, ts, ct) =>

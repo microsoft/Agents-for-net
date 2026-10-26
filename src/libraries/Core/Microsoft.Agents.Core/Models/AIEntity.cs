@@ -323,13 +323,13 @@ namespace Microsoft.Agents.Core.Models
     {
         private readonly string? _value;
 
-        /// <summary>Initializes a new <see cref="ClientCitationIconName"/> with the specified string value.</summary>
+        /// <summary>Initializes a new <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/> with the specified string value.</summary>
         public ClientCitationIconName(string? value) => _value = value;
 
-        /// <summary>Implicitly converts a <see langword="string"/> to an <see cref="ClientCitationIconName"/>.</summary>
+        /// <summary>Implicitly converts a <see langword="string"/> to an <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/>.</summary>
         public static implicit operator ClientCitationIconName(string? s) => new(s);
 
-        /// <summary>Implicitly converts an <see cref="ClientCitationIconName"/> to a <see langword="string"/>.</summary>
+        /// <summary>Implicitly converts an <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/> to a <see langword="string"/>.</summary>
         public static implicit operator string?(ClientCitationIconName? t) => t?._value;
 
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -347,11 +347,11 @@ namespace Microsoft.Agents.Core.Models
         public override int GetHashCode() =>
             _value == null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(_value);
 
-        /// <summary>Returns <see langword="true"/> if two <see cref="ClientCitationIconName"/> values are equal (case-insensitive).</summary>
+        /// <summary>Returns <see langword="true"/> if two <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/> values are equal (case-insensitive).</summary>
         public static bool operator ==(ClientCitationIconName? a, ClientCitationIconName? b) =>
             string.Equals(a?._value, b?._value, StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Returns <see langword="true"/> if two <see cref="ClientCitationIconName"/> values are not equal (case-insensitive).</summary>
+        /// <summary>Returns <see langword="true"/> if two <see cref="Microsoft.Agents.Core.Models.ClientCitationIconName"/> values are not equal (case-insensitive).</summary>
         public static bool operator !=(ClientCitationIconName? a, ClientCitationIconName? b) =>
             !string.Equals(a?._value, b?._value, StringComparison.OrdinalIgnoreCase);
 

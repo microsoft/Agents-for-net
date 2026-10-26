@@ -18,7 +18,7 @@ public class AgenticHeaderProvider : IHeaderValueProvider
     private readonly string _agentName;
 
     /// <summary>
-    /// Initializes a new instance of <see cref="AgenticHeaderProvider"/>.
+    /// Initializes a new instance of <see cref="Microsoft.Agents.Core.HeaderPropagation.AgenticHeaderProvider"/>.
     /// </summary>
     /// <param name="activity">The incoming activity to derive header values from.</param>
     /// <param name="agentName">The human-friendly agent name (typically from the [Agent] attribute).</param>

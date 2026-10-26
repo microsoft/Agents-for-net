@@ -16,13 +16,13 @@ namespace Microsoft.Agents.Builder.Dialogs
     /// <summary>
     /// Provides context for the current state of the dialog stack.
     /// </summary>
-    /// <remarks>The <see cref="Context"/> property contains the <see cref="ITurnContext"/>
+    /// <remarks>The <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.Context"/> property contains the <see cref="Microsoft.Agents.Builder.ITurnContext"/>
     /// for the current turn.</remarks>
     [System.Diagnostics.DebuggerDisplay("{GetType().Name}[{ActiveDialog?.Id}]")]
     public class DialogContext
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogContext"/> class from the turn context.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> class from the turn context.
         /// </summary>
         /// <param name="dialogs">The dialog set to create the dialog context for.</param>
         /// <param name="turnContext">The current turn context.</param>
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DialogContext"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> class.
         /// </summary>
         /// <param name="dialogs">Parent dialog set.</param>
         /// <param name="parentDialogContext">Parent dialog context.</param>
@@ -74,10 +74,10 @@ namespace Microsoft.Agents.Builder.Dialogs
         public List<DialogInstance> Stack { get; set; }
 
         /// <summary>
-        /// Gets or sets the parent <see cref="DialogContext"/>, if any. Used when searching for the ID of a dialog to start.
+        /// Gets or sets the parent <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/>, if any. Used when searching for the ID of a dialog to start.
         /// </summary>
         /// <value>
-        /// The parent <see cref="DialogContext"/>, if any. Used when searching for the ID of a dialog to start.
+        /// The parent <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/>, if any. Used when searching for the ID of a dialog to start.
         /// </value>
         public DialogContext Parent { get; set; }
 
@@ -142,9 +142,9 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
-        /// <seealso cref="EndDialogAsync(object, System.Threading.CancellationToken)"/>
-        /// <seealso cref="PromptAsync(string, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Dialog.BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(System.Object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Dialog.BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> BeginDialogAsync(string dialogId, object options = null, CancellationToken cancellationToken = default)
         {
             try
@@ -187,7 +187,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// Helper function to simplify formatting the options for calling a prompt dialog. This helper will
         /// take an <paramref name="options"/> argument and then call
-        /// <see cref="BeginDialogAsync(string, object, CancellationToken)"/>.
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/>.
         /// </summary>
         /// <param name="dialogId">ID of the prompt dialog to start.</param>
         /// <param name="options">Information to pass to the prompt dialog being started.</param>
@@ -196,8 +196,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
-        /// <seealso cref="BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
-        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Prompts.Prompt{T}.BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Prompts.Prompt{T}.BeginDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> PromptAsync(string dialogId, PromptOptions options, CancellationToken cancellationToken = default)
         {
             try
@@ -219,8 +219,8 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         /// <summary>
         /// Continues execution of the active dialog, if there is one, by passing the current
-        /// <see cref="DialogContext"/> to the active dialog's
-        /// <see cref="Dialog.ContinueDialogAsync(DialogContext, CancellationToken)"/> method.
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext"/> to the active dialog's
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.Dialog.ContinueDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Threading.CancellationToken)"/> method.
         /// </summary>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
@@ -228,7 +228,7 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.
         ///
-        /// Check the <see cref="TurnContext.Responded"/> property after the call completes
+        /// Check the <see cref="Microsoft.Agents.Builder.TurnContext.Responded"/> property after the call completes
         /// to determine if the active dialog sent a reply message to the user.
         /// </remarks>
         /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Dialog.ContinueDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, System.Threading.CancellationToken)"/>
@@ -275,9 +275,9 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <summary>
         /// Ends a dialog by popping it off the stack and returns an optional result to the dialog's
         /// parent. The parent dialog is the dialog the started the on being ended via a call to
-        /// either <see cref="BeginDialogAsync(string, object, CancellationToken)"/> or
-        /// <see cref="PromptAsync(string, PromptOptions, CancellationToken)"/>. The parent dialog
-        /// will have its <see cref="Dialog.ResumeDialogAsync(DialogContext, DialogReason, object, CancellationToken)"/>
+        /// either <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/> or
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>. The parent dialog
+        /// will have its <see cref="Microsoft.Agents.Builder.Dialogs.Dialog.ResumeDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, Microsoft.Agents.Builder.Dialogs.DialogReason, System.Object, System.Threading.CancellationToken)"/>
         /// method invoked with any returned result. If the parent dialog hasn't implemented a `ResumeDialogAsync`
         /// method, then it will be automatically ended as well and the result passed to its parent.
         /// If there are no more parent dialogs on the stack then processing of the turn will end.
@@ -291,15 +291,15 @@ namespace Microsoft.Agents.Builder.Dialogs
         ///
         /// In general, the parent context is the dialog or Agent turn handler that started the dialog.
         /// If the parent is a dialog, the stack calls the parent's
-        /// <see cref="Dialog.ResumeDialogAsync(DialogContext, DialogReason, object, CancellationToken)"/> method to
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.Dialog.ResumeDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, Microsoft.Agents.Builder.Dialogs.DialogReason, System.Object, System.Threading.CancellationToken)"/> method to
         /// return a result to the parent dialog. If the parent dialog does not implement `ResumeDialogAsync`,
         /// then the parent will end, too, and the result passed to the next parent context.
         ///
-        /// The returned <see cref="DialogTurnResult"/> contains the return value in its
-        /// <see cref="DialogTurnResult.Result"/> property.</remarks>
-        /// <seealso cref="BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
-        /// <seealso cref="PromptAsync(string, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>
-        /// <seealso cref="ReplaceDialogAsync(string, object, System.Threading.CancellationToken)"/>
+        /// The returned <see cref="Microsoft.Agents.Builder.Dialogs.DialogTurnResult"/> contains the return value in its
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.DialogTurnResult.Result"/> property.</remarks>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.PromptAsync(System.String, Microsoft.Agents.Builder.Dialogs.Prompts.PromptOptions, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.ReplaceDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/>
         /// <seealso cref="Microsoft.Agents.Builder.Dialogs.Dialog.EndDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, Microsoft.Agents.Builder.Dialogs.DialogReason, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> EndDialogAsync(object result = null, CancellationToken cancellationToken = default)
         {
@@ -350,11 +350,11 @@ namespace Microsoft.Agents.Builder.Dialogs
         ///
         /// In general, the parent context is the dialog or Agent turn handler that started the dialog.
         /// If the parent is a dialog, the stack calls the parent's
-        /// <see cref="Dialog.ResumeDialogAsync(DialogContext, DialogReason, object, CancellationToken)"/>
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.Dialog.ResumeDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, Microsoft.Agents.Builder.Dialogs.DialogReason, System.Object, System.Threading.CancellationToken)"/>
         /// method to return a result to the parent dialog. If the parent dialog does not implement
         /// `ResumeDialogAsync`, then the parent will end, too, and the result is passed to the next
         /// parent context.</remarks>
-        /// <seealso cref="EndDialogAsync(object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(System.Object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> CancelAllDialogsAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -382,11 +382,11 @@ namespace Microsoft.Agents.Builder.Dialogs
         ///
         /// In general, the parent context is the dialog or Agent turn handler that started the dialog.
         /// If the parent is a dialog, the stack calls the parent's
-        /// <see cref="Dialog.ResumeDialogAsync(DialogContext, DialogReason, object, CancellationToken)"/>
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.Dialog.ResumeDialogAsync(Microsoft.Agents.Builder.Dialogs.DialogContext, Microsoft.Agents.Builder.Dialogs.DialogReason, System.Object, System.Threading.CancellationToken)"/>
         /// method to return a result to the parent dialog. If the parent dialog does not implement
         /// `ResumeDialogAsync`, then the parent will end, too, and the result is passed to the next
         /// parent context.</remarks>
-        /// <seealso cref="EndDialogAsync(object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(System.Object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> CancelAllDialogsAsync(bool cancelParents, string eventName = null, object eventValue = null, CancellationToken cancellationToken = default)
         {
             try
@@ -456,8 +456,8 @@ namespace Microsoft.Agents.Builder.Dialogs
         /// <returns>A task that represents the work queued to execute.</returns>
         /// <remarks>If the task is successful, the result indicates whether the dialog is still
         /// active after the turn has been processed by the dialog.</remarks>
-        /// <seealso cref="BeginDialogAsync(string, object, System.Threading.CancellationToken)"/>
-        /// <seealso cref="EndDialogAsync(object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.BeginDialogAsync(System.String, System.Object, System.Threading.CancellationToken)"/>
+        /// <seealso cref="Microsoft.Agents.Builder.Dialogs.DialogContext.EndDialogAsync(System.Object, System.Threading.CancellationToken)"/>
         public async Task<DialogTurnResult> ReplaceDialogAsync(string dialogId, object options = null, CancellationToken cancellationToken = default)
         {
             try
@@ -484,7 +484,7 @@ namespace Microsoft.Agents.Builder.Dialogs
 
         /// <summary>
         /// Calls the currently active dialog's
-        /// <see cref="Dialog.RepromptDialogAsync(ITurnContext, DialogInstance, CancellationToken)"/>
+        /// <see cref="Microsoft.Agents.Builder.Dialogs.Dialog.RepromptDialogAsync(Microsoft.Agents.Builder.ITurnContext, Microsoft.Agents.Builder.Dialogs.DialogInstance, System.Threading.CancellationToken)"/>
         /// method. Used with dialogs that implement a re-prompt behavior.
         /// </summary>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects

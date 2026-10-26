@@ -19,9 +19,9 @@ namespace Microsoft.Agents.Builder.State
         private readonly Dictionary<string, IAgentState> _scopes = [];
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TurnState"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.State.TurnState"/> class.
         /// </summary>
-        /// <param name="agentStates">initial list of <see cref="AgentState"/> objects to manage.</param>
+        /// <param name="agentStates">initial list of <see cref="Microsoft.Agents.Builder.State.AgentState"/> objects to manage.</param>
         public TurnState(params IAgentState[] agentStates)
         {
             foreach (var agentState in agentStates)

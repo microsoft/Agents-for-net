@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests
     /// frames defined by Bot.Streaming TransportConstants. The protocol must:
     ///   - accept inbound CancelStream/CancelAll and clean up buffered state,
     ///   - cancel in-flight inbound dispatches whose request id matches CancelStream's id,
-    ///   - fail outbound pending requests on CancelAll with <see cref="OperationCanceledException"/>,
+    ///   - fail outbound pending requests on CancelAll with <see cref="System.OperationCanceledException"/>,
     ///   - emit a CancelAll frame on dispose so peers release in-flight handlers immediately.
     /// </summary>
     public class NamedPipeProtocolCancelTests

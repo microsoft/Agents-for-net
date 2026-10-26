@@ -3,6 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests
@@ -137,6 +140,157 @@ namespace Microsoft.Agents.Builder.Tests
             var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
 
             Assert.False(validator.IsAllowed(url));
+        }
+
+        [Theory]
+        [InlineData("ftp://files.contoso.com/file.txt")]
+        [InlineData("https://user@files.contoso.com/file.txt")]
+        public void Enabled_DeniesUnsafeAllowedHostUris(string url)
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions
+            {
+                Enabled = true,
+                Hosts = new List<string> { "contoso.com" }
+            });
+
+            Assert.False(validator.IsAllowed(url));
+        }
+
+        [Theory]
+        [InlineData("http://127.0.0.1/file.txt")]
+        [InlineData("http://10.0.0.1/file.txt")]
+        [InlineData("http://169.254.1.1/file.txt")]
+        [InlineData("http://0.0.0.0/file.txt")]
+        [InlineData("http://[::1]/file.txt")]
+        [InlineData("http://[::]/file.txt")]
+        [InlineData("http://[fd00::1]/file.txt")]
+        public void Enabled_DeniesAllowlistedPrivateNetworkAddressByDefault(string url)
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions
+            {
+                Enabled = true,
+                Hosts = new List<string> { new Uri(url).Host }
+            });
+
+            Assert.False(validator.IsAllowed(url));
+        }
+
+        [Fact]
+        public void Enabled_AllowsAllowlistedPrivateNetworkAddressWhenExplicitlyConfigured()
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions
+            {
+                Enabled = true,
+                AllowPrivateNetworkAddresses = true,
+                Hosts = new List<string> { "127.0.0.1" }
+            });
+
+            Assert.True(validator.IsAllowed("http://127.0.0.1/file.txt"));
+        }
+
+        [Fact]
+        public async Task EnabledAsync_DeniesAllowlistedHostResolvingToPrivateNetworkByDefault()
+        {
+            var validator = new OutboundHostValidator(
+                new OutboundHostValidatorOptions
+                {
+                    Enabled = true,
+                    Hosts = new List<string> { "files.contoso.com" }
+                },
+                new StubHostAddressResolver(IPAddress.Parse("10.0.0.1")));
+
+            var result = await validator.IsAllowedAsync(
+                new Uri("https://files.contoso.com/file.txt"),
+                CancellationToken.None);
+
+            Assert.False(result);
+        }
+
+        [Theory]
+        [InlineData("0.0.0.0")]
+        [InlineData("::")]
+        public async Task EnabledAsync_DeniesHostResolvingToUnspecifiedAddress(string address)
+        {
+            var validator = new OutboundHostValidator(
+                new OutboundHostValidatorOptions
+                {
+                    Enabled = true,
+                    Hosts = new List<string> { "files.contoso.com" }
+                },
+                new StubHostAddressResolver(IPAddress.Parse(address)));
+
+            var result = await validator.IsAllowedAsync(
+                new Uri("https://files.contoso.com/file.txt"),
+                CancellationToken.None);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task EnabledAsync_AllowsPrivateDnsResolutionWhenExplicitlyConfigured()
+        {
+            var validator = new OutboundHostValidator(
+                new OutboundHostValidatorOptions
+                {
+                    Enabled = true,
+                    AllowPrivateNetworkAddresses = true,
+                    Hosts = new List<string> { "files.contoso.com" }
+                },
+                new StubHostAddressResolver(IPAddress.Parse("10.0.0.1")));
+
+            var result = await validator.IsAllowedAsync(
+                new Uri("https://files.contoso.com/file.txt"),
+                CancellationToken.None);
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task EnabledAsync_DeniesHostWhenDnsResolverRejectsTheHost()
+        {
+            var validator = new OutboundHostValidator(
+                new OutboundHostValidatorOptions
+                {
+                    Enabled = true,
+                    Hosts = new List<string> { "files.contoso.com" }
+                },
+                new ThrowingHostAddressResolver(new ArgumentException("Invalid host.")));
+
+            var result = await validator.IsAllowedAsync(
+                new Uri("https://files.contoso.com/file.txt"),
+                CancellationToken.None);
+
+            Assert.False(result);
+        }
+
+        private sealed class StubHostAddressResolver : IHostAddressResolver
+        {
+            private readonly IPAddress[] _addresses;
+
+            public StubHostAddressResolver(params IPAddress[] addresses)
+            {
+                _addresses = addresses;
+            }
+
+            public Task<IPAddress[]> GetHostAddressesAsync(string hostNameOrAddress, CancellationToken cancellationToken)
+            {
+                return Task.FromResult(_addresses);
+            }
+        }
+
+        private sealed class ThrowingHostAddressResolver : IHostAddressResolver
+        {
+            private readonly Exception _exception;
+
+            public ThrowingHostAddressResolver(Exception exception)
+            {
+                _exception = exception;
+            }
+
+            public Task<IPAddress[]> GetHostAddressesAsync(string hostNameOrAddress, CancellationToken cancellationToken)
+            {
+                return Task.FromException<IPAddress[]>(_exception);
+            }
         }
     }
 }

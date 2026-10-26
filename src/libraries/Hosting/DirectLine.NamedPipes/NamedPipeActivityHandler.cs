@@ -20,10 +20,10 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
     /// <summary>
     /// Handles inbound named pipe requests by invoking the agent's turn pipeline directly,
     /// without any HTTP roundtrip. Activities arrive from the named pipe and are passed
-    /// to <see cref="IChannelAdapter.ProcessActivityAsync"/>.
+    /// to <see cref="Microsoft.Agents.Builder.IChannelAdapter.ProcessActivityAsync(System.Security.Claims.ClaimsIdentity, Microsoft.Agents.Core.Models.IActivity, Microsoft.Agents.Builder.AgentCallbackHandler, System.Threading.CancellationToken)"/>.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="NamedPipeActivityHandler"/> class.
+    /// Initializes a new instance of the <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.NamedPipeActivityHandler"/> class.
     /// </remarks>
     /// <param name="services">The service provider for resolving scoped dependencies.</param>
     /// <param name="logger">The logger instance.</param>
@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
         private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         /// <summary>
-        /// Process an inbound named pipe request. Returns a <see cref="NamedPipeResponse"/>.
+        /// Process an inbound named pipe request. Returns a <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.Protocol.NamedPipeResponse"/>.
         /// </summary>
         /// <param name="request">The inbound request.</param>
         /// <param name="cancellationToken">A cancellation token.</param>

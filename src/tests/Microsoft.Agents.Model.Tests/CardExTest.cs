@@ -13,7 +13,7 @@ namespace Microsoft.Agents.Model.Tests
     public class CardExTest
     {
         /// <summary>
-        /// Ensures that the <see cref="HeroCard"/> can be used as an attachment.
+        /// Ensures that the <see cref="Microsoft.Agents.Core.Models.HeroCard"/> can be used as an attachment.
         /// </summary>
         [Fact]
         public void HeroCardToAttachmentTest()
@@ -35,7 +35,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that the <see cref="ThumbnailCard"/> can be used as an attachment.
+        /// Ensures that the <see cref="Microsoft.Agents.Core.Models.ThumbnailCard"/> can be used as an attachment.
         /// </summary>
         [Fact]
         public void ThumbnailCardToAttachmentTest()
@@ -57,7 +57,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that the <see cref="SigninCard"/> can be used as an attachment.
+        /// Ensures that the <see cref="Microsoft.Agents.Core.Models.SigninCard"/> can be used as an attachment.
         /// </summary>
         [Fact]
         public void SigninCardToAttachmentTest()
@@ -77,7 +77,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that the <see cref="ReceiptCard"/> can be used as an attachment.
+        /// Ensures that the <see cref="Microsoft.Agents.Core.Models.ReceiptCard"/> can be used as an attachment.
         /// </summary>
         [Fact]
         public void ReceiptCardToAttachmentTest()
@@ -120,7 +120,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that the <see cref="AudioCard"/> can be used as an attachment.
+        /// Ensures that the <see cref="Microsoft.Agents.Core.Models.AudioCard"/> can be used as an attachment.
         /// </summary>
         [Fact]
         public void AudioCardToAttachmentTest()
@@ -161,7 +161,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that the <see cref="VideoCard"/> can be used as an attachment.
+        /// Ensures that the <see cref="Microsoft.Agents.Core.Models.VideoCard"/> can be used as an attachment.
         /// </summary>
         [Fact]
         public void VideoCardToAttachmentTest()
@@ -202,7 +202,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that the <see cref="AnimationCard"/> can be used as an attachment.
+        /// Ensures that the <see cref="Microsoft.Agents.Core.Models.AnimationCard"/> can be used as an attachment.
         /// </summary>
         [Fact]
         public void AnimationCardToAttachmentTest()
@@ -233,7 +233,7 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         /// <summary>
-        /// Ensures that the <see cref="OAuthCard"/> can be used as an attachment.
+        /// Ensures that the <see cref="Microsoft.Agents.Core.Models.OAuthCard"/> can be used as an attachment.
         /// </summary>
         [Fact]
         public void OAuthCardToAttachmentTest()

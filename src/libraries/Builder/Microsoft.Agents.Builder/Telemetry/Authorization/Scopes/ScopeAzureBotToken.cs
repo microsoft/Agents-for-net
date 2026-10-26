@@ -6,13 +6,13 @@ using System.Collections.Generic;
 namespace Microsoft.Agents.Builder.Telemetry.Authorization.Scopes
 {
     /// <summary>
-    /// A <see cref="ScopeAuthorizationRequest"/> that traces the acquisition of an
+    /// A <see cref="Microsoft.Agents.Builder.Telemetry.Authorization.Scopes.ScopeAuthorizationRequest"/> that traces the acquisition of an
     /// Azure Bot Framework user token.
     /// </summary>
     internal class ScopeAzureBotToken : ScopeAuthorizationRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ScopeAzureBotToken"/> class.
+        /// Initializes a new instance of the <see cref="Microsoft.Agents.Builder.Telemetry.Authorization.Scopes.ScopeAzureBotToken"/> class.
         /// </summary>
         /// <param name="authHandlerId">The identifier of the authentication handler processing the request.</param>
         /// <param name="exchangeConnection">The OAuth connection name, or <c>null</c>.</param>

@@ -189,6 +189,37 @@ namespace Microsoft.Agents.Builder.App
         }
 
         /// <summary>
+        /// Validates configuration-backed options that can be checked without performing I/O.
+        /// </summary>
+        internal void Validate()
+        {
+            if (Connections is ConfigurationConnections configurationConnections)
+            {
+                configurationConnections.ValidateConfiguration();
+            }
+
+            UserAuthorization?.Validate();
+
+            if (StartTypingTimer)
+            {
+                if (TypingOptions == null)
+                {
+                    throw new ArgumentNullException(nameof(TypingOptions));
+                }
+
+                TypingOptions.Validate();
+            }
+
+            if (AdaptiveCards?.ActionSubmitFilter is string actionSubmitFilter
+                && string.IsNullOrWhiteSpace(actionSubmitFilter))
+            {
+                throw new ArgumentException(
+                    $"{nameof(AdaptiveCardsOptions.ActionSubmitFilter)} must not be empty when configured.",
+                    nameof(AdaptiveCards.ActionSubmitFilter));
+            }
+        }
+
+        /// <summary>
         /// The IChannelAdapter to use in cases on proactive.
         /// </summary>
         /// <remarks>
@@ -204,12 +235,12 @@ namespace Microsoft.Agents.Builder.App
 
         /// <summary>
         /// Registry of adapters keyed by channelId. Lets the agent resolve the correct
-        /// <see cref="IChannelAdapter"/> for a given channel — for example, to send proactive messages or
+        /// <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> for a given channel — for example, to send proactive messages or
         /// continue a conversation — without knowing adapter types.
         /// </summary>
         /// <remarks>
         /// Populated from DI when available. If the DI-aware constructor receives an
-        /// <see cref="IChannelAdapter"/> but no registry, it creates a registry using that adapter as the
+        /// <see cref="Microsoft.Agents.Builder.IChannelAdapter"/> but no registry, it creates a registry using that adapter as the
         /// default. Programmatically constructed options must set this property or use APIs that accept an
         /// adapter explicitly.
         /// </remarks>
@@ -258,7 +289,7 @@ namespace Microsoft.Agents.Builder.App
 
         /// <summary>
         /// Optional. Options for controlling typing indicator timing and per-channel behavior.
-        /// Only used when <see cref="StartTypingTimer"/> is true.
+        /// Only used when <see cref="Microsoft.Agents.Builder.App.AgentApplicationOptions.StartTypingTimer"/> is true.
         /// </summary>
         public TypingOptions TypingOptions { get; set; } = new TypingOptions();
 

@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace Microsoft.Agents.Extensions.MSTeams.App;
 
 /// <summary>
-/// Provides <see cref="AgentApplication"/> extension methods for registering Teams-aware route handlers.
+/// Provides <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> extension methods for registering Teams-aware route handlers.
 /// </summary>
 public static class TeamsAppExtensions
 {

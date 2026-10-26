@@ -22,7 +22,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
         /// communication with DirectLineFlex without any HTTP roundtrips.
         /// </summary>
         /// <param name="builder">The host application builder.</param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgentNamedPipeTransport(this IHostApplicationBuilder builder)
         {
             ArgumentNullException.ThrowIfNull(builder);
@@ -42,7 +42,7 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
         /// <c>NamedPipe:PipeName</c> from configuration.
         /// Two pipes are created: {pipeName}.incoming and {pipeName}.outgoing.
         /// </param>
-        /// <returns>The same instance of <see cref="IHostApplicationBuilder"/> to allow for method chaining.</returns>
+        /// <returns>The same instance of <see cref="Microsoft.Extensions.Hosting.IHostApplicationBuilder"/> to allow for method chaining.</returns>
         public static IHostApplicationBuilder AddAgentNamedPipeTransport(
             this IHostApplicationBuilder builder,
             string pipeName)
@@ -77,8 +77,8 @@ namespace Microsoft.Agents.Hosting.DirectLine.NamedPipes
     }
 
     /// <summary>
-    /// <see cref="DelegatingHandler"/> that routes urn:botframework:namedpipe requests to the
-    /// <see cref="NamedPipeMessageHandler"/>, while passing all other requests through normally.
+    /// <see cref="System.Net.Http.DelegatingHandler"/> that routes urn:botframework:namedpipe requests to the
+    /// <see cref="Microsoft.Agents.Hosting.DirectLine.NamedPipes.NamedPipeMessageHandler"/>, while passing all other requests through normally.
     /// </summary>
     internal sealed class PipeRoutingDelegatingHandler(NamedPipeMessageHandler pipeHandler) : DelegatingHandler
     {

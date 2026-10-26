@@ -13,9 +13,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-      <PackageReference Include="Microsoft.NET.Test.Sdk" />
-      <PackageReference Include="Moq" />
-      <PackageReference Include="xunit" />
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" />
+	  <PackageReference Include="coverlet.collector" />
+	  <PackageReference Include="Moq" />
+	  <PackageReference Include="xunit" />
       <PackageReference Include="xunit.runner.visualstudio">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -24,5 +25,11 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\libraries\Extensions\Microsoft.Agents.Extensions.Slack\Microsoft.Agents.Extensions.Slack.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Fixtures\feedback-submit-action.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 </Project>

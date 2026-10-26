@@ -61,21 +61,10 @@
             {
               "title": "quotedreply",
               "description": "Reply with a quote of the incoming message"
-            }
-          ]
-        },
-        {
-          "scopes": [
-            "team",
-            "groupChat"
-          ],
-          "triggers": [
-            "slash"
-          ],
-          "commands": [
+            },
             {
-              "title": "promptpreview",
-              "description": "Send a targeted response with Prompt Preview"
+              "title": "customfeedback",
+              "description": "Open a custom feedback dialog from response feedback buttons"
             }
           ]
         }
