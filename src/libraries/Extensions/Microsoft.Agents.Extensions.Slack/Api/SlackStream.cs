@@ -5,6 +5,7 @@ using Microsoft.Agents.Core;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.Slack.Api;
@@ -39,14 +40,17 @@ public class SlackStream
     /// <remarks>See https://docs.slack.dev/reference/methods/chat.startStream</remarks>
     /// <param name="taskDisplayMode">The display mode for the task in the Slack stream. The default is TaskDisplayMode.Plan.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the current SlackStream instance.</returns>
-    public async Task<SlackStream> StartAsync(string taskDisplayMode = TaskDisplayMode.Plan)
+    public Task<SlackStream> StartAsync(string taskDisplayMode = TaskDisplayMode.Plan)
+        => StartAsync(taskDisplayMode, CancellationToken.None);
+
+    internal async Task<SlackStream> StartAsync(string taskDisplayMode, CancellationToken cancellationToken)
     {
         var result = await _slackApi.CallAsync("chat.startStream", new
         {
             channel = _channel,
             thread_ts = _threadTs,
             task_display_mode = taskDisplayMode,
-        }, _token);
+        }, _token, cancellationToken).ConfigureAwait(false);
 
         _messageTs = result.ts;
         return this;
@@ -80,7 +84,10 @@ public class SlackStream
     /// <remarks>See https://docs.slack.dev/reference/methods/chat.appendStream</remarks>
     /// <param name="chunks">The list of chunks to append to the message stream. Cannot be null.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the current Slack stream instance.</returns>
-    public async Task<SlackStream> AppendAsync(IList<Chunk> chunks)
+    public Task<SlackStream> AppendAsync(IList<Chunk> chunks)
+        => AppendAsync(chunks, CancellationToken.None);
+
+    internal async Task<SlackStream> AppendAsync(IList<Chunk> chunks, CancellationToken cancellationToken)
     {
         AssertionHelpers.ThrowIfNull(chunks, nameof(chunks));
 
@@ -100,7 +107,7 @@ public class SlackStream
             ts = _messageTs,
             thread_ts = _threadTs,
             chunks,
-        }, _token);
+        }, _token, cancellationToken).ConfigureAwait(false);
 
         return this;
     }
@@ -112,7 +119,10 @@ public class SlackStream
     /// <param name="chunks">An optional list of message chunks to include in the stop request. May be null to omit chunks.</param>
     /// <param name="blocks">An optional list of block elements to include in the stop request. May be null to omit blocks.</param>
     /// <returns>A task that represents the asynchronous stop operation.</returns>
-    public async Task StopAsync(IList<Chunk>? chunks = null, IList<object>? blocks = null)
+    public Task StopAsync(IList<Chunk>? chunks = null, IList<object>? blocks = null)
+        => StopAsync(chunks, blocks, CancellationToken.None);
+
+    internal async Task StopAsync(IList<Chunk>? chunks, IList<object>? blocks, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(_messageTs))
         {
@@ -126,7 +136,7 @@ public class SlackStream
             thread_ts = _threadTs,
             chunks,
             blocks,
-        }, _token);
+        }, _token, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -143,7 +153,10 @@ public class SlackStream
     /// <returns>A task that represents the asynchronous stop operation.</returns>
     /// <exception cref="ArgumentException">Thrown if blocks is a JSON object that does not contain a "blocks" property with a JSON array value, or if
     /// blocks is not a valid JSON array or object.</exception>
-    public async Task StopAsync(IList<Chunk>? chunks = null, string? blocks = null)
+    public Task StopAsync(IList<Chunk>? chunks = null, string? blocks = null)
+        => StopAsync(chunks, blocks, CancellationToken.None);
+
+    internal async Task StopAsync(IList<Chunk>? chunks, string? blocks, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(_messageTs))
         {
@@ -152,7 +165,7 @@ public class SlackStream
 
         if (blocks == null)
         {
-            await StopAsync(chunks, (IList<object>?)null);
+            await StopAsync(chunks, (IList<object>?)null, cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -181,6 +194,6 @@ public class SlackStream
             thread_ts = _threadTs,
             chunks,
             blocks = jsonElement,
-        }, _token);
+        }, _token, cancellationToken).ConfigureAwait(false);
     }
 }

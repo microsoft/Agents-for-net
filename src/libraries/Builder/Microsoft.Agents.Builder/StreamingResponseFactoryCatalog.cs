@@ -12,10 +12,13 @@ namespace Microsoft.Agents.Builder
     /// registered for that channel via <see cref="StreamingResponseFactoryAttribute"/>.
     /// </summary>
     /// <remarks>
-    /// The catalog is populated on module load by scanning loaded assemblies (and assemblies loaded later) for
-    /// <see cref="StreamingResponseFactoryAssemblyAttribute"/>, mirroring how the serialization subsystem builds
+    /// The catalog is populated by scanning loaded assemblies (and assemblies loaded later) for
+    /// <see cref="Microsoft.Agents.Builder.StreamingResponseFactoryAssemblyAttribute"/>, mirroring how the serialization subsystem builds
     /// <c>ProtocolJsonSerializer.EntityTypes</c>.  The adapter looks up a factory type here and instantiates it
     /// per channel using its service provider, so no explicit registration call is required.
+    /// A package or project reference alone does not load its assembly. Hosts must load the extension before
+    /// processing its channel's turns, or explicitly call
+    /// <see cref="Microsoft.Agents.Builder.StreamingResponseFactoryCatalog.Register(System.String, System.Type)"/>.
     /// </remarks>
     public static class StreamingResponseFactoryCatalog
     {

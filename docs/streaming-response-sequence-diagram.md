@@ -15,6 +15,12 @@ type. If discovery or creation fails, `TurnContext` uses its built-in response:
 - `TeamsStreamingResponse` for Teams and other Teams subchannels.
 - `StreamingResponse` for all other channels.
 
+Automatic discovery scans loaded assemblies and subscribes to `AssemblyLoad`; a package or project
+reference alone does not load an extension. Load the extension during host startup before processing
+its channel's turns, for example by using an extension type. Hosts using a factory-only plugin can
+explicitly call `StreamingResponseFactoryCatalog.Register("custom", typeof(CustomStreamingResponseFactory))`.
+An extension that is already loaded needs no separate service-collection registration call.
+
 ```mermaid
 sequenceDiagram
     participant Adapter as ChannelServiceAdapterBase
@@ -96,6 +102,11 @@ sequenceDiagram
 
 `StopStream` runs before the drain signal is set, so `EndStreamAsync` cannot return while
 `IsStreamStarted()` still reports `true`.
+
+If draining exceeds `EndStreamTimeout`, the base cancels the worker's token and waits for in-flight
+channel work to stop before finalization. Send hooks and error cleanup must propagate this token to
+their asynchronous channel operations. Finalization uses the caller's token, not the canceled worker
+token, so it can still deliver the buffered final response.
 
 ## Teams Flow
 
@@ -227,8 +238,8 @@ sequenceDiagram
 
 ## Slack Native Streaming
 
-The Slack extension registers `SlackStreamingResponseFactory` for the Slack channel. The factory is
-discovered automatically and creates `SlackStreamingResponse` with its `SlackApi` dependency.
+Once loaded, the Slack extension registers `SlackStreamingResponseFactory` for the Slack channel. The
+factory is discovered automatically and creates `SlackStreamingResponse` with its `SlackApi` dependency.
 
 Unlike Activity Protocol channels, Slack appends only the new text delta.
 
@@ -252,9 +263,16 @@ sequenceDiagram
     end
 
     Agent->>Response: EndStreamAsync()
-    Worker->>Response: Drain pending deltas
-    Response->>Slack: chat.appendStream(TaskUpdateChunk Complete)
-    Response->>Slack: chat.stopStream(optional feedback blocks)
+    alt Buffer drains within EndStreamTimeout
+        Worker->>Response: Drain pending deltas
+    else Drain timeout
+        Response->>Worker: Cancel in-flight requests and await worker exit
+    end
+    opt No stream exists and buffered text remains
+        Response->>Slack: chat.startStream
+        Slack-->>Response: Message timestamp
+    end
+    Response->>Slack: chat.stopStream(unsent text delta,<br/>TaskUpdateChunk Complete, optional feedback blocks)
     Response->>Response: Clear local stream and StreamId
     Response-->>Agent: Success
 

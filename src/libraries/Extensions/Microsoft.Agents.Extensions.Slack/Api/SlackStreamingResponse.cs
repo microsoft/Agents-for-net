@@ -5,7 +5,7 @@ using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using System;
-using System.Runtime.ExceptionServices;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -54,51 +54,60 @@ namespace Microsoft.Agents.Extensions.Slack.Api
         /// <inheritdoc/>
         protected override async Task SendChunkAsync(string bufferedText, int sequenceNumber, CancellationToken cancellationToken)
         {
-            await EnsureStreamAsync().ConfigureAwait(false);
+            await EnsureStreamAsync(cancellationToken).ConfigureAwait(false);
             StreamId ??= Guid.NewGuid().ToString();
 
             // Slack appends, so only send the portion of the buffered text not yet streamed.
             bufferedText ??= "";
             var start = Math.Min(_sentLength, bufferedText.Length);
             var delta = bufferedText.Substring(start);
-            _sentLength = bufferedText.Length;
 
             if (string.IsNullOrEmpty(delta))
             {
                 return;
             }
 
-            await _stream.AppendAsync(new MarkdownTextChunk(delta)).ConfigureAwait(false);
+            await _stream.AppendAsync([new MarkdownTextChunk(delta)], cancellationToken).ConfigureAwait(false);
+            _sentLength = bufferedText.Length;
         }
 
         /// <inheritdoc/>
         protected override async Task SendInformativeAsync(string text, int sequenceNumber, CancellationToken cancellationToken)
         {
-            await EnsureStreamAsync().ConfigureAwait(false);
+            await EnsureStreamAsync(cancellationToken).ConfigureAwait(false);
             StreamId ??= Guid.NewGuid().ToString();
-            await _stream.AppendAsync(new TaskUpdateChunk(StreamId, text ?? "", SlackTaskStatus.InProgress)).ConfigureAwait(false);
+            await _stream.AppendAsync(
+                [new TaskUpdateChunk(StreamId, text ?? "", SlackTaskStatus.InProgress)],
+                cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         protected override async Task FinalizeStreamAsync(bool streamedPath, CancellationToken cancellationToken)
         {
-            // The base drains buffered chunks before calling this, so the stream already contains the full text.
+            if (_stream == null && !string.IsNullOrEmpty(Message))
+            {
+                await EnsureStreamAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             if (_stream == null)
             {
                 StreamId = null;
                 return;
             }
 
-            string feedbackButtons = null;
-            Exception completionException = null;
-
-            try
+            StreamId ??= Guid.NewGuid().ToString();
+            var chunks = new List<Chunk>();
+            var delta = Message.Substring(Math.Min(_sentLength, Message.Length));
+            if (!string.IsNullOrEmpty(delta))
             {
-                await _stream.AppendAsync(new TaskUpdateChunk(id: StreamId, title: "Done", status: SlackTaskStatus.Complete));
+                chunks.Add(new MarkdownTextChunk(delta));
+            }
+            chunks.Add(new TaskUpdateChunk(id: StreamId, title: "Done", status: SlackTaskStatus.Complete));
 
-                if (FeedbackLoopEnabled)
-                {
-                    feedbackButtons = """
+            string feedbackButtons = null;
+            if (FeedbackLoopEnabled)
+            {
+                feedbackButtons = """
                     {
                         "blocks": 
                         [
@@ -128,27 +137,9 @@ namespace Microsoft.Agents.Extensions.Slack.Api
                         ]
                     }
                     """;
-                }
-            }
-            catch (Exception ex)
-            {
-                completionException = ex;
             }
 
-            try
-            {
-                await StopRemoteStreamAsync(feedbackButtons).ConfigureAwait(false);
-            }
-            catch (Exception stopException) when (completionException != null)
-            {
-                System.Diagnostics.Trace.WriteLine(
-                    $"Exception stopping Slack StreamingResponse after completion failed: {stopException.Message}");
-            }
-
-            if (completionException != null)
-            {
-                ExceptionDispatchInfo.Capture(completionException).Throw();
-            }
+            await StopRemoteStreamAsync(feedbackButtons, chunks, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -158,7 +149,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
             try
             {
-                await StopRemoteStreamAsync().ConfigureAwait(false);
+                await StopRemoteStreamAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch (Exception stopException)
             {
@@ -179,7 +170,10 @@ namespace Microsoft.Agents.Extensions.Slack.Api
             IsStreamingChannel = true;
         }
 
-        private async Task StopRemoteStreamAsync(string blocks = null)
+        private async Task StopRemoteStreamAsync(
+            string blocks = null,
+            IList<Chunk> chunks = null,
+            CancellationToken cancellationToken = default)
         {
             var stream = _stream;
             if (stream == null)
@@ -190,7 +184,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
 
             try
             {
-                await stream.StopAsync(blocks: blocks).ConfigureAwait(false);
+                await stream.StopAsync(chunks, blocks, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -199,7 +193,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
             }
         }
 
-        private async Task EnsureStreamAsync()
+        private async Task EnsureStreamAsync(CancellationToken cancellationToken)
         {
             if (_stream != null)
             {
@@ -210,7 +204,7 @@ namespace Microsoft.Agents.Extensions.Slack.Api
                 ?? throw new InvalidOperationException("Slack streaming requires SlackChannelData on the incoming activity.");
 
             var stream = new SlackStream(_slackApi, channelData.Channel, channelData.ThreadTs, channelData.ApiToken);
-            _stream = await stream.StartAsync().ConfigureAwait(false);
+            _stream = await stream.StartAsync(TaskDisplayMode.Plan, cancellationToken).ConfigureAwait(false);
         }
     }
 }

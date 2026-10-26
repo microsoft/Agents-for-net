@@ -874,6 +874,74 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal("Confidential", aiEntity.UsageInfo.Name);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task EndStreamAsync_TimeoutCancelsInFlightSend_AndSendsFinalMessage(bool informativeUpdate)
+        {
+            var sendStarted = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pendingSend = new TaskCompletionSource<ResourceResponse[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            IActivity finalMessage = null;
+            CancellationToken finalSendToken = default;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(a => a.SendActivitiesAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>(async (_, activities, cancellationToken) =>
+                {
+                    if (activities[0].Text == "initial")
+                    {
+                        return [new ResourceResponse("initial")];
+                    }
+
+                    if (activities[0].Type == ActivityTypes.Message)
+                    {
+                        finalMessage = activities[0];
+                        finalSendToken = cancellationToken;
+                        return [new ResourceResponse("final")];
+                    }
+
+                    using var registration = cancellationToken.Register(() => pendingSend.TrySetCanceled());
+                    sendStarted.TrySetResult(cancellationToken);
+                    return await pendingSend.Task;
+                });
+            var context = new TurnContext(
+                adapter.Object,
+                new Activity { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            context.StreamingResponse.InitialDelay = 1;
+            context.StreamingResponse.Interval = 1;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            if (informativeUpdate)
+            {
+                await context.StreamingResponse.QueueInformativeUpdateAsync("initial");
+                await context.StreamingResponse.QueueInformativeUpdateAsync("queued");
+            }
+            else
+            {
+                context.StreamingResponse.QueueTextChunk("complete");
+            }
+
+            var sendToken = await sendStarted.Task;
+            context.StreamingResponse.QueueTextChunk(informativeUpdate ? "complete response" : " response");
+
+            try
+            {
+                Assert.True(sendToken.CanBeCanceled);
+                var result = await context.StreamingResponse.EndStreamAsync();
+
+                Assert.Equal(StreamingResponseResult.Timeout, result);
+                Assert.True(sendToken.IsCancellationRequested);
+                Assert.False(finalSendToken.IsCancellationRequested);
+                Assert.False(context.StreamingResponse.IsStreamStarted());
+                Assert.NotNull(finalMessage);
+                AssertFinal(finalMessage, "complete response");
+            }
+            finally
+            {
+                pendingSend.TrySetResult([new ResourceResponse("intermediate")]);
+                await context.StreamingResponse.EndStreamAsync();
+            }
+        }
+
         [Fact]
         public async Task EndStreamAsync_OnStreamingChannel_WithNothingQueued_ReturnsNotStarted()
         {
@@ -1089,6 +1157,30 @@ namespace Microsoft.Agents.Builder.Tests
 
             Assert.True(context.StreamingResponse.IsStreamingChannel);
             Assert.Equal(500, context.StreamingResponse.Interval);
+        }
+
+        [Fact]
+        public async Task QueueInformativeUpdate_WhenCanceled_DoesNotSendOrRestartStream()
+        {
+            var sendAttempts = 0;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(a => a.SendActivitiesAsync(It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, _, _) =>
+                {
+                    Interlocked.Increment(ref sendAttempts);
+                    return Task.FromException<ResourceResponse[]>(new InvalidOperationException("send failed"));
+                });
+            var context = new TurnContext(
+                adapter.Object,
+                new Activity { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+
+            await context.StreamingResponse.QueueInformativeUpdateAsync("trigger cancel");
+            await context.StreamingResponse.QueueInformativeUpdateAsync("after cancel");
+
+            Assert.Equal(1, sendAttempts);
+            Assert.False(context.StreamingResponse.IsStreamStarted());
+            Assert.Equal(StreamingResponseResult.Error, await context.StreamingResponse.EndStreamAsync());
         }
 
         [Fact]

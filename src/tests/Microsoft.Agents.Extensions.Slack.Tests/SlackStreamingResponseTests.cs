@@ -7,6 +7,7 @@ using Microsoft.Agents.Extensions.Slack.Api;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -40,28 +41,118 @@ public class SlackStreamingResponseTests
         Assert.Null(response.StreamId);
     }
 
-    [Fact]
-    public async Task EndStreamAsync_TimeoutWaitsForInFlightStartBeforeStoppingStream()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EndStreamAsync_TimeoutFlushesUnsentText(bool prefixAlreadySent)
     {
-        var startResponse = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var startRequested = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var requestedMethods = new List<string>();
-        var handler = new TestHandler((request, _) =>
+        var requests = new List<(string Method, JsonElement Body)>();
+        var response = CreateResponse(new TestHandler(async (request, _) =>
         {
             var method = request.RequestUri!.Segments[^1];
-            lock (requestedMethods)
-            {
-                requestedMethods.Add(method);
-            }
+            using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync());
+            requests.Add((method, body.RootElement.Clone()));
+            return CreateJsonResponse(method == "chat.startStream"
+                ? """{"ok":true,"ts":"stream-ts"}"""
+                : """{"ok":true}""");
+        }));
+        response.InitialDelay = prefixAlreadySent ? 1 : int.MaxValue;
+        response.Interval = int.MaxValue;
+        response.EndStreamTimeout = 0;
 
-            if (method == "chat.startStream")
-            {
-                startRequested.TrySetResult(true);
-                return startResponse.Task;
-            }
+        if (prefixAlreadySent)
+        {
+            response.QueueTextChunk("prefix");
+            await response.ChunkSent.Task;
+            response.QueueTextChunk(" suffix");
+        }
+        else
+        {
+            response.QueueTextChunk("prefix suffix");
+        }
 
-            return Task.FromResult(CreateJsonResponse("""{"ok":true}"""));
+        var result = await response.EndStreamAsync();
+
+        Assert.Equal(StreamingResponseResult.Timeout, result);
+        var stop = Assert.Single(requests, request => request.Method == "chat.stopStream");
+        var chunks = stop.Body.GetProperty("chunks").EnumerateArray().ToArray();
+        Assert.Contains(chunks, chunk =>
+            chunk.GetProperty("type").GetString() == "markdown_text"
+            && chunk.GetProperty("text").GetString() == (prefixAlreadySent ? " suffix" : "prefix suffix"));
+        Assert.Contains(chunks, chunk =>
+            chunk.GetProperty("type").GetString() == "task_update"
+            && chunk.GetProperty("status").GetString() == "complete");
+        Assert.False(response.IsStreamStarted());
+        Assert.Null(response.StreamId);
+    }
+
+    [Theory]
+    [InlineData("chat.startStream")]
+    [InlineData("chat.appendStream")]
+    public async Task EndStreamAsync_TimeoutCancelsInFlightRequestBeforeFinalizing(string blockedMethod)
+    {
+        var pendingResponse = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requestStarted = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requestedMethods = new List<string>();
+        var activeRequests = 0;
+        var maxActiveRequests = 0;
+        JsonElement finalBody = default;
+        var handler = new TestHandler(async (request, cancellationToken) =>
+        {
+            var method = request.RequestUri!.Segments[^1];
+            maxActiveRequests = Math.Max(maxActiveRequests, Interlocked.Increment(ref activeRequests));
+            requestedMethods.Add(method);
+            try
+            {
+                if (method == blockedMethod && !requestStarted.Task.IsCompleted)
+                {
+                    using var registration = cancellationToken.Register(() => pendingResponse.TrySetCanceled());
+                    requestStarted.TrySetResult(cancellationToken);
+                    return await pendingResponse.Task;
+                }
+
+                if (method == "chat.stopStream")
+                {
+                    using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync());
+                    finalBody = body.RootElement.Clone();
+                }
+
+                return CreateJsonResponse(method == "chat.startStream"
+                    ? """{"ok":true,"ts":"stream-ts"}"""
+                    : """{"ok":true}""");
+            }
+            finally
+            {
+                Interlocked.Decrement(ref activeRequests);
+            }
         });
+        var response = CreateResponse(handler);
+        response.InitialDelay = 1;
+        response.EndStreamTimeout = 0;
+        response.QueueTextChunk("content");
+        var requestToken = await requestStarted.Task;
+
+        var endTask = response.EndStreamAsync();
+        try
+        {
+            Assert.True(requestToken.IsCancellationRequested);
+            Assert.Equal(StreamingResponseResult.Timeout, await endTask);
+            Assert.Equal(1, maxActiveRequests);
+            Assert.Equal("chat.stopStream", requestedMethods.Last());
+            Assert.Contains(finalBody.GetProperty("chunks").EnumerateArray(), chunk =>
+                chunk.GetProperty("type").GetString() == "markdown_text"
+                && chunk.GetProperty("text").GetString() == "content");
+            Assert.Null(response.StreamId);
+        }
+        finally
+        {
+            pendingResponse.TrySetResult(CreateJsonResponse("""{"ok":true,"ts":"stream-ts"}"""));
+            await endTask;
+        }
+    }
+
+    private static TestSlackStreamingResponse CreateResponse(TestHandler handler)
+    {
         var httpClientFactory = new Mock<IHttpClientFactory>();
         httpClientFactory
             .Setup(factory => factory.CreateClient(nameof(SlackApi)))
@@ -77,30 +168,9 @@ public class SlackStreamingResponseTests
         var turnContext = new Mock<ITurnContext>();
         turnContext.SetupGet(context => context.Activity).Returns(activity);
 
-        var response = new SlackStreamingResponse(
+        return new TestSlackStreamingResponse(
             turnContext.Object,
-            new SlackApi(httpClientFactory.Object))
-        {
-            InitialDelay = 1,
-            EndStreamTimeout = 0
-        };
-        response.QueueTextChunk("content");
-        await startRequested.Task;
-
-        var endTask = response.EndStreamAsync();
-
-        Assert.False(endTask.IsCompleted);
-
-        startResponse.SetResult(CreateJsonResponse("""{"ok":true,"ts":"stream-ts"}"""));
-        var result = await endTask;
-
-        Assert.Equal(StreamingResponseResult.Timeout, result);
-        lock (requestedMethods)
-        {
-            Assert.Equal(
-                ["chat.startStream", "chat.appendStream", "chat.appendStream", "chat.stopStream"],
-                requestedMethods);
-        }
+            new SlackApi(httpClientFactory.Object));
     }
 
     private static HttpResponseMessage CreateJsonResponse(string json)
@@ -108,6 +178,21 @@ public class SlackStreamingResponseTests
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
+
+    private sealed class TestSlackStreamingResponse(ITurnContext turnContext, SlackApi slackApi)
+        : SlackStreamingResponse(turnContext, slackApi)
+    {
+        public TaskCompletionSource<bool> ChunkSent { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        protected override void OnSendCompleted(bool isInformative, string text)
+        {
+            base.OnSendCompleted(isInformative, text);
+            if (!isInformative)
+            {
+                ChunkSent.TrySetResult(true);
+            }
+        }
+    }
 
     private sealed class TestHandler : DelegatingHandler
     {

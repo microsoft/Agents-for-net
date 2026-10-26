@@ -255,13 +255,13 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public async Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
         {
-            if (!IsStreamingChannel)
-            {
-                return;
-            }
-
             lock (this)
             {
+                if (!IsStreamingChannel || _canceled)
+                {
+                    return;
+                }
+
                 if (_ended)
                 {
                     throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
@@ -444,7 +444,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="bufferedText">The full accumulated message text at this point in the stream.</param>
         /// <param name="sequenceNumber">The 1-based sequence number for this update.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="cancellationToken">Cancellation token that must be propagated to asynchronous channel operations.</param>
         protected abstract Task SendChunkAsync(string bufferedText, int sequenceNumber, CancellationToken cancellationToken);
 
         /// <summary>
@@ -453,7 +453,7 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="text">The informative text.</param>
         /// <param name="sequenceNumber">The 1-based sequence number for this update.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="cancellationToken">Cancellation token that must be propagated to asynchronous channel operations.</param>
         protected abstract Task SendInformativeAsync(string text, int sequenceNumber, CancellationToken cancellationToken);
 
         /// <summary>
@@ -597,7 +597,7 @@ namespace Microsoft.Agents.Builder
                 {
                     await Task.Delay(dueTime, stopToken).ConfigureAwait(false);
 
-                    int nextDueTime = await SendNextIntervalAsync().ConfigureAwait(false);
+                    int nextDueTime = await SendNextIntervalAsync(stopToken).ConfigureAwait(false);
                     if (nextDueTime < 0)
                     {
                         return;
@@ -622,8 +622,9 @@ namespace Microsoft.Agents.Builder
 
         // Sends one buffered chunk (or informative) per interval and returns the next due time in milliseconds,
         // or a negative value to stop the loop.  Mirrors the previous self-rescheduling Timer callback.
-        private async Task<int> SendNextIntervalAsync()
+        private async Task<int> SendNextIntervalAsync(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             PendingSend pending;
             bool isQueueEmpty;
             bool isEnded;
@@ -641,11 +642,15 @@ namespace Microsoft.Agents.Builder
                 {
                     continueStreaming = await OnBeforeSendIntervalAsync(
                         isQueueEmpty,
-                        CancellationToken.None).ConfigureAwait(false);
+                        cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
-                    return await HandleErrorAsync(ex, CancellationToken.None).ConfigureAwait(false);
+                    return await HandleErrorAsync(ex, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (!continueStreaming)
@@ -661,6 +666,7 @@ namespace Microsoft.Agents.Builder
 
             lock (this)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 QueueNextChunk();
 
                 if (_queue.Count > 0)
@@ -687,20 +693,24 @@ namespace Microsoft.Agents.Builder
                 int sequence = _nextSequence++;
                 if (pending.IsInformative)
                 {
-                    await SendInformativeAsync(pending.Text, sequence, CancellationToken.None).ConfigureAwait(false);
+                    await SendInformativeAsync(pending.Text, sequence, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
-                    await SendChunkAsync(pending.Text, sequence, CancellationToken.None).ConfigureAwait(false);
+                    await SendChunkAsync(pending.Text, sequence, cancellationToken).ConfigureAwait(false);
                 }
                 OnSendCompleted(pending.IsInformative, pending.Text);
 
                 // Continue on the normal interval.
                 return Interval;
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                return await HandleErrorAsync(ex, CancellationToken.None).ConfigureAwait(false);
+                return await HandleErrorAsync(ex, cancellationToken).ConfigureAwait(false);
             }
         }
 
