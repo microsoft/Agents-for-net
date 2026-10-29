@@ -25,7 +25,8 @@ public static class Program
 
 Publish the customer class library with its `.deps.json` and private dependencies.
 Use SDK dependencies compatible with the runner's SDK release. The runner shares
-`Microsoft.Agents.*`, `Microsoft.AspNetCore.*` and `Microsoft.Extensions.*`
+`Microsoft.Agents.*`, `Microsoft.AspNetCore.*`, `Microsoft.Extensions.*`,
+`Microsoft.IdentityModel.*` and `System.IdentityModel.Tokens.Jwt`
 contracts with its default load context. A separate load context is dependency
 isolation, **not a security sandbox**; customer code executes with host privileges.
 Cross-major SDK compatibility is not guaranteed.

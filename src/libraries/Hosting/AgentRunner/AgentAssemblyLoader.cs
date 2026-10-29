@@ -12,7 +12,8 @@ namespace Microsoft.Agents.Hosting.AgentRunner;
 internal static class AgentAssemblyLoader
 {
     private static readonly string[] SharedAssemblyPrefixes =
-        ["Microsoft.Agents", "Microsoft.AspNetCore", "Microsoft.Extensions"];
+        ["Microsoft.Agents", "Microsoft.AspNetCore", "Microsoft.Extensions",
+         "Microsoft.IdentityModel", "System.IdentityModel.Tokens.Jwt"];
 
     internal static void LoadAndRegister(WebApplicationBuilder builder, string agentAssemblyPath)
     {

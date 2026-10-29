@@ -4,6 +4,7 @@
     <ComponentAreaName>AgentRunnerFixture</ComponentAreaName>
     <IsPackable>false</IsPackable>
     <GenerateDependencyFile>true</GenerateDependencyFile>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <Import Project="..\..\..\..\Build.Common.core.props" />
   <ItemGroup>

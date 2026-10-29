@@ -4,9 +4,15 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Microsoft.Agents.Hosting.AgentRunner.Tests;
 
@@ -25,6 +31,32 @@ public class AgentAssemblyLoaderTests
         Assert.NotNull(services.GetRequiredService<Builder.IAgent>());
         var marker = builder.Services.Single(service => service.ServiceType.FullName == "RunnerFixture.DependencyMarker");
         Assert.NotNull(services.GetRequiredService(marker.ServiceType));
+    }
+
+    [Fact]
+    public async Task LoadAndRegister_CustomerJwtConfigurationWithPrivateDependencies_SharesAuthenticationTypes()
+    {
+        using var key = RSA.Create(2048);
+        var signingKey = JsonWebKeyConverter.ConvertFromRSASecurityKey(
+            new RsaSecurityKey(key.ExportParameters(false)) { KeyId = "test-key" });
+        var metadataPath = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(metadataPath, JsonSerializer.Serialize(signingKey));
+            var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Production" });
+            builder.Configuration["AgentRunnerFixtureSigningKeyPath"] = metadataPath;
+            AgentAssemblyLoader.LoadAndRegister(builder, FixturePath);
+            builder.Services.AddAuthentication().AddJwtBearer("fixture");
+            using var services = builder.Services.BuildServiceProvider();
+
+            var options = services.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get("fixture");
+            var configuration = await options.ConfigurationManager!.GetConfigurationAsync(CancellationToken.None);
+            Assert.Equal("test-key", Assert.IsType<JsonWebKey>(Assert.Single(configuration.SigningKeys)).Kid);
+        }
+        finally
+        {
+            File.Delete(metadataPath);
+        }
     }
 
     [Fact]
