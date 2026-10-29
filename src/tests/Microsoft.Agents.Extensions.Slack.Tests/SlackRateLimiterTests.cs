@@ -25,7 +25,7 @@ public class SlackRateLimiterTests
         await limiter.WaitAsync("app:other-team:append", true, CancellationToken.None);
         clock.Advance(TimeSpan.FromSeconds(1));
 
-        await waiting.WaitAsync(TimeSpan.FromSeconds(10));
+        await waiting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class SlackRateLimiterTests
         Assert.False(waiting.IsCompleted);
         clock.Advance(TimeSpan.FromSeconds(4));
 
-        await waiting.WaitAsync(TimeSpan.FromSeconds(10));
+        await waiting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
     }
 
     [Fact]
@@ -56,6 +56,7 @@ public class SlackRateLimiterTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
 
         clock.Advance(TimeSpan.FromSeconds(1));
-        await limiter.WaitAsync("app:team:append", true, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
+        await limiter.WaitAsync("app:team:append", true, CancellationToken.None)
+            .WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
     }
 }

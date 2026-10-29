@@ -161,11 +161,15 @@ public class SlackApiTests
         var bodies = new System.Collections.Generic.List<string>();
         var slackApi = CreateSlackApi(async (request, cancellationToken) =>
         {
+#if NET8_0_OR_GREATER
             bodies.Add(await request.Content!.ReadAsStringAsync(cancellationToken));
+#else
+            bodies.Add(await request.Content!.ReadAsStringAsync());
+#endif
             if (bodies.Count == 1)
             {
                 var throttled = CreateJsonResponse(
-                    """{"ok":false,"error":"ratelimited"}""", HttpStatusCode.TooManyRequests);
+                    """{"ok":false,"error":"ratelimited"}""", (HttpStatusCode)429);
                 throttled.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.Zero);
                 return throttled;
             }
@@ -189,7 +193,7 @@ public class SlackApiTests
         {
             attempts++;
             var response = CreateJsonResponse(
-                """{"ok":false,"error":"ratelimited"}""", HttpStatusCode.TooManyRequests);
+                """{"ok":false,"error":"ratelimited"}""", (HttpStatusCode)429);
             response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.Zero);
             return Task.FromResult(response);
         });

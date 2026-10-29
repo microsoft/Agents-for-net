@@ -102,7 +102,7 @@ public class SlackStreamingResponseTests
         var response = CreateResponse(handler);
         await response.QueueInformativeUpdateAsync("Working");
         response.QueueTextChunk("Answer [do");
-        await handler.FirstText.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await handler.FirstText.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
         response.QueueTextChunk("c1] and [1].");
         response.AddCitation(new ClientCitation
         {
@@ -158,7 +158,7 @@ public class SlackStreamingResponseTests
         await response.QueueInformativeUpdateAsync("Working");
 
         clock.Advance(TimeSpan.FromMinutes(10));
-        await handler.FirstStop.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await handler.FirstStop.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
         clock.AutoAdvanceAmount = TimeSpan.FromSeconds(2);
         response.QueueTextChunk("after cutoff");
 
@@ -394,14 +394,14 @@ public class SlackStreamingResponseTests
         };
         var response = CreateResponse(handler);
         response.QueueTextChunk("answer");
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
         using var cancellation = new CancellationTokenSource();
         var informative = response.QueueInformativeUpdateAsync("cancel this status", cancellation.Token);
         cancellation.Cancel();
         try
         {
             await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => informative.WaitAsync(TimeSpan.FromSeconds(5)));
+                () => informative.WaitAsync(TimeSpan.FromSeconds(5), TimeProvider.System));
         }
         finally
         {
@@ -453,10 +453,10 @@ public class SlackStreamingResponseTests
         var response = CreateResponse(handler);
         response.EndStreamTimeout = 0;
         response.QueueTextChunk("content");
-        var requestToken = await requestStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var requestToken = await requestStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
 
         var ending = response.EndStreamAsync();
-        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
 
         Assert.True(requestToken.IsCancellationRequested);
         Assert.Equal(StreamingResponseResult.Timeout, await ending);
@@ -517,7 +517,7 @@ public class SlackStreamingResponseTests
     private static HttpResponseMessage Throttled()
     {
         var response = JsonResponse("""{"ok":false,"error":"ratelimited"}""");
-        response.StatusCode = HttpStatusCode.TooManyRequests;
+        response.StatusCode = (HttpStatusCode)429;
         response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.Zero);
         return response;
     }
@@ -528,14 +528,18 @@ public class SlackStreamingResponseTests
         public List<(string Method, JsonElement Body)> Requests { get; } = [];
         public TaskCompletionSource<bool> FirstText { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource<bool> FirstStop { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public Func<string, JsonElement, HttpResponseMessage> Reply { get; init; }
-        public Func<string, JsonElement, CancellationToken, Task<HttpResponseMessage>> HandleAsync { get; init; }
+        public Func<string, JsonElement, HttpResponseMessage> Reply { get; set; }
+        public Func<string, JsonElement, CancellationToken, Task<HttpResponseMessage>> HandleAsync { get; set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var method = request.RequestUri.Segments[^1];
+#if NET8_0_OR_GREATER
             using var document = JsonDocument.Parse(await request.Content.ReadAsStringAsync(cancellationToken));
+#else
+            using var document = JsonDocument.Parse(await request.Content.ReadAsStringAsync());
+#endif
             var body = document.RootElement.Clone();
             Requests.Add((method, body));
             var response = HandleAsync != null ? await HandleAsync(method, body, cancellationToken) : Reply?.Invoke(method, body);
