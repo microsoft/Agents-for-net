@@ -19,6 +19,9 @@ attempts using `Retry-After`. Other failures are exposed through `SlackResponseE
 The response rolls over into another message in the same thread before 12,000 accumulated markdown
 characters or a nine-minute safety window below Slack's ten-minute lifetime. Intermediate closures
 keep the agent session `processing`.
+Completion still transitions that session to `active` if an idle rollover left no open stream
+or remaining final blocks. Streams resolve the turn-bound `SlackApi` when opened so native
+requests retain the extension's typing-timer reset callback.
 
 ### Portable output
 

@@ -122,6 +122,61 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.IsType<StreamingResponse>(deliveryModeStreamContext.StreamingResponse);
         }
 
+        [Theory]
+        [InlineData("MSTEAMS", true, false)]
+        [InlineData("MsTeAmS:preview", false, false)]
+        [InlineData("MSTEAMS:COPILOT", false, true)]
+        public void StreamingResponse_ChannelSelectionUsesStructuredCaseInsensitiveIds(
+            string channelId, bool fullNotation, bool isCopilot)
+        {
+            var context = new TurnContext(
+                new Mock<IChannelAdapter>().Object,
+                new Activity
+                {
+                    Type = ActivityTypes.Message,
+                    ChannelId = new ChannelId(channelId, fullNotation)
+                });
+
+            Assert.True(context.StreamingResponse.IsStreamingChannel);
+            if (isCopilot)
+            {
+                Assert.IsType<M365CopilotStreamingResponse>(context.StreamingResponse);
+            }
+            else
+            {
+                Assert.IsType<TeamsStreamingResponse>(context.StreamingResponse);
+            }
+        }
+
+        [Theory]
+        [InlineData(Channels.Msteams)]
+        [InlineData(Channels.M365Copilot)]
+        public async Task HostedTeamsStream_PreservesLocalStreamIdWhenHostReturnsNoId(string channelId)
+        {
+            var adapter = new HostedStreamingAdapter();
+            var context = new TurnContext(adapter, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = channelId,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            context.StreamingResponse.InitialDelay = 1;
+            context.StreamingResponse.Interval = 1;
+            context.StreamingResponse.QueueTextChunk("hosted answer");
+
+            Assert.Equal(StreamingResponseResult.Success, await context.StreamingResponse.EndStreamAsync());
+            Assert.True(adapter.Responses.Count >= 2);
+            var streamId = adapter.Responses[0].GetStreamingEntity()?.StreamId;
+            Assert.False(string.IsNullOrEmpty(streamId));
+            Assert.All(adapter.Responses, activity =>
+                Assert.Equal(streamId, activity.GetStreamingEntity()?.StreamId));
+            AssertFinal(adapter.Responses.Last(), "hosted answer");
+
+            await context.StreamingResponse.ResetAsync();
+            Assert.False(string.IsNullOrEmpty(context.StreamingResponse.StreamId));
+            Assert.NotEqual(streamId, context.StreamingResponse.StreamId);
+        }
+
         [Fact]
         public async Task TeamsStreamingResponse_UserCancel_ReturnsUserCancelled()
         {
@@ -230,7 +285,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             await context.StreamingResponse.QueueInformativeUpdateAsync(informativeMessage);
 
-            var timedOut = await context.StreamingResponse.SendStreamTimedOutNotification(timeoutNotification);
+            var timedOut = await context.StreamingResponse.SendStreamTimedOutNotification(Message: timeoutNotification);
 
             Assert.True(timedOut);
             Assert.False(context.StreamingResponse.IsStreamingChannel);
@@ -975,6 +1030,92 @@ namespace Microsoft.Agents.Builder.Tests
             }
         }
 
+        [Theory]
+        [InlineData("buffered answer", false)]
+        [InlineData(" ", true)]
+        public async Task EndStreamAsync_TimeoutBeforeFirstUpdate_DeliversBufferedContent(
+            string text, bool includeAttachment)
+        {
+            var responses = new List<IActivity>();
+            var context = new TurnContext(
+                CreateMockAdapter(responses).Object,
+                new Activity { Type = ActivityTypes.Message, ChannelId = Channels.Webchat });
+            context.StreamingResponse.InitialDelay = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            if (includeAttachment)
+            {
+                context.StreamingResponse.AddAttachment(new Attachment
+                {
+                    ContentType = "image/png",
+                    ContentUrl = "https://example.com/image.png"
+                });
+            }
+            context.StreamingResponse.QueueTextChunk(text);
+
+            Assert.Equal(StreamingResponseResult.Timeout, await context.StreamingResponse.EndStreamAsync());
+            Assert.Equal(0, context.StreamingResponse.UpdatesSent());
+            var final = Assert.Single(responses);
+            AssertFinal(final, text);
+            if (includeAttachment)
+            {
+                Assert.Equal("https://example.com/image.png", Assert.Single(final.Attachments).ContentUrl);
+            }
+        }
+
+        [Fact]
+        public async Task ResetAsync_AfterTimeoutFallback_WaitsForPreviousWorkerBeforeClearingState()
+        {
+            var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pendingSend = new TaskCompletionSource<ResourceResponse[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            IActivity final = null;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(value => value.SendActivitiesAsync(
+                    It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>(async (_, activities, _) =>
+                {
+                    if (activities[0].Type == ActivityTypes.Typing && activities[0].Text == "before reset")
+                    {
+                        sendStarted.TrySetResult(true);
+                        return await pendingSend.Task;
+                    }
+                    if (activities[0].Type == ActivityTypes.Message && activities[0].Text == "after reset")
+                    {
+                        final = activities[0];
+                    }
+                    return [new ResourceResponse("current-stream")];
+                });
+            var context = new TurnContext(
+                adapter.Object,
+                new Activity { Type = ActivityTypes.Message, ChannelId = Channels.Msteams });
+            context.StreamingResponse.InitialDelay = 1;
+            context.StreamingResponse.Interval = 1;
+            context.StreamingResponse.QueueTextChunk("before reset");
+            await sendStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            await context.StreamingResponse.SendStreamTimedOutNotification("timeout");
+
+            var resetting = context.StreamingResponse.ResetAsync();
+            try
+            {
+                Assert.False(resetting.IsCompleted);
+                pendingSend.TrySetResult([new ResourceResponse("old-stream")]);
+                await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                Assert.Null(context.StreamingResponse.StreamId);
+
+                context.StreamingResponse.InitialDelay = 1;
+                context.StreamingResponse.Interval = 1;
+                context.StreamingResponse.QueueTextChunk("after reset");
+                Assert.Equal(StreamingResponseResult.Success, await context.StreamingResponse.EndStreamAsync());
+                Assert.NotNull(final);
+                AssertFinal(final, "after reset");
+            }
+            finally
+            {
+                pendingSend.TrySetResult([new ResourceResponse("old-stream")]);
+                await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+        }
+
         [Fact]
         public async Task EndStreamAsync_OnStreamingChannel_WithNothingQueued_ReturnsNotStarted()
         {
@@ -1481,6 +1622,8 @@ namespace Microsoft.Agents.Builder.Tests
         [InlineData(Channels.Directline, DeliveryModes.Normal, 500, true)]
         [InlineData(Channels.Test, DeliveryModes.Stream, 100, true)]
         [InlineData(Channels.Msteams, DeliveryModes.Normal, 1000, false)]
+        [InlineData(Channels.Msteams, DeliveryModes.Stream, 1000, true)]
+        [InlineData(Channels.M365Copilot, DeliveryModes.Stream, 1000, true)]
         public async Task ResetAsync_RestoresChannelDefaults(
             string channelId,
             string deliveryMode,
@@ -1608,6 +1751,19 @@ namespace Microsoft.Agents.Builder.Tests
         // -------------------------------------------------------------------
         // Helpers
         // -------------------------------------------------------------------
+
+        private sealed class HostedStreamingAdapter()
+            : ChannelServiceAdapterBase(new Mock<IChannelServiceClientFactory>().Object, null)
+        {
+            public List<IActivity> Responses { get; } = [];
+
+            protected override Task<bool> HostResponseAsync(
+                IActivity incomingActivity, IActivity outActivity, CancellationToken cancellationToken)
+            {
+                Responses.Add(outActivity);
+                return Task.FromResult(true);
+            }
+        }
 
         /// <summary>
         /// Polls until <paramref name="condition"/> returns true or the timeout elapses.

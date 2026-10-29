@@ -114,11 +114,11 @@ namespace Microsoft.Agents.Builder
         {
             get
             {
-                return _streamingResponse ??= Activity.ChannelId == Channels.M365Copilot
-                    ? new M365CopilotStreamingResponse(this)
-                    : Activity.ChannelId?.Channel == Channels.Msteams
-                        ? new TeamsStreamingResponse(this)
-                        : new StreamingResponse(this);
+                return _streamingResponse ??= Activity.ChannelId?.IsParentChannel(Channels.Msteams) == true
+                    ? string.Equals(Activity.ChannelId.SubChannel, Channels.M365CopilotSubChannel, StringComparison.OrdinalIgnoreCase)
+                        ? new M365CopilotStreamingResponse(this)
+                        : new TeamsStreamingResponse(this)
+                    : new StreamingResponse(this);
             }
         }
 

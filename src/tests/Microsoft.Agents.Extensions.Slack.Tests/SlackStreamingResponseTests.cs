@@ -170,6 +170,49 @@ public class SlackStreamingResponseTests
     }
 
     [Fact]
+    public async Task IdleRollover_EndsSessionWithoutAdditionalContent()
+    {
+        var clock = new FakeTimeProvider();
+        var handler = new RecordingHandler();
+        var response = CreateResponse(handler, clock);
+        await response.QueueInformativeUpdateAsync("Working");
+
+        clock.Advance(TimeSpan.FromMinutes(10));
+        await handler.FirstStop.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+        clock.AutoAdvanceAmount = TimeSpan.FromSeconds(2);
+
+        Assert.Equal(StreamingResponseResult.Success, await response.EndStreamAsync());
+        var stops = handler.Requests.Where(request => request.Method == "chat.stopStream").ToArray();
+        Assert.Equal(2, stops.Length);
+        Assert.Equal("processing", stops[0].Body.GetProperty("session_status").GetString());
+        Assert.Equal("active", stops[1].Body.GetProperty("session_status").GetString());
+        Assert.Equal("", StreamedText(handler));
+    }
+
+    [Fact]
+    public async Task StreamingRequests_UseTurnApiRegisteredAfterResponseCreation()
+    {
+        var clock = new FakeTimeProvider { AutoAdvanceAmount = TimeSpan.FromSeconds(2) };
+        var services = new TurnContextStateCollection();
+        var fallbackHandler = new RecordingHandler();
+        var response = CreateResponse(fallbackHandler, clock, services);
+        var turnHandler = new RecordingHandler();
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(value => value.CreateClient(nameof(SlackApi)))
+            .Returns(() => new HttpClient(turnHandler, disposeHandler: false));
+        var resets = 0;
+        services.Set(new SlackApi(factory.Object, () => resets++, new SlackRateLimiter(clock)));
+
+        await response.QueueInformativeUpdateAsync("Working");
+        response.QueueTextChunk("answer");
+        Assert.Equal(StreamingResponseResult.Success, await response.EndStreamAsync());
+
+        Assert.Empty(fallbackHandler.Requests);
+        Assert.Equal(turnHandler.Requests.Count, resets);
+        Assert.Equal("answer", StreamedText(turnHandler));
+    }
+
+    [Fact]
     public async Task LongResponse_RollsOverWithoutLosingOrDuplicatingText()
     {
         var handler = new RecordingHandler();
@@ -473,7 +516,8 @@ public class SlackStreamingResponseTests
         Assert.Null(response.StreamId);
     }
 
-    private static SlackStreamingResponse CreateResponse(RecordingHandler handler, FakeTimeProvider clock = null)
+    private static SlackStreamingResponse CreateResponse(
+        RecordingHandler handler, FakeTimeProvider clock = null, TurnContextStateCollection services = null)
     {
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(value => value.CreateClient(nameof(SlackApi)))
@@ -487,6 +531,7 @@ public class SlackStreamingResponseTests
         };
         var context = new Mock<ITurnContext>();
         context.SetupGet(value => value.Activity).Returns(activity);
+        context.SetupGet(value => value.Services).Returns(services ?? new TurnContextStateCollection());
         clock ??= new FakeTimeProvider { AutoAdvanceAmount = TimeSpan.FromSeconds(2) };
         return new SlackStreamingResponse(context.Object, new SlackApi(factory.Object, null, new SlackRateLimiter(clock)))
         {

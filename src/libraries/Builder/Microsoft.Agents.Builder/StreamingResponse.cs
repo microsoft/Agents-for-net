@@ -96,7 +96,8 @@ namespace Microsoft.Agents.Builder
                 return;
             }
 
-            if (UpdatesSent() > 0 || LegacyFinalMessage != null)
+            if (UpdatesSent() > 0 || LegacyFinalMessage != null || !string.IsNullOrWhiteSpace(Message)
+                || Attachments?.Count > 0)
             {
                 try
                 {

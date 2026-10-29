@@ -370,7 +370,7 @@ namespace Microsoft.Agents.Builder
                 return;
             }
 
-            var factoryKey = channelId.ToString();
+            var factoryKey = channelId.IsSubChannel() ? $"{channel}:{channelId.SubChannel}" : channel;
             if (!StreamingResponseFactoryCatalog.TryGetFactoryType(factoryKey, out var factoryType)
                 && !StreamingResponseFactoryCatalog.TryGetFactoryType(channel, out factoryType))
             {

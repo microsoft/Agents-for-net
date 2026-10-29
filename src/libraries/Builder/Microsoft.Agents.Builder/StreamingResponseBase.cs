@@ -125,8 +125,9 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         /// <remarks>
         /// StreamId assignment is the subclass's responsibility (via the protected setter). The base clears it
-        /// during <see cref="ResetAsync"/>, after which the implementation-specific reset hook may regenerate it.
-        /// Teams assigns it from the first send response; other channels typically assign a GUID up front.
+        /// during <see cref="Microsoft.Agents.Builder.StreamingResponseBase.ResetAsync(System.Threading.CancellationToken)"/>,
+        /// after which the implementation-specific reset hook may regenerate it.
+        /// Connector-backed Teams assigns it from the first send response; hosted Stream delivery uses a local GUID.
         /// </remarks>
         public string StreamId { get; protected set; }
 
@@ -413,9 +414,15 @@ namespace Microsoft.Agents.Builder
                 await EndStreamAsync(cancellationToken).ConfigureAwait(false);
             }
 
+            Task streamTask;
             lock (this)
             {
-                _ = StopStream();
+                streamTask = StopStream();
+            }
+            await streamTask.ConfigureAwait(false);
+
+            lock (this)
+            {
                 _ended = false;
                 _queue.Clear();
                 _queueEmpty.Reset();

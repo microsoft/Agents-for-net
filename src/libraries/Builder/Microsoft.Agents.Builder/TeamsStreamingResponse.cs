@@ -33,7 +33,7 @@ namespace Microsoft.Agents.Builder
         {
             Interval = 0;
             IsStreamingChannel = false;
-            StreamId = null;
+            // Preserve the base-generated ID for hosted Stream delivery.
 
             if (string.Equals(
                 DeliveryModes.ExpectReplies,

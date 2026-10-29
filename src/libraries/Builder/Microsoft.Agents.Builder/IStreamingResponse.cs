@@ -185,12 +185,12 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Cancels the stream and sends a final message to the client indicating that the stream was cancelled, but does not stop the underlying operation.  This is useful for long-running operations that may be cancelled by the user or timeout, but should continue to run in the background.
         /// </summary>
-        /// <param name="message">Message that will be sent to the client indicating the stream was cancelled.</param>
+        /// <param name="Message">Message that will be sent to the client indicating the stream was cancelled.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>
         /// <c>true</c> if the notification was sent; <c>false</c> if the response has already ended
         /// or the channel is not currently streaming.
         /// </returns>
-        Task<bool> SendStreamTimedOutNotification(string message, CancellationToken cancellationToken = default);
+        Task<bool> SendStreamTimedOutNotification(string Message, CancellationToken cancellationToken = default);
     }
 }

@@ -58,8 +58,8 @@ sequenceDiagram
 
 | Channel | Implementation | Interval | Stream identity | Special behavior |
 |---|---|---:|---|---|
-| Teams | `TeamsStreamingResponse` | 1000 ms | First response `Activity.Id` | Teams-specific errors and feedback metadata |
-| M365 Copilot (`msteams:COPILOT`) | `M365CopilotStreamingResponse` | 1000 ms | First response `Activity.Id` | Teams behavior plus 35-second idle notice and 105-second streaming cutoff |
+| Teams | `TeamsStreamingResponse` | 1000 ms | Connector response ID; local GUID for hosted Stream | Teams-specific errors and feedback metadata |
+| M365 Copilot (`msteams:COPILOT`) | `M365CopilotStreamingResponse` | 1000 ms | Connector response ID; local GUID for hosted Stream | Teams behavior plus 35-second idle notice and 105-second streaming cutoff |
 | WebChat / DirectLine | `StreamingResponse` | 500 ms | Pre-generated GUID | Full accumulated text per update |
 | `DeliveryModes.Stream` (other channels) | `StreamingResponse` | 100 ms | Pre-generated GUID | Activity Protocol streaming over the host transport |
 | Slack | `SlackStreamingResponse` | Native rate-aware pacing | Slack message timestamp | Native chunks, rollover, attachment blocks, and readable sources |
@@ -115,8 +115,10 @@ token, so it can still deliver the buffered final response.
 
 ## Teams Flow
 
-Teams assigns the stream ID. The first successful send returns an `Activity.Id`; every later streaming
-activity uses that value as both `Activity.Id` and `StreamInfo.StreamId`.
+Connector-backed Teams assigns the stream ID. The first successful send returns an `Activity.Id`;
+every later streaming activity uses that value as both `Activity.Id` and `StreamInfo.StreamId`.
+Hosted `DeliveryModes.Stream` instead preserves a local GUID in `StreamInfo.StreamId`, because
+the HTTP response queue does not return a Connector activity ID.
 
 ```mermaid
 sequenceDiagram

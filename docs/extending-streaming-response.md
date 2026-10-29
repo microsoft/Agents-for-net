@@ -50,6 +50,8 @@ the middleware/agent pipeline. Its lookup uses the incoming activity's channel I
 
 Catalog keys are case-insensitive. Parent-channel lookup happens only when the full-ID registration
 is absent: a broken full-ID factory does not cause the parent factory to be tried.
+The lookup key uses `ChannelId.Channel` and `ChannelId.SubChannel`, independently of whether
+the wire-format string includes the subchannel.
 
 ```mermaid
 flowchart TD
@@ -459,9 +461,11 @@ response routing; an extension using them must account for those differences.
 | `GetNextSequenceNumber()` | Allocate a sequence number for extra channel-specific updates. |
 | `SendStreamTimedOutNotification` | Override when the channel can close its streaming UI and continue later through non-streaming delivery. The base returns `false`. |
 
-For comparison, Teams obtains its stream ID from the first successful send. WebChat/DirectLine
-pre-generate a GUID. Native channels may have a separate remote handle as well as a local
-`StreamId`. Do not assume one identity strategy works for every transport.
+For comparison, Connector-backed Teams obtains its stream ID from the first successful send.
+Hosted `DeliveryModes.Stream`, including Teams and M365 Copilot, preserves a locally generated GUID
+because the HTTP response queue does not return a Connector activity ID. WebChat/DirectLine also
+pre-generate a GUID. Native channels may have a separate remote handle as well as a local `StreamId`.
+Do not assume one identity strategy works for every transport.
 
 ## Preserve lifecycle and error behavior
 
@@ -542,9 +546,10 @@ not a promise that arbitrary concurrent lifecycle calls are safe.
 
 ### Reset behavior
 
-`ResetAsync` ends an active stream, clears queued/buffered content, resets sequencing and
-`StreamId`, and clears final-message, citation, attachment, label, and feedback state. It restores
-shared defaults such as `InitialDelay` and `EndStreamTimeout`, then calls `OnReset`.
+`ResetAsync` ends an active stream and joins its previous worker, including one already stopped
+by fallback, before clearing queued/buffered content, sequencing, `StreamId`, and final-message,
+citation, attachment, label, and feedback state. It restores shared defaults such as `InitialDelay`
+and `EndStreamTimeout`, then calls `OnReset`.
 
 Your override must reset native handles, append cursors, channel timers, `IsStreamingChannel`,
 and channel-specific intervals/defaults. In the example, `OnReset` restores the 750 ms interval

@@ -46,6 +46,7 @@ internal sealed class SlackStreamingResponse : IStreamingResponse
     private int _segmentLength;
     private int _updates;
     private bool _hasTask;
+    private bool _sessionNeedsCompletion;
     private bool _started;
     private bool _endRequested;
     private bool _ended;
@@ -324,7 +325,7 @@ internal sealed class SlackStreamingResponse : IStreamingResponse
             _stream = null;
             _taskId = Guid.NewGuid().ToString();
             _sentLength = _segmentLength = _updates = _finalBlockOffset = 0;
-            _started = _ended = _endRequested = _ambiguousSend = _hasTask = false;
+            _started = _ended = _endRequested = _ambiguousSend = _hasTask = _sessionNeedsCompletion = false;
             _failure = null;
             _finalBlocks = null;
             FeedbackLoopEnabled = false;
@@ -519,7 +520,8 @@ internal sealed class SlackStreamingResponse : IStreamingResponse
         }
         var data = _context.Activity.GetChannelData<SlackChannelData>()
             ?? throw new InvalidOperationException("Slack streaming requires SlackChannelData.");
-        var stream = new SlackStream(_api, data.Channel, data.ThreadTs, data.ApiToken,
+        var api = _context.Services.Get<SlackApi>() ?? _api;
+        var stream = new SlackStream(api, data.Channel, data.ThreadTs, data.ApiToken,
             data.UserId, data.UserTeamId, data.TeamId == null ? null : $"{data.AppId}:{data.TeamId}");
         await stream.StartAsync(TaskDisplayMode.Plan, cancellationToken).ConfigureAwait(false);
         _stream = stream;
@@ -530,7 +532,7 @@ internal sealed class SlackStreamingResponse : IStreamingResponse
 
     private async Task SendFinalBlocksAsync(CancellationToken cancellationToken)
     {
-        if (_stream == null && _finalBlocks.Count == 0)
+        if (_stream == null && _finalBlocks.Count == 0 && !_sessionNeedsCompletion)
         {
             return;
         }
@@ -567,7 +569,7 @@ internal sealed class SlackStreamingResponse : IStreamingResponse
                 System.Diagnostics.Trace.TraceWarning("Slack repeatedly expired during finalization.");
                 return;
             }
-        } while (_finalBlockOffset < _finalBlocks.Count);
+        } while (_finalBlockOffset < _finalBlocks.Count || _sessionNeedsCompletion);
     }
 
     private async Task<bool> CloseSegmentAsync(IList<object> blocks, bool continuing, string status, CancellationToken cancellationToken)
@@ -588,6 +590,10 @@ internal sealed class SlackStreamingResponse : IStreamingResponse
             && _api.TimeProvider.GetUtcNow() - _streamStarted >= StreamLifetime)
         {
             delivered = false;
+        }
+        if (delivered)
+        {
+            _sessionNeedsCompletion = continuing;
         }
         _stream = null;
         _segmentLength = 0;
