@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Net.Http;
@@ -15,54 +15,25 @@ namespace Microsoft.Agents.Extensions.Slack.Api
     /// <c>services.AddSlack()</c> call is required.
     /// </summary>
     /// <remarks>
-    /// The factory is instantiated from dependency injection, so it can consume any registered service.  It reads
-    /// optional streaming settings from the <c>Slack:Streaming</c> configuration section (<c>Interval</c> and
-    /// <c>InitialDelay</c>, in milliseconds) and applies them to each created <see cref="SlackStreamingResponse"/>.
+    /// The factory is instantiated from dependency injection. Slack uses native batching and rate-limit
+    /// pacing rather than the Activity Protocol interval settings.
     /// </remarks>
     [StreamingResponseFactory(Channels.Slack)]
     internal class SlackStreamingResponseFactory : IStreamingResponseFactory
     {
-        private const string StreamingSection = "Slack:Streaming";
-
         private readonly SlackApi _slackApi;
-        private readonly IConfiguration _configuration;
 
         public SlackStreamingResponseFactory(IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
 
             _slackApi = new SlackApi(httpClientFactory);
-            _configuration = configuration;
         }
 
         /// <inheritdoc/>
         public IStreamingResponse Create(ITurnContext turnContext)
         {
-            var response = new SlackStreamingResponse(turnContext, _slackApi);
-            var interval = response.Interval;
-            var initialDelay = response.InitialDelay;
-
-            var section = _configuration?.GetSection(StreamingSection);
-            if (section != null && section.Exists())
-            {
-                if (TryGetInt(section, "Interval", out var configuredInterval))
-                {
-                    interval = configuredInterval;
-                }
-
-                if (TryGetInt(section, "InitialDelay", out var configuredInitialDelay))
-                {
-                    initialDelay = configuredInitialDelay;
-                }
-            }
-
-            response.ConfigureDefaults(interval, initialDelay);
-            return response;
+            return new SlackStreamingResponse(turnContext, _slackApi);
         }
-
-        private static bool TryGetInt(IConfiguration section, string key, out int value)
-            // Only accept non-negative values; Interval/InitialDelay setters reject negatives, and a bad
-            // config value must not break Slack turns - fall through to the defaults instead.
-            => int.TryParse(section[key], out value) && value >= 0;
     }
 }

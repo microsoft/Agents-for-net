@@ -820,6 +820,14 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Contains(aiEntity.Citation, c => c.Position == 1);
         }
 
+#pragma warning disable CS0618 // These helpers intentionally exercise the deprecated Activity Protocol compatibility contract.
+        private static void SetLegacyFinalMessage(ITurnContext context, IActivity activity)
+            => context.StreamingResponse.FinalMessage = activity;
+
+        private static IActivity GetLegacyFinalMessage(ITurnContext context)
+            => context.StreamingResponse.FinalMessage;
+#pragma warning restore CS0618
+
         [Fact]
         public async Task FinalMessage_CustomActivity_IsUsedAsBase()
         {
@@ -828,7 +836,7 @@ namespace Microsoft.Agents.Builder.Tests
             var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Test });
 
             var customFinal = new Activity { Text = "Custom final text" };
-            context.StreamingResponse.FinalMessage = customFinal;
+            SetLegacyFinalMessage(context, customFinal);
             context.StreamingResponse.QueueTextChunk("ignored text");
 
             await context.StreamingResponse.EndStreamAsync();
@@ -853,6 +861,31 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.NotNull(finalActivity.Attachments);
             Assert.Single(finalActivity.Attachments);
             Assert.Same(attachment, finalActivity.Attachments[0]);
+        }
+
+        [Theory]
+        [InlineData(Channels.Test)]
+        [InlineData(Channels.Msteams)]
+        [InlineData(Channels.Webchat)]
+        public async Task AttachmentWithoutAnswerText_IsNotReportedAsAnEmptyResponse(string channel)
+        {
+            var responses = new List<IActivity>();
+            var context = new TurnContext(CreateMockAdapter(responses).Object,
+                new Activity { Type = ActivityTypes.Message, ChannelId = channel });
+            context.StreamingResponse.Interval = 1;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Working");
+            context.StreamingResponse.AddAttachment(
+                new Attachment { ContentType = ContentTypes.AdaptiveCard, Content = new { type = "AdaptiveCard" } });
+
+            Assert.Equal(StreamingResponseResult.Success, await context.StreamingResponse.EndStreamAsync());
+
+            var final = responses.Last();
+            Assert.Null(final.Text);
+            Assert.Single(final.Attachments);
+            if (final.GetStreamingEntity() is StreamInfo info)
+            {
+                Assert.Equal(StreamResults.Success, info.StreamResult);
+            }
         }
 
         [Fact]
@@ -1058,10 +1091,10 @@ namespace Microsoft.Agents.Builder.Tests
                 ChannelId = Microsoft.Agents.Core.Models.Channels.Msteams
             });
             context.StreamingResponse.FeedbackLoopEnabled = true;
-            context.StreamingResponse.FinalMessage = new Activity
+            SetLegacyFinalMessage(context, new Activity
             {
                 ChannelData = new { existingKey = "existingValue" }
-            };
+            });
 
             context.StreamingResponse.QueueTextChunk("hello");
             await context.StreamingResponse.EndStreamAsync();
@@ -1291,11 +1324,11 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.InitialDelay = 10;
 
             // FinalMessage carries a bogus StreamInfo with the wrong type
-            context.StreamingResponse.FinalMessage = new Activity
+            SetLegacyFinalMessage(context, new Activity
             {
                 Text = "Final answer",
                 Entities = [new StreamInfo { StreamType = StreamTypes.Informative }]
-            };
+            });
             context.StreamingResponse.QueueTextChunk("start stream");
 
             await context.StreamingResponse.EndStreamAsync();
@@ -1314,7 +1347,7 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = CreateMockAdapter(responses);
             var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Test });
 
-            context.StreamingResponse.FinalMessage = new Activity { Text = "Only final" };
+            SetLegacyFinalMessage(context, new Activity { Text = "Only final" });
 
             var result = await context.StreamingResponse.EndStreamAsync();
 
@@ -1336,7 +1369,7 @@ namespace Microsoft.Agents.Builder.Tests
 
             // Start the stream via an informative update, then set only a FinalMessage (no text chunks).
             await context.StreamingResponse.QueueInformativeUpdateAsync("Thinking...");
-            context.StreamingResponse.FinalMessage = new Activity { Text = "Final answer" };
+            SetLegacyFinalMessage(context, new Activity { Text = "Final answer" });
 
             var result = await context.StreamingResponse.EndStreamAsync();
 
@@ -1406,7 +1439,7 @@ namespace Microsoft.Agents.Builder.Tests
             context.StreamingResponse.InitialDelay = 10;
             context.StreamingResponse.EndStreamTimeout = 10;
 
-            context.StreamingResponse.FinalMessage = new Activity { Text = "custom" };
+            SetLegacyFinalMessage(context, new Activity { Text = "custom" });
             context.StreamingResponse.FeedbackLoopEnabled = true;
             context.StreamingResponse.FeedbackLoopType = "custom";
             context.StreamingResponse.EnableGeneratedByAILabel = true;
@@ -1420,7 +1453,7 @@ namespace Microsoft.Agents.Builder.Tests
             await context.StreamingResponse.ResetAsync();
 
             Assert.Equal("", context.StreamingResponse.Message);
-            Assert.Null(context.StreamingResponse.FinalMessage);
+            Assert.Null(GetLegacyFinalMessage(context));
             Assert.Equal(false, context.StreamingResponse.EnableGeneratedByAILabel);
             Assert.Null(context.StreamingResponse.SensitivityLabel);
             Assert.Empty(context.StreamingResponse.Citations);

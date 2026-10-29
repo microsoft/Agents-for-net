@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -81,7 +81,9 @@ public class SlackAgentExtension : AgentExtension
     public Task<SlackStream> CreateStreamAsync(ITurnContext turnContext, string? thread_ts = null)
     {
         var channelData = turnContext.Activity.GetChannelData<SlackChannelData>();
-        var stream = new SlackStream(turnContext.Services.Get<SlackApi>(), channelData.Envelope.event_content.channel, thread_ts ?? channelData.Envelope.event_content.ts, channelData.ApiToken);
+        var stream = new SlackStream(turnContext.Services.Get<SlackApi>(), channelData.Channel,
+            thread_ts ?? channelData.ThreadTs, channelData.ApiToken, channelData.UserId, channelData.UserTeamId,
+            channelData.TeamId == null ? null : $"{channelData.AppId}:{channelData.TeamId}");
         return stream.StartAsync();
     }
 

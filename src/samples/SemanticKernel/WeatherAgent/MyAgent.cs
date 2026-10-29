@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -40,7 +40,7 @@ public class MyAgent : AgentApplication
         ];
 
         // Start a Streaming Process 
-        await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Working on a response for you", cancellationToken); 
+        await turnContext.StreamingResponse.QueueInformativeUpdateAsync("Working on a response for you", cancellationToken);
 
         ChatHistory chatHistory = turnState.GetValue("conversation.chatHistory", () => new ChatHistory());
         _weatherAgent = new WeatherForecastAgent(_kernel, serviceCollection.BuildServiceProvider());
@@ -50,7 +50,7 @@ public class MyAgent : AgentApplication
         if (forecastResponse == null)
         {
             turnContext.StreamingResponse.QueueTextChunk("Sorry, I couldn't get the weather forecast at the moment.");
-            await turnContext.StreamingResponse.EndStreamAsync(cancellationToken); 
+            await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
             return;
         }
 
@@ -62,7 +62,7 @@ public class MyAgent : AgentApplication
                 turnContext.StreamingResponse.QueueTextChunk(forecastResponse.Content!);
                 break;
             case WeatherForecastAgentResponseContentType.AdaptiveCard:
-                turnContext.StreamingResponse.FinalMessage = MessageFactory.Attachment(new Attachment()
+                turnContext.StreamingResponse.AddAttachment(new Attachment()
                 {
                     ContentType = ContentTypes.AdaptiveCard,
                     Content = forecastResponse.Content,

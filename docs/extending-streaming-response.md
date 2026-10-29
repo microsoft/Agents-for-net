@@ -14,7 +14,7 @@ project, not in shared Builder or Hosting code.
 | Contract | Responsibility |
 |---|---|
 | `IStreamingResponse` | The agent-facing API: queue text, add response metadata, end a stream, and reset it. |
-| `StreamingResponseBase` | Public base class implementing buffering, sequencing, the interval loop, and end/reset coordination. Derive from it for most custom transports. |
+| `StreamingResponseBase` | Public base class implementing buffering, sequencing, the interval loop, and end/reset coordination. Use it when that lifecycle matches the transport. |
 | `IStreamingResponseFactory` | Creates a response bound to the current `ITurnContext`. |
 | `StreamingResponseFactoryAttribute` | Associates a factory type with one channel or full channel/subchannel ID. |
 | `StreamingResponseFactoryCatalog` | Process-wide channel-to-factory-type mapping used by the adapter. |
@@ -23,7 +23,15 @@ The built-in `StreamingResponse`, `TeamsStreamingResponse`, and `M365CopilotStre
 classes are **internal**. They are not base classes for an external extension. Derive from the
 public `StreamingResponseBase`, or implement `IStreamingResponse` directly when you need to own
 the entire lifecycle. A direct implementation must supply every interface member and its own
-buffering, synchronization, completion, and reset behavior.
+buffering, synchronization, completion, and reset behavior. Slack takes this approach: its native
+append API benefits from its own batching, rate-limit pacing, message rollover, and final-content rendering.
+Neither Slack nor A2A needs to reproduce Activity Protocol interval behavior.
+
+`FinalMessage` is obsolete because replacing a final `IActivity` is Activity Protocol-specific.
+Use `AddAttachment` and `AddCitation` for portable output; each transport maps supported content
+to its native representation. The general-purpose deprecation lives on the shared Builder
+contract, while all Slack-specific behavior stays in the Slack extension. Existing Activity Protocol
+responses continue to honor the legacy override during deprecation.
 
 A factory selects a response; it does not add a channel adapter, configure credentials, or change
 the host's HTTP transport. For example, `DeliveryModes.Stream` selects Activity Protocol SSE
@@ -163,8 +171,7 @@ public sealed class ContosoStreamingResponse : StreamingResponseBase
         bool streamedPath,
         CancellationToken cancellationToken)
     {
-        var activity = FinalMessage ?? new Activity { Text = Message };
-        activity.Type = ActivityTypes.Message;
+        var activity = new Activity { Type = ActivityTypes.Message, Text = Message };
 
         if (Attachments != null && Attachments.Count > 0
             && !ReferenceEquals(activity.Attachments, Attachments))
@@ -244,11 +251,11 @@ The base class accumulates text and schedules calls to `SendChunkAsync`; do not 
 timer or background loop. Informative updates are intentionally a no-op in this example because
 the hypothetical channel has no status-update UI.
 
-This example supports text, `FinalMessage`, and attachments. It does not translate citation,
+This example supports text and attachments. It does not translate citation,
 AI-label, sensitivity-label, feedback, or timeout-notification settings into a channel-specific
 representation. Add those mappings if the channel supports them. `StreamingResponseBase` stores
-these settings; it does not automatically add them to outgoing activities. Metadata already
-placed on `FinalMessage` is passed to the adapter with that activity.
+these settings; it does not automatically add them to outgoing activities. Do not use the obsolete
+`FinalMessage` property to introduce Activity Protocol-specific behavior into a native transport.
 
 ## Create the factory
 
@@ -431,8 +438,8 @@ advance it only after a successful append, and clear it in `OnReset`. This assum
 text remains a stable prefix; a transformation that rewrites that prefix needs a different
 reconciliation strategy. The
 [Slack implementation](../src/libraries/Extensions/Microsoft.Agents.Extensions.Slack/Api/SlackStreamingResponse.cs)
-demonstrates lazy native stream creation, delta appends, and sending any remaining suffix while
-closing the stream.
+implements the interface directly and demonstrates native chunk batching, message rollover,
+source rendering, and supported attachment mappings. It does not use these base-class hooks.
 
 Prefer `ITurnContext.SendActivityAsync`/`UpdateActivityAsync` when the adapter supports the
 operation. Direct native API calls bypass the turn context's send/update callbacks and host
@@ -506,15 +513,14 @@ earlier:
 | `FallbackToNonStreaming` | Stop intermediate sends and set `IsStreamingChannel` to `false`. Continue buffering so a later `EndStreamAsync` can finalize normally. |
 | `Cancel` | Stop the stream and skip finalization. `EndStreamAsync` reports `Error`, or `UserCancelled` if the hook set `UserCancelledStream = true`. |
 
-Clean up remote resources in the error hook before returning `Cancel`; for example, Slack
-attempts to close its native stream after an append failure. Propagate the hook's cancellation
+Clean up remote resources in the error hook before returning `Cancel`. Propagate the hook's cancellation
 token through cleanup as well as normal sends. Avoid logging message content or credentials.
 
 `HandleSendErrorAsync` covers the intermediate-send path and the before-interval hook, not
 exceptions thrown by your `FinalizeStreamAsync`. Define appropriate final-send logging and
 exception handling in your implementation.
 
-### Completion and cancellation
+### Base-class completion and cancellation
 
 - `EndStreamTimeout` defaults to two minutes and bounds the queue-drain wait, not model generation.
   After it expires, the base cancels the worker token and waits for in-flight work to stop before
@@ -523,9 +529,10 @@ exception handling in your implementation.
   does not itself cancel the final send.
 - `Timeout` can therefore mean that finalization ran after a drain timeout; it does not necessarily
   mean the final response was lost.
-- `NotStarted` means an enabled streaming response never started its loop. In that case the base
-  does not call the finalizer. Merely setting `FinalMessage` or adding attachments does not start
-  a stream; queue text/an informative update first, or send a standalone activity directly.
+- `NotStarted` means an enabled base-class response never started its loop. In that case the base
+  does not call the finalizer. Adding attachments does not start this loop; queue text/an informative
+  update first, or send a standalone activity directly. A direct implementation can support
+  attachment-only and citation-only completion, as Slack does.
 - A second `EndStreamAsync` returns `AlreadyEnded`. Call `ResetAsync` before starting another
   sequence on that response.
 
@@ -545,8 +552,30 @@ and re-evaluates delivery mode; the base has already cleared the message ID.
 
 The factory is **not called again** by `ResetAsync`. If it applies configured defaults that
 should survive a reset, retain those defaults on the response and reapply them in `OnReset`,
-as the Slack factory/response pair does. Do not reuse the response across turns: it remains bound
-to its original context.
+or restore them in your direct implementation's reset method. Do not reuse the response across turns:
+it remains bound to its original context.
+
+### Native Slack behavior
+
+Slack coalesces pending text and serializes native start/append/stop calls. Its pacing is shared
+per app/workspace/API method, with at most three attempts for explicit rate-limit responses.
+The legacy `Interval`, `InitialDelay`, and `Slack:Streaming` interval settings do not control it.
+
+The response starts another message in the same thread before exceeding 12,000 accumulated
+markdown characters or its nine-minute safety window below Slack's ten-minute lifetime.
+Intermediate closures keep the session `processing`. Final closures combine supported attachments,
+readable citation sources, and optional feedback buttons, paging blocks into additional messages
+when necessary.
+
+Supported attachments include URL-backed PNG/JPEG/GIF images, basic Hero/Thumbnail cards with
+OpenUrl buttons, and links to other URL-backed files. Unsupported cards/actions fail explicitly.
+Citations render as stable numbered references and source links rather than Activity Protocol AI
+entities. Split citation tags are held until they can be normalized without rewriting an emitted prefix.
+
+Explicit user cancellation returns `UserCancelled`. A failed final stop retains its remote
+handle so completion can be retried. A drain timeout cancels and joins the writer, then closes
+any known remote stream. It does **not** blindly replay a canceled POST: Slack may already have
+accepted it, so the response reports `Timeout` rather than claiming guaranteed delivery.
 
 ## Validate and troubleshoot
 
@@ -565,7 +594,7 @@ not test automatic factory selection.
 | Failure policy | Cancellation, fallback, and continue actions have the intended finalization and result behavior. |
 | Drain timeout | In-flight operations observe cancellation before finalization; the finalizer receives the caller's token. |
 | Reset | A second sequence has fresh identity/cursors, restored defaults, and no content or metadata from the first. |
-| Metadata | Supported attachments, citations, labels, feedback, and `FinalMessage` are translated correctly; unsupported settings have documented behavior. |
+| Metadata | Supported attachments, citations, labels, and feedback are translated correctly; unsupported settings have documented behavior. Test legacy `FinalMessage` only for Activity Protocol compatibility. |
 
 Use synchronization primitives such as `TaskCompletionSource` to coordinate fake sends instead
 of `Task.Delay` assertions. For adapter/catalog tests, use unique channel IDs or restore prior

@@ -62,11 +62,13 @@ sequenceDiagram
 | M365 Copilot (`msteams:COPILOT`) | `M365CopilotStreamingResponse` | 1000 ms | First response `Activity.Id` | Teams behavior plus 35-second idle notice and 105-second streaming cutoff |
 | WebChat / DirectLine | `StreamingResponse` | 500 ms | Pre-generated GUID | Full accumulated text per update |
 | `DeliveryModes.Stream` (other channels) | `StreamingResponse` | 100 ms | Pre-generated GUID | Activity Protocol streaming over the host transport |
-| Slack | `SlackStreamingResponse` | 200 ms | Slack stream plus local GUID | Appends text deltas through Slack `chat.*Stream` APIs |
+| Slack | `SlackStreamingResponse` | Native rate-aware pacing | Slack message timestamp | Native chunks, rollover, attachment blocks, and readable sources |
 | Other / `ExpectReplies` | `StreamingResponse` | N/A | N/A | Buffers and sends one normal final message |
 
-`InitialDelay` defaults to 250 ms. Slack can override `Interval` and `InitialDelay` through
-`Slack:Streaming` configuration.
+`InitialDelay` defaults to 250 ms for Activity Protocol responses. Slack implements
+`IStreamingResponse` directly and does not use the interval/initial-delay settings.
+`FinalMessage` is obsolete; Activity Protocol responses retain legacy compatibility, while native
+transports use `AddAttachment` and `AddCitation`.
 
 ## Shared `StreamingResponseBase` Loop
 
@@ -244,25 +246,32 @@ sequenceDiagram
 Once loaded, the Slack extension registers `SlackStreamingResponseFactory` for the Slack channel. The
 factory is discovered automatically and creates `SlackStreamingResponse` with its `SlackApi` dependency.
 
-Unlike Activity Protocol channels, Slack appends only the new text delta.
+Unlike Activity Protocol channels, Slack owns its writer and appends only new text. It shares
+rate-limit pacing by app/workspace/method and honors `Retry-After` on explicit throttling.
+It rolls over messages before 12,000 accumulated markdown characters or a nine-minute safety
+window, preserving the thread and keeping intermediate session closures `processing`.
 
 ```mermaid
 sequenceDiagram
     participant Agent
     participant Response as SlackStreamingResponse
-    participant Worker as StreamingResponseBase loop
+    participant Worker as Native Slack writer
     participant Slack as Slack Web API
 
     Agent->>Response: QueueInformativeUpdateAsync("Working...")
-    Response->>Slack: chat.startStream
+    Response->>Worker: Queue informative update
+    Worker->>Slack: chat.startStream(channel, thread, recipient IDs)
     Slack-->>Response: Message timestamp
-    Response->>Slack: chat.appendStream(TaskUpdateChunk InProgress)
+    Worker->>Slack: chat.appendStream(TaskUpdateChunk InProgress)
 
     loop LLM produces text
         Agent->>Response: QueueTextChunk(text)
-        Worker->>Response: SendChunkAsync(full buffered text)
-        Response->>Response: Compute unsent delta from sent length
-        Response->>Slack: chat.appendStream(MarkdownTextChunk delta)
+        Response->>Response: Normalize complete citation tags and coalesce text
+        Worker->>Slack: chat.appendStream(MarkdownTextChunk delta)
+        opt Approaching size or lifetime limit
+            Worker->>Slack: chat.stopStream(session_status processing)
+            Worker->>Slack: chat.startStream(same thread)
+        end
     end
 
     Agent->>Response: EndStreamAsync()
@@ -271,15 +280,16 @@ sequenceDiagram
     else Drain timeout
         Response->>Worker: Cancel in-flight requests and await worker exit
     end
-    opt No stream exists and buffered text remains
+    opt Attachment-only or citation-only response
         Response->>Slack: chat.startStream
         Slack-->>Response: Message timestamp
     end
-    Response->>Slack: chat.stopStream(unsent text delta,<br/>TaskUpdateChunk Complete, optional feedback blocks)
+    Response->>Slack: chat.stopStream(attachment and source blocks,<br/>task completion and optional feedback)
     Response->>Response: Clear local stream and StreamId
-    Response-->>Agent: Success
+    Response-->>Agent: Success, Timeout, Error, or UserCancelled
 
-    Note over Response,Slack: Completion and send-error paths always attempt chat.stopStream
+    Note over Response,Slack: Failed stops retain the remote handle for retry
+    Note over Worker,Slack: Canceled or ambiguous POSTs are not blindly replayed
 ```
 
 ## Non-Streaming Flow
@@ -287,7 +297,7 @@ sequenceDiagram
 For unsupported channels and `DeliveryMode.ExpectReplies`, informative updates are ignored, text is buffered,
 and no interval loop starts.
 
-If no text, `FinalMessage`, or prior updates exist, `EndStreamAsync` sends nothing.
+If no text, attachments, legacy `FinalMessage`, or prior updates exist, `EndStreamAsync` sends nothing.
 
 ```mermaid
 sequenceDiagram
@@ -331,8 +341,9 @@ sequenceDiagram
 `StreamingResponse`, used by WebChat, DirectLine, and `DeliveryModes.Stream`, treats send failures as
 transport failures and cancels the stream.
 
-Slack attempts `chat.stopStream` before returning `Cancel`, so a remote Slack message is not intentionally
-left in progress after an append failure.
+Slack does not use these base-class actions. It classifies native errors, retries explicit throttling,
+reports `stopped_by_user` as `UserCancelled`, and closes known remote resources on completion/error.
+An ambiguous canceled POST is not replayed; a failed stop retains its handle for a later completion attempt.
 
 ## Key Implementation Details
 

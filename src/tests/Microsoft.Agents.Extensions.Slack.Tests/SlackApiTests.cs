@@ -156,6 +156,50 @@ public class SlackApiTests
     }
 
     [Fact]
+    public async Task CallAsync_RetriesExplicitThrottlingWithoutChangingPayload()
+    {
+        var bodies = new System.Collections.Generic.List<string>();
+        var slackApi = CreateSlackApi(async (request, cancellationToken) =>
+        {
+            bodies.Add(await request.Content!.ReadAsStringAsync(cancellationToken));
+            if (bodies.Count == 1)
+            {
+                var throttled = CreateJsonResponse(
+                    """{"ok":false,"error":"ratelimited"}""", HttpStatusCode.TooManyRequests);
+                throttled.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.Zero);
+                return throttled;
+            }
+
+            return CreateJsonResponse("""{"ok":true,"ts":"123"}""");
+        });
+
+        var response = await slackApi.CallAsync(
+            "chat.appendStream", new { channel = "C1", ts = "123", chunks = new[] { new { type = "markdown_text", text = "answer" } } });
+
+        Assert.True(response.ok);
+        Assert.Equal(2, bodies.Count);
+        Assert.Equal(bodies[0], bodies[1]);
+    }
+
+    [Fact]
+    public async Task CallAsync_StopsRetryingPersistentThrottling()
+    {
+        var attempts = 0;
+        var slackApi = CreateSlackApi((_, _) =>
+        {
+            attempts++;
+            var response = CreateJsonResponse(
+                """{"ok":false,"error":"ratelimited"}""", HttpStatusCode.TooManyRequests);
+            response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.Zero);
+            return Task.FromResult(response);
+        });
+
+        await Assert.ThrowsAsync<SlackResponseException>(() => slackApi.CallAsync("chat.stopStream"));
+
+        Assert.Equal(3, attempts);
+    }
+
+    [Fact]
     public async Task CallAsync_ThrowsSlackResponseException_OnInvalidJson()
     {
         var slackApi = CreateSlackApi((_, _) =>

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
@@ -83,6 +83,7 @@ namespace Microsoft.Agents.Builder
         private bool _canceled;
         private bool _userCanceled;
         private Task _streamTask = Task.CompletedTask;
+        private IActivity _finalMessage;
 
         // Ordered FIFO of pending sends (informative updates interleaved with buffered text chunks).
         private readonly List<PendingSend> _queue = [];
@@ -133,7 +134,13 @@ namespace Microsoft.Agents.Builder
         public string Message { get; protected set; } = "";
 
         /// <inheritdoc/>
-        public IActivity FinalMessage { get; set; }
+        [Obsolete("FinalMessage is Activity Protocol-specific. Use AddAttachment and AddCitation instead.")]
+        public IActivity FinalMessage { get => _finalMessage; set => _finalMessage = value; }
+
+        /// <summary>
+        /// Gets the legacy final activity override for Activity Protocol implementations.
+        /// </summary>
+        protected IActivity LegacyFinalMessage => _finalMessage;
 
         /// <inheritdoc/>
         public bool FeedbackLoopEnabled { get; set; }
@@ -419,7 +426,7 @@ namespace Microsoft.Agents.Builder
                 _userCanceled = false;
                 UserCancelledStream = false;
                 Message = "";
-                FinalMessage = null;
+                _finalMessage = null;
                 Citations = [];
                 Attachments = [];
                 SensitivityLabel = null;
