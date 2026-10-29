@@ -1,291 +1,145 @@
-# Teams API Drift Detector — Technical Description
+# Teams API implementation impact review
 
-## Purpose
+The drift workflows compare the centrally declared Microsoft.Teams.Apps baseline with a candidate package, then ask a repository review agent to assess **every API change** against the MSTeams implementation. API discovery, build/test execution, snapshot integrity, decision coverage, citation checks, and compatibility enforcement remain deterministic.
 
-The Teams API Drift Detector identifies API changes between two versions of `Microsoft.Teams.Apps`, determines whether the MSTeams extension uses the affected APIs, and produces deterministic findings for maintainers. CI workflows can optionally give the same bounded evidence to Copilot CLI for an advisory report, but the deterministic findings remain authoritative.
+## Workflow jobs and data flow
 
-The tool is a .NET command-line application in `scripts/TeamsApiDrift`. It reads NuGet package metadata without loading package assemblies into the running process.
+Both workflows use the same four jobs:
 
-## Component inventory
-
-| Component | Responsibility |
-| --- | --- |
-| `Microsoft.Agents.TeamsApiDrift.csproj` | Builds the `net10.0` CLI and declares its NuGet metadata-reading dependencies. |
-| `Program.cs` | Defines the CLI commands, parses arguments, coordinates services, writes outputs, and maps validation failures or exceptions to exit codes. |
-| `Contracts.cs` | Defines the serialized contracts for API models, changes, usage data, findings, test summaries, and agent-report validation. |
-| `MetadataApiExtractor.cs` | Downloads or resolves package versions, selects reference/implementation assets for supported target frameworks, and extracts the public API from assembly metadata. |
-| `ComparisonAndUsage.cs` | Compares normalized API models, scans the compiled MSTeams assembly for dependency use, and validates collected use against the curated manifest. |
-| `MetadataValidation.cs` | Validates the repository metadata against built assemblies and requires fresh, document-specific review of relevant source changes. |
-| `DriftPipeline.cs` | Resolves centrally managed package versions, classifies changes, renders reports, creates bounded agent context, and validates an agent-authored report. |
-| `ToolUtilities.cs` | Supplies common argument, JSON, path-containment, hashing, and normalization helpers. |
-| `teams-api-usage.json` | Curated inventory of the `Microsoft.Teams.Apps` symbols and members intentionally used by MSTeams, including exposure and affected source files. |
-| `teams-capabilities.json` | Maps Teams namespaces and types to capability areas, owners, and additive-change adoption policies. |
-| `teams-api-drift-instructions.md` | Constrains the optional Copilot report format, accepted evidence, required finding IDs, and advisory language. |
-| `teams-api-drift-pr.yml` | Runs drift detection for package-version pull requests or manual PR-style comparisons, publishes artifacts, and updates an internal PR comment. |
-| `teams-api-drift-scheduled.yml` | Compares the repository baseline with the latest stable package on a schedule or by manual dispatch and creates or updates an advisory issue. |
-| `Microsoft.Agents.TeamsApiDrift.Tests` | Exercises package resolution, extraction, comparison, usage and repository-metadata validation, classification, rendering, context generation, and report validation. |
-| `TeamsApiContractTests.cs` | Compile-time contract coverage that detects source-level breaks in the APIs consumed by MSTeams. |
-| `TeamsApiClientExtensionsTests.cs` | Runtime boundary tests for selected MSTeams-to-Teams API interactions. |
-
-The two workflow files are under `.github/workflows`; the test projects and files are under `src/tests`.
-
-## End-to-end data flow
+| Job | Responsibility | When it runs |
+| --- | --- | --- |
+| `versions` | Resolve baseline/candidate versions and compare NuGet package identity. | Every triggered run. |
+| `deterministic` | Extract APIs, build the candidate, run tool/contract/boundary tests, collect usage, and validate the manifest. | Only when versions differ and resolution succeeded. |
+| `assessment` | Receive deterministic evidence, prepare a fresh source snapshot, run the agent, validate decisions, and enforce the impact policy. | When versions differ and comparison/check-summary evidence was transferred successfully, even if an independent check failed. |
+| `publish` | Collect diagnostics, create/update the PR comment or scheduled issue, upload the complete artifact, and report its own publication result. | After all dependencies finish, including failures; skipped when resolved versions are identical. |
 
 ```mermaid
 flowchart TD
-    Props["Directory.Packages.props"] --> Resolve["resolve-version"]
-    Resolve --> Versions["baseline and candidate versions"]
-    Versions --> Compare["compare"]
-    Sources["NuGet sources and optional NuGet.Config"] --> Compare
-
-    Compare --> Before["before API model"]
-    Compare --> After["after API model"]
-    Compare --> Diff["raw API diff"]
-
-    CandidateBuild["compiled MSTeams assemblies and PDBs"] --> Collect["collect-usage"]
-    Collect --> Collected["collected usage"]
-    UsageManifest["teams-api-usage.json"] --> ValidateUsage["validate-usage"]
-    Collected --> ValidateUsage
-    Before -->|"scheduled: validate the repository manifest"| ValidateUsage
-    After -->|"PR: validate the updated manifest"| ValidateUsage
-
-    Diff --> Classify["classify"]
-    UsageManifest --> Classify
-    Capabilities["teams-capabilities.json"] --> Classify
-    Classify --> Findings["classified findings"]
-
-    TestRuns["build and test outcomes"] --> TestSummary["write-test-summary"]
-    Findings --> Render["render-report"]
-    TestSummary --> Render
-    Render --> Deterministic["deterministic report"]
-
-    Findings --> Context
-    TestSummary --> Context
-    UsageManifest --> Context
-    Capabilities --> Context
-    Deterministic --> Context["prepare-agent-context"]
-    AffectedSource["affected MSTeams C# files"] --> Context
-    Context --> AgentContext["bounded agent context"]
-    AgentContext --> Copilot["optional Copilot CLI report"]
-    Copilot --> ValidateAgent["validate-agent-report"]
-
-    Deterministic --> Publication["workflow artifact and PR comment or issue"]
-    ValidateAgent --> Publication
+    Versions[versions: resolve and compare NuGet versions] --> Same{Same package version?}
+    Same -->|Yes| Skip[Skip every remaining job]
+    Same -->|No| Deterministic[deterministic: API comparison, builds, tests, usage]
+    Deterministic -->|Comparison and check summary available| Assessment[assessment: agent review and evidence validation]
+    Deterministic -->|Failure diagnostics| Publish[publish: report, comment or issue, final artifact]
+    Assessment -->|Validated decisions or failure diagnostics| Publish
+    Versions -->|Resolution failure diagnostics| Publish
+    Publish --> Published[Publication result: downloads, report, comment or issue, artifacts]
 ```
 
-The package comparison is always **baseline → candidate**:
+The PR trigger watches only `Directory.Packages.props`, which declares the Teams API package version. Changes to extension code, tests, prompts, or workflow/tool files alone do not trigger this workflow. Changes to other dependencies in the shared props file run only version resolution when the Teams version is unchanged. Manual dispatch remains available. PR resolution retains the base-commit declaration and manual version overrides. Scheduled resolution queries listed stable NuGet metadata without extracting package APIs. Version equality uses normalized NuGet package identity, including equivalent omitted version components and ignoring build metadata. Identical versions skip builds, tests, agent setup, comments/issues and artifact publication. Different versions with an identical API surface still run the deterministic checks and produce an empty review without an AI call.
 
-- For a pull request, the baseline is the `Microsoft.Teams.Apps` version on the PR base branch and the candidate is the version being introduced by the PR.
-- For a scheduled run, the baseline is the version currently used by `Microsoft.Agents.Extensions.MSTeams` and the candidate is the latest stable released version.
+Every checkout uses the same immutable workflow commit. The assessment prepares its snapshot on its own runner, using the comparison/check summary downloaded from the deterministic job; snapshot preparation and validation happen on that same runner. Failed independent checks remain recorded in the review input and cannot be overridden by AI decisions.
 
-`validate-usage` is a separate manifest-integrity check; it does not compare package versions. It accepts one API model and verifies that `teams-api-usage.json` describes valid APIs for the repository state to which the manifest belongs. In a package-update PR, that repository state has moved to the candidate, so validation uses the `after` model. During a scheduled probe, the repository has not adopted the latest release and its manifest still declares the baseline version, so validation uses the `before` model. The scheduled workflow still compares, builds, and tests the baseline against the latest stable candidate.
+Jobs transfer partial evidence using intermediate artifacts. The consuming jobs download exact producer artifact IDs, so rerunning only failed jobs can reuse successful upstream evidence without guessing an attempt number or merging stale runs. Version-resolution, deterministic and assessment artifacts contain distinct sets of files.
 
-`validate-metadata` is the ordinary repository CI gate. It does not contact a NuGet source or compare package releases. Instead, it validates the checked-in manifests against the centrally declared version and the already-built `net8.0` and `net10.0` MSTeams assemblies. When Git history is available, it also compares relevant source and metadata changes with their merge base.
+The final publication job uses `always()` and collects whichever artifacts were produced. It writes `pipeline-status.json`, builds a fallback Markdown report when assessment never completed, and preserves job/check outcomes alongside any assessment report. Comment/issue publication runs before the final upload; the upload itself also uses `always()`, so a publication error does not suppress the diagnostic artifact. The final and intermediate artifacts retain files for 21 days so failed jobs can be rerun with their upstream evidence during that period. The publication result fails only for errors in its own evidence downloads, report preparation, comment/issue publication, or artifact upload. It does not repeat the compatibility gate or inherit upstream failures as its own result. Required deterministic and assessment jobs enforce their own checks and `canProceed`; their failures still make the overall workflow fail even when publication succeeds. A successful artifact upload does not clear a failed review.
+
+Only the assessment job has `copilot-requests: write`. Only publication has issue/PR-comment write permissions, and it does not check out or execute repository code. Fork PRs retain the deferred human-review behavior and cannot publish an authenticated PR comment.
+
+## Review decisions
+
+Each original `MTAPI-####` change receives one compatibility decision about existing extension behavior and public contracts:
+
+| Verdict | Meaning | Gate behavior |
+| --- | --- | --- |
+| `safe` | Existing behavior accommodates the candidate, or the change is established to be irrelevant. | May pass after complete evidence validation and independent checks. |
+| `needs-adaptation` | A concrete implementation or public-contract change is required. | Blocks adoption. |
+| `needs-human-review` | Current usage, behavior, compatibility coverage, or relevant upstream semantics remain uncertain. | Blocks adoption until reviewed. |
+
+The agent also records `used`, `unused`, or `uncertain` usage. The usage manifest and collected assembly references help navigate the implementation; they do not supply automatic compatibility decisions. A recorded use contradicts an `unused` claim. Existing `compatibilityReviews` entries are evidence for the agent to re-evaluate, rather than automatic approval in the active workflows.
+
+The review prompt requires investigating helpers, callers, public exposure, routing, mappings, serialization, and relevant tests. Additive/unconsumed changes are included, but absence of a wrapper or dedicated test for a future feature is not itself an upgrade blocker. Bounded searches of the inventoried repository and a relevant implementation boundary can establish irrelevance; hypothetical future integrations do not require proof of non-use. Related changes can be investigated together, but none may be omitted from the response. Safe consumed changes require test citations. Uncertain usage cannot be marked safe.
+
+Feature adoption is evaluated separately in a decision's `adoption` object (`outcome` and nonempty `reason`). Every `symbol-added`, `member-added`, and `framework-asset-added` change requires an explicit assessment: `recommend-adoption` explains the user benefit and extension changes; `no-adoption-needed` explains why the existing surface is sufficient, already exposes the addition, or excludes it by responsibility; `needs-product-decision` explains the opportunity and maintainer choice. Other changes may omit the object or use null. All three outcomes remain nonblocking for compatibility. Missing assessments and malformed objects invalidate the response and use the existing correction attempts, but a complete assessment never requires implementing the feature or resolving a product choice before upgrading. Compatibility reasoning and source/test evidence remain mandatory. Capability hints such as `adoptionPolicy: review-new-members` guide adoption evaluation rather than automatically blocking upstream additions. Related changes may reuse identical assessments; the report groups them by outcome/reason while counts remain per change.
+
+The trusted prompt applies adoption rules in order. Required migrations belong in compatibility; an addition used solely to replace a removed/changed API receives `no-adoption-needed` with a reference to the related changes. Existing public access, such as a newly available client method, can also make a wrapper unnecessary. Useful additions that follow an existing extension pattern normally receive `recommend-adoption`: generic event handling alone does not establish parity with comparable typed routes, fluent builders and attributes. `needs-product-decision` requires a concrete unresolved choice about new responsibilities or material tradeoffs, such as storage, retention, consent, credential ownership or runtime lifetimes, supported by the inspected APIs. Implementation effort or the option to leave a routine gap unfilled is insufficient by itself. Related changes forming one proposal must reuse identical outcome/reason text so they group together; independent proposals retain separate assessments. There are no outcome quotas.
+
+`review-new-members` guides useful parity within the mapped capability; `review-internal-additions` guides improvements to internal mappings/helpers without implying a new public feature; `advisory-only` creates no parity expectation. These hints do not expand extension responsibilities. The trusted prompt includes the repository's upstream-alignment and extension-boundary policies: use upstream models/contracts, migrate or remove exposed upstream features when required, and keep Teams-specific implementation in MSTeams. It also distinguishes test-source coverage from recorded candidate execution; tests prevented from running by a compilation failure cannot be described as passing validation. These are instructions for the agent's contextual judgment, not semantic guarantees provided by the structural validator.
+
+## Repository snapshot and tool access
+
+`prepare-impact-review` creates a new, empty `.teams-impact-review` workspace under the checkout, outside the source tree. It copies complete supported text files from `src/`, `docs/`, and the repository root. Supported extensions are `.cs`, `.csproj`, `.props`, `.targets`, `.md`, `.json`, `.slnx`, and `.xml`. Git-listed tracked and nonignored untracked files are included; build outputs and ignored local files are excluded. Repository instruction files are excluded from this inventory. Code assignments and credential-like JSON values are redacted. Redactions are a heuristic; the snapshot is not a general secret scanner.
+
+Before writing the agent input, PDB source-file hints are mapped to unique canonical paths in the source inventory, accepting relative paths and Windows/Linux/SourceLink build prefixes from other runners. The agent receives only snapshot-relative hints. Unknown or ambiguous hints are omitted and counted in `unmappedSourceFileCount`, which is bound into the review identity; omission is not proof of no usage. The original `collected-usage.json` artifact retains the unmodified PDB paths for audit. No original PDB path is followed to read a file.
+
+The full API models are copied into `baseline-api.json` and `candidate-api.json`. `review-input.json` contains the raw comparison, usage/capability hints, checks, commit, source-file inventory, model hashes, and a SHA-256 review identity. That identity binds the entire prepared input, including normalized original-source hashes and redacted snapshot hashes. Preparation verifies that the full API models reproduce the supplied diff. Files are not truncated to prompt-sized excerpts; the agent can find and read them as needed.
+
+The launcher changes its process working directory to the snapshot and also supplies it to Copilot CLI with `-C`. The prompt requires snapshot-relative tool paths and instructs the agent to retry denied checkout paths using the inventory. Access outside the snapshot is not added. The agent runs with only Copilot CLI `view`, `grep`, and `glob` tools available. Read operations are allowed; shell execution, edits, URL access, memory writes, built-in MCPs, custom instructions, and delegation are disabled. The snapshot contains no `.git` directory. Checkout credentials are not persisted. Copilot configuration/session state uses a separate fresh runner directory. Repository content, comments, package metadata, and previous acknowledgments are explicitly treated as untrusted evidence.
+
+Both assessment jobs explicitly pass their configured `COPILOT_MODEL` via `--model`. The `TEAMS_API_REVIEW_MODEL` repository Actions variable overrides the fallback configured in each workflow. `auto` is rejected so runs do not silently depend on a default model. Copilot CLI is pinned to `1.0.101` and automatic updates are disabled. The requested model and actual installed CLI version are printed in the review step, appended to the job summary, and saved in `impact-review-agent.json`. Each extracted final message also retains its session ID and the observed model if the CLI reports `data.model`; an absent observed model is recorded as unavailable rather than inferred. This records the requested model ID, not an immutable provider weights revision.
+
+These controls constrain available tools; they are not an operating-system sandbox. The review is still an AI judgment. The inventory describes the supported text surface. Missing upstream behavior or other evidence that prevents assessing affected existing behavior/contracts must lead to a human-review compatibility decision; uncertainty about future adoption belongs in a nonblocking `needs-product-decision` assessment.
+
+## Evidence validation
+
+`validate-impact-review` checks:
+
+- Schema, package versions, and exact review identity.
+- Repository commit, source inventory, source contents, and copied package models remain unchanged.
+- Exactly one decision for every change, with no unknown or duplicate IDs.
+- Recognized compatibility verdicts and usage values, nonempty reasoning, and well-formed evidence arrays.
+- A recognized adoption outcome with nonempty reasoning for every addition (and for any adoption object supplied on another change).
+- `safe` and `needs-adaptation` decisions cite an MSTeams implementation `.cs` file.
+- Safe consumed changes cite MSTeams test `.cs` files, and recorded dependency usage is not dismissed as unused.
+- Every citation quotes exact complete source lines from an inventoried snapshot file.
+
+Range-only citations are preferred: the agent supplies a source path and 1-based `startLine`/`endLine` after reading the numbered source. The validator checks bounds and extracts the exact complete source lines from the verified snapshot into the canonical evidence. This avoids transcription, indentation and JSON-escaping errors from retyping methods/tests. Empty ranges are rejected. A provided `quote` must still match the selected lines exactly. Quote-only citations also remain supported when they match uniquely; only line-ending/BOM normalization is performed, with no fuzzy matching or guessed repairs. Existence of a valid range does not establish semantic relevance; the agent must justify the chosen evidence.
+
+The launcher requests Copilot CLI JSONL events (`--output-format json --stream off`). `ReviewAgentOutput.cs` requires one successful terminal `result` record and extracts only the last completed main-agent `assistant.message`, excluding deltas, progress phases, tool requests/results and child-agent messages. Missing/incomplete/failed streams stop the review without falling back to a draft or earlier response. The complete event stream is retained for diagnosis and can include source excerpts returned by read/search tools from the redacted snapshot. The final message is expected to contain one plain JSON object. The response parser also accepts a single terminal JSON/untagged fence for compatibility with older responses. Multiple payloads/fences, trailing content, unknown properties, missing required fields and malformed JSON are rejected. Invalid JSON is returned for correction rather than silently repaired; every identity, coverage, source and evidence check still applies.
+
+Citation checks establish that evidence exists. They do not prove the semantic reasoning or that quoted tests adequately cover every runtime path; the agent must explain those claims. Independent checks provide a separate gate.
+
+## Independent checks and gate
+
+The required checks are tool build, comparison, candidate build, drift-tool tests, usage collection, and manifest validation. PR workflows also require contract and runtime-boundary checks for `net8.0` and `net10.0`. Scheduled workflows use a combined candidate-test step that runs both categories on both frameworks. All recorded independent checks must succeed.
+
+A review can be structurally valid while requiring adaptation or human review. Validation writes both `valid` and `canProceed`: `canProceed` requires valid evidence, all compatibility decisions safe, and every independent check passing. The three adoption outcomes are counted separately and do not enter the compatibility policy; coverage and well-formedness of the adoption assessment are required for a valid review. A safe AI decision cannot override a failing compiler, test, or manifest check. The deterministic and assessment enforcement steps also check their actual step outcomes, including agent execution when required, independently of the JSON result.
+
+Identical package versions skip all jobs after resolution. Different versions with no API changes produce a deterministic empty review and skip Node/Copilot installation. Fork PRs (different head/base repositories) do not run an authenticated agent: every change gets an explicit `needs-human-review` decision. Same-repository PRs can run the agent even when the repository itself is a fork. Manual and scheduled runs can run the review agent.
+
+The launcher validates each agent response and allows at most three attempts (the initial review plus two corrections) within the workflow step timeout. Invalid structure or evidence is returned to the agent through `review-feedback.json` and `previous-review.txt` in the snapshot. Each correction must return the complete review. A structurally valid response stops the loop regardless of `canProceed`: adaptation/human-review verdicts and independent failures are never retried to seek approval. Agent execution failures and validator execution failures stop immediately. The separate validation step rechecks the final response, then the assessment job enforces compatibility and its required step outcomes.
+
+An unavailable agent, timeout, missing response, invalid evidence, changed snapshot, or omitted API change cannot pass the gate. Every attempt retains its event stream, extracted final response (when available), diagnostics, validation and report for diagnosis. The prompt explicitly prohibits review-input/API-model citations and requires real implementation evidence even for safe unused/additive changes; exact quote validation is unchanged.
 
 ## CLI commands
 
-All commands write diagnostic errors to standard error. An unhandled command or configuration error returns exit code `2`. `validate-usage`, `validate-metadata`, and `validate-agent-report` return `1` for an invalid result; `classify --fail-on-drift` returns `1` for blocking or required findings. Successful commands return `0`.
-
-| Command | Primary inputs | Output | Notes |
-| --- | --- | --- | --- |
-| `resolve-version` | `--props`, optionally `--package` | Resolved version on standard output | Reads `Directory.Packages.props` and follows MSBuild property indirection. `--props -` reads XML from standard input. |
-| `compare` | `--from`, optional `--to`, `--output`, repeated `--source`, optional `--config-file` | Before model, after model, raw diff, and the resolved candidate version on standard output | When `--to` is omitted, selects the latest stable version found in the configured sources. |
-| `collect-usage` | One or more `--assembly` values and `--output` | Collected dependency usage JSON | Uses assembly metadata and portable PDBs; it does not execute the MSTeams assembly. |
-| `validate-usage` | `--manifest`, `--collected`, `--api-model`, optional `--repository-root`, `--output` | Usage-validation JSON | Checks package/version alignment, symbol/member existence, source paths, PDB evidence, exposure, and stale or missing manifest entries. |
-| `validate-metadata` | Repeated `--assembly`, `--manifest`, `--capabilities`, `--props`, optional `--repository-root` and `--base-ref` | Diagnostics and exit status | Performs offline current-state validation and Git-based source-review validation. An explicitly supplied base ref must resolve. |
-| `classify` | `--comparison`, `--manifest`, `--capabilities`, `--output`, optional `--fail-on-drift` | Findings JSON | With `--fail-on-drift`, returns `1` when blocking or required findings exist. |
-| `write-test-summary` | Repeated `--check <name>=<status>` values and `--output` | Test-summary JSON | Converts workflow step outcomes into one normalized artifact. |
-| `render-report` | `--findings`, optional `--test-summary`, `--output` | Deterministic Markdown report | Always derives the maintainer-facing sections from machine-readable artifacts. |
-| `prepare-agent-context` | `--findings`, `--manifest`, `--capabilities`, `--deterministic-report`, optional `--test-summary` and `--repository-root`, `--output` | Bounded agent-context JSON | Includes only affected in-repository C# files, redacts secrets, and limits source text size. |
-| `validate-agent-report` | `--report`, `--findings`, `--output` | Agent-report-validation JSON and validation errors on standard error when invalid | Enforces the exact title and section order, known IDs, required IDs, advisory wording, and ID-linked suggested implementation actions. |
-
-Example comparison using an authenticated private feed:
-
-```powershell
-dotnet run --project scripts/TeamsApiDrift/Microsoft.Agents.TeamsApiDrift.csproj -- `
-  compare `
-  --from <installed-version> `
-  --to <candidate-version> `
-  --source <private-feed-source-name-or-url> `
-  --config-file <path-to-NuGet.Config> `
-  --output artifacts/teams-api-drift
-```
-
-The source name is resolved through the supplied NuGet configuration, including its configured credentials. If no source is supplied, comparison uses NuGet.org. Multiple `--source` arguments are evaluated in order.
-
-## Inputs and manifests
-
-### Package versions and NuGet configuration
-
-The repository baseline is normally the `Microsoft_Teams_Apps_PkgVer` value in `Directory.Packages.props`. Workflows can override the baseline and candidate through dispatch inputs.
-
-`compare` accepts either source URLs or source aliases from a NuGet configuration file. The package service retrieves exact requested versions or enumerates stable versions when choosing the latest candidate. It examines `net8.0` and `net10.0`, preferring the nearest compatible assembly under `ref/` and falling back to `lib/`.
-
-### API models
-
-Each API model records:
-
-- Package name and version.
-- Selected asset for each target framework.
-- Public and protected types, including kind, accessibility, base type, interfaces, generic constraints, and deprecation state.
-- Members, including normalized keys and signatures, accessibility, nullability, and deprecation state.
-
-The metadata reader includes enough signature information to identify enum value changes, nullability changes, generic constraint changes, and member-shape changes without reflection-based assembly loading.
-
-### Usage manifest
-
-`teams-api-usage.json` is a reviewed, source-controlled assertion of intended API use. Each usage associates a dependency type and optional members with:
-
-- Usage kinds.
-- Whether the dependency is publicly exposed or internal-only.
-- The MSTeams source files affected by a change.
-
-The compiled assembly/PDB scan is independent evidence. `validate-usage` compares that evidence with the manifest so that a stale or incomplete manifest cannot silently drive classification.
-
-The repository gate additionally checks the manifest against both built target frameworks. It verifies the centrally managed dependency version, symbols, tracked members, public exposure in both directions, safe existing source paths, and stale manifest entries. A non-impact acknowledgment cannot suppress these provable errors.
-
-### Reviewed compatibility changes
-
-When a blocking or required finding has been reviewed and the extension already handles it safely, the usage manifest can record a `compatibilityReviews` entry. Each entry specifies `fromVersion`, `toVersion`, `upstreamSymbol`, `member`, `kind`, `before`, `after`, `targetFrameworks`, and a non-empty `reason` explaining why no adaptation is needed and identifying supporting evidence.
-
-Copy the symbol, member, change kind, signatures, and complete framework set from `raw-api-diff.json`, not the generated finding ID. Classification applies the review only when both versions and every change field match exactly (framework order does not matter). Different versions, signatures, or framework sets retain their normal compatibility classification. Historical reviews may remain in the manifest but do not acknowledge future changes.
-
-A matching review changes the finding to `no-action` with category `reviewed-compatible`, adds `compatibility-review` evidence, and includes the justification in its recommended action and deterministic report. The raw comparison and finding remain available for auditing. Reviews do not bypass manifest-integrity checks, compilation, contract tests, or runtime boundary tests. Malformed review entries fail classification explicitly.
-
-### Capability manifest
-
-`teams-capabilities.json` maps namespaces and, where necessary, specific types to product capability areas. A mapping supplies ownership and an adoption policy. The classifier uses the most specific matching mapping to distinguish additive APIs that require feature review from internal implementation opportunities.
-
-The .NET capabilities document keeps `owners` as maintainer labels rather than source-path patterns. Repository validation requires every usage symbol to resolve through an exact `upstreamTypes` entry or the longest matching `upstreamNamespaces` entry.
-
-### Source-review acknowledgments
-
-Relevant MSTeams changes must either update the affected metadata or record a fresh, document-specific non-impact review. For `teams-api-usage.json`, add or update this top-level property:
-
-```json
-"sourceReview": {
-  "outcome": "no-usage-metadata-change",
-  "reason": "Explain specifically why the changed source does not alter Teams API usage metadata."
-}
-```
-
-For `teams-capabilities.json`, use:
-
-```json
-"sourceReview": {
-  "outcome": "no-capability-metadata-change",
-  "reason": "Explain specifically why the changed usage symbols do not alter capability mapping or policy."
-}
-```
-
-Before submitting, review the full source diff and confirm that each acknowledgment still describes it accurately. The reason must be non-empty and must differ from the review at the Git base. A usage review cannot satisfy capability review, or vice versa. The corresponding metadata file must differ from the Git base somewhere in the branch, including staged or unstaged changes. It need not be updated again after every later source commit. Current-state metadata validation still runs against the built extension.
-
-Usage review applies to changed C# files that currently or previously reference `Microsoft.Teams.Apps`, files listed in the current or base usage manifest, new C# files, and the MSTeams project file. A substantive change to the `usages` array satisfies the review. When the set of consumed upstream symbols changes, the capability document must receive either a targeted change to the matching capability or its own fresh non-impact acknowledgment.
-
-Run the same offline check used by CI after building the solution:
-
-```powershell
-dotnet run --project scripts/TeamsApiDrift/Microsoft.Agents.TeamsApiDrift.csproj -c Debug --no-build -- `
-  validate-metadata `
-  --assembly bin/Debug/CplTeams/net8.0/Microsoft.Agents.Extensions.MSTeams.dll `
-  --assembly bin/Debug/CplTeams/net10.0/Microsoft.Agents.Extensions.MSTeams.dll `
-  --manifest scripts/TeamsApiDrift/teams-api-usage.json `
-  --capabilities scripts/TeamsApiDrift/teams-capabilities.json `
-  --props Directory.Packages.props `
-  --repository-root . `
-  --base-ref main
-```
-
-Omit `--base-ref` to let the tool use the pull-request environment or known `main` refs. Outside a Git checkout, current-state validation still runs and change-review validation is skipped.
-
-## Generated artifacts
-
-The standard artifact directory is `artifacts/teams-api-drift`.
-
-| Artifact | Producer | Main consumers |
+| Command | Inputs | Outputs |
 | --- | --- | --- |
-| `microsoft-teams-apps-before.api.json` | `compare` | Scheduled-workflow usage validation and uploaded evidence |
-| `microsoft-teams-apps-after.api.json` | `compare` | PR-workflow usage validation and uploaded evidence |
-| `raw-api-diff.json` | `compare` | `classify` and uploaded evidence |
-| `collected-usage.json` | `collect-usage` | `validate-usage` |
-| `usage-validation.json` | `validate-usage` | Workflow policy and uploaded diagnostics |
-| `findings.json` | `classify` | Deterministic report, agent context, report validation, workflow policy |
-| `test-summary.json` | `write-test-summary` | Deterministic report and agent context |
-| `deterministic-report.md` | `render-report` | Uploaded artifact, scheduled issue body, and full evidence linked by the PR comment |
-| `agent-context.json` | `prepare-agent-context` | Copilot CLI only |
-| `copilot-report.md` | Copilot CLI in a workflow | `validate-agent-report`, uploaded evidence, and scheduled issue body when valid |
-| `agent-report-validation.json` | `validate-agent-report` | Workflow policy and uploaded diagnostics |
+| `write-agent-metadata` | `--output`, `--model`, `--cli-version` | Requested model and CLI version JSON, console summary, and optional GitHub step summary. |
+| `extract-agent-response` | `--input`, `--output` | Final assistant response and session/model metadata; incomplete or failed event streams are rejected. |
+| `resolve-version` | `--props`, optional `--package` | Resolved version on stdout. |
+| `resolve-comparison` | `--from`, optional `--to`, `--output`, optional sources/config | Normalized baseline/candidate and `sameVersion` JSON. Omitted candidate resolves the latest listed stable release using metadata only. |
+| `compare` | `--from`, optional `--to`, `--output`, optional package sources/config | Before/after API models, complete raw diff, candidate version on stdout. |
+| `collect-usage` | Repeated `--assembly`, `--output` | Compiled dependency references and source associations. |
+| `validate-usage` | Manifest, collected usage, API model, repository root | Usage-integrity validation artifact and exit status. |
+| `write-test-summary` | Repeated `--check name=status`, `--output` | Independent step outcomes. |
+| `prepare-impact-review` | `--comparison`, `--before-api`, `--after-api`, `--manifest`, `--capabilities`, optional `--collected`, `--test-summary`, `--repository-root`, `--workspace`, `--output`, `--empty-review`, optional `--defer` | Full snapshot, trusted review input, change count on stdout, and an empty/deferred review when appropriate. |
+| `validate-impact-review` | `--input`, `--review`, `--workspace`, `--repository-root`, `--output`, `--report` | Validation/gate decision, canonical citations and Markdown report. Returns 1 for invalid evidence, 0 for a structurally valid review; the workflow separately enforces `canProceed`. |
+| `validate-metadata` | Built assemblies, manifests, props, optional base ref | Existing offline repository metadata checks used by normal CI. |
 
-The serialized JSON uses camel-case property names and stable ordering where the producer controls a collection. API changes receive deterministic IDs such as `MTAPI-0001` after normalized sorting.
+## Artifacts and workflow output
 
-## Comparison and classification
+| Artifact | Purpose |
+| --- | --- |
+| `microsoft-teams-apps-before.api.json`, `microsoft-teams-apps-after.api.json` | Deterministic package API models. |
+| `raw-api-diff.json` | Complete, stable-ID list of upstream API changes. |
+| `collected-usage.json`, `usage-validation.json` | Independent usage evidence and manifest validation. |
+| `versions.json`, `version-resolution.log`, `version-tool-build.log` | Resolved versions, skip decision and early resolver diagnostics. |
+| `pipeline-status.json` | Upstream job outcomes and artifact-collection results, including incomplete/failed runs. |
+| `test-summary.json` | Independent check outcomes. |
+| `review-input.json` | Bound review identity, canonical snapshot-relative source hints, unmapped-hint count, and source/model hash catalog. |
+| `impact-review.raw.json` | Latest extracted final assistant message, or deterministic empty/deferred review. |
+| `impact-review-agent.json` | Explicitly requested model and installed CLI version. |
+| `impact-review.attempt-N.events.jsonl`, `.raw.json.metadata.json` | Complete structured event stream and final-response session/model metadata. |
+| `impact-review.attempt-N.raw.json`, `.stderr.log`, `.validation.json`, `.report.md` | Preserved response, execution diagnostics, validation and report for each attempt. |
+| `impact-review-validation.json` | Validation errors, canonical evidence, compatibility verdict counts, adoption assessments and per-outcome counts, and final `canProceed`. |
+| `impact-report.md` | Human-readable implementation impact, evidence locations, errors and check outcomes. |
 
-The comparer first detects changes separately for each target framework, then aggregates identical changes and records the frameworks where each change occurs. It can report:
+Preparation logs the number and types of API changes. Validation logs compatibility verdict counts/reasons and separately labels every adoption outcome/reason as nonblocking, with counts for recommendations, no adoption needed, and product decisions. The report shows assessed/total additions and groups related assessments. The deterministic and assessment jobs print required step outcomes and remaining decisions; publication records all job results and checks only its own publication steps. Reports appear in the job summary and the existing marker-based PR comment or scheduled issue. Long publication bodies are capped; complete reports and raw evidence remain in the uploaded artifacts. The temporary full source snapshot is not uploaded; the pinned commit, original/snapshot hashes, and canonical quotes identify the reviewed code.
 
-- Framework asset addition or removal.
-- Type addition, removal, kind change, accessibility change, base-type change, interface change, and generic-constraint change.
-- Member addition, removal, signature change, accessibility change, and nullability change.
-- Type or member deprecation addition/removal.
-- Enum value changes.
+## Main components and unchanged repository CI
 
-Each raw change has an initial compatibility assessment: breaking, potentially breaking, non-breaking, or unknown. The classifier then combines that change with the usage and capability manifests:
+`ImpactReview.cs` owns snapshot preparation, response parsing, identity/evidence validation, and report rendering. `run-impact-review.sh` defines the agent's explicit tool permissions, captures output, and bounds evidence corrections. `ReviewAgentOutput.cs` captures the final message and agent provenance through the `extract-agent-response` and `write-agent-metadata` tool commands. `ReviewAgentOutputTests.cs` checks structured capture and metadata with xUnit; `tests/run-impact-review-tests.sh` checks orchestration offline, including correction feedback, exhaustion, execution failures, and no retries for valid blocked reviews; both workflows run it with the drift-tool tests. `tests/workflow-jobs-tests.sh` checks actual workflow job conditions and executes the embedded Bash report/publication-result steps across failure/skip scenarios using `jq`. Report preparation and publication-result evaluation require no checkout, Node setup, or drift-tool compilation in the publication job; comment/issue publication retains GitHub Script for GitHub API access. Node setup in the assessment job is retained for installing Copilot CLI through npm, rather than for repository scripts or tests. `.github/instructions/teams-api-impact-review-instructions.md` defines the investigation and response contract. `Program.cs` exposes the CLI. Package extraction/comparison and `MetadataValidation.cs` remain independent components.
 
-- A removal or structural change to an API used by MSTeams is blocking.
-- A potentially breaking change to a publicly exposed API is blocking; the same kind of internal-only change requires adaptation.
-- Deprecation of a used API requires maintainer review.
-- An additive, unused API is either a feature-review candidate or an internal implementation opportunity according to its capability adoption policy.
-- Unused changes that do not require action are retained as no-action findings for traceability.
+`DriftPipeline.cs` retains the shared version resolver, capability matching, snapshot redaction and symlink-traversal checks used by the active workflows and metadata validation. The implementation-review and metadata-validation tests retain coverage of these active behaviors.
 
-Every finding carries the raw change evidence, dependency-usage evidence where applicable, and its capability mapping. The deterministic report groups findings into blocking issues, required adaptations, feature-review candidates, internal opportunities, maintainer decisions, and no-action changes.
-
-## Workflow integration
-
-### Main repository CI
-
-`.github/workflows/ci.yml` runs `validate-metadata` immediately after the normal Debug solution build. It reuses the built drift tool and both MSTeams assemblies with `--no-build`, passes the pull-request base SHA through the step environment, and fails before packaging when either metadata document is stale or lacks required review. Push builds still perform current-state validation without a PR base.
-
-### Pull-request workflow
-
-`.github/workflows/teams-api-drift-pr.yml` runs on relevant pull requests and manual dispatch. It:
-
-1. Resolves the baseline from the PR base branch and the candidate from the PR head, unless dispatch inputs override them.
-2. Compares the two packages.
-3. Builds MSTeams against the candidate and runs the drift-tool tests, compile-time contract tests, and runtime boundary tests for supported frameworks.
-4. Collects and validates actual API usage.
-5. Classifies findings and renders the deterministic report.
-6. For manual runs and trusted internal pull requests, prepares bounded context, invokes Copilot CLI, and validates its report.
-7. Uploads the artifacts and upserts a marker-delimited PR comment containing a compact deterministic finding summary and a link to the workflow run. The full deterministic and Copilot reports remain in the artifact rather than being embedded in the comment.
-8. Fails policy when a required step failed or when blocking/required findings remain.
-
-Fork pull requests do not receive the agent context, Copilot invocation, or write access needed for comments.
-
-### Scheduled workflow
-
-`.github/workflows/teams-api-drift-scheduled.yml` runs weekly and by manual dispatch. It compares the repository baseline with the latest stable version, performs the same deterministic build/test/collection/classification pipeline, uploads the artifacts, and creates or updates one marker-delimited advisory issue when findings exist.
-
-Scheduled runs use the deterministic report. Manual dispatch can additionally create and validate a Copilot report. Copilot CLI authenticates with the short-lived workflow `GITHUB_TOKEN`, which requires `copilot-requests: write` and the corresponding organization policy. The job still applies deterministic policy independently of the prose report.
-
-## Verification layers
-
-The feature deliberately uses multiple evidence layers:
-
-1. Metadata extraction verifies the shape of the dependency API for both target frameworks.
-2. The raw comparison records every normalized API difference independently of current repository use.
-3. Assembly and PDB scanning discovers compiled MSTeams references and source locations.
-4. Usage validation checks the curated manifest against both compiled evidence and an API model.
-5. Repository metadata validation checks the built extension and requires fresh review of relevant source changes.
-6. Compile-time contract tests catch source compatibility failures in selected critical contracts.
-7. Runtime boundary tests exercise selected behavior at the MSTeams boundary.
-8. Unit tests verify deterministic comparison, classification, report, security-boundary, and validation behavior.
-9. Workflow policy combines step outcomes and finding severity into the final pass/fail result.
-
-These layers are complementary: a successful build does not replace API comparison, and an agent-authored report cannot replace deterministic validation or policy.
-
-## Security and trust boundaries
-
-- NuGet credentials remain in the selected NuGet configuration or credential provider; they are not written into drift artifacts.
-- Package assemblies and MSTeams assemblies are inspected as metadata rather than executed by the detector.
-- Agent context is limited to known artifacts and affected C# files contained beneath the configured source root; Copilot CLI receives that context without shell, file, URL, memory, or built-in MCP tools.
-- Sensitive-looking values are redacted, and included source text is length-limited.
-- The agent report is advisory and must pass structural and finding-ID validation before publication.
-- JSON artifacts, test results, and workflow exit codes are the authoritative inputs to CI policy.
+Ordinary `.github/workflows/ci.yml` continues to run `validate-metadata` against built MSTeams assemblies. Central package/version alignment, usage inventory, source associations, capability ownership, stale metadata, and required metadata reviews are still checked independently of the AI review. This architecture does not move Teams-specific runtime behavior into SDK Core, Builder, or Hosting.

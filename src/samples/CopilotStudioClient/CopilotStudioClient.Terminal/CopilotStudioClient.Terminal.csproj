@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" />
     <PackageReference Include="Terminal.Gui" />
+	<PackageReference Include="Microsoft.Identity.Client.Broker" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\libraries\Client\Microsoft.Agents.CopilotStudio.Client\Microsoft.Agents.CopilotStudio.Client.csproj" />

@@ -1,11 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using Microsoft.Agents.CopilotStudio.Client;
+using Microsoft.Identity.Client;
+using Microsoft.Identity.Client.Broker;
+using Microsoft.Identity.Client.Extensions.Msal;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
-using Microsoft.Identity.Client.Extensions.Msal;
-using Microsoft.Identity.Client;
-using Microsoft.Agents.CopilotStudio.Client;
 
 namespace CopilotStudioClient.Terminal
 {
@@ -30,7 +31,9 @@ namespace CopilotStudioClient.Terminal
             IPublicClientApplication app = PublicClientApplicationBuilder.Create(settings.AppClientId)
                  .WithAuthority(AadAuthorityAudience.AzureAdMyOrg)
                  .WithTenantId(settings.TenantId)
-                 .WithRedirectUri("http://localhost")
+                 .WithDefaultRedirectUri()
+                 .WithBroker(new BrokerOptions(BrokerOptions.OperatingSystems.Windows))
+                 .WithParentActivityOrWindow(GetConsoleOrTerminalWindow)
                  .Build();
 
             string currentDir = Path.Combine(AppContext.BaseDirectory, "mcs_client_console");
@@ -80,6 +83,45 @@ namespace CopilotStudioClient.Terminal
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authResponse.AccessToken);
             }
             return await base.SendAsync(request, cancellationToken);
+        }
+
+        enum GetAncestorFlags
+        {
+            GetParent = 1,
+            GetRoot = 2,
+            /// <summary>
+            /// Retrieves the owned root window by walking the chain of parent and owner windows returned by GetParent.
+            /// </summary>
+            GetRootOwner = 3
+        }
+
+        /// <summary>
+        /// Retrieves the handle to the ancestor of the specified window.
+        /// </summary>
+        /// <param name="hwnd">A handle to the window whose ancestor is to be retrieved.
+        /// If this parameter is the desktop window, the function returns NULL. </param>
+        /// <param name="flags">The ancestor to be retrieved.</param>
+        /// <returns>The return value is the handle to the ancestor window.</returns>
+        [DllImport("user32.dll", ExactSpelling = true)]
+        static extern IntPtr GetAncestor(IntPtr hwnd, GetAncestorFlags flags);
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
+        /// <summary>
+        /// Returns the parent window handle on Windows, or zero on Linux and macOS where browser authentication needs no parent window.
+        /// </summary>
+        public IntPtr GetConsoleOrTerminalWindow()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return IntPtr.Zero;
+            }
+
+            IntPtr consoleHandle = GetConsoleWindow();
+            IntPtr handle = GetAncestor(consoleHandle, GetAncestorFlags.GetRootOwner);
+
+            return handle;
         }
     }
 }

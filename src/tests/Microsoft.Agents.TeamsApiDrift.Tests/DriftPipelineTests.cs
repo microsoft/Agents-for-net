@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -159,6 +158,28 @@ public sealed class DriftPipelineTests
         Assert.Equal("2.1.0", VersionResolver.Resolve(new StringReader(xml)));
     }
 
+    [Theory]
+    [InlineData("2.1.0", "2.1.0", true)]
+    [InlineData("2.1", "2.1.0.0", true)]
+    [InlineData("2.1.0+baseline", "2.1.0+candidate", true)]
+    [InlineData("2.1.0", "2.1.2", false)]
+    [InlineData("2.1.0-beta.1", "2.1.0", false)]
+    public void VersionComparisonUsesNuGetPackageIdentity(string from, string to, bool same)
+    {
+        var versions = VersionResolver.Compare(from, to);
+        Assert.Equal(same, versions.SameVersion);
+        Assert.Equal(1, versions.SchemaVersion);
+    }
+
+    [Theory]
+    [InlineData("invalid", "2.1.0")]
+    [InlineData("2.1.0", "invalid")]
+    [InlineData("", "2.1.0")]
+    public void InvalidVersionsCannotSilentlySkipReview(string from, string to)
+    {
+        Assert.Throws<ArgumentException>(() => VersionResolver.Compare(from, to));
+    }
+
     [Fact]
     public void FrameworkAssetSelectionPrefersNearestReferenceAsset()
     {
@@ -248,84 +269,6 @@ public sealed class DriftPipelineTests
         Assert.Equal(expectedKind, Assert.Single(ApiComparer.Compare(Model("1.0.0", before, before), Model("2.0.0", after, after)).Changes).Kind);
     }
 
-    [Theory]
-    [InlineData("symbol-removed", "breaking", "publicly-exposed", "blocking")]
-    [InlineData("base-type-changed", "potentially-breaking", "publicly-exposed", "blocking")]
-    [InlineData("base-type-changed", "potentially-breaking", "internal-only", "required")]
-    [InlineData("deprecation-added", "unknown", "internal-only", "review")]
-    [InlineData("member-added", "non-breaking", "internal-only", "review")]
-    public void ClassifyImplementsCompatibilityPolicy(string kind, string compatibility, string exposure, string expected)
-    {
-        var comparison = Comparison(new ApiChange("MTAPI-0001", kind, "Contoso.Used", null, "before", "after", compatibility, ["net8.0"], ["test"]));
-        var manifest = Manifest(new UsageEntry { UpstreamSymbol = "Contoso.Used", Exposure = exposure, Files = ["used.cs"] });
-        var capability = Capabilities(("mapped", new Capability { UpstreamTypes = ["Contoso.Used"], AdoptionPolicy = "review-new-members" }));
-
-        var finding = Assert.Single(FindingClassifier.Classify(comparison, manifest, capability).Findings);
-
-        Assert.Equal(expected, finding.Classification);
-    }
-
-    [Fact]
-    public void ClassifyLeavesUnconsumedChangesAsNoAction()
-    {
-        var comparison = Comparison(new ApiChange("MTAPI-0001", "symbol-removed", "Contoso.Unused", null, "x", null, "breaking", ["net8.0"], ["test"]));
-        Assert.Equal("no-action", Assert.Single(FindingClassifier.Classify(comparison, Manifest(), Capabilities()).Findings).Classification);
-    }
-
-    [Theory]
-    [InlineData("internal-only")]
-    [InlineData("publicly-exposed")]
-    public void ClassifyAcknowledgesAnExactlyReviewedCompatibilityChange(string exposure)
-    {
-        var manifest = ReviewedManifest();
-        manifest.Usages[0].Exposure = exposure;
-
-        var result = FindingClassifier.Classify(ReviewedComparison(), manifest, Capabilities());
-
-        var finding = Assert.Single(result.Findings);
-        Assert.Equal("no-action", finding.Classification);
-        Assert.Equal("reviewed-compatible", finding.Category);
-        Assert.Equal(0, result.Summary.Blocking);
-        Assert.Equal(0, result.Summary.Required);
-        Assert.Equal(1, result.Summary.NoAction);
-        Assert.Contains("compatibility-review", finding.Evidence);
-        Assert.Contains("The getter already handles null.", finding.RecommendedAction, StringComparison.Ordinal);
-        Assert.Contains("The getter already handles null.", DeterministicReportRenderer.Render(result), StringComparison.Ordinal);
-    }
-
-    [Theory]
-    [InlineData("fromVersion", "\"0.9.0\"")]
-    [InlineData("toVersion", "\"3.0.0\"")]
-    [InlineData("upstreamSymbol", "\"Contoso.Other\"")]
-    [InlineData("member", "\"Other\"")]
-    [InlineData("member", "null")]
-    [InlineData("kind", "\"member-signature-changed\"")]
-    [InlineData("before", "\"different\"")]
-    [InlineData("after", "\"different\"")]
-    [InlineData("targetFrameworks", "[\"net10.0\"]")]
-    [InlineData("targetFrameworks", "[\"net8.0\", \"net10.0\"]")]
-    public void ClassifyDoesNotReuseReviewForADifferentChange(string field, string value)
-    {
-        var result = FindingClassifier.Classify(ReviewedComparison(), ReviewedManifest(field, value), Capabilities());
-
-        Assert.Equal("required", Assert.Single(result.Findings).Classification);
-        Assert.Equal(1, result.Summary.Required);
-    }
-
-    [Theory]
-    [InlineData("fromVersion", "\"\"")]
-    [InlineData("toVersion", "\" \"")]
-    [InlineData("upstreamSymbol", "\"\"")]
-    [InlineData("kind", "\"\"")]
-    [InlineData("reason", "\" \"")]
-    [InlineData("targetFrameworks", "[]")]
-    [InlineData("targetFrameworks", "[\"net8.0\", \"net8.0\"]")]
-    public void ClassifyRejectsIncompleteCompatibilityReviews(string field, string value)
-    {
-        Assert.Throws<InvalidDataException>(() =>
-            FindingClassifier.Classify(ReviewedComparison(), ReviewedManifest(field, value), Capabilities()));
-    }
-
     [Fact]
     public void UsageValidationFindsMissingSymbolMemberExposureVersionAndPath()
     {
@@ -359,151 +302,7 @@ public sealed class DriftPipelineTests
         Assert.True(result.Valid);
     }
 
-    [Fact]
-    public void ReportRendererOrdersFindingsByStableId()
-    {
-        var findings = FindingResult(
-            Finding("MTAPI-0002", "blocking"),
-            Finding("MTAPI-0001", "blocking"));
-        var report = DeterministicReportRenderer.Render(findings);
-        Assert.True(report.IndexOf("MTAPI-0001", StringComparison.Ordinal) < report.IndexOf("MTAPI-0002", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void AgentReportValidationAcceptsSummaryPrefixAndAllMandatoryIds()
-    {
-        var report = ValidReport("This is an advisory report; it does not make or authorize implementation decisions. Additional context.", "MTAPI-0001");
-        Assert.True(AgentReportValidator.Validate(report, FindingResult(Finding("MTAPI-0001", "blocking"))).Valid);
-    }
-
-    [Fact]
-    public void AgentReportValidationAllowsGenericValidationChecklistItems()
-    {
-        var report = ValidReport("This is an advisory report; it does not make or authorize implementation decisions.", "MTAPI-0001")
-            .Replace("## Validation checklist\nText.", "## Validation checklist\n- [ ] Build the extension against the candidate package.", StringComparison.Ordinal);
-        Assert.True(AgentReportValidator.Validate(report, FindingResult(Finding("MTAPI-0001", "blocking"))).Valid);
-    }
-
-    [Theory]
-    [InlineData("MTAPI-9999", "Unknown finding")]
-    [InlineData("", "Missing mandatory")]
-    public void AgentReportValidationRejectsUnknownOrMissingIds(string ids, string expectedError)
-    {
-        var result = AgentReportValidator.Validate(ValidReport("This is an advisory report; it does not make or authorize implementation decisions.", ids), FindingResult(Finding("MTAPI-0001", "required")));
-        Assert.False(result.Valid);
-        Assert.Contains(result.Errors, error => error.Contains(expectedError, StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void AgentContextRejectsPathTraversal()
-    {
-        var finding = Finding("MTAPI-0001", "blocking") with { AffectedFiles = ["../outside.cs"] };
-        Assert.Throws<InvalidDataException>(() => AgentContextBuilder.Build(FindingResult(finding), Manifest(), Capabilities(), "report", null, Path.GetTempPath()));
-    }
-
-    [Fact]
-    public void AgentContextRejectsSymlinkedSourceDirectory()
-    {
-        var root = TemporaryDirectory();
-        var sourceRoot = Path.Combine(root, PackageConstants.SourceRoot);
-        var outside = Path.Combine(root, "outside");
-        var linkedDirectory = Path.Combine(sourceRoot, "linked");
-        var relative = Path.Combine(PackageConstants.SourceRoot, "linked", "outside.cs");
-        try
-        {
-            Directory.CreateDirectory(sourceRoot);
-            Directory.CreateDirectory(outside);
-            File.WriteAllText(Path.Combine(outside, "outside.cs"), "public class Outside { }");
-            try
-            {
-                Directory.CreateSymbolicLink(linkedDirectory, outside);
-            }
-            catch (IOException) when (OperatingSystem.IsWindows())
-            {
-                // Creating links requires a Windows privilege that is not available in every test environment.
-                return;
-            }
-
-            var finding = Finding("MTAPI-0001", "blocking") with { AffectedFiles = [relative] };
-            Assert.Throws<InvalidDataException>(() => AgentContextBuilder.Build(FindingResult(finding), Manifest(), Capabilities(), "report", null, root));
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
-    }
-
-    [Fact]
-    public void AgentContextRedactsAndTruncatesSource()
-    {
-        var root = Path.Combine(Path.GetTempPath(), $"teams-api-drift-{Guid.NewGuid():N}");
-        var relative = $"{PackageConstants.SourceRoot}/test.cs";
-        var file = Path.Combine(root, relative);
-        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        File.WriteAllText(file, "var clientSecret = \"do-not-leak\";" + new string('x', 13_000));
-        try
-        {
-            var finding = Finding("MTAPI-0001", "blocking") with { AffectedFiles = [relative] };
-            var json = JsonSerializer.Serialize(AgentContextBuilder.Build(FindingResult(finding), Manifest(), Capabilities(), "report", null, root));
-            Assert.DoesNotContain("do-not-leak", json, StringComparison.Ordinal);
-            Assert.Contains("[REDACTED]", json, StringComparison.Ordinal);
-            Assert.Contains("\"truncated\":true", json, StringComparison.Ordinal);
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
-    }
-
-    [Fact]
-    public void AgentReportValidationRejectsDuplicateSectionsAndUnattributedActions()
-    {
-        var report = ValidReport("This is an advisory report; it does not make or authorize implementation decisions.", "MTAPI-0001")
-            .ReplaceLineEndings("\n")
-            .Replace("## Suggested implementation issues\nText.", "## Suggested implementation issues\n- Update the extension.", StringComparison.Ordinal)
-            + "\n## Summary\n- Update the extension.\n";
-        var validation = AgentReportValidator.Validate(report, FindingResult(Finding("MTAPI-0001", "blocking")));
-        Assert.False(validation.Valid);
-        Assert.Contains(validation.Errors, error => error.Contains("exactly once", StringComparison.Ordinal));
-        Assert.Contains(validation.Errors, error => error.Contains("not tied", StringComparison.Ordinal));
-    }
-
     private static ApiMemberModel Member(string name) => new($"method:{name}:System.Void {name}()", name, "method", "public", $"System.Void {name}()", false);
-    private static ApiComparison ReviewedComparison() => Comparison(new ApiChange(
-        "MTAPI-0001", "nullability-changed", "Contoso.Used", "Value",
-        "System.String Value [nullability:010001]", "System.String Value [nullability:010002]",
-        "potentially-breaking", ["net8.0"], ["normalized-api-model"]));
-
-    private static UsageManifest ReviewedManifest(string? field = null, string? value = null)
-    {
-        var json = JsonNode.Parse("""
-            {
-              "declaredVersion": "2.0.0",
-              "usages": [
-                { "upstreamSymbol": "Contoso.Used", "members": ["Value"], "exposure": "internal-only" }
-              ],
-              "compatibilityReviews": [
-                {
-                  "fromVersion": "1.0.0",
-                  "toVersion": "2.0.0",
-                  "upstreamSymbol": "Contoso.Used",
-                  "member": "Value",
-                  "kind": "nullability-changed",
-                  "before": "System.String Value [nullability:010001]",
-                  "after": "System.String Value [nullability:010002]",
-                  "targetFrameworks": ["net8.0"],
-                  "reason": "The getter already handles null."
-                }
-              ]
-            }
-            """)!;
-        if (field is not null)
-        {
-            json["compatibilityReviews"]![0]![field] = JsonNode.Parse(value!);
-        }
-        return json.Deserialize<UsageManifest>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
-    }
-
     private static string TemporaryDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), $"teams-api-drift-{Guid.NewGuid():N}");
@@ -534,34 +333,7 @@ public sealed class DriftPipelineTests
         new("net8.0", "lib/net8.0/test.dll", [net8]),
         new("net10.0", "lib/net10.0/test.dll", [net10])
     ]);
-    private static ApiComparison Comparison(params ApiChange[] changes) => new(1, PackageConstants.PackageId, "1.0.0", "2.0.0", changes.Length > 0, changes);
     private static UsageManifest Manifest(params UsageEntry[] entries) => new() { DeclaredVersion = "2.1.0", Usages = [.. entries] };
-    private static CapabilityDocument Capabilities(params (string Name, Capability Value)[] entries) => new() { Capabilities = entries.ToDictionary(item => item.Name, item => item.Value) };
-    private static Finding Finding(string id, string classification) => new(id, classification, null, "member-removed", "Contoso.Used", "Run", null, "internal-only", [], "old", "new", ["net8.0"], ["test"], "Act.");
-    private static FindingsResult FindingResult(params Finding[] findings) => new(1, PackageConstants.PackageId, "1.0.0", "2.0.0",
-        new(findings.Count(item => item.Classification == "blocking"), findings.Count(item => item.Classification == "required"), findings.Count(item => item.Classification == "review"), findings.Count(item => item.Classification == "no-action")), findings);
-    private static string ValidReport(string summary, string ids) => $"""
-        # Microsoft.Teams.Apps Impact Report
-        ## Summary
-        {summary}
-        {ids}
-        ## Compatibility breaks
-        Text.
-        ## Required adaptations
-        Text.
-        ## Feature-review candidates
-        Text.
-        ## Internal implementation opportunities
-        Text.
-        ## Maintainer decisions
-        Text.
-        ## No action
-        Text.
-        ## Suggested implementation issues
-        Text.
-        ## Validation checklist
-        Text.
-        """;
 }
 
 public readonly struct OperatorFixture
