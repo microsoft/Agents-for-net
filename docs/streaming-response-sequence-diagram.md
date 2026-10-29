@@ -5,6 +5,9 @@ streaming implementations. `StreamingResponseBase` owns buffering, sequencing, t
 loop, end/reset behavior, and error actions. `StreamingResponse` provides the shared Activity Protocol
 format, while channel specializations provide defaults, metadata, and error handling.
 
+For implementation guidance and a complete factory/response example, see
+[Extend IStreamingResponse with IStreamingResponseFactory](extending-streaming-response.md).
+
 ## Response Selection
 
 `ChannelServiceAdapterBase` checks the full channel ID first (for example, `msteams:COPILOT`) and then the
