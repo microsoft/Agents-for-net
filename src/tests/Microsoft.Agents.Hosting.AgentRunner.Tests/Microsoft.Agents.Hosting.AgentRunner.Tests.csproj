@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <ComponentAreaName>Tests.AgentRunner</ComponentAreaName>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <Import Project="..\..\Build.Common.core.props" />
+  <ItemGroup>
+    <Compile Remove="Fixtures\**" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <ProjectReference Include="..\..\libraries\Hosting\AgentRunner\Microsoft.Agents.Hosting.AgentRunner.csproj" />
+    <ProjectReference Include="Fixtures\Agent\Agent.csproj" ReferenceOutputAssembly="false" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <Target Name="CopyAgentFixture" AfterTargets="Build">
+    <ItemGroup>
+      <AgentFixture Include="$(RepoRoot)\bin\$(Configuration)\AgentRunnerFixture\$(TargetFramework)\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(AgentFixture)" DestinationFiles="@(AgentFixture->'$(OutDir)AgentFixture\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+</Project>
