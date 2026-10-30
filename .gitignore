@@ -226,6 +226,10 @@ appsettings.*.json
 # Local agent worktrees
 /.worktrees/
 
+# Local A2A integration-kit reports and agent logs
+/itk/reports/
+/itk/publish/
+
 # Mac files
 .DS_Store
 
