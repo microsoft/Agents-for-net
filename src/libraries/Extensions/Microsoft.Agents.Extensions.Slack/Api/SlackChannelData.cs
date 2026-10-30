@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Collections.Generic;
@@ -39,13 +39,19 @@ public class SlackChannelData
     /// the ability to access protected resources.</remarks>
     public string ApiToken { get; set; }
 
-    public string Channel => Envelope != null 
-        ? Envelope.Get<string>("event.channel") 
+    public string Channel => Envelope != null
+        ? Envelope.Get<string>("event.channel")
         : (Payload?.Get<string>("channel") ?? Payload?.Get<string>("container.channel_id"));
 
-    public string ThreadTs => Envelope != null 
-        ? (Envelope.Get<string>("event.thread_ts") ?? Envelope.Get<string>("event.ts")) 
+    public string ThreadTs => Envelope != null
+        ? (Envelope.Get<string>("event.thread_ts") ?? Envelope.Get<string>("event.ts"))
         : (Payload?.Get<string>("message.thread_ts") ?? Payload?.Get<string>("message.ts"));
+
+    internal string TeamId => Envelope?.Get<string>("team_id") ?? Payload?.Get<string>("team.id");
+    internal string UserId => Envelope?.Get<string>("event.user") ?? Payload?.Get<string>("user.id");
+    internal string UserTeamId => Envelope?.Get<string>("event.user_team")
+        ?? Payload?.Get<string>("user.team_id") ?? TeamId;
+    internal string AppId => Envelope?.Get<string>("api_app_id") ?? Payload?.Get<string>("api_app_id");
 
     /// <summary>
     /// Gets or sets the collection of additional properties not mapped to class members during JSON serialization or

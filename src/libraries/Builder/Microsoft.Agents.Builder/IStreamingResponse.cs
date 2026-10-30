@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,22 +22,30 @@ namespace Microsoft.Agents.Builder
     public interface IStreamingResponse
     {
         /// <summary>
-        /// Set IActivity that will be (optionally) used for the final streaming message.
+        /// Gets or sets the legacy Activity Protocol final activity override.
         /// </summary>
+        /// <remarks>
+        /// Use <see cref="Microsoft.Agents.Builder.IStreamingResponse.AddAttachment(Microsoft.Agents.Core.Models.Attachment)"/>
+        /// and <see cref="Microsoft.Agents.Builder.IStreamingResponse.AddCitation(Microsoft.Agents.Core.Models.ClientCitation)"/>
+        /// for portable output. Native channel implementations need not support activity replacement.
+        /// </remarks>
+        [Obsolete("FinalMessage is Activity Protocol-specific. Use AddAttachment and AddCitation instead.")]
         IActivity FinalMessage { get; set; }
 
         /// <summary>
         /// The interval in milliseconds at which intermediate messages are sent.
         /// </summary>
         /// <remarks>
-        /// Teams default: 1000
-        /// WebChat default: 500
+        /// Teams and M365 Copilot default: 1000.
+        /// WebChat and DirectLine default: 500.
+        /// DeliveryMode.Stream default: 100.
+        /// Native transports such as Slack and A2A may use their own batching and pacing instead.
         /// </remarks>
         int Interval { get; set; }
 
         /// <summary>
-        /// The initial delay in milliseconds before the first intermediate message is sent.
-        /// Defaults to 250. Set to a small value in tests.
+        /// The initial Activity Protocol delay in milliseconds before the first intermediate message is sent.
+        /// Defaults to 250 for Activity Protocol responses. Native transports may ignore this setting.
         /// </summary>
         int InitialDelay { get; set; }
 
@@ -46,8 +55,8 @@ namespace Microsoft.Agents.Builder
         string StreamId { get; }
 
         /// <summary>
-        /// The time in milliseconds that EndStream or Reset wait.  After this period expires, the
-        /// final message will be sent.
+        /// The implementation-specific queue-drain timeout in milliseconds.
+        /// A timeout does not guarantee final delivery; a native transport may not safely replay an ambiguous send.
         /// </summary>
         int EndStreamTimeout { get; set; }
 
@@ -68,7 +77,7 @@ namespace Microsoft.Agents.Builder
         /// <summary>
         /// Gets or sets a value indicating whether the feedback loop functionality is enabled.
         /// </summary>
-        /// <remarks>This currently only works for Teams channels.</remarks>
+        /// <remarks>Supported channels include Teams and Slack.</remarks>
         public bool FeedbackLoopEnabled { get; set; }
 
         /// <summary>
@@ -90,7 +99,7 @@ namespace Microsoft.Agents.Builder
         SensitivityUsageInfo? SensitivityLabel { get; set; }
 
         /// <summary>
-        /// The citations for the response.
+        /// The citations for the response. Channels may render native citations or readable source links.
         /// </summary>
         List<ClientCitation>? Citations { get; }
 
@@ -134,8 +143,8 @@ namespace Microsoft.Agents.Builder
         /// Ends the stream by sending the final message to the client.
         /// </summary>
         /// <remarks>
-        /// Since the messages are sent on an interval, this call will block until all have been sent
-        /// before sending the final Message.
+        /// Waits for queued content and finalizes the response using the channel's native transport.
+        /// Activity Protocol implementations drain their interval queue before sending the final Message.
         /// </remarks>
         /// <returns>
         /// A Task representing the async operation. The result indicates the outcome of ending the stream,
@@ -178,7 +187,10 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         /// <param name="Message">Message that will be sent to the client indicating the stream was cancelled.</param>
         /// <param name="cancellationToken"></param>
-        /// <returns>True if the stream was successfully cancelled, false otherwise.</returns>
+        /// <returns>
+        /// <c>true</c> if the notification was sent; <c>false</c> if the response has already ended
+        /// or the channel is not currently streaming.
+        /// </returns>
         Task<bool> SendStreamTimedOutNotification(string Message, CancellationToken cancellationToken = default);
     }
 }
