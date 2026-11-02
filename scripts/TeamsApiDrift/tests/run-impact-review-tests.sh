@@ -77,6 +77,7 @@ dotnet() {
         return
     fi
 
+    [[ "$1" == "$REVIEW_COMMAND" ]] || return 93
     local output='' report='' count
     count=$(cat "$MOCK_STATE/calls")
     printf '%s\n' "$count" >> "$MOCK_STATE/validations"
@@ -106,21 +107,27 @@ dotnet() {
     fi
 
     # A valid blocked review must not be retried in search of a safe verdict.
-    printf '{"valid":true,"canProceed":false,"errors":[]}' > "$output"
+    printf '{"valid":true,"canProceed":false,"hasFindings":true,"errors":[]}' > "$output"
 }
 
 export -f copilot dotnet
 
+for review_kind in impact behavior; do
+export REVIEW_PREFIX="$review_kind-review"
+export REVIEW_INPUT="$review_kind-input.json"
+[[ "$review_kind" != impact ]] || export REVIEW_INPUT=review-input.json
+export REVIEW_COMMAND="validate-$review_kind-review"
+export REVIEW_INSTRUCTIONS=".github/instructions/teams-api-impact-review-instructions.md"
 for scenario in first-valid correction always-invalid agent-failure validator-failure invalid-stream; do
-    export MOCK_CASE=$scenario MOCK_STATE="$test_root/$scenario"
+    export MOCK_CASE=$scenario MOCK_STATE="$test_root/$review_kind-$scenario"
     export ARTIFACTS="$MOCK_STATE/artifacts" REVIEW_WORKSPACE="$MOCK_STATE/snapshot" TOOL=mock-project COPILOT_MODEL=test-model
     export GITHUB_STEP_SUMMARY="$MOCK_STATE/summary.md"
 
     mkdir -p "$ARTIFACTS" "$REVIEW_WORKSPACE"
-    printf 'stale successful response' > "$ARTIFACTS/impact-review.raw.json"
+    printf 'stale successful response' > "$ARTIFACTS/$REVIEW_PREFIX.raw.json"
 
     status=0
-    bash scripts/TeamsApiDrift/run-impact-review.sh > "$MOCK_STATE/log" 2>&1 || status=$?
+    bash "scripts/TeamsApiDrift/run-$review_kind-review.sh" > "$MOCK_STATE/log" 2>&1 || status=$?
 
     expected_calls=1 expected_status=0
 
@@ -148,12 +155,12 @@ for scenario in first-valid correction always-invalid agent-failure validator-fa
         exit 1
     }
 
-    [[ -s "$ARTIFACTS/impact-review-agent.json" ]]
+    [[ -s "$ARTIFACTS/$REVIEW_PREFIX-agent.json" ]]
     [[ "$(cat "$GITHUB_STEP_SUMMARY")" == *test-model* ]]
 
     if [[ "$scenario" == agent-failure || "$scenario" == invalid-stream ]]; then
-        [[ ! -s "$ARTIFACTS/impact-review.raw.json" ]]
-        [[ -s "$ARTIFACTS/impact-review.attempt-1.events.jsonl" ]]
+        [[ ! -s "$ARTIFACTS/$REVIEW_PREFIX.raw.json" ]]
+        [[ -s "$ARTIFACTS/$REVIEW_PREFIX.attempt-1.events.jsonl" ]]
         [[ ! -f "$MOCK_STATE/validations" ]]
     elif [[ "$scenario" == validator-failure ]]; then
         [[ "$(cat "$MOCK_STATE/validations")" == 1 ]]
@@ -162,14 +169,16 @@ for scenario in first-valid correction always-invalid agent-failure validator-fa
         [[ "$(wc -l < "$MOCK_STATE/validations" | tr -d ' ')" == "$expected_calls" ]]
 
         for ((i=1; i<=expected_calls; i++)); do
-            [[ -s "$ARTIFACTS/impact-review.attempt-$i.raw.json" && -s "$ARTIFACTS/impact-review.attempt-$i.validation.json" && -s "$ARTIFACTS/impact-review.attempt-$i.report.md" ]]
+            [[ -s "$ARTIFACTS/$REVIEW_PREFIX.attempt-$i.raw.json" && -s "$ARTIFACTS/$REVIEW_PREFIX.attempt-$i.validation.json" && -s "$ARTIFACTS/$REVIEW_PREFIX.attempt-$i.report.md" ]]
         done
     fi
 
     if [[ "$scenario" != agent-failure && "$scenario" != invalid-stream ]]; then
-        cmp "$ARTIFACTS/impact-review.raw.json" "$ARTIFACTS/impact-review.attempt-$expected_calls.raw.json"
-        [[ -s "$ARTIFACTS/impact-review.attempt-$expected_calls.raw.json.metadata.json" ]]
+        cmp "$ARTIFACTS/$REVIEW_PREFIX.raw.json" "$ARTIFACTS/$REVIEW_PREFIX.attempt-$expected_calls.raw.json"
+        [[ -s "$ARTIFACTS/$REVIEW_PREFIX.attempt-$expected_calls.raw.json.metadata.json" ]]
     fi
 
-    printf 'PASS: %s (%s attempts, exit %s)\n' "$scenario" "$expected_calls" "$status"
+    printf 'PASS: %s: %s (%s attempts, exit %s)\n' "$review_kind" "$scenario" "$expected_calls" "$status"
+done
+
 done
