@@ -22,8 +22,8 @@ public sealed record BehaviorValidation(int SchemaVersion, bool Valid, bool HasF
 
 public static class BehaviorReviewPipeline
 {
-    private static readonly HashSet<string> Extensions = new(StringComparer.OrdinalIgnoreCase)
-        { ".cs", ".csproj", ".props", ".targets", ".md", ".json", ".xml" };
+    private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        { ".cs", ".csproj", ".props", ".targets", ".md", ".json", ".slnx", ".xml" };
 
     private const string TeamsRepository = "https://github.com/microsoft/teams.net";
 
@@ -119,7 +119,7 @@ public static class BehaviorReviewPipeline
         return files;
     }
 
-    private static bool Supported(string path) => Extensions.Contains(Path.GetExtension(path)) &&
+    private static bool Supported(string path) => SupportedExtensions.Contains(Path.GetExtension(path)) &&
         Path.GetFileName(path) is not ("AGENTS.md" or "CLAUDE.md" or "SKILL.md");
 
     public static async Task<BehaviorInput> PrepareAsync(string repositoryRoot, string workspace, BehaviorCatalog catalog, string to)
