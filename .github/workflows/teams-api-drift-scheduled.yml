@@ -7,6 +7,15 @@ on:
     # Runs at 08:00 UTC every Monday (~1am PST)
     - cron: '0 8 * * 1'
   workflow_dispatch:
+    inputs:
+      from_version:
+        description: Baseline Microsoft.Teams.Apps version (defaults to the SDK declaration)
+        required: false
+        type: string
+      to_version:
+        description: Candidate Microsoft.Teams.Apps version (defaults to the latest listed stable release)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -55,11 +64,21 @@ jobs:
       - name: Resolve baseline and candidate
         id: resolve
         shell: bash
+        env:
+          DISPATCH_FROM_VERSION: ${{ inputs.from_version }}
+          DISPATCH_TO_VERSION: ${{ inputs.to_version }}
         run: |
           mkdir -p "$ARTIFACTS"
-          from=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)
-          # Resolve listed stable package metadata only; no API extraction or candidate build.
-          dotnet run --project "$TOOL" -c Release --no-build -- resolve-comparison --from "$from" --output "$ARTIFACTS/versions.json" 2> >(tee "$ARTIFACTS/version-resolution.log" >&2)
+          from=$DISPATCH_FROM_VERSION
+          if [[ -z "$from" ]]; then
+            from=$(dotnet run --project "$TOOL" -c Release --no-build -- resolve-version --props Directory.Packages.props)
+          fi
+          options=()
+          if [[ -n "$DISPATCH_TO_VERSION" ]]; then
+            options+=(--to "$DISPATCH_TO_VERSION")
+          fi
+          # An omitted candidate resolves listed stable package metadata only.
+          dotnet run --project "$TOOL" -c Release --no-build -- resolve-comparison --from "$from" "${options[@]}" --output "$ARTIFACTS/versions.json" 2> >(tee "$ARTIFACTS/version-resolution.log" >&2)
           echo "from=$(jq -r '.fromVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
           echo "to=$(jq -r '.toVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
           echo "same=$(jq -r '.sameVersion' "$ARTIFACTS/versions.json")" >> "$GITHUB_OUTPUT"
@@ -156,11 +175,19 @@ jobs:
         id: manifest
         if: always() && steps.collect.outcome == 'success' && steps.compare.outcome == 'success'
         continue-on-error: true
-        run: >-
-          dotnet run --project "$TOOL" -c Release --no-build -- validate-usage
-          --manifest "$MANIFEST" --collected "$ARTIFACTS/collected-usage.json"
-          --api-model "$ARTIFACTS/microsoft-teams-apps-before.api.json"
-          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json"
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_FROM_VERSION: ${{ inputs.from_version }}
+        run: |
+          options=()
+          if [[ "$EVENT_NAME" == workflow_dispatch && -n "$DISPATCH_FROM_VERSION" ]]; then
+            options+=(--skip-manifest-version-check)
+          fi
+          dotnet run --project "$TOOL" -c Release --no-build -- validate-usage \
+          --manifest "$MANIFEST" --collected "$ARTIFACTS/collected-usage.json" \
+          --api-model "$ARTIFACTS/microsoft-teams-apps-before.api.json" \
+          --repository-root "$GITHUB_WORKSPACE" --output "$ARTIFACTS/usage-validation.json" \
+          "${options[@]}"
 
       - name: Write independent check outcomes
         id: checks
@@ -191,7 +218,12 @@ jobs:
         shell: bash
         run: |
           failures=()
-          check() { printf '%-30s %s\n' "$1" "$2"; [[ "$2" == success ]] || failures+=("$1"); }
+          printf '## Deterministic API checks\n\n| Check | Outcome |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          check() {
+            printf '%-30s %s\n' "$1" "$2"
+            printf '| %s | %s |\n' "$1" "$2" >> "$GITHUB_STEP_SUMMARY"
+            [[ "$2" == success ]] || failures+=("$1")
+          }
           check tool "${{ steps.tool.outcome }}"
           check compare "${{ steps.compare.outcome }}"
           check build "${{ steps.build.outcome }}"
@@ -328,16 +360,104 @@ jobs:
             jq -r '.summary | "Safe: \(.safe) | Needs adaptation: \(.needsAdaptation) | Needs human review: \(.needsHumanReview) | Feature adoption (nonblocking): recommend \(.adoptionRecommendations // 0) | not needed \(.adoptionNotNeeded // 0) | product decision \(.adoptionNeedsProductDecision // 0)"' "$ARTIFACTS/impact-review-validation.json"
             jq -r '.decisions[] | select(.verdict != "safe") | "\(.changeId): \(.verdict) — \(.reason)"' "$ARTIFACTS/impact-review-validation.json"
             jq -r '.decisions[] | select(.adoption != null) | "\(.changeId): adoption \(.adoption.outcome) (nonblocking) — \(.adoption.reason)"' "$ARTIFACTS/impact-review-validation.json"
-            [[ "$(jq -r '.canProceed' "$ARTIFACTS/impact-review-validation.json")" == true ]] || failures+=(impact-policy)
+            # canProceed includes upstream checks and review findings; job status reflects only this job's steps.
           else
             failures+=(missing-impact-review)
           fi
           if (( ${#failures[@]} )); then printf 'Summary: Implementation review FAILED: %s\n' "${failures[*]}"; exit 1; fi
           echo 'Summary: Implementation review passed.'
 
+  behavior_analysis:
+    name: Analyze outbound Teams behaviors
+    needs: versions
+    if: needs.versions.outputs.same == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      copilot-requests: write
+    env:
+      ARTIFACTS: artifacts/teams-api-drift/behavior
+      REVIEW_WORKSPACE: ${{ github.workspace }}/.teams-behavior-review
+      COPILOT_MODEL: ${{ vars.TEAMS_API_REVIEW_MODEL || 'gpt-5.3-codex' }}
+      COPILOT_CLI_VERSION: '1.0.101'
+      COPILOT_AUTO_UPDATE: 'false'
+    outputs:
+      artifact_id: ${{ steps.stage_artifact.outputs.artifact-id }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Build behavior review tool
+        run: dotnet build "$TOOL" -c Release
+
+      - name: Prepare release-matched behavior sources
+        env:
+          TO_VERSION: ${{ needs.versions.outputs.to }}
+        shell: bash
+        run: |
+          mkdir -p "$ARTIFACTS"
+          dotnet run --project "$TOOL" -c Release --no-build -- prepare-behavior-review \
+            --to "$TO_VERSION" \
+            --catalog scripts/TeamsApiDrift/behaviors.json \
+            --repository-root "$GITHUB_WORKSPACE" --workspace "$REVIEW_WORKSPACE" \
+            --output "$ARTIFACTS/behavior-input.json" 2>&1 | tee "$ARTIFACTS/preparation.log"
+
+      - name: Set up Node for behavior reviewer
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
+      - name: Install behavior review agent
+        timeout-minutes: 5
+        run: npm install --global "@github/copilot@$COPILOT_CLI_VERSION"
+
+      - name: Review outbound wire behaviors
+        timeout-minutes: 20
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COPILOT_HOME: ${{ runner.temp }}/teams-behavior-copilot
+        run: bash scripts/TeamsApiDrift/run-behavior-review.sh
+
+      - name: Validate and render advisory behavior report
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "$ARTIFACTS/behavior-input.json" ]]; then
+            status=0
+            dotnet run --project "$TOOL" -c Release --no-build -- validate-behavior-review \
+              --input "$ARTIFACTS/behavior-input.json" --review "$ARTIFACTS/behavior-review.raw.json" \
+              --workspace "$REVIEW_WORKSPACE" --output "$ARTIFACTS/behavior-review-validation.json" \
+              --report "$ARTIFACTS/behavior-report.md" || status=$?
+            if [[ -f "$ARTIFACTS/behavior-report.md" ]]; then cat "$ARTIFACTS/behavior-report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+            exit "$status"
+          else
+            echo 'Behavior preparation did not complete; see preparation diagnostics.' >&2
+            exit 1
+          fi
+
+      - name: Transfer behavior diagnostics
+        id: stage_artifact
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: teams-api-drift-intermediate-${{ github.run_id }}-${{ github.run_attempt }}-behavior
+          path: artifacts/teams-api-drift/behavior
+          retention-days: 21
+          if-no-files-found: error
+
   publish:
     name: Publish report and final artifacts
-    needs: [versions, deterministic, assessment]
+    needs: [versions, deterministic, assessment, behavior_analysis]
     # Still publish diagnostics if version resolution or any later job failed.
     if: always() && needs.versions.outputs.same != 'true'
     runs-on: ubuntu-latest
@@ -372,6 +492,15 @@ jobs:
         with:
           artifact-ids: ${{ needs.assessment.outputs.artifact_id }}
           path: artifacts/teams-api-drift
+
+      - name: Collect behavior diagnostics
+        id: download_behavior
+        if: always() && needs.behavior_analysis.outputs.artifact_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.behavior_analysis.outputs.artifact_id }}
+          path: artifacts/teams-api-drift/behavior
 
       - name: Prepare final report and pipeline diagnostics
         id: report
@@ -420,17 +549,52 @@ jobs:
             fi
             printf '\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL"
           } >> "$report_path"
-          cat "$report_path" >> "$GITHUB_STEP_SUMMARY"
+          behavior_findings=false
+          if [[ -f "$ARTIFACTS/behavior/behavior-report.md" ]]; then
+            printf '\n' >> "$report_path"
+            cat "$ARTIFACTS/behavior/behavior-report.md" >> "$report_path"
+          else
+            printf '\n## Teams specific behavior analysis\n\nNo validated behavior report was produced; see job diagnostics.\n' >> "$report_path"
+          fi
+          if [[ -f "$ARTIFACTS/behavior/behavior-review-validation.json" ]]; then
+            if jq -e '.schemaVersion == 1 and (.valid | type == "boolean") and (.hasFindings | type == "boolean")' "$ARTIFACTS/behavior/behavior-review-validation.json" > /dev/null; then
+              behavior_findings=$(jq -r '.hasFindings or (.valid | not)' "$ARTIFACTS/behavior/behavior-review-validation.json")
+            else
+              echo 'Invalid behavior validation artifact.' >&2
+              exit 1
+            fi
+          fi
+          # Keep operational checks in artifacts and job summaries, not in the issue.
+          awk '
+            /^(```+|~~~+)/ {
+              if (!fence) { fence=substr($0, 1, 1) }
+              else if (substr($0, 1, 1) == fence) { fence="" }
+              if (!omit) print
+              next
+            }
+            !fence && (/^# / || /^## /) {
+              omit=($0 ~ /^## (Teams wire-behavior summary|Independent check outcomes|Workflow job outcomes|Recorded independent checks)[[:space:]]*$/)
+            }
+            !omit { print }
+          ' "$report_path" > "$ARTIFACTS/issue-report.md"
+          {
+            printf '## Report publication\n\nThe combined report is included in the final artifact and the review issue when publication succeeds.\n\n'
+            jq -r 'to_entries[] | select((.key | startswith("download_")) and .value.outcome == "failure") | "- Evidence download failed: \(.key)"' <<< "$DOWNLOAD_RESULTS"
+            for error in "${errors[@]}"; do printf -- '- %s\n' "$error"; done
+            printf '\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL"
+          } >> "$GITHUB_STEP_SUMMARY"
           publish_issue=$(jq -r --argjson jobs "$JOB_RESULTS" \
             'any($jobs[]; .result != "success") or . == null or (.changes | length) > 0' <<< "$comparison")
+          [[ "$behavior_findings" == true ]] && publish_issue=true
           printf 'publish_issue=%s\nfrom=%s\nto=%s\n' "$publish_issue" "$from" "$to" >> "$GITHUB_OUTPUT"
           printf 'Summary: Prepared final report; deterministic and assessment outcomes preserved. Package versions: %s -> %s.\n' "$from" "$to"
 
       - name: Create or update implementation review issue
+        id: publish_issue
         if: always() && steps.report.outcome == 'success' && steps.report.outputs.publish_issue == 'true'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          REPORT_PATH: artifacts/teams-api-drift/impact-report.md
+          REPORT_PATH: artifacts/teams-api-drift/issue-report.md
           FROM_VERSION: ${{ steps.report.outputs.from }}
           TO_VERSION: ${{ steps.report.outputs.to }}
         with:
@@ -444,13 +608,33 @@ jobs:
             const { owner, repo } = context.repo;
             const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
             const report = fs.readFileSync(process.env.REPORT_PATH, 'utf8');
-            const body = `${marker}\n${report.slice(0, 55000)}\n\n[Full report and artifacts](${runUrl})`;
+            // Bound each analysis separately so both remain visible in large issues.
+            const shorten = (text, limit) => {
+              if (text.length <= limit) return text;
+              let excerpt = text.slice(0, limit);
+              excerpt = excerpt.slice(0, excerpt.lastIndexOf('\n'));
+              const fences = excerpt.match(/^```/gm) || [];
+              if (fences.length % 2) excerpt += '\n```';
+              return excerpt + '\n\n_Report excerpt; see the complete artifact for remaining details._\n';
+            };
+            const behaviorIndex = report.indexOf('\n## Teams specific behavior analysis');
+            let excerpt;
+            if (report.length > 55000 && behaviorIndex >= 0) {
+              const impact = report.slice(0, behaviorIndex);
+              const behavior = report.slice(behaviorIndex);
+              const behaviorLimit = Math.min(behavior.length, 55000 - Math.min(impact.length, 30000));
+              excerpt = shorten(impact, 55000 - behaviorLimit) + '\n' + shorten(behavior, behaviorLimit);
+            } else {
+              excerpt = shorten(report, 55000);
+            }
+            const body = `${marker}\n${excerpt}\n\n[Full report and artifacts](${runUrl})`;
             const title = `Microsoft.Teams.Apps implementation review: ${process.env.FROM_VERSION} → ${process.env.TO_VERSION}`;
             const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
             const existing = issues.find(issue => !issue.pull_request && issue.body?.includes(marker));
             const response = existing
               ? await github.rest.issues.update({ owner, repo, issue_number: existing.number, title, body })
               : await github.rest.issues.create({ owner, repo, title, body });
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n[Published review issue](${response.data.html_url})\n`);
             console.log(`Summary: Published implementation review: ${response.data.html_url}`);
 
       - name: Publish complete comparison and review artifacts
@@ -469,6 +653,10 @@ jobs:
         env:
           STEP_RESULTS: ${{ toJSON(steps) }}
         run: |
+          {
+            printf '\n### Publication steps\n\n| Step | Outcome |\n| --- | --- |\n'
+            jq -r 'to_entries[] | "| \(.key) | \(.value.outcome) |"' <<< "$STEP_RESULTS"
+          } >> "$GITHUB_STEP_SUMMARY"
           mapfile -t failures < <(jq -r 'to_entries[] | select(.value.outcome == "failure") | .key' <<< "$STEP_RESULTS")
           if (( ${#failures[@]} )); then
             printf 'Publication requires attention: %s\n' "${failures[*]}" >&2

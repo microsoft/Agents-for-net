@@ -302,6 +302,27 @@ public sealed class DriftPipelineTests
         Assert.True(result.Valid);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CustomBaselineSkipsOnlyVersionValidation(bool invalidSymbol)
+    {
+        var symbol = invalidSymbol ? "Contoso.Missing" : "Contoso.Used";
+        var manifest = Manifest(new UsageEntry { UpstreamSymbol = symbol, Exposure = "internal-only" });
+        var collected = new CollectedUsage(1, PackageConstants.PackageId, "test.dll", [new(symbol, [], "internal-only")]);
+        var model = Model("2.0.0", Symbol("Contoso.Used"), Symbol("Contoso.Used"));
+
+        var result = UsageValidator.Validate(manifest, collected, model, Path.GetTempPath(), skipVersionCheck: true);
+
+        Assert.Equal(!invalidSymbol, result.Valid);
+        Assert.Contains("Version check skipped for custom baseline", Assert.Single(result.Warnings));
+        Assert.DoesNotContain(result.Errors, error => error.Contains("does not match", StringComparison.Ordinal));
+        if (invalidSymbol)
+        {
+            Assert.Contains(result.Errors, error => error.Contains("Manifest symbol does not exist", StringComparison.Ordinal));
+        }
+    }
+
     private static ApiMemberModel Member(string name) => new($"method:{name}:System.Void {name}()", name, "method", "public", $"System.Void {name}()", false);
     private static string TemporaryDirectory()
     {
