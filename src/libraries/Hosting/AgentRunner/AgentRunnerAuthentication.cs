@@ -72,9 +72,17 @@ internal static class AgentRunnerAuthentication
                     return EntraScheme;
                 }
 
-                // The unvalidated issuer selects a validator; it never grants access.
-                return new JsonWebToken(parts[1]).Issuer == AuthenticationConstants.BotFrameworkTokenIssuer
-                    ? BotFrameworkScheme : EntraScheme;
+                try
+                {
+                    // The unvalidated issuer selects a validator; it never grants access.
+                    return new JsonWebToken(parts[1]).Issuer == AuthenticationConstants.BotFrameworkTokenIssuer
+                        ? BotFrameworkScheme : EntraScheme;
+                }
+                catch (ArgumentException)
+                {
+                    // CanReadToken checks framing; let the JWT validator reject invalid JSON.
+                    return EntraScheme;
+                }
             };
         })
         .AddJwtBearer(BotFrameworkScheme, options => Configure(

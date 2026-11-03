@@ -4,7 +4,7 @@
 using System;
 using Microsoft.Agents.Hosting.AgentRunner;
 
-var parsed = AgentRunnerArgs.Parse(args, out var errors);
+var parsed = AgentRunnerArgs.Parse(args, out var errors, out var exitCode);
 if (parsed is null)
 {
     foreach (var error in errors)
@@ -12,7 +12,7 @@ if (parsed is null)
         Console.Error.WriteLine(error);
     }
 
-    return 1;
+    return exitCode;
 }
 
 await using var app = AgentRunnerHost.BuildApp(parsed);

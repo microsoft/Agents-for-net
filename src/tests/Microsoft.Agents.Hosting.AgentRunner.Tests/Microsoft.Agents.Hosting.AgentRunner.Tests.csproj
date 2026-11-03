@@ -15,6 +15,7 @@
     </PackageReference>
     <ProjectReference Include="..\..\libraries\Hosting\AgentRunner\Microsoft.Agents.Hosting.AgentRunner.csproj" />
     <ProjectReference Include="Fixtures\Agent\Agent.csproj" ReferenceOutputAssembly="false" />
+    <AssemblyMetadata Include="AgentRunnerProjectPath" Value="$(MSBuildProjectDirectory)\..\..\libraries\Hosting\AgentRunner\Microsoft.Agents.Hosting.AgentRunner.csproj" />
     <Using Include="Xunit" />
   </ItemGroup>
   <Target Name="CopyAgentFixture" AfterTargets="Build">

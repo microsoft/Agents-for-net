@@ -9,9 +9,10 @@ public class AgentRunnerArgsTests
     public void Parse_ValidArguments_PreservesPortAndPath()
     {
         var parsed = AgentRunnerArgs.Parse(
-            ["--port", "3978", "--agent-assembly", @"C:\agent bundle\agent.dll"], out var errors);
+            ["--port", "3978", "--agent-assembly", @"C:\agent bundle\agent.dll"], out var errors, out var exitCode);
 
         Assert.Empty(errors);
+        Assert.Equal(0, exitCode);
         Assert.Equal(new AgentRunnerArgs(3978, @"C:\agent bundle\agent.dll"), parsed);
     }
 
@@ -25,7 +26,8 @@ public class AgentRunnerArgsTests
     [InlineData("--port", "3978", "--agent-assembly", "agent.dll", "--unexpected")]
     public void Parse_InvalidArguments_ReturnsErrors(params string[] args)
     {
-        Assert.Null(AgentRunnerArgs.Parse(args, out var errors));
+        Assert.Null(AgentRunnerArgs.Parse(args, out var errors, out var exitCode));
         Assert.NotEmpty(errors);
+        Assert.Equal(1, exitCode);
     }
 }

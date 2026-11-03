@@ -112,6 +112,8 @@ public class AgentRunnerHostTests
     [Theory]
     [InlineData("missing")]
     [InlineData("malformed")]
+    [InlineData("malformed-json-header")]
+    [InlineData("malformed-json-payload")]
     [InlineData("unsigned")]
     [InlineData("wrong-audience")]
     [InlineData("wrong-tenant")]
@@ -128,9 +130,12 @@ public class AgentRunnerHostTests
         {
             "missing" => null,
             "malformed" => "not-a-token",
+            "malformed-json-header" => "bm90LWpzb24.e30.c2ln",
+            "malformed-json-payload" => "eyJhbGciOiJSUzI1NiJ9.bm90LWpzb24.c2ln",
             "unsigned" => new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
             {
-                Issuer = TenantIssuer, Audience = ClientId,
+                Issuer = TenantIssuer,
+                Audience = ClientId,
             }),
             "wrong-audience" => CreateToken(key, TenantIssuer, "44444444-4444-4444-4444-444444444444"),
             "wrong-tenant" => CreateToken(key, ExtraIssuer),

@@ -1,18 +1,24 @@
 # Agent Runner
 
-The `Microsoft.Agents.Hosting.AgentRunner` .NET tool hosts an Agents SDK assembly
-without requiring that assembly to supply its own executable entry point.
-It requires the .NET 10 **ASP.NET Core runtime**.
+The `Microsoft.Agents.Hosting.AgentRunner` .NET tool hosts an Agents SDK
+application using shared service registration. Develop and test the application
+with its normal entry point; use AgentRunner as the entry point in the container.
+The runner requires the .NET 10 **ASP.NET Core runtime**.
+
+Install an exact published version separately from the agent application:
 
 ```powershell
-dotnet tool install Microsoft.Agents.Hosting.AgentRunner --version <published-version> --tool-path .\runner
-.\runner\agent-runner --agent-assembly C:\agents\MyAgent.dll --port 3978
+dotnet tool install Microsoft.Agents.Hosting.AgentRunner --version PUBLISHED_VERSION --tool-path .\runner
 ```
 
-The customer assembly must expose this exact contract in the global namespace:
+Do not add this package as an application `PackageReference`; NuGet rejects a
+.NET tool as a regular project dependency. Installing the tool independently
+leaves the application's SDK references and normal publish output unchanged.
+
+The application must expose this exact contract in the global namespace:
 
 ```csharp
-public static class Program
+public partial class Program
 {
     public static void RegisterServices(WebApplicationBuilder builder)
     {
@@ -23,7 +29,26 @@ public static class Program
 }
 ```
 
-Publish the customer class library with its `.deps.json` and private dependencies.
+Call `Program.RegisterServices(builder)` from the application's existing entry
+point after creating its `WebApplicationBuilder`. Keep its normal middleware,
+endpoints, and `app.Run()` for local development. Include the application's other
+required service registrations in the shared method. AgentRunner invokes this
+method instead of executing the application's entry point and supplies its own
+HTTP pipeline.
+
+Publish the application with its `.deps.json` and private dependencies:
+
+```powershell
+dotnet publish .\MyAgent.csproj -c Release -o .\publish
+.\runner\agent-runner --agent-assembly .\publish\MyAgent.dll --port 3978
+```
+
+Use the second command as the container's entry point, with paths appropriate
+to the image. Install the tool on the container's OS/architecture so the installer
+generates the appropriate command launcher. The command starts the managed runner
+DLL; a native executable included by a platform build only works on its matching
+platform.
+
 Use SDK dependencies compatible with the runner's SDK release. The runner shares
 `Microsoft.Agents.*`, `Microsoft.AspNetCore.*`, `Microsoft.Extensions.*`,
 `Microsoft.IdentityModel.*` and `System.IdentityModel.Tokens.Jwt`
@@ -50,10 +75,12 @@ issuer values extend trust; configure them only through trusted deployment polic
 Metadata/signing-key discovery requires access to the relevant Microsoft endpoints.
 Customer registration must provide `IAgent` and `IAgentHttpAdapter`.
 
-For container builds, acquire an **exact published package version at build time**
-and copy the entire tool payload (`tools/net10.0/any`) into the image. Start its
-`Microsoft.Agents.Hosting.AgentRunner.dll` with `dotnet`. Do not copy just the DLL,
-download packages at process startup, or depend on a global tool cache.
+For container builds, install an **exact published package version at image build
+time** with `--tool-path`, not at process startup. Include the application's
+publish output and the complete tool installation, including its hidden `.store`
+directory, in the image. Do not copy just the launcher or depend on a global tool
+cache. The runner's existing loopback-only listener and authentication behavior
+are unchanged; retain the deployment's existing proxy/network arrangement.
 
 Local development:
 

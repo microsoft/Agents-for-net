@@ -9,6 +9,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>Hosts an Agents SDK registration-contract assembly on an authenticated loopback endpoint.</Description>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackAgentRunnerExecutable</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
   <Import Project="..\..\..\Build.Common.core.props" />
   <ItemGroup>
@@ -19,4 +20,11 @@
     <InternalsVisibleTo Include="Microsoft.Agents.Hosting.AgentRunner.Tests" />
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+  <Target Name="PackAgentRunnerExecutable" DependsOnTargets="PackTool"
+          Condition="'$(PackAsTool)' == 'true' and '$(UseAppHost)' == 'true' and '$(RuntimeIdentifier)' == ''">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(PublishDir)$(AssemblyName)$(_NativeExecutableExtension)"
+                              PackagePath="tools\$(TargetFramework)\any\" />
+    </ItemGroup>
+  </Target>
 </Project>
