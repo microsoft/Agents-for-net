@@ -33,6 +33,7 @@
     <Project Path="libraries/Extensions/Microsoft.Agents.Extensions.Teams/Microsoft.Agents.Extensions.Teams.csproj" />
   </Folder>
   <Folder Name="/Libraries/Hosting/">
+    <Project Path="libraries/Hosting/AgentRunner/Microsoft.Agents.Hosting.AgentRunner.csproj" />
     <Project Path="libraries/Hosting/AspNetCore/Microsoft.Agents.Hosting.AspNetCore.csproj" />
     <Project Path="libraries/Hosting/DirectLine.NamedPipes/Microsoft.Agents.Hosting.DirectLine.NamedPipes.csproj" />
   </Folder>
@@ -114,6 +115,7 @@
     <Project Path="tests/Microsoft.Agents.Extensions.Slack.Tests/Microsoft.Agents.Extensions.Slack.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Extensions.Teams.Tests/Microsoft.Agents.Extensions.Teams.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Hosting.AspNetCore/Microsoft.Agents.Hosting.AspNetCore.Tests.csproj" />
+    <Project Path="tests/Microsoft.Agents.Hosting.AgentRunner.Tests/Microsoft.Agents.Hosting.AgentRunner.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Hosting.DirectLine.NamedPipes/Microsoft.Agents.Hosting.DirectLine.NamedPipes.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Model.Tests/Microsoft.Agents.Model.Tests.csproj" />
     <Project Path="tests/Microsoft.Agents.Samples.A2A.Tests/Microsoft.Agents.Samples.A2A.Tests.csproj" />
