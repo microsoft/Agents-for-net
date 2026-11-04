@@ -155,5 +155,8 @@
     <!-- A2A -->
     <PackageVersion Include="A2A.AspNetCore" Version="1.0.0-preview2" />
     <PackageVersion Include="A2A" Version="1.0.0-preview2" />
+    <!-- ITK-only protocol instruction handling -->
+    <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
+    <PackageVersion Include="Grpc.Tools" Version="2.84.0" />
   </ItemGroup>
 </Project>
