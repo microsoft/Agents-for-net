@@ -182,7 +182,7 @@ sequenceDiagram
 - **StreamId** — Teams assigns it from first response; WebChat/DirectLine/DeliveryModes.Stream SSE uses a pre-generated GUID set on every outgoing `Activity.Id`.
 - **EndStreamTimeout** — defaults to 2 minutes. If queue doesn't drain in time, returns `Timeout`. This does not guarantee that an already pending transport send has completed or been canceled.
 - **ResetAsync** — allows reusing `StreamingResponse` for multiple streams in the same turn (waits for current stream to end first).
-- **Client timeout fallback** — a Teams timeout error switches to non-streaming mode and updates the existing stream activity with the final message. The M365 Copilot proactive timeout path terminates the visible stream and later sends the final content as a normal message.
+- **Client timeout fallback** — a Teams timeout error switches to non-streaming mode and updates the existing stream activity with the final message. The M365 Copilot proactive timeout path later sends the final content as a normal message even if a timeout notification fails. A reset invalidates the previous stream's pending fallback.
 - **M365 keep-alive clock** — the 35-second check is measured from stream start or the last informative update while the queue is empty. Ordinary text chunks and intermediate text sends do not reset this clock.
 - **No final payload means no send** — on a non-streaming channel, `EndStreamAsync` sends only when text, a `FinalMessage`, or prior updates exist.
 

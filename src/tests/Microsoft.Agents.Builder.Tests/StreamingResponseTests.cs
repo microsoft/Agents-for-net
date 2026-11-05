@@ -1407,6 +1407,143 @@ namespace Microsoft.Agents.Builder.Tests
             }
         }
 
+        [Theory]
+        [InlineData(false, 1)]
+        [InlineData(true, 1)]
+        [InlineData(true, 2)]
+        public async Task M365Copilot_FailedTimeoutNotification_PreservesFinalResponse(
+            bool bufferedText, int failedNotification)
+        {
+            const string timeoutMessage = "Timeout notification.";
+            var responses = new List<IActivity>();
+            var notificationAttempts = 0;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Text.Contains(timeoutMessage))
+                    {
+                        notificationAttempts++;
+                        if (notificationAttempts == failedNotification)
+                        {
+                            return Task.FromException<ResourceResponse[]>(new System.IO.IOException("Notification failed."));
+                        }
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            context.StreamingResponse.StreamingTakingTooLongMessage = timeoutMessage;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Starting.");
+            try
+            {
+                if (bufferedText)
+                {
+                    context.StreamingResponse.QueueTextChunk("Buffered ");
+                }
+                SetPrivateField(context.StreamingResponse, "M365StreamingTimeout", TimeSpan.Zero);
+                var callback = InvokeTimerCallback(
+                    context.StreamingResponse, GetPrivateField<Timer>(context.StreamingResponse, "_timer"));
+                await callback.Completed.Task;
+
+                Assert.Empty(callback.Exceptions);
+                Assert.Equal(bufferedText ? 2 : 1, notificationAttempts);
+                Assert.False(context.StreamingResponse.IsStreamingChannel);
+                context.StreamingResponse.QueueTextChunk("completed.");
+                var result = await context.StreamingResponse.EndStreamAsync();
+
+                Assert.Equal(StreamingResponseResult.Success, result);
+                Assert.Equal(bufferedText ? "Buffered completed." : "completed.", responses.Last().Text);
+                Assert.Null(responses.Last().GetStreamingEntity());
+            }
+            finally
+            {
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task M365Copilot_ResetDuringFailedTimeoutNotification_PreservesReplacement(bool startReplacement)
+        {
+            const string timeoutMessage = "Timeout notification.";
+            var pendingNotification = new TaskCompletionSource<ResourceResponse[]>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var notificationStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var responses = new List<IActivity>();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Text.Contains(timeoutMessage))
+                    {
+                        notificationStarted.TrySetResult(true);
+                        return pendingNotification.Task;
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.InitialDelay = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            context.StreamingResponse.StreamingTakingTooLongMessage = timeoutMessage;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Starting.");
+            SetPrivateField(context.StreamingResponse, "M365StreamingTimeout", TimeSpan.Zero);
+            var callback = InvokeTimerCallback(
+                context.StreamingResponse, GetPrivateField<Timer>(context.StreamingResponse, "_timer"));
+            try
+            {
+                await notificationStarted.Task;
+                await context.StreamingResponse.ResetAsync();
+                if (startReplacement)
+                {
+                    context.StreamingResponse.QueueTextChunk("Replacement.");
+                }
+
+                pendingNotification.SetException(new System.IO.IOException("Old notification failed."));
+                await callback.Completed.Task;
+
+                Assert.Empty(callback.Exceptions);
+                Assert.True(context.StreamingResponse.IsStreamingChannel);
+                Assert.Equal(startReplacement, context.StreamingResponse.IsStreamStarted());
+                SetPrivateField(context.StreamingResponse, "M365StreamingTimeout", TimeSpan.FromMinutes(10));
+                if (!startReplacement)
+                {
+                    context.StreamingResponse.QueueTextChunk("Replacement.");
+                }
+                var replacementCallback = InvokeTimerCallback(
+                    context.StreamingResponse, GetPrivateField<Timer>(context.StreamingResponse, "_timer"));
+                await replacementCallback.Completed.Task;
+                Assert.Empty(replacementCallback.Exceptions);
+                Assert.Equal("Replacement.", responses.Last().Text);
+                AssertTyping(responses.Last());
+            }
+            finally
+            {
+                pendingNotification.TrySetException(new System.IO.IOException("Old notification failed."));
+                await callback.Completed.Task;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
         [Fact]
         public async Task ResetAsync_ClearsAllState()
         {

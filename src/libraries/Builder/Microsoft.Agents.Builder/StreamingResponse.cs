@@ -51,6 +51,7 @@ namespace Microsoft.Agents.Builder
         private bool _ended = false;
         private Timer _timer;
         private Timer _processingTimer;
+        private object _streamLifetime = new();
         private bool _messageUpdated = false;
         private bool _isTeamsChannel;
         private bool _canceled;
@@ -623,6 +624,7 @@ namespace Microsoft.Agents.Builder
             lock (this)
             {
                 StopStream();
+                _streamLifetime = new object();
                 _ended = false;
                 _queue.Clear();
                 FinalMessage = null;
@@ -815,12 +817,13 @@ namespace Microsoft.Agents.Builder
         /// </description></item>
         /// <item><description>Dequeues and sends the next buffered activity (if any). If the queue is empty and the stream has ended, it signals completion and stops the timer; otherwise it shortens the interval to pick up the next chunk sooner.</description></item>
         /// </list>
-        /// Because the timer runs on a background thread, exceptions are handled within <see cref="Microsoft.Agents.Builder.StreamingResponse.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.Timer, System.Threading.CancellationToken)"/> rather than propagated, and awaits are performed outside of any <c>lock</c>.
+        /// Because the timer runs on a background thread, exceptions are handled within <see cref="Microsoft.Agents.Builder.StreamingResponse.SendActivityAsync(Microsoft.Agents.Core.Models.IActivity, System.Threading.Timer, System.Object, System.Threading.CancellationToken)"/> rather than propagated, and awaits are performed outside of any <c>lock</c>.
         /// </remarks>
         /// <param name="state">The <see cref="System.Threading.Timer"/> that scheduled this callback.</param>
         private async void SendIntermediateMessage(object state)
         {
             var timer = state as Timer;
+            object streamLifetime;
             lock (this)
             {
                 if (timer == null || !ReferenceEquals(timer, _timer) ||
@@ -829,6 +832,7 @@ namespace Microsoft.Agents.Builder
                     return;
                 }
                 _processingTimer = timer;
+                streamLifetime = _streamLifetime;
             }
             int? nextInterval = null;
             try
@@ -863,12 +867,13 @@ namespace Microsoft.Agents.Builder
                 {
                     foreach (var activityToSend in timedOutActivitiesForBizChat)
                     {
-                        await SendActivityAsync(activityToSend, timer, CancellationToken.None).ConfigureAwait(false);
+                        await SendActivityAsync(activityToSend, timer, streamLifetime, CancellationToken.None).ConfigureAwait(false);
                     }
 
                     lock (this)
                     {
-                        if (!ReferenceEquals(timer, _timer))
+                        // A failed notification can stop this timer without replacing the stream.
+                        if (!ReferenceEquals(streamLifetime, _streamLifetime))
                         {
                             return;
                         }
@@ -943,15 +948,24 @@ namespace Microsoft.Agents.Builder
         }
 
         private Task SendActivityAsync(IActivity activity, CancellationToken cancellationToken)
-            => SendActivityAsync(activity, null, cancellationToken);
+            => SendActivityAsync(activity, null, null, cancellationToken);
 
-        private async Task SendActivityAsync(IActivity activity, Timer timer, CancellationToken cancellationToken)
+        private Task SendActivityAsync(IActivity activity, Timer timer, CancellationToken cancellationToken)
+            => SendActivityAsync(activity, timer, null, cancellationToken);
+
+        private bool IsCurrentSend(Timer timer, object streamLifetime) =>
+            streamLifetime != null
+                ? ReferenceEquals(streamLifetime, _streamLifetime)
+                : timer == null || ReferenceEquals(timer, _timer);
+
+        private async Task SendActivityAsync(
+            IActivity activity, Timer timer, object streamLifetime, CancellationToken cancellationToken)
         {
             if (activity != null)
             {
                 lock (this)
                 {
-                    if (timer != null && !ReferenceEquals(timer, _timer))
+                    if (!IsCurrentSend(timer, streamLifetime))
                     {
                         return;
                     }
@@ -969,7 +983,7 @@ namespace Microsoft.Agents.Builder
                     var response = await _context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
                     lock (this)
                     {
-                        if (timer != null && !ReferenceEquals(timer, _timer))
+                        if (!IsCurrentSend(timer, streamLifetime))
                         {
                             return;
                         }
@@ -1051,7 +1065,7 @@ namespace Microsoft.Agents.Builder
 
                     lock (this)
                     {
-                        if (timer != null && !ReferenceEquals(timer, _timer))
+                        if (!IsCurrentSend(timer, streamLifetime))
                         {
                             return;
                         }
@@ -1068,7 +1082,7 @@ namespace Microsoft.Agents.Builder
                     }
                     lock (this)
                     {
-                        if (timer != null && !ReferenceEquals(timer, _timer))
+                        if (!IsCurrentSend(timer, streamLifetime))
                         {
                             return;
                         }
