@@ -227,23 +227,40 @@ public sealed class ContosoStreamingResponse : StreamingResponseBase
         IActivity activity,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(StreamId))
+        object lifetime;
+        bool firstSend;
+        Task<ResourceResponse> sendTask;
+        lock (this)
         {
-            var response = await _context.SendActivityAsync(
-                activity, cancellationToken).ConfigureAwait(false);
-            if (string.IsNullOrEmpty(response.Id))
+            lifetime = StreamLifetime;
+            firstSend = string.IsNullOrEmpty(StreamId);
+            if (firstSend)
             {
-                throw new InvalidOperationException(
-                    "Contoso streaming requires an activity ID from the first send.");
+                sendTask = _context.SendActivityAsync(activity, cancellationToken);
             }
-
-            StreamId = response.Id;
+            else
+            {
+                activity.Id = StreamId;
+                sendTask = _context.UpdateActivityAsync(activity, cancellationToken);
+            }
         }
-        else
+        var response = await sendTask.ConfigureAwait(false);
+
+        lock (this)
         {
-            activity.Id = StreamId;
-            await _context.UpdateActivityAsync(
-                activity, cancellationToken).ConfigureAwait(false);
+            if (!IsCurrentStream(lifetime))
+            {
+                return;
+            }
+            if (firstSend)
+            {
+                if (string.IsNullOrEmpty(response.Id))
+                {
+                    throw new InvalidOperationException(
+                        "Contoso streaming requires an activity ID from the first send.");
+                }
+                StreamId = response.Id;
+            }
         }
     }
 }
@@ -459,7 +476,13 @@ response routing; an extension using them must account for those differences.
 | `StreamId` | Protected setter for the channel's stream identity. The base does not allocate one. |
 | `FallbackToNonStreaming()` | Disable intermediate streaming, stop the loop, and allow later final delivery. It does not stop model generation. |
 | `GetNextSequenceNumber()` | Allocate a sequence number for extra channel-specific updates. |
+| `StreamLifetime` / `IsCurrentStream(object)` | Capture the lifetime at hook entry; under `lock (this)`, recheck it after asynchronous work before changing state or starting another channel operation. Stop/reset invalidates the lifetime. |
 | `SendStreamTimedOutNotification` | Override when the channel can close its streaming UI and continue later through non-streaming delivery. The base returns `false`. |
+
+The base starts send, error, and before-interval hooks under `lock (this)` to bind their initial state
+reads to the checked lifetime, then awaits outside that lock. Keep the synchronous part of each hook
+short and do not block on asynchronous work. The base fences its own continuations; hooks must fence
+their channel-specific state, including returned resource IDs, append cursors, and fallback decisions.
 
 For comparison, Connector-backed Teams obtains its stream ID from the first successful send.
 Hosted `DeliveryModes.Stream`, including Teams and M365 Copilot, preserves a locally generated GUID
@@ -490,7 +513,7 @@ sequenceDiagram
         alt Queue drains before deadline
             Worker->>Response: Stop loop and signal drained
         else EndStreamTimeout expires
-            Response->>Worker: Cancel worker token and await worker exit
+            Response->>Worker: Invalidate lifetime and cancel worker token<br/>Do not join a noncooperative send
         end
         Response->>Transport: FinalizeStreamAsync(true, callerToken)
         Transport-->>Agent: Final response through the chosen transport
@@ -527,8 +550,9 @@ exception handling in your implementation.
 ### Base-class completion and cancellation
 
 - `EndStreamTimeout` defaults to two minutes and bounds the queue-drain wait, not model generation.
-  After it expires, the base cancels the worker token and waits for in-flight work to stop before
-  finalizing. A hook that ignores cancellation can extend that wait.
+  After it expires, the base invalidates the worker's lifetime, requests cancellation, and proceeds
+  to finalization without joining a noncooperative send. The final send itself is not bounded by this
+  timeout, and an already accepted channel request can still finish externally.
 - Finalization receives the **caller's token**, not the canceled worker token, so a drain timeout
   does not itself cancel the final send.
 - `Timeout` can therefore mean that finalization ran after a drain timeout; it does not necessarily
@@ -546,10 +570,11 @@ not a promise that arbitrary concurrent lifecycle calls are safe.
 
 ### Reset behavior
 
-`ResetAsync` ends an active stream and joins its previous worker, including one already stopped
-by fallback, before clearing queued/buffered content, sequencing, `StreamId`, and final-message,
-citation, attachment, label, and feedback state. It restores shared defaults such as `InitialDelay`
-and `EndStreamTimeout`, then calls `OnReset`.
+`ResetAsync` ends an active stream using the drain deadline, invalidates the previous lifetime,
+and clears queued/buffered content, sequencing, `StreamId`, and final-message, citation, attachment,
+label, and feedback state without joining stopped channel work. It restores shared defaults such
+as `InitialDelay` and `EndStreamTimeout`, then calls `OnReset`. Late sends and lifecycle continuations
+must not assign IDs, update clocks/cursors, cancel, or fall back a replacement stream.
 
 Your override must reset native handles, append cursors, channel timers, `IsStreamingChannel`,
 and channel-specific intervals/defaults. In the example, `OnReset` restores the 750 ms interval

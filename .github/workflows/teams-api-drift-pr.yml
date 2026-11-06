@@ -229,7 +229,12 @@ jobs:
         shell: bash
         run: |
           failures=()
-          check() { printf '%-30s %s\n' "$1" "$2"; [[ "$2" == success ]] || failures+=("$1"); }
+          printf '## Deterministic API checks\n\n| Check | Outcome |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          check() {
+            printf '%-30s %s\n' "$1" "$2"
+            printf '| %s | %s |\n' "$1" "$2" >> "$GITHUB_STEP_SUMMARY"
+            [[ "$2" == success ]] || failures+=("$1")
+          }
           check tool "${{ steps.tool.outcome }}"
           check compare "${{ steps.compare.outcome }}"
           check build "${{ steps.build.outcome }}"
@@ -367,7 +372,7 @@ jobs:
             jq -r '.summary | "Safe: \(.safe) | Needs adaptation: \(.needsAdaptation) | Needs human review: \(.needsHumanReview) | Feature adoption (nonblocking): recommend \(.adoptionRecommendations // 0) | not needed \(.adoptionNotNeeded // 0) | product decision \(.adoptionNeedsProductDecision // 0)"' "$ARTIFACTS/impact-review-validation.json"
             jq -r '.decisions[] | select(.verdict != "safe") | "\(.changeId): \(.verdict) — \(.reason)"' "$ARTIFACTS/impact-review-validation.json"
             jq -r '.decisions[] | select(.adoption != null) | "\(.changeId): adoption \(.adoption.outcome) (nonblocking) — \(.adoption.reason)"' "$ARTIFACTS/impact-review-validation.json"
-            [[ "$(jq -r '.canProceed' "$ARTIFACTS/impact-review-validation.json")" == true ]] || failures+=(impact-policy)
+            # canProceed includes upstream checks and review findings; job status reflects only this job's steps.
           else
             failures+=(missing-impact-review)
           fi
@@ -459,13 +464,19 @@ jobs:
             fi
             printf '\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL"
           } >> "$report_path"
-          cat "$report_path" >> "$GITHUB_STEP_SUMMARY"
+          {
+            printf '## Report publication\n\nThe combined report is included in the final artifact and the PR comment when publication succeeds.\n\n'
+            jq -r 'to_entries[] | select((.key | startswith("download_")) and .value.outcome == "failure") | "- Evidence download failed: \(.key)"' <<< "$DOWNLOAD_RESULTS"
+            for error in "${errors[@]}"; do printf -- '- %s\n' "$error"; done
+            printf '\n[Workflow logs and complete artifacts](%s)\n' "$RUN_URL"
+          } >> "$GITHUB_STEP_SUMMARY"
           publish_issue=$(jq -r --argjson jobs "$JOB_RESULTS" \
             'any($jobs[]; .result != "success") or . == null or (.changes | length) > 0' <<< "$comparison")
           printf 'publish_issue=%s\nfrom=%s\nto=%s\n' "$publish_issue" "$from" "$to" >> "$GITHUB_OUTPUT"
           printf 'Summary: Prepared final report; deterministic and assessment outcomes preserved. Package versions: %s -> %s.\n' "$from" "$to"
 
       - name: Publish implementation review comment
+        id: publish_comment
         if: always() && steps.report.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
@@ -488,6 +499,7 @@ jobs:
             const response = existing
               ? await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body })
               : await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n[Published review comment](${response.data.html_url})\n`);
             console.log(`Summary: Published implementation review: ${response.data.html_url}`);
 
       - name: Publish complete comparison and review artifacts
@@ -506,6 +518,10 @@ jobs:
         env:
           STEP_RESULTS: ${{ toJSON(steps) }}
         run: |
+          {
+            printf '\n### Publication steps\n\n| Step | Outcome |\n| --- | --- |\n'
+            jq -r 'to_entries[] | "| \(.key) | \(.value.outcome) |"' <<< "$STEP_RESULTS"
+          } >> "$GITHUB_STEP_SUMMARY"
           mapfile -t failures < <(jq -r 'to_entries[] | select(.value.outcome == "failure") | .key' <<< "$STEP_RESULTS")
           if (( ${#failures[@]} )); then
             printf 'Publication requires attention: %s\n' "${failures[*]}" >&2

@@ -21,6 +21,9 @@ When working on streaming message delivery, read `docs/streaming-response-sequen
 - It sends **intermediate Typing activities** on an interval, giving the UX of a streamed message. Each intermediate contains the **full accumulated text** (not a delta).
 - A **final Message activity** is sent with `StreamInfo.StreamType = Final` when `EndStreamAsync()` is called.
 - The async delay loop waits until each send completes before scheduling the next interval, preventing overlapping sends.
+- `EndStreamTimeout` bounds the queue-drain wait. On expiry, the base stops the worker and proceeds to
+  finalization without joining a noncooperative send. Each stop/reset invalidates its lifetime so late
+  successes, errors, and lifecycle hooks cannot change a replacement stream.
 - **Non-streaming channels** buffer all text and send a single normal message on `EndStreamAsync()` — no send loop runs.
 - Teams requires using the `Activity.Id` returned from the first send as the `StreamId` for all subsequent messages.
 - `ResetAsync()` clears buffered and synchronization state and restores shared and channel-specific defaults,
@@ -44,6 +47,8 @@ The following service errors are Teams-specific and are handled by `TeamsStreami
 - **BadArgument + "streaming api is not enabled"** → disables streaming for this turn (does not cancel)
 - **ContentStreamNotAllowed + exceeded streaming time** → updates the existing activity and falls back to non-streaming
 - **M365 Copilot** → while the queue is empty, sends an inactivity notice after 35 seconds from the last successful send; at 1 minute 45 seconds it stops streaming and falls back to normal final delivery
+- Failed M365 timeout notifications do not cancel final delivery. Attempt each notification for the
+  current lifetime and fall back to normal delivery even when one fails.
 
 WebChat, DirectLine, `DeliveryMode.Stream`, and other errors are treated as transport failures; the stream is canceled and returns `Error`.
 

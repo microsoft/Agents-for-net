@@ -143,6 +143,23 @@ namespace Microsoft.Agents.Builder
         /// </summary>
         protected IActivity LegacyFinalMessage => _finalMessage;
 
+        /// <summary>
+        /// Gets the identity of the current streaming lifetime, invalidated when the stream stops or resets.
+        /// </summary>
+        /// <remarks>
+        /// Capture this identity when a send hook starts. After asynchronous work, hold <c>lock (this)</c>
+        /// and check <see cref="Microsoft.Agents.Builder.StreamingResponseBase.IsCurrentStream(System.Object)"/>
+        /// before changing shared state or starting another channel operation.
+        /// </remarks>
+        protected object StreamLifetime { get; private set; } = new();
+
+        /// <summary>
+        /// Checks whether an operation still belongs to the current streaming lifetime.
+        /// </summary>
+        /// <param name="streamLifetime">The captured <see cref="Microsoft.Agents.Builder.StreamingResponseBase.StreamLifetime"/>.</param>
+        /// <returns>Whether the captured lifetime is still current.</returns>
+        protected bool IsCurrentStream(object streamLifetime) => ReferenceEquals(streamLifetime, StreamLifetime);
+
         /// <inheritdoc/>
         public bool FeedbackLoopEnabled { get; set; }
 
@@ -263,6 +280,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public async Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
         {
+            object streamLifetime;
+            int sequence;
             lock (this)
             {
                 if (!IsStreamingChannel || _canceled)
@@ -282,22 +301,39 @@ namespace Microsoft.Agents.Builder
                     _queueEmpty.Reset();
                     return;
                 }
+
+                streamLifetime = StreamLifetime;
+                sequence = _nextSequence++;
             }
 
             // Stream not started yet: send the first informative directly on the caller's thread, then start the loop.
-            int sequence = _nextSequence++;
             try
             {
-                await SendInformativeAsync(text, sequence, cancellationToken).ConfigureAwait(false);
-                OnSendCompleted(isInformative: true, text);
+                Task sendTask;
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return;
+                    }
+                    sendTask = SendInformativeAsync(text, sequence, cancellationToken);
+                }
+                await sendTask.ConfigureAwait(false);
+
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return;
+                    }
+                    OnSendCompleted(isInformative: true, text);
+                    StartStream();
+                }
             }
             catch (Exception ex)
             {
-                await HandleErrorAsync(ex, cancellationToken).ConfigureAwait(false);
-                return;
+                await HandleErrorAsync(ex, streamLifetime, cancellationToken).ConfigureAwait(false);
             }
-
-            StartStream();
         }
 
         /// <inheritdoc/>
@@ -377,15 +413,10 @@ namespace Microsoft.Agents.Builder
                     if (!_queueEmpty.WaitOne(EndStreamTimeout))
                     {
                         result = StreamingResponseResult.Timeout;
-                        Task streamTask;
                         lock (this)
                         {
-                            streamTask = StopStream();
+                            _ = StopStream();
                         }
-
-                        // A send hook may already be in flight and may create channel-side resources.
-                        // Wait for it to finish before finalization closes those resources.
-                        await streamTask.ConfigureAwait(false);
                     }
 
                     if (_canceled)
@@ -414,15 +445,9 @@ namespace Microsoft.Agents.Builder
                 await EndStreamAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            Task streamTask;
             lock (this)
             {
-                streamTask = StopStream();
-            }
-            await streamTask.ConfigureAwait(false);
-
-            lock (this)
-            {
+                _ = StopStream();
                 _ended = false;
                 _queue.Clear();
                 _queueEmpty.Reset();
@@ -471,13 +496,14 @@ namespace Microsoft.Agents.Builder
         protected abstract Task SendInformativeAsync(string text, int sequenceNumber, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Sends the final message and/or closes the channel stream.  Called from <see cref="EndStreamAsync"/> after
-        /// the buffer has drained (or immediately for non-streaming channels).
+        /// Sends the final message and/or closes the channel stream. Called from
+        /// <see cref="Microsoft.Agents.Builder.StreamingResponseBase.EndStreamAsync(System.Threading.CancellationToken)"/>
+        /// after the buffer drains or the drain timeout expires, or immediately for non-streaming channels.
         /// </summary>
         /// <param name="streamedPath">
-        /// <c>true</c> when <see cref="EndStreamAsync"/> took the streaming (loop) path (i.e. the channel was
+        /// <c>true</c> when <see cref="Microsoft.Agents.Builder.StreamingResponseBase.EndStreamAsync(System.Threading.CancellationToken)"/> took the streaming (loop) path (i.e. the channel was
         /// a streaming channel when the stream ended), <c>false</c> for a non-streaming channel.  A
-        /// <see cref="StreamErrorAction.FallbackToNonStreaming"/> can set <see cref="IsStreamingChannel"/> to
+        /// <see cref="Microsoft.Agents.Builder.StreamErrorAction.FallbackToNonStreaming"/> can set <see cref="Microsoft.Agents.Builder.StreamingResponseBase.IsStreamingChannel"/> to
         /// <c>false</c> while <paramref name="streamedPath"/> remains <c>true</c>.
         /// </param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -549,7 +575,7 @@ namespace Microsoft.Agents.Builder
         {
             lock (this)
             {
-                if (_streamStarted || !IsStreamingChannel)
+                if (_streamStarted || !IsStreamingChannel || _ended || _canceled)
                 {
                     return;
                 }
@@ -560,13 +586,14 @@ namespace Microsoft.Agents.Builder
                 int dueTime = interval == 0 ? Interval : interval;
 
                 // Fire-and-forget: the loop yields immediately at the first Task.Delay.
-                _streamTask = RunStreamAsync(dueTime, cts);
+                _streamTask = RunStreamAsync(dueTime, cts, StreamLifetime);
             }
         }
 
         private Task StopStream()
         {
             _streamStarted = false;
+            StreamLifetime = new object();
             var cts = _streamCts;
             _streamCts = null;
             if (cts != null)
@@ -601,7 +628,7 @@ namespace Microsoft.Agents.Builder
         // Task.Delay instead of System.Threading.Timer, avoiding thread-pool timer callbacks and
         // self-rescheduling shared timer state.  Each iteration waits the current due time, then sends one
         // buffered/informative item; the tick returns the next due time (or a negative value to stop).
-        private async Task RunStreamAsync(int firstDueTime, CancellationTokenSource cts)
+        private async Task RunStreamAsync(int firstDueTime, CancellationTokenSource cts, object streamLifetime)
         {
             var stopToken = cts.Token;
             try
@@ -611,7 +638,7 @@ namespace Microsoft.Agents.Builder
                 {
                     await Task.Delay(dueTime, stopToken).ConfigureAwait(false);
 
-                    int nextDueTime = await SendNextIntervalAsync(stopToken).ConfigureAwait(false);
+                    int nextDueTime = await SendNextIntervalAsync(streamLifetime, stopToken).ConfigureAwait(false);
                     if (nextDueTime < 0)
                     {
                         return;
@@ -636,7 +663,7 @@ namespace Microsoft.Agents.Builder
 
         // Sends one buffered chunk (or informative) per interval and returns the next due time in milliseconds,
         // or a negative value to stop the loop.  Mirrors the previous self-rescheduling Timer callback.
-        private async Task<int> SendNextIntervalAsync(CancellationToken cancellationToken)
+        private async Task<int> SendNextIntervalAsync(object streamLifetime, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             PendingSend pending;
@@ -645,6 +672,10 @@ namespace Microsoft.Agents.Builder
 
             lock (this)
             {
+                if (!IsCurrentStream(streamLifetime))
+                {
+                    return -1;
+                }
                 isQueueEmpty = _queue.Count == 0 && !_messageUpdated;
                 isEnded = _ended;
             }
@@ -654,9 +685,16 @@ namespace Microsoft.Agents.Builder
                 bool continueStreaming;
                 try
                 {
-                    continueStreaming = await OnBeforeSendIntervalAsync(
-                        isQueueEmpty,
-                        cancellationToken).ConfigureAwait(false);
+                    Task<bool> intervalTask;
+                    lock (this)
+                    {
+                        if (!IsCurrentStream(streamLifetime))
+                        {
+                            return -1;
+                        }
+                        intervalTask = OnBeforeSendIntervalAsync(isQueueEmpty, cancellationToken);
+                    }
+                    continueStreaming = await intervalTask.ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -664,13 +702,17 @@ namespace Microsoft.Agents.Builder
                 }
                 catch (Exception ex)
                 {
-                    return await HandleErrorAsync(ex, cancellationToken).ConfigureAwait(false);
+                    return await HandleErrorAsync(ex, streamLifetime, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (!continueStreaming)
                 {
                     lock (this)
                     {
+                        if (!IsCurrentStream(streamLifetime))
+                        {
+                            return -1;
+                        }
                         _ = StopStream();
                         _queueEmpty.Set();
                     }
@@ -680,6 +722,10 @@ namespace Microsoft.Agents.Builder
 
             lock (this)
             {
+                if (!IsCurrentStream(streamLifetime))
+                {
+                    return -1;
+                }
                 cancellationToken.ThrowIfCancellationRequested();
                 QueueNextChunk();
 
@@ -704,19 +750,29 @@ namespace Microsoft.Agents.Builder
             // Can't await inside the lock.
             try
             {
-                int sequence = _nextSequence++;
-                if (pending.IsInformative)
+                Task sendTask;
+                lock (this)
                 {
-                    await SendInformativeAsync(pending.Text, sequence, cancellationToken).ConfigureAwait(false);
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return -1;
+                    }
+                    int sequence = _nextSequence++;
+                    sendTask = pending.IsInformative
+                        ? SendInformativeAsync(pending.Text, sequence, cancellationToken)
+                        : SendChunkAsync(pending.Text, sequence, cancellationToken);
                 }
-                else
-                {
-                    await SendChunkAsync(pending.Text, sequence, cancellationToken).ConfigureAwait(false);
-                }
-                OnSendCompleted(pending.IsInformative, pending.Text);
+                await sendTask.ConfigureAwait(false);
 
-                // Continue on the normal interval.
-                return Interval;
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return -1;
+                    }
+                    OnSendCompleted(pending.IsInformative, pending.Text);
+                    return Interval;
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -724,19 +780,29 @@ namespace Microsoft.Agents.Builder
             }
             catch (Exception ex)
             {
-                return await HandleErrorAsync(ex, cancellationToken).ConfigureAwait(false);
+                return await HandleErrorAsync(ex, streamLifetime, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        private async Task<int> HandleErrorAsync(Exception exception, CancellationToken cancellationToken)
+        private async Task<int> HandleErrorAsync(
+            Exception exception, object streamLifetime, CancellationToken cancellationToken)
         {
             // Errors are handled here (not rethrown) since this is running on the streaming loop and would
             // otherwise fault the loop task.
-            UserCancelledStream = false;
             StreamErrorAction action;
             try
             {
-                action = await HandleSendErrorAsync(exception, cancellationToken).ConfigureAwait(false);
+                Task<StreamErrorAction> errorTask;
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return -1;
+                    }
+                    UserCancelledStream = false;
+                    errorTask = HandleSendErrorAsync(exception, cancellationToken);
+                }
+                action = await errorTask.ConfigureAwait(false);
             }
             catch
             {
@@ -745,6 +811,10 @@ namespace Microsoft.Agents.Builder
 
             lock (this)
             {
+                if (!IsCurrentStream(streamLifetime))
+                {
+                    return -1;
+                }
                 switch (action)
                 {
                     case StreamErrorAction.Continue:

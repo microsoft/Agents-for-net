@@ -7,6 +7,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1062,8 +1063,10 @@ namespace Microsoft.Agents.Builder.Tests
             }
         }
 
-        [Fact]
-        public async Task ResetAsync_AfterTimeoutFallback_WaitsForPreviousWorkerBeforeClearingState()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ResetAsync_AfterTimeoutFallback_DoesNotWaitForPreviousWorker(bool sendFails)
         {
             var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var pendingSend = new TaskCompletionSource<ResourceResponse[]>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -1090,22 +1093,38 @@ namespace Microsoft.Agents.Builder.Tests
                 new Activity { Type = ActivityTypes.Message, ChannelId = Channels.Msteams });
             context.StreamingResponse.InitialDelay = 1;
             context.StreamingResponse.Interval = 1;
+            context.StreamingResponse.EndStreamTimeout = 0;
             context.StreamingResponse.QueueTextChunk("before reset");
             await sendStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            var previousWorker = GetStreamWorker(context.StreamingResponse);
             await context.StreamingResponse.SendStreamTimedOutNotification("timeout");
 
             var resetting = context.StreamingResponse.ResetAsync();
             try
             {
-                Assert.False(resetting.IsCompleted);
-                pendingSend.TrySetResult([new ResourceResponse("old-stream")]);
+                Assert.True(resetting.IsCompleted, "Reset must not join an uncooperative send after fallback.");
                 await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
                 Assert.Null(context.StreamingResponse.StreamId);
 
-                context.StreamingResponse.InitialDelay = 1;
-                context.StreamingResponse.Interval = 1;
+                context.StreamingResponse.InitialDelay = int.MaxValue;
+                context.StreamingResponse.EndStreamTimeout = 0;
                 context.StreamingResponse.QueueTextChunk("after reset");
-                Assert.Equal(StreamingResponseResult.Success, await context.StreamingResponse.EndStreamAsync());
+                if (sendFails)
+                {
+                    pendingSend.SetException(new ErrorResponseException("Old stream cancelled.")
+                    {
+                        Body = new ErrorResponse(new Error { Code = "ContentStreamNotAllowed" })
+                    });
+                }
+                else
+                {
+                    pendingSend.SetResult([new ResourceResponse("old-stream")]);
+                }
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+                Assert.Null(context.StreamingResponse.StreamId);
+                Assert.True(context.StreamingResponse.IsStreamStarted());
+                Assert.Equal(StreamingResponseResult.Timeout, await context.StreamingResponse.EndStreamAsync());
                 Assert.NotNull(final);
                 AssertFinal(final, "after reset");
             }
@@ -1113,6 +1132,73 @@ namespace Microsoft.Agents.Builder.Tests
             {
                 pendingSend.TrySetResult([new ResourceResponse("old-stream")]);
                 await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                context.StreamingResponse.EndStreamTimeout = 0;
+                await context.StreamingResponse.ResetAsync();
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task EndStreamAsync_TimeoutDoesNotWaitForNoncooperativeSend(bool informativeUpdate)
+        {
+            var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pendingSend = new TaskCompletionSource<ResourceResponse[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            IActivity final = null;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Text == "initial")
+                    {
+                        return Task.FromResult(new[] { new ResourceResponse("initial") });
+                    }
+                    if (activities[0].Type == ActivityTypes.Message)
+                    {
+                        final = activities[0];
+                        return Task.FromResult(new[] { new ResourceResponse("final") });
+                    }
+                    sendStarted.TrySetResult(true);
+                    return pendingSend.Task;
+                });
+            using var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Webchat
+            });
+            context.StreamingResponse.InitialDelay = 1;
+            context.StreamingResponse.Interval = 1;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            if (informativeUpdate)
+            {
+                await context.StreamingResponse.QueueInformativeUpdateAsync("initial");
+                await context.StreamingResponse.QueueInformativeUpdateAsync("queued");
+            }
+            else
+            {
+                context.StreamingResponse.QueueTextChunk("complete");
+            }
+            await sendStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            var worker = GetStreamWorker(context.StreamingResponse);
+            context.StreamingResponse.QueueTextChunk(informativeUpdate ? "complete response" : " response");
+
+            var ending = context.StreamingResponse.EndStreamAsync();
+            try
+            {
+                Assert.True(ending.IsCompleted, "The drain deadline must not join an uncooperative send.");
+                Assert.Equal(StreamingResponseResult.Timeout, await ending);
+                Assert.NotNull(final);
+                AssertFinal(final, "complete response");
+                Assert.False(context.StreamingResponse.IsStreamStarted());
+            }
+            finally
+            {
+                pendingSend.TrySetResult([new ResourceResponse("old-stream")]);
+                await ending.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                await worker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                await context.StreamingResponse.ResetAsync();
             }
         }
 
@@ -1569,6 +1655,451 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal("second message", lastFinal.Text);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task StreamWorker_AfterStop_DoesNotSendOrThrow(bool reset)
+        {
+            var responses = new List<IActivity>();
+            var context = new TurnContext(CreateMockAdapter(responses).Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Webchat
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Thinking...");
+            var worker = GetStreamWorker(context.StreamingResponse);
+            try
+            {
+                if (reset)
+                {
+                    await context.StreamingResponse.ResetAsync();
+                }
+                else
+                {
+                    Assert.True(await context.StreamingResponse.SendStreamTimedOutNotification("Timed out."));
+                }
+
+                var sentBeforeCompletion = responses.Count;
+                await worker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+                Assert.Equal(sentBeforeCompletion, responses.Count);
+                Assert.False(context.StreamingResponse.IsStreamStarted());
+            }
+            finally
+            {
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task StreamWorker_FromPreviousStream_DoesNotStopReplacementStream()
+        {
+            var responses = new List<IActivity>();
+            using var context = new TurnContext(CreateMockAdapter(responses).Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Webchat
+            });
+            var response = new PausedIntervalResponse(context)
+            {
+                Interval = int.MaxValue,
+                InitialDelay = 1,
+                EndStreamTimeout = 0
+            };
+            response.QueueTextChunk("First stream.");
+            await response.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            var previousWorker = GetStreamWorker(response);
+            var resetting = response.ResetAsync();
+            try
+            {
+                Assert.True(resetting.IsCompleted, "Reset must not join a pending interval hook.");
+                await resetting;
+                response.InitialDelay = int.MaxValue;
+                response.EndStreamTimeout = 0;
+                response.QueueTextChunk("Replacement stream.");
+                var sentBeforeCompletion = responses.Count;
+
+                response.Resume.TrySetResult(true);
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                Assert.Equal(sentBeforeCompletion, responses.Count);
+                Assert.True(response.IsStreamStarted());
+                Assert.Equal("Replacement stream.", response.Message);
+
+                Assert.Equal(StreamingResponseResult.Timeout, await response.EndStreamAsync());
+                Assert.Equal("Replacement stream.", responses.Last().Text);
+                AssertFinal(responses.Last(), "Replacement stream.");
+            }
+            finally
+            {
+                response.Resume.TrySetResult(true);
+                await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                response.EndStreamTimeout = 0;
+                await response.ResetAsync();
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public async Task StreamWorker_SendCompletesAfterReset_DoesNotChangeReplacementStream(
+            bool informativeUpdate, bool sendFails)
+        {
+            var pendingSend = new TaskCompletionSource<ResourceResponse[]>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var responses = new List<IActivity>();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Type == ActivityTypes.Typing && activities[0].Text == "First stream.")
+                    {
+                        sendStarted.TrySetResult(true);
+                        return pendingSend.Task;
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.InitialDelay = 1;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            var firstSend = informativeUpdate
+                ? context.StreamingResponse.QueueInformativeUpdateAsync("First stream.")
+                : Task.CompletedTask;
+            if (!informativeUpdate)
+            {
+                context.StreamingResponse.QueueTextChunk("First stream.");
+            }
+            await sendStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            var previousWorker = informativeUpdate ? firstSend : GetStreamWorker(context.StreamingResponse);
+            var resetting = context.StreamingResponse.ResetAsync();
+            try
+            {
+                Assert.True(resetting.IsCompleted, "Reset must not wait for the previous send to complete.");
+                await resetting;
+                context.StreamingResponse.InitialDelay = int.MaxValue;
+                context.StreamingResponse.EndStreamTimeout = 0;
+                context.StreamingResponse.QueueTextChunk("Replacement stream.");
+
+                if (sendFails)
+                {
+                    pendingSend.SetException(new ErrorResponseException("Old stream cancelled.")
+                    {
+                        Body = new ErrorResponse(new Error { Code = "ContentStreamNotAllowed" })
+                    });
+                }
+                else
+                {
+                    pendingSend.SetResult([new ResourceResponse("old-stream-id")]);
+                }
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+                Assert.Null(context.StreamingResponse.StreamId);
+                Assert.True(context.StreamingResponse.IsStreamStarted());
+                Assert.Equal(StreamingResponseResult.Timeout, await context.StreamingResponse.EndStreamAsync());
+                Assert.Equal("Replacement stream.", responses.Last().Text);
+                Assert.Null(responses.Last().GetStreamingEntity().StreamId);
+            }
+            finally
+            {
+                pendingSend.TrySetResult([new ResourceResponse("old-stream-id")]);
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                context.StreamingResponse.EndStreamTimeout = 0;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Theory]
+        [InlineData(false, 1)]
+        [InlineData(true, 1)]
+        [InlineData(true, 2)]
+        public async Task M365Copilot_FailedTimeoutNotification_PreservesFinalResponse(
+            bool bufferedText, int failedNotification)
+        {
+            const string timeoutMessage = "Timeout notification.";
+            var responses = new List<IActivity>();
+            var notificationAttempts = 0;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Text.Contains(timeoutMessage))
+                    {
+                        notificationAttempts++;
+                        if (notificationAttempts == failedNotification)
+                        {
+                            return Task.FromException<ResourceResponse[]>(new System.IO.IOException("Notification failed."));
+                        }
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            var response = Assert.IsType<M365CopilotStreamingResponse>(context.StreamingResponse);
+            response.Interval = 1;
+            context.StreamingResponse.StreamingTakingTooLongMessage = timeoutMessage;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Starting.");
+            try
+            {
+                if (bufferedText)
+                {
+                    context.StreamingResponse.QueueTextChunk("Buffered ");
+                }
+                response.StreamingTimeout = TimeSpan.Zero;
+                await GetStreamWorker(response).WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+                Assert.Equal(bufferedText ? 2 : 1, notificationAttempts);
+                Assert.False(context.StreamingResponse.IsStreamingChannel);
+                context.StreamingResponse.QueueTextChunk("completed.");
+                var result = await context.StreamingResponse.EndStreamAsync();
+
+                Assert.Equal(StreamingResponseResult.Success, result);
+                Assert.Equal(bufferedText ? "Buffered completed." : "completed.", responses.Last().Text);
+                Assert.Null(responses.Last().GetStreamingEntity());
+            }
+            finally
+            {
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public async Task M365Copilot_ResetDuringTimeoutNotification_PreservesReplacement(
+            bool startReplacement, bool notificationFails)
+        {
+            const string timeoutMessage = "Timeout notification.";
+            var pendingNotification = new TaskCompletionSource<ResourceResponse[]>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var notificationStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var responses = new List<IActivity>();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Text.Contains(timeoutMessage))
+                    {
+                        notificationStarted.TrySetResult(true);
+                        return pendingNotification.Task;
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            var response = Assert.IsType<M365CopilotStreamingResponse>(context.StreamingResponse);
+            response.Interval = 1;
+            response.EndStreamTimeout = 0;
+            context.StreamingResponse.StreamingTakingTooLongMessage = timeoutMessage;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Starting.");
+            response.StreamingTimeout = TimeSpan.Zero;
+            await notificationStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            var previousWorker = GetStreamWorker(response);
+            var resetting = response.ResetAsync();
+            try
+            {
+                Assert.True(resetting.IsCompleted, "Reset must not join a pending timeout notification.");
+                await resetting;
+                response.InitialDelay = int.MaxValue;
+                response.EndStreamTimeout = 0;
+                if (startReplacement)
+                {
+                    context.StreamingResponse.QueueTextChunk("Replacement.");
+                }
+
+                if (notificationFails)
+                {
+                    pendingNotification.SetException(new System.IO.IOException("Old notification failed."));
+                }
+                else
+                {
+                    pendingNotification.SetResult([new ResourceResponse("old-stream-id")]);
+                }
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+                Assert.True(context.StreamingResponse.IsStreamingChannel);
+                Assert.Equal(startReplacement, context.StreamingResponse.IsStreamStarted());
+                if (!startReplacement)
+                {
+                    context.StreamingResponse.QueueTextChunk("Replacement.");
+                }
+                Assert.Equal(StreamingResponseResult.Timeout, await response.EndStreamAsync());
+                Assert.Equal("Replacement.", responses.Last().Text);
+                AssertFinal(responses.Last(), "Replacement.");
+            }
+            finally
+            {
+                pendingNotification.TrySetException(new System.IO.IOException("Old notification failed."));
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                response.EndStreamTimeout = 0;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task StreamWorker_ErrorCheckpointCompletesAfterReset_DoesNotFallbackReplacement()
+        {
+            var checkpointStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pendingCheckpoint = new TaskCompletionSource<ResourceResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var responses = new List<IActivity>();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Type == ActivityTypes.Typing && activities[0].Text == "First stream.")
+                    {
+                        return Task.FromException<ResourceResponse[]>(new ErrorResponseException("Stream timed out.")
+                        {
+                            Body = new ErrorResponse(new Error
+                            {
+                                Code = "ContentStreamNotAllowed",
+                                Message = "Content stream finished due to exceeded streaming time."
+                            })
+                        });
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            adapter.Setup(value => value.UpdateActivityAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity, CancellationToken>((_, _, _) =>
+                {
+                    checkpointStarted.TrySetResult(true);
+                    return pendingCheckpoint.Task;
+                });
+            using var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            });
+            var response = context.StreamingResponse;
+            response.InitialDelay = 1;
+            response.EndStreamTimeout = 0;
+            response.QueueTextChunk("First stream.");
+            await checkpointStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            var previousWorker = GetStreamWorker(response);
+            var resetting = response.ResetAsync();
+            try
+            {
+                Assert.True(resetting.IsCompleted, "Reset must not join an error checkpoint.");
+                await resetting;
+                response.InitialDelay = int.MaxValue;
+                response.EndStreamTimeout = 0;
+                response.QueueTextChunk("Replacement.");
+                pendingCheckpoint.TrySetResult(new ResourceResponse("old-stream"));
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+                Assert.True(response.IsStreamingChannel);
+                Assert.True(response.IsStreamStarted());
+                Assert.Null(response.StreamId);
+                Assert.Equal(StreamingResponseResult.Timeout, await response.EndStreamAsync());
+                AssertFinal(responses.Last(), "Replacement.");
+            }
+            finally
+            {
+                pendingCheckpoint.TrySetResult(new ResourceResponse("old-stream"));
+                await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                response.EndStreamTimeout = 0;
+                await response.ResetAsync();
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+        }
+
+        [Fact]
+        public async Task M365Copilot_ResetDuringWorkingNotice_DoesNotStartReplacementTimeoutClock()
+        {
+            var noticeStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pendingNotice = new TaskCompletionSource<ResourceResponse[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var replacementSent = new TaskCompletionSource<IActivity>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var informativeCount = 0;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    var activity = activities[0];
+                    if (activity.GetStreamingEntity()?.StreamType == StreamTypes.Informative
+                        && Interlocked.Increment(ref informativeCount) == 2)
+                    {
+                        noticeStarted.TrySetResult(true);
+                        return pendingNotice.Task;
+                    }
+                    if (activity.Text?.StartsWith("Replacement.", StringComparison.Ordinal) == true)
+                    {
+                        replacementSent.TrySetResult(activity);
+                    }
+                    return Task.FromResult(new[] { new ResourceResponse(activity.Id) });
+                });
+            using var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            var response = Assert.IsType<M365CopilotStreamingResponse>(context.StreamingResponse);
+            response.Interval = 1;
+            response.EndStreamTimeout = 0;
+            response.WorkingNoticeInterval = TimeSpan.Zero;
+            await response.QueueInformativeUpdateAsync("Starting.");
+            await noticeStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            var previousWorker = GetStreamWorker(response);
+            var resetting = response.ResetAsync();
+            try
+            {
+                Assert.True(resetting.IsCompleted, "Reset must not join a working notice.");
+                await resetting;
+                pendingNotice.TrySetResult([new ResourceResponse("old-stream")]);
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+                response.InitialDelay = 1;
+                response.StreamingTimeout = TimeSpan.Zero;
+                response.QueueTextChunk("Replacement.");
+                var firstActivity = await replacementSent.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                Assert.Equal("Replacement.", firstActivity.Text);
+                AssertTyping(firstActivity);
+            }
+            finally
+            {
+                pendingNotice.TrySetResult([new ResourceResponse("old-stream")]);
+                await resetting.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                response.EndStreamTimeout = 0;
+                await response.ResetAsync();
+                await previousWorker.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+        }
+
         [Fact]
         public async Task ResetAsync_ClearsAllState()
         {
@@ -1751,6 +2282,27 @@ namespace Microsoft.Agents.Builder.Tests
         // -------------------------------------------------------------------
         // Helpers
         // -------------------------------------------------------------------
+
+        private static Task GetStreamWorker(IStreamingResponse response)
+        {
+            var field = typeof(StreamingResponseBase).GetField("_streamTask", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(field);
+            return Assert.IsAssignableFrom<Task>(field.GetValue(response));
+        }
+
+        private sealed class PausedIntervalResponse(TurnContext context) : StreamingResponse(context)
+        {
+            public TaskCompletionSource<bool> Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            public TaskCompletionSource<bool> Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            protected override async Task<bool> OnBeforeSendIntervalAsync(
+                bool isQueueEmpty, CancellationToken cancellationToken)
+            {
+                Entered.TrySetResult(true);
+                await Resume.Task.ConfigureAwait(false);
+                return false;
+            }
+        }
 
         private sealed class HostedStreamingAdapter()
             : ChannelServiceAdapterBase(new Mock<IChannelServiceClientFactory>().Object, null)

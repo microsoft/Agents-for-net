@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -48,6 +49,7 @@ namespace Microsoft.Agents.Builder
             bool isQueueEmpty,
             CancellationToken cancellationToken)
         {
+            var streamLifetime = StreamLifetime;
             if (_streamStartTime == null)
             {
                 // The timeout window starts after the first successful send, not when text is queued.
@@ -74,12 +76,36 @@ namespace Microsoft.Agents.Builder
 
                 foreach (var activity in timeoutActivities)
                 {
-                    await SendStreamActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        Task sendTask;
+                        lock (this)
+                        {
+                            if (!IsCurrentStream(streamLifetime))
+                            {
+                                return false;
+                            }
+                            sendTask = SendStreamActivityAsync(activity, cancellationToken);
+                        }
+                        await sendTask.ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Context.Adapter?.Logger?.LogWarning(
+                            "Exception during M365 Copilot timeout notification: {ExceptionMessage}",
+                            ex.Message);
+                    }
                 }
 
                 // End only the streaming transport. The caller may continue generating content,
                 // which EndStreamAsync will later deliver as a normal, complete message.
-                FallbackToNonStreaming();
+                lock (this)
+                {
+                    if (IsCurrentStream(streamLifetime))
+                    {
+                        FallbackToNonStreaming();
+                    }
+                }
                 return false;
             }
 
@@ -95,7 +121,13 @@ namespace Microsoft.Agents.Builder
                     notice,
                     GetNextSequenceNumber(),
                     cancellationToken).ConfigureAwait(false);
-                OnSendCompleted(isInformative: true, notice);
+                lock (this)
+                {
+                    if (IsCurrentStream(streamLifetime))
+                    {
+                        OnSendCompleted(isInformative: true, notice);
+                    }
+                }
             }
 
             return true;

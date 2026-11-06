@@ -73,7 +73,9 @@ transports use `AddAttachment` and `AddCitation`.
 ## Shared `StreamingResponseBase` Loop
 
 The previous `System.Threading.Timer` callback is replaced by a single asynchronous `Task.Delay` loop.
-Only one send can be active at a time. Informative updates and buffered text snapshots share one FIFO queue.
+Each active worker awaits its current send before scheduling another. Informative updates and buffered
+text snapshots share one FIFO queue. A noncooperative send from a stopped lifetime can still finish
+externally after finalization or reset.
 
 ```mermaid
 sequenceDiagram
@@ -108,10 +110,16 @@ sequenceDiagram
 `StopStream` runs before the drain signal is set, so `EndStreamAsync` cannot return while
 `IsStreamStarted()` still reports `true`.
 
-If draining exceeds `EndStreamTimeout`, the base cancels the worker's token and waits for in-flight
-channel work to stop before finalization. Send hooks and error cleanup must propagate this token to
-their asynchronous channel operations. Finalization uses the caller's token, not the canceled worker
-token, so it can still deliver the buffered final response.
+If draining exceeds `EndStreamTimeout`, the base cancels the worker's token and proceeds to finalization
+without joining in-flight channel work. Send hooks and error cleanup must propagate this token to their
+asynchronous channel operations. Finalization uses the caller's token, not the canceled worker token.
+The deadline bounds queue draining, not final-message I/O or the external completion of an ignored
+cancellation request.
+
+Stopping or resetting a stream invalidates its lifetime. The worker checks that lifetime before
+consuming buffered content, invoking hooks, applying send results/errors, or signaling completion.
+Channel hooks must also fence their own asynchronous state updates using `StreamLifetime` and
+`IsCurrentStream`, so late work cannot mutate or stop a replacement stream.
 
 ## Teams Flow
 
@@ -165,6 +173,9 @@ error handling, and final-message metadata while adding separate lifecycle requi
   text, or `StreamingTakingTooLongMessage` if none exists.
 - At the cutoff, the streaming transport is closed and the response falls back to normal delivery. Content
   generation can continue, and `EndStreamAsync` later sends the complete buffered response as a normal message.
+- Timeout notifications are best-effort: both activities are attempted when text exists, even if the
+  first fails. Failure does not cancel final delivery. A stopped/reset lifetime cannot send its remaining
+  notifications or switch a replacement stream to fallback.
 
 ```mermaid
 sequenceDiagram
@@ -194,7 +205,8 @@ sequenceDiagram
                 Response->>Context: Message + Final + Success<br/>partial text and timeout notice
                 Context->>Copilot: Close stream
             end
-            Response->>Response: FallbackToNonStreaming<br/>Stop loop and signal drain
+            Note over Response,Copilot: Notification failures do not cancel final delivery
+            Response->>Response: If lifetime is current: FallbackToNonStreaming<br/>Stop loop and signal drain
         else Queue empty and idle for more than 35 seconds
             Response->>Context: Send Typing + Informative directly
             Context->>Copilot: Previous informative text or working notice
@@ -350,12 +362,13 @@ An ambiguous canceled POST is not replayed; a failed stop retains its handle for
 ## Key Implementation Details
 
 - The interval loop uses `Task.Delay`, not `System.Threading.Timer`.
-- Only one send runs at a time; the next delay begins after the current send completes.
+- Within an active worker, the next delay begins after the current send completes.
 - Informative updates and text snapshots are sent in FIFO order.
 - Activity Protocol intermediate messages contain the full accumulated text; Slack sends only the new delta.
-- `EndStreamTimeout` defaults to two minutes.
+- `EndStreamTimeout` defaults to two minutes and bounds queue draining, without joining a noncooperative send.
 - `ResetAsync` ends an active stream, clears buffered and synchronization state, restores shared defaults,
-  and invokes the implementation-specific reset hook to restore channel defaults and stream identity.
+  invalidates the previous lifetime, and invokes the implementation-specific reset hook to restore channel
+  defaults and stream identity. It does not wait indefinitely for stopped channel work.
 - Factory lookup checks the full channel ID before the parent ID, enabling subchannel specializations.
 - Factory instantiation failures are cached without caching the absence of a registration, so later-loaded
   extension assemblies can still be discovered.

@@ -58,6 +58,10 @@ namespace Microsoft.Agents.Builder
         /// The implementation-specific queue-drain timeout in milliseconds.
         /// A timeout does not guarantee final delivery; a native transport may not safely replay an ambiguous send.
         /// </summary>
+        /// <remarks>
+        /// <see cref="Microsoft.Agents.Builder.StreamingResponseBase"/> requests cancellation when the timeout
+        /// expires and proceeds to finalization without joining a noncooperative intermediate send.
+        /// </remarks>
         int EndStreamTimeout { get; set; }
 
         /// <summary>

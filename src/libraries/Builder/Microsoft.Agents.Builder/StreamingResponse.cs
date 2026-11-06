@@ -129,14 +129,28 @@ namespace Microsoft.Agents.Builder
             string message,
             CancellationToken cancellationToken = default)
         {
-            if (HasEnded || !IsStreamingChannel)
+            object streamLifetime;
+            Task sendTask;
+            lock (this)
             {
-                return false;
+                if (HasEnded || !IsStreamingChannel)
+                {
+                    return false;
+                }
+                streamLifetime = StreamLifetime;
+                sendTask = SendStreamActivityAsync(CreateStreamStoppedMessage(message), cancellationToken);
             }
+            await sendTask.ConfigureAwait(false);
 
-            await SendStreamActivityAsync(CreateStreamStoppedMessage(message), cancellationToken).ConfigureAwait(false);
-            FallbackToNonStreaming();
-            return true;
+            lock (this)
+            {
+                if (!IsCurrentStream(streamLifetime))
+                {
+                    return false;
+                }
+                FallbackToNonStreaming();
+                return true;
+            }
         }
 
         protected virtual IActivity CreateFinalMessage()
@@ -209,20 +223,30 @@ namespace Microsoft.Agents.Builder
                 return;
             }
 
-            var streamInfo = activity.GetStreamingEntity();
-            if (!string.IsNullOrEmpty(StreamId))
+            object streamLifetime;
+            Task<ResourceResponse> sendTask;
+            lock (this)
             {
-                activity.Id = StreamId;
-                if (streamInfo != null)
+                streamLifetime = StreamLifetime;
+                var streamInfo = activity.GetStreamingEntity();
+                if (!string.IsNullOrEmpty(StreamId))
                 {
-                    streamInfo.StreamId = StreamId;
+                    activity.Id = StreamId;
+                    if (streamInfo != null)
+                    {
+                        streamInfo.StreamId = StreamId;
+                    }
                 }
+                sendTask = Context.SendActivityAsync(activity, cancellationToken);
             }
+            var response = await sendTask.ConfigureAwait(false);
 
-            var response = await Context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
-            if (string.IsNullOrEmpty(StreamId))
+            lock (this)
             {
-                StreamId = response.Id;
+                if (IsCurrentStream(streamLifetime) && string.IsNullOrEmpty(StreamId))
+                {
+                    StreamId = response.Id;
+                }
             }
         }
 
