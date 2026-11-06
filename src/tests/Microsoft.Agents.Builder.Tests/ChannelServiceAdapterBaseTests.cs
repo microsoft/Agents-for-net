@@ -4,6 +4,7 @@
 using Microsoft.Agents.Connector;
 using Microsoft.Agents.Connector.Types;
 using Microsoft.Agents.Core.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,15 @@ namespace Microsoft.Agents.Builder.Tests
     public class ChannelServiceAdapterBaseTests
     {
         bool _callbackInvoked = false;
+
+        [Fact]
+        public void PreservesExistingConstructorSignature()
+        {
+            var constructor = typeof(ChannelServiceAdapterBase).GetConstructor(
+                [typeof(IChannelServiceClientFactory), typeof(Microsoft.Extensions.Logging.ILogger)]);
+
+            Assert.NotNull(constructor);
+        }
 
         private readonly ConversationReference _reference = new ConversationReference
         {
@@ -378,6 +388,32 @@ namespace Microsoft.Agents.Builder.Tests
                 Times.Never);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task ProcessActivityAsync_SelectsSubchannelFactoryRegardlessOfWireNotation(bool fullNotation)
+        {
+            var channel = $"factory-{Guid.NewGuid():N}";
+            StreamingResponseFactoryCatalog.Register(channel, typeof(ParentChannelStreamingResponseFactory));
+            StreamingResponseFactoryCatalog.Register($"{channel}:preview", typeof(FullChannelStreamingResponseFactory));
+            using var services = new ServiceCollection().BuildServiceProvider();
+            var adapter = new TestChannelAdapter(
+                CreateMockChannelServiceClientFactory().Object, services, null);
+            var activity = new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = new ChannelId($"{channel}:preview", fullNotation),
+                DeliveryMode = DeliveryModes.ExpectReplies,
+                Conversation = new ConversationAccount(id: "conversation-id")
+            };
+
+            await adapter.ProcessActivityAsync(new ClaimsIdentity(), activity, (context, _) =>
+            {
+                Assert.IsType<FullChannelStreamingResponse>(context.StreamingResponse);
+                return Task.CompletedTask;
+            }, CancellationToken.None);
+        }
+
         [Fact]
         public async Task ProcessProactiveAsync_ShouldInvokeCallback()
         {
@@ -573,10 +609,35 @@ namespace Microsoft.Agents.Builder.Tests
             return mockChannelServiceClientFactory;
         }
 
+        public class ParentChannelStreamingResponseFactory : IStreamingResponseFactory
+        {
+            public IStreamingResponse Create(ITurnContext context) => new StreamingResponse((TurnContext)context);
+        }
+
+        public class FullChannelStreamingResponseFactory : IStreamingResponseFactory
+        {
+            public IStreamingResponse Create(ITurnContext context) => new FullChannelStreamingResponse((TurnContext)context);
+        }
+
+        private sealed class FullChannelStreamingResponse(TurnContext context) : StreamingResponse(context)
+        {
+        }
+
         private class TestChannelAdapter : ChannelServiceAdapterBase
         {
-            public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory, IOutboundHostValidator hostValidator = null)
+            public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory)
+                : base(channelServiceClientFactory, null, null)
+            {
+            }
+
+            public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory, IOutboundHostValidator hostValidator)
                 : base(channelServiceClientFactory, null, hostValidator)
+            {
+            }
+
+            public TestChannelAdapter(IChannelServiceClientFactory channelServiceClientFactory,
+                IServiceProvider serviceProvider, IOutboundHostValidator hostValidator)
+                : base(channelServiceClientFactory, null, serviceProvider, hostValidator)
             {
             }
         }

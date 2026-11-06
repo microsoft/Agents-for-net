@@ -30,6 +30,7 @@ An extension can use any combination of these extensibility points:
 | Serialization customization | Add converters or `JsonTypeInfoResolver` instances | `[SerializationInit]` |
 | Host endpoint mapping | Expose host- or channel-specific HTTP endpoints | Explicit mapping in `Program.cs` |
 | Custom adapters | Translate a native protocol to and from the Activity Protocol | `[ChannelAdapter]` |
+| Custom streaming responses | Select channel-specific intermediate and final delivery | `[StreamingResponseFactory]` and generated assembly manifest |
 | Custom DI | Register extension services and adapter aliases | `IAgentServiceRegistrar` and `[assembly: AgentServiceRegistration]` |
 | Custom access-token providers | Acquire application/service tokens for named connections | `IAccessTokenProvider` selected by `Connections` configuration |
 | Custom user authorization | Implement end-user sign-in, refresh, sign-out, and flow state | `IUserAuthorization` selected by `AgentApplication:UserAuthorization` configuration |
@@ -50,6 +51,7 @@ If a pull request changes code outside the extension project, it must explain wh
 - [Serialization customization](#serialization-customization)
 - [Map host endpoints](#map-host-endpoints)
 - [Custom adapters](#custom-adapters)
+- [Custom streaming responses](#custom-streaming-responses)
 - [Custom DI with `IAgentServiceRegistrar`](#custom-di-with-iagentserviceregistrar)
 - [Custom `IAccessTokenProvider`](#custom-iaccesstokenprovider)
 - [Custom `IUserAuthorization`](#custom-iuserauthorization)
@@ -820,6 +822,16 @@ services.SetDefaultChannelAdapter<ContosoAdapter>();
 
 Use `TrySetDefaultChannelAdapter<TAdapter>` only when establishing a framework convention that
 must not replace an application's explicit choice.
+
+## Custom streaming responses
+
+Use `IStreamingResponseFactory` to supply a per-turn response for a channel while preserving
+the agent-facing `ITurnContext.StreamingResponse` API. Derive from `StreamingResponseBase` for
+shared buffering and lifecycle coordination, and mark the factory with
+`[StreamingResponseFactory("contoso")]`.
+
+See [Extend IStreamingResponse with IStreamingResponseFactory](extending-streaming-response.md)
+for a complete example, discovery and DI requirements, lifecycle hooks, and validation guidance.
 
 ## Custom DI with IAgentServiceRegistrar
 

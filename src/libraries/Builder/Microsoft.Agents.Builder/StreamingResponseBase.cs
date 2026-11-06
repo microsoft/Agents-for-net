@@ -1,0 +1,842 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Core;
+using Microsoft.Agents.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Microsoft.Agents.Builder
+{
+    /// <summary>
+    /// The action a <see cref="StreamingResponseBase"/> should take when a send hook throws.
+    /// Returned by <see cref="StreamingResponseBase.HandleSendErrorAsync(Exception, CancellationToken)"/>.
+    /// </summary>
+    public enum StreamErrorAction
+    {
+        /// <summary>
+        /// Ignore the error and keep streaming (the failed send is dropped).
+        /// </summary>
+        Continue,
+
+        /// <summary>
+        /// Stop streaming intermediate updates for the remainder of the turn, but continue
+        /// to send a final (non-streamed) message.  The base sets <see cref="StreamingResponseBase.IsStreamingChannel"/>
+        /// to <c>false</c> and stops the stream loop; <see cref="StreamingResponseBase.FinalizeStreamAsync(bool, CancellationToken)"/> is still called.
+        /// </summary>
+        FallbackToNonStreaming,
+
+        /// <summary>
+        /// Stop the stream.  The result of <see cref="StreamingResponseBase.EndStreamAsync(CancellationToken)"/> will be
+        /// <see cref="StreamingResponseResult.UserCancelled"/> when <see cref="StreamingResponseBase.UserCancelledStream"/>
+        /// is set (by the subclass before returning), otherwise <see cref="StreamingResponseResult.Error"/>.
+        /// </summary>
+        Cancel,
+    }
+
+    /// <summary>
+    /// Provides the shared streaming infrastructure used by <see cref="IStreamingResponse"/> implementations:
+    /// a text buffer, an interval send loop, sequence tracking, and buffered/informative send scheduling.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Channel extension authors extend this class to provide custom streaming behavior for a channel and
+    /// register an <see cref="IStreamingResponseFactory"/> so the adapter can select it per channel.  The
+    /// built-in <see cref="StreamingResponse"/> (WebChat / DirectLine) and
+    /// <see cref="TeamsStreamingResponse"/> implementations also extend this class.
+    /// </para>
+    /// <para>
+    /// The four abstract hooks (<see cref="SendChunkAsync"/>, <see cref="SendInformativeAsync"/>,
+    /// <see cref="FinalizeStreamAsync"/>, <see cref="HandleSendErrorAsync"/>) define the required channel-specific
+    /// behavior. Optional hooks allow subclasses to transform buffered text, run work before an interval,
+    /// observe successful sends, and reset channel-specific state. Buffering, sequencing, cancellation, and
+    /// stream lifecycle remain shared.
+    /// </para>
+    /// </remarks>
+    public abstract class StreamingResponseBase : IStreamingResponse
+    {
+        private const int DefaultInitialDelay = 250;
+        private const string DefaultFeedbackLoopType = "default";
+        private const string DefaultStreamingTakingTooLongMessage =
+            "The response is taking longer than expected. Please wait while we continue to generate the response.";
+
+        /// <summary>
+        /// The default time, in milliseconds, that <see cref="EndStreamAsync"/> will wait for the buffer to drain.
+        /// </summary>
+        public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
+
+        // A single pending send: either an informative update, or a buffered text chunk snapshot.
+        private sealed class PendingSend
+        {
+            public bool IsInformative;
+            public string Text;
+        }
+
+        private int _nextSequence = 1;
+        private bool _ended;
+        private CancellationTokenSource _streamCts;
+        private bool _streamStarted;
+        private bool _messageUpdated;
+        private bool _canceled;
+        private bool _userCanceled;
+        private Task _streamTask = Task.CompletedTask;
+        private IActivity _finalMessage;
+
+        // Ordered FIFO of pending sends (informative updates interleaved with buffered text chunks).
+        private readonly List<PendingSend> _queue = [];
+        private readonly AutoResetEvent _queueEmpty = new(false);
+
+        private int _interval;
+        private int _initialDelay = DefaultInitialDelay;
+
+        /// <inheritdoc/>
+        public int Interval
+        {
+            get => _interval;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Interval must be greater than or equal to 0.");
+                _interval = value;
+            }
+        }
+
+        /// <inheritdoc/>
+        public int InitialDelay
+        {
+            get => _initialDelay;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "InitialDelay must be greater than or equal to 0.");
+                _initialDelay = value;
+            }
+        }
+
+        /// <inheritdoc/>
+        public int EndStreamTimeout { get; set; } = DefaultEndStreamTimeout;
+
+        /// <inheritdoc/>
+        public bool IsStreamingChannel { get; protected set; }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// StreamId assignment is the subclass's responsibility (via the protected setter). The base clears it
+        /// during <see cref="Microsoft.Agents.Builder.StreamingResponseBase.ResetAsync(System.Threading.CancellationToken)"/>,
+        /// after which the implementation-specific reset hook may regenerate it.
+        /// Connector-backed Teams assigns it from the first send response; hosted Stream delivery uses a local GUID.
+        /// </remarks>
+        public string StreamId { get; protected set; }
+
+        /// <inheritdoc/>
+        public string Message { get; protected set; } = "";
+
+        /// <inheritdoc/>
+        [Obsolete("FinalMessage is Activity Protocol-specific. Use AddAttachment and AddCitation instead.")]
+        public IActivity FinalMessage { get => _finalMessage; set => _finalMessage = value; }
+
+        /// <summary>
+        /// Gets the legacy final activity override for Activity Protocol implementations.
+        /// </summary>
+        protected IActivity LegacyFinalMessage => _finalMessage;
+
+        /// <summary>
+        /// Gets the identity of the current streaming lifetime, invalidated when the stream stops or resets.
+        /// </summary>
+        /// <remarks>
+        /// Capture this identity when a send hook starts. After asynchronous work, hold <c>lock (this)</c>
+        /// and check <see cref="Microsoft.Agents.Builder.StreamingResponseBase.IsCurrentStream(System.Object)"/>
+        /// before changing shared state or starting another channel operation.
+        /// </remarks>
+        protected object StreamLifetime { get; private set; } = new();
+
+        /// <summary>
+        /// Checks whether an operation still belongs to the current streaming lifetime.
+        /// </summary>
+        /// <param name="streamLifetime">The captured <see cref="Microsoft.Agents.Builder.StreamingResponseBase.StreamLifetime"/>.</param>
+        /// <returns>Whether the captured lifetime is still current.</returns>
+        protected bool IsCurrentStream(object streamLifetime) => ReferenceEquals(streamLifetime, StreamLifetime);
+
+        /// <inheritdoc/>
+        public bool FeedbackLoopEnabled { get; set; }
+
+        /// <inheritdoc/>
+        public string FeedbackLoopType { get; set; } = DefaultFeedbackLoopType;
+
+        /// <inheritdoc/>
+        public bool? EnableGeneratedByAILabel { get; set; } = false;
+
+        /// <inheritdoc/>
+        public SensitivityUsageInfo? SensitivityLabel { get; set; }
+
+        /// <inheritdoc/>
+        public List<ClientCitation>? Citations { get; protected set; } = [];
+
+        /// <inheritdoc/>
+        public string StreamingTakingTooLongMessage { get; set; } = DefaultStreamingTakingTooLongMessage;
+
+        /// <summary>
+        /// Attachments to be included in the final message.  Only used for the final message, not intermediate messages.
+        /// </summary>
+        public List<Attachment>? Attachments { get; protected set; } = [];
+
+        /// <summary>
+        /// When <see cref="HandleSendErrorAsync"/> returns <see cref="StreamErrorAction.Cancel"/>, set this to
+        /// <c>true</c> to report the cancellation as <see cref="StreamingResponseResult.UserCancelled"/> rather
+        /// than <see cref="StreamingResponseResult.Error"/>.
+        /// </summary>
+        protected bool UserCancelledStream { get; set; }
+
+        /// <summary>
+        /// Gets whether <see cref="EndStreamAsync"/> has ended this response.
+        /// </summary>
+        protected bool HasEnded
+        {
+            get
+            {
+                lock (this)
+                {
+                    return _ended;
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public int UpdatesSent() => _nextSequence - 1;
+
+        /// <inheritdoc/>
+        public bool IsStreamStarted() => _streamStarted;
+
+        /// <inheritdoc/>
+        public void AddAttachment(Attachment attachment)
+        {
+            AssertionHelpers.ThrowIfNull(attachment, nameof(attachment));
+            Attachments ??= [];
+            Attachments.Add(attachment);
+        }
+
+        /// <inheritdoc/>
+        public void AddCitation(ClientCitation citation)
+        {
+            Citations ??= [];
+            Citations.Add(citation);
+        }
+
+        /// <inheritdoc/>
+        public void AddCitation(Citation citation, int citationPosition)
+        {
+            Citations ??= [];
+            Citations.Add(new ClientCitation()
+            {
+                Position = citationPosition,
+                Appearance = new ClientCitationAppearance()
+                {
+                    Name = citation.Title ?? $"Document #{citationPosition}",
+                    Abstract = CitationUtils.Snippet(citation.Content, 480),
+                    Url = citation.Url
+                }
+            });
+        }
+
+        /// <inheritdoc/>
+        public void AddCitations(IList<Citation> citations)
+        {
+            if (citations.Count > 0)
+            {
+                Citations ??= [];
+
+                int currPos = Citations.Count;
+
+                foreach (Citation citation in citations)
+                {
+                    Citations.Add(new ClientCitation()
+                    {
+                        Position = currPos + 1,
+                        Appearance = new ClientCitationAppearance()
+                        {
+                            Name = citation.Title ?? $"Document #{currPos + 1}",
+                            Abstract = CitationUtils.Snippet(citation.Content, 480),
+                            Url = citation.Url
+                        }
+                    });
+                    currPos++;
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void AddCitations(IList<ClientCitation> citations)
+        {
+            if (citations.Count > 0)
+            {
+                Citations ??= [];
+                Citations.AddRange(citations);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task QueueInformativeUpdateAsync(string text, CancellationToken cancellationToken = default)
+        {
+            object streamLifetime;
+            int sequence;
+            lock (this)
+            {
+                if (!IsStreamingChannel || _canceled)
+                {
+                    return;
+                }
+
+                if (_ended)
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
+                }
+
+                if (IsStreamStarted())
+                {
+                    // Stream already running - queue the informative so it is sent, in order, on the streaming loop.
+                    _queue.Add(new PendingSend { IsInformative = true, Text = text });
+                    _queueEmpty.Reset();
+                    return;
+                }
+
+                streamLifetime = StreamLifetime;
+                sequence = _nextSequence++;
+            }
+
+            // Stream not started yet: send the first informative directly on the caller's thread, then start the loop.
+            try
+            {
+                Task sendTask;
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return;
+                    }
+                    sendTask = SendInformativeAsync(text, sequence, cancellationToken);
+                }
+                await sendTask.ConfigureAwait(false);
+
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return;
+                    }
+                    OnSendCompleted(isInformative: true, text);
+                    StartStream();
+                }
+            }
+            catch (Exception ex)
+            {
+                await HandleErrorAsync(ex, streamLifetime, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void QueueTextChunk(string text)
+        {
+            if (string.IsNullOrEmpty(text) || _canceled)
+            {
+                return;
+            }
+
+            lock (this)
+            {
+                if (_ended)
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(ErrorHelper.StreamingResponseEnded, null);
+                }
+
+                // Buffer all chunks.
+                Message += text;
+                Message = TransformBufferedTextSafe(Message);
+
+                _messageUpdated = true;
+
+                // Start the stream if needed.  The InitialDelay gives a quicker first message (better UX) when
+                // no Informative update preceded it; the normal Interval is used after the first message.
+                StartStream(InitialDelay);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default)
+        {
+            if (!IsStreamingChannel)
+            {
+                lock (this)
+                {
+                    if (_ended)
+                    {
+                        return StreamingResponseResult.AlreadyEnded;
+                    }
+
+                    _ended = true;
+                }
+
+                // The loop isn't running for non-streaming channels.  Let the subclass send the buffered final message.
+                await FinalizeStreamAsync(streamedPath: false, cancellationToken).ConfigureAwait(false);
+
+                return StreamingResponseResult.Success;
+            }
+            else
+            {
+                lock (this)
+                {
+                    if (_ended)
+                    {
+                        return StreamingResponseResult.AlreadyEnded;
+                    }
+
+                    _ended = true;
+
+                    if (_canceled)
+                    {
+                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
+                    }
+
+                    if (!IsStreamStarted())
+                    {
+                        return StreamingResponseResult.NotStarted;
+                    }
+                }
+
+                StreamingResponseResult result = StreamingResponseResult.Success;
+
+                // Wait for queued items to be sent on the streaming loop interval.
+                try
+                {
+                    if (!_queueEmpty.WaitOne(EndStreamTimeout))
+                    {
+                        result = StreamingResponseResult.Timeout;
+                        lock (this)
+                        {
+                            _ = StopStream();
+                        }
+                    }
+
+                    if (_canceled)
+                    {
+                        return _userCanceled ? StreamingResponseResult.UserCancelled : StreamingResponseResult.Error;
+                    }
+                }
+                catch (AbandonedMutexException)
+                {
+                    _ = StopStream();
+                }
+
+                // A fallback (see StreamErrorAction.FallbackToNonStreaming) may have flipped IsStreamingChannel
+                // to false while draining; FinalizeStreamAsync inspects IsStreamingChannel to decide how to send.
+                await FinalizeStreamAsync(streamedPath: true, cancellationToken).ConfigureAwait(false);
+
+                return result;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task ResetAsync(CancellationToken cancellationToken = default)
+        {
+            if (IsStreamStarted())
+            {
+                await EndStreamAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            lock (this)
+            {
+                _ = StopStream();
+                _ended = false;
+                _queue.Clear();
+                _queueEmpty.Reset();
+                _messageUpdated = false;
+                _nextSequence = 1;
+                StreamId = null;
+                _canceled = false;
+                _userCanceled = false;
+                UserCancelledStream = false;
+                Message = "";
+                _finalMessage = null;
+                Citations = [];
+                Attachments = [];
+                SensitivityLabel = null;
+                EnableGeneratedByAILabel = false;
+                FeedbackLoopEnabled = false;
+                FeedbackLoopType = DefaultFeedbackLoopType;
+                StreamingTakingTooLongMessage = DefaultStreamingTakingTooLongMessage;
+                InitialDelay = DefaultInitialDelay;
+                EndStreamTimeout = DefaultEndStreamTimeout;
+
+                OnReset();
+            }
+        }
+
+        /// <inheritdoc/>
+        public virtual Task<bool> SendStreamTimedOutNotification(string message, CancellationToken cancellationToken = default)
+            => Task.FromResult(false);
+
+        /// <summary>
+        /// Sends a chunk of accumulated (buffered) text as a channel-specific intermediate message.
+        /// Called on the streaming loop.
+        /// </summary>
+        /// <param name="bufferedText">The full accumulated message text at this point in the stream.</param>
+        /// <param name="sequenceNumber">The 1-based sequence number for this update.</param>
+        /// <param name="cancellationToken">Cancellation token that must be propagated to asynchronous channel operations.</param>
+        protected abstract Task SendChunkAsync(string bufferedText, int sequenceNumber, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Sends an informative ("thinking") update.  Called on the caller's thread for the first update, and on
+        /// the streaming loop thereafter.  Implement as a no-op if the channel does not support informative updates.
+        /// </summary>
+        /// <param name="text">The informative text.</param>
+        /// <param name="sequenceNumber">The 1-based sequence number for this update.</param>
+        /// <param name="cancellationToken">Cancellation token that must be propagated to asynchronous channel operations.</param>
+        protected abstract Task SendInformativeAsync(string text, int sequenceNumber, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Sends the final message and/or closes the channel stream. Called from
+        /// <see cref="Microsoft.Agents.Builder.StreamingResponseBase.EndStreamAsync(System.Threading.CancellationToken)"/>
+        /// after the buffer drains or the drain timeout expires, or immediately for non-streaming channels.
+        /// </summary>
+        /// <param name="streamedPath">
+        /// <c>true</c> when <see cref="Microsoft.Agents.Builder.StreamingResponseBase.EndStreamAsync(System.Threading.CancellationToken)"/> took the streaming (loop) path (i.e. the channel was
+        /// a streaming channel when the stream ended), <c>false</c> for a non-streaming channel.  A
+        /// <see cref="Microsoft.Agents.Builder.StreamErrorAction.FallbackToNonStreaming"/> can set <see cref="Microsoft.Agents.Builder.StreamingResponseBase.IsStreamingChannel"/> to
+        /// <c>false</c> while <paramref name="streamedPath"/> remains <c>true</c>.
+        /// </param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        protected abstract Task FinalizeStreamAsync(bool streamedPath, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Interprets a send error and returns the action the base should apply.  Called on the streaming loop
+        /// (or the caller's thread for the first informative update).
+        /// </summary>
+        /// <param name="exception">The exception thrown by a send hook.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        protected abstract Task<StreamErrorAction> HandleSendErrorAsync(Exception exception, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Transforms the buffered text after each chunk is appended.  Default is identity.  The default
+        /// <see cref="StreamingResponse"/> overrides this to normalize citation markers.
+        /// </summary>
+        protected virtual string TransformBufferedText(string bufferedText) => bufferedText;
+
+        /// <summary>
+        /// Called (under lock) at the end of <see cref="ResetAsync"/> so subclasses can reset their own state.
+        /// </summary>
+        protected virtual void OnReset()
+        {
+        }
+
+        /// <summary>
+        /// Called before each streaming-loop pass. Return <c>false</c> to stop the loop.
+        /// </summary>
+        /// <param name="isQueueEmpty">Whether no informative or text update is currently pending.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        protected virtual Task<bool> OnBeforeSendIntervalAsync(bool isQueueEmpty, CancellationToken cancellationToken)
+            => Task.FromResult(true);
+
+        /// <summary>
+        /// Called after an informative or text update is sent successfully.
+        /// </summary>
+        protected virtual void OnSendCompleted(bool isInformative, string text)
+        {
+        }
+
+        /// <summary>
+        /// Switches the response to non-streaming delivery and stops the interval loop.
+        /// </summary>
+        protected void FallbackToNonStreaming()
+        {
+            lock (this)
+            {
+                IsStreamingChannel = false;
+                _ = StopStream();
+                _queueEmpty.Set();
+            }
+        }
+
+        /// <summary>
+        /// Gets the next stream sequence number for a channel-specific activity.
+        /// </summary>
+        protected int GetNextSequenceNumber()
+        {
+            lock (this)
+            {
+                return _nextSequence++;
+            }
+        }
+
+        private string TransformBufferedTextSafe(string text) => TransformBufferedText(text) ?? text;
+
+        private void StartStream(int interval = 0)
+        {
+            lock (this)
+            {
+                if (_streamStarted || !IsStreamingChannel || _ended || _canceled)
+                {
+                    return;
+                }
+
+                _streamStarted = true;
+                var cts = new CancellationTokenSource();
+                _streamCts = cts;
+                int dueTime = interval == 0 ? Interval : interval;
+
+                // Fire-and-forget: the loop yields immediately at the first Task.Delay.
+                _streamTask = RunStreamAsync(dueTime, cts, StreamLifetime);
+            }
+        }
+
+        private Task StopStream()
+        {
+            _streamStarted = false;
+            StreamLifetime = new object();
+            var cts = _streamCts;
+            _streamCts = null;
+            if (cts != null)
+            {
+                try
+                {
+                    cts.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // The owning loop already disposed the source while exiting.
+                }
+            }
+
+            return _streamTask;
+        }
+
+        private void QueueNextChunk()
+        {
+            if (!_messageUpdated)
+            {
+                return;
+            }
+            _messageUpdated = false;
+
+            // Snapshot the current accumulated text for this chunk.
+            _queue.Add(new PendingSend { IsInformative = false, Text = Message });
+            _queueEmpty.Reset();
+        }
+
+        // Background loop that replaces the previous interval Timer.  Like TypingWorker, it uses
+        // Task.Delay instead of System.Threading.Timer, avoiding thread-pool timer callbacks and
+        // self-rescheduling shared timer state.  Each iteration waits the current due time, then sends one
+        // buffered/informative item; the tick returns the next due time (or a negative value to stop).
+        private async Task RunStreamAsync(int firstDueTime, CancellationTokenSource cts, object streamLifetime)
+        {
+            var stopToken = cts.Token;
+            try
+            {
+                int dueTime = firstDueTime;
+                while (true)
+                {
+                    await Task.Delay(dueTime, stopToken).ConfigureAwait(false);
+
+                    int nextDueTime = await SendNextIntervalAsync(streamLifetime, stopToken).ConfigureAwait(false);
+                    if (nextDueTime < 0)
+                    {
+                        return;
+                    }
+
+                    dueTime = nextDueTime;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected when the stream is stopped (cancel / fallback / reset).
+            }
+            catch (Exception)
+            {
+                // Best-effort: a failure in the streaming loop must not crash the process or fault the turn.
+            }
+            finally
+            {
+                cts.Dispose();
+            }
+        }
+
+        // Sends one buffered chunk (or informative) per interval and returns the next due time in milliseconds,
+        // or a negative value to stop the loop.  Mirrors the previous self-rescheduling Timer callback.
+        private async Task<int> SendNextIntervalAsync(object streamLifetime, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            PendingSend pending;
+            bool isQueueEmpty;
+            bool isEnded;
+
+            lock (this)
+            {
+                if (!IsCurrentStream(streamLifetime))
+                {
+                    return -1;
+                }
+                isQueueEmpty = _queue.Count == 0 && !_messageUpdated;
+                isEnded = _ended;
+            }
+
+            if (!isEnded)
+            {
+                bool continueStreaming;
+                try
+                {
+                    Task<bool> intervalTask;
+                    lock (this)
+                    {
+                        if (!IsCurrentStream(streamLifetime))
+                        {
+                            return -1;
+                        }
+                        intervalTask = OnBeforeSendIntervalAsync(isQueueEmpty, cancellationToken);
+                    }
+                    continueStreaming = await intervalTask.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    return await HandleErrorAsync(ex, streamLifetime, cancellationToken).ConfigureAwait(false);
+                }
+
+                if (!continueStreaming)
+                {
+                    lock (this)
+                    {
+                        if (!IsCurrentStream(streamLifetime))
+                        {
+                            return -1;
+                        }
+                        _ = StopStream();
+                        _queueEmpty.Set();
+                    }
+                    return -1;
+                }
+            }
+
+            lock (this)
+            {
+                if (!IsCurrentStream(streamLifetime))
+                {
+                    return -1;
+                }
+                cancellationToken.ThrowIfCancellationRequested();
+                QueueNextChunk();
+
+                if (_queue.Count > 0)
+                {
+                    pending = _queue[0];
+                    _queue.RemoveAt(0);
+                }
+                else if (_ended)
+                {
+                    _ = StopStream();
+                    _queueEmpty.Set();
+                    return -1;
+                }
+                else
+                {
+                    // Nothing queued and not ending - chunking is likely slow.  Poll faster to pick up the next chunk.
+                    return 200;
+                }
+            }
+
+            // Can't await inside the lock.
+            try
+            {
+                Task sendTask;
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return -1;
+                    }
+                    int sequence = _nextSequence++;
+                    sendTask = pending.IsInformative
+                        ? SendInformativeAsync(pending.Text, sequence, cancellationToken)
+                        : SendChunkAsync(pending.Text, sequence, cancellationToken);
+                }
+                await sendTask.ConfigureAwait(false);
+
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return -1;
+                    }
+                    OnSendCompleted(pending.IsInformative, pending.Text);
+                    return Interval;
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                return await HandleErrorAsync(ex, streamLifetime, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private async Task<int> HandleErrorAsync(
+            Exception exception, object streamLifetime, CancellationToken cancellationToken)
+        {
+            // Errors are handled here (not rethrown) since this is running on the streaming loop and would
+            // otherwise fault the loop task.
+            StreamErrorAction action;
+            try
+            {
+                Task<StreamErrorAction> errorTask;
+                lock (this)
+                {
+                    if (!IsCurrentStream(streamLifetime))
+                    {
+                        return -1;
+                    }
+                    UserCancelledStream = false;
+                    errorTask = HandleSendErrorAsync(exception, cancellationToken);
+                }
+                action = await errorTask.ConfigureAwait(false);
+            }
+            catch
+            {
+                action = StreamErrorAction.Cancel;
+            }
+
+            lock (this)
+            {
+                if (!IsCurrentStream(streamLifetime))
+                {
+                    return -1;
+                }
+                switch (action)
+                {
+                    case StreamErrorAction.Continue:
+                        // Ignore the failed send and keep streaming on the normal interval.
+                        return Interval;
+
+                    case StreamErrorAction.FallbackToNonStreaming:
+                        // Disable streaming for the rest of the turn; a plain final message will still be sent.
+                        IsStreamingChannel = false;
+                        _ = StopStream();
+                        _queueEmpty.Set();
+                        return -1;
+
+                    case StreamErrorAction.Cancel:
+                    default:
+                        _ = StopStream();
+                        _canceled = true;
+                        _userCanceled = UserCancelledStream;
+                        _queueEmpty.Set();
+                        return -1;
+                }
+            }
+        }
+    }
+}
