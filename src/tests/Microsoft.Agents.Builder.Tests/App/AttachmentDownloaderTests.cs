@@ -269,14 +269,18 @@ namespace Microsoft.Agents.Builder.Tests.App
                 handler.RequestUris);
         }
 
-        [Fact]
-        public async Task DownloadFilesAsync_DisallowedRedirect_SkipsAttachment_NoRequestToRedirectTarget()
+        [Theory]
+        [InlineData("https://evil.example.com/doc.txt")]
+        [InlineData("http://files.contoso.com/doc.txt")]
+        public async Task DownloadFilesAsync_DisallowedRedirect_SkipsAttachment_NoRequestToRedirectTarget(string redirectUrl)
         {
             var handler = new RecordingHandler((request, callCount) =>
-                new HttpResponseMessage(HttpStatusCode.Redirect)
-                {
-                    Headers = { Location = new Uri("https://evil.example.com/doc.txt") }
-                });
+                callCount == 1
+                    ? new HttpResponseMessage(HttpStatusCode.Redirect)
+                    {
+                        Headers = { Location = new Uri(redirectUrl) }
+                    }
+                    : CreateFileResponse());
             var validator = new OutboundHostValidator(new OutboundHostValidatorOptions
             {
                 Enabled = true,

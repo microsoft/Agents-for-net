@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace Microsoft.Agents.Builder
 {
     /// <summary>
-    /// Validates that an outbound URL targets an allowed host before the SDK makes a
+    /// Validates that an outbound URL uses a permitted transport and targets an allowed host before the SDK makes a
     /// server-side, often token-bearing, request to it (e.g. Activity.ServiceUrl callbacks
     /// or attachment downloads). This is the SDK's shared anti-SSRF ("allowed hosts") control.
     /// </summary>
@@ -30,7 +30,9 @@ namespace Microsoft.Agents.Builder
         /// <param name="url">The absolute URL that is about to be requested.</param>
         /// <returns>
         /// <see langword="true"/> when enforcement is disabled, or when enforcement is enabled and the URL's host
-        /// matches the built-in first-party allowlist or a configured host; otherwise <see langword="false"/>.
+        /// matches the built-in first-party allowlist or a configured host and uses HTTPS, or HTTP to loopback
+        /// when explicitly permitted by <see cref="Microsoft.Agents.Builder.OutboundHostValidatorOptions.AllowHttpForLoopback"/>;
+        /// otherwise <see langword="false"/>.
         /// </returns>
         bool IsAllowed(string url);
 
@@ -69,6 +71,17 @@ namespace Microsoft.Agents.Builder
         public bool AllowPrivateNetworkAddresses { get; set; } = false;
 
         /// <summary>
+        /// Gets or sets a value indicating whether HTTP URLs targeting loopback are permitted for development.
+        /// Defaults to <see langword="false"/>.
+        /// </summary>
+        /// <remarks>
+        /// The host must still be allowlisted and
+        /// <see cref="Microsoft.Agents.Builder.OutboundHostValidatorOptions.AllowPrivateNetworkAddresses"/> must be enabled.
+        /// This exception does not permit HTTP URLs targeting non-loopback hosts.
+        /// </remarks>
+        public bool AllowHttpForLoopback { get; set; } = false;
+
+        /// <summary>
         /// Gets or sets the additional allowed host suffixes. An entry matches a request host when the host equals the
         /// entry or is a subdomain of it (e.g. <c>contoso.com</c> matches <c>contoso.com</c> and <c>files.contoso.com</c>).
         /// A leading <c>*.</c> is accepted and ignored (treated as a suffix).
@@ -96,6 +109,7 @@ namespace Microsoft.Agents.Builder
 
         private readonly bool _enabled;
         private readonly bool _allowPrivateNetworkAddresses;
+        private readonly bool _allowHttpForLoopback;
         private readonly IHostAddressResolver _hostAddressResolver;
         private readonly string[] _suffixes;
 
@@ -113,6 +127,7 @@ namespace Microsoft.Agents.Builder
             options ??= new OutboundHostValidatorOptions();
             _enabled = options.Enabled;
             _allowPrivateNetworkAddresses = options.AllowPrivateNetworkAddresses;
+            _allowHttpForLoopback = options.AllowHttpForLoopback;
             _hostAddressResolver = hostAddressResolver ?? throw new ArgumentNullException(nameof(hostAddressResolver));
 
             var suffixes = new List<string>();
@@ -163,7 +178,8 @@ namespace Microsoft.Agents.Builder
                 return false;
             }
 
-            if ((uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            var allowedLoopbackHttp = _allowHttpForLoopback && uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback;
+            if ((uri.Scheme != Uri.UriSchemeHttps && !allowedLoopbackHttp)
                 || !string.IsNullOrEmpty(uri.UserInfo))
             {
                 return false;
