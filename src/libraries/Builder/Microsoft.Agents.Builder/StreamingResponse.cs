@@ -382,6 +382,7 @@ namespace Microsoft.Agents.Builder
             }
             else
             {
+                object streamLifetime;
                 lock (this)
                 {
                     if (_ended)
@@ -390,6 +391,7 @@ namespace Microsoft.Agents.Builder
                     }
 
                     _ended = true;
+                    streamLifetime = _streamLifetime;
 
                     if (_canceled)
                     {
@@ -422,15 +424,29 @@ namespace Microsoft.Agents.Builder
                     StopStream();
                 }
 
-                if (UpdatesSent() > 0 || FinalMessage != null)
+                IActivity finalActivity;
+                lock (this)
+                {
+                    if (!ReferenceEquals(streamLifetime, _streamLifetime))
+                    {
+                        return StreamingResponseResult.AlreadyEnded;
+                    }
+                    finalActivity = UpdatesSent() > 0 || FinalMessage != null ? CreateFinalMessage() : null;
+                }
+
+                if (finalActivity != null)
                 {
                     if (_streamTimedOut)
                     {
-                        await UpdateActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                        await UpdateActivityAsync(finalActivity, cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
-                        await SendActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
+                        await SendActivityAsync(finalActivity, null, streamLifetime, cancellationToken).ConfigureAwait(false);
+                        if (_streamTimedOut && _canceled)
+                        {
+                            return StreamingResponseResult.Error;
+                        }
                     }
                 }
 
@@ -1018,6 +1034,7 @@ namespace Microsoft.Agents.Builder
 
                     bool CanceledStream = true; // logging flag and general cancellation handler
                     bool streamTimedOut = false;
+                    bool updateFinalMessage = false;
                     bool userCanceled = false;
                     bool disableStreaming = false;
                     if (ex is ErrorResponseException errorResponse)
@@ -1083,10 +1100,23 @@ namespace Microsoft.Agents.Builder
                         {
                             IsStreamingChannel = false;
                         }
+                        if (streamTimedOut && activity.GetStreamingEntity() is StreamInfo streamInfo &&
+                            streamInfo.StreamType == StreamTypes.Final)
+                        {
+                            activity.Entities.Remove(streamInfo);
+                            updateFinalMessage = true;
+                        }
                     }
                     if (streamTimedOut)
                     {
-                        await SendStreamTimeOutCheckpoint(timer, cancellationToken).ConfigureAwait(false);
+                        if (updateFinalMessage)
+                        {
+                            CanceledStream = await UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false) == null;
+                        }
+                        else
+                        {
+                            await SendStreamTimeOutCheckpoint(timer, cancellationToken).ConfigureAwait(false);
+                        }
                     }
                     lock (this)
                     {

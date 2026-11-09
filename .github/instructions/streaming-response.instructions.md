@@ -21,6 +21,7 @@ When working on streaming message delivery, read `docs/streaming-response-sequen
 - **Non-streaming channels** buffer all text and send a single normal message on `EndStreamAsync()` — no timer runs.
 - Teams requires using the `Activity.Id` returned from the first send as the `StreamId` for all subsequent messages.
 - `ResetAsync()` allows reusing the stream for multiple streaming sequences in one turn.
+- Final sends retain their originating stream lifetime; a late completion after `ResetAsync()` must not update or stop a replacement stream.
 
 ## Channel Intervals
 
@@ -34,7 +35,7 @@ When working on streaming message delivery, read `docs/streaming-response-sequen
 
 ## Error Scenarios
 
-- **ContentStreamNotAllowed + "Content stream finished due to exceeded streaming time."** → disables streaming, updates the existing activity with a timeout checkpoint, and later updates it with the final response
+- **ContentStreamNotAllowed + "Content stream finished due to exceeded streaming time."** → disables streaming. Intermediate-send timeouts update a checkpoint and later the final response; final-send timeouts immediately update the original activity with the complete composed final payload, without stream markers or duplicate attachments. Failed final recovery returns `Error`.
 - **Other ContentStreamNotAllowed on Teams** → service rejection, not evidence of a user pressing Stop; stops the stream and reports `Error` when ending the failed stream
 - **Other ContentStreamNotAllowed on non-Teams channels** → retains the existing client-cancellation interpretation and `UserCancelled` result
 - **BadArgument + "streaming api is not enabled"** → disables streaming for this turn (does not cancel)

@@ -125,6 +125,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
 
 ### Build System
 - **Central Package Management** via `Directory.Packages.props` — all package versions are declared there.
+- Keep teams.net package versions synchronized: `Microsoft.Teams.Apps` and `Microsoft.Teams.Cards` both use `Microsoft_Teams_Apps_PkgVer`. Do not pin Cards independently.
 - Core libraries **multi-target** `net8.0` and `netstandard2.0` (set in `src/Build.Common.core.props`).
 - **TreatWarningsAsErrors** is enabled globally (`src/Build.Shared.props`).
 - Package versioning uses **Nerdbank.GitVersioning** (`src/libraries/version.json`). Release branches follow the pattern `rel/v{version}`.

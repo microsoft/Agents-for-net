@@ -257,6 +257,154 @@ namespace Microsoft.Agents.Builder.Tests
             }
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task Teams_FinalSendTimeout_UpdatesCompleteFinalPayload(bool updateFails)
+        {
+            const string streamId = "teams-stream-id";
+            var updates = new List<IActivity>();
+            var updateToken = CancellationToken.None;
+            using var cancellation = new CancellationTokenSource();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                    activities[0].Type == ActivityTypes.Message
+                        ? Task.FromException<ResourceResponse[]>(new ErrorResponseException("Final send timed out.")
+                        {
+                            Body = new ErrorResponse(new Error
+                            {
+                                Code = "ContentStreamNotAllowed",
+                                Message = "Content stream finished due to exceeded streaming time."
+                            })
+                        })
+                        : Task.FromResult(new[] { new ResourceResponse(streamId) }));
+            adapter.Setup(value => value.UpdateActivityAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity, CancellationToken>((_, activity, token) =>
+                {
+                    updates.Add(activity);
+                    updateToken = token;
+                    return updateFails
+                        ? Task.FromException<ResourceResponse>(new InvalidOperationException("Update failed."))
+                        : Task.FromResult(new ResourceResponse(streamId));
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            try
+            {
+                await context.StreamingResponse.QueueInformativeUpdateAsync("Working...");
+                var citation = new ClientCitation
+                {
+                    Position = 1,
+                    Appearance = new ClientCitationAppearance { Name = "Source", Abstract = "Summary" }
+                };
+                context.StreamingResponse.FinalMessage = new Activity
+                {
+                    Text = "Completed answer.",
+                    Attachments = [new Attachment { Name = "existing.txt", ContentType = "text/plain" }],
+                    Entities = [new AIEntity { Citation = [citation] }]
+                };
+                context.StreamingResponse.AddAttachment(new Attachment { Name = "added.txt", ContentType = "text/plain" });
+                context.StreamingResponse.SensitivityLabel = new SensitivityUsageInfo { AtId = "label-id", Name = "Confidential" };
+                GetPrivateField<AutoResetEvent>(context.StreamingResponse, "_queueEmpty").Set();
+
+                var result = await context.StreamingResponse.EndStreamAsync(cancellation.Token);
+
+                Assert.Equal(updateFails ? StreamingResponseResult.Error : StreamingResponseResult.Success, result);
+                var final = Assert.Single(updates);
+                Assert.Equal(streamId, final.Id);
+                Assert.Equal("Completed answer.", final.Text);
+                Assert.Equal(new[] { "existing.txt", "added.txt" }, final.Attachments.Select(attachment => attachment.Name));
+                Assert.Null(final.GetStreamingEntity());
+                var metadata = Assert.Single(final.Entities.OfType<AIEntity>());
+                Assert.Same(citation, Assert.Single(metadata.Citation));
+                Assert.Equal("label-id", metadata.UsageInfo.AtId);
+                Assert.Equal(cancellation.Token, updateToken);
+                Assert.Equal(StreamingResponseResult.AlreadyEnded, await context.StreamingResponse.EndStreamAsync());
+            }
+            finally
+            {
+                context.StreamingResponse.EndStreamTimeout = 0;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task Teams_FinalTimeoutAfterReset_DoesNotChangeReplacementStream()
+        {
+            var pendingSend = new TaskCompletionSource<ResourceResponse[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var updates = new List<IActivity>();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Type == ActivityTypes.Message && activities[0].Text == "Original answer.")
+                    {
+                        sendStarted.TrySetResult(true);
+                        return pendingSend.Task;
+                    }
+                    return Task.FromResult(new[] { new ResourceResponse("stream-id") });
+                });
+            adapter.Setup(value => value.UpdateActivityAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .Callback<ITurnContext, IActivity, CancellationToken>((_, activity, _) => updates.Add(activity))
+                .ReturnsAsync(new ResourceResponse("stream-id"));
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.InitialDelay = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            Task<StreamingResponseResult> ending = null;
+            try
+            {
+                await context.StreamingResponse.QueueInformativeUpdateAsync("Working...");
+                context.StreamingResponse.FinalMessage = new Activity { Text = "Original answer." };
+                GetPrivateField<AutoResetEvent>(context.StreamingResponse, "_queueEmpty").Set();
+                ending = context.StreamingResponse.EndStreamAsync();
+                await sendStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TimeProvider.System);
+
+                await context.StreamingResponse.ResetAsync();
+                context.StreamingResponse.QueueTextChunk("Replacement answer.");
+                pendingSend.SetException(new ErrorResponseException("Old final send timed out.")
+                {
+                    Body = new ErrorResponse(new Error
+                    {
+                        Code = "ContentStreamNotAllowed",
+                        Message = "Content stream finished due to exceeded streaming time."
+                    })
+                });
+                await ending.WaitAsync(TimeSpan.FromSeconds(5), TimeProvider.System);
+
+                Assert.Empty(updates);
+                Assert.True(context.StreamingResponse.IsStreamingChannel);
+                Assert.True(context.StreamingResponse.IsStreamStarted());
+                Assert.Null(context.StreamingResponse.StreamId);
+                Assert.Equal("Replacement answer.", context.StreamingResponse.Message);
+            }
+            finally
+            {
+                pendingSend.TrySetResult([new ResourceResponse("stream-id")]);
+                if (ending != null)
+                {
+                    await ending.WaitAsync(TimeSpan.FromSeconds(5), TimeProvider.System);
+                }
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
         [Fact]
         public async Task Teams_StreamingPastTwoMinutes_ContinuesIntermediateDelivery()
         {

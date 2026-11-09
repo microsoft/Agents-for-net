@@ -223,9 +223,12 @@ if (result == StreamingResponseResult.Error)
 }
 ```
 
-The recognized service-timeout message retains the existing recovery path: a
-timeout checkpoint and the eventual final response update the original activity
-in place. Shared cancellation results and non-Teams cancellation behavior are
+The recognized service-timeout message on an intermediate send produces a timeout
+checkpoint; the eventual final response updates the original activity in place.
+If the final send itself times out, the complete composed payload is updated
+immediately, preserving attachments and metadata without a working-only checkpoint
+or duplicate attachments. Failed final recovery returns `Error`.
+Shared cancellation results and non-Teams cancellation behavior are
 unchanged. M365 Copilot's 35-second working notice and 1-minute-45-second
 non-streaming fallback are separate from Teams' service window and remain
 unchanged.
