@@ -534,7 +534,7 @@ namespace Microsoft.Agents.Builder
                     entity.AdditionalType ??= [];
                     if (!entity.AdditionalType.Contains(AIEntity.AdditionalTypeAIGeneratedContent))
                     {
-                        entity.AdditionalType.Add(AIEntity.AdditionalTypeAIGeneratedContent);
+                        entity.AdditionalType = [.. entity.AdditionalType, AIEntity.AdditionalTypeAIGeneratedContent];
                     }
                 }
             }

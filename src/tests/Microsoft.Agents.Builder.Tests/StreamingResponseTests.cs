@@ -1233,8 +1233,12 @@ namespace Microsoft.Agents.Builder.Tests
             }
         }
 
-        [Fact]
-        public async Task SensitivityLabel_ReusesExistingRootAndPreservesUnspecifiedMetadata()
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        public async Task SensitivityLabel_ReusesExistingRootAndPreservesUnspecifiedMetadata(
+            bool hasAiMarker, bool useReadOnlyCollection)
         {
             var responses = new List<IActivity>();
             var adapter = CreateMockAdapter(responses);
@@ -1242,9 +1246,12 @@ namespace Microsoft.Agents.Builder.Tests
             {
                 Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Test
             });
+            string[] additionalTypes = hasAiMarker
+                ? [AIEntity.AdditionalTypeAIGeneratedContent, "CustomContent"]
+                : ["CustomContent"];
             var existing = new AIEntity
             {
-                AdditionalType = [AIEntity.AdditionalTypeAIGeneratedContent, "CustomContent"],
+                AdditionalType = useReadOnlyCollection ? Array.AsReadOnly(additionalTypes) : additionalTypes,
                 Citation = [new ClientCitation { Position = 7, Appearance = new ClientCitationAppearance { Name = "Existing source" } }],
                 UsageInfo = new SensitivityUsageInfo { AtId = "urn:example:old-label" }
             };
