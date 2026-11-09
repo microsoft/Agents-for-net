@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -710,7 +711,8 @@ namespace Microsoft.Agents.Hosting.AspNetCore
                         sp.GetRequiredService<IConnections>(),
                         sp.GetRequiredService<IHttpClientFactory>(),
                         options,
-                        sp.GetService<IOutboundHostValidator>()));
+                        sp.GetService<IOutboundHostValidator>(),
+                        sp.GetService<ILogger<M365AttachmentDownloader>>()));
                 }
 
                 return list;

@@ -642,6 +642,33 @@ namespace Microsoft.Agents.Builder.Tests.App
             connections.VerifyNoOtherCalls();
         }
 
+        [Theory]
+        [InlineData("image/jpeg", "image/jpeg")]
+        [InlineData("image/webp", "image/webp")]
+        [InlineData(null, "application/octet-stream")]
+        public async Task M365DownloadFilesAsync_ResponseContentType_IsPreservedOrFallsBack(
+            string responseContentType, string expectedContentType)
+        {
+            var handler = new RecordingHandler((_, _) =>
+            {
+                var response = CreateFileResponse();
+                response.Content.Headers.ContentType = responseContentType == null
+                    ? null
+                    : new System.Net.Http.Headers.MediaTypeHeaderValue(responseContentType);
+                return response;
+            });
+            var downloader = CreateM365Downloader(
+                handler, new Mock<Microsoft.Agents.Authentication.IConnections>().Object,
+                validationEnabled: true, useAnonymous: true);
+
+            var result = await downloader.DownloadFilesAsync(
+                CreateContext("https://files.contoso.com/doc.txt", Channels.Msteams), null, CancellationToken.None);
+
+            var file = Assert.Single(result);
+            Assert.Equal(expectedContentType, file.ContentType);
+            Assert.Equal("file-bytes", file.Content.ToString());
+        }
+
         [Fact]
         public async Task M365DownloadFilesAsync_PrivateRedirect_SkipsAttachment_NoRequestToRedirectTarget()
         {
@@ -727,8 +754,8 @@ namespace Microsoft.Agents.Builder.Tests.App
             return factory.Object;
         }
 
-        private static M365AttachmentDownloader CreateM365Downloader(
-            RecordingHandler handler,
+        internal static M365AttachmentDownloader CreateM365Downloader(
+            HttpMessageHandler handler,
             Microsoft.Agents.Authentication.IConnections connections,
             bool validationEnabled,
             bool useAnonymous = false)

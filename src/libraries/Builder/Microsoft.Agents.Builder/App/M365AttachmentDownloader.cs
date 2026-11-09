@@ -3,12 +3,16 @@
 
 using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -24,6 +28,7 @@ namespace Microsoft.Agents.Builder.App
     /// An HTTPS <c>content.downloadUrl</c> is used without a bearer token, even when <c>ContentUrl</c> is absent.
     /// Invalid pre-authorized URLs and unsuccessful HTTP responses are skipped without falling back to another URL or identity.
     /// The token provider is resolved only for authenticated <c>ContentUrl</c> downloads.
+    /// Teams inline images use the current turn's connector credential and do not require an AgentExtension.
     /// </remarks>
     public class M365AttachmentDownloader : IInputFileDownloader
     {
@@ -31,6 +36,8 @@ namespace Microsoft.Agents.Builder.App
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConnections _connections;
         private readonly AttachmentDownloadHttpClient? _validatedHttpClient;
+        private readonly AttachmentDownloadHttpClient _redirectHttpClient;
+        private readonly ILogger<M365AttachmentDownloader> _logger;
 
         /// <summary>
         /// Creates the M365AttachmentDownloader
@@ -45,13 +52,29 @@ namespace Microsoft.Agents.Builder.App
         {
         }
 
+        /// <summary>
+        /// Creates an attachment downloader with diagnostic logging.
+        /// </summary>
+        /// <param name="connections">The configured connections.</param>
+        /// <param name="httpClientFactory">The HTTP client factory.</param>
+        /// <param name="options">The download options.</param>
+        /// <param name="hostValidator">Optional shared allowed-hosts validator.</param>
+        /// <param name="logger">The diagnostic logger.</param>
+        public M365AttachmentDownloader(
+            IConnections connections, IHttpClientFactory httpClientFactory, M365AttachmentDownloaderOptions options,
+            IOutboundHostValidator hostValidator, ILogger<M365AttachmentDownloader> logger)
+            : this(connections, httpClientFactory, options, hostValidator, new DnsHostAddressResolver(), validatedHttpClient: null, logger)
+        {
+        }
+
         internal M365AttachmentDownloader(
             IConnections connections,
             IHttpClientFactory httpClientFactory,
             M365AttachmentDownloaderOptions options,
             IOutboundHostValidator hostValidator,
             IHostAddressResolver hostAddressResolver,
-            HttpClient validatedHttpClient)
+            HttpClient validatedHttpClient,
+            ILogger<M365AttachmentDownloader> logger = null)
         {
             AssertionHelpers.ThrowIfNull(connections, nameof(connections));
             AssertionHelpers.ThrowIfNull(httpClientFactory, nameof(httpClientFactory));
@@ -59,11 +82,11 @@ namespace Microsoft.Agents.Builder.App
             _options = options ?? new();
             _connections = connections;
             _httpClientFactory = httpClientFactory;
-            _validatedHttpClient = hostValidator?.Enabled == true
-                ? validatedHttpClient == null
-                    ? new AttachmentDownloadHttpClient(hostValidator, hostAddressResolver)
-                    : new AttachmentDownloadHttpClient(hostValidator, hostAddressResolver, validatedHttpClient)
-                : null;
+            _logger = logger ?? NullLogger<M365AttachmentDownloader>.Instance;
+            _redirectHttpClient = validatedHttpClient == null
+                ? new AttachmentDownloadHttpClient(hostValidator, hostAddressResolver)
+                : new AttachmentDownloadHttpClient(hostValidator, hostAddressResolver, validatedHttpClient);
+            _validatedHttpClient = hostValidator?.Enabled == true ? _redirectHttpClient : null;
         }
 
         /// <inheritdoc />
@@ -75,40 +98,23 @@ namespace Microsoft.Agents.Builder.App
             }
 
             // Filter out HTML attachments
-            IEnumerable<Attachment>? attachments = turnContext.Activity.Attachments?.Where((a) => !a.ContentType.StartsWith(ContentTypes.Html));
+            IEnumerable<Attachment>? attachments = turnContext.Activity.Attachments?.Where(
+                a => a?.ContentType != null && !a.ContentType.StartsWith(ContentTypes.Html, StringComparison.OrdinalIgnoreCase));
             if (attachments == null || !attachments.Any())
             {
                 return [];
             }
 
             Task<string>? accessTokenTask = null;
+            Task<string> GetDefaultAccessTokenAsync() => _options.UseAnonymous
+                ? Task.FromResult<string>(null)
+                : accessTokenTask ??= GetAccessTokenAsync(turnContext);
             List<InputFile> files = [];
 
             foreach (Attachment attachment in attachments)
             {
-                bool preAuthorized = TryGetPreAuthorizedDownloadUrl(attachment, out string downloadUrl);
-                Uri downloadUri = null;
-                if (preAuthorized)
-                {
-                    if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out downloadUri) || downloadUri.Scheme != Uri.UriSchemeHttps)
-                    {
-                        continue;
-                    }
-                }
-                else if (attachment.ContentUrl != null &&
-                    (attachment.ContentUrl.StartsWith("https://") || attachment.ContentUrl.StartsWith("http://localhost")))
-                {
-                    downloadUri = new Uri(attachment.ContentUrl);
-                }
-
-                string accessToken = null;
-                if (downloadUri != null && !preAuthorized && !_options.UseAnonymous)
-                {
-                    accessTokenTask ??= GetAccessTokenAsync(turnContext);
-                    accessToken = await accessTokenTask.ConfigureAwait(false);
-                }
-
-                InputFile? file = await DownloadFileAsync(attachment, downloadUri, accessToken, cancellationToken);
+                InputFile? file = await DownloadAttachmentAsync(
+                    turnContext, attachment, GetDefaultAccessTokenAsync, cancellationToken).ConfigureAwait(false);
                 if (file != null)
                 {
                     files.Add(file);
@@ -116,6 +122,90 @@ namespace Microsoft.Agents.Builder.App
             }
 
             return files;
+        }
+
+        private async Task<InputFile?> DownloadAttachmentAsync(
+            ITurnContext turnContext, Attachment attachment, Func<Task<string>> getAccessToken, CancellationToken cancellationToken)
+        {
+            bool preAuthorized = TryGetPreAuthorizedDownloadUrl(attachment, out string downloadUrl);
+            if (!preAuthorized && turnContext.Activity.ChannelId == Channels.Msteams
+                && M365InlineImage.GetAttachmentId(attachment, out var imageUri) is string imageId)
+            {
+                return await DownloadInlineImageAsync(
+                    turnContext, attachment, imageUri, imageId, cancellationToken).ConfigureAwait(false);
+            }
+
+            Uri downloadUri = null;
+            if (preAuthorized)
+            {
+                if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out downloadUri) || downloadUri.Scheme != Uri.UriSchemeHttps)
+                {
+                    return null;
+                }
+            }
+            else if (attachment.ContentUrl != null &&
+                (attachment.ContentUrl.StartsWith("https://") || attachment.ContentUrl.StartsWith("http://localhost")))
+            {
+                downloadUri = new Uri(attachment.ContentUrl);
+            }
+
+            string accessToken = downloadUri != null && !preAuthorized
+                ? await getAccessToken().ConfigureAwait(false)
+                : null;
+            AuthenticationHeaderValue authorization = string.IsNullOrEmpty(accessToken)
+                ? null
+                : new AuthenticationHeaderValue("Bearer", accessToken);
+            return await DownloadFileAsync(
+                attachment, downloadUri, authorization, requireHttps: false, retainAuthorizationOnSameOriginRedirects: false,
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task<InputFile?> DownloadInlineImageAsync(
+            ITurnContext turnContext, Attachment attachment, Uri uri, string id, CancellationToken cancellationToken)
+        {
+            if (!M365InlineImage.IsUnderServiceUrl(uri, turnContext.Activity.ServiceUrl))
+            {
+                _logger.LogWarning("Inline image {AttachmentId} skipped because its URL is not under the inbound HTTPS service URL.", id);
+                return null;
+            }
+
+            var state = turnContext.Services.Get<InlineImageState>();
+            if (state == null)
+            {
+                state = new InlineImageState(M365InlineImage.ReadHints(turnContext.Activity.Attachments, _logger));
+                turnContext.Services.Set(state);
+            }
+
+            if (!_options.UseAnonymous && state.Authorization == null)
+            {
+                if (turnContext.Services.Get<IConnectorClient>() is not IRestTransport transport)
+                {
+                    _logger.LogWarning("Inline image {AttachmentId} skipped because no connector REST transport is available.", id);
+                    return null;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                using var client = await transport.GetHttpClientAsync().ConfigureAwait(false);
+                var authorization = client.DefaultRequestHeaders.Authorization;
+                if (!string.Equals(authorization?.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase)
+                    || string.IsNullOrEmpty(authorization.Parameter))
+                {
+                    _logger.LogWarning("Inline image {AttachmentId} skipped because the connector transport has no bearer credential.", id);
+                    return null;
+                }
+
+                state.Authorization = authorization;
+            }
+
+            var file = await DownloadFileAsync(
+                attachment, uri, _options.UseAnonymous ? null : state.Authorization,
+                requireHttps: true, retainAuthorizationOnSameOriginRedirects: true, cancellationToken).ConfigureAwait(false);
+            if (file != null)
+            {
+                M365InlineImage.SetDownloadedMetadata(file, attachment, id, state.Hints);
+            }
+
+            return file;
         }
 
         private Task<string> GetAccessTokenAsync(ITurnContext turnContext)
@@ -153,25 +243,25 @@ namespace Microsoft.Agents.Builder.App
         }
 
         private async Task<InputFile?> DownloadFileAsync(
-            Attachment attachment, Uri downloadUri, string accessToken, CancellationToken cancellationToken)
+            Attachment attachment, Uri downloadUri, AuthenticationHeaderValue authorization, bool requireHttps,
+            bool retainAuthorizationOnSameOriginRedirects, CancellationToken cancellationToken)
         {
             string? name = attachment.Name;
 
             if (downloadUri != null)
             {
-                AuthenticationHeaderValue authorization = string.IsNullOrEmpty(accessToken)
-                    ? null
-                    : new AuthenticationHeaderValue("Bearer", accessToken);
-
                 HttpResponseMessage response;
-                if (_validatedHttpClient != null)
+                if (_validatedHttpClient != null || requireHttps || retainAuthorizationOnSameOriginRedirects)
                 {
-                    response = await _validatedHttpClient.SendAsync(
+                    response = await _redirectHttpClient.SendAsync(
                         downloadUri,
                         request => request.Headers.Authorization = authorization,
+                        requireHttps,
+                        retainAuthorizationOnSameOriginRedirects,
                         cancellationToken).ConfigureAwait(false);
                     if (response == null)
                     {
+                        LogDownloadFailure(statusCode: null);
                         return null;
                     }
                 }
@@ -189,6 +279,7 @@ namespace Microsoft.Agents.Builder.App
                     // Failed to download file
                     if (!response.IsSuccessStatusCode)
                     {
+                        LogDownloadFailure(response.StatusCode);
                         return null;
                     }
 
@@ -199,12 +290,9 @@ namespace Microsoft.Agents.Builder.App
                     byte[] content = await response.Content.ReadAsByteArrayAsync();
 #endif
 
-                    // Fixup content type
-                    string contentType = response.Content.Headers.ContentType.MediaType;
-                    if ((bool)(contentType?.StartsWith("image/")))
-                    {
-                        contentType = "image/png";
-                    }
+                    string contentType = response.Content.Headers.ContentType?.MediaType
+                        ?? attachment.ContentType
+                        ?? "application/octet-stream";
 
                     return new InputFile(new BinaryData(content), contentType)
                     {
@@ -213,6 +301,7 @@ namespace Microsoft.Agents.Builder.App
                     };
                 }
             }
+
             else
             {
                 return new InputFile(new BinaryData(attachment.Content), attachment.ContentType)
@@ -221,6 +310,19 @@ namespace Microsoft.Agents.Builder.App
                     Filename = name
                 };
             }
+        }
+
+        private void LogDownloadFailure(HttpStatusCode? statusCode)
+        {
+            _logger.LogWarning(
+                "Attachment download skipped; HTTP status {StatusCode} (no status means URL validation refused the request).",
+                (int?)statusCode);
+        }
+
+        private sealed class InlineImageState(Dictionary<string, string> hints)
+        {
+            public Dictionary<string, string> Hints { get; } = hints;
+            public AuthenticationHeaderValue? Authorization { get; set; }
         }
     }
 

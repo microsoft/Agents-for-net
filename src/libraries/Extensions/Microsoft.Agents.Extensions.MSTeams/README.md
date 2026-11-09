@@ -107,3 +107,58 @@ for direct `ContentUrl` downloads. Those authenticated downloads acquire one tok
 lazily per batch. Existing optional host/DNS and redirect validation is unchanged.
 Keep custom HTTP handlers for this downloader credential-free; it selects request
 authentication itself.
+
+## Pasted inline images
+
+The shared `M365AttachmentDownloader` handles pasted images through the existing
+`builder.AddAgentM365AttachmentDownloader()` registration. This is Core/Builder
+functionality: it does not require the MSTeams package or `[TeamsExtension]`.
+No second downloader registration or Files facade is needed:
+
+```csharp
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Core.Models;
+
+public class ImageAgent : AgentApplication
+{
+    public ImageAgent(AgentApplicationOptions options) : base(options)
+    {
+        OnActivity(ActivityTypes.Message, async (context, state, cancellationToken) =>
+        {
+            foreach (var file in state.Temp.InputFiles)
+            {
+                await context.SendActivityAsync(
+                    $"Received {file.Filename} ({file.ContentType}).",
+                    cancellationToken: cancellationToken);
+            }
+        }, rank: RouteRank.Last);
+    }
+}
+```
+
+An inline image is an `image/*` attachment whose URL path ends in
+`/v3/attachments/{id}/views/original`. Its HTTPS URL must be under the inbound
+activity's service URL, including its origin and path prefix. This is checked
+before resolving credentials, even when optional outbound host validation is
+disabled. The downloader reuses the turn's connector bearer rather than selecting
+an app-only or Graph identity. Custom connector REST transports must expose that
+bearer in their configured client's default Authorization header; otherwise the
+image is skipped with a warning. `UseAnonymous` still avoids acquiring credentials.
+
+Redirects use HTTPS only. Authorization is retained on the initial origin and
+dropped permanently after leaving it; existing optional host/DNS checks still
+apply to every hop. This path uses the shared credential-free manual-redirect
+transport, not an automatically redirecting client supplied by a custom handler.
+HTTP failures are skipped with status diagnostics.
+
+Downloaded PNG, JPEG, GIF, and WebP signatures determine `ContentType` and the
+generated `image-{id}` filename extension. A pasted GIF that arrives as PNG bytes
+is therefore returned as PNG, without converting the bytes. HTML image-format
+hints, or the attachment's image MIME type when no hint exists, are fallbacks for
+unrecognized bytes. Unsupported formats get no invented extension and use
+`application/octet-stream`. The companion HTML is not returned as an input file.
+Uploaded files retain their existing names and signed-download behavior.
+
+Automatic downloads remain opt-in. The Teams extension does not configure,
+wrap, or replace attachment downloaders.

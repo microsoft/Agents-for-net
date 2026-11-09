@@ -91,6 +91,13 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 - Changes outside the extension project must provide a general-purpose extensibility capability.
 - Pull requests making such changes must explain why the extension cannot use existing extensibility points and identify the related Core documentation updates.
 
+### Attachment downloader ownership
+
+- Teams/M365 attachment downloading is shared SDK Core/Builder infrastructure, implemented by `M365AttachmentDownloader` in `src/libraries/Builder/Microsoft.Agents.Builder/App/`.
+- This is an explicit exception to the AgentExtension boundary rules above: attachment classification, locator/credential selection, service-URL binding, redirects, and downloaded MIME/filename handling belong in the shared downloader pipeline, even for Teams-specific attachment shapes.
+- Do not add a separate `TeamsAttachmentDownloader`, wrap or replace the downloader from `TeamsAgentExtension`, or require `[TeamsExtension]` to enable these downloads.
+- Preserve the existing opt-in `AddAgentM365AttachmentDownloader` / `IInputFileDownloader` registration and `turnState.Temp.InputFiles` / `InputFile` output. Keep shared download code independent of MSTeams and teams.net Activity DTOs.
+
 **Microsoft.Agents.Extensions.Teams** (`src/libraries/Extensions/Microsoft.Agents.Extensions.Teams/`)
 - This is the older Teams Extension and should not be used.
 
