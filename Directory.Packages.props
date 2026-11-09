@@ -22,7 +22,7 @@
     <Microsoft_IdentityClient_PkgVer>4.90.0</Microsoft_IdentityClient_PkgVer>
     <Xunit_PackageVersion>2.9.3</Xunit_PackageVersion>
     <Xunit_v3_PackageVersion>3.0.1</Xunit_v3_PackageVersion>
-    <Microsoft_Teams_Apps_PkgVer Condition="'$(Microsoft_Teams_Apps_PkgVer)' == ''">2.1.2</Microsoft_Teams_Apps_PkgVer>
+    <Microsoft_Teams_Apps_PkgVer Condition="'$(Microsoft_Teams_Apps_PkgVer)' == ''">2.2.0</Microsoft_Teams_Apps_PkgVer>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.146" />

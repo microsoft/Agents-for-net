@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
-using Microsoft.Agents.Core.Serialization;
 
 namespace Microsoft.Agents.Extensions.MSTeams;
 
@@ -34,19 +33,14 @@ public static class TeamsActivityExtensions
     }
 
     /// <summary>
-    /// Gets the TeamsMeetingInfo object from the current activity.
+    /// Gets the meeting metadata from the current activity's Teams channel data.
     /// </summary>
     /// <param name="activity">This activity.</param>
-    /// <returns>The current activity's team's meeting, or null.</returns>
-    public static Microsoft.Teams.Apps.Clients.Meeting TeamsGetMeetingInfo(this IActivity activity)
+    /// <returns>The current activity's <see cref="Microsoft.Teams.Apps.Schema.TeamsChannelDataMeeting"/>, or <see langword="null"/>.</returns>
+    public static Microsoft.Teams.Apps.Schema.TeamsChannelDataMeeting TeamsGetMeetingInfo(this IActivity activity)
     {
         var channelData = activity.GetChannelData<Microsoft.Teams.Apps.Schema.TeamsChannelData>();
-        if (channelData != null && channelData.Properties.TryGetValue("meeting", out var meetingObj))
-        {
-            return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Clients.Meeting>(meetingObj);
-        }
-
-        return null;
+        return channelData?.Meeting;
     }
 
     /// <summary>
