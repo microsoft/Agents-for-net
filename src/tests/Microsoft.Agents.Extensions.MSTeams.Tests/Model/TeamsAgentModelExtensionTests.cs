@@ -4,6 +4,7 @@
 using Microsoft.Teams.Apps.Schema;
 using Microsoft.Teams.Apps;
 using Microsoft.Agents.Core.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using Xunit;
@@ -60,6 +61,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
                 Id = "activity-id",
                 ServiceUrl = "https://smba.trafficmanager.net/amer/",
                 ChannelId = CoreModels.Channels.Msteams,
+                Locale = "en-US",
+                Timestamp = new DateTimeOffset(2026, 11, 9, 21, 6, 57, TimeSpan.Zero),
+                LocalTimestamp = new DateTimeOffset(2026, 11, 9, 15, 6, 57, TimeSpan.FromHours(-6)),
+                LocalTimezone = "America/Chicago",
                 Conversation = new CoreModels.ConversationAccount
                 {
                     Id = "conversation-id",
@@ -89,6 +94,14 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
             Assert.Equal("user-id", converted.From?.Id);
             Assert.Equal("agent-id", converted.Recipient?.Id);
             Assert.Equal(source.ServiceUrl, converted.ServiceUrl?.AbsoluteUri);
+            Assert.Equal("en-US", converted.Locale);
+            Assert.Equal("2026-11-09T21:06:57+00:00", converted.Timestamp);
+            Assert.Equal("2026-11-09T15:06:57-06:00", converted.LocalTimestamp);
+            Assert.Equal("America/Chicago", converted.LocalTimezone);
+            Assert.DoesNotContain("locale", converted.Properties.Keys);
+            Assert.DoesNotContain("timestamp", converted.Properties.Keys);
+            Assert.DoesNotContain("localTimestamp", converted.Properties.Keys);
+            Assert.DoesNotContain("localTimezone", converted.Properties.Keys);
             if (activityType == "message")
             {
                 Assert.Equal(text, Assert.IsType<MessageActivity>(converted).Text);
@@ -100,6 +113,10 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
 
             var restored = converted.ToCoreActivity();
             Assert.Equal("activity-id", restored.Id);
+            Assert.Equal(source.Locale, restored.Locale);
+            Assert.Equal(source.Timestamp, restored.Timestamp);
+            Assert.Equal(source.LocalTimestamp, restored.LocalTimestamp);
+            Assert.Equal(source.LocalTimezone, restored.LocalTimezone);
             Assert.Equal("Chat", restored.Conversation.Name);
             Assert.True(restored.Conversation.IsGroup);
             Assert.Equal("groupChat", restored.Conversation.ConversationType);

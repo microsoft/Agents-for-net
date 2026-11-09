@@ -92,6 +92,10 @@ public static class TeamsModelExtensions
     {
         var coreActivity = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Core.Schema.CoreActivity>(activity);
         var teamsActivity = Microsoft.Teams.Apps.Schema.TeamsActivity.FromActivity(coreActivity);
+        teamsActivity.Locale = teamsActivity.Properties.Extract<string>("locale");
+        teamsActivity.Timestamp = teamsActivity.Properties.Extract<string>("timestamp");
+        teamsActivity.LocalTimestamp = teamsActivity.Properties.Extract<string>("localTimestamp");
+        teamsActivity.LocalTimezone = teamsActivity.Properties.Extract<string>("localTimezone");
         if (teamsActivity is Microsoft.Teams.Apps.MessageActivity messageActivity)
         {
             messageActivity.Text = activity.Text;
