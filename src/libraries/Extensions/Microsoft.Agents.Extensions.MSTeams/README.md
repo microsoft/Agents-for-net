@@ -74,3 +74,36 @@ await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
 The final message includes the label even without citations or an AI-generated
 marker. Setting `SensitivityLabel` alone does not claim that content is AI-generated.
 No new ApiClient wrapper or upstream activity model is required.
+
+## Pre-authorized incoming attachments
+
+Register the existing downloader once before building the host:
+
+```csharp
+using Microsoft.Agents.Hosting.AspNetCore;
+
+builder.AddAgentM365AttachmentDownloader();
+```
+
+In an agent route, consume the existing downloaded-input collection:
+
+```csharp
+foreach (var file in turnState.Temp.InputFiles)
+{
+    await turnContext.SendActivityAsync(
+        $"Received {file.Filename} ({file.Content.ToMemory().Length} bytes).",
+        cancellationToken: cancellationToken);
+}
+```
+
+For Teams and M365 Copilot attachments, an HTTPS `content.downloadUrl` is already
+authorized by its URL. The downloader does not resolve a token provider or add a
+bearer for that request, including when `ContentUrl` is absent. Invalid signed URLs
+and unsuccessful HTTP responses are skipped without falling back to `ContentUrl`
+or another identity.
+
+`UseAnonymous` is not required for signed URLs; it still controls authentication
+for direct `ContentUrl` downloads. Those authenticated downloads acquire one token
+lazily per batch. Existing optional host/DNS and redirect validation is unchanged.
+Keep custom HTTP handlers for this downloader credential-free; it selects request
+authentication itself.

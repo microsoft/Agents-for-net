@@ -10,14 +10,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App
 {
     /// <summary>
-    /// Downloads attachments from M365/Teams using the configured Token Provider (from IConnections).
+    /// Downloads attachments from M365/Teams using pre-authorized URLs or the configured token provider.
     /// </summary>
+    /// <remarks>
+    /// An HTTPS <c>content.downloadUrl</c> is used without a bearer token, even when <c>ContentUrl</c> is absent.
+    /// Invalid pre-authorized URLs and unsuccessful HTTP responses are skipped without falling back to another URL or identity.
+    /// The token provider is resolved only for authenticated <c>ContentUrl</c> downloads.
+    /// </remarks>
     public class M365AttachmentDownloader : IInputFileDownloader
     {
         private readonly M365AttachmentDownloaderOptions _options;
@@ -74,32 +81,34 @@ namespace Microsoft.Agents.Builder.App
                 return [];
             }
 
-            string accessToken = "";
-
-            // If authentication is enabled, get access token
-            if (!_options.UseAnonymous)
-            {
-                IAccessTokenProvider accessTokenProvider = null;
-                if (string.IsNullOrEmpty(_options.TokenProviderName))
-                {
-                    accessTokenProvider = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
-                }
-                else
-                {
-                    if (!_connections.TryGetConnection(_options.TokenProviderName, out accessTokenProvider))
-                    {
-                        accessTokenProvider = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
-                    }
-                }
-
-                accessToken = await accessTokenProvider.GetAccessTokenAsync(turnContext.Identity.GetOutgoingAudience(), _options.Scopes).ConfigureAwait(false);
-            }
-
+            Task<string>? accessTokenTask = null;
             List<InputFile> files = [];
 
             foreach (Attachment attachment in attachments)
             {
-                InputFile? file = await DownloadFileAsync(attachment, accessToken, cancellationToken);
+                bool preAuthorized = TryGetPreAuthorizedDownloadUrl(attachment, out string downloadUrl);
+                Uri downloadUri = null;
+                if (preAuthorized)
+                {
+                    if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out downloadUri) || downloadUri.Scheme != Uri.UriSchemeHttps)
+                    {
+                        continue;
+                    }
+                }
+                else if (attachment.ContentUrl != null &&
+                    (attachment.ContentUrl.StartsWith("https://") || attachment.ContentUrl.StartsWith("http://localhost")))
+                {
+                    downloadUri = new Uri(attachment.ContentUrl);
+                }
+
+                string accessToken = null;
+                if (downloadUri != null && !preAuthorized && !_options.UseAnonymous)
+                {
+                    accessTokenTask ??= GetAccessTokenAsync(turnContext);
+                    accessToken = await accessTokenTask.ConfigureAwait(false);
+                }
+
+                InputFile? file = await DownloadFileAsync(attachment, downloadUri, accessToken, cancellationToken);
                 if (file != null)
                 {
                     files.Add(file);
@@ -109,30 +118,57 @@ namespace Microsoft.Agents.Builder.App
             return files;
         }
 
-        private async Task<InputFile?> DownloadFileAsync(Attachment attachment, string accessToken, CancellationToken cancellationToken)
+        private Task<string> GetAccessTokenAsync(ITurnContext turnContext)
+        {
+            IAccessTokenProvider accessTokenProvider;
+            if (string.IsNullOrEmpty(_options.TokenProviderName) ||
+                !_connections.TryGetConnection(_options.TokenProviderName, out accessTokenProvider))
+            {
+                accessTokenProvider = _connections.GetTokenProvider(turnContext.Identity, turnContext.Activity);
+            }
+
+            return accessTokenProvider.GetAccessTokenAsync(turnContext.Identity.GetOutgoingAudience(), _options.Scopes);
+        }
+
+        private static bool TryGetPreAuthorizedDownloadUrl(Attachment attachment, out string downloadUrl)
+        {
+            downloadUrl = null;
+            JsonElement content;
+            try
+            {
+                content = ProtocolJsonSerializer.ToObject<JsonElement>(attachment.Content);
+            }
+            catch (JsonException) when (attachment.Content is string)
+            {
+                return false;
+            }
+
+            if (content.ValueKind != JsonValueKind.Object || !content.TryGetProperty("downloadUrl", out JsonElement value))
+            {
+                return false;
+            }
+
+            downloadUrl = value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+            return true;
+        }
+
+        private async Task<InputFile?> DownloadFileAsync(
+            Attachment attachment, Uri downloadUri, string accessToken, CancellationToken cancellationToken)
         {
             string? name = attachment.Name;
 
-            if (attachment.ContentUrl != null && (attachment.ContentUrl.StartsWith("https://") || attachment.ContentUrl.StartsWith("http://localhost")))
+            if (downloadUri != null)
             {
-                // Get downloadable content link
-                string downloadUrl;
-                var contentProperties = ProtocolJsonSerializer.ToJsonElements(attachment.Content);
-                if (contentProperties == null || !contentProperties.TryGetValue("downloadUrl", out System.Text.Json.JsonElement value))
-                {
-                    downloadUrl = attachment.ContentUrl;
-                }
-                else
-                {
-                    downloadUrl = value.ToString();
-                }
+                AuthenticationHeaderValue authorization = string.IsNullOrEmpty(accessToken)
+                    ? null
+                    : new AuthenticationHeaderValue("Bearer", accessToken);
 
                 HttpResponseMessage response;
                 if (_validatedHttpClient != null)
                 {
                     response = await _validatedHttpClient.SendAsync(
-                        new Uri(downloadUrl),
-                        request => request.Headers.Add("Authorization", $"Bearer {accessToken}"),
+                        downloadUri,
+                        request => request.Headers.Authorization = authorization,
                         cancellationToken).ConfigureAwait(false);
                     if (response == null)
                     {
@@ -142,8 +178,9 @@ namespace Microsoft.Agents.Builder.App
                 else
                 {
                     using var httpClient = _httpClientFactory.CreateClient(nameof(M365AttachmentDownloader));
-                    using HttpRequestMessage request = new(HttpMethod.Get, downloadUrl);
-                    request.Headers.Add("Authorization", $"Bearer {accessToken}");
+                    httpClient.DefaultRequestHeaders.Authorization = null;
+                    using HttpRequestMessage request = new(HttpMethod.Get, downloadUri);
+                    request.Headers.Authorization = authorization;
                     response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
                 }
 

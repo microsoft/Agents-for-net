@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.App;
@@ -402,14 +403,243 @@ namespace Microsoft.Agents.Builder.Tests.App
                 new HttpClient(handler));
             var context = CreateContext(
                 "https://files.contoso.com/doc.txt",
-                Channels.Msteams,
-                new { downloadUrl = "https://files.contoso.com/doc.txt" });
+                Channels.Msteams);
             context.Identity = new System.Security.Claims.ClaimsIdentity();
 
             var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
 
             Assert.Single(result);
             Assert.Equal(new[] { "Bearer test-token", null }, handler.AuthorizationHeaders);
+        }
+
+        [Theory]
+        [InlineData(true, true)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(false, false)]
+        public async Task M365DownloadFilesAsync_PreAuthorizedUrl_DoesNotResolveCredentialsOrSendBearer(
+            bool validationEnabled, bool hasContentUrl)
+        {
+            var handler = new RecordingHandler();
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>(MockBehavior.Strict);
+            var downloader = CreateM365Downloader(handler, connections.Object, validationEnabled);
+            var contentUrl = hasContentUrl ? "https://files.contoso.com/view/doc.txt" : null;
+            var context = CreateContext(
+                contentUrl, Channels.Msteams,
+                new { downloadUrl = "https://files.contoso.com/doc.txt?tempauth=signed" });
+            context.Activity.Attachments[0].Name = "doc.txt";
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            var file = Assert.Single(result);
+            Assert.Equal("file-bytes", file.Content.ToString());
+            Assert.Equal("text/plain", file.ContentType);
+            Assert.Equal(contentUrl, file.ContentUrl);
+            Assert.Equal("doc.txt", file.Filename);
+            Assert.Equal(new[] { "https://files.contoso.com/doc.txt?tempauth=signed" }, handler.RequestUris);
+            Assert.Null(Assert.Single(handler.AuthorizationHeaders));
+            connections.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task M365DownloadFilesAsync_PreAuthorizedRedirect_DoesNotSendBearerOnAnyHop()
+        {
+            var handler = new RecordingHandler((_, count) => count == 1
+                ? new HttpResponseMessage(HttpStatusCode.Redirect)
+                {
+                    Headers = { Location = new Uri("https://cdn.contoso.com/doc.txt") }
+                }
+                : CreateFileResponse());
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>(MockBehavior.Strict);
+            var downloader = CreateM365Downloader(handler, connections.Object, validationEnabled: true);
+            var context = CreateContext(
+                "https://files.contoso.com/view/doc.txt", Channels.Msteams,
+                new { downloadUrl = "https://files.contoso.com/doc.txt?tempauth=signed" });
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            Assert.Single(result);
+            Assert.Equal(2, handler.CallCount);
+            Assert.All(handler.AuthorizationHeaders, value => Assert.Null(value));
+            connections.VerifyNoOtherCalls();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task M365DownloadFilesAsync_MixedRoutes_UsesBearerOnlyForAuthenticatedContentUrls(
+            bool validationEnabled)
+        {
+            var handler = new RecordingHandler();
+            var accessTokenProvider = new Mock<Microsoft.Agents.Authentication.IAccessTokenProvider>();
+            accessTokenProvider
+                .Setup(value => value.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<IList<string>>(), false))
+                .ReturnsAsync("test-token");
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>();
+            connections.Setup(value => value.GetTokenProvider(
+                    It.IsAny<System.Security.Claims.ClaimsIdentity>(), It.IsAny<IActivity>()))
+                .Returns(accessTokenProvider.Object);
+            var downloader = CreateM365Downloader(handler, connections.Object, validationEnabled);
+            var context = CreateContext(null, Channels.Msteams);
+            context.Identity = new System.Security.Claims.ClaimsIdentity();
+            context.Activity.Attachments =
+            [
+                new Attachment
+                {
+                    ContentType = "application/octet-stream",
+                    Content = new { downloadUrl = "https://files.contoso.com/signed-first.txt" }
+                },
+                new Attachment
+                {
+                    ContentType = "application/octet-stream",
+                    ContentUrl = "https://files.contoso.com/authenticated-first.txt"
+                },
+                new Attachment
+                {
+                    ContentType = "application/octet-stream",
+                    ContentUrl = "https://files.contoso.com/view/signed-last.txt",
+                    Content = new { downloadUrl = "https://files.contoso.com/signed-last.txt" }
+                },
+                new Attachment
+                {
+                    ContentType = "application/octet-stream",
+                    ContentUrl = "https://files.contoso.com/authenticated-last.txt"
+                }
+            ];
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            Assert.Equal(4, result.Count);
+            Assert.Equal(new[] { null, "Bearer test-token", null, "Bearer test-token" }, handler.AuthorizationHeaders);
+            accessTokenProvider.Verify(value => value.GetAccessTokenAsync(
+                It.IsAny<string>(), It.IsAny<IList<string>>(), false), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true, HttpStatusCode.Unauthorized)]
+        [InlineData(true, HttpStatusCode.Forbidden)]
+        [InlineData(false, HttpStatusCode.Unauthorized)]
+        [InlineData(false, HttpStatusCode.Forbidden)]
+        public async Task M365DownloadFilesAsync_PreAuthorizedFailure_DoesNotFallbackToAuthenticatedUrl(
+            bool validationEnabled, HttpStatusCode status)
+        {
+            var handler = new RecordingHandler((_, _) => new HttpResponseMessage(status));
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>(MockBehavior.Strict);
+            var downloader = CreateM365Downloader(handler, connections.Object, validationEnabled);
+            var context = CreateContext(
+                "https://files.contoso.com/authenticated.txt", Channels.Msteams,
+                new { downloadUrl = "https://files.contoso.com/expired.txt" });
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            Assert.Empty(result);
+            Assert.Equal(new[] { "https://files.contoso.com/expired.txt" }, handler.RequestUris);
+            Assert.Null(Assert.Single(handler.AuthorizationHeaders));
+            connections.VerifyNoOtherCalls();
+        }
+
+        [Theory]
+        [InlineData(true, """{"downloadUrl":null}""")]
+        [InlineData(false, """{"downloadUrl":null}""")]
+        [InlineData(true, """{"downloadUrl":""}""")]
+        [InlineData(false, """{"downloadUrl":""}""")]
+        [InlineData(true, """{"downloadUrl":"not a URL"}""")]
+        [InlineData(false, """{"downloadUrl":"not a URL"}""")]
+        [InlineData(true, """{"downloadUrl":"http://files.contoso.com/doc.txt"}""")]
+        [InlineData(false, """{"downloadUrl":"http://files.contoso.com/doc.txt"}""")]
+        public async Task M365DownloadFilesAsync_InvalidPreAuthorizedUrl_DoesNotFallbackOrResolveCredentials(
+            bool validationEnabled, string content)
+        {
+            var handler = new RecordingHandler();
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>(MockBehavior.Strict);
+            var downloader = CreateM365Downloader(handler, connections.Object, validationEnabled);
+            var context = CreateContext(
+                "https://files.contoso.com/authenticated.txt", Channels.Msteams,
+                JsonSerializer.Deserialize<JsonElement>(content));
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            Assert.Empty(result);
+            Assert.Equal(0, handler.CallCount);
+            connections.VerifyNoOtherCalls();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task M365DownloadFilesAsync_AnonymousContentUrl_DoesNotSendBearer(bool validationEnabled)
+        {
+            var handler = new RecordingHandler();
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>(MockBehavior.Strict);
+            var downloader = CreateM365Downloader(
+                handler, connections.Object, validationEnabled, useAnonymous: true);
+            var context = CreateContext("https://files.contoso.com/doc.txt", Channels.Msteams);
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            Assert.Single(result);
+            Assert.Null(Assert.Single(handler.AuthorizationHeaders));
+            connections.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task M365DownloadFilesAsync_PreAuthorizedUrl_DoesNotInheritDefaultBearer()
+        {
+            var handler = new RecordingHandler();
+            var factory = new Mock<IHttpClientFactory>();
+            factory.Setup(value => value.CreateClient(It.IsAny<string>())).Returns(() =>
+            {
+                var client = new HttpClient(handler, disposeHandler: false);
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "configured-token");
+                return client;
+            });
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>(MockBehavior.Strict);
+            var downloader = new M365AttachmentDownloader(connections.Object, factory.Object);
+            var context = CreateContext(
+                "https://files.contoso.com/view/doc.txt", Channels.Msteams,
+                new { downloadUrl = "https://files.contoso.com/doc.txt" });
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            Assert.Single(result);
+            Assert.Null(Assert.Single(handler.AuthorizationHeaders));
+            connections.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task M365DownloadFilesAsync_PreAuthorizedJsonContent_DownloadsWithoutContentUrl()
+        {
+            var handler = new RecordingHandler();
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>(MockBehavior.Strict);
+            var downloader = CreateM365Downloader(handler, connections.Object, validationEnabled: true);
+            var context = CreateContext(
+                null, Channels.M365Copilot,
+                """{"downloadUrl":"https://files.contoso.com/doc.txt"}""");
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            Assert.Equal("file-bytes", Assert.Single(result).Content.ToString());
+            Assert.Equal(new[] { "https://files.contoso.com/doc.txt" }, handler.RequestUris);
+            Assert.Null(Assert.Single(handler.AuthorizationHeaders));
+            connections.VerifyNoOtherCalls();
+        }
+
+        [Theory]
+        [InlineData("embedded content")]
+        [InlineData("{not JSON")]
+        public async Task M365DownloadFilesAsync_EmbeddedContent_DoesNotResolveCredentials(string content)
+        {
+            var handler = new RecordingHandler();
+            var connections = new Mock<Microsoft.Agents.Authentication.IConnections>(MockBehavior.Strict);
+            var downloader = CreateM365Downloader(handler, connections.Object, validationEnabled: true);
+            var context = CreateContext(null, Channels.Msteams, content);
+
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
+
+            Assert.Equal(content, Assert.Single(result).Content.ToObjectFromJson<string>());
+            Assert.Equal(0, handler.CallCount);
+            connections.VerifyNoOtherCalls();
         }
 
         [Fact]
@@ -493,8 +723,27 @@ namespace Microsoft.Agents.Builder.Tests.App
         private static IHttpClientFactory CreateFactory(HttpMessageHandler handler)
         {
             var factory = new Mock<IHttpClientFactory>();
-            factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient(handler));
+            factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient(handler, disposeHandler: false));
             return factory.Object;
+        }
+
+        private static M365AttachmentDownloader CreateM365Downloader(
+            RecordingHandler handler,
+            Microsoft.Agents.Authentication.IConnections connections,
+            bool validationEnabled,
+            bool useAnonymous = false)
+        {
+            return new M365AttachmentDownloader(
+                connections,
+                CreateFactory(handler),
+                new M365AttachmentDownloaderOptions { UseAnonymous = useAnonymous },
+                new OutboundHostValidator(new OutboundHostValidatorOptions
+                {
+                    Enabled = validationEnabled,
+                    Hosts = ["contoso.com"]
+                }),
+                PublicAddressResolver(),
+                new HttpClient(handler, disposeHandler: false));
         }
 
         private static AttachmentDownloader CreateValidatedDownloader(
