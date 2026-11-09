@@ -162,3 +162,13 @@ Uploaded files retain their existing names and signed-download behavior.
 
 Automatic downloads remain opt-in. The Teams extension does not configure,
 wrap, or replace attachment downloaders.
+
+## Agentic-user shared files
+
+The same shared `M365AttachmentDownloader` resolves uploaded-file metadata with
+no signed `downloadUrl` through Graph for eligible agentic users. Configure its
+`GraphBaseUrl` when needed and consume `turnState.Temp.InputFiles` as above; no
+MSTeams activation is required. See the [shared downloader guide](../../Builder/Microsoft.Agents.Builder/README.md#agentic-user-shared-files)
+for Graph permissions, supported scopes, sovereign-host configuration, and the
+no-fallback policy. Unsigned uploaded-file metadata is no longer fetched directly
+from its browsable `ContentUrl`.

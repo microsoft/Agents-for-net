@@ -758,13 +758,15 @@ namespace Microsoft.Agents.Builder.Tests.App
             HttpMessageHandler handler,
             Microsoft.Agents.Authentication.IConnections connections,
             bool validationEnabled,
-            bool useAnonymous = false)
+            bool useAnonymous = false,
+            M365AttachmentDownloaderOptions options = null,
+            IOutboundHostValidator hostValidator = null)
         {
             return new M365AttachmentDownloader(
                 connections,
                 CreateFactory(handler),
-                new M365AttachmentDownloaderOptions { UseAnonymous = useAnonymous },
-                new OutboundHostValidator(new OutboundHostValidatorOptions
+                options ?? new M365AttachmentDownloaderOptions { UseAnonymous = useAnonymous },
+                hostValidator ?? new OutboundHostValidator(new OutboundHostValidatorOptions
                 {
                     Enabled = validationEnabled,
                     Hosts = ["contoso.com"]
