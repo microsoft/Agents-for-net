@@ -30,6 +30,30 @@ if (meeting != null)
 }
 ```
 
+## Extended markdown (GA)
+
+Teams extended markdown is generally available with teams.net 2.2.0. Use the
+`extendedmarkdown` wire value on the existing Core activity; no Teams activity
+conversion or new send helper is needed:
+
+```csharp
+using Microsoft.Agents.Core.Models;
+
+var reply = new Activity
+{
+    Type = ActivityTypes.Message,
+    TextFormat = "extendedmarkdown",
+    Text = "## Result\n\n**Status:** Complete."
+};
+await turnContext.SendActivityAsync(reply, cancellationToken);
+```
+
+Choose a format supported by the receiving client; this is Teams formatting
+guidance, not a change to other channels' rendering or to the default text format.
+GA extended markdown does **not** make HTML widgets GA. Widget composition,
+runtime handshakes, and call-tool routing remain experimental and are not enabled
+by setting `TextFormat`.
+
 ## Purview sensitivity labels
 
 Use the shared Core `SensitivityUsageInfo.AtId` for a Purview label's actual GUID.
