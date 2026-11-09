@@ -440,7 +440,8 @@ namespace Microsoft.Agents.Builder.App
 #endif
 
                     string contentType = response.Content.Headers.ContentType?.MediaType
-                        ?? attachment.ContentType
+                        ?? (string.Equals(attachment.ContentType, FileDownloadInfoContentType, StringComparison.OrdinalIgnoreCase)
+                            ? null : attachment.ContentType)
                         ?? "application/octet-stream";
 
                     return new InputFile(new BinaryData(content), contentType)

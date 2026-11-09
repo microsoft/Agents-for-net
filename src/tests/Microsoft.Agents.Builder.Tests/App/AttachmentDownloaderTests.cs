@@ -643,11 +643,13 @@ namespace Microsoft.Agents.Builder.Tests.App
         }
 
         [Theory]
-        [InlineData("image/jpeg", "image/jpeg")]
-        [InlineData("image/webp", "image/webp")]
-        [InlineData(null, "application/octet-stream")]
+        [InlineData("image/jpeg", "image/jpeg", false)]
+        [InlineData("image/webp", "image/webp", false)]
+        [InlineData(null, "application/octet-stream", false)]
+        [InlineData("image/jpeg", "image/jpeg", true)]
+        [InlineData(null, "application/octet-stream", true)]
         public async Task M365DownloadFilesAsync_ResponseContentType_IsPreservedOrFallsBack(
-            string responseContentType, string expectedContentType)
+            string responseContentType, string expectedContentType, bool signedUpload)
         {
             var handler = new RecordingHandler((_, _) =>
             {
@@ -660,9 +662,16 @@ namespace Microsoft.Agents.Builder.Tests.App
             var downloader = CreateM365Downloader(
                 handler, new Mock<Microsoft.Agents.Authentication.IConnections>().Object,
                 validationEnabled: true, useAnonymous: true);
+            var context = CreateContext(
+                signedUpload ? null : "https://files.contoso.com/doc.txt",
+                Channels.Msteams,
+                signedUpload ? new { downloadUrl = "https://files.contoso.com/doc.txt" } : null);
+            if (signedUpload)
+            {
+                context.Activity.Attachments[0].ContentType = "application/vnd.microsoft.teams.file.download.info";
+            }
 
-            var result = await downloader.DownloadFilesAsync(
-                CreateContext("https://files.contoso.com/doc.txt", Channels.Msteams), null, CancellationToken.None);
+            var result = await downloader.DownloadFilesAsync(context, null, CancellationToken.None);
 
             var file = Assert.Single(result);
             Assert.Equal(expectedContentType, file.ContentType);
