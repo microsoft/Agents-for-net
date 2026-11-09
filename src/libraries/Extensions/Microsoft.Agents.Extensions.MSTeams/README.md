@@ -196,3 +196,36 @@ MSTeams activation is required. See the [shared downloader guide](../../Builder/
 for Graph permissions, supported scopes, sovereign-host configuration, and the
 no-fallback policy. Unsigned uploaded-file metadata is no longer fetched directly
 from its browsable `ContentUrl`.
+
+## Teams streaming service behavior
+
+Teams' service-enforced streaming window is ten minutes from the first
+informative or content update. The SDK's `EndStreamTimeout` defaults to two
+minutes **only for draining queued updates when ending or resetting**; it is not
+a Teams lifetime limit and does not need to be set to ten minutes.
+
+Teams no longer exposes the streaming UI Stop feature. Non-timeout
+`ContentStreamNotAllowed` responses stop the stream as service errors rather than
+being interpreted as a user pressing Stop. Continue passing application
+cancellation tokens through the existing APIs:
+
+```csharp
+using Microsoft.Agents.Builder;
+using Microsoft.Extensions.Logging;
+
+await turnContext.StreamingResponse.QueueInformativeUpdateAsync(
+    "Working...", cancellationToken);
+turnContext.StreamingResponse.QueueTextChunk("Completed response.");
+var result = await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
+if (result == StreamingResponseResult.Error)
+{
+    logger.LogWarning("The streaming response failed.");
+}
+```
+
+The recognized service-timeout message retains the existing recovery path: a
+timeout checkpoint and the eventual final response update the original activity
+in place. Shared cancellation results and non-Teams cancellation behavior are
+unchanged. M365 Copilot's 35-second working notice and 1-minute-45-second
+non-streaming fallback are separate from Teams' service window and remain
+unchanged.

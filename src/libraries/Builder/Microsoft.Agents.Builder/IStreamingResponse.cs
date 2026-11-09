@@ -46,9 +46,15 @@ namespace Microsoft.Agents.Builder
         string StreamId { get; }
 
         /// <summary>
-        /// The time in milliseconds that EndStream or Reset wait.  After this period expires, the
-        /// final message will be sent.
+        /// The maximum time in milliseconds that
+        /// <see cref="Microsoft.Agents.Builder.IStreamingResponse.EndStreamAsync(System.Threading.CancellationToken)"/> or
+        /// <see cref="Microsoft.Agents.Builder.IStreamingResponse.ResetAsync(System.Threading.CancellationToken)"/>
+        /// waits for queued intermediate updates before attempting the final message.
         /// </summary>
+        /// <remarks>
+        /// Defaults to two minutes. This bounds queue draining when ending or resetting a stream,
+        /// not its total lifetime or the receiving channel's service-enforced streaming window.
+        /// </remarks>
         int EndStreamTimeout { get; set; }
 
         /// <summary>
@@ -139,8 +145,9 @@ namespace Microsoft.Agents.Builder
         /// Ends the stream by sending the final message to the client.
         /// </summary>
         /// <remarks>
-        /// Since the messages are sent on an interval, this call will block until all have been sent
-        /// before sending the final Message.
+        /// Since the messages are sent on an interval, this call blocks while draining queued updates,
+        /// up to <see cref="Microsoft.Agents.Builder.IStreamingResponse.EndStreamTimeout"/>,
+        /// before attempting the final message. This wait is not the receiving channel's stream lifetime.
         /// </remarks>
         /// <returns>
         /// A Task representing the async operation. The result indicates the outcome of ending the stream,

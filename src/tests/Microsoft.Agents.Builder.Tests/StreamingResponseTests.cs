@@ -148,6 +148,149 @@ namespace Microsoft.Agents.Builder.Tests
             AssertTyping(responses[1]);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("user cancelled")]
+        [InlineData("The service rejected the stream.")]
+        public async Task Teams_ContentStreamNotAllowed_ReturnsError(string errorMessage)
+        {
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new ErrorResponseException("Stream rejected.")
+                {
+                    Body = new ErrorResponse(new Error
+                    {
+                        Code = "ContentStreamNotAllowed",
+                        Message = errorMessage
+                    })
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.InitialDelay = int.MaxValue;
+            try
+            {
+                context.StreamingResponse.QueueTextChunk("Pending response.");
+                var timer = GetPrivateField<Timer>(context.StreamingResponse, "_timer");
+                var callback = InvokeTimerCallback(context.StreamingResponse, timer);
+                await callback.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TimeProvider.System);
+
+                Assert.Empty(callback.Exceptions);
+                Assert.False(context.StreamingResponse.IsStreamStarted());
+                context.StreamingResponse.QueueTextChunk("Ignored after failure.");
+                Assert.Equal("Pending response.", context.StreamingResponse.Message);
+                Assert.Equal(StreamingResponseResult.Error, await context.StreamingResponse.EndStreamAsync());
+            }
+            finally
+            {
+                context.StreamingResponse.EndStreamTimeout = 0;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task Teams_ServiceTimeout_UpdatesOriginalMessageWithFinalResponse()
+        {
+            const string streamId = "teams-stream-id";
+            var updates = new List<IActivity>();
+            var sendAttempts = 0;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, _, _) =>
+                {
+                    if (++sendAttempts == 1)
+                    {
+                        return Task.FromResult(new[] { new ResourceResponse(streamId) });
+                    }
+                    return Task.FromException<ResourceResponse[]>(new ErrorResponseException("Stream timeout.")
+                    {
+                        Body = new ErrorResponse(new Error
+                        {
+                            Code = "ContentStreamNotAllowed",
+                            Message = "Content stream finished due to exceeded streaming time."
+                        })
+                    });
+                });
+            adapter.Setup(value => value.UpdateActivityAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
+                .Callback<ITurnContext, IActivity, CancellationToken>((_, activity, _) => updates.Add(activity))
+                .ReturnsAsync(new ResourceResponse(streamId));
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            try
+            {
+                await context.StreamingResponse.QueueInformativeUpdateAsync("Working...");
+                context.StreamingResponse.QueueTextChunk("Partial response.");
+                var timer = GetPrivateField<Timer>(context.StreamingResponse, "_timer");
+                var callback = InvokeTimerCallback(context.StreamingResponse, timer);
+                await callback.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TimeProvider.System);
+
+                Assert.Empty(callback.Exceptions);
+                Assert.False(context.StreamingResponse.IsStreamingChannel);
+                var checkpoint = Assert.Single(updates);
+                Assert.Equal(streamId, checkpoint.Id);
+                Assert.Contains(context.StreamingResponse.StreamingTakingTooLongMessage, checkpoint.Text);
+
+                context.StreamingResponse.QueueTextChunk(" Completed.");
+                Assert.Equal(StreamingResponseResult.Success, await context.StreamingResponse.EndStreamAsync());
+                Assert.Equal(2, sendAttempts);
+                Assert.Equal(2, updates.Count);
+                Assert.Equal(streamId, updates[1].Id);
+                Assert.Equal("Partial response. Completed.", updates[1].Text);
+                Assert.Null(updates[1].GetStreamingEntity());
+            }
+            finally
+            {
+                context.StreamingResponse.EndStreamTimeout = 0;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task Teams_StreamingPastTwoMinutes_ContinuesIntermediateDelivery()
+        {
+            var responses = new List<IActivity>();
+            var context = new TurnContext(CreateMockAdapter(responses).Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            try
+            {
+                await context.StreamingResponse.QueueInformativeUpdateAsync("Working...");
+                SetPrivateField<DateTime?>(context.StreamingResponse, "_streamStartTime", DateTime.UtcNow.AddMinutes(-3));
+                context.StreamingResponse.QueueTextChunk("Still streaming.");
+                var timer = GetPrivateField<Timer>(context.StreamingResponse, "_timer");
+                var callback = InvokeTimerCallback(context.StreamingResponse, timer);
+                await callback.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TimeProvider.System);
+
+                Assert.Empty(callback.Exceptions);
+                Assert.True(context.StreamingResponse.IsStreamingChannel);
+                Assert.True(context.StreamingResponse.IsStreamStarted());
+                Assert.Equal(2, responses.Count);
+                Assert.Equal("Still streaming.", responses[1].Text);
+                AssertTyping(responses[1]);
+            }
+            finally
+            {
+                context.StreamingResponse.EndStreamTimeout = 0;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
         [Fact]
         public async Task TestStreamingResponseStreamingFallback()
         {

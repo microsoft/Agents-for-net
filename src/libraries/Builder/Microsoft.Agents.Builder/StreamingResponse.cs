@@ -40,7 +40,7 @@ namespace Microsoft.Agents.Builder
     {
         public static readonly int DefaultEndStreamTimeout = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
-        private const string TeamsStreamCancelled = "ContentStreamNotAllowed";
+        private const string ContentStreamNotAllowed = "ContentStreamNotAllowed";
         private const string TeamsStreamTimedOut = "Content stream finished due to exceeded streaming time.";
         // Teams failed to accept streaming messages. 
         private const string BadArgument = "BadArgument";
@@ -1022,27 +1022,23 @@ namespace Microsoft.Agents.Builder
                     bool disableStreaming = false;
                     if (ex is ErrorResponseException errorResponse)
                     {
-                        // User canceled?
-                        if (TeamsStreamCancelled.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
+                        if (ContentStreamNotAllowed.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase) &&
+                            errorResponse?.Body?.Error?.Message != null &&
+                            errorResponse.Body.Error.Message.Equals(TeamsStreamTimedOut, StringComparison.OrdinalIgnoreCase))
                         {
-                            if (errorResponse?.Body?.Error?.Message != null &&
-                                errorResponse.Body.Error.Message.Equals(TeamsStreamTimedOut, StringComparison.OrdinalIgnoreCase))
-                            {
-                                // stream timeout 
-                                _context?.Adapter?.Logger?.LogWarning("Client canceled due to exceeded allowed streaming time. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}", errorResponse?.Body?.Error?.Code, errorResponse?.Body?.Error?.Message);
-                                System.Diagnostics.Trace.WriteLine($"Client canceled due to exceeded allowed streaming time. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}");
+                            _context?.Adapter?.Logger?.LogWarning("Service exceeded allowed streaming time. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}", errorResponse?.Body?.Error?.Code, errorResponse?.Body?.Error?.Message);
+                            System.Diagnostics.Trace.WriteLine($"Service exceeded allowed streaming time. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}");
 
-                                streamTimedOut = true;
-                                disableStreaming = true;
-                                CanceledStream = false;
-                            }
-                            else
-                            {
-
-                                _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}", errorResponse?.Body?.Error?.Code, errorResponse?.Body?.Error?.Message);
-                                System.Diagnostics.Trace.WriteLine($"User canceled stream on the client side. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}");
-                                userCanceled = true;
-                            }
+                            streamTimedOut = true;
+                            disableStreaming = true;
+                            CanceledStream = false;
+                        }
+                        else if (!_isTeamsChannel &&
+                            ContentStreamNotAllowed.Equals(errorResponse?.Body?.Error?.Code, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}", errorResponse?.Body?.Error?.Code, errorResponse?.Body?.Error?.Message);
+                            System.Diagnostics.Trace.WriteLine($"User canceled stream on the client side. {errorResponse?.Body?.Error?.Code} - {errorResponse?.Body?.Error?.Message}");
+                            userCanceled = true;
                         }
                         // Stream not allowed?
 #pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons - this is to support older .NET versions
@@ -1068,7 +1064,7 @@ namespace Microsoft.Agents.Builder
                             System.Diagnostics.Trace.WriteLine($"Exception during StreamingResponse: {ex.Message} - {errorMessage}");
                         }
 
-                        if (CanceledStream)
+                        if (userCanceled)
                         {
                             _context?.Adapter?.Logger?.LogWarning("User canceled stream on the client side.");
                             System.Diagnostics.Trace.WriteLine("User canceled stream on the client side.");

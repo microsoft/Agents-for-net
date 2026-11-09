@@ -115,7 +115,21 @@ sequenceDiagram
     deactivate StreamingResponse
 ```
 
-## Error Handling: User Cancellation, Timeout & Teams Errors
+## Teams Service Window and Application Cancellation
+
+Teams enforces a **ten-minute streaming window from the first informative or
+content update**. The SDK reacts to the service timeout rather than imposing a
+local Teams lifetime timer. `EndStreamTimeout` is a separate, two-minute default
+wait for queue draining when ending or resetting a stream; increasing it does not
+extend the Teams service window.
+
+Teams no longer exposes the streaming UI Stop feature. A non-timeout
+`ContentStreamNotAllowed` response is a service rejection, not proof of user
+cancellation. The failed stream reports `Error` when ended. Application
+cancellation tokens, the shared `UserCancelled` result, and non-Teams
+client-cancellation interpretation remain unchanged.
+
+## Error Handling: Service Rejection, Timeout & Client Cancellation
 
 ```mermaid
 sequenceDiagram
@@ -130,7 +144,10 @@ sequenceDiagram
     alt ContentStreamNotAllowed + timeout message
         StreamingResponse->>StreamingResponse: _streamTimedOut = true<br/>IsStreamingChannel = false<br/>send timeout checkpoint
         Note over StreamingResponse: EndStreamAsync updates the existing<br/>stream activity with the final message
-    else ContentStreamNotAllowed (user canceled)
+    else ContentStreamNotAllowed on Teams (not a timeout)
+        StreamingResponse->>StreamingResponse: _canceled = true<br/>StopStream()
+        Note over StreamingResponse: EndStreamAsync returns Error<br/>No Teams UI-stop inference
+    else ContentStreamNotAllowed on a non-Teams channel
         StreamingResponse->>StreamingResponse: _userCanceled = true<br/>_canceled = true<br/>StopStream()
         Note over StreamingResponse: EndStreamAsync returns UserCancelled
     else BadArgument + "streaming api is not enabled"
@@ -181,7 +198,7 @@ sequenceDiagram
 - **Message accumulates** — each intermediate message sends the FULL text so far (not a delta). Channel displays latest as replacement.
 - **Final message metadata** — the root `AIEntity` is created or reused for AI labeling, referenced citations, or a sensitivity label. A sensitivity label does not imply AI-generated content. Existing metadata is retained unless the streaming response explicitly supplies its replacement.
 - **StreamId** — Teams assigns it from first response; WebChat/DirectLine/DeliveryModes.Stream SSE uses a pre-generated GUID set on every outgoing `Activity.Id`.
-- **EndStreamTimeout** — defaults to 2 minutes. If queue doesn't drain in time, returns `Timeout`. This does not guarantee that an already pending transport send has completed or been canceled.
+- **EndStreamTimeout** — defaults to 2 minutes for queue draining during `EndStreamAsync` / `ResetAsync`, not total stream lifetime. If the queue doesn't drain in time, returns `Timeout`. This does not guarantee that an already pending transport send has completed or been canceled.
 - **ResetAsync** — allows reusing `StreamingResponse` for multiple streams in the same turn (waits for current stream to end first).
 - **Client timeout fallback** — a Teams timeout error switches to non-streaming mode and updates the existing stream activity with the final message. The M365 Copilot proactive timeout path later sends the final content as a normal message even if a timeout notification fails. A reset invalidates the previous stream's pending fallback.
 - **M365 keep-alive clock** — the 35-second check is measured from stream start or the last informative update while the queue is empty. Ordinary text chunks and intermediate text sends do not reset this clock.
