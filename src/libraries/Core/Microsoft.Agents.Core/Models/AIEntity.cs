@@ -267,7 +267,7 @@ namespace Microsoft.Agents.Core.Models
         public string? Name { get; set; }
 
         /// <summary>
-        /// Optional. Ignored in Teams
+        /// Optional priority of the sensitivity metadata, interpreted by the receiving client.
         /// </summary>
         public int Position { get; set; }
 

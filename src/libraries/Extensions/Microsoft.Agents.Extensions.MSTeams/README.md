@@ -29,3 +29,48 @@ if (meeting != null)
         cancellationToken: cancellationToken);
 }
 ```
+
+## Purview sensitivity labels
+
+Use the shared Core `SensitivityUsageInfo.AtId` for a Purview label's actual GUID.
+Teams resolves the label from this identifier; `Name` and `Description` are display
+fallbacks, not substitutes for the identifier. For message-level labels, `Position`
+can carry the priority used by Teams to choose the most restrictive label. Core
+keeps this metadata generic and does not resolve or validate Teams label IDs.
+
+An ordinary Core message can carry the label inside its root message entity:
+
+```csharp
+using Microsoft.Agents.Core.Models;
+
+var label = new SensitivityUsageInfo
+{
+    AtId = purviewLabelId,
+    Name = "Confidential",
+    Position = 1
+};
+var reply = new Activity
+{
+    Type = ActivityTypes.Message,
+    Text = "Labeled response.",
+    Entities = [new AIEntity { UsageInfo = label }]
+};
+await turnContext.SendActivityAsync(reply, cancellationToken);
+```
+
+If a message already has an `AIEntity` for citations or AI labeling, set its
+`UsageInfo` rather than adding a second root. A citation-specific label belongs in
+`ClientCitationAppearance.UsageInfo`.
+
+For streamed or buffered output, use the existing streaming API:
+
+```csharp
+turnContext.StreamingResponse.SensitivityLabel = label;
+turnContext.StreamingResponse.EnableGeneratedByAILabel = false;
+turnContext.StreamingResponse.QueueTextChunk("Labeled response.");
+await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
+```
+
+The final message includes the label even without citations or an AI-generated
+marker. Setting `SensitivityLabel` alone does not claim that content is AI-generated.
+No new ApiClient wrapper or upstream activity model is required.

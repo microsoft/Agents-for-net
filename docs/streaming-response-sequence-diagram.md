@@ -1,6 +1,6 @@
 # StreamingResponse Sequence Diagram
 
-Shows how `StreamingResponse` delivers chunked intermediate messages on a timer interval, giving the UX of a streamed message. When complete, a final `ActivityTypes.Message` is sent with the full text and optional attachments/citations.
+Shows how `StreamingResponse` delivers chunked intermediate messages on a timer interval, giving the UX of a streamed message. When complete, a final `ActivityTypes.Message` is sent with the full text and optional attachments, citations, and sensitivity metadata.
 
 ## Participants
 
@@ -179,6 +179,7 @@ sequenceDiagram
 - **Callbacks belong to one timer lifetime** — queued callbacks from a stopped timer are ignored. A late timer-driven send completion from a previous stream cannot update or stop a replacement stream after `ResetAsync`.
 - **InitialDelay** (default 250ms) — used for the first `QueueTextChunk` if no informative was sent, enabling faster stream start.
 - **Message accumulates** — each intermediate message sends the FULL text so far (not a delta). Channel displays latest as replacement.
+- **Final message metadata** — the root `AIEntity` is created or reused for AI labeling, referenced citations, or a sensitivity label. A sensitivity label does not imply AI-generated content. Existing metadata is retained unless the streaming response explicitly supplies its replacement.
 - **StreamId** — Teams assigns it from first response; WebChat/DirectLine/DeliveryModes.Stream SSE uses a pre-generated GUID set on every outgoing `Activity.Id`.
 - **EndStreamTimeout** — defaults to 2 minutes. If queue doesn't drain in time, returns `Timeout`. This does not guarantee that an already pending transport send has completed or been canceled.
 - **ResetAsync** — allows reusing `StreamingResponse` for multiple streams in the same turn (waits for current stream to end first).

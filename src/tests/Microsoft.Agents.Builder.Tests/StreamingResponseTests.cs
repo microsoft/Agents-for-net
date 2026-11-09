@@ -838,7 +838,7 @@ namespace Microsoft.Agents.Builder.Tests
             var adapter = CreateMockAdapter(responses);
             var context = new TurnContext(adapter.Object, new Activity() { Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Test });
             context.StreamingResponse.EnableGeneratedByAILabel = true;
-            context.StreamingResponse.SensitivityLabel = new SensitivityUsageInfo { Name = "Confidential" };
+            context.StreamingResponse.SensitivityLabel = new SensitivityUsageInfo { AtId = "urn:example:confidential", Name = "Confidential" };
 
             context.StreamingResponse.QueueTextChunk("hello");
             await context.StreamingResponse.EndStreamAsync();
@@ -847,7 +847,136 @@ namespace Microsoft.Agents.Builder.Tests
             var aiEntity = finalActivity.Entities?.OfType<AIEntity>().FirstOrDefault();
             Assert.NotNull(aiEntity);
             Assert.NotNull(aiEntity.UsageInfo);
+            Assert.Equal("urn:example:confidential", aiEntity.UsageInfo.AtId);
             Assert.Equal("Confidential", aiEntity.UsageInfo.Name);
+        }
+
+        [Theory]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Test, DeliveryModes.Normal, false)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Msteams, DeliveryModes.ExpectReplies, false)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Webchat, DeliveryModes.ExpectReplies, false)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Test, DeliveryModes.Normal, null)]
+        public async Task SensitivityLabel_WithoutAiLabelOrCitations_IsIncludedInBufferedFinalMessage(
+            string channelId, string deliveryMode, bool? generatedByAI)
+        {
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message, ChannelId = channelId, DeliveryMode = deliveryMode
+            });
+            context.StreamingResponse.EnableGeneratedByAILabel = generatedByAI;
+            context.StreamingResponse.SensitivityLabel = new SensitivityUsageInfo
+            {
+                AtId = "urn:example:confidential", Name = "Confidential"
+            };
+
+            context.StreamingResponse.QueueTextChunk("hello");
+            var result = await context.StreamingResponse.EndStreamAsync();
+
+            Assert.Equal(StreamingResponseResult.Success, result);
+            var finalActivity = Assert.Single(responses);
+            Assert.Equal("hello", finalActivity.Text);
+            var entity = Assert.Single(finalActivity.Entities.OfType<AIEntity>());
+            Assert.Equal("urn:example:confidential", entity.UsageInfo.AtId);
+            Assert.DoesNotContain(AIEntity.AdditionalTypeAIGeneratedContent, entity.AdditionalType);
+        }
+
+        [Theory]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Msteams, DeliveryModes.Normal)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Webchat, DeliveryModes.Normal)]
+        [InlineData(Microsoft.Agents.Core.Models.Channels.Test, DeliveryModes.Stream)]
+        public async Task SensitivityLabel_WithoutAiLabelOrCitations_IsIncludedInStreamingFinalMessage(
+            string channelId, string deliveryMode)
+        {
+            var responses = new List<IActivity>();
+            var firstUpdate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                    It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    lock (responses)
+                    {
+                        responses.AddRange(activities);
+                    }
+                    if (activities.Any(activity => activity.Type == ActivityTypes.Typing))
+                    {
+                        firstUpdate.TrySetResult(true);
+                    }
+                    return Task.FromResult(activities.Select(_ => new ResourceResponse("stream-id")).ToArray());
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message, ChannelId = channelId, DeliveryMode = deliveryMode
+            });
+            context.StreamingResponse.InitialDelay = 0;
+            context.StreamingResponse.Interval = 1;
+            context.StreamingResponse.EndStreamTimeout = 10000;
+            context.StreamingResponse.EnableGeneratedByAILabel = false;
+            context.StreamingResponse.SensitivityLabel = new SensitivityUsageInfo
+            {
+                AtId = "urn:example:confidential", Name = "Confidential"
+            };
+
+            try
+            {
+                context.StreamingResponse.QueueTextChunk("hello");
+                await firstUpdate.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+                var result = await context.StreamingResponse.EndStreamAsync();
+
+                Assert.Equal(StreamingResponseResult.Success, result);
+                IActivity finalActivity;
+                lock (responses)
+                {
+                    finalActivity = Assert.Single(responses, activity => activity.Type == ActivityTypes.Message);
+                }
+                AssertFinal(finalActivity, "hello");
+                var entity = Assert.Single(finalActivity.Entities.OfType<AIEntity>());
+                Assert.Equal("urn:example:confidential", entity.UsageInfo.AtId);
+                Assert.DoesNotContain(AIEntity.AdditionalTypeAIGeneratedContent, entity.AdditionalType);
+            }
+            finally
+            {
+                InvokePrivateMethod(context.StreamingResponse, "StopStream");
+            }
+        }
+
+        [Fact]
+        public async Task SensitivityLabel_ReusesExistingRootAndPreservesUnspecifiedMetadata()
+        {
+            var responses = new List<IActivity>();
+            var adapter = CreateMockAdapter(responses);
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message, ChannelId = Microsoft.Agents.Core.Models.Channels.Test
+            });
+            var existing = new AIEntity
+            {
+                AdditionalType = [AIEntity.AdditionalTypeAIGeneratedContent, "CustomContent"],
+                Citation = [new ClientCitation { Position = 7, Appearance = new ClientCitationAppearance { Name = "Existing source" } }],
+                UsageInfo = new SensitivityUsageInfo { AtId = "urn:example:old-label" }
+            };
+            existing.Properties["custom"] = JsonSerializer.SerializeToElement(new { retained = true });
+            context.StreamingResponse.FinalMessage = new Activity
+            {
+                Text = "Custom text [7]", Entities = [existing, new Entity("custom-metadata")]
+            };
+            context.StreamingResponse.EnableGeneratedByAILabel = true;
+            context.StreamingResponse.SensitivityLabel = new SensitivityUsageInfo { AtId = "urn:example:new-label" };
+
+            context.StreamingResponse.QueueTextChunk("hello");
+            await context.StreamingResponse.EndStreamAsync();
+
+            var finalActivity = Assert.Single(responses);
+            var entity = Assert.Single(finalActivity.Entities.OfType<AIEntity>());
+            Assert.Equal("Custom text [7]", finalActivity.Text);
+            Assert.Equal("urn:example:new-label", entity.UsageInfo.AtId);
+            Assert.Equal(7, Assert.Single(entity.Citation).Position);
+            Assert.Contains("CustomContent", entity.AdditionalType);
+            Assert.Equal(1, entity.AdditionalType.Count(value => value == AIEntity.AdditionalTypeAIGeneratedContent));
+            Assert.True(entity.Properties["custom"].GetProperty("retained").GetBoolean());
+            Assert.Contains(finalActivity.Entities, value => value.Type == "custom-metadata");
         }
 
         [Fact]
