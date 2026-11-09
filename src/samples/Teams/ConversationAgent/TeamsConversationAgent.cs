@@ -13,6 +13,7 @@ using Microsoft.Agents.Extensions.MSTeams.App;
 using Microsoft.Agents.Extensions.MSTeams.Channels;
 using Microsoft.Agents.Extensions.MSTeams.Teams;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,9 +22,10 @@ using System.Xml;
 namespace ConversationAgent;
 
 [TeamsExtension]
-public partial class TeamsConversationAgent(AgentApplicationOptions options, ILogger<TeamsConversationAgent> logger) : AgentApplication(options)
+public partial class TeamsConversationAgent(AgentApplicationOptions options, ILogger<TeamsConversationAgent> logger, IConfiguration? configuration = null) : AgentApplication(options)
 {
     private readonly ILogger<TeamsConversationAgent> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IConfiguration _validationConfiguration = configuration ?? new ConfigurationBuilder().Build();
 
     [TeamsActivityRoute(ActivityTypes.InstallationUpdate)]
     public async Task OnInstallationUpdateActivityAsync(ITeamsTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
@@ -139,6 +141,12 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options, ILo
             await turnContext.SendActivityAsync(response, cancellationToken);
             return;
         }
+        if (turnContext.Activity.Attachments?.Count > 0)
+        {
+            await ReportAttachmentsAsync(turnContext, turnState, cancellationToken);
+            return;
+        }
+
         // a normal message from the conversation
         var card = NewCard("Welcome!");
         card.Buttons.Add(new CardAction

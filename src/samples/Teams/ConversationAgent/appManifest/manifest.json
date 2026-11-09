@@ -33,7 +33,7 @@
       "isNotificationOnly": false,
       "supportsCalling": false,
       "supportsVideo": false,
-      "supportsFiles": false,
+      "supportsFiles": true,
       "supportsTargetedMessages": true,
       "commandLists": [
         {
@@ -46,6 +46,10 @@
             "mention"
           ],
           "commands": [
+            {
+              "title": "validate",
+              "description": "Show attachment and stable feature validation commands"
+            },
             {
               "title": "mentionme",
               "description": "Sends message with @mention of the sender"

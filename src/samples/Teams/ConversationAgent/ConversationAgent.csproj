@@ -4,6 +4,7 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
+		<UserSecretsId>AgentsSdk-TeamsConversationAgent</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
