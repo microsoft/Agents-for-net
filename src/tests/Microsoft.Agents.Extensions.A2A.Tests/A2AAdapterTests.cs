@@ -1814,8 +1814,10 @@ public class A2AAdapterTests
         Assert.Contains(InTaskAuthorizationExtension.Uri, resumeActivation.ActivatedExtensions);
     }
 
-    [Fact]
-    public async Task ProcessJsonRpcMessageStreamAsync()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProcessJsonRpcMessageStreamAsync(bool mappedEndpoint)
     {
         // Arrange
         A2ARequestContext activation = null;
@@ -1826,7 +1828,13 @@ public class A2AAdapterTests
 
             agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
             {
-                await context.SendActivityAsync($"Echo: {context.Activity.Text}", cancellationToken: ct);
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = $"Echo: {context.Activity.Text}",
+                    },
+                    cancellationToken: ct);
             });
 
             return agent;
@@ -1859,8 +1867,7 @@ public class A2AAdapterTests
 
         // Act
 
-        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
-        await result.ExecuteAsync(context);
+        await ExecuteRequestAsync(record.Adapter, record.Agent, context, mappedEndpoint, CancellationToken.None);
 
         // Assert
 
@@ -1927,6 +1934,135 @@ public class A2AAdapterTests
 
         Assert.True(turnExecuted);
         Assert.Same(requestContext, observedContext);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task ProcessJsonRpc_CancelTask_CancelsActiveExecution(bool mappedEndpoint, bool streaming)
+    {
+        var agent = new BlockingAgent();
+        var record = UseRecord(_ => agent);
+        var sendRequest = CreateSendMessageRequest("active-cancellation", returnImmediately: !streaming);
+        if (streaming)
+        {
+            sendRequest.Method = A2AMethods.SendStreamingMessage;
+        }
+        var sendContext = CreateHttpContext(JsonSerializer.Serialize(sendRequest));
+        var sendExecution = ExecuteRequestAsync(record.Adapter, agent, sendContext, mappedEndpoint, CancellationToken.None);
+        try
+        {
+            await agent.Started.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            if (!streaming)
+            {
+                await sendExecution.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+
+            var cancelContext = CreateHttpContext(JsonSerializer.Serialize(new JsonRpcRequest
+            {
+                Id = Guid.NewGuid().ToString(),
+                Method = A2AMethods.CancelTask,
+                Params = JsonSerializer.SerializeToElement(new CancelTaskRequest { Id = agent.TaskId }),
+            }));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            cancelContext.RequestAborted = timeout.Token;
+
+            await ExecuteRequestAsync(record.Adapter, agent, cancelContext, mappedEndpoint, timeout.Token);
+
+            Assert.Equal(TaskState.Canceled, ReadTaskResponse(cancelContext).Status.State);
+            Assert.True(agent.CancellationObserved.Task.IsCompletedSuccessfully);
+        }
+        finally
+        {
+            agent.Release.TrySetResult();
+            await sendExecution.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            if (agent.Started.Task.IsCompletedSuccessfully)
+            {
+                await agent.Completed.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ServiceProviderDisposeAsync_CancelsActiveExecution()
+    {
+        var agent = new BlockingAgent();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IStorage, MemoryStorage>();
+        services.AddA2AAdapter();
+        await using var provider = services.BuildServiceProvider();
+        var adapter = provider.GetRequiredService<A2AAdapter>();
+        try
+        {
+            var context = CreateHttpContext(JsonSerializer.Serialize(
+                CreateSendMessageRequest("shutdown-cancellation", returnImmediately: true)));
+            await ExecuteRequestAsync(adapter, agent, context, mappedEndpoint: true, CancellationToken.None);
+            await agent.Started.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+            await provider.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+            Assert.True(agent.CancellationObserved.Task.IsCompletedSuccessfully);
+            Assert.True(agent.Completed.Task.IsCompletedSuccessfully);
+        }
+        finally
+        {
+            agent.Release.TrySetResult();
+            await agent.Completed.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+        }
+    }
+
+    [Fact]
+    public async Task ProcessJsonRpc_ConcurrentRequests_PreserveAgentAndAuthentication()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var record = UseRecord(record =>
+        {
+            var agent = new TestApplication(new TestApplicationOptions(record.Storage));
+            agent.OnActivity(ActivityTypes.Message, async (context, _, ct) =>
+            {
+                started.TrySetResult();
+                await release.Task.WaitAsync(ct);
+                await context.SendActivityAsync(new Activity
+                {
+                    Type = ActivityTypes.EndOfConversation,
+                    Text = $"first:{context.Services.Get<A2ARequestAuthentication>().AccessToken}",
+                }, cancellationToken: ct);
+            });
+            return agent;
+        });
+        var secondAgent = new TestApplication(new TestApplicationOptions(record.Storage));
+        secondAgent.OnActivity(ActivityTypes.Message, async (context, _, ct) =>
+        {
+            await context.SendActivityAsync(new Activity
+            {
+                Type = ActivityTypes.EndOfConversation,
+                Text = $"second:{context.Services.Get<A2ARequestAuthentication>().AccessToken}",
+            }, cancellationToken: ct);
+        });
+        var firstContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("first-request")));
+        var secondContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("second-request")));
+        AuthenticateContext(firstContext, "first-token");
+        AuthenticateContext(secondContext, "second-token");
+        var firstRequest = ExecuteRequestAsync(record.Adapter, record.Agent, firstContext, mappedEndpoint: true, CancellationToken.None);
+
+        try
+        {
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            await ExecuteRequestAsync(record.Adapter, secondAgent, secondContext, mappedEndpoint: true, CancellationToken.None);
+
+            Assert.Equal("second:second-token", ReadTaskResponse(secondContext).Status.Message.Parts[0].Text);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await firstRequest.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+        }
+
+        Assert.Equal("first:first-token", ReadTaskResponse(firstContext).Status.Message.Parts[0].Text);
     }
 
     [Fact]
@@ -2163,7 +2299,7 @@ public class A2AAdapterTests
 
     #endregion
 
-    private static JsonRpcRequest CreateSendMessageRequest(string contextId)
+    private static JsonRpcRequest CreateSendMessageRequest(string contextId, bool returnImmediately = false)
     {
         return new JsonRpcRequest
         {
@@ -2175,7 +2311,10 @@ public class A2AAdapterTests
                 {
                     ContextId = contextId,
                     Parts = [new Part() { Text = "Hello" }]
-                }
+                },
+                Configuration = returnImmediately
+                    ? new SendMessageConfiguration { ReturnImmediately = true }
+                    : null,
             })
         };
     }
@@ -2303,6 +2442,23 @@ public class A2AAdapterTests
         await endpoint.RequestDelegate!(context);
     }
 
+    private static async Task ExecuteRequestAsync(
+        A2AAdapter adapter,
+        IAgent agent,
+        DefaultHttpContext context,
+        bool mappedEndpoint,
+        CancellationToken cancellationToken)
+    {
+        if (mappedEndpoint)
+        {
+            await ExecuteJsonRpcAsync(adapter, agent, context, cancellationToken);
+            return;
+        }
+
+        var result = await adapter.ProcessJsonRpcAsync(context.Request, context.Response, agent, cancellationToken);
+        await result.ExecuteAsync(context);
+    }
+
     private static DefaultHttpContext CreateHttpContext(string requestContent = null)
     {
         var context = new DefaultHttpContext();
@@ -2381,6 +2537,42 @@ public class A2AAdapterTests
         {
             capture(turnContext);
             await next(cancellationToken);
+        }
+    }
+
+    private sealed class BlockingAgent : IAgent
+    {
+        public string TaskId { get; private set; }
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource CancellationObserved { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            if (!turnContext.Activity.IsType(ActivityTypes.Message))
+            {
+                return;
+            }
+
+            TaskId = turnContext.Services.Get<RequestContext>().TaskId;
+            Started.TrySetResult();
+            try
+            {
+                await Release.Task.WaitAsync(cancellationToken);
+                await turnContext.SendActivityAsync(
+                    new Activity { Type = ActivityTypes.EndOfConversation },
+                    cancellationToken: cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                CancellationObserved.TrySetResult();
+                throw;
+            }
+            finally
+            {
+                Completed.TrySetResult();
+            }
         }
     }
 

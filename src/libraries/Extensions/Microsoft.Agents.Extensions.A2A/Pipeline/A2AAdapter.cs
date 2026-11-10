@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -47,9 +48,10 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// customization or replacement point.
 /// </remarks>
 [ChannelAdapter(Channels.A2A)]
-internal class A2AAdapter : ChannelAdapter
+internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
 {
     private readonly ITaskStore _taskStore;
+    private readonly A2AServerWithoutExtendedAgentCard _requestHandler;
     private readonly ChannelEventNotifier _a2aNotifier;
     private static readonly ConcurrentDictionary<string, AgentRequestContext> _a2aAgentContext = new();
     private static readonly AsyncLocal<AgentRequestContext> _currentAgentContext = new();
@@ -116,13 +118,27 @@ internal class A2AAdapter : ChannelAdapter
         _a2aServerLogger = loggerFactory.CreateLogger<A2AServer>();
         _agentCardCacheControl = $"public, max-age={(long)Math.Ceiling(adapterOptions.AgentCardCacheMaxAge.TotalSeconds)}";
         _configuration = configuration;
+        _requestHandler = new A2AServerWithoutExtendedAgentCard(
+            new CurrentAgentHandlerProxy(),
+            _taskStore,
+            _a2aNotifier,
+            _a2aServerLogger,
+            _a2aServerOptions);
 
         OnTurnError = (turnContext, exception) =>
         {
+            if (exception is OperationCanceledException)
+            {
+                return Task.FromException(exception);
+            }
+
             Logger.LogError(exception, "A2AAdapter.OnTurnError: An error occurred during turn processing.");
             throw new A2AException($"A2AAdapter.OnTurnError: An error occurred during turn processing: {exception.Message}", exception);
         };
     }
+
+    /// <inheritdoc/>
+    public ValueTask DisposeAsync() => _requestHandler.DisposeAsync();
 
     /// <inheritdoc/>
     public Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
@@ -138,7 +154,7 @@ internal class A2AAdapter : ChannelAdapter
         try
         {
             var result = await global::A2A.AspNetCore.A2AJsonRpcProcessor.ProcessRequestAsync(
-                CurrentRequestHandler,
+                RequestHandlerProxy,
                 httpRequest,
                 A2AServiceExtensions.Dispatch.Registry,
                 A2AServiceExtensions.Dispatch.JsonRpcBindings,
@@ -264,16 +280,6 @@ internal class A2AAdapter : ChannelAdapter
         return _a2aAgentContext.GetOrAdd(agentContext.RequestId, agentContext);
     }
 
-    private A2AServerWithoutExtendedAgentCard GetA2AServerForAgent(AgentRequestContext agentContext)
-    {
-        return new A2AServerWithoutExtendedAgentCard(agentContext, _taskStore, _a2aNotifier, _a2aServerLogger, _a2aServerOptions);
-    }
-
-    private A2AServerWithoutExtendedAgentCard CurrentRequestHandler =>
-        GetA2AServerForAgent(
-            _currentAgentContext.Value
-                ?? throw new InvalidOperationException("An A2A request context is not active."));
-
     internal static IA2ARequestHandler RequestHandlerProxy { get; } = new CurrentRequestHandlerProxy();
 
     private sealed class RequestContextScope(
@@ -289,10 +295,23 @@ internal class A2AAdapter : ChannelAdapter
         }
     }
 
+    private sealed class CurrentAgentHandlerProxy : IAgentHandler
+    {
+        private static AgentRequestContext Current =>
+            _currentAgentContext.Value
+                ?? throw new InvalidOperationException("An A2A request context is not active.");
+
+        public Task ExecuteAsync(RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken) =>
+            Current.ExecuteAsync(context, eventQueue, cancellationToken);
+
+        public Task CancelAsync(RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken) =>
+            Current.CancelAsync(context, eventQueue, cancellationToken);
+    }
+
     private sealed class CurrentRequestHandlerProxy : IA2ARequestHandler
     {
         private static A2AServerWithoutExtendedAgentCard Current =>
-            _currentAdapter.Value?.CurrentRequestHandler
+            _currentAdapter.Value?._requestHandler
                 ?? throw new InvalidOperationException("An A2A request context is not active.");
 
         public Task<SendMessageResponse> SendMessageAsync(
@@ -304,8 +323,37 @@ internal class A2AAdapter : ChannelAdapter
         public IAsyncEnumerable<StreamResponse> SendStreamingMessageAsync(
             SendMessageRequest request,
             A2ARequestContext? requestContext,
-            CancellationToken cancellationToken = default) =>
-            Current.SendStreamingMessageAsync(request, requestContext, cancellationToken);
+            CancellationToken cancellationToken = default)
+        {
+            var agentContext = _currentAgentContext.Value
+                ?? throw new InvalidOperationException("An A2A request context is not active.");
+            return SendStreamingMessageWithRequestContextAsync(
+                Current, agentContext, request, requestContext, cancellationToken);
+        }
+
+        private static async IAsyncEnumerable<StreamResponse> SendStreamingMessageWithRequestContextAsync(
+            A2AServer server,
+            AgentRequestContext agentContext,
+            SendMessageRequest request,
+            A2ARequestContext? requestContext,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            // Streaming can start after the endpoint's ambient request scope has exited.
+            var previousContext = _currentAgentContext.Value;
+            _currentAgentContext.Value = agentContext;
+            try
+            {
+                await foreach (var response in server.SendStreamingMessageAsync(
+                    request, requestContext, cancellationToken).ConfigureAwait(false))
+                {
+                    yield return response;
+                }
+            }
+            finally
+            {
+                _currentAgentContext.Value = previousContext;
+            }
+        }
 
         public Task<AgentTask> GetTaskAsync(GetTaskRequest request, A2ARequestContext? requestContext, CancellationToken cancellationToken = default) =>
             Current.GetTaskAsync(request, requestContext, cancellationToken);

@@ -19,7 +19,7 @@ namespace Microsoft.Agents.Extensions.A2A.Tests;
 public class A2AServiceRegistrationTests
 {
     [Fact]
-    public void AddAgentCore_RegistersA2AAdapterFromExtensionManifest()
+    public async Task AddAgentCore_RegistersA2AAdapterFromExtensionManifest()
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -27,7 +27,7 @@ public class A2AServiceRegistrationTests
 
         services.AddAgentCore<CloudAdapter>();
 
-        using var provider = services.BuildServiceProvider();
+        await using var provider = services.BuildServiceProvider();
         var concreteAdapter = provider.GetRequiredService<A2AAdapter>();
         var channelAdapter = provider
             .GetRequiredService<IChannelAdapterRegistry>()
