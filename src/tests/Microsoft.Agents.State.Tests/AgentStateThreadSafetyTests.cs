@@ -361,8 +361,9 @@ namespace Microsoft.Agents.State.Tests
                     });
             storage.Setup(s => s.WriteAsync(
                     Moq.It.IsAny<IReadOnlyDictionary<string, object>>(),
+                    Moq.It.Is<StorageWriteOptions>(options => options.ExpectedVersion == null),
                     Moq.It.IsAny<CancellationToken>()))
-                .ReturnsAsync((IReadOnlyDictionary<string, object> changes, CancellationToken _) =>
+                .ReturnsAsync((IReadOnlyDictionary<string, object> changes, StorageWriteOptions _, CancellationToken _) =>
                     new Dictionary<string, StorageWriteResult>
                     {
                         [changes.Keys.Single()] = new StorageWriteResult
@@ -374,7 +375,7 @@ namespace Microsoft.Agents.State.Tests
                     });
             storage.Setup(s => s.WriteAsync(
                     Moq.It.IsAny<IReadOnlyDictionary<string, object>>(),
-                    Moq.It.IsAny<StorageWriteOptions>(),
+                    Moq.It.Is<StorageWriteOptions>(options => options.ExpectedVersion != null),
                     Moq.It.IsAny<CancellationToken>()))
                 .Callback((IReadOnlyDictionary<string, object> _, StorageWriteOptions options, CancellationToken _) =>
                     expectedVersion = options.ExpectedVersion)
@@ -420,8 +421,9 @@ namespace Microsoft.Agents.State.Tests
                     });
             storage.Setup(s => s.WriteAsync(
                     It.IsAny<IReadOnlyDictionary<string, object>>(),
+                    It.Is<StorageWriteOptions>(options => options.Mode == StorageWriteMode.Upsert && options.ExpectedVersion == null),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync((IReadOnlyDictionary<string, object> changes, CancellationToken _) =>
+                .ReturnsAsync((IReadOnlyDictionary<string, object> changes, StorageWriteOptions _, CancellationToken _) =>
                     new Dictionary<string, StorageWriteResult>
                     {
                         [changes.Keys.Single()] = new StorageWriteResult
@@ -441,10 +443,11 @@ namespace Microsoft.Agents.State.Tests
 
             storage.Verify(s => s.WriteAsync(
                 It.IsAny<IReadOnlyDictionary<string, object>>(),
+                It.Is<StorageWriteOptions>(options => options.Mode == StorageWriteMode.Upsert && options.ExpectedVersion == null),
                 It.IsAny<CancellationToken>()), Times.Once);
             storage.Verify(s => s.WriteAsync(
                 It.IsAny<IReadOnlyDictionary<string, object>>(),
-                It.IsAny<StorageWriteOptions>(),
+                It.Is<StorageWriteOptions>(options => options.ExpectedVersion != null),
                 It.IsAny<CancellationToken>()), Times.Never);
         }
 

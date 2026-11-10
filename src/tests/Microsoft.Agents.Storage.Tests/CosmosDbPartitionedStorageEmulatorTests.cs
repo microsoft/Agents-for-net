@@ -17,9 +17,9 @@ namespace Microsoft.Agents.Storage.Tests
     public class CosmosDbPartitionedStorageEmulatorTests : StorageBaseTests, IAsyncLifetime, IClassFixture<CosmosDbPartitionStorageFixture>
     {
         // Endpoint and Authkey for the CosmosDB Emulator running locally
-        private IStorage _storage;
+        private CosmosDbPartitionedStorage _storage;
 
-        public CosmosDbPartitionedStorageEmulatorTests()
+        public CosmosDbPartitionedStorageEmulatorTests(CosmosDbPartitionStorageFixture fixture)
         {
             _storage = new CosmosDbPartitionedStorage(
                 new CosmosDbPartitionedStorageOptions
@@ -27,7 +27,7 @@ namespace Microsoft.Agents.Storage.Tests
                     AuthKey = CosmosDbConstants.CosmosAuthKey,
                     ContainerId = CosmosDbConstants.CosmosCollectionName,
                     CosmosDbEndpoint = CosmosDbConstants.CosmosServiceEndpoint,
-                    DatabaseId = CosmosDbConstants.CosmosDatabaseName,
+                    DatabaseId = fixture.DatabaseId,
                 });
         }
 
@@ -36,9 +36,11 @@ namespace Microsoft.Agents.Storage.Tests
             return Task.CompletedTask;
         }
 
-        public async Task DisposeAsync()
+        public Task DisposeAsync()
         {
+            _storage.Dispose();
             _storage = null;
+            return Task.CompletedTask;
         }
 
         [Fact]

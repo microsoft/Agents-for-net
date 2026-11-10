@@ -131,6 +131,7 @@ namespace Microsoft.Agents.Storage.Tests
                 {
                     ["existing"] = new PocoItem() { Id = "1", Count = 7 },
                 },
+                new StorageWriteOptions(),
                 cancellationToken: CancellationToken.None);
 
             var readResults = await storageV2.ReadAsync(
@@ -187,7 +188,7 @@ namespace Microsoft.Agents.Storage.Tests
             IStorageV2 secondStorage = new MemoryStorage(dictionary: dictionary);
 
             var initialWrite = await firstStorage.WriteAsync(
-                new Dictionary<string, object> { ["item"] = new PocoItem { Id = "initial" } });
+                new Dictionary<string, object> { ["item"] = new PocoItem { Id = "initial" } }, new StorageWriteOptions());
             var initialVersion = initialWrite["item"].Version;
 
             var firstUpdate = await firstStorage.WriteAsync(
@@ -212,6 +213,7 @@ namespace Microsoft.Agents.Storage.Tests
                 {
                     ["item"] = new PocoItem() { Id = "1", Count = 1 },
                 },
+                new StorageWriteOptions(),
                 cancellationToken: CancellationToken.None);
 
             var replaceWrite = await storageV2.WriteAsync(
@@ -246,6 +248,7 @@ namespace Microsoft.Agents.Storage.Tests
                 {
                     ["item"] = new PocoItem() { Id = "1" },
                 },
+                new StorageWriteOptions(),
                 cancellationToken: CancellationToken.None);
 
             var conditionalDelete = await storageV2.DeleteAsync(

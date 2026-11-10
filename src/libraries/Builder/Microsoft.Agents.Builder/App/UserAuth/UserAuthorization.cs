@@ -67,12 +67,7 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 _startSignIn = (context, cancellationToken) => Task.FromResult(true);
             }
 
-            DefaultHandlerName = _options.DefaultHandlerName ?? _dispatcher.Default.Name;
-
-            if (!_dispatcher.TryGet(DefaultHandlerName, out _))
-            {
-                throw ExceptionHelper.GenerateException<IndexOutOfRangeException>(ErrorHelper.UserAuthorizationDefaultHandlerNotFound, null, DefaultHandlerName);
-            }
+            DefaultHandlerName = _options.GetDefaultHandlerName();
         }
 
         [Obsolete("Use Task<string> GetTurnTokenAsync(ITurnContext, string) instead")]
@@ -267,6 +262,14 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 return false;
             }
 
+            if (flowContinuation
+                && string.IsNullOrEmpty(turnContext.Activity.From?.Id)
+                && !string.IsNullOrEmpty(signInState.ContinuationActivity?.From?.Id))
+            {
+                turnContext.Activity.From ??= new ChannelAccount { Role = RoleTypes.User };
+                turnContext.Activity.From.Id = signInState.ContinuationActivity.From.Id;
+            }
+
             bool autoSignIn = forceAuto || (_startSignIn != null && await _startSignIn(turnContext, cancellationToken));
             if (autoSignIn || flowContinuation)
             {
@@ -386,8 +389,8 @@ namespace Microsoft.Agents.Builder.App.UserAuth
                 if (turnContext.Activity.IsType(ActivityTypes.Invoke)
                     && (turnContext.Activity.Name == SignInConstants.TokenExchangeOperationName || turnContext.Activity.Name == SignInConstants.VerifyStateOperationName))
                 {
-                    _app.Logger.LogWarning("UserAuthorization: Received Invoke:{Invoke.Name} but an OAuthFlow is not active for user '{User.Id}' using handler '{Handler.Name}'", 
-                        turnContext.Activity.Name, turnContext.Activity.From.Id, handlerName ?? DefaultHandlerName);
+                    _app.Logger.LogWarning("UserAuthorization: Received Invoke:{Invoke.Name} but an OAuthFlow is not active using handler '{Handler.Name}'",
+                        turnContext.Activity.Name, handlerName ?? DefaultHandlerName);
 
                     // This would mean we've received an OAuth related request, but we aren't in an active flow.
                     // For Invoke activities, set the InvokeResponse since the user won't seen any sent activities.
@@ -481,6 +484,12 @@ namespace Microsoft.Agents.Builder.App.UserAuth
 
         private static string GetStorageKey(ITurnContext turnContext)
         {
+            var keyProvider = turnContext.Services.Get<IUserAuthorizationStateKeyProvider>();
+            if (keyProvider != null)
+            {
+                return keyProvider.GetKey(turnContext);
+            }
+
             // This key is used since per conversation, a user can only have one active flow at a time.
             var channelId = turnContext.Activity.ChannelId?.Channel ?? throw new InvalidOperationException("invalid activity-missing ChannelId");
             var userId = turnContext.Activity.From?.Id ?? throw new InvalidOperationException("invalid activity-missing From.Id");

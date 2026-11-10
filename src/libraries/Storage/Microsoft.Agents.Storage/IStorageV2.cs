@@ -27,21 +27,21 @@ namespace Microsoft.Agents.Storage
         /// Writes typed items to storage and returns an explicit result for each requested write.
         /// </summary>
         /// <typeparam name="TValue">The value type to write.</typeparam>
-        /// <param name="changes">The keyed items to write.</param>
+        /// <param name="changes">The keyed, non-null items to write.</param>
+        /// <param name="options">Settings for the V2 write operation.</param>
         /// <param name="cancellationToken">A cancellation token that can be used by other objects
         /// or threads to receive notice of cancellation.</param>
         /// <returns>A task that represents the work queued to execute.</returns>
-        Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class;
-
-        /// <summary>
-        /// Writes typed items to storage and returns an explicit result for each requested write.
-        /// </summary>
-        /// <typeparam name="TValue">The value type to write.</typeparam>
-        /// <param name="changes">The keyed items to write.</param>
-        /// <param name="options">Optional settings for the write operation.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects
-        /// or threads to receive notice of cancellation.</param>
-        /// <returns>A task that represents the work queued to execute.</returns>
+        /// <exception cref="System.ArgumentNullException">The changes collection is null.</exception>
+        /// <exception cref="System.ArgumentException">An item value in the changes collection is null.
+        /// The batch is rejected before any item is written.</exception>
+        /// <remarks>
+        /// V2 writes must pass options explicitly. Use
+        /// <see cref="Microsoft.Agents.Storage.StorageWriteOptions.ExpectedVersion"/> for optimistic concurrency.
+        /// Calls without options use the inherited <see cref="Microsoft.Agents.Storage.IStorage"/> contract
+        /// and preserve payload ETag checks.
+        /// Null item values are not supported; use an explicit delete operation to remove a key.
+        /// </remarks>
         Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class;
 
         /// <summary>

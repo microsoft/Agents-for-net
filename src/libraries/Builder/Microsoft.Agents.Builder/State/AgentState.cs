@@ -189,6 +189,12 @@ namespace Microsoft.Agents.Builder.State
         {
             AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
 
+            var loadPolicy = turnContext.Services.Get<IAgentStateLoadPolicy>();
+            if (loadPolicy != null && !loadPolicy.ShouldLoad(turnContext, this))
+            {
+                return;
+            }
+
             var storageKey = GetStorageKey(turnContext);
 
             if (ShouldLoad(turnContext, storageKey, force))
@@ -268,7 +274,7 @@ namespace Microsoft.Agents.Builder.State
                             }
                             else
                             {
-                                writeResults = await _storage.WriteAsync(readOnlyChanges, cancellationToken).ConfigureAwait(false);
+                                writeResults = await _storage.WriteAsync(readOnlyChanges, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
                             }
 
                             var writeResult = writeResults[key];

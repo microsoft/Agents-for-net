@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Agents.Builder.App
@@ -33,5 +34,49 @@ namespace Microsoft.Agents.Builder.App
             {
                 [Channels.M365Copilot] = new TypingChannelStrategy(initialDelayMs: 250, intervalMs: 1000)
             };
+
+        /// <summary>
+        /// Validates typing timing values before a turn starts.
+        /// </summary>
+        internal void Validate()
+        {
+            ValidateStrategy(new TypingChannelStrategy(InitialDelayMs, IntervalMs), nameof(TypingOptions));
+
+            if (ChannelStrategies == null)
+            {
+                return;
+            }
+
+            foreach (var channelStrategy in ChannelStrategies)
+            {
+                if (channelStrategy.Value == null)
+                {
+                    throw new ArgumentException(
+                        $"A typing strategy is required for channel '{channelStrategy.Key}'.",
+                        nameof(ChannelStrategies));
+                }
+
+                ValidateStrategy(channelStrategy.Value, nameof(ChannelStrategies));
+            }
+        }
+
+        private static void ValidateStrategy(ITypingChannelStrategy strategy, string parameterName)
+        {
+            if (strategy.InitialDelayMs < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    parameterName,
+                    strategy.InitialDelayMs,
+                    $"{nameof(ITypingChannelStrategy.InitialDelayMs)} must be >= 0.");
+            }
+
+            if (strategy.IntervalMs < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    parameterName,
+                    strategy.IntervalMs,
+                    $"{nameof(ITypingChannelStrategy.IntervalMs)} must be >= 0.");
+            }
+        }
     }
 }

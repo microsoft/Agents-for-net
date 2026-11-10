@@ -37,7 +37,7 @@ namespace Microsoft.Agents.Connector
 
             _appId = appId;
 
-            _userTokenClient = new UserTokenRestClient(this);
+            _userTokenClient = new UserTokenRestClient(this, _appId);
             _agentSignInClient = new AgentSignInRestClient(this);
             _logger = logger ?? NullLogger.Instance;
         }

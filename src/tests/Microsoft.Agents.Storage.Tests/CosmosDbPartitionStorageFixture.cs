@@ -1,40 +1,43 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
+using Xunit;
 
 namespace Microsoft.Agents.Storage.Tests
 {
-    public class CosmosDbPartitionStorageFixture : IDisposable
+    public class CosmosDbPartitionStorageFixture : IAsyncLifetime
     {
-        public CosmosDbPartitionStorageFixture()
+        private CosmosClient _client;
+        private Database _database;
+
+        public string DatabaseId { get; } = $"{CosmosDbConstants.CosmosDatabaseName}-{Guid.NewGuid():N}";
+
+        public async Task InitializeAsync()
         {
             if (IgnoreOnNoEmulatorFact.HasEmulator.Value)
             {
-                var client = new CosmosClient(
+                _client = new CosmosClient(
                     CosmosDbConstants.CosmosServiceEndpoint,
                     CosmosDbConstants.CosmosAuthKey,
                     new CosmosClientOptions());
 
-                client.CreateDatabaseIfNotExistsAsync(CosmosDbConstants.CosmosDatabaseName);
+                var response = await _client.CreateDatabaseAsync(DatabaseId);
+                _database = response.Database;
             }
         }
 
-        public async void Dispose()
+        public async Task DisposeAsync()
         {
-            if (IgnoreOnNoEmulatorFact.HasEmulator.Value)
+            try
             {
-                var client = new CosmosClient(
-                    CosmosDbConstants.CosmosServiceEndpoint,
-                    CosmosDbConstants.CosmosAuthKey,
-                    new CosmosClientOptions());
-                try
+                if (_database != null)
                 {
-                    await client.GetDatabase(CosmosDbConstants.CosmosDatabaseName).DeleteAsync();
+                    await _database.DeleteAsync();
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Error cleaning up resources: {0}", ex.ToString());
-                }
+            }
+            finally
+            {
+                _client?.Dispose();
             }
         }
     }

@@ -129,6 +129,28 @@ namespace Microsoft.Agents.Authentication
             }
         }
 
+        /// <summary>
+        /// Validates connection-map entries without constructing token providers.
+        /// </summary>
+        public void ValidateConfiguration()
+        {
+            foreach (var mapItem in _map)
+            {
+                if (string.IsNullOrWhiteSpace(mapItem.Connection) || !_connections.ContainsKey(mapItem.Connection))
+                {
+                    throw Core.Errors.ExceptionHelper.GenerateException<IndexOutOfRangeException>(
+                        ErrorHelper.ConnectionNotFoundByName,
+                        null,
+                        mapItem.Connection);
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapItem.ServiceUrl) && mapItem.ServiceUrl != "*")
+                {
+                    _ = new Regex(mapItem.ServiceUrl, RegexOptions.IgnoreCase);
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public IAccessTokenProvider GetConnection(string name)
         {

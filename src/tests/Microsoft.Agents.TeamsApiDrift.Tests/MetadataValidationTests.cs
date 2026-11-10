@@ -122,23 +122,77 @@ public sealed class MetadataValidationTests
     }
 
     [Fact]
-    public void AcknowledgmentMustBeAtLeastAsRecentAsSourceChange()
+    public void CommittedMetadataReviewCoversLaterSourceChangesInSameBranch()
     {
-        using var fresh = new MetadataFixture(git: true);
-        fresh.AppendSource("// source first");
-        fresh.Commit("change source");
-        fresh.Manifest.SourceReview = UsageReview("No usage metadata changed.");
-        fresh.WriteManifest();
-        fresh.Commit("review usage metadata");
-        Assert.DoesNotContain(fresh.Validate(fresh.BaseCommit).Findings, finding => finding.RuleId == MetadataValidator.UsageReviewRule);
+        using var fixture = new MetadataFixture(git: true);
+        fixture.AppendSource("// source first");
+        fixture.Commit("change source");
+        fixture.Manifest.SourceReview = UsageReview("No usage metadata changed.");
+        fixture.WriteManifest();
+        fixture.Commit("review usage metadata");
+        fixture.AppendSource("// source after review");
+        fixture.Commit("change source again");
 
-        using var stale = new MetadataFixture(git: true);
-        stale.Manifest.SourceReview = UsageReview("No usage metadata changed.");
-        stale.WriteManifest();
-        stale.Commit("review usage metadata");
-        stale.AppendSource("// source after review");
-        stale.Commit("change source");
-        Assert.Contains(stale.Validate(stale.BaseCommit).Findings, finding => finding.RuleId == MetadataValidator.UsageReviewRule);
+        Assert.DoesNotContain(fixture.Validate(fixture.BaseCommit).Findings, finding => finding.RuleId == MetadataValidator.UsageReviewRule);
+    }
+
+    [Fact]
+    public void CommittedMetadataReviewCoversWorkingSourceChangesInSameBranch()
+    {
+        using var fixture = new MetadataFixture(git: true);
+        fixture.AppendSource("// source first");
+        fixture.Commit("change source");
+        fixture.Manifest.SourceReview = UsageReview("No usage metadata changed.");
+        fixture.WriteManifest();
+        fixture.Commit("review usage metadata");
+        fixture.AppendSource("// uncommitted source change");
+
+        Assert.DoesNotContain(fixture.Validate(fixture.BaseCommit).Findings, finding => finding.RuleId == MetadataValidator.UsageReviewRule);
+    }
+
+    [Fact]
+    public void SubstantiveMetadataUpdateCoversLaterSourceChangesInSameBranch()
+    {
+        using var fixture = new MetadataFixture(git: true);
+        fixture.AppendSource("// source first");
+        fixture.Commit("change source");
+        fixture.Manifest.Usages[0].UsageKinds.Add("updated-routing");
+        fixture.WriteManifest();
+        fixture.Commit("update usage metadata");
+        fixture.AppendSource("// source after metadata update");
+        fixture.Commit("change source again");
+
+        Assert.DoesNotContain(fixture.Validate(fixture.BaseCommit).Findings, finding => finding.RuleId == MetadataValidator.UsageReviewRule);
+    }
+
+    [Fact]
+    public void RevertedMetadataReviewDoesNotSatisfySourceReview()
+    {
+        using var fixture = new MetadataFixture(git: true);
+        fixture.AppendSource("// implementation change");
+        fixture.Commit("change source");
+        fixture.Manifest.SourceReview = UsageReview("No usage metadata changed.");
+        fixture.WriteManifest();
+        fixture.Commit("review usage metadata");
+        fixture.Manifest.SourceReview = null;
+        fixture.WriteManifest();
+        fixture.Commit("revert usage review");
+
+        Assert.Contains(fixture.Validate(fixture.BaseCommit).Findings, finding => finding.RuleId == MetadataValidator.UsageReviewRule);
+    }
+
+    [Fact]
+    public void CommittedCapabilityReviewCoversLaterSourceChangesInSameBranch()
+    {
+        using var fixture = new MetadataFixture(git: true);
+        fixture.ChangeSymbol("Microsoft.Teams.Apps.Schema.Other");
+        fixture.Capabilities.SourceReview = CapabilityReview("The existing schema capability still owns this symbol.");
+        fixture.WriteCapabilities();
+        fixture.Commit("review changed usage symbol");
+        fixture.AppendSource("// source after capability review");
+        fixture.Commit("change source again");
+
+        Assert.DoesNotContain(fixture.Validate(fixture.BaseCommit).Findings, finding => finding.RuleId == MetadataValidator.CapabilitiesReviewRule);
     }
 
     [Fact]

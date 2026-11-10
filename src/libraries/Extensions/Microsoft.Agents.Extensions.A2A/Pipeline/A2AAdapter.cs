@@ -6,7 +6,9 @@ using A2A.AspNetCore;
 using A2AProtocolAgentCard = A2A.AgentCard;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Adapters;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -367,7 +369,11 @@ internal class A2AAdapter : ChannelAdapter
     internal async Task ExecuteAgentTurnAsync(AgentRequestContext agentContext, RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
     {
         var activity = A2AActivity.ActivityFromMessage(agentContext.RequestId, context.TaskId, context.Message);
-        if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
+        if (activity != null)
+        {
+            activity.From.Id = A2AUserIdentity.GetUserId(agentContext.Authentication?.Identity);
+        }
+        if (activity == null || !activity.Validate(ValidationContext.Receiver))
         {
             Logger.LogError("Invalid Activity for RequestId={RequestId}, TaskId={TaskId}", agentContext.RequestId, context.TaskId);
             throw new A2AException($"Invalid Activity for RequestId={agentContext.RequestId}", A2AErrorCode.InternalError);
@@ -414,7 +420,11 @@ internal class A2AAdapter : ChannelAdapter
             ChannelId = Channels.A2A,
             Conversation = new ConversationAccount() { Id = context.TaskId },
             Recipient = new ChannelAccount { Id = "assistant", Role = RoleTypes.Agent },
-            From = new ChannelAccount { Id = context.TaskId, Role = RoleTypes.User }
+            From = new ChannelAccount
+            {
+                Id = A2AUserIdentity.GetUserId(authentication?.Identity),
+                Role = RoleTypes.User
+            }
         };
 
         _ = await ProcessActivityWithA2AAuthenticationAsync(
@@ -517,6 +527,9 @@ internal class A2AAdapter : ChannelAdapter
         if (a2aContext != null)
         {
             context.Services.Set(a2aContext);
+            context.Services.Set<IUserAuthorizationStateKeyProvider>(
+                new A2AUserAuthorizationStateKeyProvider(a2aContext.TaskId));
+            context.Services.Set<IAgentStateLoadPolicy>(A2AStateLoadPolicy.Instance);
         }
         if (a2aEventQueue != null)
         {
@@ -538,6 +551,27 @@ internal class A2AAdapter : ChannelAdapter
         finally
         {
             _currentAgentContext.Value = previousContext;
+        }
+    }
+
+    private sealed class A2AUserAuthorizationStateKeyProvider(string taskId) : IUserAuthorizationStateKeyProvider
+    {
+        public string GetKey(ITurnContext turnContext)
+        {
+            var channelId = turnContext.Activity.ChannelId?.Channel
+                ?? throw new InvalidOperationException("invalid activity-missing ChannelId");
+            return $"oauth/{channelId}/{taskId}/userAuthorizationState";
+        }
+    }
+
+    private sealed class A2AStateLoadPolicy : IAgentStateLoadPolicy
+    {
+        public static readonly A2AStateLoadPolicy Instance = new();
+
+        public bool ShouldLoad(ITurnContext turnContext, IAgentState agentState)
+        {
+            return agentState.Name != UserState.ScopeName
+                || !string.IsNullOrEmpty(turnContext.Activity.From?.Id);
         }
     }
 
