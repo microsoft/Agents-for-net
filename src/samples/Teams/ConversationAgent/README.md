@@ -106,9 +106,9 @@ leave credential placeholders in tracked configuration when using user secrets.
 The manifest now enables `supportsFiles` and adds **validate** to the existing
 command list. Repackage and reinstall/update the Teams app after changing the
 manifest; restarting the server alone does not update the installed manifest.
-The sample retains its existing development-preview manifest for its original
-targeted-message features. The validation additions do not enable threading,
-Plans, HTML widgets, or Socket Mode.
+The sample uses the stable v1.29 manifest for targeted messages and slash commands.
+The validation additions do not enable threading, Plans, HTML widgets, or
+Socket Mode.
 
 Start in the bot's **personal chat**. Type `validate` for the available checks.
 In group/channel conversations, mention the bot so Teams delivers the message;
@@ -279,7 +279,7 @@ You can interact with this bot in Teams by sending it a message, or selecting a 
 5. **PromptPreview** _(Type `/` in the Teams compose box and select this agent)_
    - **Result:** The bot sends a targeted response containing Prompt Preview metadata.
    - **Valid Scopes:** personal (user-to-user) chat, group chat, team chat
-   - **Usage:** Select `promptpreview` from the Teams slash-command picker. This requires the dev-preview manifest included with the sample.
+   - **Usage:** Select `promptpreview` from the Teams slash-command picker. This uses the stable v1.29 manifest included with the sample.
 6. **CustomFeedback**
    - **Result:** The agent sends a response with thumbs-up and thumbs-down buttons. Selecting either button opens a custom feedback dialog.
    - **Valid Scopes:** personal, group chat, team chat
