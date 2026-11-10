@@ -58,28 +58,17 @@ The following instructions use one A2ACli instance to send messages and receive
 local push notifications, plus Bash-compatible curl commands to trigger proactive
 updates. No tunnel or separate push registration request is needed.
 
-### Enable loopback callbacks in Development
+### Development callback policy
 
-Use an `a2a-dotnet` build that includes `PushNotificationUrlOptions.AllowLoopback`.
-The option defaults to `false`; Development does not automatically enable it.
-In `A2AAgentStartup.ConfigureBuilder`, add this registration before
-`builder.AddAgentDefaults()`:
+`A2AAgentStartup.ConfigureBuilder` enables `PushNotificationUrlOptions.AllowLoopback`
+only in Development and restricts callback hosts to `localhost`, `127.0.0.1`, and
+`::1`. No additional registration is needed for this sample. The upstream option
+defaults to `false`; this sample explicitly opts in for local testing.
 
-```csharp
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddSingleton(new global::A2A.PushNotificationUrlOptions
-    {
-        AllowLoopback = true,
-        AllowedHosts = ["localhost", "127.0.0.1", "::1"],
-    });
-}
-```
-
-This permits HTTP/HTTPS callbacks to the allowed loopback hosts only during
-Development. Every DNS answer for `localhost` must be loopback; other private
-destinations remain blocked, and connection-time validation still applies.
-Outside Development, the default HTTPS/public-address policy remains in effect.
+This permits HTTP/HTTPS callbacks to those loopback hosts only during Development.
+Every DNS answer for `localhost` must be loopback; other private destinations remain
+blocked, and connection-time validation still applies. Outside Development, the
+sample leaves the upstream default HTTPS/public-address policy in effect.
 
 Start or restart A2AAgent as described above and leave it running. Its launch
 profile selects Development.

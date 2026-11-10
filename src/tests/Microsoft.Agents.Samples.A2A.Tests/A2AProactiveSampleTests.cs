@@ -71,18 +71,39 @@ public class A2AProactiveSampleTests
         await app.StopAsync(timeout.Token);
     }
 
-    [Fact]
-    public async Task SampleStartup_UsesUpstreamPushUrlPolicyWithoutFixedCallback()
+    [Theory]
+    [InlineData("Development", "http://127.0.0.1/notify", "127.0.0.1")]
+    [InlineData("Production", "https://8.8.8.8/notify", "8.8.8.8")]
+    public async Task SampleStartup_AllowsEnvironmentAppropriatePushDestinations(string environment, string url, string expectedAddress)
     {
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = Environments.Development });
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "A2AAgent.appsettings.json"));
+        builder.Configuration["TokenValidation:Audiences:0"] = "22222222-2222-2222-2222-222222222222";
+        builder.Configuration["TokenValidation:TenantId"] = "11111111-1111-1111-1111-111111111111";
         A2AAgentStartup.ConfigureBuilder(builder);
         await using var app = builder.Build();
         var policy = app.Services.GetRequiredService<IPushNotificationUrlValidator>();
 
-        var addresses = await policy.ValidateAsync("https://8.8.8.8/notify");
+        var addresses = await policy.ValidateAsync(url);
 
-        Assert.Equal(IPAddress.Parse("8.8.8.8"), Assert.Single(addresses));
+        Assert.Equal(IPAddress.Parse(expectedAddress), Assert.Single(addresses));
+    }
+
+    [Theory]
+    [InlineData("Development", "https://8.8.8.8/notify")]
+    [InlineData("Production", "https://127.0.0.1/notify")]
+    [InlineData("Production", "http://8.8.8.8/notify")]
+    public async Task SampleStartup_RejectsUnsafePushDestinations(string environment, string url)
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
+        builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "A2AAgent.appsettings.json"));
+        builder.Configuration["TokenValidation:Audiences:0"] = "22222222-2222-2222-2222-222222222222";
+        builder.Configuration["TokenValidation:TenantId"] = "11111111-1111-1111-1111-111111111111";
+        A2AAgentStartup.ConfigureBuilder(builder);
+        await using var app = builder.Build();
+        var policy = app.Services.GetRequiredService<IPushNotificationUrlValidator>();
+
+        await Assert.ThrowsAsync<A2AException>(() => policy.ValidateAsync(url));
     }
 
     [Theory]

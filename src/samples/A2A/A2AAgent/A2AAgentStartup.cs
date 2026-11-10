@@ -49,11 +49,14 @@ internal static class A2AAgentStartup
         // in a cluster of Agent instances.
         builder.Services.AddSingleton<IStorage, MemoryStorage>();
 
-        builder.Services.AddSingleton(new PushNotificationUrlOptions
+        if (builder.Environment.IsDevelopment())
         {
-            AllowedHosts = ["localhost", "127.0.0.1", "::1"],
-            AllowLoopback = builder.Environment.IsDevelopment(),
-        });
+            builder.Services.AddSingleton(new PushNotificationUrlOptions
+            {
+                AllowedHosts = ["localhost", "127.0.0.1", "::1"],
+                AllowLoopback = true,
+            });
+        }
     }
 
     internal static void ConfigureApplication(WebApplication app)
