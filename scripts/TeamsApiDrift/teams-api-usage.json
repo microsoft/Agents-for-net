@@ -5,7 +5,7 @@
   "sourceRoot": "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams",
   "sourceReview": {
     "outcome": "no-usage-metadata-change",
-    "reason": "Microsoft.Teams.Apps is updated to 2.1.2, which supplies the cryptography fixes transitively, so the direct MSTeams cryptography overrides are removed. Consumed Teams API symbols, members, exposure, and source associations are unchanged."
+    "reason": "Reviewed the MSTeams project changes that add explicit System.Security.Cryptography.Pkcs and System.Security.Cryptography.Xml references at the centrally pinned versions, plus generated-resource encoding normalization. Microsoft.Teams.Apps remains at 2.1.2; consumed Teams API symbols, members, public exposure, and source associations are unchanged."
   },
   "compatibilityReviews": [
     {

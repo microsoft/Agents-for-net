@@ -39,6 +39,23 @@ public class AgentCardComposerTests
         Assert.Empty(card.Capabilities.Extensions);
     }
 
+    [Fact]
+    public async Task ComposeAsync_SigningHandler_ReceivesAuthorizationDeclaration()
+    {
+        var result = await ComposeAsync(card =>
+        {
+            var extension = Assert.Single(card.Capabilities.Extensions);
+            Assert.Equal(InTaskAuthorizationExtension.Uri, extension.Uri);
+            card.Signatures = [new AgentCardSignature { Protected = "header", Signature = "signature" }];
+            return card;
+        });
+
+        Assert.Equal(InTaskAuthorizationExtension.Uri, Assert.Single(result.Capabilities.Extensions).Uri);
+        var signature = Assert.Single(result.Signatures);
+        Assert.Equal("header", signature.Protected);
+        Assert.Equal("signature", signature.Signature);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -79,7 +96,9 @@ public class AgentCardComposerTests
             : null,
     };
 
-    private static Task<A2AProtocolAgentCard> ComposeAsync(A2AProtocolAgentCard card)
+    private static Task<A2AProtocolAgentCard> ComposeAsync(A2AProtocolAgentCard card) => ComposeAsync(_ => card);
+
+    private static Task<A2AProtocolAgentCard> ComposeAsync(Func<A2AProtocolAgentCard, A2AProtocolAgentCard> cardHandler)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
         {
@@ -91,16 +110,18 @@ public class AgentCardComposerTests
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:OAuthFlows:DeviceCode:Scopes:agent.read"] = "Access the agent",
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "agent.read",
         }).Build();
-        var agent = new CardHandlerAgent(new AgentApplicationOptions(new MemoryStorage()), card);
+        var agent = new CardHandlerAgent(new AgentApplicationOptions(new MemoryStorage()), cardHandler);
         return new A2AAgentCardComposer(configuration).ComposeAsync(
             CreateCard(),
             agent,
             A2AServiceExtensions.Dispatch.InTaskAuthorization.Extension);
     }
 
-    private sealed class CardHandlerAgent(AgentApplicationOptions options, A2AProtocolAgentCard card)
+    private sealed class CardHandlerAgent(
+        AgentApplicationOptions options,
+        Func<A2AProtocolAgentCard, A2AProtocolAgentCard> cardHandler)
         : AgentApplication(options), IAgentCardHandler
     {
-        public Task<A2AProtocolAgentCard> GetAgentCard(A2AProtocolAgentCard defaultCard) => Task.FromResult(card);
+        public Task<A2AProtocolAgentCard> GetAgentCard(A2AProtocolAgentCard defaultCard) => Task.FromResult(cardHandler(defaultCard));
     }
 }
