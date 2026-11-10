@@ -1,6 +1,6 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
-  "manifestVersion": "devPreview",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.29/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.29",
   "version": "1.0.0",
   "id": "<<AAD_APP_CLIENT_ID>>",
   "developer": {
@@ -33,7 +33,7 @@
       "isNotificationOnly": false,
       "supportsCalling": false,
       "supportsVideo": false,
-      "supportsFiles": false,
+      "supportsFiles": true,
       "supportsTargetedMessages": true,
       "commandLists": [
         {
@@ -46,6 +46,10 @@
             "mention"
           ],
           "commands": [
+            {
+              "title": "validate",
+              "description": "Show attachment and stable feature validation commands"
+            },
             {
               "title": "mentionme",
               "description": "Sends message with @mention of the sender"

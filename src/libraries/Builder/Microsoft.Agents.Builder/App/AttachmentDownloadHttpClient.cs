@@ -4,6 +4,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace Microsoft.Agents.Builder.App
             UseCookies = false
         });
 
-        private readonly IOutboundHostValidator _hostValidator;
+        private readonly IOutboundHostValidator? _hostValidator;
         private readonly IHostAddressResolver _hostAddressResolver;
         private readonly HttpClient _httpClient;
 
@@ -32,21 +33,32 @@ namespace Microsoft.Agents.Builder.App
             IHostAddressResolver hostAddressResolver,
             HttpClient httpClient)
         {
-            _hostValidator = hostValidator ?? throw new ArgumentNullException(nameof(hostValidator));
+            _hostValidator = hostValidator;
             _hostAddressResolver = hostAddressResolver ?? throw new ArgumentNullException(nameof(hostAddressResolver));
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
-        public async Task<HttpResponseMessage?> SendAsync(
+        public Task<HttpResponseMessage?> SendAsync(
             Uri requestUri,
             Action<HttpRequestMessage>? configureInitialRequest,
             CancellationToken cancellationToken)
+            => SendAsync(requestUri, configureInitialRequest, requireHttps: false, retainAuthorizationOnSameOriginRedirects: false, cancellationToken);
+
+        public async Task<HttpResponseMessage?> SendAsync(
+            Uri requestUri,
+            Action<HttpRequestMessage>? configureInitialRequest,
+            bool requireHttps,
+            bool retainAuthorizationOnSameOriginRedirects,
+            CancellationToken cancellationToken)
         {
             var currentUri = requestUri;
+            AuthenticationHeaderValue? authorization = null;
+            bool sameOrigin = true;
 
             for (var redirectCount = 0; ; redirectCount++)
             {
-                if (!await IsAllowedAsync(currentUri, cancellationToken).ConfigureAwait(false))
+                if ((requireHttps && currentUri?.Scheme != Uri.UriSchemeHttps)
+                    || !await IsAllowedAsync(currentUri, cancellationToken).ConfigureAwait(false))
                 {
                     return null;
                 }
@@ -55,6 +67,11 @@ namespace Microsoft.Agents.Builder.App
                 if (redirectCount == 0)
                 {
                     configureInitialRequest?.Invoke(request);
+                    authorization = request.Headers.Authorization;
+                }
+                else if (retainAuthorizationOnSameOriginRedirects && sameOrigin)
+                {
+                    request.Headers.Authorization = authorization;
                 }
 
                 var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
@@ -72,21 +89,32 @@ namespace Microsoft.Agents.Builder.App
                 currentUri = response.Headers.Location.IsAbsoluteUri
                     ? response.Headers.Location
                     : new Uri(currentUri, response.Headers.Location);
+                sameOrigin = sameOrigin && Uri.Compare(
+                    currentUri, requestUri, UriComponents.SchemeAndServer, UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase) == 0;
                 response.Dispose();
             }
         }
 
         private async Task<bool> IsAllowedAsync(Uri uri, CancellationToken cancellationToken)
         {
+            if (uri == null || !uri.IsAbsoluteUri
+                || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                || !string.IsNullOrEmpty(uri.UserInfo))
+            {
+                return false;
+            }
+
+            if (_hostValidator?.Enabled != true)
+            {
+                return true;
+            }
+
             if (_hostValidator is OutboundHostValidator defaultValidator)
             {
                 return await defaultValidator.IsAllowedAsync(uri, cancellationToken, _hostAddressResolver).ConfigureAwait(false);
             }
 
-            if (uri == null
-                || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
-                || !string.IsNullOrEmpty(uri.UserInfo)
-                || !_hostValidator.IsAllowed(uri))
+            if (!_hostValidator.IsAllowed(uri))
             {
                 return false;
             }

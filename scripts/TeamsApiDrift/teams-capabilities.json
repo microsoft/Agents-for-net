@@ -20,7 +20,7 @@
       "description": "Meeting APIs and event payloads.",
       "owners": ["agents-sdk-msteams"],
       "upstreamNamespaces": ["Microsoft.Teams.Apps.Clients", "Microsoft.Teams.Apps.Meetings"],
-      "upstreamTypes": ["Microsoft.Teams.Apps.EventName", "Microsoft.Teams.Apps.EventNames"],
+      "upstreamTypes": ["Microsoft.Teams.Apps.EventName", "Microsoft.Teams.Apps.EventNames", "Microsoft.Teams.Apps.Schema.TeamsChannelDataMeeting"],
       "adoptionPolicy": "review-new-members"
     },
     "message-extensions": {

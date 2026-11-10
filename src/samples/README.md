@@ -5,6 +5,16 @@ its own `README.md` with setup and run instructions. This document describes the
 that are **shared across all samples** via the `Directory.Build.props` / `Directory.Build.targets`
 files in this folder.
 
+## Live Teams validation
+
+The existing [Teams ConversationAgent](./Teams/ConversationAgent/README.md#live-validation-of-teams-integration-changes)
+includes an attachment/client test matrix and commands for conversion fidelity,
+extended markdown, sensitivity labels, streaming, and typed meeting metadata.
+Its README explains authenticated Teams/tunnel setup, personal-chat file uploads,
+clipboard images and HTML companions, conditional agentic-user Graph file tests,
+and an opt-in simulated final-send error that exercises real Teams recovery
+updates. The simulation does not validate the live service timeout.
+
 ## Shared sample code
 
 Rather than duplicating boilerplate in every project, the samples share a small set of helper files

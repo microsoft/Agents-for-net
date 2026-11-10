@@ -90,14 +90,18 @@ public static class TeamsModelExtensions
     /// <returns>A Microsoft Teams <c>Activity</c> that represents the specified <c>Microsoft.Agents.Core.Models.IActivity</c>.</returns>
     public static Microsoft.Teams.Apps.Schema.TeamsActivity ToTeamsActivity(this Core.Models.IActivity activity)
     {
-        if (activity.IsType(Core.Models.ActivityTypes.Message))
+        var coreActivity = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Core.Schema.CoreActivity>(activity);
+        var teamsActivity = Microsoft.Teams.Apps.Schema.TeamsActivity.FromActivity(coreActivity);
+        teamsActivity.Locale = teamsActivity.Properties.Extract<string>("locale");
+        teamsActivity.Timestamp = teamsActivity.Properties.Extract<string>("timestamp");
+        teamsActivity.LocalTimestamp = teamsActivity.Properties.Extract<string>("localTimestamp");
+        teamsActivity.LocalTimezone = teamsActivity.Properties.Extract<string>("localTimezone");
+        if (teamsActivity is Microsoft.Teams.Apps.MessageActivity messageActivity)
         {
-            var messageActivity = ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.MessageActivity>(activity);
             messageActivity.Text = activity.Text;
-            return messageActivity;
         }
 
-        return ProtocolJsonSerializer.ToObject<Microsoft.Teams.Apps.Schema.TeamsActivity>(activity);
+        return teamsActivity;
     }
 
     /// <summary>

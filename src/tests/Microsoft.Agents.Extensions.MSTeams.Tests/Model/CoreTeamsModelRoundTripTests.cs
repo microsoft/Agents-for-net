@@ -232,6 +232,30 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests.Model
             Assert.Equal("act2",          coreFromTeams.Id);
         }
 
+        [Fact]
+        public void Activity_NestedSensitivityIds_SurviveDeveloperInteroperability()
+        {
+            var core = ProtocolJsonSerializer.ToObject<Core.Models.Activity>(
+                """
+                {"type":"message","channelId":"msteams","text":"Hello","entities":[{"type":"https://schema.org/Message","@type":"Message","@context":"https://schema.org","@id":"","usageInfo":{"@type":"CreativeWork","@id":"urn:example:message-label"},"citation":[{"@type":"Claim","position":1,"appearance":{"@type":"DigitalDocument","name":"Source","abstract":"Source summary","usageInfo":{"@type":"CreativeWork","@id":"urn:example:citation-label"}}}]}]}
+                """);
+
+            var teams = core.ToTeamsActivity();
+            var roundTrip = teams.ToCoreActivity();
+
+            foreach (var payload in new[] { ToJson(teams), ToJson(roundTrip) })
+            {
+                using var json = JsonDocument.Parse(payload);
+                var entity = json.RootElement.GetProperty("entities")[0];
+                Assert.Equal("", entity.GetProperty("@id").GetString());
+                Assert.True(entity.GetProperty("usageInfo").TryGetProperty("@id", out var messageId));
+                Assert.Equal("urn:example:message-label", messageId.GetString());
+                Assert.True(entity.GetProperty("citation")[0].GetProperty("appearance")
+                    .GetProperty("usageInfo").TryGetProperty("@id", out var citationId));
+                Assert.Equal("urn:example:citation-label", citationId.GetString());
+            }
+        }
+
         // -----------------------------------------------------------------------
         // Auto-matched pairs (same simple class name in both assemblies)
         // -----------------------------------------------------------------------
