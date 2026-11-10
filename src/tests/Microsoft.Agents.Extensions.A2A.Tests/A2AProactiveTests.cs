@@ -200,6 +200,43 @@ public class A2AProactiveTests
         Assert.Equal("Nested update", Assert.Single(fixture.Sender.Events).StatusUpdate.Status.Message.Parts[0].Text);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Proactive_AfterOriginalTurnCompletesStartsNewExecution(bool sendActivity)
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var resume = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task deferred = Task.CompletedTask;
+
+        await fixture.Adapter.ContinueConversationAsync(new ClaimsIdentity(), fixture.Conversation.Reference, (outer, ct) =>
+        {
+            deferred = Task.Run(async () =>
+            {
+                await resume.Task.WaitAsync(timeout.Token);
+                if (sendActivity)
+                {
+                    await Proactive.SendActivityAsync(fixture.Adapter, fixture.Conversation,
+                        MessageFactory.Text("Deferred update"), timeout.Token);
+                }
+                else
+                {
+                    await fixture.Agent.Proactive.ContinueConversationAsync(fixture.Adapter, fixture.Conversation,
+                        (inner, _, innerCt) => inner.SendActivityAsync("Deferred update", cancellationToken: innerCt),
+                        cancellationToken: timeout.Token);
+                }
+            }, timeout.Token);
+            return outer.SendActivityAsync("Initial update", cancellationToken: ct);
+        }, timeout.Token);
+
+        resume.SetResult(true);
+        await deferred.WaitAsync(timeout.Token);
+
+        Assert.Equal("Deferred update", (await fixture.Tasks.GetTaskAsync("task-1")).Status.Message.Parts[0].Text);
+        Assert.Equal(2, fixture.Sender.Events.Count);
+    }
+
     [Fact]
     public async Task ContinueConversation_CrossTaskDoesNotReuseCurrentExecution()
     {

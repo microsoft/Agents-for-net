@@ -57,7 +57,7 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
     private static readonly ConcurrentDictionary<string, AgentRequestContext> _a2aAgentContext = new();
     private static readonly AsyncLocal<AgentRequestContext> _currentAgentContext = new();
     private static readonly AsyncLocal<A2AAdapter> _currentAdapter = new();
-    private static readonly AsyncLocal<ITurnContext> _currentTurn = new();
+    private static readonly AsyncLocal<StrongBox<ITurnContext>> _currentTurn = new();
     private static readonly A2AServerOptions _a2aServerOptions = new();
     private static readonly string _assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
     private readonly ILoggerFactory _loggerFactory;
@@ -533,7 +533,7 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
         AssertionHelpers.ThrowIfNull(callback, nameof(callback));
         ValidateConversation(claimsIdentity, continuationActivity.GetConversationReference());
 
-        var currentTurn = _currentTurn.Value;
+        var currentTurn = _currentTurn.Value?.Value;
         if (currentTurn?.Adapter == this
             && currentTurn.Services.Get<RequestContext>() is { } currentContext
             && currentContext.TaskId == continuationActivity.Conversation?.Id)
@@ -617,8 +617,9 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
 
         var previousContext = _currentAgentContext.Value;
         var previousTurn = _currentTurn.Value;
+        var activeTurn = new StrongBox<ITurnContext>(context);
         _currentAgentContext.Value = agentRequestContext;
-        _currentTurn.Value = context;
+        _currentTurn.Value = activeTurn;
         try
         {
             await RunPipelineAsync(context, callback, cancellationToken).ConfigureAwait(false);
@@ -626,6 +627,8 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
         }
         finally
         {
+            // Invalidate the turn in inherited execution contexts before its services are disposed.
+            activeTurn.Value = null;
             _currentAgentContext.Value = previousContext;
             _currentTurn.Value = previousTurn;
         }
