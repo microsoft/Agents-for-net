@@ -11,6 +11,25 @@ namespace Microsoft.Agents.Storage
 {
     internal static class StorageCompatibility
     {
+        internal static Dictionary<string, object> ValidateAndCopyWriteChanges<TValue>(IReadOnlyDictionary<string, TValue> changes)
+            where TValue : class
+        {
+            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+
+            Dictionary<string, object> copy = new(changes.Count);
+            foreach (var change in changes)
+            {
+                if (change.Value == null)
+                {
+                    throw new ArgumentException($"Storage write value for key '{change.Key}' cannot be null.", nameof(changes));
+                }
+
+                copy.Add(change.Key, change.Value);
+            }
+
+            return copy;
+        }
+
         public static IStorageV2 AsV2(IStorage storage)
         {
             AssertionHelpers.ThrowIfNull(storage, nameof(storage));
@@ -97,14 +116,9 @@ namespace Microsoft.Agents.Storage
             return _storage.WriteAsync(changes, cancellationToken);
         }
 
-        public Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, CancellationToken cancellationToken = default) where TValue : class
-        {
-            return WriteAsync(changes, options: null, cancellationToken);
-        }
-
         public async Task<IReadOnlyDictionary<string, StorageWriteResult>> WriteAsync<TValue>(IReadOnlyDictionary<string, TValue> changes, StorageWriteOptions options, CancellationToken cancellationToken = default) where TValue : class
         {
-            AssertionHelpers.ThrowIfNull(changes, nameof(changes));
+            var changesAsObject = StorageCompatibility.ValidateAndCopyWriteChanges(changes);
 
             if (options != null)
             {
@@ -125,22 +139,20 @@ namespace Microsoft.Agents.Storage
                 }
             }
 
-            if (changes.Count == 0)
+            if (changesAsObject.Count == 0)
             {
                 return new Dictionary<string, StorageWriteResult>();
             }
 
-            Dictionary<string, object> changesAsObject = new(changes.Count);
-            foreach (var change in changes)
+            foreach (var key in changesAsObject.Keys)
             {
-                AssertionHelpers.ThrowIfNullOrWhiteSpace(change.Key, nameof(changes));
-                changesAsObject.Add(change.Key, change.Value);
+                AssertionHelpers.ThrowIfNullOrWhiteSpace(key, nameof(changes));
             }
 
             await _storage.WriteAsync(changesAsObject, cancellationToken).ConfigureAwait(false);
 
-            Dictionary<string, StorageWriteResult> results = new(changes.Count);
-            foreach (var change in changes)
+            Dictionary<string, StorageWriteResult> results = new(changesAsObject.Count);
+            foreach (var change in changesAsObject)
             {
                 results[change.Key] = new StorageWriteResult()
                 {

@@ -6,7 +6,9 @@ using A2A.AspNetCore;
 using A2AProtocolAgentCard = A2A.AgentCard;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.Adapters;
+using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
@@ -28,6 +30,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -45,7 +48,7 @@ namespace Microsoft.Agents.Extensions.A2A.Pipeline;
 /// customization or replacement point.
 /// </remarks>
 [ChannelAdapter(Channels.A2A)]
-internal class A2AAdapter : ChannelAdapter
+internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
 {
     private readonly ITaskStore _taskStore;
     private readonly A2AServer _server;
@@ -125,10 +128,18 @@ internal class A2AAdapter : ChannelAdapter
 
         OnTurnError = (turnContext, exception) =>
         {
+            if (exception is OperationCanceledException)
+            {
+                return Task.FromException(exception);
+            }
+
             Logger.LogError(exception, "A2AAdapter.OnTurnError: An error occurred during turn processing.");
             throw new A2AException($"A2AAdapter.OnTurnError: An error occurred during turn processing: {exception.Message}", exception);
         };
     }
+
+    /// <inheritdoc/>
+    public ValueTask DisposeAsync() => _server.DisposeAsync();
 
     /// <inheritdoc/>
     public Task ProcessAsync(HttpRequest httpRequest, HttpResponse httpResponse, IAgent agent, CancellationToken cancellationToken = default)
@@ -144,7 +155,7 @@ internal class A2AAdapter : ChannelAdapter
         try
         {
             var result = await global::A2A.AspNetCore.A2AJsonRpcProcessor.ProcessRequestAsync(
-                CurrentRequestHandler,
+                RequestHandlerProxy,
                 httpRequest,
                 A2AServiceExtensions.Dispatch.Registry,
                 A2AServiceExtensions.Dispatch.JsonRpcBindings,
@@ -323,8 +334,37 @@ internal class A2AAdapter : ChannelAdapter
         public IAsyncEnumerable<StreamResponse> SendStreamingMessageAsync(
             SendMessageRequest request,
             A2ARequestContext? requestContext,
-            CancellationToken cancellationToken = default) =>
-            Current.SendStreamingMessageAsync(request, requestContext, cancellationToken);
+            CancellationToken cancellationToken = default)
+        {
+            var agentContext = _currentAgentContext.Value
+                ?? throw new InvalidOperationException("An A2A request context is not active.");
+            return SendStreamingMessageWithRequestContextAsync(
+                Current, agentContext, request, requestContext, cancellationToken);
+        }
+
+        private static async IAsyncEnumerable<StreamResponse> SendStreamingMessageWithRequestContextAsync(
+            A2AServer server,
+            AgentRequestContext agentContext,
+            SendMessageRequest request,
+            A2ARequestContext? requestContext,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            // Streaming can start after the endpoint's ambient request scope has exited.
+            var previousContext = _currentAgentContext.Value;
+            _currentAgentContext.Value = agentContext;
+            try
+            {
+                await foreach (var response in server.SendStreamingMessageAsync(
+                    request, requestContext, cancellationToken).ConfigureAwait(false))
+                {
+                    yield return response;
+                }
+            }
+            finally
+            {
+                _currentAgentContext.Value = previousContext;
+            }
+        }
 
         public Task<AgentTask> GetTaskAsync(GetTaskRequest request, A2ARequestContext? requestContext, CancellationToken cancellationToken = default) =>
             Current.GetTaskAsync(request, requestContext, cancellationToken);
@@ -389,7 +429,11 @@ internal class A2AAdapter : ChannelAdapter
     internal async Task ExecuteAgentTurnAsync(AgentRequestContext agentContext, RequestContext context, AgentEventQueue eventQueue, CancellationToken cancellationToken)
     {
         var activity = A2AActivity.ActivityFromMessage(agentContext.RequestId, context.TaskId, context.Message);
-        if (activity == null || !activity.Validate(ValidationContext.Channel | ValidationContext.Receiver))
+        if (activity != null)
+        {
+            activity.From.Id = A2AUserIdentity.GetUserId(agentContext.Authentication?.Identity);
+        }
+        if (activity == null || !activity.Validate(ValidationContext.Receiver))
         {
             Logger.LogError("Invalid Activity for RequestId={RequestId}, TaskId={TaskId}", agentContext.RequestId, context.TaskId);
             throw new A2AException($"Invalid Activity for RequestId={agentContext.RequestId}", A2AErrorCode.InternalError);
@@ -436,7 +480,11 @@ internal class A2AAdapter : ChannelAdapter
             ChannelId = Channels.A2A,
             Conversation = new ConversationAccount() { Id = context.TaskId },
             Recipient = new ChannelAccount { Id = "assistant", Role = RoleTypes.Agent },
-            From = new ChannelAccount { Id = context.TaskId, Role = RoleTypes.User }
+            From = new ChannelAccount
+            {
+                Id = A2AUserIdentity.GetUserId(authentication?.Identity),
+                Role = RoleTypes.User
+            }
         };
 
         _ = await ProcessActivityWithA2AAuthenticationAsync(
@@ -553,6 +601,9 @@ internal class A2AAdapter : ChannelAdapter
         if (a2aContext != null)
         {
             context.Services.Set(a2aContext);
+            context.Services.Set<IUserAuthorizationStateKeyProvider>(
+                new A2AUserAuthorizationStateKeyProvider(a2aContext.TaskId));
+            context.Services.Set<IAgentStateLoadPolicy>(A2AStateLoadPolicy.Instance);
         }
         if (a2aEventQueue != null)
         {
@@ -577,6 +628,27 @@ internal class A2AAdapter : ChannelAdapter
         {
             _currentAgentContext.Value = previousContext;
             _currentTurn.Value = previousTurn;
+        }
+    }
+
+    private sealed class A2AUserAuthorizationStateKeyProvider(string taskId) : IUserAuthorizationStateKeyProvider
+    {
+        public string GetKey(ITurnContext turnContext)
+        {
+            var channelId = turnContext.Activity.ChannelId?.Channel
+                ?? throw new InvalidOperationException("invalid activity-missing ChannelId");
+            return $"oauth/{channelId}/{taskId}/userAuthorizationState";
+        }
+    }
+
+    private sealed class A2AStateLoadPolicy : IAgentStateLoadPolicy
+    {
+        public static readonly A2AStateLoadPolicy Instance = new();
+
+        public bool ShouldLoad(ITurnContext turnContext, IAgentState agentState)
+        {
+            return agentState.Name != UserState.ScopeName
+                || !string.IsNullOrEmpty(turnContext.Activity.From?.Id);
         }
     }
 

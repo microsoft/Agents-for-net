@@ -29,6 +29,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -936,6 +937,173 @@ public class A2AAdapterTests
     }
 
     [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync_WithoutUserIdentity_KeepsTurnUsableAndUserStateUnavailable()
+    {
+        InvalidOperationException userStateException = null;
+        var record = UseRecord(record =>
+        {
+            var agent = new TestApplication(new TestApplicationOptions(record.Storage));
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                userStateException = Assert.Throws<InvalidOperationException>(
+                    () => state.User.GetValue<string>("value"));
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = "completed",
+                    },
+                    cancellationToken: ct);
+            });
+            return agent;
+        });
+
+        var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("anonymous-context")));
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(
+            context.Request,
+            context.Response,
+            record.Agent,
+            CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        Assert.Equal("completed", ReadTaskResponse(context).Status.Message.Parts[0].Text);
+        Assert.Equal("user is not loaded", userStateException.Message);
+    }
+
+    [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync_WithValidatedDelegatedIdentity_IsolatesUserState()
+    {
+        var record = UseRecord(record =>
+        {
+            var agent = new TestApplication(new TestApplicationOptions(record.Storage));
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                var count = state.User.GetValue("count", () => 0) + 1;
+                state.User.SetValue("count", count);
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = $"count:{count}",
+                    },
+                    cancellationToken: ct);
+            });
+            return agent;
+        });
+
+        async Task<string> SendAsync(string tenantId, string objectId)
+        {
+            var token = CreateDelegatedToken(tenantId, objectId);
+            var identity = new ClaimsIdentity(
+                new JwtSecurityTokenHandler().ReadJwtToken(token).Claims,
+                authenticationType: "Bearer");
+            var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest(Guid.NewGuid().ToString())));
+            AuthenticateContext(context, token, identity);
+
+            var result = await record.Adapter.ProcessJsonRpcAsync(
+                context.Request,
+                context.Response,
+                record.Agent,
+                CancellationToken.None);
+            await result.ExecuteAsync(context);
+            return ReadTaskResponse(context).Status.Message.Parts[0].Text;
+        }
+
+        Assert.Equal("count:1", await SendAsync("tenant-1", "user-1"));
+        Assert.Equal("count:2", await SendAsync("tenant-1", "user-1"));
+        Assert.Equal("count:1", await SendAsync("tenant-1", "user-2"));
+        Assert.Equal("count:1", await SendAsync("tenant-2", "user-1"));
+    }
+
+    [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync_WithMappedDelegatedIdentity_LoadsUserState()
+    {
+        var record = UseRecord(record =>
+        {
+            var agent = new TestApplication(new TestApplicationOptions(record.Storage));
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                state.User.SetValue("value", "loaded");
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = state.User.GetValue<string>("value"),
+                    },
+                    cancellationToken: ct);
+            });
+            return agent;
+        });
+        var token = CreateDelegatedToken("mapped-tenant", "mapped-user");
+        var identity = new ClaimsIdentity(
+        [
+            new Claim("iss", "https://login.microsoftonline.com/mapped-tenant/v2.0"),
+            new Claim("http://schemas.microsoft.com/identity/claims/tenantid", "mapped-tenant"),
+            new Claim("http://schemas.microsoft.com/identity/claims/objectidentifier", "mapped-user"),
+            new Claim(ClaimTypes.NameIdentifier, "mapped-subject"),
+            new Claim("http://schemas.microsoft.com/identity/claims/scope", "access_as_user"),
+        ],
+        authenticationType: "Bearer");
+        var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("mapped-context")));
+        AuthenticateContext(context, token, identity);
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(
+            context.Request,
+            context.Response,
+            record.Agent,
+            CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        Assert.Equal("loaded", ReadTaskResponse(context).Status.Message.Parts[0].Text);
+    }
+
+    [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync_WithCallingApplicationIdentity_DoesNotLoadUserState()
+    {
+        var record = UseRecord(record =>
+        {
+            var agent = new TestApplication(new TestApplicationOptions(record.Storage));
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                Assert.Throws<InvalidOperationException>(() => state.User.GetValue<string>("value"));
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = "completed",
+                    },
+                    cancellationToken: ct);
+            });
+            return agent;
+        });
+        var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            issuer: "https://login.microsoftonline.com/tenant-app/v2.0",
+            claims:
+            [
+                new Claim("tid", "tenant-app"),
+                new Claim("oid", "application-object-id"),
+                new Claim("sub", "application-subject"),
+                new Claim("roles", "agent.invoke"),
+            ],
+            expires: DateTime.UtcNow.AddMinutes(30)));
+        var identity = new ClaimsIdentity(
+            new JwtSecurityTokenHandler().ReadJwtToken(token).Claims,
+            authenticationType: "Bearer");
+        var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("application-context")));
+        AuthenticateContext(context, token, identity);
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(
+            context.Request,
+            context.Response,
+            record.Agent,
+            CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        Assert.Equal("completed", ReadTaskResponse(context).Status.Message.Parts[0].Text);
+    }
+
+    [Fact]
     public async Task ProcessJsonRpcMessageSendAsync_WithContentFreeEndOfConversation_CompletesTask()
     {
         var record = UseRecord(record =>
@@ -1002,6 +1170,76 @@ public class A2AAdapterTests
         await result.ExecuteAsync(context);
 
         Assert.Equal("Token: opaque-token", ReadTaskResponse(context).Status.Message.Parts[0].Text);
+    }
+
+    [Fact]
+    public async Task ProcessJsonRpcMessageSendAsync_WhenOAuthIdentityChanges_DoesNotRunProtectedRoute()
+    {
+        var connections = Mock.Of<IConnections>();
+        var routeRan = false;
+        var record = UseRecord(record =>
+        {
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections,
+                    new A2AUserAuthorization("request", connections, new OBOSettings()))
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOnForAny,
+                    SignInFailedMessage = (_, _) =>
+                    [
+                        new Activity
+                        {
+                            Type = ActivityTypes.EndOfConversation,
+                            Code = EndOfConversationCodes.Error,
+                            Text = "authorization failed",
+                        },
+                    ],
+                }
+            };
+            var agent = new TestApplication(options);
+            agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
+            {
+                routeRan = true;
+                state.User.SetValue("protected", true);
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = "protected",
+                    },
+                    cancellationToken: ct);
+            });
+            return agent;
+        });
+
+        var requestIdentityToken = CreateDelegatedToken("tenant-1", "user-1");
+        var requestIdentity = new ClaimsIdentity(
+            new JwtSecurityTokenHandler().ReadJwtToken(requestIdentityToken).Claims,
+            authenticationType: "Bearer");
+        var context = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("identity-switch")));
+        AuthenticateContext(
+            context,
+            CreateDelegatedToken("tenant-1", "user-2"),
+            requestIdentity);
+
+        var result = await record.Adapter.ProcessJsonRpcAsync(
+            context.Request,
+            context.Response,
+            record.Agent,
+            CancellationToken.None);
+        await result.ExecuteAsync(context);
+
+        Assert.False(routeRan);
+        var task = ReadTaskResponse(context);
+        Assert.Equal(TaskState.Failed, task.Status.State);
+        Assert.DoesNotContain(
+            "protected",
+            task.Status.Message.Parts[0].Text,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1151,6 +1389,220 @@ public class A2AAdapterTests
         Assert.NotNull(cancelActivation);
         Assert.Contains(InTaskAuthorizationExtension.Uri, cancelActivation.ActivatedExtensions);
         Assert.Empty(await record.Storage.ReadAsync<object>([storageKey], CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ResumeAuthAsync_WithoutTrustedTokenValidation_KeepsUserStateUnavailable()
+    {
+        var connections = Mock.Of<IConnections>();
+        var record = UseRecord(record =>
+        {
+            var authorization = CreateInTaskAuthorization("request", record.Storage, connections);
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections,
+                    authorization)
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                },
+            };
+            var agent = new TestApplication(options);
+            var extension = new A2AAgentExtension(agent);
+            agent.RegisteredExtensions.Add(extension);
+            extension.Skill("protected", skill => skill
+                .OnMessage("Hello", async (context, state, cancellationToken) =>
+                {
+                    Assert.Throws<InvalidOperationException>(
+                        () => state.User.GetValue<bool>("authorized"));
+                    await context.SendActivityAsync("user-state-unavailable", cancellationToken: cancellationToken);
+                }, autoSigninHandlers: ["request"]));
+            return agent;
+        });
+
+        var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("unvalidated-route-oauth")));
+        initialContext.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
+        var initialResult = await record.Adapter.ProcessJsonRpcAsync(
+            initialContext.Request,
+            initialContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await initialResult.ExecuteAsync(initialContext);
+
+        var initialTask = ReadTaskResponse(initialContext);
+        var resumeContext = CreateResumeAuthContext(
+            initialTask,
+            CreateDelegatedToken("forged-tenant", "forged-user"));
+
+        var resumeResult = await record.Adapter.ProcessJsonRpcAsync(
+            resumeContext.Request,
+            resumeContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await resumeResult.ExecuteAsync(resumeContext);
+
+        var completedTask = ReadTaskResponse(resumeContext);
+        Assert.Equal(TaskState.Completed, completedTask.Status.State);
+        Assert.Equal("user-state-unavailable", completedTask.Status.Message.Parts[0].Text);
+    }
+
+    [Fact]
+    public async Task ResumeAuthAsync_WithDelegatedIdentity_LoadsUserStateBeforeProtectedRoute()
+    {
+        var delegatedToken = CreateDelegatedToken("tenant-route", "user-route");
+        IList<string> oboScopes = ["User.Read"];
+        var accessTokenProvider = new Mock<IAccessTokenProvider>();
+        accessTokenProvider
+            .As<IOBOExchange>()
+            .Setup(provider => provider.AcquireTokenOnBehalfOf(oboScopes, delegatedToken))
+            .ReturnsAsync(new TokenResponse
+            {
+                Token = "trusted-downstream-token",
+                Expiration = DateTimeOffset.UtcNow.AddMinutes(30),
+            });
+        IAccessTokenProvider configuredProvider = accessTokenProvider.Object;
+        var connections = new Mock<IConnections>();
+        connections
+            .Setup(value => value.TryGetConnection("user-state-obo", out configuredProvider))
+            .Returns(true);
+        var record = UseRecord(record =>
+        {
+            var authorization = CreateInTaskAuthorization(
+                "request",
+                record.Storage,
+                connections.Object,
+                "user-state-obo",
+                oboScopes);
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections.Object,
+                    authorization)
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                },
+            };
+            var agent = new TestApplication(options);
+            var extension = new A2AAgentExtension(agent);
+            agent.RegisteredExtensions.Add(extension);
+            extension.Skill("protected", skill => skill
+                .OnMessage("Hello", async (context, state, cancellationToken) =>
+                {
+                    state.User.SetValue("authorized", true);
+                    await context.SendActivityAsync(
+                        $"authorized:{state.User.GetValue<bool>("authorized")}",
+                        cancellationToken: cancellationToken);
+                }, autoSigninHandlers: ["request"]));
+            return agent;
+        });
+
+        var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("route-oauth-context")));
+        initialContext.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
+        var initialResult = await record.Adapter.ProcessJsonRpcAsync(
+            initialContext.Request,
+            initialContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await initialResult.ExecuteAsync(initialContext);
+
+        var initialTask = ReadTaskResponse(initialContext);
+        var resumeContext = CreateResumeAuthContext(initialTask, delegatedToken);
+
+        var resumeResult = await record.Adapter.ProcessJsonRpcAsync(
+            resumeContext.Request,
+            resumeContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await resumeResult.ExecuteAsync(resumeContext);
+
+        var completedTask = ReadTaskResponse(resumeContext);
+        Assert.Equal(TaskState.Completed, completedTask.Status.State);
+        Assert.Equal("authorized:True", completedTask.Status.Message.Parts[0].Text);
+    }
+
+    [Fact]
+    public async Task ResumeAuthAsync_WithDifferentDelegatedIdentity_DoesNotRunProtectedRoute()
+    {
+        var initialToken = CreateDelegatedToken("tenant-route", "user-a");
+        var resumeToken = CreateDelegatedToken("tenant-route", "user-b");
+        IList<string> oboScopes = ["User.Read"];
+        var accessTokenProvider = new Mock<IAccessTokenProvider>();
+        accessTokenProvider
+            .As<IOBOExchange>()
+            .Setup(provider => provider.AcquireTokenOnBehalfOf(oboScopes, resumeToken))
+            .ReturnsAsync(new TokenResponse
+            {
+                Token = "trusted-downstream-token",
+                Expiration = DateTimeOffset.UtcNow.AddMinutes(30),
+            });
+        IAccessTokenProvider configuredProvider = accessTokenProvider.Object;
+        var connections = new Mock<IConnections>();
+        connections
+            .Setup(value => value.TryGetConnection("user-state-obo", out configuredProvider))
+            .Returns(true);
+        var routeRan = false;
+        var record = UseRecord(record =>
+        {
+            var authorization = CreateInTaskAuthorization(
+                "request",
+                record.Storage,
+                connections.Object,
+                "user-state-obo",
+                oboScopes);
+            var options = new TestApplicationOptions(record.Storage)
+            {
+                UserAuthorization = new UserAuthorizationOptions(
+                    NullLoggerFactory.Instance,
+                    record.Storage,
+                    connections.Object,
+                    authorization)
+                {
+                    DefaultHandlerName = "request",
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                },
+            };
+            var agent = new TestApplication(options);
+            var extension = new A2AAgentExtension(agent);
+            agent.RegisteredExtensions.Add(extension);
+            extension.Skill("protected", skill => skill
+                .OnMessage("Hello", async (context, state, cancellationToken) =>
+                {
+                    routeRan = true;
+                    await context.SendActivityAsync("protected", cancellationToken: cancellationToken);
+                }, autoSigninHandlers: ["request"]));
+            return agent;
+        });
+
+        var initialContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("route-oauth-identity-switch")));
+        initialContext.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
+        var initialIdentity = new ClaimsIdentity(
+            new JwtSecurityTokenHandler().ReadJwtToken(initialToken).Claims,
+            authenticationType: "Bearer");
+        AuthenticateContext(initialContext, initialToken, initialIdentity);
+        var initialResult = await record.Adapter.ProcessJsonRpcAsync(
+            initialContext.Request,
+            initialContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await initialResult.ExecuteAsync(initialContext);
+
+        var initialTask = ReadTaskResponse(initialContext);
+        var resumeContext = CreateResumeAuthContext(initialTask, resumeToken);
+
+        var resumeResult = await record.Adapter.ProcessJsonRpcAsync(
+            resumeContext.Request,
+            resumeContext.Response,
+            record.Agent,
+            CancellationToken.None);
+        await resumeResult.ExecuteAsync(resumeContext);
+
+        Assert.False(routeRan);
     }
 
     [Theory]
@@ -1362,8 +1814,10 @@ public class A2AAdapterTests
         Assert.Contains(InTaskAuthorizationExtension.Uri, resumeActivation.ActivatedExtensions);
     }
 
-    [Fact]
-    public async Task ProcessJsonRpcMessageStreamAsync()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProcessJsonRpcMessageStreamAsync(bool mappedEndpoint)
     {
         // Arrange
         A2ARequestContext activation = null;
@@ -1374,7 +1828,13 @@ public class A2AAdapterTests
 
             agent.OnActivity(ActivityTypes.Message, async (context, state, ct) =>
             {
-                await context.SendActivityAsync($"Echo: {context.Activity.Text}", cancellationToken: ct);
+                await context.SendActivityAsync(
+                    new Activity
+                    {
+                        Type = ActivityTypes.EndOfConversation,
+                        Text = $"Echo: {context.Activity.Text}",
+                    },
+                    cancellationToken: ct);
             });
 
             return agent;
@@ -1407,8 +1867,7 @@ public class A2AAdapterTests
 
         // Act
 
-        var result = await record.Adapter.ProcessJsonRpcAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
-        await result.ExecuteAsync(context);
+        await ExecuteRequestAsync(record.Adapter, record.Agent, context, mappedEndpoint, CancellationToken.None);
 
         // Assert
 
@@ -1475,6 +1934,135 @@ public class A2AAdapterTests
 
         Assert.True(turnExecuted);
         Assert.Same(requestContext, observedContext);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task ProcessJsonRpc_CancelTask_CancelsActiveExecution(bool mappedEndpoint, bool streaming)
+    {
+        var agent = new BlockingAgent();
+        var record = UseRecord(_ => agent);
+        var sendRequest = CreateSendMessageRequest("active-cancellation", returnImmediately: !streaming);
+        if (streaming)
+        {
+            sendRequest.Method = A2AMethods.SendStreamingMessage;
+        }
+        var sendContext = CreateHttpContext(JsonSerializer.Serialize(sendRequest));
+        var sendExecution = ExecuteRequestAsync(record.Adapter, agent, sendContext, mappedEndpoint, CancellationToken.None);
+        try
+        {
+            await agent.Started.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            if (!streaming)
+            {
+                await sendExecution.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+
+            var cancelContext = CreateHttpContext(JsonSerializer.Serialize(new JsonRpcRequest
+            {
+                Id = Guid.NewGuid().ToString(),
+                Method = A2AMethods.CancelTask,
+                Params = JsonSerializer.SerializeToElement(new CancelTaskRequest { Id = agent.TaskId }),
+            }));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            cancelContext.RequestAborted = timeout.Token;
+
+            await ExecuteRequestAsync(record.Adapter, agent, cancelContext, mappedEndpoint, timeout.Token);
+
+            Assert.Equal(TaskState.Canceled, ReadTaskResponse(cancelContext).Status.State);
+            Assert.True(agent.CancellationObserved.Task.IsCompletedSuccessfully);
+        }
+        finally
+        {
+            agent.Release.TrySetResult();
+            await sendExecution.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            if (agent.Started.Task.IsCompletedSuccessfully)
+            {
+                await agent.Completed.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ServiceProviderDisposeAsync_CancelsActiveExecution()
+    {
+        var agent = new BlockingAgent();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IStorage, MemoryStorage>();
+        services.AddA2AAdapter();
+        await using var provider = services.BuildServiceProvider();
+        var adapter = provider.GetRequiredService<A2AAdapter>();
+        try
+        {
+            var context = CreateHttpContext(JsonSerializer.Serialize(
+                CreateSendMessageRequest("shutdown-cancellation", returnImmediately: true)));
+            await ExecuteRequestAsync(adapter, agent, context, mappedEndpoint: true, CancellationToken.None);
+            await agent.Started.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+            await provider.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+
+            Assert.True(agent.CancellationObserved.Task.IsCompletedSuccessfully);
+            Assert.True(agent.Completed.Task.IsCompletedSuccessfully);
+        }
+        finally
+        {
+            agent.Release.TrySetResult();
+            await agent.Completed.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+        }
+    }
+
+    [Fact]
+    public async Task ProcessJsonRpc_ConcurrentRequests_PreserveAgentAndAuthentication()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var record = UseRecord(record =>
+        {
+            var agent = new TestApplication(new TestApplicationOptions(record.Storage));
+            agent.OnActivity(ActivityTypes.Message, async (context, _, ct) =>
+            {
+                started.TrySetResult();
+                await release.Task.WaitAsync(ct);
+                await context.SendActivityAsync(new Activity
+                {
+                    Type = ActivityTypes.EndOfConversation,
+                    Text = $"first:{context.Services.Get<A2ARequestAuthentication>().AccessToken}",
+                }, cancellationToken: ct);
+            });
+            return agent;
+        });
+        var secondAgent = new TestApplication(new TestApplicationOptions(record.Storage));
+        secondAgent.OnActivity(ActivityTypes.Message, async (context, _, ct) =>
+        {
+            await context.SendActivityAsync(new Activity
+            {
+                Type = ActivityTypes.EndOfConversation,
+                Text = $"second:{context.Services.Get<A2ARequestAuthentication>().AccessToken}",
+            }, cancellationToken: ct);
+        });
+        var firstContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("first-request")));
+        var secondContext = CreateHttpContext(JsonSerializer.Serialize(CreateSendMessageRequest("second-request")));
+        AuthenticateContext(firstContext, "first-token");
+        AuthenticateContext(secondContext, "second-token");
+        var firstRequest = ExecuteRequestAsync(record.Adapter, record.Agent, firstContext, mappedEndpoint: true, CancellationToken.None);
+
+        try
+        {
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            await ExecuteRequestAsync(record.Adapter, secondAgent, secondContext, mappedEndpoint: true, CancellationToken.None);
+
+            Assert.Equal("second:second-token", ReadTaskResponse(secondContext).Status.Message.Parts[0].Text);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await firstRequest.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+        }
+
+        Assert.Equal("first:first-token", ReadTaskResponse(firstContext).Status.Message.Parts[0].Text);
     }
 
     [Fact]
@@ -1711,7 +2299,7 @@ public class A2AAdapterTests
 
     #endregion
 
-    private static JsonRpcRequest CreateSendMessageRequest(string contextId)
+    private static JsonRpcRequest CreateSendMessageRequest(string contextId, bool returnImmediately = false)
     {
         return new JsonRpcRequest
         {
@@ -1723,7 +2311,10 @@ public class A2AAdapterTests
                 {
                     ContextId = contextId,
                     Parts = [new Part() { Text = "Hello" }]
-                }
+                },
+                Configuration = returnImmediately
+                    ? new SendMessageConfiguration { ReturnImmediately = true }
+                    : null,
             })
         };
     }
@@ -1731,7 +2322,9 @@ public class A2AAdapterTests
     private static A2AUserAuthorization CreateInTaskAuthorization(
         string name,
         IStorage storage,
-        IConnections connections)
+        IConnections connections,
+        string oboConnectionName = null,
+        IList<string> oboScopes = null)
     {
         return new A2AUserAuthorization(
             name,
@@ -1753,7 +2346,32 @@ public class A2AAdapterTests
                     },
                 },
                 RequiredScopes = ["agent.read"],
+                OBOConnectionName = oboConnectionName,
+                OBOScopes = oboScopes,
             });
+    }
+
+    private static DefaultHttpContext CreateResumeAuthContext(AgentTask task, string token)
+    {
+        var authorizationRequestId = task.Status.Message.Metadata[InTaskAuthorizationExtension.Uri]
+            .GetProperty("authorizationRequest")
+            .GetProperty("id")
+            .GetString();
+        var context = CreateHttpContext(JsonSerializer.Serialize(new JsonRpcRequest
+        {
+            Id = Guid.NewGuid().ToString(),
+            Method = InTaskAuthorizationExtension.AuthResponseOperation,
+            Params = JsonSerializer.SerializeToElement(new AuthResponseRequest
+            {
+                TaskId = task.Id,
+                ContextId = task.ContextId,
+                AuthorizationRequestId = authorizationRequestId,
+            }),
+        }));
+        context.Request.Headers[A2AExtensionsHeader] = InTaskAuthorizationExtension.Uri;
+        context.Request.Headers[InTaskAuthorizationExtension.TokenHeader] = token;
+        AuthenticateContext(context, "agent-jwt");
+        return context;
     }
 
     private static AgentTask ReadTaskResponse(DefaultHttpContext context, bool isHttpJson = false)
@@ -1824,6 +2442,23 @@ public class A2AAdapterTests
         await endpoint.RequestDelegate!(context);
     }
 
+    private static async Task ExecuteRequestAsync(
+        A2AAdapter adapter,
+        IAgent agent,
+        DefaultHttpContext context,
+        bool mappedEndpoint,
+        CancellationToken cancellationToken)
+    {
+        if (mappedEndpoint)
+        {
+            await ExecuteJsonRpcAsync(adapter, agent, context, cancellationToken);
+            return;
+        }
+
+        var result = await adapter.ProcessJsonRpcAsync(context.Request, context.Response, agent, cancellationToken);
+        await result.ExecuteAsync(context);
+    }
+
     private static DefaultHttpContext CreateHttpContext(string requestContent = null)
     {
         var context = new DefaultHttpContext();
@@ -1842,10 +2477,13 @@ public class A2AAdapterTests
     /// Applies the authentication result an ASP.NET Core handler with <c>SaveToken = true</c> produces:
     /// an authenticated principal plus a ticket carrying the validated access token.
     /// </summary>
-    private static void AuthenticateContext(DefaultHttpContext context, string validatedToken)
+    private static void AuthenticateContext(
+        DefaultHttpContext context,
+        string validatedToken,
+        ClaimsIdentity identity = null)
     {
-        var principal = new ClaimsPrincipal(
-            new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "caller")], authenticationType: "Test"));
+        var principal = new ClaimsPrincipal(identity
+            ?? new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "caller")], authenticationType: "Test"));
         var properties = new AuthenticationProperties();
         properties.StoreTokens([new AuthenticationToken { Name = "access_token", Value = validatedToken }]);
 
@@ -1855,6 +2493,22 @@ public class A2AAdapterTests
             AuthenticateResult = AuthenticateResult.Success(
                 new AuthenticationTicket(principal, properties, "Test")),
         });
+    }
+
+    private static string CreateDelegatedToken(string tenantId, string objectId)
+    {
+        return new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken(
+            issuer: $"https://login.microsoftonline.com/{tenantId}/v2.0",
+            audience: "api://agent-client-id",
+            claims:
+            [
+                new Claim("tid", tenantId),
+                new Claim("oid", objectId),
+                new Claim("sub", $"subject-{objectId}"),
+                new Claim("scp", "agent.access"),
+                new Claim("appid", "agent-client-id"),
+            ],
+            expires: DateTime.UtcNow.AddMinutes(30)));
     }
 
     private sealed class StubAuthenticateResultFeature : IAuthenticateResultFeature
@@ -1883,6 +2537,42 @@ public class A2AAdapterTests
         {
             capture(turnContext);
             await next(cancellationToken);
+        }
+    }
+
+    private sealed class BlockingAgent : IAgent
+    {
+        public string TaskId { get; private set; }
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource CancellationObserved { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        {
+            if (!turnContext.Activity.IsType(ActivityTypes.Message))
+            {
+                return;
+            }
+
+            TaskId = turnContext.Services.Get<RequestContext>().TaskId;
+            Started.TrySetResult();
+            try
+            {
+                await Release.Task.WaitAsync(cancellationToken);
+                await turnContext.SendActivityAsync(
+                    new Activity { Type = ActivityTypes.EndOfConversation },
+                    cancellationToken: cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                CancellationObserved.TrySetResult();
+                throw;
+            }
+            finally
+            {
+                Completed.TrySetResult();
+            }
         }
     }
 

@@ -5,7 +5,6 @@ The A2A samples live under `src\samples\A2A`.
 | Sample | Project | Purpose |
 | --- | --- | --- |
 | [A2AAgent](A2AAgent/README.md) | `src\samples\A2A\A2AAgent\A2AAgent.csproj` | Hosts the A2A sample agent and demonstrates anonymous routes plus delegated OBO to Microsoft Graph. |
-| [A2ATCKAgent](A2ATCKAgent/README.md) | `src\samples\A2A\A2ATCKAgent\A2ATCKAgent.csproj` | Hosts the endpoint used for A2A TCK compatibility testing. |
 | [A2ACli](A2ACli/README.md) | `src\samples\A2A\A2ACli\A2ACli.csproj` | Interactive console client that predicts a skill from Agent Card metadata and selects anonymous, delegated, or application authentication for that skill. |
 
 ## Quick start

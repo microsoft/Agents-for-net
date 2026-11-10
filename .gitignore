@@ -223,6 +223,9 @@ appsettings.*.json
 *.sln.iml
 .idea
 
+# Local agent worktrees
+/.worktrees/
+
 # Mac files
 .DS_Store
 

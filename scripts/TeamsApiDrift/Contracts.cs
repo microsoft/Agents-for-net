@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Microsoft.Agents.TeamsApiDrift;
 
 public sealed record ApiModel(
@@ -58,7 +56,19 @@ public sealed class UsageManifest
     public string SourceRoot { get; set; } = PackageConstants.SourceRoot;
     public List<UsageEntry> Usages { get; set; } = [];
     public SourceReview? SourceReview { get; set; }
+    public List<CompatibilityReview> CompatibilityReviews { get; set; } = [];
 }
+
+public sealed record CompatibilityReview(
+    string FromVersion,
+    string ToVersion,
+    string UpstreamSymbol,
+    string? Member,
+    string Kind,
+    string? Before,
+    string? After,
+    IReadOnlyList<string> TargetFrameworks,
+    string Reason);
 
 public sealed class UsageEntry
 {
@@ -124,47 +134,9 @@ public sealed record MetadataFinding(
     string Fix,
     string? Subject = null);
 
-public sealed record FindingsResult(
-    int SchemaVersion,
-    string Package,
-    string FromVersion,
-    string ToVersion,
-    FindingSummary Summary,
-    IReadOnlyList<Finding> Findings);
-
-public sealed record FindingSummary(
-    int Blocking,
-    int Required,
-    int Review,
-    [property: JsonPropertyName("no-action")] int NoAction);
-
-public sealed record Finding(
-    string Id,
-    string Classification,
-    string? Category,
-    string Kind,
-    string UpstreamSymbol,
-    string? Member,
-    string? Capability,
-    string Exposure,
-    IReadOnlyList<string> AffectedFiles,
-    string? Before,
-    string? After,
-    IReadOnlyList<string> TargetFrameworks,
-    IReadOnlyList<string> Evidence,
-    string RecommendedAction);
-
 public sealed record TestSummary(
     int SchemaVersion,
     IReadOnlyDictionary<string, string> Checks);
-
-public sealed record AgentReportValidation(
-    int SchemaVersion,
-    bool Valid,
-    IReadOnlyList<string> ReferencedFindingIds,
-    IReadOnlyList<string> MissingMandatoryFindingIds,
-    IReadOnlyList<string> UnknownFindingIds,
-    IReadOnlyList<string> Errors);
 
 public static class PackageConstants
 {

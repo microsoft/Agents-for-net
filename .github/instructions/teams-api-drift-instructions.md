@@ -18,3 +18,5 @@ Produce Markdown with this exact title and these level-two headings in this exac
 The first non-empty text under Summary must begin exactly with: `This is an advisory report; it does not make or authorize implementation decisions.` You may append further summary text to that paragraph.
 
 Include every blocking and required finding ID, invent no IDs, and attribute each action bullet under `## Suggested implementation issues` to at least one supplied `MTAPI-####` ID. Other sections, including `## Validation checklist`, may use ordinary Markdown bullets for generic evidence, file lists, and build/test checks. Use prose rather than suggested implementation bullets when there is no applicable finding.
+
+Findings with category `reviewed-compatible` are exact, version-scoped maintainer acknowledgments. Preserve their justification under `## No action`; do not propose adaptations for these already-reviewed changes.

@@ -260,7 +260,7 @@ public static partial class AssemblyUsageCollector
 
 public static class UsageValidator
 {
-    public static UsageValidation Validate(UsageManifest manifest, CollectedUsage collected, ApiModel model, string repositoryRoot)
+    public static UsageValidation Validate(UsageManifest manifest, CollectedUsage collected, ApiModel model, string repositoryRoot, bool skipVersionCheck = false)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
@@ -268,7 +268,18 @@ public static class UsageValidator
         var missingMembers = new List<string>();
         if (manifest.SchemaVersion != 1) errors.Add("Usage manifest must use schemaVersion 1.");
         if (manifest.Package != PackageConstants.PackageId) errors.Add($"Usage manifest must describe {PackageConstants.PackageId}.");
-        if (manifest.DeclaredVersion != model.Version) errors.Add($"Manifest version {manifest.DeclaredVersion} does not match API model version {model.Version}.");
+        if (manifest.DeclaredVersion != model.Version)
+        {
+            var message = $"Manifest version {manifest.DeclaredVersion} does not match API model version {model.Version}.";
+            if (skipVersionCheck)
+            {
+                warnings.Add($"Version check skipped for custom baseline. {message}");
+            }
+            else
+            {
+                errors.Add(message);
+            }
+        }
 
         var duplicates = manifest.Usages
             .GroupBy(usage => usage.UpstreamSymbol, StringComparer.Ordinal)

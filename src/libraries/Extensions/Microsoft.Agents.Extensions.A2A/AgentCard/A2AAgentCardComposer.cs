@@ -60,6 +60,7 @@ internal sealed class A2AAgentCardComposer
             AddGlobalRequirement(hostDefaults, authorizationsByHandler);
         }
         AddSkills(hostDefaults, agent, authorizationsByHandler);
+        hostDefaults = AddProtocolExtensions(hostDefaults, authorizations, inTaskAuthorization);
 
         if (agent is IAgentCardHandler agentCardHandler)
         {

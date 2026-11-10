@@ -524,8 +524,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Tests
                 .Returns(activity)
                 .Verifiable(Times.Exactly(7));
             _context.SetupGet(e => e.Services)
-                .Returns([])
-                .Verifiable(Times.Exactly(1));
+                .Returns([]);
             _context.SetupGet(e => e.StackState)
                 .Returns([]);
 
