@@ -339,8 +339,8 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
             return null;
         }
 
-        var extensionRequest = turnContext.Services.Get<A2AProtocolExtensionRequest>();
-        if (extensionRequest?.IsActivated(InTaskAuthorizationExtension.Uri) != true)
+        var requestContext = turnContext.Services.Get<RequestContext>();
+        if (requestContext?.ExtensionActivation?.ActivatedExtensions.Contains(InTaskAuthorizationExtension.Uri) != true)
         {
             throw new A2AException("The in-task authorization extension must be activated for this operation.", A2AErrorCode.UnsupportedOperation);
         }
@@ -419,15 +419,12 @@ public class A2AUserAuthorization : OBOExchange, IUserAuthorization
         if (turnContext.Activity?.IsType(ActivityTypes.Event) == true
             && string.Equals(turnContext.Activity.Name, InTaskAuthorizationExtension.AuthResponseEventName, StringComparison.Ordinal))
         {
-            var resumeValue = turnContext.Activity.Value switch
+            var delegatedAccessToken = turnContext.Services
+                .Get<InTaskAuthorizationContext>()
+                ?.DelegatedAccessToken;
+            if (!string.IsNullOrEmpty(delegatedAccessToken))
             {
-                AuthResponseEventValue value => value,
-                JsonElement element => element.Deserialize<AuthResponseEventValue>(A2AJsonUtilities.DefaultOptions),
-                _ => null,
-            };
-            if (!string.IsNullOrEmpty(resumeValue?.AccessToken))
-            {
-                return CreateTokenResponse(resumeValue.AccessToken);
+                return CreateTokenResponse(delegatedAccessToken);
             }
         }
 

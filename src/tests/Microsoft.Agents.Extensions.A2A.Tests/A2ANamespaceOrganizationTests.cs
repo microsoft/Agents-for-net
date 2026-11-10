@@ -16,10 +16,9 @@ public class A2ANamespaceOrganizationTests
     [InlineData("HandlerUtils", RootNamespace + ".Routing")]
     [InlineData("A2AServiceRegistrar", RootNamespace + ".Integration")]
     [InlineData("A2AAdapter", RootNamespace + ".Pipeline")]
-    [InlineData("IA2AHttpAdapter", RootNamespace + ".Pipeline")]
-    [InlineData("A2AJsonRpcProcessor", RootNamespace + ".Pipeline")]
     [InlineData("A2AMessageActivity", RootNamespace + ".Pipeline")]
     [InlineData("A2ATurnContext", RootNamespace + ".Pipeline")]
+    [InlineData("InTaskAuthorizationOperation", RootNamespace + ".ProtocolExtensions.InTaskAuthorization")]
     [InlineData("A2AUserAuthorization", RootNamespace + ".Authorization")]
     [InlineData("A2AUserAuthorizationSettings", RootNamespace + ".Authorization")]
     [InlineData("A2AAgentCardOptions", RootNamespace + ".AgentCard")]
@@ -123,8 +122,6 @@ public class A2ANamespaceOrganizationTests
 
     [Theory]
     [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.A2AAdapter")]
-    [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.IA2AHttpAdapter")]
-    [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.A2AJsonRpcProcessor")]
     [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.A2AMessageActivity")]
     [InlineData("Microsoft.Agents.Extensions.A2A.Pipeline.A2ATurnContext")]
     [InlineData("Microsoft.Agents.Extensions.A2A.AgentCard.A2AAgentCardOptions")]
@@ -133,5 +130,16 @@ public class A2ANamespaceOrganizationTests
         Assert.DoesNotContain(
             typeof(A2AAgentExtension).Assembly.GetExportedTypes(),
             type => type.FullName == fullName);
+    }
+
+    [Theory]
+    [InlineData("A2AHttpProcessor")]
+    [InlineData("A2AJsonRpcProcessor")]
+    [InlineData("IA2AHttpAdapter")]
+    public void CopiedProcessorType_DoesNotExist(string typeName)
+    {
+        Assert.DoesNotContain(
+            typeof(A2AAgentExtension).Assembly.GetTypes(),
+            type => type.Name == typeName);
     }
 }

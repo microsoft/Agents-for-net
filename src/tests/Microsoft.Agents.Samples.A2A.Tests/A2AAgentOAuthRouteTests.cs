@@ -239,10 +239,9 @@ public class A2AAgentOAuthRouteTests
             "-me-agentcard",
             delegatedToken);
 
-        Assert.Contains(
-            "custom_scope",
-            ReadResponseText(context),
-            StringComparison.Ordinal);
+        AgentTask task = ReadTaskResponse(context);
+        Assert.Equal(TaskState.Failed, task.Status.State);
+        Assert.Contains("custom_scope", task.Status.Message!.Parts[0].Text, StringComparison.Ordinal);
         graphClient.VerifyNoOtherCalls();
     }
 

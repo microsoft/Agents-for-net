@@ -17,6 +17,7 @@
     <Microsoft_Extentions_PkgVer>10.0.13</Microsoft_Extentions_PkgVer>
     <Microsoft_Bcl_PkgVer>10.0.13</Microsoft_Bcl_PkgVer>
     <Microsoft_System_PkgVer>10.0.13</Microsoft_System_PkgVer>
+    <Microsoft_Cryptography_PkgVer>10.0.13</Microsoft_Cryptography_PkgVer>
     <Microsoft_AspNetCore_PkgVer>8.0.29</Microsoft_AspNetCore_PkgVer>
     <Microsoft_IdentityModel_PkgVer>8.22.0</Microsoft_IdentityModel_PkgVer>
     <Microsoft_IdentityClient_PkgVer>4.90.0</Microsoft_IdentityClient_PkgVer>
@@ -55,7 +56,8 @@
     <PackageVersion Include="System.Memory.Data" Version="$(Microsoft_System_PkgVer)" />
     <PackageVersion Include="System.Runtime.Caching" Version="$(Microsoft_System_PkgVer)" />
     <PackageVersion Include="System.Configuration.ConfigurationManager" Version="$(Microsoft_System_PkgVer)" />
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="$(Microsoft_System_PkgVer)" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="$(Microsoft_Cryptography_PkgVer)" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="$(Microsoft_Cryptography_PkgVer)" />
     <PackageVersion Include="System.Net.ServerSentEvents" Version="$(Microsoft_System_PkgVer)" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <!-- ASP.net Core support -->
@@ -153,7 +155,7 @@
     <!-- A365 -->
     <PackageVersion Include="Microsoft.Agents.A365.Notifications" Version="1.1.14-preview" />
     <!-- A2A -->
-    <PackageVersion Include="A2A.AspNetCore" Version="1.0.0-preview2" />
-    <PackageVersion Include="A2A" Version="1.0.0-preview2" />
+    <PackageVersion Include="A2A.AspNetCore" Version="1.0.0-preview4" />
+    <PackageVersion Include="A2A" Version="1.0.0-preview4" />
   </ItemGroup>
 </Project>

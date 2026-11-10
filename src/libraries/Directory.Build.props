@@ -1,5 +1,7 @@
 <Project>
 	<PropertyGroup>
+		<LocalA2APackageSource>$(UserProfile)\.nuget\local-packages\a2a</LocalA2APackageSource>
+		<RestoreAdditionalProjectSources Condition="Exists('$(LocalA2APackageSource)')">$(RestoreAdditionalProjectSources);$(LocalA2APackageSource)</RestoreAdditionalProjectSources>
 		<!-- Enabled Documentation for Libs folder-->
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<NoWarn>$(NoWarn);CS1591;CS1572;CS1574</NoWarn>
