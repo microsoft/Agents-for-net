@@ -219,8 +219,15 @@ the task, not to the broader A2A context ID.
 For multi-turn behavior, send a response with
 `Activity.InputHint == InputHints.ExpectingInput`. This moves the A2A task to
 `input-required` and lets the client supply the next message on that task.
-A normal message does not complete the task. Send
-`ActivityTypes.EndOfConversation` when the task is complete:
+A normal message emits a `working` status rather than an explicit completion.
+
+There is an exception after in-task OAuth: when `auth-response` finishes, the
+extension promotes a final `working` task state to `completed`. If the resumed
+route needs more input or later proactive updates, end the resumed turn with a
+response whose `InputHint` is `InputHints.ExpectingInput` so the task is left
+`input-required` instead.
+
+Send `ActivityTypes.EndOfConversation` when the task is complete:
 
 ```csharp
 await turnContext.SendActivityAsync(
@@ -261,7 +268,9 @@ new task or conversation. For work performed after the original request ends:
    `Proactive.StoreConversationAsync` and keeps the returned conversation ID.
 1. The agent leaves the task nonterminal. For example, an
    `InputHints.ExpectingInput` response leaves it `input-required` and allows
-   the initial request to return.
+   the initial request to return. If the route resumes after in-task OAuth,
+   its final response must also use `InputHints.ExpectingInput`; otherwise
+   `auth-response` can complete the task before proactive work begins.
 1. A background worker or external trigger sends an activity or invokes a
    continuation handler for that task. The extension uses the upstream
    `a2a-dotnet` task-continuation and push-delivery pipeline.
