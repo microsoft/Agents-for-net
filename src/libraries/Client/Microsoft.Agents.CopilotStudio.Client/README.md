@@ -7,6 +7,6 @@ Supports starting and managing conversations, sending activities, and receiving 
 
 ## Resources
 
-- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
-- [Integrate with Copilot Studio](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/integrate-with-mcs)
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [Integrate with Copilot Studio](https://learn.microsoft.com/microsoft-365/agents-sdk/integrate-with-mcs)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)

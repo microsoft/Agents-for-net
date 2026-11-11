@@ -8,6 +8,6 @@ application-defined authentication and authorization.
 
 ## Resources
 
-- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
-- [Quickstart for .NET](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/quickstart?pivots=dotnet)
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [Quickstart for .NET](https://learn.microsoft.com/microsoft-365/agents-sdk/quickstart?pivots=dotnet)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)

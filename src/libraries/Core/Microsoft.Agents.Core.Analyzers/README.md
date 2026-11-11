@@ -8,5 +8,5 @@ agent extensions, routes, and serialization.
 
 ## Resources
 
-- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)

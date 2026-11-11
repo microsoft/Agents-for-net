@@ -7,6 +7,6 @@ adapter, multi-turn conversation tests, reply assertions, and optional AI-based 
 
 ## Resources
 
-- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
-- [Unit testing .NET agents](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/unit-testing-agents-dotnet)
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [Unit testing .NET agents](https://learn.microsoft.com/microsoft-365/agents-sdk/unit-testing-agents-dotnet)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)
