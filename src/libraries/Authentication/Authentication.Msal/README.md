@@ -10,4 +10,5 @@ identities for authentication with Azure Bot Service and Microsoft Entra ID.
 
 - [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 - [Configure authentication with MSAL](https://learn.microsoft.com/microsoft-365/agents-sdk/configure-authentication-msal?pivots=dotnet)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.authentication.msal?view=m365-agents-sdk)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)

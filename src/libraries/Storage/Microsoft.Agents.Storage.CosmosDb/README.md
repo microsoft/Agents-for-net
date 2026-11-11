@@ -9,4 +9,5 @@ abstractions. Persists conversation and user state across turns and application 
 
 - [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 - [Storage overview](https://learn.microsoft.com/microsoft-365/agents-sdk/storage?tabs=csharp)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.storage.cosmosdb?view=m365-agents-sdk)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)

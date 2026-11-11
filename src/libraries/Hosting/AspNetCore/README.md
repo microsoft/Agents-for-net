@@ -10,4 +10,5 @@ application-defined authentication and authorization.
 
 - [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 - [Quickstart for .NET](https://learn.microsoft.com/microsoft-365/agents-sdk/quickstart?pivots=dotnet)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.hosting.aspnetcore?view=m365-agents-sdk)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)

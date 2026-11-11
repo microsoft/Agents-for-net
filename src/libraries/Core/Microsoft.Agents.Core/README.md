@@ -9,4 +9,5 @@ platforms.
 ## Resources
 
 - [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.core?view=m365-agents-sdk)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)
