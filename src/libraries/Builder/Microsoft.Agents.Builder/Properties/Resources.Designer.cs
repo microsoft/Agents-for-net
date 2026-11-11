@@ -430,6 +430,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Assembly must be configured for user authorization handler &apos;{0}&apos; because type &apos;{1}&apos; is not defined by Microsoft.Agents.Builder..
+        /// </summary>
+        internal static string UserAuthorizationAssemblyRequired {
+            get {
+                return ResourceManager.GetString("UserAuthorizationAssemblyRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Handler name &apos;{0}&apos; not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid..
         /// </summary>
         internal static string UserAuthorizationDefaultHandlerNotFound {
@@ -471,15 +480,6 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string UserAuthorizationRequiresAdapter {
             get {
                 return ResourceManager.GetString("UserAuthorizationRequiresAdapter", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Assembly must be configured for user authorization handler &apos;{0}&apos; because type &apos;{1}&apos; is not defined by Microsoft.Agents.Builder..
-        /// </summary>
-        internal static string UserAuthorizationAssemblyRequired {
-            get {
-                return ResourceManager.GetString("UserAuthorizationAssemblyRequired", resourceCulture);
             }
         }
         

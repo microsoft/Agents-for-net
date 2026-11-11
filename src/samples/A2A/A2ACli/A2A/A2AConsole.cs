@@ -293,7 +293,7 @@ internal sealed class A2AConsole
 
         if (_pushNotificationReceiver is not null)
         {
-            configuration.PushNotificationConfig = new PushNotificationConfig
+            configuration.TaskPushNotificationConfig = new TaskPushNotificationConfig
             {
                 Url = _pushNotificationReceiver.AbsoluteUri,
             };
