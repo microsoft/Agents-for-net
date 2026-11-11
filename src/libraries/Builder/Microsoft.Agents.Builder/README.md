@@ -2,11 +2,11 @@
 
 ## About
 
-The primary package for building agents with the Microsoft 365 Agents SDK. Provides the `AgentApplication` routing framework, middleware pipeline, and turn context model for handling conversational activities across channels and platforms.
+Provides the application framework for building agents with the Microsoft 365 Agents SDK. Includes
+activity routing, middleware, turn context, state management, user sign-in, Adaptive Cards, and
+streaming responses across channels and platforms.
 
-## Main Types
+## Resources
 
-- `AgentApplication`: Base class for agents with route-based activity handling and middleware support
-- `IAgent`: Core agent interface implemented by all agents
-- `ITurnContext`: Provides access to the current activity, channel, and services for a given turn
-- `ITurnState`: Per-turn state container
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

@@ -2,4 +2,10 @@
 
 ## About
 
-Provides SharePoint-specific extensions for the Microsoft 365 Agents SDK, including models and activity handlers for building agents that integrate with SharePoint experiences such as Viva Connections and SharePoint pages.
+Provides SharePoint and Viva Connections models and activity handlers for the Microsoft 365 Agents
+SDK. Supports Adaptive Card Extensions, card views, quick views, and action handling.
+
+## Resources
+
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

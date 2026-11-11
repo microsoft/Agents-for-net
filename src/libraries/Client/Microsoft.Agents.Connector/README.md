@@ -2,4 +2,10 @@
 
 ## About
 
-Contains the client implementation for the Azure Bot Service Channel API and Token API. Used internally by the SDK to send and receive activities through Azure Bot Service channels.
+Provides clients for the Azure Bot Service Channel and Token APIs used by the Microsoft 365 Agents
+SDK. Supports activity delivery, conversation operations, attachment access, and user token operations.
+
+## Resources
+
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

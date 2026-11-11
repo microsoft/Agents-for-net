@@ -2,10 +2,12 @@
 
 ## About
 
-Provides Microsoft Teams-specific extensions for the Microsoft 365 Agents SDK. Includes the Teams AgentExtension for accessing Teams context, roster, and meeting information within agent turns.
+Adds Microsoft Teams functionality to agents built with the Microsoft 365 Agents SDK. Includes
+message extensions, task modules, meetings, team and channel events, file consent, and access to
+Teams and Microsoft Graph API clients.
 
-## Main Types
+## Resources
 
-- TeamsAgentExtension: Provides access to Microsoft Teams context, roster, and meeting information within agent turns.
-- TeamsTurnContext: Represents the context of a turn in a Microsoft Teams conversation, including information about the user, channel, and meeting.
-- Teams specific route attributes: Provides attributes for routing messages and events to specific Teams channels or meetings.
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Teams extension for .NET](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/teams/teams-extension?pivots=dotnet)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

@@ -2,11 +2,11 @@
 
 ## About
 
-Provides utilities for unit testing agents built with the Microsoft 365 Agents SDK. Supports sending activities to an agent and asserting on its replies, with optional AI-based semantic validation.
+Provides utilities for testing agents built with the Microsoft 365 Agents SDK. Includes an in-process
+adapter, multi-turn conversation tests, reply assertions, and optional AI-based semantic validation.
 
-## Main Types
+## Resources
 
-- `AgentTestHost`: Host for running an agent in a test environment
-- `TestAdapter`: In-process channel adapter for sending and receiving activities in tests
-- `TestFlow`: Fluent API for structuring multi-turn conversation tests
-- `IResponseValidator`: Interface for reply assertion strategies, including `SemanticValidator` for AI-based assertions
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Unit testing .NET agents](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/unit-testing-agents-dotnet)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

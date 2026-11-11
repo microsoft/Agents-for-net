@@ -2,10 +2,10 @@
 
 ## About
 
-Defines core authentication and token retrieval abstractions for the Microsoft 365 Agents SDK. Supports named, configuration-driven connections to different token providers.
+Defines authentication and token acquisition abstractions for the Microsoft 365 Agents SDK. Supports
+configuration-driven named connections to token providers for agent and agentic identities.
 
-## Main Types
+## Resources
 
-- `IAccessTokenProvider`: Interface for retrieving access tokens
-- `IConnections`: Returns an `IAccessTokenProvider` by name or matching criteria
-- `ConfigurationConnections`: Loads `IConnections` from `appsettings.json` configuration
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

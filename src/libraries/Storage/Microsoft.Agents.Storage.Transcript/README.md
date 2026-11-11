@@ -2,11 +2,11 @@
 
 ## About
 
-Provides transcript logging for the Microsoft 365 Agents SDK. A [transcript](https://github.com/microsoft/Agents/blob/main/specs/transcript/transcript.md) is a log of conversational activities — including tracing generated during activity processing — made by humans and automated software.
+Provides conversation transcript logging and storage abstractions for the Microsoft 365 Agents SDK.
+Includes transcript stores backed by memory or Azure Blob Storage, plus file and trace loggers.
 
-## Main Types
+## Resources
 
-- `ITranscriptLogger`: Interface for logging activities to a transcript store
-- `TranscriptLoggerMiddleware`: Middleware that automatically logs incoming and outgoing activities
-- `MemoryTranscriptStore`: In-memory transcript store for testing
-- `BlobsTranscriptStore`: Azure Blob Storage transcript store for production (in `Microsoft.Agents.Storage.Blobs`)
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Storage overview](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/storage?tabs=csharp)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

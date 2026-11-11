@@ -2,17 +2,11 @@
 
 ## About
 
-Provides Roslyn analyzers and code fixes for the Microsoft 365 Agents SDK. Helps detect common SDK usage errors and enforce conventions at compile time, improving developer productivity and correctness.
+Provides Roslyn source generators, analyzers, code fixes, and diagnostic suppression for the
+Microsoft 365 Agents SDK. Validates declarations and generates integration code for features such as
+agent extensions, routes, and serialization.
 
-## Rules
+## Resources
 
-| ID | Severity | Description |
-|----|----------|-------------|
-| MAA001 | Error | A class decorated with an `AgentExtension` attribute must be declared `partial`. |
-| MAA002 | Error | A method decorated with a route attribute (any `IRouteAttribute`) must match the handler delegate signature the attribute declares via `[RouteHandlerType(typeof(...))]`. A code fix is offered to rewrite the method signature. |
-
-## Suppressors
-
-| Suppressed ID | Description |
-|---------------|-------------|
-| IDE0051 | Private methods decorated with a route attribute (any `IRouteAttribute`) are wired up declaratively and invoked via route registration, so the "unused private member" diagnostic is suppressed for them. Genuinely unused private members are still reported. |
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)
