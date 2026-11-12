@@ -4,6 +4,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.Agents.Builder.App.Proactive;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -71,12 +72,22 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
                         yield return MetadataReference.CreateFromFile(path);
         }
 
-        private static async Task<ImmutableArray<Diagnostic>> GetSuppressedAwareDiagnosticsAsync(string source)
+        private static async Task<ImmutableArray<Diagnostic>> GetSuppressedAwareDiagnosticsAsync(string source, bool useSdkStubs = true)
         {
+            var trees = useSdkStubs
+                ? new[] { CSharpSyntaxTree.ParseText(StubSource), CSharpSyntaxTree.ParseText(source) }
+                : new[] { CSharpSyntaxTree.ParseText(source) };
+            var references = GetReferences();
+            if (!useSdkStubs)
+            {
+                references = references.Append(MetadataReference.CreateFromFile(typeof(ContinueConversationAttribute).Assembly.Location))
+                    .GroupBy(reference => reference.Display).Select(group => group.First());
+            }
+
             var compilation = CSharpCompilation.Create(
                 "TestAssembly",
-                new[] { CSharpSyntaxTree.ParseText(StubSource), CSharpSyntaxTree.ParseText(source) },
-                GetReferences(),
+                trees,
+                references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
             var compileErrors = compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
@@ -120,6 +131,38 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var diags = await GetSuppressedAwareDiagnosticsAsync(source);
             var diag = Assert.Single(diags, d => d.Id == "IDE0051");
             Assert.True(diag.IsSuppressed);
+        }
+
+        [Theory]
+        [InlineData("ContinueConversation", "ITurnContext")]
+        [InlineData("ContinueConversation", "ISpecializedTurnContext")]
+        [InlineData("DerivedContinueConversation", "ISpecializedTurnContext")]
+        public async Task ContinueConversationFromSdk_Ide0051_IsSuppressed(string attribute, string contextType)
+        {
+            var source = $$"""
+                using System.Threading;
+                using System.Threading.Tasks;
+                using Microsoft.Agents.Builder;
+                using Microsoft.Agents.Builder.App.Proactive;
+                using Microsoft.Agents.Builder.State;
+
+                public interface ISpecializedTurnContext : ITurnContext { }
+                public class DerivedContinueConversationAttribute : ContinueConversationAttribute { }
+                public class MyAgent
+                {
+                    [{{attribute}}]
+                    private Task OnContinueAsync({{contextType}} context, ITurnState state, CancellationToken ct)
+                        => Task.CompletedTask;
+
+                    private void TrulyUnused() { }
+                }
+                """;
+
+            var diagnostics = await GetSuppressedAwareDiagnosticsAsync(source, useSdkStubs: false);
+
+            Assert.Equal(2, diagnostics.Count(diagnostic => diagnostic.Id == "IDE0051"));
+            Assert.True(Assert.Single(diagnostics, diagnostic => diagnostic.GetMessage().Contains("OnContinueAsync")).IsSuppressed);
+            Assert.False(Assert.Single(diagnostics, diagnostic => diagnostic.GetMessage().Contains("TrulyUnused")).IsSuppressed);
         }
 
         [Fact]

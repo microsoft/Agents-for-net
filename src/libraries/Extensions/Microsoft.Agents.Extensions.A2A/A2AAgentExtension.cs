@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.A2A.Errors;
 using Microsoft.Agents.Extensions.A2A.Routing;
@@ -39,6 +40,10 @@ public class A2AAgentExtension : Builder.AgentExtension
     /// Gets the normalized A2A skill registrations configured for this agent.
     /// </summary>
     internal IReadOnlyList<A2ASkillRegistration> SkillRegistrations => _skillRegistrations;
+
+    /// <inheritdoc/>
+    public override ITurnContext WrapTurnContext(ITurnContext turnContext)
+        => HandlerUtils.WrapTurnContext(turnContext);
 
     /// <summary>
     /// Registers an A2A skill and the message route that implements it.

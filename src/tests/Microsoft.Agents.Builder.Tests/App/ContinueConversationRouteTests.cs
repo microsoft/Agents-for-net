@@ -1,14 +1,20 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Builder.App.UserAuth;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Builder.Testing;
+using Microsoft.Agents.Builder.UserAuth;
+using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Storage;
 using Microsoft.Agents.TestSupport;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using System;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -208,6 +214,116 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         #region RouteHandler Tests
 
+        [Theory]
+        [InlineData("TypedRouteHandler")]
+        [InlineData("StaticTypedRouteHandler")]
+        public async Task RouteHandler_AcceptsSpecializedContext(string method)
+        {
+            var agent = new TestAgentApplication(new AgentApplicationOptions(new MemoryStorage()));
+            var route = new ContinueConversationRoute<TestAgentApplication>(method, string.Empty);
+            var handler = route.RouteHandler(agent);
+            using var inner = CreateEmptyContext();
+            var context = new SpecializedTurnContext(inner);
+            var state = new TurnState();
+            using var cancellation = new CancellationTokenSource();
+
+            await handler(context, state, cancellation.Token);
+
+            Assert.Same(state, context.State);
+            Assert.Equal(cancellation.Token, context.CancellationToken);
+        }
+
+        [Fact]
+        public async Task RouteHandler_RejectsUnavailableSpecializedContext()
+        {
+            var agent = new TestAgentApplication(new AgentApplicationOptions(new MemoryStorage()));
+            var route = new ContinueConversationRoute<TestAgentApplication>("TypedRouteHandler", string.Empty);
+            var handler = route.RouteHandler(agent);
+            using var context = CreateEmptyContext();
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => handler(context, new TurnState(), default));
+
+            Assert.Contains(nameof(ISpecializedTurnContext), exception.Message);
+            Assert.Contains("EmptyContext", exception.Message);
+        }
+
+        [Theory]
+        [InlineData("EmptyContext", "EmptyContext", true)]
+        [InlineData("EmptyContext", "EmptyContext:subchannel", true)]
+        [InlineData("EmptyContext:subchannel", "EmptyContext:subchannel", true)]
+        [InlineData("EmptyContext:other", "EmptyContext:subchannel", false)]
+        [InlineData("other", "EmptyContext", false)]
+        public async Task RouteHandler_UsesOnlyMatchingExtension(string extensionChannel, string turnChannel, bool matches)
+        {
+            var agent = new TestAgentApplication(new AgentApplicationOptions(new MemoryStorage()));
+            agent.RegisterExtension(new SpecializedExtension { ChannelId = extensionChannel });
+            var handler = new ContinueConversationRoute<TestAgentApplication>("TypedRouteHandler", string.Empty).RouteHandler(agent);
+            using var context = CreateEmptyContext();
+            context.Activity.ChannelId = turnChannel;
+            var state = new TurnState();
+
+            if (matches)
+            {
+                await handler(context, state, default);
+                Assert.Same(state, context.Services.Get<ITurnState>("captured-state"));
+            }
+            else
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => handler(context, state, default));
+                Assert.Null(context.Services.Get<ITurnState>("captured-state"));
+            }
+        }
+
+        [Theory]
+        [InlineData("InvalidTypedSignatureMethod")]
+        [InlineData("NonAsyncTypedMethod")]
+        public void RouteHandler_RejectsInvalidSpecializedSignatures(string method)
+        {
+            var agent = new TestAgentApplication(new AgentApplicationOptions(new MemoryStorage()));
+            var route = new ContinueConversationRoute<TestAgentApplication>(method, string.Empty);
+
+            var exception = Assert.Throws<ArgumentException>(() => route.RouteHandler(agent));
+
+            ExceptionTester.IsException<ArgumentException>(exception, -50004, _output);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task RouteHandler_PreservesAttributeTokenAcquisition(bool signedIn)
+        {
+            var authorization = new Mock<IUserAuthorization>();
+            authorization.SetupGet(handler => handler.Name).Returns("required");
+            authorization.Setup(handler => handler.GetRefreshedUserTokenAsync(
+                It.IsAny<ITurnContext>(), null, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(signedIn ? new TokenResponse { Token = "test-token", Expiration = DateTimeOffset.UtcNow.AddHours(1) } : null);
+            var storage = new MemoryStorage();
+            var agent = new TestAgentApplication(new AgentApplicationOptions(storage)
+            {
+                Proactive = new ProactiveOptions(storage),
+                UserAuthorization = new UserAuthorizationOptions(NullLoggerFactory.Instance, storage, new Mock<IConnections>().Object, authorization.Object)
+                {
+                    AutoSignIn = UserAuthorizationOptions.AutoSignInOff,
+                },
+            });
+            agent.RegisterExtension(new SpecializedExtension { ChannelId = "EmptyContext" });
+            using var context = CreateEmptyContext();
+            var conversation = new Conversation(new ClaimsIdentity(), context.Activity.GetConversationReference());
+            var handler = new ContinueConversationRoute<TestAgentApplication>("SecuredTypedRouteHandler", string.Empty).RouteHandler(agent);
+
+            if (signedIn)
+            {
+                await agent.Proactive.ContinueConversationAsync(context.Adapter, conversation, handler);
+                Assert.Equal("test-token", agent.CapturedToken);
+                Assert.True(agent.SecuredHandlerCalled);
+            }
+            else
+            {
+                await Assert.ThrowsAsync<UserNotSignedIn>(() => agent.Proactive.ContinueConversationAsync(context.Adapter, conversation, handler));
+                Assert.False(agent.SecuredHandlerCalled);
+            }
+        }
+
         [Fact]
         public void RouteHandler_ShouldReturnValidDelegate()
         {
@@ -350,6 +466,24 @@ namespace Microsoft.Agents.Builder.Tests.App
 
         #region Test Helper Class
 
+        public interface ISpecializedTurnContext : ITurnContext
+        {
+            ITurnState State { get; set; }
+            CancellationToken CancellationToken { get; set; }
+        }
+
+        private sealed class SpecializedTurnContext(ITurnContext context) : TurnContextWrapper(context), ISpecializedTurnContext
+        {
+            public ITurnState State { get; set; }
+            public CancellationToken CancellationToken { get; set; }
+        }
+
+        private sealed class SpecializedExtension : AgentExtension
+        {
+            public override ITurnContext WrapTurnContext(ITurnContext turnContext)
+                => new SpecializedTurnContext(turnContext);
+        }
+
         public class TestAgentApplication : AgentApplication
         {
             public TestAgentApplication(AgentApplicationOptions options) : base(options)
@@ -360,6 +494,33 @@ namespace Microsoft.Agents.Builder.Tests.App
             public bool PublicRouteHandlerCalled { get; private set; }
             public bool PrivateRouteHandlerCalled { get; private set; }
             public bool ProtectedRouteHandlerCalled { get; private set; }
+            public bool SecuredHandlerCalled { get; private set; }
+            public string CapturedToken { get; private set; }
+
+            private Task TypedRouteHandler(ISpecializedTurnContext context, ITurnState state, CancellationToken cancellationToken)
+                => StaticTypedRouteHandler(context, state, cancellationToken);
+
+            private static Task StaticTypedRouteHandler(ISpecializedTurnContext context, ITurnState state, CancellationToken cancellationToken)
+            {
+                context.State = state;
+                context.Services.Set("captured-state", state);
+                context.CancellationToken = cancellationToken;
+                return Task.CompletedTask;
+            }
+
+            [ContinueConversation(autoSignInHandlers: "required")]
+            private async Task SecuredTypedRouteHandler(ISpecializedTurnContext context, ITurnState state, CancellationToken ct)
+            {
+                SecuredHandlerCalled = true;
+                CapturedToken = await UserAuthorization.GetTurnTokenAsync(context, cancellationToken: ct);
+            }
+
+            private Task InvalidTypedSignatureMethod(ISpecializedTurnContext context, string state, CancellationToken ct)
+                => Task.CompletedTask;
+
+            private void NonAsyncTypedMethod(ISpecializedTurnContext context, ITurnState state, CancellationToken ct)
+            {
+            }
 
             public Task TestRouteHandler(ITurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
             {

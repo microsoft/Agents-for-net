@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -545,9 +545,9 @@ namespace Microsoft.Agents.Hosting.AspNetCore
         /// <returns>An endpoint convention builder that can be used to further customize the mapped proactive messaging
         /// endpoints.</returns>
         public static IEndpointConventionBuilder MapAgentProactiveEndpoints<TAgent>(
-            this IEndpointRouteBuilder endpoints, 
-            IDictionary<string, ContinueConversationRoute<TAgent>> continueRoutes, 
-            bool requireAuth = true, 
+            this IEndpointRouteBuilder endpoints,
+            IDictionary<string, ContinueConversationRoute<TAgent>> continueRoutes,
+            bool requireAuth = true,
             [StringSyntax("Route")] string defaultPath = "/proactive") where TAgent : AgentApplication
         {
             var routeGroup = endpoints.MapGroup(defaultPath);
@@ -570,20 +570,20 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 // Continue with ConversationId in the route
                 var withId = string.IsNullOrEmpty(continueRoute.Key) ? "/continue/{conversationId}" : $"/continue/{continueRoute.Key}/{{conversationId}}";
-                routeGroup.MapPost(withId, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, string conversationId, ILogger<HttpProactive> logger, CancellationToken ct) => 
-                    HttpProactive.ContinueConversationWithConversationIdAsync<TAgent>(continueRoute.Value, req, resp, adapter, agent, conversationId, logger, ct))
+                routeGroup.MapPost(withId, (HttpRequest req, HttpResponse resp, TAgent agent, string conversationId, ILogger<HttpProactive> logger, CancellationToken ct) =>
+                    HttpProactive.ContinueConversationWithConversationIdAsync<TAgent>(continueRoute.Value, req, resp, agent, conversationId, logger, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
 
                 // Continue with Conversation in the body
                 var withConversation = string.IsNullOrEmpty(continueRoute.Key) ? "/continue" : $"/continue/{continueRoute.Key}";
-                routeGroup.MapPost(withConversation, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, ILogger<HttpProactive> logger, CancellationToken ct) =>
-                    HttpProactive.ContinueConversationWithConversationAsync<TAgent>(continueRoute.Value, req, resp, adapter, agent, logger, ct))
+                routeGroup.MapPost(withConversation, (HttpRequest req, HttpResponse resp, TAgent agent, ILogger<HttpProactive> logger, CancellationToken ct) =>
+                    HttpProactive.ContinueConversationWithConversationAsync<TAgent>(continueRoute.Value, req, resp, agent, logger, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
 
                 // Create with CreateConversation in the body
                 var createPattern = string.IsNullOrEmpty(continueRoute.Key) ? "/create" : $"/create/{continueRoute.Key}";
-                routeGroup.MapPost(createPattern, (HttpRequest req, HttpResponse resp, IChannelAdapter adapter, TAgent agent, ILogger<HttpProactive> logger, CancellationToken ct) =>
-                    HttpProactive.CreateConversationAsync<TAgent>(continueRoute.Value, req, resp, adapter, agent, logger, ct))
+                routeGroup.MapPost(createPattern, (HttpRequest req, HttpResponse resp, TAgent agent, ILogger<HttpProactive> logger, CancellationToken ct) =>
+                    HttpProactive.CreateConversationAsync<TAgent>(continueRoute.Value, req, resp, agent, logger, ct))
                     .WithMetadata(new AcceptsMetadata(["application/json"]));
             }
 
