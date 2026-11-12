@@ -25,7 +25,7 @@ the peer, or the test kit. Keep the JSON reports and agent logs when investigati
 
 ## Prerequisites
 
-- .NET SDK from [`global.json`](../global.json) (currently 10.0.401).
+- .NET SDK from [`global.json`](../global.json).
 - Docker (the upstream kit's Python launcher uses Unix-only APIs and cannot run
   natively on Windows). The kit image supplies Python, uv, and .NET.
 - GitHub/network access for the first peer build. No credentials are needed.
@@ -60,10 +60,10 @@ docker run --rm `
   --output /reports/itk.json --log-dir /reports/logs
 ```
 
-On the baseline used for this contribution (`Agents-for-net` `e08ed1bf`, kit
-`bcce1a15`), JSON-RPC reports `PASS` and HTTP+JSON reports `FAIL`. The latter
-is an actionable integration failure, not an unsupported binding: the current
-HTTP+JSON route returns a JSON-RPC response envelope instead of a bare task.
+Both selected scenarios pass with a2a-dotnet `1.0.0-preview4` and kit
+`bcce1a15`. On the original preview2 baseline (`Agents-for-net` `e08ed1bf`),
+the HTTP+JSON scenario failed because the route returned a JSON-RPC response
+envelope instead of a bare task.
 If startup fails, inspect `reports/logs/agent_current.log` and verify that the
 container's .NET SDK satisfies this repository's `global.json`.
 
@@ -106,9 +106,10 @@ changing the operations or expected task states. ACTS also sends its synthetic
 anonymous, it removes only that test token before the SDK's authentication
 parser sees it. This is not a production authentication pattern.
 
-`rest` is ACTS's name for the HTTP+JSON binding. On the stated baseline, the
-focused task checks pass 2/2 on JSON-RPC and pass 0/2 on HTTP+JSON for the
-same response-envelope defect seen by ITK. The report records each failure.
+`rest` is ACTS's name for the HTTP+JSON binding. With a2a-dotnet
+`1.0.0-preview4`, the focused task checks pass 2/2 on each binding. The original
+preview2 baseline passed 2/2 on JSON-RPC and 0/2 on HTTP+JSON because of the
+same response-envelope defect seen by ITK.
 If the agent is not reachable, ACTS exits before producing a test verdict.
 Reports under `itk/reports/` are ignored by Git; retain them separately when
 reporting a failure, together with the SDK and kit commit IDs. Do not interpret
