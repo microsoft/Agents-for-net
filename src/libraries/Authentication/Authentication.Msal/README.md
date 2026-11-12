@@ -2,6 +2,13 @@
 
 ## About
 
-Provides the MSAL `IAccessTokenProvider` implementation for authenticating agents with Azure Bot Service and Entra ID. Supports Client Secret, Certificate, Federated Credentials, and Managed Identity authentication types.
+Provides Microsoft Authentication Library (MSAL)-based token acquisition for agents built with the
+Microsoft 365 Agents SDK. Supports client secrets, certificates, federated credentials, and managed
+identities for authentication with Azure Bot Service and Microsoft Entra ID.
 
-See [Configure authentication in a .NET agent](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/microsoft-authentication-library-configuration-options) for configuration details.
+## Resources
+
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [Configure authentication with MSAL](https://learn.microsoft.com/microsoft-365/agents-sdk/configure-authentication-msal?pivots=dotnet)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.authentication.msal?view=m365-agents-sdk)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

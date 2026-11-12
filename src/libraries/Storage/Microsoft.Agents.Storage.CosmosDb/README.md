@@ -2,11 +2,12 @@
 
 ## About
 
-Azure Cosmos DB implementation of `IStorage` for the Microsoft 365 Agents SDK. Suitable for production deployments requiring persistent, globally distributed conversation state storage.
+Provides a partitioned Azure Cosmos DB implementation of the Microsoft 365 Agents SDK storage
+abstractions. Persists conversation and user state across turns and application restarts.
 
-## Main Types
+## Resources
 
-- `CosmosDbPartitionedStorage`: `IStorage` implementation backed by Azure Cosmos DB with partition key support
-- `CosmosDbPartitionedStorageOptions`: Configuration options for the Cosmos DB endpoint, database, and container
-
-See [Agents SDK storage overview](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/storage) for more information.
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [Storage overview](https://learn.microsoft.com/microsoft-365/agents-sdk/storage?tabs=csharp)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.storage.cosmosdb?view=m365-agents-sdk)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

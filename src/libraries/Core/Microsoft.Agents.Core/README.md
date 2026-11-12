@@ -2,11 +2,12 @@
 
 ## About
 
-Contains the Activity Protocol models and core interfaces used throughout the Microsoft 365 Agents SDK. The Activity Protocol defines the standard message format for agent communication across channels and platforms.
+Provides the Activity Protocol models and core abstractions used throughout the Microsoft 365 Agents
+SDK. Includes serialization support, telemetry definitions, and utilities shared across channels and
+platforms.
 
-## Main Types
+## Resources
 
-- Activity Protocol models (Activity, ChannelAccount, ConversationReference, etc.)
-- Core SDK interfaces
-- Serialization support
-- Telemetry definitions and utilities
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.core?view=m365-agents-sdk)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)

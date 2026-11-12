@@ -2,10 +2,12 @@
 
 ## About
 
-Enables agent-to-agent communication using the Activity Protocol. An agent uses this package to start and manage conversations with other agents, supporting both synchronous and streaming response delivery modes.
+Enables agent-to-agent communication over the Activity Protocol for the Microsoft 365 Agents SDK.
+Supports starting and managing conversations with other agents, including synchronous and streaming
+response delivery.
 
-## Main Types
+## Resources
 
-- `IAgentHost`: Manages conversations with other agents
-- `AddAgentHost()`: DI extension to register agent-to-agent capabilities
-- `AgentResponses`: Extension for receiving replies from other agents within an `AgentApplication`
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.client?view=m365-agents-sdk)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)
