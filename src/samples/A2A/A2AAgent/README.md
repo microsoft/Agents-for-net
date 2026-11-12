@@ -30,7 +30,9 @@ OAuth configuration, see the [A2A developer guide](A2A-DEVELOPER-GUIDE.md).
 | `-me-agentcard` | Acquires a delegated Agent API token before the request, exchanges it for Microsoft Graph `User.Read`, and returns the caller's profile. | Agent Card OAuth |
 | `-me-intask` | Requests a delegated Agent API token after the task starts, exchanges it for Microsoft Graph `User.Read`, and returns the caller's profile. | In-Task OAuth |
 
-The A2A endpoints are available at `http://localhost:3978/a2a` by default.
+JSON-RPC and HTTP+JSON are available at `http://localhost:3978/a2a` by default.
+The default launch profile also exposes native gRPC at `https://localhost:3979/`
+and advertises that separate listener in the Agent Card.
 
 ## Run anonymously
 
@@ -49,6 +51,57 @@ dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- --agent http://loca
 Send ordinary text, `-stream`, or `-multi`. The shipped placeholders leave token
 validation disabled during local development, so the anonymous scenarios work
 without Microsoft Entra configuration.
+
+## Run with native gRPC
+
+`MyAgent` declares `JsonRpc`, `HttpJson`, and `Grpc` interfaces. The same
+`app.MapA2AApplicationEndpoints(requireAuth: false)` maps all three; no additional
+gRPC registration or mapping is needed in application code.
+
+For the default TLS listener, trust the .NET development certificate:
+
+```powershell
+dotnet dev-certs https --trust
+dotnet run --project src\samples\A2A\A2AAgent\A2AAgent.csproj --launch-profile A2AAgent
+```
+
+Discover the public card at `http://localhost:3978/.well-known/agent-card.json`
+or `http://localhost:3978/a2a/.well-known/agent-card.json`. Select its `GRPC`
+interface with protocol version `1.0` and connect to `https://localhost:3979/`.
+TLS negotiates HTTP/2 for gRPC while existing HTTP/1 routes remain available.
+
+For local plaintext HTTP/2, use the separate development profile:
+
+```powershell
+dotnet run --project src\samples\A2A\A2AAgent\A2AAgent.csproj --launch-profile A2AAgent-h2c
+```
+
+This keeps discovery, JSON-RPC, HTTP+JSON, and Activity Protocol routes on
+`http://localhost:3978` and adds an **HTTP/2-only** gRPC listener at
+`http://localhost:3980/`. Plaintext `Http1AndHttp2` does not negotiate native
+HTTP/2. A client fetching discovery directly from the HTTP/2-only listener must
+also explicitly use HTTP/2.
+
+Both profiles set `A2AAdapterOptions__GrpcUrl` to the actual gRPC listener.
+For other deployments, configure `A2AAdapterOptions:GrpcUrl` with an absolute
+HTTP(S) root address, without credentials, prefixes, query strings, or fragments.
+If omitted, the card uses the discovery request's scheme and authority.
+The option changes the advertised target only; configure Kestrel and proxies
+separately. Proxies must preserve HTTP/2, streaming, authentication metadata, and
+gRPC trailers. Use TLS outside trusted local development.
+
+The fixed gRPC method paths require `[AgentInterface(A2AAgentTransportProtocol.Grpc,
+"/")]`. Prefixes (including enclosing route groups), multiple gRPC agents, and
+duplicate mappings fail at startup. Do not separately call `MapGrpcA2A`.
+Unary, streaming, subscription, retrieval, and cancellation calls share the
+existing A2A server and task store across all bindings.
+
+Authentication uses the same ASP.NET Core validation and route-scoped
+authorization as HTTP. A raw bearer metadata value is not a validated
+credential. The shared operation registry also exposes in-task `auth-response`
+through upstream's generic `A2AExtensionService.InvokeExtensionOperation` RPC;
+see the [developer guide](A2A-DEVELOPER-GUIDE.md#grpc-authentication-and-protocol-extensions).
+Extended Agent Cards remain unsupported.
 
 ## View telemetry
 

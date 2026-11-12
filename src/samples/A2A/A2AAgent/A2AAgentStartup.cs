@@ -61,7 +61,7 @@ internal static class A2AAgentStartup
         // Map the default agent endpoints: GET "/" and the agent message endpoints.
         app.MapDefaultAgentEndpoints();
 
-        // Map A2A endpoints.  By default A2A will respond on '/a2a'.
+        // Map the declared JSON-RPC and HTTP+JSON interfaces at '/a2a' and native gRPC at '/'.
         // The A2A transport itself stays anonymous even when token validation is enabled: the
         // Graph profile routes opt in through autoSignInHandlers,
         // and the echo, multi-turn, streaming, and direct A2A routes remain anonymous.

@@ -7,7 +7,7 @@ authentication provider, OAuth endpoints, or scopes.
 At startup, the client:
 
 1. Resolves the agent's public Agent Card anonymously.
-1. Selects a JSON-RPC or HTTP+JSON interface on the configured agent origin.
+1. Selects a JSON-RPC, HTTP+JSON, or gRPC interface on the configured agent origin.
 1. Uses the Agent Card's skill examples to predict the skill for each message.
 1. Evaluates the selected skill's security requirements and OAuth metadata.
 1. Acquires a token when the selected requirement matches a configured local
@@ -31,6 +31,7 @@ The startup options are:
 
 ```text
 --agent <url>
+--transport auto|jsonrpc|http-json|grpc
 --auth-mode none|delegated|app
 --history
 --use-push-notifications
@@ -38,7 +39,14 @@ The startup options are:
 --help
 ```
 
-`--agent` overrides `A2A:AgentUrl` from configuration.
+`--agent` overrides `A2A:AgentUrl` from configuration. It is always an HTTP(S)
+Agent Card discovery URL, including when the selected request transport is gRPC.
+`--transport` overrides `A2A:Transport`, which defaults to `auto`.
+
+In `auto` mode, the first supported, valid interface in Agent Card order is
+selected. An explicit transport must be available on the configured origin.
+Messaging and in-task authorization use that same selection; a failed send is
+never retried automatically over another transport.
 
 While the client is running:
 
@@ -53,6 +61,56 @@ Authorization Code flow. `app` requires a Client Credentials flow.
 
 Changing authentication mode drops any task awaiting continuation so a task is
 not resumed using a different authentication selection.
+
+## gRPC
+
+Select gRPC explicitly, or use `auto` when the Agent Card lists gRPC first:
+
+```powershell
+dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- `
+  --agent https://agent.example.com --transport grpc
+```
+
+The advertised gRPC target may be `host:port` (TLS by default) or an explicit
+HTTP(S) URL. It must identify the root service, without a path prefix, query,
+fragment, or user information. Standard gRPC method paths are fixed;
+`GrpcChannel` does not use a URL prefix to route calls.
+
+The target must have the same scheme, host, and effective port as `--agent`.
+A different listener port is a different origin, even on the same host.
+Point discovery at the gRPC authority rather than trusting a card-advertised
+foreign destination. Redirects are disabled.
+
+Native gRPC requires HTTP/2 and a proxy that preserves streaming and trailers.
+TLS listeners can negotiate HTTP/2. For explicit loopback plaintext development,
+use an HTTP/2-only listener and select `grpc`, so card discovery also uses
+HTTP/2 prior knowledge:
+
+```powershell
+dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- `
+  --agent http://localhost:3979 --transport grpc
+```
+
+The server must expose its public well-known Agent Card on that listener.
+Keep a separate HTTP/1 listener if other development clients require it.
+The CLI never disables TLS certificate validation; trust the development
+certificate when using HTTPS.
+
+Authentication modes, automatic skill selection, attachments, task continuation,
+history, and response rendering work the same over gRPC. Agent API tokens are
+resolved for every request, so changing `:auth` does not leave a token captured
+in the channel. Credentials over plaintext are permitted only on loopback.
+
+In-task authorization uses the generated `A2AExtensionService` envelope with
+operation ID `<extension-uri>#auth-response`. Extension activation and the
+task-scoped delegated token are call metadata; the delegated token is not put
+in the JSON payload or substituted for the Agent API bearer token. Repeated
+challenge IDs are rejected, while consecutive distinct challenges can resume.
+
+Standard and extension calls share one channel, disposed on console exit or
+startup failure. Ctrl+C cancels active calls. Extension RPC failures are
+recoverable in the console and display only the gRPC status, not raw server
+details or metadata. Push notification callbacks remain HTTP.
 
 ## Push notifications
 
@@ -89,14 +147,15 @@ The client loads configuration in this order:
 1. .NET user secrets
 
 Values loaded later override values loaded earlier. Command-line `--agent`
-overrides the configured agent URL.
+and `--transport` override their configured values.
 
 The configuration has two top-level areas:
 
 ```json
 {
   "A2A": {
-    "AgentUrl": "https://agent.example.com/a2a"
+    "AgentUrl": "https://agent.example.com/a2a",
+    "Transport": "auto"
   },
   "Authentication": {
     "Providers": {
@@ -156,7 +215,8 @@ The configuration has two top-level areas:
 
 | Property | Purpose |
 |---|---|
-| `AgentUrl` | Base URL used to resolve the public Agent Card. Must be an absolute URI. The `--agent` option overrides it. |
+| `AgentUrl` | HTTP(S) base URL used to resolve the public Agent Card. The `--agent` option overrides it. |
+| `Transport` | `auto` (default), `jsonrpc`, `http-json`, or `grpc`. The `--transport` option overrides it. |
 
 ### `Authentication:Providers`
 
