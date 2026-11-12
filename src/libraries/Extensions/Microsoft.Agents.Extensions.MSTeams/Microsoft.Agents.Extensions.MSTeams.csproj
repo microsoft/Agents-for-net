@@ -28,6 +28,8 @@
 		<PackageReference Include="Microsoft.Extensions.Http" />
 		<PackageReference Include="Microsoft.Teams.Apps" />
 		<PackageReference Include="Microsoft.Graph" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" />
+		<PackageReference Include="System.Security.Cryptography.Xml" />
     </ItemGroup>
 
 	<ItemGroup>

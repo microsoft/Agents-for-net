@@ -9,12 +9,17 @@ namespace Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization
 /// <summary>
 /// Defines the Agents SDK A2A in-task authorization protocol extension.
 /// </summary>
-internal sealed class InTaskAuthorizationExtension : IA2AProtocolExtension
+internal static class InTaskAuthorizationExtension
 {
     /// <summary>
     /// The versioned extension identifier.
     /// </summary>
     public const string Uri = "https://schemas.microsoft.com/agents/a2a/extensions/in-task-authorization/v1";
+
+    /// <summary>
+    /// The stable transport-neutral operation identity for resume authorization.
+    /// </summary>
+    public const string AuthResponseOperationId = Uri + "#auth-response";
 
     /// <summary>
     /// The JSON-RPC operation used to resume an interrupted authorization flow.
@@ -31,9 +36,7 @@ internal sealed class InTaskAuthorizationExtension : IA2AProtocolExtension
     /// </summary>
     public const string TokenHeader = "x-a2a-intask-authorization";
 
-    string IA2AProtocolExtension.Uri => Uri;
-
-    AgentExtension IA2AProtocolExtension.CreateAgentCardExtension()
+    internal static AgentExtension CreateAgentCardExtension()
     {
         return new AgentExtension
         {

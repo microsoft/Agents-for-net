@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System.Net.Http.Headers;
@@ -110,9 +110,16 @@ namespace CopilotStudioClientSample
         [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
 
-        // This is your window handle!
+        /// <summary>
+        /// Returns the parent window handle on Windows, or zero on Linux and macOS where browser authentication needs no parent window.
+        /// </summary>
         public IntPtr GetConsoleOrTerminalWindow()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return IntPtr.Zero;
+            }
+
             IntPtr consoleHandle = GetConsoleWindow();
             IntPtr handle = GetAncestor(consoleHandle, GetAncestorFlags.GetRootOwner);
 

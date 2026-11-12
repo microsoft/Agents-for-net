@@ -5,6 +5,7 @@ using A2A;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
+using Microsoft.Agents.Builder.UserAuth;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Extensions.A2A;
 using System;
@@ -28,6 +29,10 @@ public partial class MyAgent : AgentApplication
     public MyAgent(AgentApplicationOptions options, IGraphProfileClient graphClient) : base(options)
     {
         _graphClient = graphClient;
+        if (options.UserAuthorization is not null)
+        {
+            UserAuthorization.OnUserSignInFailure(OnUserSignInFailureAsync);
+        }
     }
 
     [A2ASkill(name: "StreamingResponse", description: "Simulates a StreamingResponse.  Send -stream to start", tags: "a2a, sample, streaming-response", examples: "-stream", text: "-stream")]
@@ -155,6 +160,24 @@ public partial class MyAgent : AgentApplication
                 Type = ActivityTypes.EndOfConversation,
                 Text = text,
                 Code = EndOfConversationCodes.CompletedSuccessfully,
+            },
+            cancellationToken: cancellationToken);
+    }
+
+    private static Task OnUserSignInFailureAsync(
+        ITurnContext turnContext,
+        ITurnState turnState,
+        string handlerName,
+        SignInResponse response,
+        IActivity initiatingActivity,
+        CancellationToken cancellationToken)
+    {
+        return turnContext.SendActivityAsync(
+            new Activity
+            {
+                Type = ActivityTypes.EndOfConversation,
+                Code = EndOfConversationCodes.Error,
+                Text = $"Sign in for '{handlerName}' completed without a token. Status={response.Cause}/{response.Error?.Message}",
             },
             cancellationToken: cancellationToken);
     }

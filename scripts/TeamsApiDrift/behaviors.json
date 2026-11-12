@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "behaviors": [
+    {
+      "id": "streaming-responses",
+      "description": "Compare Teams outbound streaming wire behavior for equivalent caller intent.",
+      "sourceHints": [
+        "Agents: StreamingResponse, IStreamingResponse, StreamInfo, TurnContext, CloudAdapterBase, ConversationsRestClient, ProtocolJsonSerializer",
+        "Teams: TeamsStreamingWriter (including partial files), Context, ConversationClient, stream entities, JSON converters and transport; discover paths at each revision",
+        "Read relevant tests and trace helpers beyond these navigation hints; do not assume fixed upstream directory structure."
+      ],
+      "checks": [
+        {
+          "id": "transport",
+          "description": "Trace HTTP methods, route construction, protocol headers, JSON serialization, field names and omission rules through dispatch."
+        },
+        {
+          "id": "informative",
+          "description": "Compare initial and repeated informative updates, their payloads, ordering, and relationship to stream creation."
+        },
+        {
+          "id": "text-chunks",
+          "description": "Compare accumulated text updates with and without an initial informative update, including activity types, stream IDs and sequences."
+        },
+        {
+          "id": "finalization",
+          "description": "Compare final messages, supplied final activity overrides, stream metadata, idempotency, and empty streams."
+        },
+        {
+          "id": "reuse",
+          "description": "Compare starting a second streaming sequence, identifiers, sequences, and emitted requests."
+        },
+        {
+          "id": "attachments",
+          "description": "Compare optional attachments and cards in streaming and final payloads."
+        },
+        {
+          "id": "citations",
+          "description": "Compare citation entities, reference filtering, and text transformations on the wire."
+        },
+        {
+          "id": "ai-metadata",
+          "description": "Compare AI labels and sensitivity metadata, including optional entity omission."
+        },
+        {
+          "id": "feedback",
+          "description": "Compare feedback metadata placement and serialization."
+        },
+        {
+          "id": "cancellation",
+          "description": "Compare requests emitted or suppressed after client cancellation and caller cancellation."
+        },
+        {
+          "id": "timeout",
+          "description": "Compare timeout recognition and outbound fallback, including POST versus update."
+        },
+        {
+          "id": "disabled-fallback",
+          "description": "Compare behavior when streaming is unavailable, including final buffered delivery."
+        },
+        {
+          "id": "ordering-throttling",
+          "description": "Compare ordering, coalescing, throttling, and retries only where they affect observable requests or protocol compliance."
+        }
+      ]
+    }
+  ]
+}

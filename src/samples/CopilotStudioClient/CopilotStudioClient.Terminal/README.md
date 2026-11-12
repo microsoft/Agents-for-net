@@ -48,7 +48,9 @@ Create or reuse a **public client/native** Entra app registration:
 3. Use these settings:
    - **Supported account types**: `Accounts in this organization directory only`
    - **Platform**: `Public client/native (mobile & desktop)`
-   - **Redirect URI**: `http://localhost`
+   - **Redirect URIs**:
+     - `http://localhost` for browser fallback and non-Windows sign-in.
+     - `ms-appx-web://microsoft.aad.brokerplugin/{client_id}` for Windows broker sign-in. Replace `{client_id}` with the app registration's **Application (client) ID**. Add this URI under **Authentication** > **Add a platform** > **Mobile and desktop applications** > **Custom redirect URIs**.
 4. In the app registration, record:
    - `Application (client) ID`
    - `Directory (tenant) ID`

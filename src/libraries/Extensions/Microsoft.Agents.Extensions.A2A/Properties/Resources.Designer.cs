@@ -61,14 +61,104 @@ namespace Microsoft.Agents.Extensions.A2A.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to EnforceRequiredScopes requires at least one non-empty RequiredScopes value..
+        ///   Looks up a localized string similar to No AgentApplication was found. Define an AgentApplication in the calling assembly or register one as IAgent..
         /// </summary>
-        internal static string AuthorizationRequiredScopesMissing {
+        internal static string AgentApplicationNotFound {
             get {
-                return ResourceManager.GetString("AuthorizationRequiredScopesMissing", resourceCulture);
+                return ResourceManager.GetString("AgentApplicationNotFound", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A authorization handler &apos;{0}&apos; used by {1} requires Agent Card security metadata..
+        /// </summary>
+        internal static string AgentCardAuthorizationMetadataRequired {
+            get {
+                return ResourceManager.GetString("AgentCardAuthorizationMetadataRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A skill &apos;{0}&apos; has conflicting registrations..
+        /// </summary>
+        internal static string AgentCardConflictingSkillRegistration {
+            get {
+                return ResourceManager.GetString("AgentCardConflictingSkillRegistration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A Agent Card security scheme &apos;{0}&apos; is configured more than once..
+        /// </summary>
+        internal static string AgentCardDuplicateSecurityScheme {
+            get {
+                return ResourceManager.GetString("AgentCardDuplicateSecurityScheme", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A Agent Card requirement references missing security scheme &apos;{0}&apos;..
+        /// </summary>
+        internal static string AgentCardMissingSecurityScheme {
+            get {
+                return ResourceManager.GetString("AgentCardMissingSecurityScheme", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A Agent Card security scheme &apos;{0}&apos; cannot be null..
+        /// </summary>
+        internal static string AgentCardNullSecurityScheme {
+            get {
+                return ResourceManager.GetString("AgentCardNullSecurityScheme", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A Agent Card configuration cannot set protected property &apos;{0}&apos;..
+        /// </summary>
+        internal static string AgentCardProtectedProperty {
+            get {
+                return ResourceManager.GetString("AgentCardProtectedProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A Agent Card requirement for scheme &apos;{0}&apos; includes a scope that the scheme does not define..
+        /// </summary>
+        internal static string AgentCardUndefinedScope {
+            get {
+                return ResourceManager.GetString("AgentCardUndefinedScope", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A {0} references authorization handler &apos;{1}&apos;, which must be configured as an A2AUserAuthorization handler..
+        /// </summary>
+        internal static string AgentCardUnknownAuthorizationHandler {
+            get {
+                return ResourceManager.GetString("AgentCardUnknownAuthorizationHandler", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Agent &apos;{0}&apos; must declare an AgentInterfaceAttribute when multiple AgentApplications are present..
+        /// </summary>
+        internal static string AgentInterfaceMissing {
+            get {
+                return ResourceManager.GetString("AgentInterfaceMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No A2A request context was found for request &apos;{0}&apos;..
+        /// </summary>
+        internal static string AgentRequestContextMissing {
+            get {
+                return ResourceManager.GetString("AgentRequestContextMissing", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to RequiredScopes enforcement for handler &apos;{0}&apos; requires a delegated JWT with an scp claim..
         /// </summary>
@@ -77,7 +167,34 @@ namespace Microsoft.Agents.Extensions.A2A.Properties {
                 return ResourceManager.GetString("AuthorizationDelegatedJwtRequired", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OAuthFlows must specify exactly one OAuth flow..
+        /// </summary>
+        internal static string AuthorizationExactlyOneOAuthFlowRequired {
+            get {
+                return ResourceManager.GetString("AuthorizationExactlyOneOAuthFlowRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to EnforceRequiredScopes in InTask mode requires at least one OBOScopes value so the client-supplied token is validated by a trusted exchange..
+        /// </summary>
+        internal static string AuthorizationInTaskScopeEnforcementRequiresOBO {
+            get {
+                return ResourceManager.GetString("AuthorizationInTaskScopeEnforcementRequiresOBO", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to EnforceRequiredScopes requires at least one non-empty RequiredScopes value..
+        /// </summary>
+        internal static string AuthorizationRequiredScopesMissing {
+            get {
+                return ResourceManager.GetString("AuthorizationRequiredScopesMissing", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to The token for handler &apos;{0}&apos; is missing required scope(s): {1}..
         /// </summary>
@@ -86,7 +203,52 @@ namespace Microsoft.Agents.Extensions.A2A.Properties {
                 return ResourceManager.GetString("AuthorizationRequiredScopesNotGranted", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SecuritySchemeName is required when OAuthFlows is configured..
+        /// </summary>
+        internal static string AuthorizationSecuritySchemeNameRequired {
+            get {
+                return ResourceManager.GetString("AuthorizationSecuritySchemeNameRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The A2A task could not be written because Azure Blob Storage rejected the block list. Concurrent uploads larger than 128 MB can cause this failure..
+        /// </summary>
+        internal static string BlobTaskWriteConflict {
+            get {
+                return ResourceManager.GetString("BlobTaskWriteConflict", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A skill &apos;{0}&apos; has conflicting metadata..
+        /// </summary>
+        internal static string ConflictingSkillMetadata {
+            get {
+                return ResourceManager.GetString("ConflictingSkillMetadata", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A skill &apos;{0}&apos; can define only one message route..
+        /// </summary>
+        internal static string SkillRouteAlreadyDefined {
+            get {
+                return ResourceManager.GetString("SkillRouteAlreadyDefined", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A2A skill &apos;{0}&apos; must define a message route..
+        /// </summary>
+        internal static string SkillRouteMissing {
+            get {
+                return ResourceManager.GetString("SkillRouteMissing", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to Unexpected request token for handler &apos;{0}&apos;..
         /// </summary>
