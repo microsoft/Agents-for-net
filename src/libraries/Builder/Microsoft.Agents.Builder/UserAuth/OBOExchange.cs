@@ -6,7 +6,6 @@ using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,7 +34,7 @@ namespace Microsoft.Agents.Builder.UserAuth
             IList<string> scopes = exchangeScopes ?? oboSettings.OBOScopes;
 
             // If OBO is not supplied (by config or passed) return token as-is.
-            if (scopes == null || !scopes.Any())
+            if (scopes == null || scopes.Count == 0)
             {
                 return token;
             }

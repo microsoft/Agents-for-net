@@ -354,7 +354,7 @@ namespace Microsoft.Agents.Builder.Dialogs.Prompts
                     prompt.SuggestedActions = msg.SuggestedActions;
                 }
 
-                if (msg.Attachments != null && msg.Attachments.Any())
+                if (msg.Attachments != null && msg.Attachments.Count > 0)
                 {
                     if (prompt.Attachments == null)
                     {
