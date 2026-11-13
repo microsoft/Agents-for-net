@@ -1,9 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
+using Microsoft.Agents.Builder.State;
 using System;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Builder.App.Proactive
 {
@@ -48,7 +51,32 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <summary>
         /// Gets the delegate associated with this instance.
         /// </summary>
-        public RouteHandler RouteHandler(TAgent agent) => CreateHandlerDelegate<RouteHandler>(agent, _delegate);
+        public RouteHandler RouteHandler(TAgent agent)
+        {
+            try
+            {
+                var parameters = _delegate.GetParameters();
+                if (parameters.Length == 3 &&
+                    parameters[0].ParameterType != typeof(ITurnContext) &&
+                    typeof(ITurnContext).IsAssignableFrom(parameters[0].ParameterType))
+                {
+                    return (RouteHandler)typeof(ContinueConversationRoute<TAgent>)
+                        .GetMethod(nameof(CreateTypedHandler), BindingFlags.Instance | BindingFlags.NonPublic)
+                        .MakeGenericMethod(parameters[0].ParameterType)
+                        .Invoke(this, [agent]);
+                }
+
+                return RouteAttributeHelper.CreateHandlerDelegate<RouteHandler>(agent, _delegate);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException is ArgumentException)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeHandlerInvalid, ex.InnerException);
+            }
+            catch (ArgumentException ex)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeHandlerInvalid, ex);
+            }
+        }
 
         /// <summary>
         /// Gets the collection of token handler names used to process authentication tokens.
@@ -57,23 +85,43 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
         public override string ToString() => $"ContinueConversationRoute: Delegate={_delegate.Name}, TokenHandlers=[{string.Join(", ", TokenHandlers ?? [])}]";
 
-        private static T CreateHandlerDelegate<T>(TAgent agent, MethodInfo attributedMethod)
-    where T : class, Delegate
+        private RouteHandler CreateTypedHandler<TContext>(TAgent agent) where TContext : ITurnContext
         {
-            try
-            {
-#if !NETSTANDARD
-                return attributedMethod.IsStatic ? attributedMethod.CreateDelegate<T>() : attributedMethod.CreateDelegate<T>(agent);
-#else
-                return attributedMethod.IsStatic
-                    ? (T)attributedMethod.CreateDelegate(typeof(T))
-                    : (T)attributedMethod.CreateDelegate(typeof(T), agent);
-#endif
-            }
-            catch (ArgumentException ex)
-            {
-                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.AttributeHandlerInvalid, ex);
-            }
+            var handler = RouteAttributeHelper.CreateHandlerDelegate<Func<TContext, ITurnState, CancellationToken, Task>>(agent, _delegate);
+            var continuation = new ContinueConversationHandler(_delegate,
+                (context, state, ct) => handler(GetTurnContext<TContext>(agent, context), state, ct));
+            return continuation.InvokeAsync;
         }
+
+        private TContext GetTurnContext<TContext>(TAgent agent, ITurnContext context) where TContext : ITurnContext
+        {
+            if (context is TContext typedContext)
+            {
+                return typedContext;
+            }
+
+            foreach (var registered in agent.RegisteredExtensions)
+            {
+                if (registered is AgentExtension extension &&
+                    extension.ChannelId != null &&
+                    (extension.ChannelId == context.Activity.ChannelId ||
+                     (!extension.ChannelId.IsSubChannel() && extension.ChannelId.IsParentChannel(context.Activity.ChannelId?.Channel))) &&
+                    extension.WrapTurnContext(context) is TContext wrappedContext)
+                {
+                    return wrappedContext;
+                }
+            }
+
+            throw Core.Errors.ExceptionHelper.GenerateException<InvalidOperationException>(
+                ErrorHelper.ProactiveTurnContextUnavailable, null, _delegate.Name, typeof(TContext).FullName, context.Activity.ChannelId);
+        }
+    }
+
+    internal sealed class ContinueConversationHandler(MethodInfo method, RouteHandler handler)
+    {
+        internal MethodInfo Method { get; } = method;
+
+        internal Task InvokeAsync(ITurnContext context, ITurnState state, CancellationToken cancellationToken)
+            => handler(context, state, cancellationToken);
     }
 }

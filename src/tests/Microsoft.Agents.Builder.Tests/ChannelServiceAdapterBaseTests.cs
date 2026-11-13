@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Connector;
@@ -22,12 +22,18 @@ namespace Microsoft.Agents.Builder.Tests
         {
             Conversation = new ConversationAccount(id: "conversation-id"),
             ActivityId = "activity-id",
+            ChannelId = Channels.Test,
+            Agent = new ChannelAccount("MyBot"),
+            User = new ChannelAccount("user"),
             ServiceUrl = "http://mybot.com"
         };
 
         private readonly Activity _activity = new Activity
         {
-            Conversation = new ConversationAccount(),
+            Conversation = new ConversationAccount(id: "conversation-id"),
+            ChannelId = Channels.Test,
+            Recipient = new ChannelAccount("MyBot"),
+            From = new ChannelAccount("user"),
             ServiceUrl = "MyServiceUrl"
         };
 
@@ -384,7 +390,7 @@ namespace Microsoft.Agents.Builder.Tests
             // Arrange
             _callbackInvoked = false;
             var adapter = new TestChannelAdapter(CreateMockChannelServiceClientFactory().Object);
-            var identity = new ClaimsIdentity();
+            var identity = new ClaimsIdentity(new[] { new Claim("aud", "MyBot") });
 
             // Act
             await adapter.ProcessProactiveAsync(identity, _activity, audience: null, ContinueCallback, CancellationToken.None);
@@ -400,7 +406,7 @@ namespace Microsoft.Agents.Builder.Tests
             const string expectedAudience = "my-audience";
             var factory = CreateMockChannelServiceClientFactory();
             var adapter = new TestChannelAdapter(factory.Object);
-            var identity = new ClaimsIdentity();
+            var identity = new ClaimsIdentity(new[] { new Claim("aud", "MyBot") });
 
             // Act
             await adapter.ProcessProactiveAsync(identity, _activity, expectedAudience, ContinueCallback, CancellationToken.None);
@@ -445,7 +451,7 @@ namespace Microsoft.Agents.Builder.Tests
                     Channels.Test,
                     "https://evil.example.com",
                     null,
-                    new ConversationParameters(),
+                    new ConversationParameters { Agent = new ChannelAccount("agent-id") },
                     ContinueCallback,
                     CancellationToken.None));
             factory.Verify(
@@ -469,7 +475,7 @@ namespace Microsoft.Agents.Builder.Tests
                     Channels.Test,
                     null,
                     null,
-                    new ConversationParameters(),
+                    new ConversationParameters { Agent = new ChannelAccount("agent-id") },
                     ContinueCallback,
                     CancellationToken.None));
             factory.Verify(
@@ -580,5 +586,5 @@ namespace Microsoft.Agents.Builder.Tests
             {
             }
         }
-    } 
+    }
 }
