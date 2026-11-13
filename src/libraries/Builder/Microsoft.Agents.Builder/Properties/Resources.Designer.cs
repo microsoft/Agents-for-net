@@ -340,6 +340,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Continue conversation handler &apos;{0}&apos; requires turn context &apos;{1}&apos;, but it is unavailable for channel &apos;{2}&apos;. Register an extension that supplies this context..
+        /// </summary>
+        internal static string ProactiveTurnContextUnavailable {
+            get {
+                return ResourceManager.GetString("ProactiveTurnContextUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to RouteBuilder &apos;{0}&apos; missing required property &apos;{1}&apos;.
         /// </summary>
         internal static string RouteBuilderMissingProperty {
