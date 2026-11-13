@@ -38,6 +38,38 @@ builder
     .AddAgent<MyAgent, MyAdapter>();
 ```
 
+## Outbound URL validation
+
+Outbound validation is opt-in. Enable it in configuration:
+
+```json
+{
+  "OutboundHostValidator": {
+    "Enabled": true
+  }
+}
+```
+
+The shared validator requires HTTPS for allowed outbound URLs, including channel callbacks, proactive operations, and attachment downloads and redirects. Host allowlisting and private-network restrictions still apply.
+
+When a `serviceurl` token claim is present, `CloudAdapter` also requires the activity's `ServiceUrl` to match its scheme, hostname, and effective port. Paths may differ, and an omitted default port matches its explicit equivalent (for example, HTTPS port 443). When validation is disabled, claim mismatches only produce warnings.
+
+HTTP loopback URLs require a separate, default-off development exception. For example, in `appsettings.Development.json`:
+
+```json
+{
+  "OutboundHostValidator": {
+    "Enabled": true,
+    "IncludeDefaultMicrosoftHosts": false,
+    "Hosts": ["localhost"],
+    "AllowPrivateNetworkAddresses": true,
+    "AllowHttpForLoopback": true
+  }
+}
+```
+
+This HTTP exception still requires host allowlisting and private-network permission. It does not allow HTTP to production first-party hosts, other public hosts, or non-loopback private addresses, and does not relax claim origin binding.
+
 ## Error handling
 
 `CloudAdapter` logs unhandled exceptions with their full server-side stack traces. Its default error handler sends the exception-message chain to the customer and emits a diagnostic trace activity without a stack trace.

@@ -321,7 +321,11 @@ namespace Microsoft.Agents.Hosting.AspNetCore
             {
                 var validClaimUri = Uri.TryCreate(serviceUrlClaim.Value, UriKind.Absolute, out var claimUrl);
                 var validActivityUri = Uri.TryCreate(activity.ServiceUrl, UriKind.Absolute, out var activityUrl);
-                if (!validClaimUri || !validActivityUri || !string.Equals(claimUrl.Host, activityUrl.Host, StringComparison.OrdinalIgnoreCase))
+                if (!validClaimUri
+                    || !validActivityUri
+                    || !string.Equals(claimUrl.Scheme, activityUrl.Scheme, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(claimUrl.Host, activityUrl.Host, StringComparison.OrdinalIgnoreCase)
+                    || claimUrl.Port != activityUrl.Port)
                 {
                     if (HostValidator.Enabled)
                     {

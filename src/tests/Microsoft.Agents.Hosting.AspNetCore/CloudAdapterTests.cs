@@ -868,21 +868,177 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
 
         #region ValidateServiceUrl Tests
 
-        [Fact]
-        public async Task ProcessAsync_ValidateServiceUrl_MatchingHosts_ShouldSucceed()
+        [Theory]
+        [InlineData("https://smba.trafficmanager.net/teams/", "https://SMBA.trafficmanager.net/other/")]
+        [InlineData("https://smba.trafficmanager.net:443/teams/", "https://smba.trafficmanager.net/other/")]
+        [InlineData("https://smba.trafficmanager.net/teams/", "https://smba.trafficmanager.net:443/other/")]
+        public async Task ProcessAsync_ValidateServiceUrl_MatchingHosts_ShouldSucceed(string serviceUrl, string serviceUrlClaim)
         {
             var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
             var record = UseRecordWithOptions(
                 (record) => new ActivityHandler(),
                 new AdapterOptions(),
                 validator);
-            var activity = CreateMessageActivity(serviceUrl: "https://smba.trafficmanager.net/teams/");
-            var context = CreateHttpContextWithServiceUrlClaim(activity, "https://smba.trafficmanager.net/other/");
+            var activity = CreateMessageActivity(serviceUrl: serviceUrl);
+            var context = CreateHttpContextWithServiceUrlClaim(activity, serviceUrlClaim);
 
             await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
 
-            // Should not return BadRequest - matching hosts pass validation
-            Assert.NotEqual(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+            Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
+        }
+
+        [Theory]
+        [InlineData(ActivityTypes.Message, DeliveryModes.Normal, "http://smba.trafficmanager.net/teams/", "https://smba.trafficmanager.net/", StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Invoke, DeliveryModes.Normal, "http://smba.trafficmanager.net/teams/", "https://smba.trafficmanager.net/", StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Message, DeliveryModes.Stream, "http://smba.trafficmanager.net/teams/", "https://smba.trafficmanager.net/", StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Message, DeliveryModes.ExpectReplies, "http://smba.trafficmanager.net/teams/", "https://smba.trafficmanager.net/", StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Message, DeliveryModes.Normal, "http://smba.trafficmanager.net/teams/", null, StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Message, DeliveryModes.Normal, "http://smba.trafficmanager.net/teams/", "http://smba.trafficmanager.net/", StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Message, DeliveryModes.Normal, "https://smba.trafficmanager.net/teams/", "http://smba.trafficmanager.net/", StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Message, DeliveryModes.Normal, "https://smba.trafficmanager.net:444/teams/", "https://smba.trafficmanager.net/", StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Message, DeliveryModes.Normal, "https://smba.trafficmanager.net/teams/", "https://smba.trafficmanager.net:444/", StatusCodes.Status400BadRequest)]
+        [InlineData(ActivityTypes.Message, DeliveryModes.Normal, "https://smba.trafficmanager.net/teams/", "HTTPS://smba.trafficmanager.net/", StatusCodes.Status202Accepted)]
+        public async Task ProcessAsync_ValidateServiceUrl_Enabled_ShouldRejectInsecureOrClaimMismatchedServiceUrlsBeforeProcessing(
+            string activityType, string deliveryMode, string serviceUrl, string serviceUrlClaim, int expectedStatus)
+        {
+            var tokenRequests = 0;
+            var tokenProvider = new Mock<IAccessTokenProvider>();
+            tokenProvider.Setup(provider => provider.GetAccessTokenAsync(AuthenticationConstants.BotFrameworkAudience, It.IsAny<IList<string>>(), false))
+                .Callback(() => tokenRequests++)
+                .ReturnsAsync("test-token");
+            var connections = new Mock<IConnections>();
+            connections.Setup(connection => connection.GetTokenProvider(It.IsAny<ClaimsIdentity>(), serviceUrl))
+                .Returns(tokenProvider.Object);
+
+            var requests = new List<(Uri Uri, HttpMethod Method, string Authorization)>();
+            using var handler = new TestHttpHandler();
+            handler.Override = request =>
+            {
+                requests.Add((request.RequestUri, request.Method, request.Headers.Authorization?.ToString()));
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{\"id\":\"replyResourceId\"}", Encoding.UTF8, "application/json")
+                };
+            };
+            var httpFactory = new Mock<IHttpClientFactory>();
+            httpFactory.Setup(factory => factory.CreateClient(It.IsAny<string>()))
+                .Returns(() => new HttpClient(handler, disposeHandler: false));
+            var factory = new RestChannelServiceClientFactory(new ConfigurationBuilder().Build(), httpFactory.Object, connections.Object);
+            var queue = new ActivityTaskQueue();
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true });
+            var adapter = new CloudAdapter(factory, queue, hostValidator: validator);
+            var processedTurns = 0;
+            var agent = new Mock<IAgent>();
+            agent.Setup(agent => agent.OnTurnAsync(It.IsAny<ITurnContext>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, CancellationToken>(async (turnContext, cancellationToken) =>
+                {
+                    processedTurns++;
+                    await turnContext.SendActivityAsync("Test reply", cancellationToken: cancellationToken);
+                });
+
+            var activity = activityType == ActivityTypes.Invoke
+                ? CreateInvokeActivity(deliveryMode, activityId: "activityId")
+                : CreateMessageActivity(deliveryMode, activityId: "activityId");
+            activity.ServiceUrl = serviceUrl;
+            var context = serviceUrlClaim == null
+                ? CreateHttpContext(activity)
+                : CreateHttpContextWithServiceUrlClaim(activity, serviceUrlClaim);
+            if (serviceUrlClaim == null)
+            {
+                context.User = new ClaimsPrincipal(new ClaimsIdentity("TestAuth"));
+            }
+
+            await adapter.ProcessAsync(context.Request, context.Response, agent.Object, CancellationToken.None);
+
+            if (context.Response.StatusCode == StatusCodes.Status202Accepted)
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var queued = await queue.WaitForActivityAsync(timeout.Token);
+                await adapter.ProcessActivityAsync(queued.ClaimsIdentity, queued.Activity, agent.Object.OnTurnAsync, CancellationToken.None);
+            }
+
+            Assert.Equal(expectedStatus, context.Response.StatusCode);
+            if (expectedStatus == StatusCodes.Status202Accepted)
+            {
+                Assert.Equal(1, processedTurns);
+                Assert.Equal(1, tokenRequests);
+                var request = Assert.Single(requests);
+                Assert.Equal("https", request.Uri.Scheme);
+                Assert.Equal("smba.trafficmanager.net", request.Uri.Host);
+                Assert.Equal(HttpMethod.Post, request.Method);
+                Assert.Equal("Bearer test-token", request.Authorization);
+            }
+            else
+            {
+                Assert.Equal(0, processedTurns);
+                Assert.Equal(0, tokenRequests);
+                Assert.Empty(requests);
+            }
+
+            using var cancellation = new CancellationTokenSource();
+            var remainingActivity = queue.WaitForActivityAsync(cancellation.Token);
+            cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => remainingActivity);
+        }
+
+        [Theory]
+        [InlineData("http://smba.trafficmanager.net/teams/", "https://smba.trafficmanager.net/")]
+        [InlineData("https://smba.trafficmanager.net/teams/", "http://smba.trafficmanager.net/")]
+        [InlineData("https://smba.trafficmanager.net:444/teams/", "https://smba.trafficmanager.net/")]
+        public async Task ProcessAsync_ValidateServiceUrl_Disabled_ShouldAcceptAndWarnForClaimOriginMismatch(
+            string serviceUrl, string serviceUrlClaim)
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = false });
+            var record = UseRecordWithOptions(
+                (record) => new ActivityHandler(),
+                new AdapterOptions(),
+                validator);
+            var activity = CreateMessageActivity(serviceUrl: serviceUrl);
+            var context = CreateHttpContextWithServiceUrlClaim(activity, serviceUrlClaim);
+            record.AdapterLogger.Setup(logger => logger.IsEnabled(LogLevel.Warning)).Returns(true);
+
+            await record.Adapter.ProcessAsync(context.Request, context.Response, record.Agent, CancellationToken.None);
+
+            Assert.Equal(StatusCodes.Status202Accepted, context.Response.StatusCode);
+            record.AdapterLogger.Verify(
+                logger => logger.Log(
+                    LogLevel.Warning,
+                    It.Is<EventId>(eventId => eventId.Id == 9),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString().Contains("Invalid service URL")),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+                Times.Once);
+        }
+
+        [Theory]
+        [InlineData("http://localhost:3978/api/", "http://localhost:3978/claim/", true, StatusCodes.Status202Accepted)]
+        [InlineData("http://localhost:3978/api/", "http://localhost:3978/claim/", false, StatusCodes.Status400BadRequest)]
+        [InlineData("http://localhost:3978/api/", "http://localhost:3979/claim/", true, StatusCodes.Status400BadRequest)]
+        [InlineData("https://localhost:3978/api/", "http://localhost:3978/claim/", true, StatusCodes.Status400BadRequest)]
+        [InlineData("http://localhost:3978/api/", "https://localhost:3978/claim/", true, StatusCodes.Status400BadRequest)]
+        [InlineData("http://localhost/api/", "http://localhost:80/claim/", true, StatusCodes.Status202Accepted)]
+        public async Task ProcessAsync_ValidateServiceUrl_LoopbackHttp_RequiresExplicitExceptionAndMatchingOrigin(
+            string serviceUrl, string serviceUrlClaim, bool allowHttpForLoopback, int expectedStatus)
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["OutboundHostValidator:Enabled"] = "true",
+                    ["OutboundHostValidator:AllowHttpForLoopback"] = allowHttpForLoopback.ToString(),
+                    ["OutboundHostValidator:AllowPrivateNetworkAddresses"] = "true",
+                    ["OutboundHostValidator:Hosts:0"] = "localhost"
+                })
+                .Build();
+            var adapter = new CloudAdapter(
+                new Mock<IChannelServiceClientFactory>().Object,
+                new ActivityTaskQueue(),
+                config: configuration);
+            var activity = CreateMessageActivity(serviceUrl: serviceUrl);
+            var context = CreateHttpContextWithServiceUrlClaim(activity, serviceUrlClaim);
+
+            await adapter.ProcessAsync(context.Request, context.Response, new ActivityHandler(), CancellationToken.None);
+
+            Assert.Equal(expectedStatus, context.Response.StatusCode);
         }
 
         [Fact]

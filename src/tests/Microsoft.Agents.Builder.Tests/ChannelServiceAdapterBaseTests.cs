@@ -133,14 +133,17 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.True(_callbackInvoked);
         }
 
-        [Fact]
-        public async Task ContinueConversationAsync_ShouldRejectDisallowedServiceUrl()
+        [Theory]
+        [InlineData("https://evil.example.com")]
+        [InlineData("http://smba.trafficmanager.net/teams/")]
+        public async Task ContinueConversationAsync_ShouldRejectDisallowedServiceUrl(string serviceUrl)
         {
             // Arrange
             var factory = CreateMockChannelServiceClientFactory();
             var adapter = new TestChannelAdapter(
                 factory.Object,
-                new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true, IncludeDefaultMicrosoftHosts = false }));
+                new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true }));
+            _reference.ServiceUrl = serviceUrl;
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(
@@ -435,21 +438,23 @@ namespace Microsoft.Agents.Builder.Tests
                 () => adapter.ProcessProactiveAsync(identity, activityWithNoConversation, audience: null, ContinueCallback, CancellationToken.None));
         }
 
-        [Fact]
-        public async Task CreateConversationAsync_ShouldRejectDisallowedServiceUrl()
+        [Theory]
+        [InlineData("https://evil.example.com")]
+        [InlineData("http://smba.trafficmanager.net/teams/")]
+        public async Task CreateConversationAsync_ShouldRejectDisallowedServiceUrl(string serviceUrl)
         {
             // Arrange
             var factory = CreateMockChannelServiceClientFactory();
             var adapter = new TestChannelAdapter(
                 factory.Object,
-                new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true, IncludeDefaultMicrosoftHosts = false }));
+                new OutboundHostValidator(new OutboundHostValidatorOptions { Enabled = true }));
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(
                 () => adapter.CreateConversationAsync(
                     new ClaimsIdentity([new Claim("aud", "agent-id")]),
                     Channels.Test,
-                    "https://evil.example.com",
+                    serviceUrl,
                     null,
                     new ConversationParameters { Agent = new ChannelAccount("agent-id") },
                     ContinueCallback,

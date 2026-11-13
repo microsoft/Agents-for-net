@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 
 namespace Microsoft.Agents.Builder.Tests
@@ -48,6 +49,56 @@ namespace Microsoft.Agents.Builder.Tests
 
             Assert.True(validator.Enabled);
             Assert.True(validator.IsAllowed(url));
+        }
+
+        [Theory]
+        [InlineData("http://smba.trafficmanager.net/teams/")]
+        [InlineData("http://graph.microsoft.com/v1.0/me")]
+        [InlineData("http://files.contoso.com/doc.txt")]
+        public void Enabled_DeniesHttpForAllowedProductionHosts(string url)
+        {
+            var validator = new OutboundHostValidator(new OutboundHostValidatorOptions
+            {
+                Enabled = true,
+                Hosts = new List<string> { "contoso.com" }
+            });
+
+            Assert.False(validator.IsAllowed(url));
+            Assert.False(validator.IsAllowed(new Uri(url)));
+        }
+
+        [Theory]
+        [InlineData("http://localhost:3978/doc.txt", true, true, true, true)]
+        [InlineData("http://127.0.0.1/doc.txt", true, true, true, true)]
+        [InlineData("http://[::1]/doc.txt", true, true, true, true)]
+        [InlineData("http://127.0.0.1/doc.txt", false, true, true, false)]
+        [InlineData("http://127.0.0.1/doc.txt", true, false, true, false)]
+        [InlineData("http://127.0.0.1/doc.txt", true, true, false, false)]
+        [InlineData("http://10.0.0.1/doc.txt", true, true, true, false)]
+        [InlineData("http://smba.trafficmanager.net/doc.txt", true, true, true, false)]
+        [InlineData("http://localhost.contoso.com/doc.txt", true, true, true, false)]
+        [InlineData("http://[::]/doc.txt", true, true, true, false)]
+        [InlineData("http://user@localhost/doc.txt", true, true, true, false)]
+        public async Task Enabled_LoopbackHttpException_RequiresExplicitTransportHostAndNetworkPermissions(
+            string url, bool allowHttpForLoopback, bool allowPrivateAddresses, bool allowHost, bool expected)
+        {
+            var uri = new Uri(url);
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["Enabled"] = "true",
+                    ["AllowHttpForLoopback"] = allowHttpForLoopback.ToString(),
+                    ["AllowPrivateNetworkAddresses"] = allowPrivateAddresses.ToString(),
+                    ["Hosts:0"] = allowHost ? uri.GetLeftPart(UriPartial.Authority) : "excluded.example.com"
+                })
+                .Build();
+            var validator = new OutboundHostValidator(
+                configuration.Get<OutboundHostValidatorOptions>(),
+                new StubHostAddressResolver(IPAddress.Parse("203.0.113.10")));
+
+            Assert.Equal(expected, validator.IsAllowed(url));
+            Assert.Equal(expected, validator.IsAllowed(uri));
+            Assert.Equal(expected, await validator.IsAllowedAsync(uri, CancellationToken.None));
         }
 
         [Theory]
@@ -185,7 +236,7 @@ namespace Microsoft.Agents.Builder.Tests
                 Hosts = new List<string> { "127.0.0.1" }
             });
 
-            Assert.True(validator.IsAllowed("http://127.0.0.1/file.txt"));
+            Assert.True(validator.IsAllowed("https://127.0.0.1/file.txt"));
         }
 
         [Fact]
