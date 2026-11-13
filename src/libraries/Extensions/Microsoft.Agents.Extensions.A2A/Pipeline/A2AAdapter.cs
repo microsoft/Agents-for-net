@@ -65,6 +65,7 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
     private readonly string _agentCardLastModified = DateTimeOffset.UtcNow.ToString("R", CultureInfo.InvariantCulture);
     private readonly string _agentCardCacheControl;
     private readonly IConfiguration _configuration;
+    private readonly Uri _grpcUrl;
 
     /// <summary>
     /// Initializes an adapter with an in-memory A2A task store.
@@ -116,12 +117,26 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
                 "Agent Card cache max-age cannot be negative.");
         }
 
+        if (adapterOptions.GrpcUrl is { } grpcUrl
+            && (!grpcUrl.IsAbsoluteUri
+                || (grpcUrl.Scheme != Uri.UriSchemeHttp && grpcUrl.Scheme != Uri.UriSchemeHttps)
+                || grpcUrl.AbsolutePath != "/"
+                || !string.IsNullOrEmpty(grpcUrl.UserInfo)
+                || !string.IsNullOrEmpty(grpcUrl.Query)
+                || !string.IsNullOrEmpty(grpcUrl.Fragment)))
+        {
+            throw new ArgumentException(
+                "The gRPC address must be an absolute HTTP or HTTPS root URL without credentials, a path prefix, query, or fragment.",
+                nameof(options));
+        }
+
         _loggerFactory = loggerFactory;
         _taskStore = taskStore;
         _a2aNotifier = a2aNotifier ?? new ChannelEventNotifier();
         _a2aServerLogger = loggerFactory.CreateLogger<A2AServer>();
         _agentCardCacheControl = $"public, max-age={(long)Math.Ceiling(adapterOptions.AgentCardCacheMaxAge.TotalSeconds)}";
         _configuration = configuration;
+        _grpcUrl = adapterOptions.GrpcUrl;
         _supportsPushNotifications = server != null;
         _server = server ?? new A2AServerWithoutExtendedAgentCard(
             new AgentHandlerProxy(), _taskStore, _a2aNotifier, _a2aServerLogger, _a2aServerOptions);
@@ -237,6 +252,15 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
                         ProtocolBinding = agentInterface.Protocol,
                         Url = $"{httpRequest.Scheme}://{httpRequest.Host.Value}{agentInterface.Path}/",
                         ProtocolVersion = "1.0"
+                    });
+                }
+                else if (agentInterface.Protocol == A2AAgentTransportProtocol.Grpc)
+                {
+                    agentCard.SupportedInterfaces.Add(new AgentInterface
+                    {
+                        ProtocolBinding = A2AAgentTransportProtocol.Grpc,
+                        Url = _grpcUrl?.AbsoluteUri ?? $"{httpRequest.Scheme}://{httpRequest.Host.Value}/",
+                        ProtocolVersion = "1.0",
                     });
                 }
             }

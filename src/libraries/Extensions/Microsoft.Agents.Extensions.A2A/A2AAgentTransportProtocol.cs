@@ -17,4 +17,9 @@ public static class A2AAgentTransportProtocol
     /// The HTTP+JSON protocol-binding identifier.
     /// </summary>
     public const string HttpJson = "HTTP+JSON";
+
+    /// <summary>
+    /// The native gRPC protocol-binding identifier.
+    /// </summary>
+    public const string Grpc = "GRPC";
 }

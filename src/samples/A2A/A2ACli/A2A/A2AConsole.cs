@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using A2A;
+using Grpc.Core;
 
 namespace Microsoft.Agents.Samples.A2ACli.A2A;
 
@@ -134,8 +135,11 @@ internal sealed class A2AConsole
             {
                 // One failed send or history read must not end the session; the operator can retry,
                 // switch authentication mode, or quit. Only the exception message is shown so no
-                // request/response detail or credential can be written to the console.
-                _output.WriteLine($"Request failed: {exception.GetType().Name}: {exception.Message}");
+                // request/response detail or credential can be written to the console. Raw gRPC
+                // faults display only their status, not server details or metadata.
+                _output.WriteLine(exception is RpcException rpcException
+                    ? $"Request failed: gRPC {rpcException.StatusCode}."
+                    : $"Request failed: {exception.GetType().Name}: {exception.Message}");
             }
         }
 
@@ -160,6 +164,7 @@ internal sealed class A2AConsole
         }
 
         return exception is A2AException
+            or RpcException
             or HttpRequestException
             or HttpIOException
             or JsonException
