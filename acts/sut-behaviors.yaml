@@ -1,0 +1,8 @@
+# Deliberately limited to the one behavior implemented by itk/ItkAgent.cs.
+# This is not a claim of full A2A ACTS conformance.
+acts_version: "1.0"
+behaviors:
+  - prefix: "tck-complete-task"
+    description: "Complete an A2A task with a text status message"
+    response_type: task
+    terminal_state: TASK_STATE_COMPLETED
