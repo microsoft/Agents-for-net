@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.Agents.Core.Errors;
 
 namespace Microsoft.Agents.Extensions.A2A.Errors;
@@ -61,4 +61,18 @@ internal static partial class ErrorHelper
         new(-100022, Resource(nameof(AuthorizationRequiredScopesNotGranted)), $"{HelpLinkBase}-100022");
     internal static readonly AgentErrorDefinition AuthorizationInTaskScopeEnforcementRequiresOBO =
         new(-100023, Resource(nameof(AuthorizationInTaskScopeEnforcementRequiresOBO)), $"{HelpLinkBase}-100023");
+    internal static readonly AgentErrorDefinition PushNotificationDataInvalid =
+        new(-100024, Resource(nameof(PushNotificationDataInvalid)), $"{HelpLinkBase}-100024");
+    internal static readonly AgentErrorDefinition PushNotificationLimitExceeded =
+        new(-100025, Resource(nameof(PushNotificationLimitExceeded)), $"{HelpLinkBase}-100025");
+    internal static readonly AgentErrorDefinition PushNotificationWriteConflict =
+        new(-100026, Resource(nameof(PushNotificationWriteConflict)), $"{HelpLinkBase}-100026");
+    internal static readonly AgentErrorDefinition PushNotificationInvalidParameters =
+        new(-100027, Resource(nameof(PushNotificationInvalidParameters)), $"{HelpLinkBase}-100027");
+    internal static readonly AgentErrorDefinition PushNotificationAlreadyExists =
+        new(-100028, Resource(nameof(PushNotificationAlreadyExists)), $"{HelpLinkBase}-100028");
+    internal static readonly AgentErrorDefinition PushNotificationTransportInsecure =
+        new(-100029, Resource(nameof(PushNotificationTransportInsecure)), $"{HelpLinkBase}-100029");
+    internal static readonly AgentErrorDefinition PushNotificationInvalidationFailed =
+        new(-100030, Resource(nameof(PushNotificationInvalidationFailed)), $"{HelpLinkBase}-100030");
 }

@@ -188,4 +188,25 @@
   <data name="BlobTaskWriteConflict" xml:space="preserve">
     <value>The A2A task could not be written because Azure Blob Storage rejected the block list. Concurrent uploads larger than 128 MB can cause this failure.</value>
   </data>
+  <data name="PushNotificationDataInvalid" xml:space="preserve">
+    <value>The stored A2A push notification data could not be decrypted or validated.</value>
+  </data>
+  <data name="PushNotificationLimitExceeded" xml:space="preserve">
+    <value>The A2A push notification registration exceeds a configured storage limit.</value>
+  </data>
+  <data name="PushNotificationWriteConflict" xml:space="preserve">
+    <value>The A2A push notification registration could not be written within the configured contention limit.</value>
+  </data>
+  <data name="PushNotificationInvalidParameters" xml:space="preserve">
+    <value>The A2A push notification identifiers or pagination parameters are invalid or stale.</value>
+  </data>
+  <data name="PushNotificationAlreadyExists" xml:space="preserve">
+    <value>The A2A push notification configuration ID already exists.</value>
+  </data>
+  <data name="PushNotificationTransportInsecure" xml:space="preserve">
+    <value>A2A push notification storage requires HTTPS. HTTP loopback endpoints require explicit local-development opt-in.</value>
+  </data>
+  <data name="PushNotificationInvalidationFailed" xml:space="preserve">
+    <value>An A2A push notification generation was canceled, but a cancellation callback failed.</value>
+  </data>
 </root>
