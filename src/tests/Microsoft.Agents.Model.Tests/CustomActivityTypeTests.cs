@@ -299,9 +299,12 @@ namespace Microsoft.Agents.Model.Tests
                     """{"type":"invoke","value":{"action":"escalate","ticket":"T-9"}}""");
                 var noMatch = ProtocolJsonSerializer.ToObject<Activity>(
                     """{"type":"invoke","value":{"action":"acknowledge"}}""");
+                var unrelated = ProtocolJsonSerializer.ToObject<Activity>(
+                    """{"type":"message","value":true}""");
 
                 Assert.IsType<EscalatedActivity>(match);
                 Assert.Equal(typeof(Activity), noMatch.GetType());
+                Assert.IsType<bool>(unrelated.Value);
             }
             finally
             {
