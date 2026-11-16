@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Agents.Samples.A2ACli.A2A;
 using Microsoft.Agents.Samples.A2ACli.OAuth.Configuration;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +27,17 @@ internal sealed class A2ACliOptions
     {
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(startupOptions);
+
+        if (startupOptions.AgentClientId is not null)
+        {
+            configuration = new ConfigurationBuilder()
+                .AddConfiguration(configuration)
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Authentication:Providers:entra:Registrations:agent:ClientId"] = startupOptions.AgentClientId,
+                })
+                .Build();
+        }
 
         Uri agentUrl = startupOptions.AgentUrl
             ?? GetRequiredAbsoluteUri(configuration, "A2A:AgentUrl");
@@ -81,6 +93,8 @@ internal sealed class A2ACliOptions
 internal sealed class StartupOptions
 {
     public Uri? AgentUrl { get; init; }
+
+    public string? AgentClientId { get; init; }
 
     public A2AAuthMode? AuthMode { get; init; }
 

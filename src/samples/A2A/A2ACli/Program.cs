@@ -23,7 +23,8 @@ namespace Microsoft.Agents.Samples.A2ACli;
 internal sealed class Program
 {
     private const string Usage =
-        "Usage: A2ACli [--agent <url>] [--auth-mode none|delegated|app] [--history] "
+        "Usage: A2ACli [--agent <url>] [--agent-client-id <id>] "
+        + "[--auth-mode none|delegated|app] [--history] "
         + "[--transport auto|jsonrpc|http-json|grpc] "
         + "[--use-push-notifications] [--push-notification-receiver <url>] [--help]";
 
@@ -141,6 +142,7 @@ internal sealed class Program
         ArgumentNullException.ThrowIfNull(args);
 
         Uri? agentUrl = null;
+        string? agentClientId = null;
         Uri? pushNotificationReceiver = null;
         A2AAuthMode? authMode = null;
         A2ATransport? transport = null;
@@ -168,6 +170,14 @@ internal sealed class Program
             else if (string.Equals(argument, "--agent", StringComparison.OrdinalIgnoreCase))
             {
                 agentUrl = ReadAbsoluteUri(args, ref index, "--agent");
+            }
+            else if (string.Equals(argument, "--agent-client-id", StringComparison.OrdinalIgnoreCase))
+            {
+                agentClientId = ReadValue(args, ref index, "--agent-client-id");
+                if (string.IsNullOrWhiteSpace(agentClientId))
+                {
+                    throw new ArgumentException("Option --agent-client-id requires a client ID.", nameof(args));
+                }
             }
             else if (string.Equals(argument, "--push-notification-receiver", StringComparison.OrdinalIgnoreCase))
             {
@@ -199,6 +209,7 @@ internal sealed class Program
         return new StartupOptions
         {
             AgentUrl = agentUrl,
+            AgentClientId = agentClientId,
             AuthMode = authMode,
             Transport = transport,
             ShowHistory = showHistory,

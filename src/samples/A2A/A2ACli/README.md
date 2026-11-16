@@ -31,6 +31,7 @@ The startup options are:
 
 ```text
 --agent <url>
+--agent-client-id <id>
 --transport auto|jsonrpc|http-json|grpc
 --auth-mode none|delegated|app
 --history
@@ -42,6 +43,9 @@ The startup options are:
 `--agent` overrides `A2A:AgentUrl` from configuration. It is always an HTTP(S)
 Agent Card discovery URL, including when the selected request transport is gRPC.
 `--transport` overrides `A2A:Transport`, which defaults to `auto`.
+`--agent-client-id` overrides
+`Authentication:Providers:entra:Registrations:agent:ClientId`. When connecting
+to the A2AAgent sample, use the Agent App Registration's application (client) ID.
 
 In `auto` mode, the first supported, valid interface in Agent Card order is
 selected. An explicit transport must be available on the configured origin.
@@ -97,14 +101,14 @@ The CLI never disables TLS certificate validation; trust the development
 certificate when using HTTPS.
 
 Authentication modes, automatic skill selection, attachments, task continuation,
-history, and response rendering work the same over gRPC. Agent API tokens are
+history, and response rendering work the same over gRPC. Agent access tokens are
 resolved for every request, so changing `:auth` does not leave a token captured
 in the channel. Credentials over plaintext are permitted only on loopback.
 
 In-task authorization uses the generated `A2AExtensionService` envelope with
 operation ID `<extension-uri>#auth-response`. Extension activation and the
 task-scoped delegated token are call metadata; the delegated token is not put
-in the JSON payload or substituted for the Agent API bearer token. Repeated
+in the JSON payload or substituted for the agent's bearer token. Repeated
 challenge IDs are rejected, while consecutive distinct challenges can resume.
 
 Standard and extension calls share one channel, disposed on console exit or
@@ -146,8 +150,8 @@ The client loads configuration in this order:
 1. Environment variables prefixed with `A2ACLI_`
 1. .NET user secrets
 
-Values loaded later override values loaded earlier. Command-line `--agent`
-and `--transport` override their configured values.
+Values loaded later override values loaded earlier. Command-line `--agent`,
+`--agent-client-id`, and `--transport` override their configured values.
 
 The configuration has two top-level areas:
 
@@ -168,19 +172,19 @@ The configuration has two top-level areas:
           "offline_access"
         ],
         "Registrations": {
-          "delegated": {
+          "agent": {
             "GrantTypes": [
               "DeviceCode",
               "AuthorizationCode"
             ],
-            "ClientId": "<public-client-id>",
+            "ClientId": "<agent-client-id>",
             "RedirectUri": "http://localhost:8400/callback/"
           },
-          "application": {
+          "a2aclient": {
             "GrantTypes": [
               "ClientCredentials"
             ],
-            "ClientId": "<confidential-client-id>",
+            "ClientId": "<a2aclient-client-id>",
             "ClientSecret": "<store-outside-source-control>",
             "TokenEndpointAuthenticationMethod": "ClientSecretPost"
           }
@@ -219,6 +223,15 @@ The configuration has two top-level areas:
 | `Transport` | `auto` (default), `jsonrpc`, `http-json`, or `grpc`. The `--transport` option overrides it. |
 
 ### `Authentication:Providers`
+
+The Entra sample registrations identify which app registration to use:
+
+- `agent` uses the **Agent App Registration's** client ID for Device Code or
+  Authorization Code user sign-in. For A2AAgent, this is the same client ID used
+  by `TokenValidation:Audiences` and `Connections:ServiceConnection:Settings:ClientId`.
+- `a2aclient` uses the **client app registration's** client ID and secret for
+  app-only Client Credentials requests. It is not needed for A2AAgent's
+  `-me-agentcard` or `-me-intask` commands.
 
 `Providers` is a dictionary of local OAuth provider policies. The Agent Card
 still discovers the advertised flow, scopes, metadata URL, and OAuth
@@ -349,22 +362,27 @@ The committed `appsettings.json` contains placeholders only. Store local
 credentials with .NET user secrets:
 
 ```powershell
-dotnet user-secrets set "Authentication:Providers:entra:Registrations:delegated:ClientId" "<client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
-dotnet user-secrets set "Authentication:Providers:entra:Registrations:application:ClientId" "<client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
-dotnet user-secrets set "Authentication:Providers:entra:Registrations:application:ClientSecret" "<client-secret>" --project src\samples\A2A\A2ACli\A2ACli.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:agent:ClientId" "<agent-client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:a2aclient:ClientId" "<a2aclient-client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:a2aclient:ClientSecret" "<client-secret>" --project src\samples\A2A\A2ACli\A2ACli.csproj
 dotnet user-secrets set "Authentication:Providers:browser-oauth:Registrations:browser:ClientId" "<client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
 ```
 
 These configuration paths use local provider and registration IDs. Do not
-replace `entra`, `application`, or `browser-oauth` with an Agent Card scheme
+replace `entra`, `agent`, `a2aclient`, or `browser-oauth` with an Agent Card scheme
 name.
+
+For existing local configuration, rename registration paths from `delegated`
+to `agent` and from `application` to `a2aclient`, including user secrets and
+environment variables. Remove obsolete entries so they do not create extra
+registrations.
 
 Environment variables use the `A2ACLI_` prefix and `__` for configuration
 section separators:
 
 ```powershell
 $env:A2ACLI_A2A__AgentUrl = "https://agent.example.com/a2a"
-$env:A2ACLI_Authentication__Providers__entra__Registrations__delegated__ClientId = "<client-id>"
+$env:A2ACLI_Authentication__Providers__entra__Registrations__agent__ClientId = "<agent-client-id>"
 $env:A2ACLI_Authentication__Providers__entra__AllowedAuthorities__0 = "https://login.microsoftonline.com"
 ```
 
@@ -437,7 +455,7 @@ trust endpoints under `https://identity.example.com/tenant`.
 
 This check occurs before the client sends credentials.
 
-Agent API access tokens are also restricted to the configured agent origin.
+Agent access tokens are also restricted to the configured agent origin.
 The client refuses to send them to another origin or over plaintext HTTP,
 except for HTTP loopback addresses used during local development.
 
