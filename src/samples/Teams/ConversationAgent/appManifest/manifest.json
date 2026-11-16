@@ -75,6 +75,7 @@
       ]
     }
   ],
+  "supportsChannelFeatures": "tier1",
   "permissions": [
     "identity",
     "messageTeamMembers"
