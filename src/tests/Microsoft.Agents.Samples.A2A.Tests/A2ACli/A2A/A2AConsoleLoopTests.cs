@@ -266,8 +266,8 @@ public class A2AConsoleLoopTests
         await console.RunAsync(CancellationToken.None);
 
         Assert.NotNull(actualRequest);
-        Assert.Equal(notificationUri.AbsoluteUri, actualRequest.Configuration?.PushNotificationConfig?.Url);
-        Assert.Null(actualRequest.Configuration?.PushNotificationConfig?.Authentication);
+        Assert.Equal(notificationUri.AbsoluteUri, actualRequest.Configuration?.TaskPushNotificationConfig?.Url);
+        Assert.Null(actualRequest.Configuration?.TaskPushNotificationConfig?.Authentication);
     }
 
     private static SendMessageResponse CreateResponse(TaskState state) => new()

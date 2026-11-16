@@ -416,7 +416,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(conversation.Reference);
             Assert.NotNull(conversation.Identity);
 
-            conversation.Validate(validateConversation: false);
+            ChannelServiceAdapterBase.ValidateLegacyConversation(conversation, validateConversation: false);
         }
 
         [Fact]
@@ -433,7 +433,7 @@ namespace Microsoft.Agents.Builder.Tests.App
             Assert.NotNull(conversation.Reference);
             Assert.NotNull(conversation.Identity);
 
-            conversation.Validate(validateConversation: true);
+            ChannelServiceAdapterBase.ValidateLegacyConversation(conversation, validateConversation: true);
         }
 
         [Fact]

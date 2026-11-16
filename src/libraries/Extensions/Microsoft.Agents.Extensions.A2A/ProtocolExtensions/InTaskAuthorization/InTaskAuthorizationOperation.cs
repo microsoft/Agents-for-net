@@ -1,0 +1,103 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using A2A;
+using A2A.AspNetCore;
+using Microsoft.Agents.Extensions.A2A.Pipeline;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
+
+internal static class InTaskAuthorizationOperation
+{
+    private static readonly A2AOperationId OperationId =
+        new(InTaskAuthorizationExtension.AuthResponseOperationId);
+
+    internal static InTaskAuthorizationRegistration AddOperation(
+        A2ACustomOperationRegistryBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        var extension = builder.RegisterExtension(InTaskAuthorizationExtension.CreateAgentCardExtension());
+        var operation = builder.Map<AuthResponseRequest, AgentTask>(
+            extension,
+            OperationId,
+            A2AAdapter.AuthResponseAsync,
+            InTaskAuthorizationJsonContext.Default.AuthResponseRequest,
+            (System.Text.Json.Serialization.Metadata.JsonTypeInfo<AgentTask>)
+                A2AJsonUtilities.DefaultOptions.GetTypeInfo(typeof(AgentTask)),
+            ValidateRequest);
+        return new InTaskAuthorizationRegistration(extension, operation);
+    }
+
+    internal static void AddJsonRpcBinding(
+        A2AJsonRpcCustomOperationBuilder builder,
+        A2ACustomOperation<AuthResponseRequest, AgentTask> operation)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(operation);
+        builder.Map(
+            InTaskAuthorizationExtension.AuthResponseOperation,
+            operation);
+    }
+
+    internal static void AddHttpBinding(
+        A2AHttpCustomOperationBuilder builder,
+        A2ACustomOperation<AuthResponseRequest, AgentTask> operation)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(operation);
+        builder.Map(
+            HttpMethods.Post,
+            "/tasks/{taskId}:auth-response",
+            operation,
+            BindHttpRequestAsync);
+    }
+
+    private static async ValueTask<AuthResponseRequest> BindHttpRequestAsync(
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        AuthResponseRequest request;
+        try
+        {
+            request = await JsonSerializer.DeserializeAsync(
+                context.Request.Body,
+                InTaskAuthorizationJsonContext.Default.AuthResponseRequest,
+                cancellationToken).ConfigureAwait(false)
+                ?? throw new JsonException("The auth-response request body is required.");
+        }
+        catch (JsonException exception)
+        {
+            throw new A2AException(
+                "Invalid auth-response request body.",
+                exception,
+                A2AErrorCode.InvalidParams);
+        }
+
+        request.TaskId = context.Request.RouteValues["taskId"]?.ToString()
+            ?? throw new A2AException(
+                "The auth-response task ID route value is required.",
+                A2AErrorCode.InvalidParams);
+        return request;
+    }
+
+    private static void ValidateRequest(AuthResponseRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.TaskId)
+            || string.IsNullOrWhiteSpace(request.ContextId)
+            || string.IsNullOrWhiteSpace(request.AuthorizationRequestId))
+        {
+            throw new A2AException(
+                "auth-response requires taskId, contextId, and authorizationRequestId.",
+                A2AErrorCode.InvalidParams);
+        }
+    }
+}
+
+internal sealed record InTaskAuthorizationRegistration(
+    A2AExtensionRegistration Extension,
+    A2ACustomOperation<AuthResponseRequest, AgentTask> Operation);

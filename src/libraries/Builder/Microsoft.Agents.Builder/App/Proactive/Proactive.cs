@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Adapters;
@@ -155,7 +155,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveConversationRequired, null);
             }
-            conversation.Validate();
+            ValidateConversation(adapter, conversation);
 
             if (activity == null)
             {
@@ -174,23 +174,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
 
             ExceptionDispatchInfo exceptionInfo = null;
             ResourceResponse response = null;
-            await adapter.ContinueConversationAsync(conversation.Identity, conversation.Reference, async (turnContext, ct) =>
+            try
             {
-                try
+                await adapter.ContinueConversationAsync(conversation.Identity, conversation.Reference, async (turnContext, ct) =>
                 {
-                    response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
-                    // results in the exception being lost.  Capture the exception info here to re-throw
-                    // after ContinueConversationAsync completes.
-                    telemetryScope.SetError(ex);
-                    exceptionInfo = ExceptionDispatchInfo.Capture(ex);
-                }
-            }, cancellationToken).ConfigureAwait(false);
-
-            exceptionInfo?.Throw();
+                    try
+                    {
+                        response = await turnContext.SendActivityAsync(activity, ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Preserve the send failure even if the adapter subsequently fails delivery.
+                        telemetryScope.SetError(ex);
+                        exceptionInfo = ExceptionDispatchInfo.Capture(ex);
+                    }
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                exceptionInfo?.Throw();
+            }
 
             return response;
         }
@@ -304,14 +307,17 @@ namespace Microsoft.Agents.Builder.App.Proactive
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveConversationRequired, null, "null instance");
             }
-            conversation.Validate();
+            ValidateConversation(adapter, conversation);
 
             continuationActivity ??= conversation.Reference.GetContinuationActivity();
 
             // If token handlers were not explicitly provided, check for ContinueConversationAttribute on the handler method to get them.
             if (autoSignInHandlers == null || autoSignInHandlers.Length == 0)
             {
-                var attribute = continuationHandler.GetMethodInfo().GetCustomAttribute<ContinueConversationAttribute>(true);
+                var handlerMethod = continuationHandler.Target is ContinueConversationHandler boundHandler
+                    ? boundHandler.Method
+                    : continuationHandler.GetMethodInfo();
+                var attribute = handlerMethod.GetCustomAttribute<ContinueConversationAttribute>(true);
                 if (attribute != null)
                 {
                     autoSignInHandlers = RouteAttributeHelper.DelimitedToList(attribute.TokenHandlers);
@@ -322,23 +328,26 @@ namespace Microsoft.Agents.Builder.App.Proactive
             using var telemetryScope = new ScopeContinueConversation(conversationId, continuationActivity, createActivityLink(conversation));
             ExceptionDispatchInfo exceptionInfo = null;
 
-            await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
+            try
             {
-                try
+                await adapter.ProcessProactiveAsync(conversation.Identity, continuationActivity, null, async (turnContext, ct) =>
                 {
-                    await OnTurnAsync(turnContext, continuationHandler, tokenHandlers: autoSignInHandlers, ct).ConfigureAwait(false);
-                }
-                catch(Exception ex)
-                {
-                    // Exceptions would normally bubble up to the Adapter.  Since this is proactive it
-                    // results in the exception being lost.  Capture the exception info here to re-throw
-                    // after ProcessProactiveAsync completes.
-                    telemetryScope.SetError(ex);
-                    exceptionInfo = ExceptionDispatchInfo.Capture(ex);
-                }
-            }, cancellationToken).ConfigureAwait(false);
-
-            exceptionInfo?.Throw();
+                    try
+                    {
+                        await OnTurnAsync(turnContext, continuationHandler, tokenHandlers: autoSignInHandlers, ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Preserve the callback failure even if the adapter subsequently fails delivery.
+                        telemetryScope.SetError(ex);
+                        exceptionInfo = ExceptionDispatchInfo.Capture(ex);
+                    }
+                }, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                exceptionInfo?.Throw();
+            }
         }
 
         /// <summary>
@@ -383,20 +392,27 @@ namespace Microsoft.Agents.Builder.App.Proactive
         /// <returns>A task that represents the asynchronous operation. The task result contains the newly created <c>Conversation</c>.</returns>
         /// <exception cref="UserNotSignedIn">Thrown if the RouteHandler specifies token handlers and not all have been signed into.</exception>
         public async Task<Conversation> CreateConversationAsync(
-            IChannelAdapter adapter, 
-            CreateConversationOptions createOptions, 
+            IChannelAdapter adapter,
+            CreateConversationOptions createOptions,
             RouteHandler continuationHandler = null,
             string[] autoSignInHandlers = null,
             Func<ConversationReference, IActivity> continuationActivityFactory = null,
             CancellationToken cancellationToken = default)
         {
             AssertionHelpers.ThrowIfNull(adapter, nameof(adapter));
-            
+
             if (createOptions == null)
             {
                 throw Core.Errors.ExceptionHelper.GenerateException<ArgumentNullException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, "null instance");
             }
-            createOptions.Validate();
+            if (adapter is IProactiveAdapterValidator validator)
+            {
+                validator.ValidateCreateConversation(createOptions);
+            }
+            else
+            {
+                ChannelServiceAdapterBase.ValidateCreateConversationOptions(createOptions);
+            }
 
             var newReference = await adapter.CreateConversationAsync(
                 createOptions.Identity,
@@ -433,6 +449,18 @@ namespace Microsoft.Agents.Builder.App.Proactive
             }
 
             return newConversation;
+        }
+
+        private static void ValidateConversation(IChannelAdapter adapter, Conversation conversation)
+        {
+            if (adapter is IProactiveAdapterValidator validator)
+            {
+                validator.ValidateConversation(conversation.Identity, conversation.Reference);
+            }
+            else
+            {
+                ChannelServiceAdapterBase.ValidateLegacyConversation(conversation);
+            }
         }
 
         #region Conversation Storage
@@ -583,7 +611,7 @@ namespace Microsoft.Agents.Builder.App.Proactive
         {
             if (conversation?.ActivityContext != null)
             {
-                return new System.Diagnostics.ActivityLink((System.Diagnostics.ActivityContext) conversation.ActivityContext);
+                return new System.Diagnostics.ActivityLink((System.Diagnostics.ActivityContext)conversation.ActivityContext);
             }
             return null;
         }

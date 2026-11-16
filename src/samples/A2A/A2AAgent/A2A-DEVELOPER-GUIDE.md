@@ -26,6 +26,7 @@ using Microsoft.Agents.Extensions.A2A;
 [A2AExtension]
 [AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/a2a")]
 [AgentInterface(A2AAgentTransportProtocol.HttpJson, "/a2a")]
+[AgentInterface(A2AAgentTransportProtocol.Grpc, "/")]
 public partial class MyAgent : AgentApplication
 {
 }
@@ -47,8 +48,115 @@ app.MapDefaultAgentEndpoints();
 app.MapA2AApplicationEndpoints();
 ```
 
-`MapA2AApplicationEndpoints` maps the well-known Agent Card and the configured
-JSON-RPC and HTTP+JSON interfaces. The default path is `/a2a`.
+`MapA2AApplicationEndpoints` maps the public HTTP well-known Agent Card and the
+declared JSON-RPC, HTTP+JSON, and native gRPC interfaces. Without interface
+attributes, the existing default remains JSON-RPC at `/a2a`. The existing agent
+service registrar adds upstream gRPC services before host build; do not add a
+second A2A server, request handler, or application-level `MapGrpcA2A` call.
+
+## Host native gRPC
+
+Declare `[AgentInterface(A2AAgentTransportProtocol.Grpc, "/")]`. Standard method
+paths such as `/lf.a2a.v1.A2AService/SendMessage` are fixed; the path component of
+a .NET `GrpcChannel` address is not a service prefix. The extension therefore
+rejects non-root attribute paths, prefixed enclosing route groups, and competing
+root gRPC mappings at startup. Only one gRPC agent/interface can be mapped per
+application, even when it has multiple listeners. Use separate applications and
+authorities for multiple gRPC agents. Unrelated gRPC services are unaffected by
+the A2A request-scope interceptor.
+
+Native gRPC requires HTTP/2-capable hosting:
+
+- **TLS:** enable HTTP/2 negotiation (for example Kestrel `Http1AndHttp2` with a
+  certificate). Existing HTTP/1 endpoints can share that TLS listener.
+- **Plaintext development (h2c):** configure an HTTP/2-only listener. A plaintext
+  `Http1AndHttp2` listener falls back to HTTP/1 and does not provide native gRPC.
+  Keep a separate HTTP/1 listener if existing HTTP clients need it.
+- **Proxies:** preserve HTTP/2, streaming, request/response metadata, and trailers
+  such as `grpc-status-details-bin`. Buffering streams or stripping trailers
+  breaks protocol behavior. gRPC-Web and reflection are not enabled.
+
+For example, separate listeners can be configured in appsettings:
+
+```json
+{
+  "Kestrel": {
+    "Endpoints": {
+      "Http": { "Url": "http://localhost:3978", "Protocols": "Http1" },
+      "Grpc": { "Url": "http://localhost:3980", "Protocols": "Http2" }
+    }
+  },
+  "A2AAdapterOptions": {
+    "GrpcUrl": "http://localhost:3980/"
+  }
+}
+```
+
+Use plaintext only on trusted local networks; configure a certificate and HTTPS
+for production. The sample's `A2AAgent-h2c` launch profile provides this local
+configuration without changing the existing `/api/messages` and `/a2a` routes.
+Its default profile instead uses HTTPS on port 3979 for gRPC.
+
+### gRPC discovery and Agent Card customization
+
+HTTP `/.well-known/agent-card.json` remains anonymous even when operation
+endpoints require authorization, including for gRPC-only agents. When a gRPC
+agent is declared, the root card describes that agent. JSON-RPC also retains
+its prefixed well-known card, and HTTP+JSON retains its `/card` endpoint.
+
+The card advertises `GRPC` with `protocolVersion` `1.0`. By default its target is
+the discovery request's scheme and authority with `/`, not the HTTP A2A path.
+If HTTP discovery and gRPC use different listeners, set
+`A2AAdapterOptions:GrpcUrl` (or register `A2AAdapterOptions` with a `GrpcUrl` URI).
+It must be an absolute HTTP(S) root URL without credentials, a path prefix,
+query, or fragment. This option advertises an address; it does not bind a
+listener. A client reading discovery from a plaintext HTTP/2-only listener must
+explicitly request HTTP/2.
+
+All interfaces are composed **before** `IAgentCardHandler.GetAgentCard`, so final
+customization and signing see the gRPC address. No interface is appended after
+the handler returns. Extended Agent Cards remain unsupported.
+
+### gRPC authentication and protocol extensions
+
+`requireAuth` follows the same `RequireAuthorization`/`AllowAnonymous`
+conventions as the HTTP bindings. Use ASP.NET Core authentication and
+authorization middleware before endpoints. The interceptor establishes the
+existing adapter request context for the entire unary or server-streaming call,
+including task subscriptions and custom operations. The selected agent and the
+validated request principal stay isolated across concurrent calls.
+
+For request-token authorization and OBO, configure the authentication handler to
+save the validated access token (for example `JwtBearerOptions.SaveToken = true`).
+The adapter consumes that authentication ticket, not an arbitrary raw
+`Authorization` metadata value. Route-scoped `A2AUserAuthorization` handlers
+continue to work as they do over HTTP.
+
+All bindings use the same long-lived server, task store, cancellation registry,
+and immutable custom-operation registry. Upstream
+`AddA2AGrpc(new A2AGrpcExtensionOptions(registry))` negotiates the
+`a2a-extensions` metadata and maps structured A2A failures to gRPC status and rich
+trailers; the extension does not duplicate that translation layer.
+
+For in-task authorization, request activation with:
+
+```text
+a2a-version: 1.0
+a2a-extensions: https://schemas.microsoft.com/agents/a2a/extensions/in-task-authorization/v1
+```
+
+After an authorization-required task response, invoke the upstream generic
+`a2a.extensions.v1.A2AExtensionService/InvokeExtensionOperation` method with:
+
+- `operation_id` equal to the extension URI followed by `#auth-response`;
+- a UTF-8 JSON `payload` containing `taskId`, `contextId`, and
+  `authorizationRequestId`; and
+- the delegated access token in `x-a2a-intask-authorization` metadata.
+
+The normal `Authorization` metadata remains reserved for request
+authentication. The same registry operation resumes the original task over
+gRPC, HTTP+JSON, or JSON-RPC; it is not a new RPC on the standard A2A service.
+Activation metadata and rich error trailers are retained on operation failures.
 
 ## Generate the Agent Card
 
@@ -524,8 +632,9 @@ fail explicitly instead of falling back to an arbitrary choice.
   A2A task.
 - `ITurnState.User` requires a usable user identity. Application tokens and
   anonymous requests do not provide one.
-- Multiple A2A agents in one host are not supported; requests are routed to the
-  registered `IAgent`.
+- Only one root gRPC agent/interface is supported per application. Existing
+  JSON-RPC and HTTP+JSON helpers resolve the registered `IAgent`; multiple
+  independent HTTP agents in one host are not supported.
 
 ## Design history and further reading
 

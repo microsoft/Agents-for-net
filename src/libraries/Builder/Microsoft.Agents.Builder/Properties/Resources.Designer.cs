@@ -340,6 +340,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Continue conversation handler &apos;{0}&apos; requires turn context &apos;{1}&apos;, but it is unavailable for channel &apos;{2}&apos;. Register an extension that supplies this context..
+        /// </summary>
+        internal static string ProactiveTurnContextUnavailable {
+            get {
+                return ResourceManager.GetString("ProactiveTurnContextUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to RouteBuilder &apos;{0}&apos; missing required property &apos;{1}&apos;.
         /// </summary>
         internal static string RouteBuilderMissingProperty {
@@ -430,6 +439,15 @@ namespace Microsoft.Agents.Builder.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Assembly must be configured for user authorization handler &apos;{0}&apos; because type &apos;{1}&apos; is not defined by Microsoft.Agents.Builder..
+        /// </summary>
+        internal static string UserAuthorizationAssemblyRequired {
+            get {
+                return ResourceManager.GetString("UserAuthorizationAssemblyRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Handler name &apos;{0}&apos; not found in configuration under AgentApplication:UserAuthorization:Handlers, or AgentApplication:UserAuthorization:DefaultHandlerName is invalid..
         /// </summary>
         internal static string UserAuthorizationDefaultHandlerNotFound {
@@ -471,15 +489,6 @@ namespace Microsoft.Agents.Builder.Properties {
         internal static string UserAuthorizationRequiresAdapter {
             get {
                 return ResourceManager.GetString("UserAuthorizationRequiresAdapter", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Assembly must be configured for user authorization handler &apos;{0}&apos; because type &apos;{1}&apos; is not defined by Microsoft.Agents.Builder..
-        /// </summary>
-        internal static string UserAuthorizationAssemblyRequired {
-            get {
-                return ResourceManager.GetString("UserAuthorizationAssemblyRequired", resourceCulture);
             }
         }
         
