@@ -147,11 +147,17 @@ transport mechanisms.
 The client loads configuration in this order:
 
 1. `appsettings.json`
+1. `appsettings.Development.json` for Debug builds, or
+   `appsettings.Production.json` for non-Debug builds (optional)
 1. Environment variables prefixed with `A2ACLI_`
 1. .NET user secrets
 
 Values loaded later override values loaded earlier. Command-line `--agent`,
 `--agent-client-id`, and `--transport` override their configured values.
+
+The optional JSON file is selected by the CLI's build configuration, not an
+environment variable. Create these files beside `appsettings.json`; they are
+ignored by Git and copied to the build and publish output when present.
 
 The configuration has two top-level areas:
 
@@ -359,7 +365,8 @@ constructing `OAuth21DcrCredentialProvider`.
 ## Keep credentials outside `appsettings.json`
 
 The committed `appsettings.json` contains placeholders only. Store local
-credentials with .NET user secrets:
+credentials in the optional build-specific JSON file, environment variables,
+or .NET user secrets:
 
 ```powershell
 dotnet user-secrets set "Authentication:Providers:entra:Registrations:agent:ClientId" "<agent-client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj

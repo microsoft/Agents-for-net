@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using A2AProtocol = A2A;
@@ -47,12 +48,7 @@ internal sealed class Program
                 return 0;
             }
 
-            IConfiguration configuration = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false)
-                .AddEnvironmentVariables("A2ACLI_")
-                .AddUserSecrets<Program>(optional: true)
-                .Build();
+            IConfiguration configuration = CreateConfiguration(AppContext.BaseDirectory);
 
             A2ACliOptions options = A2ACliOptions.FromConfiguration(configuration, startupOptions);
             var authenticationSession = new A2AAuthenticationSession();
@@ -135,6 +131,22 @@ internal sealed class Program
         {
             Console.CancelKeyPress -= cancelHandler;
         }
+    }
+
+    internal static IConfigurationRoot CreateConfiguration(string basePath)
+    {
+        bool isDebugBuild = typeof(Program).Assembly
+            .GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration == "Debug";
+
+        return new ConfigurationBuilder()
+            .SetBasePath(basePath)
+            .AddJsonFile("appsettings.json", optional: false)
+            .AddJsonFile(
+                isDebugBuild ? "appsettings.Development.json" : "appsettings.Production.json",
+                optional: true)
+            .AddEnvironmentVariables("A2ACLI_")
+            .AddUserSecrets<Program>(optional: true)
+            .Build();
     }
 
     internal static StartupOptions ParseStartupOptions(string[] args)
