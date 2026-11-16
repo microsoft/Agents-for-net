@@ -24,12 +24,14 @@ namespace Microsoft.Agents.Connector.RestClients
     internal class UserTokenRestClient : IUserToken
     {
         private readonly IRestTransport _transport;
+        private readonly string _appId;
         private readonly ILogger _logger;
         private static readonly MemoryCache _cache = new MemoryCache(nameof(UserTokenRestClient));
 
-        public UserTokenRestClient(IRestTransport transport, ILogger logger = null)
+        public UserTokenRestClient(IRestTransport transport, string appId, ILogger logger = null)
         {
             _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+            _appId = appId;
             _logger = logger;
         }
 
@@ -83,9 +85,9 @@ namespace Microsoft.Agents.Connector.RestClients
             }
         }
 
-        private static string CacheKey(string userId, string connectionName, ChannelId channelId)
+        private string CacheKey(string userId, string connectionName, ChannelId channelId)
         {
-            return $"{userId}-{connectionName}-{channelId?.Channel}";
+            return $"{_appId}-{userId}-{connectionName}-{channelId?.Channel}";
         }
 
         /// <inheritdoc/>

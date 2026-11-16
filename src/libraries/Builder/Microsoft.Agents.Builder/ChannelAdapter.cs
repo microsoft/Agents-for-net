@@ -1,7 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder.App.Proactive;
+using Microsoft.Agents.Builder.Errors;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -19,7 +21,7 @@ namespace Microsoft.Agents.Builder
     /// </summary>
     /// <remarks>This would not normally be used by the creator of an Agent except
     /// in cases where a custom Adapter is being implemented.</remarks>
-    public abstract class ChannelAdapter : IChannelAdapter
+    public abstract class ChannelAdapter : IChannelAdapter, IProactiveAdapterValidator
     {
         /// <summary>
         /// The key value for any InvokeResponseActivity that would be on the TurnState.
@@ -61,6 +63,35 @@ namespace Microsoft.Agents.Builder
 
         /// <inheritdoc/>
         public abstract Task<ResourceResponse[]> SendActivitiesAsync(ITurnContext turnContext, IActivity[] activities, CancellationToken cancellationToken);
+
+        /// <inheritdoc/>
+        public virtual void ValidateConversation(ClaimsIdentity identity, ConversationReference reference)
+        {
+            AssertionHelpers.ThrowIfNull(identity, nameof(identity));
+            if (reference == null)
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationInstance, null, nameof(Conversation.Reference));
+            }
+            if (string.IsNullOrWhiteSpace(reference.ChannelId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, nameof(ConversationReference.ChannelId));
+            }
+            if (string.IsNullOrWhiteSpace(reference.Conversation?.Id))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidConversationReferenceInstance, null, $"{nameof(ConversationReference.Conversation)}.{nameof(ConversationAccount.Id)}");
+            }
+        }
+
+        /// <inheritdoc/>
+        public virtual void ValidateCreateConversation(CreateConversationOptions options)
+        {
+            AssertionHelpers.ThrowIfNull(options, nameof(options));
+            AssertionHelpers.ThrowIfNull(options.Identity, nameof(options.Identity));
+            if (string.IsNullOrWhiteSpace(options.ChannelId))
+            {
+                throw Core.Errors.ExceptionHelper.GenerateException<ArgumentException>(ErrorHelper.ProactiveInvalidCreateConversationInstance, null, nameof(CreateConversationOptions.ChannelId));
+            }
+        }
 
         /// <inheritdoc/>
         public virtual Task CreateConversationAsync(string agentAppId, string channelId, string serviceUrl, string audience, ConversationParameters conversationParameters, AgentCallbackHandler callback, CancellationToken cancellationToken = default)
@@ -142,6 +173,8 @@ namespace Microsoft.Agents.Builder
             AssertionHelpers.ThrowIfNull(claimsIdentity, nameof(claimsIdentity));
             AssertionHelpers.ThrowIfNull(continuationActivity, nameof(continuationActivity));
             AssertionHelpers.ThrowIfNull(callback, nameof(callback));
+
+            ValidateConversation(claimsIdentity, continuationActivity.GetConversationReference());
 
             // Create a turn context
             using var context = new TurnContext(this, continuationActivity, claimsIdentity);

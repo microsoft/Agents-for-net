@@ -254,6 +254,10 @@
     <value>Continuing the conversation with OAuth failed because the user is not signed into all handlers.</value>
     <comment>Raised during Proactive.ContinueConversation with token handlers specified and not all handler had been signed into.</comment>
   </data>
+  <data name="ProactiveTurnContextUnavailable" xml:space="preserve">
+    <value>Continue conversation handler '{0}' requires turn context '{1}', but it is unavailable for channel '{2}'. Register an extension that supplies this context.</value>
+    <comment>Raised when a continuation handler requires a specialized context that the current turn and its registered channel extensions cannot supply.</comment>
+  </data>
 	<data name="ProactiveConversationNotFound" xml:space="preserve">
     <value>Conversation not found for conversationId '{0}'.</value>
     <comment>Raised when the specified conversationId was not found.  Was it stored?</comment>

@@ -426,7 +426,7 @@ namespace Microsoft.Agents.Builder.Tests
                 secondActivity => Assert.Equal(customWorkingNotice, secondActivity.Text));
 
             await WaitForConditionAsync(
-                () => !GetPrivateField<bool>(context.StreamingResponse, "_processingTimer"),
+                () => GetPrivateField<Timer>(context.StreamingResponse, "_processingTimer") == null,
                 "Expected the keep-alive timer callback to finish before ending the stream.");
 
             var endStreamTask = Task.Run(() => context.StreamingResponse.EndStreamAsync());
@@ -483,7 +483,7 @@ namespace Microsoft.Agents.Builder.Tests
                 () => !context.StreamingResponse.IsStreamingChannel,
                 "Expected the BizChat timeout callback to disable streaming when no text was buffered.");
             await WaitForConditionAsync(
-                () => !GetPrivateField<bool>(context.StreamingResponse, "_processingTimer"),
+                () => GetPrivateField<Timer>(context.StreamingResponse, "_processingTimer") == null,
                 "Expected the BizChat timeout callback to finish before ending the stream.");
 
             var endResult = await WaitForTaskAsync(
@@ -560,7 +560,7 @@ namespace Microsoft.Agents.Builder.Tests
                 () => !context.StreamingResponse.IsStreamingChannel,
                 "Expected the BizChat timeout callback to disable streaming when text was buffered.");
             await WaitForConditionAsync(
-                () => !GetPrivateField<bool>(context.StreamingResponse, "_processingTimer"),
+                () => GetPrivateField<Timer>(context.StreamingResponse, "_processingTimer") == null,
                 "Expected the BizChat timeout callback to finish before ending the stream.");
 
             IActivity[] timeoutSnapshot;
@@ -1254,6 +1254,296 @@ namespace Microsoft.Agents.Builder.Tests
             Assert.Equal("second message", lastFinal.Text);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task TimerCallback_AfterStop_DoesNotSendOrThrow(bool reset)
+        {
+            var responses = new List<IActivity>();
+            var context = new TurnContext(CreateMockAdapter(responses).Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Webchat
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Thinking...");
+            var timer = GetPrivateField<Timer>(context.StreamingResponse, "_timer");
+            try
+            {
+                if (reset)
+                {
+                    await context.StreamingResponse.ResetAsync();
+                }
+                else
+                {
+                    Assert.True(await context.StreamingResponse.SendStreamTimedOutNotification("Timed out."));
+                }
+
+                var sentBeforeCallback = responses.Count;
+                var callback = InvokeTimerCallback(context.StreamingResponse, timer);
+                await callback.Completed.Task;
+
+                Assert.Empty(callback.Exceptions);
+                Assert.Equal(sentBeforeCallback, responses.Count);
+                Assert.False(context.StreamingResponse.IsStreamStarted());
+            }
+            finally
+            {
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Fact]
+        public async Task TimerCallback_FromPreviousStream_DoesNotConsumeReplacementStream()
+        {
+            var responses = new List<IActivity>();
+            var context = new TurnContext(CreateMockAdapter(responses).Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Webchat
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.InitialDelay = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("First stream.");
+            var firstTimer = GetPrivateField<Timer>(context.StreamingResponse, "_timer");
+            try
+            {
+                await context.StreamingResponse.ResetAsync();
+                context.StreamingResponse.QueueTextChunk("Replacement stream.");
+                var replacementTimer = GetPrivateField<Timer>(context.StreamingResponse, "_timer");
+                var sentBeforeCallback = responses.Count;
+
+                var staleCallback = InvokeTimerCallback(context.StreamingResponse, firstTimer);
+                await staleCallback.Completed.Task;
+                Assert.Empty(staleCallback.Exceptions);
+                Assert.Equal(sentBeforeCallback, responses.Count);
+
+                var currentCallback = InvokeTimerCallback(context.StreamingResponse, replacementTimer);
+                await currentCallback.Completed.Task;
+                Assert.Empty(currentCallback.Exceptions);
+                Assert.Equal("Replacement stream.", responses.Last().Text);
+                AssertTyping(responses.Last());
+            }
+            finally
+            {
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task TimerCallback_SendCompletesAfterReset_DoesNotChangeReplacementStream(bool sendFails)
+        {
+            var pendingSend = new TaskCompletionSource<ResourceResponse[]>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var responses = new List<IActivity>();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].GetStreamingEntity()?.StreamType == StreamTypes.Streaming &&
+                        activities[0].Text == "First stream.")
+                    {
+                        sendStarted.TrySetResult(true);
+                        return pendingSend.Task;
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.Msteams
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.InitialDelay = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            context.StreamingResponse.QueueTextChunk("First stream.");
+            var firstTimer = GetPrivateField<Timer>(context.StreamingResponse, "_timer");
+            var callback = InvokeTimerCallback(context.StreamingResponse, firstTimer);
+            try
+            {
+                await sendStarted.Task;
+                Assert.False(callback.Completed.Task.IsCompleted);
+                await context.StreamingResponse.ResetAsync();
+                context.StreamingResponse.QueueTextChunk("Replacement stream.");
+                var replacementTimer = GetPrivateField<Timer>(context.StreamingResponse, "_timer");
+
+                if (sendFails)
+                {
+                    pendingSend.SetException(new ErrorResponseException("Old stream cancelled.")
+                    {
+                        Body = new ErrorResponse(new Error { Code = "ContentStreamNotAllowed" })
+                    });
+                }
+                else
+                {
+                    pendingSend.SetResult([new ResourceResponse("old-stream-id")]);
+                }
+                await callback.Completed.Task;
+
+                Assert.Empty(callback.Exceptions);
+                Assert.Null(context.StreamingResponse.StreamId);
+                Assert.True(context.StreamingResponse.IsStreamStarted());
+                var currentCallback = InvokeTimerCallback(context.StreamingResponse, replacementTimer);
+                await currentCallback.Completed.Task;
+                Assert.Empty(currentCallback.Exceptions);
+                Assert.Equal("Replacement stream.", responses.Last().Text);
+                Assert.Null(responses.Last().GetStreamingEntity().StreamId);
+            }
+            finally
+            {
+                pendingSend.TrySetResult([new ResourceResponse("old-stream-id")]);
+                await callback.Completed.Task;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Theory]
+        [InlineData(false, 1)]
+        [InlineData(true, 1)]
+        [InlineData(true, 2)]
+        public async Task M365Copilot_FailedTimeoutNotification_PreservesFinalResponse(
+            bool bufferedText, int failedNotification)
+        {
+            const string timeoutMessage = "Timeout notification.";
+            var responses = new List<IActivity>();
+            var notificationAttempts = 0;
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Text.Contains(timeoutMessage))
+                    {
+                        notificationAttempts++;
+                        if (notificationAttempts == failedNotification)
+                        {
+                            return Task.FromException<ResourceResponse[]>(new System.IO.IOException("Notification failed."));
+                        }
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            context.StreamingResponse.StreamingTakingTooLongMessage = timeoutMessage;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Starting.");
+            try
+            {
+                if (bufferedText)
+                {
+                    context.StreamingResponse.QueueTextChunk("Buffered ");
+                }
+                SetPrivateField(context.StreamingResponse, "M365StreamingTimeout", TimeSpan.Zero);
+                var callback = InvokeTimerCallback(
+                    context.StreamingResponse, GetPrivateField<Timer>(context.StreamingResponse, "_timer"));
+                await callback.Completed.Task;
+
+                Assert.Empty(callback.Exceptions);
+                Assert.Equal(bufferedText ? 2 : 1, notificationAttempts);
+                Assert.False(context.StreamingResponse.IsStreamingChannel);
+                context.StreamingResponse.QueueTextChunk("completed.");
+                var result = await context.StreamingResponse.EndStreamAsync();
+
+                Assert.Equal(StreamingResponseResult.Success, result);
+                Assert.Equal(bufferedText ? "Buffered completed." : "completed.", responses.Last().Text);
+                Assert.Null(responses.Last().GetStreamingEntity());
+            }
+            finally
+            {
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task M365Copilot_ResetDuringFailedTimeoutNotification_PreservesReplacement(bool startReplacement)
+        {
+            const string timeoutMessage = "Timeout notification.";
+            var pendingNotification = new TaskCompletionSource<ResourceResponse[]>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var notificationStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var responses = new List<IActivity>();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter.Setup(value => value.SendActivitiesAsync(
+                It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+                .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
+                {
+                    if (activities[0].Text.Contains(timeoutMessage))
+                    {
+                        notificationStarted.TrySetResult(true);
+                        return pendingNotification.Task;
+                    }
+                    responses.AddRange(activities);
+                    return Task.FromResult(new[] { new ResourceResponse(activities[0].Id) });
+                });
+            var context = new TurnContext(adapter.Object, new Activity
+            {
+                Type = ActivityTypes.Message,
+                ChannelId = Channels.M365Copilot,
+                DeliveryMode = DeliveryModes.Stream
+            });
+            context.StreamingResponse.Interval = int.MaxValue;
+            context.StreamingResponse.InitialDelay = int.MaxValue;
+            context.StreamingResponse.EndStreamTimeout = 0;
+            context.StreamingResponse.StreamingTakingTooLongMessage = timeoutMessage;
+            await context.StreamingResponse.QueueInformativeUpdateAsync("Starting.");
+            SetPrivateField(context.StreamingResponse, "M365StreamingTimeout", TimeSpan.Zero);
+            var callback = InvokeTimerCallback(
+                context.StreamingResponse, GetPrivateField<Timer>(context.StreamingResponse, "_timer"));
+            try
+            {
+                await notificationStarted.Task;
+                await context.StreamingResponse.ResetAsync();
+                if (startReplacement)
+                {
+                    context.StreamingResponse.QueueTextChunk("Replacement.");
+                }
+
+                pendingNotification.SetException(new System.IO.IOException("Old notification failed."));
+                await callback.Completed.Task;
+
+                Assert.Empty(callback.Exceptions);
+                Assert.True(context.StreamingResponse.IsStreamingChannel);
+                Assert.Equal(startReplacement, context.StreamingResponse.IsStreamStarted());
+                SetPrivateField(context.StreamingResponse, "M365StreamingTimeout", TimeSpan.FromMinutes(10));
+                if (!startReplacement)
+                {
+                    context.StreamingResponse.QueueTextChunk("Replacement.");
+                }
+                var replacementCallback = InvokeTimerCallback(
+                    context.StreamingResponse, GetPrivateField<Timer>(context.StreamingResponse, "_timer"));
+                await replacementCallback.Completed.Task;
+                Assert.Empty(replacementCallback.Exceptions);
+                Assert.Equal("Replacement.", responses.Last().Text);
+                AssertTyping(responses.Last());
+            }
+            finally
+            {
+                pendingNotification.TrySetException(new System.IO.IOException("Old notification failed."));
+                await callback.Completed.Task;
+                await context.StreamingResponse.ResetAsync();
+                context.Dispose();
+            }
+        }
+
         [Fact]
         public async Task ResetAsync_ClearsAllState()
         {
@@ -1376,9 +1666,51 @@ namespace Microsoft.Agents.Builder.Tests
 
         private static void InvokePrivateMethod(IStreamingResponse response, string methodName, params object[] arguments)
         {
+            if (methodName == "SendIntermediateMessage" && arguments.Length == 1 && arguments[0] == null)
+            {
+                arguments[0] = GetPrivateField<Timer>(response, "_timer");
+            }
             var method = response.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.NotNull(method);
             method.Invoke(response, arguments);
+        }
+
+        private static CapturedTimerCallback InvokeTimerCallback(IStreamingResponse response, Timer timer)
+        {
+            var callback = new CapturedTimerCallback();
+            var previousContext = SynchronizationContext.Current;
+            try
+            {
+                // Capture async-void failures as assertions rather than crashing the test host.
+                SynchronizationContext.SetSynchronizationContext(callback);
+                InvokePrivateMethod(response, "SendIntermediateMessage", timer);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+            return callback;
+        }
+
+        private sealed class CapturedTimerCallback : SynchronizationContext
+        {
+            public TaskCompletionSource<bool> Completed { get; } = new(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            public List<Exception> Exceptions { get; } = [];
+
+            public override void OperationCompleted() => Completed.TrySetResult(true);
+
+            public override void Post(SendOrPostCallback callback, object state)
+            {
+                try
+                {
+                    callback(state);
+                }
+                catch (Exception exception)
+                {
+                    Exceptions.Add(exception);
+                }
+            }
         }
 
         private static Mock<IChannelAdapter> CreateMockAdapter(List<IActivity> responses)

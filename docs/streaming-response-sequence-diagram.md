@@ -76,7 +76,7 @@ sequenceDiagram
     Note over Timer,StreamingResponse: Timer continues sending<br/>queued items until empty
 
     Timer->>StreamingResponse: Final timer tick (queue empty + _ended)
-    StreamingResponse->>StreamingResponse: _queueEmpty.Set()<br/>StopStream()
+    StreamingResponse->>StreamingResponse: StopStream()<br/>_queueEmpty.Set()
 
     StreamingResponse->>StreamingResponse: CreateFinalMessage()<br/>(StreamType=Final, full text,<br/>citations, AI entity, feedback loop)
     StreamingResponse->>TurnContext: SendActivityAsync(finalMessage)
@@ -175,13 +175,14 @@ sequenceDiagram
 
 ## Key Implementation Details
 
-- **Timer is one-shot, re-armed after each send** — prevents overlapping sends if `SendActivityAsync` takes longer than `Interval` (e.g., MSAL token refresh).
+- **Timer is one-shot, re-armed after the callback finishes its send** — the callback clears its in-flight guard before re-arming. Timer creation, re-arming, and disposal use the same lock.
+- **Callbacks belong to one timer lifetime** — queued callbacks from a stopped timer are ignored. A late timer-driven send completion from a previous stream cannot update or stop a replacement stream after `ResetAsync`.
 - **InitialDelay** (default 250ms) — used for the first `QueueTextChunk` if no informative was sent, enabling faster stream start.
 - **Message accumulates** — each intermediate message sends the FULL text so far (not a delta). Channel displays latest as replacement.
 - **StreamId** — Teams assigns it from first response; WebChat/DirectLine/DeliveryModes.Stream SSE uses a pre-generated GUID set on every outgoing `Activity.Id`.
-- **EndStreamTimeout** — defaults to 2 minutes. If queue doesn't drain in time, returns `Timeout`.
+- **EndStreamTimeout** — defaults to 2 minutes. If queue doesn't drain in time, returns `Timeout`. This does not guarantee that an already pending transport send has completed or been canceled.
 - **ResetAsync** — allows reusing `StreamingResponse` for multiple streams in the same turn (waits for current stream to end first).
-- **Client timeout fallback** — a Teams timeout error switches to non-streaming mode and updates the existing stream activity with the final message. The M365 Copilot proactive timeout path terminates the visible stream and later sends the final content as a normal message.
+- **Client timeout fallback** — a Teams timeout error switches to non-streaming mode and updates the existing stream activity with the final message. The M365 Copilot proactive timeout path later sends the final content as a normal message even if a timeout notification fails. A reset invalidates the previous stream's pending fallback.
 - **M365 keep-alive clock** — the 35-second check is measured from stream start or the last informative update while the queue is empty. Ordinary text chunks and intermediate text sends do not reset this clock.
 - **No final payload means no send** — on a non-streaming channel, `EndStreamAsync` sends only when text, a `FinalMessage`, or prior updates exist.
 

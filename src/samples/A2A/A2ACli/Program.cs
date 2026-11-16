@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +24,7 @@ internal sealed class Program
 {
     private const string Usage =
         "Usage: A2ACli [--agent <url>] [--auth-mode none|delegated|app] [--history] "
+        + "[--transport auto|jsonrpc|http-json|grpc] "
         + "[--use-push-notifications] [--push-notification-receiver <url>] [--help]";
 
     private static async Task<int> Main(string[] args)
@@ -77,8 +79,10 @@ internal sealed class Program
                         approval)),
                 oauthTokenClient,
                 A2AAgentOrigin.FromAgentUrl(options.AgentUrl));
-            using var httpClient = new HttpClient(
-                new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider, options.AgentUrl));
+            using var httpClient = CreateAgentHttpClient(
+                new AuthenticatedA2AHttpHandler(authenticationSession, accessTokenProvider, options.AgentUrl),
+                options.AgentUrl,
+                options.Transport);
             await using var notificationReceiver = options.UsePushNotifications
                 ? await PushNotificationReceiver.StartAsync(
                     options.PushNotificationReceiver,
@@ -96,23 +100,16 @@ internal sealed class Program
 
             var resolver = new A2AProtocol.A2ACardResolver(options.AgentUrl, httpClient);
             A2AProtocol.AgentCard card = await resolver.GetAgentCardAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-            if ((card.Capabilities.Extensions ?? []).Any(extension =>
-                string.Equals(extension.Uri, A2AInTaskAuthorizationClient.ExtensionUri, StringComparison.Ordinal)))
-            {
-                httpClient.DefaultRequestHeaders.TryAddWithoutValidation(
-                    A2AInTaskAuthorizationClient.ExtensionHeader,
-                    A2AInTaskAuthorizationClient.ExtensionUri);
-            }
             if (startupOptions.AuthMode is A2AAuthMode authMode)
             {
                 authenticationSession.SetMode(authMode);
             }
-            A2AProtocol.IA2AClient client = CreateClient(card, httpClient, options.AgentUrl);
+            using A2AClientConnection connection = CreateClient(card, httpClient, options.AgentUrl, options.Transport);
             A2AInTaskAuthorizationClient inTaskAuthorizationClient =
-                A2AInTaskAuthorizationClient.Create(card, httpClient, accessTokenProvider, options.AgentUrl);
+                A2AInTaskAuthorizationClient.Create(connection, httpClient, accessTokenProvider);
 
             var console = new A2AConsole(
-                client,
+                connection.Client,
                 card,
                 authenticationSession,
                 Console.In,
@@ -146,6 +143,7 @@ internal sealed class Program
         Uri? agentUrl = null;
         Uri? pushNotificationReceiver = null;
         A2AAuthMode? authMode = null;
+        A2ATransport? transport = null;
         bool showHistory = false;
         bool usePushNotifications = false;
         bool showHelp = false;
@@ -188,6 +186,10 @@ internal sealed class Program
 
                 authMode = parsedMode;
             }
+            else if (string.Equals(argument, "--transport", StringComparison.OrdinalIgnoreCase))
+            {
+                transport = A2ACliOptions.ParseTransport(ReadValue(args, ref index, "--transport"));
+            }
             else
             {
                 throw new ArgumentException($"Unknown option '{argument}'.", nameof(args));
@@ -198,6 +200,7 @@ internal sealed class Program
         {
             AgentUrl = agentUrl,
             AuthMode = authMode,
+            Transport = transport,
             ShowHistory = showHistory,
             UsePushNotifications = usePushNotifications,
             PushNotificationReceiver = pushNotificationReceiver,
@@ -211,9 +214,13 @@ internal sealed class Program
     /// <remarks>
     /// Only interfaces on the configured agent origin are accepted. The Agent Card is data returned by the
     /// agent, so an interface URL pointing somewhere else must fail here — before the shared authenticated
-    /// <see cref="HttpClient"/> could attach the Agent API access token to it.
+    /// <see cref="System.Net.Http.HttpClient"/> could attach the Agent API access token to it.
     /// </remarks>
-    internal static A2AProtocol.IA2AClient CreateClient(A2AProtocol.AgentCard card, HttpClient httpClient, Uri agentUrl)
+    internal static A2AClientConnection CreateClient(
+        A2AProtocol.AgentCard card,
+        HttpClient httpClient,
+        Uri agentUrl,
+        A2ATransport transport = A2ATransport.Auto)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(httpClient);
@@ -221,43 +228,87 @@ internal sealed class Program
         Uri agentOrigin = A2AAgentOrigin.FromAgentUrl(agentUrl);
 
         List<A2AProtocol.AgentInterface> supported = (card.SupportedInterfaces ?? [])
-            .Where(item => IsSupportedBinding(item.ProtocolBinding))
+            .Where(item => IsSupportedBinding(item.ProtocolBinding) && MatchesTransport(item.ProtocolBinding, transport))
             .ToList();
 
         if (supported.Count == 0)
         {
             throw new InvalidOperationException(
-                "The Agent Card does not advertise a supported JSON-RPC or HTTP+JSON interface.");
+                transport == A2ATransport.Auto
+                    ? "The Agent Card does not advertise a supported JSON-RPC, HTTP+JSON, or GRPC interface."
+                    : $"The Agent Card does not advertise the requested {transport} transport.");
         }
 
-        A2AProtocol.AgentInterface? interfaceDefinition = null;
-        Uri? interfaceUri = null;
+        bool rejectedGrpcPrefix = false;
         foreach (A2AProtocol.AgentInterface candidate in supported)
         {
-            if (Uri.TryCreate(candidate.Url, UriKind.Absolute, out Uri? candidateUri)
-                && A2AAgentOrigin.IsSameOrigin(agentOrigin, candidateUri))
+            bool isGrpc = string.Equals(candidate.ProtocolBinding, A2AProtocol.ProtocolBindingNames.Grpc, StringComparison.OrdinalIgnoreCase);
+            string? target = candidate.Url;
+            if (isGrpc && !string.IsNullOrWhiteSpace(target) && !target.Contains("://", StringComparison.Ordinal))
             {
-                interfaceDefinition = candidate;
-                interfaceUri = candidateUri;
-                break;
+                target = $"https://{target}";
             }
+
+            if (!Uri.TryCreate(target, UriKind.Absolute, out Uri? candidateUri)
+                || (candidateUri.Scheme != Uri.UriSchemeHttp && candidateUri.Scheme != Uri.UriSchemeHttps)
+                || !A2AAgentOrigin.IsSameOrigin(agentOrigin, candidateUri))
+            {
+                continue;
+            }
+
+            if (isGrpc && (candidateUri.AbsolutePath != "/" || candidateUri.Query.Length != 0
+                || candidateUri.Fragment.Length != 0 || candidateUri.UserInfo.Length != 0))
+            {
+                rejectedGrpcPrefix = true;
+                continue;
+            }
+
+            if ((card.Capabilities?.Extensions ?? []).Any(extension =>
+                string.Equals(extension.Uri, A2AInTaskAuthorizationClient.ExtensionUri, StringComparison.Ordinal)))
+            {
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation(
+                    A2AInTaskAuthorizationClient.ExtensionHeader,
+                    A2AInTaskAuthorizationClient.ExtensionUri);
+            }
+            return new A2AClientConnection(candidate.ProtocolBinding, candidateUri, httpClient);
         }
 
-        if (interfaceDefinition is null || interfaceUri is null)
-        {
-            throw new InvalidOperationException(
-                $"The Agent Card advertises no supported interface on the configured agent origin '{agentOrigin.GetLeftPart(UriPartial.Authority)}'. "
-                + "Refusing to use an interface hosted elsewhere.");
-        }
-
-        return string.Equals(interfaceDefinition.ProtocolBinding, A2AProtocol.ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
-            ? new global::A2A.A2AClient(interfaceUri, httpClient)
-            : new A2AProtocol.A2AHttpJsonClient(interfaceUri, httpClient);
+        throw new InvalidOperationException(
+            rejectedGrpcPrefix
+                ? "The advertised GRPC target must be an HTTP(S) authority at the root, without a path prefix, query, fragment, or user information."
+                : $"The Agent Card advertises no supported interface on the configured agent origin '{agentOrigin.GetLeftPart(UriPartial.Authority)}'. "
+                    + "Refusing to use an interface hosted elsewhere.");
     }
 
     private static bool IsSupportedBinding(string? protocolBinding)
         => string.Equals(protocolBinding, A2AProtocol.ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(protocolBinding, A2AProtocol.ProtocolBindingNames.HttpJson, StringComparison.OrdinalIgnoreCase);
+            || string.Equals(protocolBinding, A2AProtocol.ProtocolBindingNames.HttpJson, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(protocolBinding, A2AProtocol.ProtocolBindingNames.Grpc, StringComparison.OrdinalIgnoreCase);
+
+    private static bool MatchesTransport(string? binding, A2ATransport transport) => transport switch
+    {
+        A2ATransport.Auto => true,
+        A2ATransport.JsonRpc => string.Equals(binding, A2AProtocol.ProtocolBindingNames.JsonRpc, StringComparison.OrdinalIgnoreCase),
+        A2ATransport.HttpJson => string.Equals(binding, A2AProtocol.ProtocolBindingNames.HttpJson, StringComparison.OrdinalIgnoreCase),
+        A2ATransport.Grpc => string.Equals(binding, A2AProtocol.ProtocolBindingNames.Grpc, StringComparison.OrdinalIgnoreCase),
+        _ => false,
+    };
+
+    internal static HttpClient CreateAgentHttpClient(HttpMessageHandler handler, Uri agentUrl, A2ATransport transport)
+    {
+        var client = new HttpClient(handler);
+        if (agentUrl.Scheme == Uri.UriSchemeHttps)
+        {
+            client.DefaultRequestVersion = HttpVersion.Version20;
+            client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+        }
+        else if (transport == A2ATransport.Grpc)
+        {
+            client.DefaultRequestVersion = HttpVersion.Version20;
+            client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact;
+        }
+        return client;
+    }
 
     private static Uri ReadAbsoluteUri(string[] args, ref int index, string optionName)
     {
