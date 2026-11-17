@@ -241,10 +241,12 @@ namespace Microsoft.Agents.Core.Models
         string Text { get; set; }
 
         /// <summary>
-        /// The textFormat field denotes whether the text field should be interpreted as Markdown [3], plain text, or XML. The value 
-        /// of the textFormat field is of type string, with defined values of <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Plain"/>, <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Markdown"/> 
-        /// or <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Xml"/>. Default is <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Plain"/>.
-        /// This field is not designed to be extended with arbitrary values.
+        /// The textFormat field denotes how the receiving client should interpret the text field.
+        /// Common values are <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Plain"/>,
+        /// <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Markdown"/>, and
+        /// <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Xml"/>. Default is
+        /// <see cref="Microsoft.Agents.Core.Models.TextFormatTypes.Plain"/>.
+        /// Use additional channel-specific values only when documented as supported by the receiving client.
         /// </summary>
         string TextFormat { get; set; }
 
