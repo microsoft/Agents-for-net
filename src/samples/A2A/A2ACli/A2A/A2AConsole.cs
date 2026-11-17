@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -30,6 +31,7 @@ internal sealed class A2AConsole
     private readonly Uri? _pushNotificationReceiver;
     private string? _taskId;
     private string? _contextId;
+    private string? _lastTaskId;
     private bool _useStreaming;
 
     public A2AConsole(
@@ -85,13 +87,13 @@ internal sealed class A2AConsole
                 continue;
             }
 
-            if (TryHandleCommand(prompt))
-            {
-                continue;
-            }
-
             try
             {
+                if (await TryHandleTaskCommandAsync(prompt, cancellationToken).ConfigureAwait(false) || TryHandleCommand(prompt))
+                {
+                    continue;
+                }
+
                 if (_taskId is null && _requestPlanner is not null)
                 {
                     A2AAgentCardSkillSelection selection = _requestPlanner.Plan(prompt);
@@ -224,6 +226,7 @@ internal sealed class A2AConsole
 
             if (modeChanged)
             {
+                _lastTaskId = null;
                 A2AAuthMode? activeOverride = _authenticationSession.ModeOverride;
                 _authenticationSession.SetAutomaticAuthentication(null);
                 if (activeOverride is A2AAuthMode overrideMode)
@@ -263,6 +266,57 @@ internal sealed class A2AConsole
         }
 
         return false;
+    }
+
+    private async Task<bool> TryHandleTaskCommandAsync(string input, CancellationToken cancellationToken)
+    {
+        string command = input.Trim().ToLowerInvariant();
+        if (command is not (":status" or ":cancel" or ":resume"))
+        {
+            return false;
+        }
+
+        if (_lastTaskId is null)
+        {
+            _output.WriteLine("No task is available. Send a request first.");
+            return true;
+        }
+
+        AgentTask? task;
+        if (command == ":status")
+        {
+            task = await _client.GetTaskAsync(new GetTaskRequest { Id = _lastTaskId }, cancellationToken).ConfigureAwait(false);
+            A2AResponseWriter.Write(_output, task);
+        }
+        else if (command == ":cancel")
+        {
+            task = await _client.CancelTaskAsync(new CancelTaskRequest { Id = _lastTaskId }, cancellationToken).ConfigureAwait(false);
+            A2AResponseWriter.Write(_output, task);
+        }
+        else
+        {
+            if (_agentCard.Capabilities.Streaming != true)
+            {
+                _output.WriteLine("The agent does not advertise task streaming. Use :status instead.");
+                return true;
+            }
+            // Resubscribe to the existing task. Never repeat the original request to recover a stream.
+            task = await ReadStreamingAsync(
+                _client.SubscribeToTaskAsync(new SubscribeToTaskRequest { Id = _lastTaskId }, cancellationToken),
+                cancellationToken, stopWhenSuspended: true).ConfigureAwait(false);
+            if (_inTaskAuthorizationClient is not null && task?.Status.State == TaskState.AuthRequired)
+            {
+                task = await _inTaskAuthorizationClient.ResumeIfRequiredAsync(task, cancellationToken).ConfigureAwait(false);
+                A2AResponseWriter.Write(_output, task);
+            }
+        }
+
+        if (task is not null)
+        {
+            _output.WriteLine($"Task {task.Id}: {task.Status.State}");
+        }
+        UpdateContinuation(task);
+        return true;
     }
 
     private async Task<SendMessageRequest> CreateRequestAsync(string prompt, CancellationToken cancellationToken)
@@ -319,19 +373,35 @@ internal sealed class A2AConsole
         return response.Task;
     }
 
-    private async Task<AgentTask?> SendStreamingAsync(
+    private Task<AgentTask?> SendStreamingAsync(
         SendMessageRequest request,
         CancellationToken cancellationToken)
+        => ReadStreamingAsync(_client.SendStreamingMessageAsync(request, cancellationToken), cancellationToken);
+
+    private async Task<AgentTask?> ReadStreamingAsync(
+        IAsyncEnumerable<StreamResponse> updates,
+        CancellationToken cancellationToken,
+        bool stopWhenSuspended = false)
     {
         AgentTask? task = null;
 
-        await foreach (StreamResponse response in _client
-            .SendStreamingMessageAsync(request, cancellationToken)
+        await foreach (StreamResponse response in updates
             .WithCancellation(cancellationToken)
             .ConfigureAwait(false))
         {
             A2AResponseWriter.Write(_output, response);
             task = TaskProjection.Apply(task, response);
+            if (!string.IsNullOrWhiteSpace(task?.Id))
+            {
+                // Retain the ID even if the stream fails before its final status arrives.
+                _lastTaskId = task.Id;
+            }
+            if (stopWhenSuspended && (task?.Status.State is TaskState.InputRequired or TaskState.AuthRequired))
+            {
+                // Subscriptions stay open across suspended states. Release the console so the user
+                // can answer or sign in; ordinary send streams still read their complete response.
+                break;
+            }
         }
 
         return task;
@@ -339,6 +409,10 @@ internal sealed class A2AConsole
 
     private void UpdateContinuation(AgentTask? task)
     {
+        if (!string.IsNullOrWhiteSpace(task?.Id))
+        {
+            _lastTaskId = task.Id;
+        }
         if (task?.Status.State == TaskState.InputRequired)
         {
             _taskId = task.Id;

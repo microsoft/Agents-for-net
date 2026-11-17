@@ -57,14 +57,21 @@ While the client is running:
 - `:auth auto|none|delegated|app` changes authentication selection for future
   requests.
 - `:history on|off` changes task history display.
+- `:status` retrieves the last task and displays its ID, state, and content.
+- `:cancel` requests cancellation of the last task.
+- `:resume` resubscribes to the last task's stream without sending its original
+  request again. The task ID is retained when a stream fails after its initial
+  task event, so it can still be inspected or resumed. When the task asks for
+  input, observation stops and the next message continues that task.
 - `:q` or `quit` exits.
 
 `auto` uses the selected skill's advertised security requirements. `none`
 sends no OAuth token. `delegated` requires a supported Device Code or
 Authorization Code flow. `app` requires a Client Credentials flow.
 
-Changing authentication mode drops any task awaiting continuation so a task is
-not resumed using a different authentication selection.
+Changing authentication mode drops continuation and task-control references so
+a task is not resumed or inspected using a different authentication selection.
+Task-control commands are available between turns; Ctrl+C still ends the CLI.
 
 ## gRPC
 

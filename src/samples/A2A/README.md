@@ -6,6 +6,7 @@ The A2A samples live under `src\samples\A2A`.
 | --- | --- | --- |
 | [A2AAgent](A2AAgent/README.md) | `src\samples\A2A\A2AAgent\A2AAgent.csproj` | Hosts the A2A sample agent and demonstrates anonymous routes plus delegated OBO to Microsoft Graph. |
 | [A2ACli](A2ACli/README.md) | `src\samples\A2A\A2ACli\A2ACli.csproj` | Interactive console client that predicts a skill from Agent Card metadata and selects anonymous, delegated, or application authentication for that skill. |
+| [WorkIQBriefingAgent](WorkIQBriefingAgent/README.md) | `src\samples\A2A\WorkIQBriefingAgent\WorkIQBriefingAgent.csproj` | Delegates briefing research to Work IQ over A2A, supports review/revision, and actually sends the explicitly approved email through Microsoft Graph. |
 
 ## Quick start
 
