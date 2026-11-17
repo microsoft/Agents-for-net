@@ -157,5 +157,7 @@
     <!-- A2A -->
     <PackageVersion Include="A2A.AspNetCore" Version="1.0.0-preview4" />
     <PackageVersion Include="A2A" Version="1.0.0-preview4" />
+    <PackageVersion Include="A2A.Grpc.AspNetCore" Version="1.0.0-preview4" />
+    <PackageVersion Include="A2A.Grpc" Version="1.0.0-preview4" />
   </ItemGroup>
 </Project>

@@ -23,6 +23,7 @@ using Microsoft.Agents.Samples.A2ACli.OAuth.Registration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -30,6 +31,60 @@ namespace Microsoft.Agents.Samples.A2ACli.Tests;
 
 public class A2ACliProgramTests
 {
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void CreateConfiguration_LoadsOptionalBuildSettings_BeforeEnvironmentVariables(
+        bool includeBuildSettings,
+        bool overrideWithEnvironmentVariable)
+    {
+#if DEBUG
+        const string settingsFile = "appsettings.Development.json";
+        const string inactiveSettingsFile = "appsettings.Production.json";
+        const string settingsValue = "development";
+#else
+        const string settingsFile = "appsettings.Production.json";
+        const string inactiveSettingsFile = "appsettings.Development.json";
+        const string settingsValue = "production";
+#endif
+        DirectoryInfo directory = Directory.CreateTempSubdirectory("A2ACli-");
+        string key = $"ConfigurationTest{Guid.NewGuid():N}";
+        string environmentVariable = $"A2ACLI_{key}";
+        try
+        {
+            File.WriteAllText(
+                Path.Combine(directory.FullName, "appsettings.json"),
+                $$"""{"{{key}}":"base","{{key}}_BaseOnly":"retained"}""");
+            if (includeBuildSettings)
+            {
+                File.WriteAllText(
+                    Path.Combine(directory.FullName, settingsFile),
+                    $$"""{"{{key}}":"{{settingsValue}}"}""");
+                File.WriteAllText(Path.Combine(directory.FullName, inactiveSettingsFile), "not json");
+            }
+            if (overrideWithEnvironmentVariable)
+            {
+                Environment.SetEnvironmentVariable(environmentVariable, "environment");
+            }
+
+            IConfigurationRoot configuration = Program.CreateConfiguration(directory.FullName);
+            using var configurationLifetime = (IDisposable)configuration;
+
+            string expectedValue = overrideWithEnvironmentVariable
+                ? "environment"
+                : includeBuildSettings ? settingsValue : "base";
+            Assert.Equal(expectedValue, configuration[key]);
+            Assert.Equal("retained", configuration[$"{key}_BaseOnly"]);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(environmentVariable, null);
+            directory.Delete(recursive: true);
+        }
+    }
+
     [Fact]
     public void CreateNoRedirectHttpHandler_DisablesAutomaticRedirects()
     {

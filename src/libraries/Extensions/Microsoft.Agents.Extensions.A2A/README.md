@@ -4,7 +4,8 @@
 
 Adds Agent2Agent (A2A) protocol support to agents built with the Microsoft 365 Agents SDK, including
 agent discovery, task management, messaging, streaming, and authorization. This package is in preview
-and may introduce breaking changes.
+and may introduce breaking changes. Its namespace organization is intentionally breaking, with no
+compatibility wrappers for the previous namespace layout.
 
 ## Resources
 

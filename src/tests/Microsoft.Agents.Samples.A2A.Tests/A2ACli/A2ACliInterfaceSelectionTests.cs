@@ -28,9 +28,9 @@ public class A2ACliInterfaceSelectionTests
         AgentCard card = CreateCard((ProtocolBindingNames.JsonRpc, "https://agent.example/a2a/"));
         using var httpClient = CreateHttpClient();
 
-        IA2AClient client = Program.CreateClient(card, httpClient, AgentUrl);
+        using A2AClientConnection connection = Program.CreateClient(card, httpClient, AgentUrl);
 
-        Assert.IsType<global::A2A.A2AClient>(client);
+        Assert.IsType<global::A2A.A2AClient>(connection.Client);
     }
 
     [Fact]
@@ -39,9 +39,9 @@ public class A2ACliInterfaceSelectionTests
         AgentCard card = CreateCard((ProtocolBindingNames.HttpJson, "https://agent.example/a2a/"));
         using var httpClient = CreateHttpClient();
 
-        IA2AClient client = Program.CreateClient(card, httpClient, AgentUrl);
+        using A2AClientConnection connection = Program.CreateClient(card, httpClient, AgentUrl);
 
-        Assert.IsType<A2AHttpJsonClient>(client);
+        Assert.IsType<A2AHttpJsonClient>(connection.Client);
     }
 
     [Fact]
@@ -73,9 +73,9 @@ public class A2ACliInterfaceSelectionTests
             (ProtocolBindingNames.JsonRpc, "https://agent.example/a2a/"));
         using var httpClient = CreateHttpClient();
 
-        IA2AClient client = Program.CreateClient(card, httpClient, AgentUrl);
+        using A2AClientConnection connection = Program.CreateClient(card, httpClient, AgentUrl);
 
-        Assert.IsType<global::A2A.A2AClient>(client);
+        Assert.IsType<global::A2A.A2AClient>(connection.Client);
     }
 
     [Fact]
@@ -87,10 +87,96 @@ public class A2ACliInterfaceSelectionTests
         Assert.Throws<InvalidOperationException>(() => Program.CreateClient(card, httpClient, AgentUrl));
     }
 
+    [Theory]
+    [InlineData("https://agent.example/")]
+    [InlineData("https://agent.example:443")]
+    [InlineData("agent.example:443")]
+    public void CreateClient_GrpcOnlyCard_IsSelected(string target)
+    {
+        AgentCard card = CreateCard((ProtocolBindingNames.Grpc, target));
+        using var httpClient = CreateHttpClient();
+
+        using A2AClientConnection connection = Program.CreateClient(card, httpClient, AgentUrl);
+
+        Assert.IsType<global::A2A.Grpc.A2AGrpcClient>(connection.Client);
+    }
+
+    [Fact]
+    public void CreateClient_AutoSelection_PreservesCardOrder()
+    {
+        AgentCard card = CreateCard(
+            (ProtocolBindingNames.Grpc, "https://agent.example/"),
+            (ProtocolBindingNames.JsonRpc, "https://agent.example/a2a/"));
+        using var httpClient = CreateHttpClient();
+
+        using A2AClientConnection connection = Program.CreateClient(card, httpClient, AgentUrl);
+
+        Assert.IsType<global::A2A.Grpc.A2AGrpcClient>(connection.Client);
+    }
+
+    [Theory]
+    [InlineData("https://agent.example/a2a")]
+    [InlineData("https://agent.example/?ignored=true")]
+    [InlineData("https://agent.example/#ignored")]
+    [InlineData("https://user@agent.example/")]
+    public void CreateClient_GrpcTargetWithUnsupportedPrefix_ExplainsRootRequirement(string target)
+    {
+        AgentCard card = CreateCard((ProtocolBindingNames.Grpc, target));
+        using var httpClient = CreateHttpClient();
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Program.CreateClient(card, httpClient, AgentUrl));
+
+        Assert.Contains("root", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("jsonrpc", "JSONRPC")]
+    [InlineData("http-json", "HTTP+JSON")]
+    [InlineData("grpc", "GRPC")]
+    public void CreateClient_ExplicitTransport_DoesNotUseEarlierBindings(string transport, string expectedBinding)
+    {
+        AgentCard card = CreateCard(
+            (ProtocolBindingNames.HttpJson, "https://agent.example/a2a/"),
+            (ProtocolBindingNames.Grpc, "agent.example:443"),
+            (ProtocolBindingNames.JsonRpc, "https://agent.example/a2a/"));
+        using var httpClient = CreateHttpClient();
+
+        A2ATransport selection = Program.ParseStartupOptions(["--transport", transport]).Transport!.Value;
+        using A2AClientConnection connection = Program.CreateClient(card, httpClient, AgentUrl, selection);
+
+        Assert.Equal(expectedBinding, connection.ProtocolBinding);
+    }
+
+    [Fact]
+    public void CreateClient_ExplicitUnavailableTransport_DoesNotFallback()
+    {
+        AgentCard card = CreateCard((ProtocolBindingNames.JsonRpc, "https://agent.example/a2a/"));
+        using var httpClient = CreateHttpClient();
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => Program.CreateClient(card, httpClient, AgentUrl, A2ATransport.Grpc));
+
+        Assert.Contains("requested", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("https://foreign.example/")]
+    [InlineData("agent.example:8443")]
+    [InlineData("http://agent.example/")]
+    public void CreateClient_GrpcForeignOrigin_IsRejected(string target)
+    {
+        AgentCard card = CreateCard((ProtocolBindingNames.Grpc, target));
+        using var httpClient = CreateHttpClient();
+
+        Assert.Throws<InvalidOperationException>(
+            () => Program.CreateClient(card, httpClient, AgentUrl, A2ATransport.Grpc));
+    }
+
     [Fact]
     public void CreateClient_NoSupportedBinding_Throws()
     {
-        AgentCard card = CreateCard((ProtocolBindingNames.Grpc, "https://agent.example/a2a/"));
+        AgentCard card = CreateCard(("UNSUPPORTED", "https://agent.example/a2a/"));
         using var httpClient = CreateHttpClient();
 
         var exception = Assert.Throws<InvalidOperationException>(
