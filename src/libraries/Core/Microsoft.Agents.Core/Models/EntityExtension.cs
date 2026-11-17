@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Text.RegularExpressions;
+using System.Text;
 using System.Linq;
 using System;
 using Microsoft.Agents.Core.Serialization;
@@ -75,49 +76,79 @@ namespace Microsoft.Agents.Core.Models
                 return text;
             }
 
-            bool foundTag;
-            do
+            const string openingTag = "<at";
+            const string closingTag = "</at";
+            StringBuilder normalized = null;
+            int position = 0;
+            int copyStart = 0;
+            int openingStart = -1;
+            int contentStart = 0;
+
+            while (position < text.Length)
             {
-                foundTag = false;
-                int iAtStart = text.IndexOf("<at", StringComparison.InvariantCultureIgnoreCase);
-                if (iAtStart >= 0)
+                int tagStart = text.IndexOf('<', position);
+                if (tagStart < 0)
                 {
-                    int iAtEnd = text.IndexOf(">", iAtStart, StringComparison.InvariantCultureIgnoreCase);
-                    if (iAtEnd > 0)
-                    {
-                        int iAtClose = text.IndexOf("</at>", iAtEnd, StringComparison.InvariantCultureIgnoreCase);
-                        if (iAtClose > 0)
-                        {
-                            // replace </at> 
-                            var followingText = text.Substring(iAtClose + 5);
-
-                            // if first char of followingText is not whitespace
-                            if (!char.IsWhiteSpace(followingText.FirstOrDefault()))
-                            {
-                                // insert space because teams does => <at>Tom</at> is cool => Tom is cool
-                                followingText = $" {followingText}";
-                            }
-
-#if !NETSTANDARD
-                            text = string.Concat(text.AsSpan(0, iAtClose), followingText);
-
-                            // replace <at ...>
-                            text = string.Concat(text.AsSpan(0, iAtStart), text.AsSpan(iAtEnd + 1));
-#else
-                            text = string.Concat(text.Substring(0, iAtClose), followingText);
-                            // replace <at ...>
-                            text = string.Concat(text.Substring(0, iAtStart), text.Substring(iAtEnd + 1));
-#endif
-
-                            // we found one, try again, there may be more.
-                            foundTag = true;
-                        }
-                    }
+                    break;
                 }
-            }
-            while (foundTag);
 
-            return text;
+                bool isOpening = text.Length - tagStart >= openingTag.Length
+                    && string.Compare(text, tagStart, openingTag, 0, openingTag.Length, StringComparison.OrdinalIgnoreCase) == 0;
+                bool isClosing = text.Length - tagStart >= closingTag.Length
+                    && string.Compare(text, tagStart, closingTag, 0, closingTag.Length, StringComparison.OrdinalIgnoreCase) == 0;
+                int tagNameLength = isOpening ? openingTag.Length : isClosing ? closingTag.Length : 0;
+                int tagNameEnd = tagStart + tagNameLength;
+                if (tagNameLength == 0
+                    || (tagNameEnd < text.Length && text[tagNameEnd] != '>' && !char.IsWhiteSpace(text[tagNameEnd])))
+                {
+                    position = tagStart + 1;
+                    continue;
+                }
+
+                // Invalid structure leaves the whole field unchanged, including earlier valid pairs.
+                if (isOpening)
+                {
+                    if (openingStart >= 0)
+                    {
+                        return text;
+                    }
+
+                    int tagEnd = text.IndexOf('>', tagNameEnd);
+                    if (tagEnd < 0)
+                    {
+                        return text;
+                    }
+
+                    openingStart = tagStart;
+                    contentStart = tagEnd + 1;
+                    position = contentStart;
+                    continue;
+                }
+
+                if (openingStart < 0 || tagNameEnd == text.Length || text[tagNameEnd] != '>')
+                {
+                    return text;
+                }
+
+                normalized ??= new StringBuilder(text.Length);
+                normalized.Append(text, copyStart, openingStart - copyStart);
+                normalized.Append(text, contentStart, tagStart - contentStart);
+                position = tagNameEnd + 1;
+                if (position == text.Length || !char.IsWhiteSpace(text[position]))
+                {
+                    normalized.Append(' ');
+                }
+
+                copyStart = position;
+                openingStart = -1;
+            }
+
+            if (openingStart >= 0 || normalized == null)
+            {
+                return text;
+            }
+
+            return normalized.Append(text, copyStart, text.Length - copyStart).ToString();
         }
 
 
