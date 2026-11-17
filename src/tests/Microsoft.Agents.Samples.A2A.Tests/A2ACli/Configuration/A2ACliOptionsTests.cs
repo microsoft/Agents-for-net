@@ -23,6 +23,7 @@ public class A2ACliOptionsTests
         StartupOptions options = Program.ParseStartupOptions(
         [
             "--agent", "https://agent.example/a2a",
+            "--agent-client-id", "agent-client-id",
             "--history",
             "--use-push-notifications",
             "--push-notification-receiver", "https://receiver.example",
@@ -44,6 +45,18 @@ public class A2ACliOptionsTests
         StartupOptions options = Program.ParseStartupOptions([]);
 
         Assert.Null(options.AuthMode);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("--history")]
+    public void ParseStartupOptions_AgentClientIdWithoutValue_IsRejected(string? value)
+    {
+        string[] arguments = value is null ? ["--agent-client-id"] : ["--agent-client-id", value];
+
+        Assert.Throws<ArgumentException>(() => Program.ParseStartupOptions(arguments));
     }
 
     [Theory]
@@ -135,6 +148,33 @@ public class A2ACliOptionsTests
     }
 
     [Fact]
+    public void FromConfiguration_CommandLineAgentClientId_OverridesOnlyAgentRegistration()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddJsonFile(GetA2ACliSampleAppSettingsPath(), optional: false)
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Providers:entra:Registrations:agent:ClientId"] = "configured-agent-client-id",
+                ["Authentication:Providers:entra:Registrations:a2aclient:ClientId"] = "configured-a2aclient-id",
+            })
+            .Build();
+        StartupOptions startupOptions = Program.ParseStartupOptions(
+            ["--agent-client-id", "command-line-agent-client-id"]);
+
+        A2ACliOptions options = A2ACliOptions.FromConfiguration(configuration, startupOptions);
+
+        OAuthCredentialProviderOptions entra = options.Authentication.Providers["entra"];
+        Assert.Equal("command-line-agent-client-id", entra.Registrations["agent"].ClientId);
+        Assert.Equal("configured-a2aclient-id", entra.Registrations["a2aclient"].ClientId);
+        Assert.Equal(
+            [A2AOAuthFlowType.DeviceCode, A2AOAuthFlowType.AuthorizationCode],
+            entra.Registrations["agent"].GrantTypes);
+        Assert.Equal(
+            "configured-agent-client-id",
+            configuration["Authentication:Providers:entra:Registrations:agent:ClientId"]);
+    }
+
+    [Fact]
     public void FromConfiguration_BindsConfiguredOAuthProvidersAndRegistrations()
     {
         IConfiguration configuration = new ConfigurationBuilder()
@@ -187,12 +227,12 @@ public class A2ACliOptionsTests
         Assert.Contains(new Uri("https://login.microsoftonline.com"), entra.AllowedAuthorities);
         Assert.Equal(
             [A2AOAuthFlowType.DeviceCode, A2AOAuthFlowType.AuthorizationCode],
-            entra.Registrations["delegated"].GrantTypes);
-        Assert.Equal([A2AOAuthFlowType.ClientCredentials], entra.Registrations["application"].GrantTypes);
+            entra.Registrations["agent"].GrantTypes);
+        Assert.Equal([A2AOAuthFlowType.ClientCredentials], entra.Registrations["a2aclient"].GrantTypes);
         Assert.Equal(
             OAuthTokenEndpointAuthenticationMethod.ClientSecretPost,
-            entra.Registrations["application"].TokenEndpointAuthenticationMethod);
-        Assert.False(string.IsNullOrWhiteSpace(entra.Registrations["application"].ClientSecret));
+            entra.Registrations["a2aclient"].TokenEndpointAuthenticationMethod);
+        Assert.False(string.IsNullOrWhiteSpace(entra.Registrations["a2aclient"].ClientSecret));
 
         OAuthCredentialProviderOptions genericPkce = Assert.IsType<OAuthCredentialProviderOptions>(options.Authentication.Providers["browser-oauth"]);
         Assert.Equal(OAuthCredentialProviderType.GenericOAuth2Pkce, genericPkce.Type);
