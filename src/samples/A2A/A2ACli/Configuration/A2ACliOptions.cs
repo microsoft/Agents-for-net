@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Agents.Samples.A2ACli.A2A;
 using Microsoft.Agents.Samples.A2ACli.OAuth.Configuration;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,8 @@ internal sealed class A2ACliOptions
 
     public A2ACliAuthenticationOptions Authentication { get; init; } = new();
 
+    public A2ATransport Transport { get; init; }
+
     public bool ShowHistory { get; init; }
 
     public bool UsePushNotifications { get; init; }
@@ -25,12 +28,29 @@ internal sealed class A2ACliOptions
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(startupOptions);
 
+        if (startupOptions.AgentClientId is not null)
+        {
+            configuration = new ConfigurationBuilder()
+                .AddConfiguration(configuration)
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Authentication:Providers:entra:Registrations:agent:ClientId"] = startupOptions.AgentClientId,
+                })
+                .Build();
+        }
+
         Uri agentUrl = startupOptions.AgentUrl
             ?? GetRequiredAbsoluteUri(configuration, "A2A:AgentUrl");
+        if (!agentUrl.IsAbsoluteUri
+            || (agentUrl.Scheme != Uri.UriSchemeHttp && agentUrl.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new InvalidOperationException("The A2A Agent Card discovery URL must use HTTP or HTTPS.");
+        }
 
         return new A2ACliOptions
         {
             AgentUrl = agentUrl,
+            Transport = startupOptions.Transport ?? ParseTransport(configuration["A2A:Transport"] ?? "auto"),
             Authentication = new A2ACliAuthenticationOptions
             {
                 Providers = OAuthCredentialProviderConfigurationReader.Read(
@@ -41,6 +61,16 @@ internal sealed class A2ACliOptions
             PushNotificationReceiver = startupOptions.PushNotificationReceiver ?? new Uri("http://localhost:5000"),
         };
     }
+
+    internal static A2ATransport ParseTransport(string value) => value.ToLowerInvariant() switch
+    {
+        "auto" => A2ATransport.Auto,
+        "jsonrpc" => A2ATransport.JsonRpc,
+        "http-json" => A2ATransport.HttpJson,
+        "grpc" => A2ATransport.Grpc,
+        _ => throw new ArgumentException(
+            $"Unsupported transport '{value}'. Expected auto, jsonrpc, http-json, or grpc.", nameof(value)),
+    };
 
     private static Uri GetRequiredAbsoluteUri(IConfiguration configuration, string key)
     {
@@ -64,7 +94,11 @@ internal sealed class StartupOptions
 {
     public Uri? AgentUrl { get; init; }
 
+    public string? AgentClientId { get; init; }
+
     public A2AAuthMode? AuthMode { get; init; }
+
+    public A2ATransport? Transport { get; init; }
 
     public bool ShowHistory { get; init; }
 

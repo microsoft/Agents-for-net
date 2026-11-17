@@ -16,6 +16,11 @@ For setup, Agent Card generation, skills, protocol mapping, and OAuth
 configuration patterns, see the
 [A2A developer guide](../../../samples/A2A/A2AAgent/A2A-DEVELOPER-GUIDE.md).
 
+JSON-RPC, HTTP+JSON, and native gRPC share attribute-driven endpoint mapping,
+agent execution, authentication, and protocol extensions. Native gRPC requires
+HTTP/2 and supports one root-mounted agent per application; listener setup is
+covered in the developer guide.
+
 ## API organization
 
 | Area | Namespace | Use |
