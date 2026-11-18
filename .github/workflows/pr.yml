@@ -34,18 +34,16 @@ jobs:
     - name: Trigger Azure DevOps Pipeline
       id: trigger
       run: |
-        response=$(curl -v -X POST \
+        response=$(curl -sS -X POST \
           -H "Authorization: Bearer ${{ steps.getToken.outputs.token }}" \
           -H "Content-Type: application/json" \
-          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}},"variables": {"ProjectBranch": {"value": "${{ github.head_ref || github.ref_name }}"}}}' \
+          -d "$(jq -cn --arg branch "$BRANCH_NAME" '{resources: {repositories: {self: {refName: "refs/heads/main"}}}, variables: {ProjectBranch: {value: $branch}}}')" \
           ${{ vars.AZDEVOPS_URL }}/_apis/pipelines/${{ env.AzDevOpsPipelineId }}/runs?api-version=7.1)
         echo $BRANCH_NAME
         echo $response
         echo "::set-output name=run_id::$(echo $response | jq -r .id)"
       env:
         BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-#          -d '{"resources": {"repositories": {"self": {"refName": "refs/heads/main"}}}}' \   
-#          refs/heads/users/mbarbour/pipelineUpdate    
 
     - name: Monitor Pipeline Run
       run: |
