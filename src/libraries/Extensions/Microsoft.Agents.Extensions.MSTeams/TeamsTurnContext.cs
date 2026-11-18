@@ -9,6 +9,7 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Graph;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,6 +27,11 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
 
     /// <inheritdoc/>
     public Microsoft.Teams.Apps.Clients.ApiClient Client => _turnContext.Services.Get<Microsoft.Teams.Apps.Clients.ApiClient>();
+
+    /// <inheritdoc/>
+    [Experimental("ExperimentalTeamsPlan")]
+    public TeamsPlan CreatePlan(Microsoft.Teams.Apps.PlanOptions? options = null)
+        => TeamsAgentExtension.CreatePlan(this, options);
 
     /// <inheritdoc/>
     public override Task<ResourceResponse> SendActivityAsync(

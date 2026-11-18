@@ -89,6 +89,38 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
         }
 
         [Fact]
+        public void ExperimentalEntity_GeneratesLocallySuppressedRegistration()
+        {
+            var source = """
+                namespace MyApp
+                {
+                    [System.Diagnostics.CodeAnalysis.Experimental("PreviewEntity001")]
+                    public class PreviewEntity : Microsoft.Agents.Core.Models.Entity
+                    {
+                        public PreviewEntity() : base("preview") { }
+                    }
+
+                    public class StableEntity : Microsoft.Agents.Core.Models.Entity
+                    {
+                        public StableEntity() : base("stable") { }
+                    }
+                }
+                """;
+
+            var text = Assert.Single(RunGenerator(source).GetRunResult()
+                .Results.Single().GeneratedSources).SourceText.ToString().ReplaceLineEndings("\n");
+
+            Assert.Contains("""
+                #pragma warning disable PreviewEntity001
+                [assembly: Microsoft.Agents.Core.Serialization.EntityInitAssemblyAttribute(typeof(global::MyApp.PreviewEntity))]
+                #pragma warning restore PreviewEntity001
+                """, text);
+            Assert.EndsWith(
+                "[assembly: Microsoft.Agents.Core.Serialization.EntityInitAssemblyAttribute(typeof(global::MyApp.StableEntity))]",
+                text);
+        }
+
+        [Fact]
         public void MultipleEntitySubclasses_GeneratesAllAttributes()
         {
             var source = """

@@ -209,6 +209,29 @@ sequenceDiagram
 - **M365 keep-alive clock** — the 35-second check is measured from stream start or the last informative update while the queue is empty. Ordinary text chunks and intermediate text sends do not reset this clock.
 - **No final payload means no send** — on a non-streaming channel, `EndStreamAsync` sends only when text, a `FinalMessage`, or prior updates exist.
 
+## Custom Final Delivery
+
+The `Microsoft.Agents.Builder.StreamingResponseExtensions.EndStreamAsync` overload
+accepts a `Func<IActivity, CancellationToken, Task<ResourceResponse>>` for callers
+that need to own final delivery. It supplies the fully composed final Core
+activity, including text, attachments, citations, labels, feedback, and applicable
+stream identifiers. The callback replaces only final delivery, including the
+default final PUT after a service timeout; intermediate sends and timeout
+checkpoints remain unchanged.
+
+The callback owns transport recovery, and its exceptions propagate to the
+ending caller. It is not invoked without a final payload or when ending reports
+`AlreadyEnded` or `NotStarted`, and it is not retained across resets. The overload
+supports the SDK writer; an unsupported custom `IStreamingResponse` implementation
+throws `NotSupportedException`. The original `EndStreamAsync(CancellationToken)`
+and its default error/recovery behavior are unchanged.
+
+This is a general-purpose output extensibility point. Channel extensions can
+apply their own final-message metadata and transport requirements without
+introducing channel-specific branches in Builder or requiring callers to use
+`FinalMessage`. Continue using `AddAttachment`, `AddCitation`, and the label
+properties to compose output.
+
 ## Related Source Files
 
 | Component | Path |

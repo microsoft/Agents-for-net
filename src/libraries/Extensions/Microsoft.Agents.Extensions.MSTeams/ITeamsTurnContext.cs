@@ -4,6 +4,7 @@
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Graph;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,6 +25,16 @@ public interface ITeamsTurnContext : ITurnContext
     /// Returns the ApiClient instance registered for Microsoft Teams API access in the current turn context.
     /// </summary>
     Microsoft.Teams.Apps.Clients.ApiClient Client { get; }
+
+    /// <summary>
+    /// Creates an experimental <see cref="Microsoft.Agents.Extensions.MSTeams.TeamsPlan"/> for this turn.
+    /// </summary>
+    /// <param name="options">A saved binding, or null to bind to the incoming activity's own ID.</param>
+    /// <returns>A Plan helper. Creating it sends nothing.</returns>
+    /// <remarks>The default implementation also supports custom Teams turn contexts without an override.</remarks>
+    [Experimental("ExperimentalTeamsPlan")]
+    TeamsPlan CreatePlan(Microsoft.Teams.Apps.PlanOptions? options = null)
+        => TeamsAgentExtension.CreatePlan(this, options);
 
     /// <summary>
     /// Sends an activity to the conversation with a targeted treatment, allowing the activity to be directed to a

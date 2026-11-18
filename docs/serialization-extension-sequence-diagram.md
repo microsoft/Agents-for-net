@@ -173,6 +173,12 @@ public class ClientInfo : Entity
 
 No explicit registration code is needed — the source generator detects the `Entity` subclass at compile time and the runtime registers it automatically.
 
+For an entity marked with `System.Diagnostics.CodeAnalysis.ExperimentalAttribute`,
+generated registration and referenced-assembly preloading suppress only that
+type's declared diagnostic around the generated `typeof` reference. This lets
+ordinary consumers load the extension without opting into an unused preview;
+direct use of the experimental entity still requires an explicit opt-in.
+
 ### Adding a Source-Generated JsonSerializerContext
 
 ```csharp

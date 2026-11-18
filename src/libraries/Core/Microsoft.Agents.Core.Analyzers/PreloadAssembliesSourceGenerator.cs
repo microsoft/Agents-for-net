@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Analyzers.Extensions;
@@ -96,7 +96,8 @@ namespace Microsoft.Agents.Core.Analyzers
                     && attribute.ConstructorArguments[0].Value is INamedTypeSymbol type
                     && IsExternallyAccessible(type))
                 {
-                    builder.Add(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                    builder.Add(type.WithExperimentalDiagnosticSuppression(
+                        $"typeof({type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}),"));
                 }
             }
         }
@@ -137,7 +138,7 @@ namespace Microsoft.Agents.Core.Analyzers
                     // which is always loaded and already registered — never preload it.
                     if (!name.StartsWith(CoreModelsNamespacePrefix))
                     {
-                        builder.Add(name);
+                        builder.Add(type.WithExperimentalDiagnosticSuppression($"typeof({name}),"));
                     }
                 }
             }
@@ -145,7 +146,7 @@ namespace Microsoft.Agents.Core.Analyzers
 
         private static string GenerateSource(ImmutableArray<string> types)
         {
-            var typesAsStrings = types.Distinct().Select(static x => $"typeof({x})");
+            var typesAsStrings = types.Distinct();
 
             var sb = new StringBuilder();
             sb.AppendFormat(/* lang=c#-test */ """
@@ -172,7 +173,7 @@ namespace Microsoft.Agents.Core.Analyzers
                 }}
             }}
             """,
-            string.Join(",\r\n            ", typesAsStrings));
+            string.Join("\n            ", typesAsStrings));
 
             return sb.ToString();
         }

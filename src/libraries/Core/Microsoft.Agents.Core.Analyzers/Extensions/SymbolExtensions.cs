@@ -1,12 +1,25 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.CodeAnalysis;
+using System.Linq;
 
 namespace Microsoft.Agents.Core.Analyzers.Extensions
 {
     internal static class SymbolExtensions
     {
+        public static string WithExperimentalDiagnosticSuppression(this INamedTypeSymbol type, string source)
+        {
+            var diagnosticId = type.GetAttributes()
+                .FirstOrDefault(attribute => attribute.AttributeClass?.ToDisplayString()
+                    == "System.Diagnostics.CodeAnalysis.ExperimentalAttribute")
+                ?.ConstructorArguments.FirstOrDefault().Value as string;
+
+            return diagnosticId == null
+                ? source
+                : $"#pragma warning disable {diagnosticId}\n{source}\n#pragma warning restore {diagnosticId}";
+        }
+
         public static bool InheritsFrom(this ITypeSymbol classSymbol, ISymbol? baseClassSymbol)
         {
             var current = classSymbol.BaseType;

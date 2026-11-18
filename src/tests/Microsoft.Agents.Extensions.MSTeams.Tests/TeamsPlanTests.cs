@@ -1,0 +1,699 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Connector;
+using Microsoft.Agents.Core.Errors;
+using Microsoft.Agents.Core.Models;
+using Microsoft.Agents.Core.Serialization;
+using Microsoft.Agents.Extensions.MSTeams.Models;
+using Microsoft.Teams.Apps;
+using Moq;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
+using BuilderTurnContext = Microsoft.Agents.Builder.TurnContext;
+using CoreChannels = Microsoft.Agents.Core.Models.Channels;
+using Entity = Microsoft.Agents.Core.Models.Entity;
+using PlanInfoEntity = Microsoft.Agents.Extensions.MSTeams.Models.PlanInfoEntity;
+using PlanStep = Microsoft.Teams.Apps.Schema.Entities.PlanStep;
+using PlanStepStatuses = Microsoft.Teams.Apps.Schema.Entities.PlanStepStatuses;
+using PlanTypes = Microsoft.Teams.Apps.Schema.Entities.PlanTypes;
+using StepSource = Microsoft.Teams.Apps.Schema.Entities.StepSource;
+
+#pragma warning disable ExperimentalTeamsPlan // Exercise the explicitly opted-in Plans surface.
+
+namespace Microsoft.Agents.Extensions.MSTeams.Tests;
+
+public partial class TeamsPlanTests
+{
+    [Fact]
+    public void PlanEntity_RoundTripsAsCoreEntityWithStepsSourcesAndExtensionData()
+    {
+        const string json = """
+            {"type":"typing","entities":[{"type":"planInfo","planType":"start","steps":[{"id":"outline","version":1,"title":"Outline","status":"active","sources":[{"title":"Reference","url":"https://example.com/reference"}]}],"future":"preserved"}]}
+            """;
+
+        var activity = ProtocolJsonSerializer.ToObject<Activity>(json);
+        var entity = Assert.IsType<PlanInfoEntity>(Assert.Single(activity.Entities));
+        var step = Assert.Single(entity.Steps);
+        Assert.Equal("start", entity.PlanType.Value);
+        Assert.Equal("outline", step.Id);
+        Assert.Equal("Reference", Assert.Single(step.Sources).Title);
+        Assert.Equal("https://example.com/reference", Assert.Single(step.Sources).Url.AbsoluteUri);
+
+        using var roundTrip = JsonDocument.Parse(ProtocolJsonSerializer.ToJson(activity));
+        var wireEntity = Assert.Single(roundTrip.RootElement.GetProperty("entities").EnumerateArray());
+        Assert.Equal("planInfo", wireEntity.GetProperty("type").GetString());
+        Assert.Equal("preserved", wireEntity.GetProperty("future").GetString());
+        Assert.Equal(1, wireEntity.GetProperty("steps")[0].GetProperty("version").GetInt32());
+    }
+
+    [Theory]
+    [InlineData("start")]
+    [InlineData("continue")]
+    [InlineData("stop")]
+    [InlineData("error")]
+    public async Task Lifecycle_PostsPromptBoundTypingAndReportsNoMessageResult(string operation)
+    {
+        using var environment = new PlanEnvironment(_ => Response(HttpStatusCode.Accepted, ""));
+        var plan = TeamsAgentExtension.CreatePlan(environment.Context);
+        var notifications = new List<TeamsPlanSentEventArgs>();
+        plan.Sent += (_, args) => notifications.Add(args);
+
+        switch (operation)
+        {
+            case "start":
+                await plan.StartAsync([NewStep()]);
+                break;
+            case "continue":
+                await plan.UpdateAsync([NewStep()]);
+                break;
+            case "stop":
+                await plan.StopAsync();
+                break;
+            case "error":
+                await plan.ErrorAsync();
+                break;
+        }
+
+        var request = Assert.Single(environment.Requests);
+        Assert.Equal(HttpMethod.Post, request.Method);
+        Assert.Equal("https://regional.example/teams/v3/conversations/conversation/activities", request.Uri.AbsoluteUri);
+        Assert.Equal("Bearer connector-token", request.Authorization);
+        using var body = JsonDocument.Parse(request.Body);
+        Assert.Equal("typing", body.RootElement.GetProperty("type").GetString());
+        Assert.Equal("prompt", body.RootElement.GetProperty("replyToId").GetString());
+        var entity = GetPlanEntity(body.RootElement);
+        Assert.Equal(operation, entity.GetProperty("planType").GetString());
+        Assert.Equal(operation is "start" or "continue", entity.TryGetProperty("steps", out _));
+        Assert.Null(Assert.Single(notifications).Response);
+    }
+
+    [Fact]
+    public async Task CustomContext_DefaultFactoryUsesItsCoreActivityAndTransport()
+    {
+        using var environment = new PlanEnvironment();
+        var customContext = new Mock<ITeamsTurnContext> { CallBase = true };
+        var coreContext = customContext.As<ITurnContext>();
+        coreContext.SetupGet(context => context.Activity).Returns(environment.Context.Activity);
+        coreContext.SetupGet(context => context.Services).Returns(environment.Context.Services);
+
+        var response = await customContext.Object.CreatePlan().CompleteAsync("Answer.");
+
+        Assert.Equal("service-message", response.Id);
+        var request = Assert.Single(environment.Requests);
+        Assert.Equal("/teams/v3/conversations/conversation/activities", request.Uri.AbsolutePath);
+        using var body = JsonDocument.Parse(request.Body);
+        Assert.Equal("prompt", body.RootElement.GetProperty("replyToId").GetString());
+        Assert.Equal("complete", GetPlanEntity(body.RootElement).GetProperty("planType").GetString());
+    }
+
+    [Fact]
+    public async Task Update_SendsOnlySuppliedStepAndKeepsApplicationVersion()
+    {
+        using var environment = new PlanEnvironment();
+        var plan = new TeamsPlan(environment.Context);
+        await plan.StartAsync([NewStep(), NewStep("answer")]);
+        var changed = NewStep("answer");
+        changed.Version = 7;
+        changed.Status = PlanStepStatuses.Completed;
+
+        await plan.UpdateAsync([changed]);
+
+        using var body = JsonDocument.Parse(environment.Requests.Last().Body);
+        var step = Assert.Single(GetPlanEntity(body.RootElement).GetProperty("steps").EnumerateArray());
+        Assert.Equal("answer", step.GetProperty("id").GetString());
+        Assert.Equal(7, step.GetProperty("version").GetInt32());
+        Assert.Equal("completed", step.GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task Start_SnapshotsMutableStepsBeforeAcquiringTransportCredentials()
+    {
+        var tokenRequested = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var token = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var environment = new PlanEnvironment(tokenProvider: () =>
+        {
+            tokenRequested.TrySetResult(true);
+            return token.Task;
+        });
+        var plan = new TeamsPlan(environment.Context);
+        var step = NewStep();
+        step.Sources = [new StepSource { Title = "Original source", Url = new Uri("https://example.com/original") }];
+
+        var sending = plan.StartAsync([step]);
+        await tokenRequested.Task.WaitAsync(TimeSpan.FromSeconds(5), TimeProvider.System);
+        step.Title = "Changed";
+        step.Version = 2;
+        step.Sources[0].Title = "Changed source";
+        token.SetResult("connector-token");
+        await sending;
+
+        using var body = JsonDocument.Parse(Assert.Single(environment.Requests).Body);
+        var snapshot = GetPlanEntity(body.RootElement).GetProperty("steps")[0];
+        Assert.Equal("Outline", snapshot.GetProperty("title").GetString());
+        Assert.Equal(1, snapshot.GetProperty("version").GetInt32());
+        Assert.Equal("Original source", snapshot.GetProperty("sources")[0].GetProperty("title").GetString());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Complete_PostsCoreMessagePreservingContentAndCallerActivity(bool existingCompletion)
+    {
+        using var environment = new PlanEnvironment();
+        var plan = new TeamsPlan(environment.Context);
+        var message = new Activity
+        {
+            Type = ActivityTypes.Message,
+            Text = "Answer.",
+            ReplyToId = "not-the-prompt",
+            Attachments = [new Attachment { ContentType = "text/plain", Content = "attachment" }],
+            Entities = [new AIEntity { UsageInfo = new SensitivityUsageInfo { Name = "Internal" } }]
+        };
+        if (existingCompletion)
+        {
+            message.Entities.Add(new PlanInfoEntity { PlanType = PlanTypes.Complete });
+        }
+        var original = ProtocolJsonSerializer.ToJson(message);
+        ResourceResponse notification = null;
+        plan.Sent += (_, args) => notification = args.Response;
+
+        var response = await plan.CompleteAsync(message);
+
+        Assert.Equal("service-message", response.Id);
+        Assert.Same(response, notification);
+        Assert.Equal(original, ProtocolJsonSerializer.ToJson(message));
+        var request = Assert.Single(environment.Requests);
+        Assert.Equal(HttpMethod.Post, request.Method);
+        Assert.EndsWith("/conversations/conversation/activities", request.Uri.AbsolutePath);
+        using var body = JsonDocument.Parse(request.Body);
+        Assert.Equal("prompt", body.RootElement.GetProperty("replyToId").GetString());
+        Assert.Equal("Answer.", body.RootElement.GetProperty("text").GetString());
+        Assert.Single(body.RootElement.GetProperty("attachments").EnumerateArray());
+        Assert.Equal("complete", GetPlanEntity(body.RootElement).GetProperty("planType").GetString());
+        Assert.Equal(2, body.RootElement.GetProperty("entities").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task TopLevelChatBinding_DoesNotTurnRootPromptIntoAThreadReply()
+    {
+        var incoming = Incoming("100");
+        incoming.ChannelData = JsonSerializer.Deserialize<JsonElement>(
+            """{"chat":{"id":"chat"},"replyChain":{"id":"100"}}""");
+        using var environment = new PlanEnvironment(incoming: incoming);
+
+        await new TeamsPlan(environment.Context).CompleteAsync("Top-level answer.");
+
+        Assert.Equal("/teams/v3/conversations/conversation/activities",
+            Assert.Single(environment.Requests).Uri.AbsolutePath);
+    }
+
+    [Theory]
+    [InlineData("message", "200", "card", "100", null, false)]
+    [InlineData("message", "200", "card", "150", null, true)]
+    [InlineData("messageReaction", "reaction", null, "opaque", null, false)]
+    [InlineData("messageReaction", "reaction", null, "150", null, true)]
+    [InlineData("messageUpdate", "100", null, null, null, false)]
+    [InlineData("messageUpdate", "150", null, null, null, true)]
+    [InlineData("invoke", "invoke", null, "100", null, false)]
+    [InlineData("invoke", "invoke", null, "150", """{"messagePayload":{"id":"100"}}""", false)]
+    [InlineData("invoke", "invoke", null, "100", """{"messagePayload":{"id":"150"}}""", true)]
+    [InlineData("invoke", "invoke", null, null, null, true)]
+    [InlineData("event", "event", null, null, null, false)]
+    public async Task ChatBinding_DistinguishesInThreadActionsFromTopLevelMessages(
+        string activityType, string activityId, string sourceName, string actedOnId, string valueJson, bool inThread)
+    {
+        var incoming = Incoming(activityId);
+        incoming.Type = activityType;
+        incoming.ReplyToId = actedOnId;
+        incoming.Value = valueJson == null ? null : JsonSerializer.Deserialize<JsonElement>(valueJson);
+        incoming.ChannelData = JsonSerializer.SerializeToElement(new
+        {
+            chat = new { id = "chat" },
+            replyChain = new { id = "100" },
+            source = sourceName == null ? null : new { name = sourceName }
+        });
+        using var environment = new PlanEnvironment(incoming: incoming);
+
+        await new TeamsPlan(environment.Context).CompleteAsync("Answer.");
+
+        var request = Assert.Single(environment.Requests);
+        Assert.Equal(inThread
+            ? "/teams/v3/conversations/chat/replyChains/100"
+            : "/teams/v3/conversations/conversation/activities", request.Uri.AbsolutePath);
+        using var body = JsonDocument.Parse(request.Body);
+        Assert.Equal(activityId, body.RootElement.GetProperty("replyToId").GetString());
+    }
+
+    [Fact]
+    public async Task RestoredChatBinding_UsesOriginalPromptAndSavedReplyChainWithFreshTransport()
+    {
+        var incoming = Incoming();
+        incoming.Conversation.Id = "full;messageid=opaque";
+        incoming.ReplyToId = "not-the-original-prompt";
+        incoming.ChannelData = JsonSerializer.Deserialize<JsonElement>(
+            """{"chat":{"id":"chat/id"},"replyChain":{"id":"root/id"}}""");
+        using var original = new PlanEnvironment(incoming: incoming);
+        var originalContext = new TeamsTurnContext(original.Context);
+        var plan = originalContext.CreatePlan();
+        await plan.StartAsync([NewStep()]);
+        var savedBinding = ProtocolJsonSerializer.ToJson(plan.Options);
+        using var resumed = new PlanEnvironment(incoming: Incoming("later-event", "full;messageid=opaque"));
+        ITeamsTurnContext resumedContext = new TeamsTurnContext(resumed.Context);
+        var restored = resumedContext.CreatePlan(ProtocolJsonSerializer.ToObject<PlanOptions>(savedBinding));
+
+        await restored.CompleteAsync("Delayed answer.");
+
+        var progress = Assert.Single(original.Requests);
+        Assert.Equal("/teams/v3/conversations/full;messageid=opaque/activities", Uri.UnescapeDataString(progress.Uri.AbsolutePath));
+        var completion = Assert.Single(resumed.Requests);
+        Assert.Equal(HttpMethod.Post, completion.Method);
+        Assert.Equal("https://regional.example/teams/v3/conversations/chat%2Fid/replyChains/root%2Fid", completion.Uri.AbsoluteUri);
+        using var body = JsonDocument.Parse(completion.Body);
+        Assert.Equal("prompt", body.RootElement.GetProperty("replyToId").GetString());
+        Assert.Equal("full;messageid=opaque", body.RootElement.GetProperty("conversation").GetProperty("id").GetString());
+    }
+
+    [Fact]
+    public async Task ChannelBinding_KeepsFullConversationRatherThanUsingChatReplyChain()
+    {
+        var incoming = Incoming(conversationId: "channel;messageid=thread");
+        incoming.ChannelData = JsonSerializer.Deserialize<JsonElement>(
+            """{"channel":{"id":"channel"},"chat":{"id":"not-a-chat-destination"},"replyChain":{"id":"root"}}""");
+        using var environment = new PlanEnvironment(incoming: incoming);
+
+        await new TeamsPlan(environment.Context).CompleteAsync("Channel answer.");
+
+        var request = Assert.Single(environment.Requests);
+        Assert.Equal("/teams/v3/conversations/channel;messageid=thread/activities", Uri.UnescapeDataString(request.Uri.AbsolutePath));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PlanConflict_PreservesSdkErrorAndDoesNotRetry(bool chatThread)
+    {
+        var incoming = Incoming();
+        if (chatThread)
+        {
+            incoming.ChannelData = JsonSerializer.Deserialize<JsonElement>(
+                """{"chat":{"id":"chat"},"replyChain":{"id":"root"}}""");
+        }
+        using var environment = new PlanEnvironment(
+            _ => Response(HttpStatusCode.Conflict, """{"error":{"code":"PlanConflict","message":"Already completed."}}"""),
+            incoming: incoming);
+
+        var exception = await Assert.ThrowsAsync<ErrorResponseException>(() =>
+            new TeamsPlan(environment.Context).CompleteAsync("Answer."));
+
+        Assert.Equal(409, exception.StatusCode);
+        Assert.Equal("PlanConflict", exception.Body.Error.Code);
+        Assert.Equal("Already completed.", exception.Body.Error.Message);
+        Assert.Single(environment.Requests);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TargetedPrompt_IsRejectedBeforeAnySend(bool activityTreatment)
+    {
+        var incoming = Incoming();
+        if (activityTreatment)
+        {
+            incoming.MakeTargetedActivity();
+        }
+        else
+        {
+            incoming.Recipient.Properties["isTargeted"] = JsonSerializer.SerializeToElement(true);
+        }
+        using var environment = new PlanEnvironment(incoming: incoming);
+
+        Assert.Throws<ArgumentException>(() => new TeamsPlan(environment.Context));
+
+        Assert.Empty(environment.Requests);
+    }
+
+    [Fact]
+    public async Task TargetedCompletion_IsRejectedRatherThanSentPublicly()
+    {
+        using var environment = new PlanEnvironment();
+        var message = Activity.CreateMessageActivity().WithText("Private.").WithTargetedRecipient(new ChannelAccount("other"));
+
+        await Assert.ThrowsAsync<ArgumentException>(() => new TeamsPlan(environment.Context).CompleteAsync(message));
+
+        Assert.Empty(environment.Requests);
+    }
+
+    [Theory]
+    [InlineData("typing", "complete")]
+    [InlineData("message", "start")]
+    public async Task InvalidCompletion_DoesNotSendNonMessageOrNonCompleteOperation(string activityType, string operation)
+    {
+        using var environment = new PlanEnvironment();
+        var message = new Activity
+        {
+            Type = activityType,
+            Text = "Answer.",
+            Entities = [new Entity("planInfo") { Properties = { ["planType"] = JsonSerializer.SerializeToElement(operation) } }]
+        };
+
+        await Assert.ThrowsAsync<ArgumentException>(() => new TeamsPlan(environment.Context).CompleteAsync(message));
+
+        Assert.Empty(environment.Requests);
+    }
+
+    [Theory]
+    [InlineData("", "root")]
+    [InlineData("chat", "")]
+    [InlineData(".", "root")]
+    [InlineData("chat", "..")]
+    public void InvalidSavedReplyChain_IsRejected(string chatId, string rootId)
+    {
+        using var environment = new PlanEnvironment();
+        var options = new PlanOptions
+        {
+            ConversationId = "conversation",
+            ReplyToId = "prompt",
+            ReplyChain = new PlanReplyChain { ChatOrChannelId = chatId, ReplyChainId = rootId }
+        };
+
+        Assert.Throws<ArgumentException>(() => new TeamsPlan(environment.Context, options));
+
+        Assert.Empty(environment.Requests);
+    }
+
+    [Fact]
+    public void SavedBindingForAnotherConversation_IsRejected()
+    {
+        using var environment = new PlanEnvironment();
+
+        Assert.Throws<ArgumentException>(() => new TeamsPlan(environment.Context, new PlanOptions
+        {
+            ConversationId = "another-conversation",
+            ReplyToId = "prompt"
+        }));
+
+        Assert.Empty(environment.Requests);
+    }
+
+    [Fact]
+    public async Task CanceledLifecycle_DoesNotPost()
+    {
+        using var environment = new PlanEnvironment();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new TeamsPlan(environment.Context).StartAsync([NewStep()], cancellation.Token));
+
+        Assert.Empty(environment.Requests);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task StreamingCompletion_PostsComposedCoreOutputWithOriginalBinding(bool restoredChat)
+    {
+        using var environment = new PlanEnvironment();
+        var binding = new PlanOptions
+        {
+            ConversationId = "conversation",
+            ReplyToId = "original-prompt",
+            ReplyChain = restoredChat ? new PlanReplyChain { ChatOrChannelId = "chat", ReplyChainId = "root" } : null
+        };
+        var plan = new TeamsPlan(environment.Context, binding);
+        ResourceResponse notification = null;
+        plan.Sent += (_, args) => notification = args.Response;
+        var stream = environment.Context.StreamingResponse;
+        stream.EnableGeneratedByAILabel = true;
+        stream.SensitivityLabel = new SensitivityUsageInfo { Name = "Internal" };
+        stream.FeedbackLoopEnabled = true;
+        stream.AddAttachment(new Attachment { ContentType = "text/plain", Content = "attachment" });
+        stream.AddCitation(new Citation("Reference text", "Reference", "https://example.com/reference"), 1);
+        await stream.QueueInformativeUpdateAsync("Working.");
+        stream.QueueTextChunk("Answer [doc1].");
+
+        var result = await plan.CompleteStreamingAsync();
+
+        Assert.Equal(StreamingResponseResult.Success, result);
+        var request = Assert.Single(environment.Requests, IsMessagePost);
+        Assert.Equal("/teams/v3/conversations/conversation/activities", request.Uri.AbsolutePath);
+        var final = ProtocolJsonSerializer.ToObject<Activity>(request.Body);
+        Assert.Equal("original-prompt", final.ReplyToId);
+        Assert.Equal("Answer [1].", final.Text);
+        Assert.Single(final.Attachments);
+        Assert.Equal("complete", Assert.Single(final.Entities.OfType<PlanInfoEntity>()).PlanType.Value);
+        var ai = Assert.Single(final.Entities.OfType<AIEntity>());
+        Assert.Equal("Internal", ai.UsageInfo.Name);
+        Assert.Equal("Reference", Assert.Single(ai.Citation).Appearance.Name);
+        Assert.Contains("AIGeneratedContent", ai.AdditionalType);
+        Assert.Equal("default", final.GetChannelData<JsonElement>().GetProperty("feedbackLoop").GetProperty("type").GetString());
+        Assert.Equal(StreamTypes.Final, final.GetStreamingEntity().StreamType);
+        Assert.Equal("service-message", final.GetStreamingEntity().StreamId);
+        Assert.Equal("service-message", notification.Id);
+    }
+
+    [Fact]
+    public async Task StreamingFinalTimeout_RecoversWithOneOrdinaryCompletionPostAndRetainsMetadata()
+    {
+        var completionAttempts = 0;
+        using var environment = new PlanEnvironment(request =>
+            IsMessagePost(request) && ++completionAttempts == 1
+                ? StreamTimeoutResponse()
+                : Response(HttpStatusCode.OK, """{"id":"completed-message"}"""));
+        var plan = new TeamsPlan(environment.Context);
+        var stream = environment.Context.StreamingResponse;
+        stream.SensitivityLabel = new SensitivityUsageInfo { Name = "Internal" };
+        stream.AddAttachment(new Attachment { ContentType = "text/plain", Content = "attachment" });
+        await stream.QueueInformativeUpdateAsync("Working.");
+        stream.QueueTextChunk("Complete answer.");
+
+        var result = await plan.CompleteStreamingAsync();
+
+        Assert.Equal(StreamingResponseResult.Success, result);
+        var completions = environment.Requests.Where(IsMessagePost).ToArray();
+        Assert.Equal(2, completions.Length);
+        Assert.NotNull(ProtocolJsonSerializer.ToObject<Activity>(completions[0].Body).GetStreamingEntity());
+        var recovered = ProtocolJsonSerializer.ToObject<Activity>(completions[1].Body);
+        Assert.Null(recovered.Id);
+        Assert.Null(recovered.GetStreamingEntity());
+        Assert.Equal("prompt", recovered.ReplyToId);
+        Assert.Equal("Complete answer.", recovered.Text);
+        Assert.Single(recovered.Attachments);
+        Assert.Equal("Internal", Assert.Single(recovered.Entities.OfType<AIEntity>()).UsageInfo.Name);
+        Assert.Equal("complete", Assert.Single(recovered.Entities.OfType<PlanInfoEntity>()).PlanType.Value);
+        Assert.DoesNotContain(environment.Requests, request => request.Method == HttpMethod.Put);
+    }
+
+    [Fact]
+    public async Task EarlierStreamingTimeout_PostsCompletionRatherThanUsingFinalPutFallback()
+    {
+        var streamSends = 0;
+        using var environment = new PlanEnvironment(request =>
+        {
+            using var body = JsonDocument.Parse(request.Body);
+            return body.RootElement.GetProperty("type").GetString() == "typing" && ++streamSends > 1
+                ? StreamTimeoutResponse()
+                : Response(HttpStatusCode.OK, """{"id":"service-message"}""");
+        });
+        var plan = new TeamsPlan(environment.Context);
+        var stream = environment.Context.StreamingResponse;
+        await stream.QueueInformativeUpdateAsync("Working.");
+        stream.QueueTextChunk("Complete answer.");
+        await stream.QueueInformativeUpdateAsync("Finishing.");
+
+        var result = await plan.CompleteStreamingAsync();
+
+        Assert.Equal(StreamingResponseResult.Success, result);
+        var request = Assert.Single(environment.Requests, IsMessagePost);
+        var final = ProtocolJsonSerializer.ToObject<Activity>(request.Body);
+        Assert.Equal("Complete answer.", final.Text);
+        Assert.Null(final.GetStreamingEntity());
+        Assert.Equal("complete", Assert.Single(final.Entities.OfType<PlanInfoEntity>()).PlanType.Value);
+        var checkpoint = Assert.Single(environment.Requests, entry => entry.Method == HttpMethod.Put);
+        Assert.DoesNotContain(ProtocolJsonSerializer.ToObject<Activity>(checkpoint.Body).Entities,
+            entity => entity.Type == "planInfo");
+        Assert.Same(request, environment.Requests.Last());
+    }
+
+    [Theory]
+    [InlineData(409, "PlanConflict")]
+    [InlineData(400, "ContentStreamNotAllowed")]
+    [InlineData(401, "Unauthorized")]
+    public async Task StreamingCompletionRejection_PropagatesWithoutRetry(int status, string errorCode)
+    {
+        using var environment = new PlanEnvironment(request => IsMessagePost(request)
+            ? Response((HttpStatusCode)status, $$$"""{"error":{"code":"{{{errorCode}}}","message":"Rejected."}}""")
+            : Response(HttpStatusCode.OK, """{"id":"service-message"}"""));
+        var plan = new TeamsPlan(environment.Context);
+        await environment.Context.StreamingResponse.QueueInformativeUpdateAsync("Working.");
+        environment.Context.StreamingResponse.QueueTextChunk("Answer.");
+
+        var failure = await Record.ExceptionAsync(() => plan.CompleteStreamingAsync());
+        var exception = Assert.IsType<ErrorResponseException>(status == 401
+            ? Assert.IsType<OperationCanceledException>(failure).InnerException
+            : failure);
+
+        Assert.Equal(status, exception.StatusCode);
+        Assert.Equal(errorCode, exception.Body.Error.Code);
+        Assert.Single(environment.Requests, IsMessagePost);
+    }
+
+    [Fact]
+    public async Task AmbiguousStreamingCompletionFailure_DoesNotRetry()
+    {
+        using var environment = new PlanEnvironment(request => IsMessagePost(request)
+            ? throw new HttpRequestException("Connection lost after sending.")
+            : Response(HttpStatusCode.OK, """{"id":"service-message"}"""));
+        var plan = new TeamsPlan(environment.Context);
+        await environment.Context.StreamingResponse.QueueInformativeUpdateAsync("Working.");
+        environment.Context.StreamingResponse.QueueTextChunk("Answer.");
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => plan.CompleteStreamingAsync());
+
+        Assert.Single(environment.Requests, IsMessagePost);
+    }
+
+    [Fact]
+    public async Task FailedCompletionRecovery_PropagatesConflictWithoutAThirdPost()
+    {
+        var completionAttempts = 0;
+        using var environment = new PlanEnvironment(request => !IsMessagePost(request)
+            ? Response(HttpStatusCode.OK, """{"id":"service-message"}""")
+            : ++completionAttempts == 1
+                ? StreamTimeoutResponse()
+                : Response(HttpStatusCode.Conflict, """{"error":{"code":"PlanConflict","message":"Already completed."}}"""));
+        var plan = new TeamsPlan(environment.Context);
+        await environment.Context.StreamingResponse.QueueInformativeUpdateAsync("Working.");
+        environment.Context.StreamingResponse.QueueTextChunk("Answer.");
+
+        var exception = await Assert.ThrowsAsync<ErrorResponseException>(() => plan.CompleteStreamingAsync());
+
+        Assert.Equal("PlanConflict", exception.Body.Error.Code);
+        Assert.Equal(2, environment.Requests.Count(IsMessagePost));
+    }
+
+    [Fact]
+    public async Task RepeatedStreamingCompletion_DoesNotPostAgain()
+    {
+        using var environment = new PlanEnvironment();
+        var plan = new TeamsPlan(environment.Context);
+        await environment.Context.StreamingResponse.QueueInformativeUpdateAsync("Working.");
+        environment.Context.StreamingResponse.QueueTextChunk("Answer.");
+
+        Assert.Equal(StreamingResponseResult.Success, await plan.CompleteStreamingAsync());
+        Assert.Equal(StreamingResponseResult.AlreadyEnded, await plan.CompleteStreamingAsync());
+
+        Assert.Single(environment.Requests, IsMessagePost);
+    }
+
+    private static bool IsMessagePost(RecordedRequest request)
+    {
+        using var body = JsonDocument.Parse(request.Body);
+        return request.Method == HttpMethod.Post && body.RootElement.GetProperty("type").GetString() == "message";
+    }
+
+    private static HttpResponseMessage StreamTimeoutResponse() => Response(HttpStatusCode.BadRequest,
+        """{"error":{"code":"ContentStreamNotAllowed","message":"Content stream finished due to exceeded streaming time."}}""");
+
+    private static PlanStep NewStep(string id = "outline") => new()
+    {
+        Id = id,
+        Title = "Outline",
+        Version = 1,
+        Status = PlanStepStatuses.Active
+    };
+
+    private static Activity Incoming(string activityId = "prompt", string conversationId = "conversation") => new()
+    {
+        Type = ActivityTypes.Message,
+        ChannelId = CoreChannels.Msteams,
+        Id = activityId,
+        ServiceUrl = "https://regional.example/teams/",
+        Conversation = new ConversationAccount(id: conversationId),
+        From = new ChannelAccount("user"),
+        Recipient = new ChannelAccount("agent")
+    };
+
+    private static JsonElement GetPlanEntity(JsonElement activity) => Assert.Single(
+        activity.GetProperty("entities").EnumerateArray(), entity => entity.GetProperty("type").GetString() == "planInfo");
+
+    private static HttpResponseMessage Response(HttpStatusCode status, string body) => new(status)
+    {
+        Content = new StringContent(body, Encoding.UTF8, "application/json")
+    };
+
+    private sealed record RecordedRequest(HttpMethod Method, Uri Uri, string Body, string Authorization);
+
+    private sealed class PlanEnvironment : IDisposable
+    {
+        private readonly RecordingHandler _handler;
+
+        public PlanEnvironment(
+            Func<RecordedRequest, HttpResponseMessage> respond = null,
+            Activity incoming = null,
+            Func<Task<string>> tokenProvider = null)
+        {
+            _handler = new RecordingHandler(respond ?? (_ => Response(HttpStatusCode.OK, """{"id":"service-message"}""")));
+            var factory = new RecordingClientFactory(_handler);
+            var connector = new RestConnectorClient(
+                new Uri("https://regional.example/teams/"),
+                factory,
+                tokenProvider ?? (() => Task.FromResult("connector-token")));
+            Context = new BuilderTurnContext(new ConnectorAdapter(), incoming ?? Incoming(), new ClaimsIdentity());
+            Context.Services.Set<IConnectorClient>(connector);
+            Context.Services.Set<IUserTokenClient>(new RestUserTokenClient(
+                "agent", new Uri("https://token.example/"), factory, null));
+            Context.StreamingResponse.InitialDelay = 1;
+            Context.StreamingResponse.Interval = 1;
+            Context.StreamingResponse.EndStreamTimeout = 5000;
+        }
+
+        public BuilderTurnContext Context { get; }
+        public RecordedRequest[] Requests => _handler.Requests.ToArray();
+        public HttpClient CreateHttpClient() => new(_handler, disposeHandler: false);
+
+        public void Dispose()
+        {
+            Context.Dispose();
+            _handler.Dispose();
+        }
+    }
+
+    private sealed class ConnectorAdapter() : ChannelServiceAdapterBase(new Mock<IChannelServiceClientFactory>().Object);
+
+    private sealed class RecordingClientFactory(HttpMessageHandler handler) : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
+    }
+
+    private sealed class RecordingHandler(Func<RecordedRequest, HttpResponseMessage> respond) : HttpMessageHandler
+    {
+        public ConcurrentQueue<RecordedRequest> Requests { get; } = new();
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var recorded = new RecordedRequest(
+                request.Method,
+                request.RequestUri,
+                await request.Content.ReadAsStringAsync(cancellationToken),
+                request.Headers.Authorization?.ToString());
+            Requests.Enqueue(recorded);
+            return respond(recorded);
+        }
+    }
+}
+
+#pragma warning restore ExperimentalTeamsPlan

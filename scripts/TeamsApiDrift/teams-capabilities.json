@@ -3,10 +3,10 @@
   "package": "Microsoft.Teams.Apps",
   "capabilities": {
     "channels-and-teams": {
-      "description": "Team and channel lifecycle routing and models.",
+      "description": "Team/channel lifecycle routing and conversation/thread metadata.",
       "owners": ["agents-sdk-msteams"],
       "upstreamNamespaces": ["Microsoft.Teams.Apps.Schema"],
-      "upstreamTypes": ["Microsoft.Teams.Apps.ConversationEventType"],
+      "upstreamTypes": ["Microsoft.Teams.Apps.ConversationEventType", "Microsoft.Teams.Apps.Schema.ChatInfo", "Microsoft.Teams.Apps.Schema.ReplyChainInfo", "Microsoft.Teams.Apps.Schema.TeamsChannelDataSource"],
       "adoptionPolicy": "review-new-members"
     },
     "files": {
@@ -28,6 +28,23 @@
       "owners": ["agents-sdk-msteams"],
       "upstreamNamespaces": ["Microsoft.Teams.Apps.MessageExtensions"],
       "upstreamTypes": ["Microsoft.Teams.Apps.InvokeName", "Microsoft.Teams.Apps.InvokeNames"],
+      "adoptionPolicy": "review-new-members"
+    },
+    "plans": {
+      "description": "Experimental Plan wire-model parity, step/status/source contracts, and saved prompt/thread bindings; native activities and delivery remain in MSTeams.",
+      "owners": ["agents-sdk-msteams"],
+      "upstreamNamespaces": [],
+      "upstreamTypes": [
+        "Microsoft.Teams.Apps.PlanOptions",
+        "Microsoft.Teams.Apps.PlanReplyChain",
+        "Microsoft.Teams.Apps.Schema.Entities.PlanInfoEntity",
+        "Microsoft.Teams.Apps.Schema.Entities.PlanStep",
+        "Microsoft.Teams.Apps.Schema.Entities.PlanStepStatus",
+        "Microsoft.Teams.Apps.Schema.Entities.PlanStepStatuses",
+        "Microsoft.Teams.Apps.Schema.Entities.PlanType",
+        "Microsoft.Teams.Apps.Schema.Entities.PlanTypes",
+        "Microsoft.Teams.Apps.Schema.Entities.StepSource"
+      ],
       "adoptionPolicy": "review-new-members"
     },
     "task-modules": {
