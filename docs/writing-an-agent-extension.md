@@ -40,6 +40,11 @@ Keep protocol-, channel-, and feature-specific implementation inside the extensi
 
 If a pull request changes code outside the extension project, it must explain why the extension cannot use existing extensibility points and identify the related Core documentation updates needed to describe the new shared capability.
 
+Teams/M365 attachment downloading is an explicit ownership exception: it is
+shared Core/Builder infrastructure in `M365AttachmentDownloader`, not an MSTeams
+AgentExtension feature. Keep its classification, credentials, and downloaded-file
+handling in that shared pipeline.
+
 ### In this guide
 
 - [Design the extension-facing API](#design-the-extension-facing-api)
@@ -53,6 +58,7 @@ If a pull request changes code outside the extension project, it must explain wh
 - [Custom DI with `IAgentServiceRegistrar`](#custom-di-with-iagentserviceregistrar)
 - [Custom `IAccessTokenProvider`](#custom-iaccesstokenprovider)
 - [Custom `IUserAuthorization`](#custom-iuserauthorization)
+- [Input-file download processing](#input-file-download-processing)
 - [Typed turn contexts and native clients](#typed-turn-contexts-and-native-clients)
 - [Package layout](#package-layout)
 - [Validation checklist](#validation-checklist)
@@ -1249,6 +1255,35 @@ properties explicitly.
 the default selector starts authorization automatically; applications can replace that boolean
 behavior with an `AutoSignInSelector` through DI. Routes can also select named authorization
 handlers.
+
+## Input-file download processing
+
+Automatic inputs are supplied by registered `IInputFileDownloader` implementations.
+`AgentApplication` invokes them before its before-turn handlers and appends their
+results to `turnState.Temp.InputFiles`. Do not rely on a native client initialized
+in a before-turn handler, or register overlapping downloaders expecting the
+pipeline to deduplicate their results.
+
+Teams/M365 attachment downloading belongs directly in
+`Microsoft.Agents.Builder.App.M365AttachmentDownloader`, including inline-image
+classification, service-URL binding, credential selection, HTML hints, and
+downloaded MIME/filename handling. This is shared Core/Builder infrastructure,
+not a responsibility of `TeamsAgentExtension`. Do not introduce a separate Teams
+downloader or replace the registered downloader from an AgentExtension.
+
+`AddAgentM365AttachmentDownloader()` remains the opt-in registration, and its
+`InputFile` results are available even without `[TeamsExtension]`. Keep the shared
+implementation independent of extension packages and upstream Activity DTOs.
+Other extensions can implement `IInputFileDownloader` for their own input contracts.
+
+The shared downloader keeps signed locators credential-free. Its inline-image
+path binds the selected connector credential to the inbound HTTPS service URL,
+uses HTTPS-only manual redirects, and drops authorization permanently after
+leaving the initial origin. Optional host/DNS policy still runs on every hop.
+Downloaded bytes determine supported inline-image MIME types and filenames;
+response MIME types are otherwise preserved with attachment/octet-stream
+fallbacks. Failed HTTP responses remain skipped with diagnostic logging. Do not
+log bearer tokens or signed URL queries.
 
 ## Typed turn contexts and native clients
 
