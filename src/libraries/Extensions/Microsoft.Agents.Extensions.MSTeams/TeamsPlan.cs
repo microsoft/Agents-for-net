@@ -252,12 +252,18 @@ public sealed class TeamsPlan
     private static IActivity PrepareCompletion(IActivity message)
     {
         AssertionHelpers.ThrowIfNull(message, nameof(message));
-        if (message.Type != ActivityTypes.Message || message.IsTargetedActivity())
+        if (message.Type != ActivityTypes.Message)
         {
-            throw new ArgumentException("A Plan completion must be a non-targeted message activity.", nameof(message));
+            throw new ArgumentException("A Plan completion must be a message activity.", nameof(message));
         }
 
+        // Cloning materializes untyped entities, so validate targeting on the clone.
         var activity = message.Clone();
+        if (activity.IsTargetedActivity())
+        {
+            throw new ArgumentException("Targeted Plan completions are not supported.", nameof(message));
+        }
+
         var plans = activity.Entities?.Where(entity => entity.Type == PlanInfoEntity.EntityName).ToArray() ?? [];
         if (plans.Any(entity => ProtocolJsonSerializer.ToObject<PlanInfoEntity>(entity).PlanType.Value != "complete"))
         {

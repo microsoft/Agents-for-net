@@ -344,15 +344,38 @@ public partial class TeamsPlanTests
         Assert.Empty(environment.Requests);
     }
 
-    [Fact]
-    public async Task TargetedCompletion_IsRejectedRatherThanSentPublicly()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task TargetedCompletion_IsRejectedBeforeAnySend(bool untypedTreatment, bool chatThread)
     {
-        using var environment = new PlanEnvironment();
+        var incoming = Incoming();
+        if (chatThread)
+        {
+            incoming.ChannelData = JsonSerializer.Deserialize<JsonElement>(
+                """{"chat":{"id":"chat"},"replyChain":{"id":"root"}}""");
+        }
+        using var environment = new PlanEnvironment(incoming: incoming);
         var message = Activity.CreateMessageActivity().WithText("Private.").WithTargetedRecipient(new ChannelAccount("other"));
+        if (untypedTreatment)
+        {
+            message.Entities =
+            [
+                new Entity("activityTreatment")
+                {
+                    Properties = { ["treatment"] = JsonSerializer.SerializeToElement("targeted") }
+                }
+            ];
+            Assert.False(message.IsTargetedActivity());
+        }
+        var original = ProtocolJsonSerializer.ToJson(message);
 
         await Assert.ThrowsAsync<ArgumentException>(() => new TeamsPlan(environment.Context).CompleteAsync(message));
 
         Assert.Empty(environment.Requests);
+        Assert.Equal(original, ProtocolJsonSerializer.ToJson(message));
     }
 
     [Theory]
