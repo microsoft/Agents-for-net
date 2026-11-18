@@ -147,14 +147,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.BackgroundQueue
                         try
                         {
                             // Create the task which will execute the work item.
-                            // CancellationToken.None: cleanup must always run regardless of shutdown state.
-                            var task = ProcessAsync(activityWithClaims, stoppingToken)
-                                .ContinueWith(t =>
-                                {
-                                    _activitiesProcessing.TryRemove(activityWithClaims, out _);
-                                }, CancellationToken.None);
-
+                            var task = ProcessAsync(activityWithClaims, stoppingToken);
                             _activitiesProcessing.TryAdd(activityWithClaims, task);
+
+                            // Attach cleanup after registration: a completed turn can run it immediately.
+                            // CancellationToken.None: cleanup must always run regardless of shutdown state.
+                            _ = task.ContinueWith(t =>
+                            {
+                                _activitiesProcessing.TryRemove(activityWithClaims, out _);
+                            }, CancellationToken.None);
                         }
                         finally
                         {
