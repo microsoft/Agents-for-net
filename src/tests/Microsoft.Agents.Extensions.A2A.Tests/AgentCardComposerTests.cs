@@ -4,6 +4,7 @@
 using A2A;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Extensions.A2A.AgentCard;
+using Microsoft.Agents.Extensions.A2A.ProtocolExtensions;
 using Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 using Microsoft.Agents.Storage;
 using Microsoft.Extensions.Configuration;
@@ -59,7 +60,7 @@ public class AgentCardComposerTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task ComposeAsync_MatchingDeclaration_PreservesUnrelatedDeclarations(bool signed)
+    public async Task ComposeAsync_MatchingDeclaration_PreservesRegisteredDeclarations(bool signed)
     {
         var card = CreateCard(signed);
         var declaration = InTaskAuthorizationExtension.CreateAgentCardExtension();
@@ -67,7 +68,8 @@ public class AgentCardComposerTests
         card.Capabilities.Extensions.Add(declaration);
         card.Capabilities.Extensions.Add(new global::A2A.AgentExtension { Uri = "urn:example:other" });
 
-        var result = await ComposeAsync(card);
+        var result = await ComposeAsync(_ => card, builder =>
+            builder.RegisterExtension(new global::A2A.AgentExtension { Uri = "urn:example:other" }));
 
         Assert.Equal(2, result.Capabilities.Extensions.Count);
         Assert.Null(result.Capabilities.Extensions[0].Required);
@@ -86,6 +88,60 @@ public class AgentCardComposerTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => ComposeAsync(card));
     }
 
+    [Fact]
+    public async Task ComposeAsync_CustomDeclaration_IsComposedBeforeSigning()
+    {
+        var result = await ComposeAsync(card =>
+        {
+            Assert.Contains(card.Capabilities.Extensions, extension => extension.Uri == "urn:example:custom");
+            card.Signatures = [new AgentCardSignature { Protected = "header", Signature = "signature" }];
+            return card;
+        }, builder => builder.RegisterExtension(new global::A2A.AgentExtension { Uri = "urn:example:custom" }));
+
+        Assert.Single(result.Signatures);
+        Assert.Contains(result.Capabilities.Extensions, extension => extension.Uri == "urn:example:custom");
+    }
+
+    [Fact]
+    public async Task ComposeAsync_UnregisteredDeclaration_Throws()
+    {
+        var card = CreateCard();
+        card.Capabilities.Extensions.Add(new global::A2A.AgentExtension { Uri = "urn:example:unsupported" });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ComposeAsync(card));
+
+        Assert.Contains("urn:example:unsupported", exception.Message);
+    }
+
+    [Fact]
+    public async Task ComposeAsync_HandlerChangesRegisteredDeclaration_Throws()
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ComposeAsync(card =>
+        {
+            foreach (var extension in card.Capabilities.Extensions)
+            {
+                if (extension.Uri == "urn:example:custom")
+                {
+                    extension.Description = "Conflicting description";
+                }
+            }
+            return card;
+        }, builder => builder.RegisterExtension(new global::A2A.AgentExtension { Uri = "urn:example:custom" })));
+    }
+
+    [Fact]
+    public async Task ComposeAsync_SignedHandlerCardMissingCustomDeclaration_RequiresResigning()
+    {
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ComposeAsync(card =>
+        {
+            card.Capabilities.Extensions.RemoveAll(extension => extension.Uri == "urn:example:custom");
+            card.Signatures = [new AgentCardSignature { Protected = "header", Signature = "signature" }];
+            return card;
+        }, builder => builder.RegisterExtension(new global::A2A.AgentExtension { Uri = "urn:example:custom" })));
+
+        Assert.Contains("re-sign", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static A2AProtocolAgentCard CreateCard(bool signed = false) => new()
     {
         Capabilities = new AgentCapabilities { Extensions = [] },
@@ -98,7 +154,9 @@ public class AgentCardComposerTests
 
     private static Task<A2AProtocolAgentCard> ComposeAsync(A2AProtocolAgentCard card) => ComposeAsync(_ => card);
 
-    private static Task<A2AProtocolAgentCard> ComposeAsync(Func<A2AProtocolAgentCard, A2AProtocolAgentCard> cardHandler)
+    private static Task<A2AProtocolAgentCard> ComposeAsync(
+        Func<A2AProtocolAgentCard, A2AProtocolAgentCard> cardHandler,
+        Action<A2AProtocolExtensionBuilder> configure = null)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
         {
@@ -111,10 +169,13 @@ public class AgentCardComposerTests
             ["AgentApplication:UserAuthorization:Handlers:request:Settings:RequiredScopes:0"] = "agent.read",
         }).Build();
         var agent = new CardHandlerAgent(new AgentApplicationOptions(new MemoryStorage()), cardHandler);
+        var builder = new A2AProtocolExtensionBuilder();
+        new InTaskAuthorizationOperation().Register(builder);
+        configure?.Invoke(builder);
         return new A2AAgentCardComposer(configuration).ComposeAsync(
             CreateCard(),
             agent,
-            A2AServiceExtensions.Dispatch.InTaskAuthorization.Extension);
+            builder.Build().Registry);
     }
 
     private sealed class CardHandlerAgent(

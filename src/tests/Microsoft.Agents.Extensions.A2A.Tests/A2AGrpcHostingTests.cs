@@ -55,7 +55,7 @@ using Proto = A2A.Grpc.Protos;
 
 namespace Microsoft.Agents.Extensions.A2A.Tests;
 
-public class A2AGrpcHostingTests
+public partial class A2AGrpcHostingTests
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
     private static readonly AgentSpec AllBindings = new("GrpcAgent",
@@ -628,6 +628,8 @@ public class A2AGrpcHostingTests
         public RSA SigningKey { get; } = RSA.Create(2048);
         public bool SignCard { get; set; }
         public bool InTaskAuthorization { get; set; }
+        public bool ExtensionAvailable { get; set; } = true;
+        public int ExtensionRegistrations { get; set; }
         public ConcurrentQueue<CallLifetime> AgentRequests { get; } = new();
         public CallState For(string text) => _calls.GetOrAdd(text, _ => new CallState());
         public void Dispose() => SigningKey.Dispose();
@@ -641,6 +643,7 @@ public class A2AGrpcHostingTests
         public string AgentType { get; set; }
         public string Identity { get; set; }
         public string AccessToken { get; set; }
+        public A2ARequestContext ExtensionActivation { get; set; }
         public CallLifetime Lifetime { get; set; }
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -695,6 +698,7 @@ public class A2AGrpcHostingTests
             call.AgentType = GetType().Name;
             call.Identity = authentication.Identity.Name ?? "anonymous";
             call.AccessToken = authentication.AccessToken;
+            call.ExtensionActivation = context.Services.Get<RequestContext>().ExtensionActivation;
             call.TaskId = context.Services.Get<RequestContext>().TaskId;
             call.RequestId = context.Activity.RequestId;
             call.Lifetime = _lifetime;
@@ -755,6 +759,8 @@ public class A2AGrpcHostingTests
         private readonly bool _nestedGroup;
         private readonly string _collision;
         private readonly string _grpcUrl;
+        private readonly Action<IServiceCollection, Type[]> _configureServices;
+        private readonly bool _useEndpointHelpers;
         private readonly X509Certificate2 _certificate;
         private readonly List<HttpClient> _grpcHttpClients = [];
         private readonly List<GrpcChannel> _channels = [];
@@ -766,7 +772,9 @@ public class A2AGrpcHostingTests
 
         public GrpcHost(AgentSpec[] agents, bool tls = false, bool requireAuth = false,
             string grpcUrl = null, string prefix = null, bool nestedGroup = false,
-            string collision = null, bool inTaskAuthorization = false)
+            string collision = null, bool inTaskAuthorization = false,
+            Action<IServiceCollection, Type[]> configureServices = null,
+            bool useEndpointHelpers = false)
         {
             _agents = agents;
             _requireAuth = requireAuth;
@@ -774,6 +782,8 @@ public class A2AGrpcHostingTests
             _prefix = prefix;
             _nestedGroup = nestedGroup;
             _collision = collision;
+            _configureServices = configureServices;
+            _useEndpointHelpers = useEndpointHelpers;
             Scenario.InTaskAuthorization = inTaskAuthorization;
             if (tls)
             {
@@ -861,6 +871,7 @@ public class A2AGrpcHostingTests
                 builder.Services.AddTransient(type);
             }
             builder.Services.AddTransient(typeof(IAgent), sp => sp.GetRequiredService(types[0]));
+            _configureServices?.Invoke(builder.Services, types);
             App = builder.Build();
             App.UseAuthentication();
             App.UseAuthorization();
@@ -877,7 +888,15 @@ public class A2AGrpcHostingTests
                     endpoints = endpoints.MapGroup("");
                 }
             }
-            map(endpoints, _requireAuth, "/a2a");
+            if (_useEndpointHelpers)
+            {
+                endpoints.MapA2AJsonRpc(requireAuth: _requireAuth);
+                endpoints.MapA2AHttp(requireAuth: _requireAuth);
+            }
+            else
+            {
+                map(endpoints, _requireAuth, "/a2a");
+            }
             if (_collision == "mapping")
             {
                 map(endpoints, _requireAuth, "/a2a");
@@ -899,7 +918,8 @@ public class A2AGrpcHostingTests
             Http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{httpListener.IPEndPoint.Port}/") };
         }
 
-        public GrpcChannel CreateChannel(string bearer = null, bool ticketOnly = false, bool extensions = false)
+        public GrpcChannel CreateChannel(string bearer = null, bool ticketOnly = false, bool extensions = false,
+            string extensionUri = null)
         {
             var handler = new HttpClientHandler();
             if (_certificate != null)
@@ -920,14 +940,19 @@ public class A2AGrpcHostingTests
             {
                 http.DefaultRequestHeaders.Add("a2a-extensions", InTaskAuthorizationExtension.Uri);
             }
+            if (extensionUri != null)
+            {
+                http.DefaultRequestHeaders.Add("a2a-extensions", extensionUri);
+            }
             _grpcHttpClients.Add(http);
             var channel = GrpcChannel.ForAddress(GrpcAddress, new GrpcChannelOptions { HttpClient = http });
             _channels.Add(channel);
             return channel;
         }
 
-        public A2AGrpcClient CreateClient(string bearer = null, bool ticketOnly = false, bool extensions = false) =>
-            new(CreateChannel(bearer, ticketOnly, extensions));
+        public A2AGrpcClient CreateClient(string bearer = null, bool ticketOnly = false, bool extensions = false,
+            string extensionUri = null) =>
+            new(CreateChannel(bearer, ticketOnly, extensions, extensionUri));
 
         public async Task<ProtocolAgentCard> GetCardAsync()
         {
