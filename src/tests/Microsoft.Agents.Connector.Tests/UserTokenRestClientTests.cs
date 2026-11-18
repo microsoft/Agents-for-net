@@ -672,6 +672,49 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Equal("first-app-token", (await GetCachedTokenAsync(sameAppClient, userId, tokenOrSignIn)).Token);
         }
 
+        [Theory]
+        [InlineData(false, "app-user", "id", "graph", "channel", "app", "user-id", "graph", "channel")]
+        [InlineData(true, "app-user", "id", "graph", "channel", "app", "user-id", "graph", "channel")]
+        [InlineData(false, "app", "user", "graph-api", "channel", "app", "user-graph", "api", "channel")]
+        [InlineData(true, "app", "user", "graph-api", "channel", "app", "user-graph", "api", "channel")]
+        [InlineData(false, "app", "user", "graph-api", "channel", "app", "user", "graph", "api-channel")]
+        [InlineData(true, "app", "user", "graph-api", "channel", "app", "user", "graph", "api-channel")]
+        public async Task TokenCache_DoesNotAliasIdentityComponents(
+            bool tokenOrSignIn,
+            string firstAppId,
+            string firstUserId,
+            string firstConnectionName,
+            string firstChannelId,
+            string secondAppId,
+            string secondUserId,
+            string secondConnectionName,
+            string secondChannelId)
+        {
+            var scope = Guid.NewGuid().ToString();
+            var firstHttpClient = new Mock<HttpClient>();
+            firstHttpClient
+                .Setup(client => client.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => CreateTokenHttpResponse("first-identity-token", tokenOrSignIn));
+            var secondHttpClient = new Mock<HttpClient>();
+            secondHttpClient
+                .Setup(client => client.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => CreateTokenHttpResponse("second-identity-token", tokenOrSignIn));
+
+            using var firstClient = UseClient($"{scope}-{firstAppId}", firstHttpClient);
+            using var secondClient = UseClient($"{scope}-{secondAppId}", secondHttpClient);
+            using var sameFirstClient = UseClient($"{scope}-{firstAppId}", secondHttpClient);
+            using var sameSecondClient = UseClient($"{scope}-{secondAppId}", firstHttpClient);
+
+            Assert.Equal("first-identity-token",
+                (await GetCachedTokenAsync(firstClient, firstUserId, tokenOrSignIn, firstConnectionName, firstChannelId)).Token);
+            Assert.Equal("second-identity-token",
+                (await GetCachedTokenAsync(secondClient, secondUserId, tokenOrSignIn, secondConnectionName, secondChannelId)).Token);
+            Assert.Equal("first-identity-token",
+                (await GetCachedTokenAsync(sameFirstClient, firstUserId, tokenOrSignIn, firstConnectionName, firstChannelId)).Token);
+            Assert.Equal("second-identity-token",
+                (await GetCachedTokenAsync(sameSecondClient, secondUserId, tokenOrSignIn, secondConnectionName, secondChannelId)).Token);
+        }
+
         [Fact]
         public async Task ExchangeTokenAsync_CacheIsScopedByAppId()
         {
@@ -694,6 +737,31 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Equal("first-app-token", exchanged.Token);
             Assert.Equal("second-app-token", (await GetCachedTokenAsync(secondClient, userId, false)).Token);
             Assert.Equal("first-app-token", (await GetCachedTokenAsync(sameAppClient, userId, false)).Token);
+        }
+
+        [Fact]
+        public async Task ExchangeTokenAsync_DoesNotAliasUserAndConnection()
+        {
+            var appId = Guid.NewGuid().ToString();
+            var firstHttpClient = new Mock<HttpClient>();
+            firstHttpClient
+                .Setup(client => client.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => CreateTokenHttpResponse("exchanged-first-user-token"));
+            var secondHttpClient = new Mock<HttpClient>();
+            secondHttpClient
+                .Setup(client => client.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => CreateTokenHttpResponse("second-user-token"));
+
+            using var firstClient = UseClient(appId, firstHttpClient);
+            using var secondClient = UseClient(appId, secondHttpClient);
+
+            await firstClient.ExchangeTokenAsync(
+                "user", "graph-api", ChannelId, new TokenExchangeRequest(), CancellationToken.None);
+
+            Assert.Equal("second-user-token",
+                (await GetCachedTokenAsync(secondClient, "user-graph", false, "api")).Token);
+            Assert.Equal("exchanged-first-user-token",
+                (await GetCachedTokenAsync(secondClient, "user", false, "graph-api")).Token);
         }
 
         [Fact]
@@ -731,6 +799,43 @@ namespace Microsoft.Agents.Connector.Tests
             Assert.Equal("second-app-token", (await GetCachedTokenAsync(secondClient, userId, false)).Token);
         }
 
+        [Fact]
+        public async Task SignOutUserAsync_DoesNotRemoveAnotherUserAndConnection()
+        {
+            var appId = Guid.NewGuid().ToString();
+            var firstHttpClient = new Mock<HttpClient>();
+            firstHttpClient
+                .Setup(client => client.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => CreateTokenHttpResponse("first-user-token"));
+            var secondHttpClient = new Mock<HttpClient>();
+            secondHttpClient
+                .Setup(client => client.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => CreateTokenHttpResponse("second-user-token"));
+
+            using var firstClient = UseClient(appId, firstHttpClient);
+            using var secondClient = UseClient(appId, secondHttpClient);
+            await GetCachedTokenAsync(firstClient, "user", false, "graph-api");
+            await GetCachedTokenAsync(secondClient, "user-graph", false, "api");
+
+            firstHttpClient
+                .Setup(client => client.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => CreateTokenHttpResponse("refreshed-first-user-token"));
+            firstHttpClient
+                .Setup(client => client.SendAsync(
+                    It.Is<HttpRequestMessage>(request => request.Method == HttpMethod.Delete), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => new HttpResponseMessage(HttpStatusCode.NoContent));
+            secondHttpClient
+                .Setup(client => client.SendAsync(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => CreateTokenHttpResponse("refreshed-second-user-token"));
+
+            await firstClient.SignOutUserAsync("user", "graph-api", ChannelId, CancellationToken.None);
+
+            Assert.Equal("second-user-token",
+                (await GetCachedTokenAsync(secondClient, "user-graph", false, "api")).Token);
+            Assert.Equal("refreshed-first-user-token",
+                (await GetCachedTokenAsync(firstClient, "user", false, "graph-api")).Token);
+        }
+
         private static HttpResponseMessage CreateTokenHttpResponse(string token, bool tokenOrSignIn = false)
         {
             var tokenResponse = new TokenResponse
@@ -747,16 +852,21 @@ namespace Microsoft.Agents.Connector.Tests
             };
         }
 
-        private static async Task<TokenResponse> GetCachedTokenAsync(RestUserTokenClient client, string userId, bool tokenOrSignIn)
+        private static async Task<TokenResponse> GetCachedTokenAsync(
+            RestUserTokenClient client,
+            string userId,
+            bool tokenOrSignIn,
+            string connectionName = ConnectionName,
+            string channelId = ChannelId)
         {
             if (tokenOrSignIn)
             {
                 var response = await client.GetTokenOrSignInResourceAsync(
-                    ConnectionName, new Activity { From = new ChannelAccount { Id = userId }, ChannelId = ChannelId }, null);
+                    connectionName, new Activity { From = new ChannelAccount { Id = userId }, ChannelId = channelId }, null);
                 return response.TokenResponse;
             }
 
-            return await client.GetUserTokenAsync(userId, ConnectionName, ChannelId, null, CancellationToken.None);
+            return await client.GetUserTokenAsync(userId, connectionName, channelId, null, CancellationToken.None);
         }
 
         private static RestUserTokenClient UseClient(string appId = "appId", Mock<HttpClient> httpClient = null)
