@@ -2,13 +2,12 @@
 
 ## About
 
-Provides the storage abstraction layer for the Microsoft 365 Agents SDK. Because agents are stateless by design, this package enables conversation and user state to be persisted across turns.
+Defines storage abstractions for managing conversation and user state across turns in the
+Microsoft 365 Agents SDK. Includes in-memory storage for development and testing.
 
-Includes `MemoryStorage` for development and testing. For production deployments, use `Microsoft.Agents.Storage.Blobs` or `Microsoft.Agents.Storage.CosmosDb`.
+## Resources
 
-## Main Types
-
-- `IStorage`: Core key-value storage interface
-- `MemoryStorage`: In-memory storage for testing (non-persistent)
-
-See [Agents SDK storage overview](https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/storage) for more information.
+- [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
+- [Storage overview](https://learn.microsoft.com/microsoft-365/agents-sdk/storage?tabs=csharp)
+- [API reference](https://learn.microsoft.com/dotnet/api/microsoft.agents.storage?view=m365-agents-sdk)
+- [Releases](https://github.com/microsoft/Agents-for-net/releases)
