@@ -50,7 +50,8 @@ namespace Microsoft.Agents.Builder.Testing.Http
             var charset = content?.Headers.ContentType?.CharSet?.Trim('"');
             var encoding = string.IsNullOrEmpty(charset) ? Encoding.UTF8 : Encoding.GetEncoding(charset);
             var text = encoding.GetString(bytes);
-            if (string.Equals(content?.Headers.ContentType?.MediaType, "application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase))
+            var mediaType = content?.Headers.ContentType?.MediaType;
+            if (string.Equals(mediaType, "application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase))
             {
                 return string.Join("&", HttpRequestMatcher.ParseQuery(text).Select(pair =>
                     Uri.EscapeDataString(pair.Key) + "=" + Uri.EscapeDataString(IsCredential(pair.Key) ? Redacted : pair.Value)));
@@ -69,7 +70,10 @@ namespace Microsoft.Agents.Builder.Testing.Http
             }
             catch (JsonException)
             {
-                return text;
+                return string.Equals(mediaType, "application/json", StringComparison.OrdinalIgnoreCase)
+                    || mediaType?.EndsWith("+json", StringComparison.OrdinalIgnoreCase) == true
+                    ? Redacted
+                    : text;
             }
         }
 
@@ -117,6 +121,7 @@ namespace Microsoft.Agents.Builder.Testing.Http
                 || normalized.Contains("secret") || normalized.Contains("password")
                 || normalized.Contains("credential") || normalized.Contains("signature")
                 || normalized.Contains("assertion") || normalized == "sig"
+                || normalized == "devicecode" || normalized == "codeverifier"
                 || normalized == "code" || normalized == "auth" || normalized == "sas";
         }
     }
