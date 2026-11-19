@@ -250,6 +250,61 @@ public partial class A2AGrpcHostingTests
         Assert.Equal(1, host.Scenario.ExtensionRegistrations);
     }
 
+    [Theory]
+    [InlineData("/card", null, false)]
+    [InlineData("/CARD/", "/group", true)]
+    [InlineData("/.well-known/agent-card.json", "/group", false)]
+    public async Task ProtocolExtensions_DiscoveryRouteCollisionsAreRejectedAtStartup(
+        string route, string prefix, bool useEndpointHelpers)
+    {
+        await using var host = new GrpcHost(
+            [new AgentSpec("DiscoveryAgent",
+                (A2AAgentTransportProtocol.JsonRpc, "/a2a"),
+                (A2AAgentTransportProtocol.HttpJson, "/a2a"))],
+            prefix: prefix,
+            configureServices: (services, _) =>
+            {
+                services.AddSingleton(new DiscoveryRouteContributor("GET", route));
+                services.AddA2AProtocolExtension<DiscoveryRouteContributor>();
+            },
+            useEndpointHelpers: useEndpointHelpers);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => host.StartAsync());
+
+        Assert.Contains("Agent Card", exception.Message);
+        Assert.Contains("GET", exception.Message);
+    }
+
+    [Theory]
+    [InlineData("POST", "/card")]
+    [InlineData("GET", "/nested/card")]
+    public async Task ProtocolExtensions_NonconflictingRoutesPreserveDiscoveryAndCustomOperations(
+        string method, string route)
+    {
+        await using var host = new GrpcHost(
+            [new AgentSpec("DiscoveryAgent",
+                (A2AAgentTransportProtocol.JsonRpc, "/a2a"),
+                (A2AAgentTransportProtocol.HttpJson, "/a2a"))],
+            prefix: "/group",
+            configureServices: (services, _) =>
+            {
+                services.AddSingleton(new DiscoveryRouteContributor(method, route));
+                services.AddA2AProtocolExtension<DiscoveryRouteContributor>();
+            });
+        await host.StartAsync();
+
+        Assert.Contains(CustomExtensionUri, await host.Http.GetStringAsync("/group/a2a/card"));
+        using var request = new HttpRequestMessage(new HttpMethod(method), "/group/a2a" + route)
+        {
+            Content = JsonContent(new ExtensionRequest("allowed")),
+        };
+        request.Headers.Add("a2a-extensions", CustomExtensionUri);
+        using var response = await host.Http.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("allowed", body.RootElement.GetProperty("text").GetString());
+    }
+
     private static void AddAgentContributor<TContributor>(IServiceCollection services, Type agentType)
         where TContributor : class, IA2AProtocolExtensionContributor
         => typeof(A2AServiceExtensions).GetMethods()
@@ -310,6 +365,22 @@ public partial class A2AGrpcHostingTests
                 (JsonTypeInfo<ExtensionResult>)JsonSerializerOptions.Default.GetTypeInfo(typeof(ExtensionResult)));
             builder.JsonRpc.Map("example/echo", operation);
             builder.Http.Map("POST", "/example:echo", operation, async (context, cancellationToken) =>
+                await JsonSerializer.DeserializeAsync<ExtensionRequest>(context.Request.Body, cancellationToken: cancellationToken));
+        }
+    }
+
+    public sealed class DiscoveryRouteContributor(string method, string route) : IA2AProtocolExtensionContributor
+    {
+        public void Register(A2AProtocolExtensionBuilder builder)
+        {
+            var extension = builder.RegisterExtension(new global::A2A.AgentExtension { Uri = CustomExtensionUri });
+            var operation = builder.Map<ExtensionRequest, ExtensionResult>(
+                extension,
+                new A2AOperationId(CustomExtensionUri + "#discovery"),
+                (_, request, _) => ValueTask.FromResult(new ExtensionResult(request.Text)),
+                (JsonTypeInfo<ExtensionRequest>)JsonSerializerOptions.Default.GetTypeInfo(typeof(ExtensionRequest)),
+                (JsonTypeInfo<ExtensionResult>)JsonSerializerOptions.Default.GetTypeInfo(typeof(ExtensionResult)));
+            builder.Http.Map(method, route, operation, async (context, cancellationToken) =>
                 await JsonSerializer.DeserializeAsync<ExtensionRequest>(context.Request.Body, cancellationToken: cancellationToken));
         }
     }

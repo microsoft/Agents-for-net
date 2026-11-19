@@ -73,7 +73,7 @@ public static partial class A2AServiceExtensions
             sp.GetRequiredService<A2AProtocolExtensionRegistry>()));
         services.TryAddSingleton<A2AGrpcRequestInterceptor>();
         services.TryAddEnumerable(
-            ServiceDescriptor.Singleton<IStartupFilter, A2AGrpcEndpointValidationStartupFilter>());
+            ServiceDescriptor.Singleton<IStartupFilter, A2AEndpointValidationStartupFilter>());
         services.AddA2AGrpc();
         services.TryAddSingleton(sp => sp.GetRequiredService<A2AProtocolExtensionRegistry>().GrpcDispatch.Registry);
         services.Configure<GrpcServiceOptions>(options =>
@@ -157,7 +157,7 @@ public static partial class A2AServiceExtensions
                     {
                         var agent = A2AGrpcEndpointMetadata.ResolveAgent(request.HttpContext.RequestServices, agentType);
                         return adapter.ProcessAgentCardAsync(request, response, agent, agentInterface.Path, cancellationToken);
-                    }).AllowAnonymous();
+                    }).AllowAnonymous().WithMetadata(new A2AAgentCardEndpointMetadata());
                 }
                 else if (agentInterface.Protocol == A2AAgentTransportProtocol.HttpJson)
                 {
@@ -178,7 +178,7 @@ public static partial class A2AServiceExtensions
         {
             var agent = A2AGrpcEndpointMetadata.ResolveAgent(request.HttpContext.RequestServices, discoveryAgent);
             return adapter.ProcessAgentCardAsync(request, response, agent, defaultPath, cancellationToken);
-        }).AllowAnonymous();
+        }).AllowAnonymous().WithMetadata(new A2AAgentCardEndpointMetadata());
 
         return a2aGroup;
     }
@@ -336,7 +336,8 @@ public static partial class A2AServiceExtensions
                 var agent = A2AGrpcEndpointMetadata.ResolveAgent(request.HttpContext.RequestServices, agentType);
                 await adapter.ProcessAgentCardAsync(request, response, agent, prefixPath, cancellationToken);
             })
-            .AllowAnonymous();
+            .AllowAnonymous()
+            .WithMetadata(new A2AAgentCardEndpointMetadata());
         var operationGroup = routeGroup.MapGroup("");
         operationGroup.AddEndpointFilter((context, next) => UseRequestContextAsync(context, next, agentType));
         operationGroup.MapHttpA2A(

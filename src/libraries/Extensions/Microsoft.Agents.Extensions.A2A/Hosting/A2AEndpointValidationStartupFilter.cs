@@ -13,7 +13,7 @@ using System.Linq;
 
 namespace Microsoft.Agents.Extensions.A2A.Hosting;
 
-internal sealed class A2AGrpcEndpointValidationStartupFilter : IStartupFilter
+internal sealed class A2AEndpointValidationStartupFilter : IStartupFilter
 {
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
     {
@@ -24,10 +24,6 @@ internal sealed class A2AGrpcEndpointValidationStartupFilter : IStartupFilter
         var grpcRoutes = routes.Where(endpoint =>
             endpoint.Metadata.GetMetadata<A2AGrpcEndpointMetadata>() != null
             && endpoint.Metadata.GetMetadata<GrpcMethodMetadata>() != null).ToArray();
-        if (grpcRoutes.Length == 0)
-        {
-            return;
-        }
 
         // Inspect fully composed route patterns so nested route groups cannot hide a prefix.
         foreach (var route in grpcRoutes)
@@ -50,6 +46,25 @@ internal sealed class A2AGrpcEndpointValidationStartupFilter : IStartupFilter
             }
         }
 
-        _ = app.ApplicationServices.GetRequiredService<A2AAdapter>();
+        foreach (var route in routes.Where(endpoint =>
+            endpoint.Metadata.GetMetadata<A2AAgentCardEndpointMetadata>() != null))
+        {
+            if (routes.Count(candidate =>
+                string.Equals(candidate.RoutePattern.RawText?.Trim('/'), route.RoutePattern.RawText?.Trim('/'), StringComparison.OrdinalIgnoreCase)
+                && (candidate.Metadata.GetMetadata<IHttpMethodMetadata>() is not { } methods
+                    || methods.HttpMethods.Count == 0
+                    || methods.HttpMethods.Contains(HttpMethods.Get, StringComparer.OrdinalIgnoreCase))) > 1)
+            {
+                throw new InvalidOperationException(
+                    $"A competing A2A Agent Card endpoint is mapped for 'GET {route.RoutePattern.RawText}'. Protocol extensions and application routes cannot replace SDK-owned discovery endpoints.");
+            }
+        }
+
+        if (grpcRoutes.Length > 0)
+        {
+            _ = app.ApplicationServices.GetRequiredService<A2AAdapter>();
+        }
     };
 }
+
+internal sealed record A2AAgentCardEndpointMetadata;
