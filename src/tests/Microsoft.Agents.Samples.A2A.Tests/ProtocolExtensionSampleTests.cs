@@ -117,7 +117,10 @@ public class ProtocolExtensionSampleTests
 
     private static async Task<WebApplication> StartAsync()
     {
-        var app = ProtocolExtensionAgent.Program.CreateApplication(["--urls", "http://127.0.0.1:0"]);
+        var builder = WebApplication.CreateBuilder(["--urls", "http://127.0.0.1:0"]);
+        ProtocolExtensionAgentStartup.ConfigureBuilder(builder);
+        var app = builder.Build();
+        ProtocolExtensionAgentStartup.ConfigureApplication(app);
         await app.StartAsync();
         return app;
     }

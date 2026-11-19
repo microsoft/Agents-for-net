@@ -74,7 +74,8 @@ A2A task or implement a real debate workflow.
 
 ## How it works
 
-`Program.cs` opts in with one registration:
+`Program.cs` and the tests share the configuration in
+`ProtocolExtensionAgentStartup.cs`, which opts in with one registration:
 
 ```csharp
 builder.Services.AddA2AProtocolExtension<DebateExtension>();
