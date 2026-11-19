@@ -3,31 +3,19 @@
 
 using Microsoft.Agents.Extensions.A2A;
 using Microsoft.Agents.Hosting.AspNetCore;
-using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
+using ProtocolExtensionAgent;
 
-namespace ProtocolExtensionAgent;
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-public static class Program
-{
-    public static async Task Main(string[] args)
-    {
-        await using var app = CreateApplication(args);
-        await app.RunAsync();
-    }
+builder.AddAgentDefaults().AddAgent<DebateAgent>();
 
-    internal static WebApplication CreateApplication(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
-        builder.AddAgentDefaults().AddAgent<DebateAgent>();
-        builder.Services.AddSingleton<IStorage, MemoryStorage>();
-        builder.Services.AddA2AProtocolExtension<DebateExtension>();
+WebApplication app = builder.Build();
 
-        var app = builder.Build();
-        app.UseAgents();
-        app.MapA2AApplicationEndpoints(requireAuth: false);
-        return app;
-    }
-}
+// Add the authentication and authorization middleware to the request pipeline.
+app.UseAgents();
+
+// Map the A2At endpoints only for this sample
+app.MapA2AApplicationEndpoints(requireAuth: false);
+
+app.Run();
