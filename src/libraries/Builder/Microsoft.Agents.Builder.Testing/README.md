@@ -3,7 +3,7 @@
 ## About
 
 Provides utilities for testing agents built with the Microsoft 365 Agents SDK. Includes an in-process
-adapter, multi-turn conversation tests, reply assertions, and optional AI-based semantic validation.
+adapter, multi-turn conversation tests, reply assertions, HTTP service simulation, and optional AI-based semantic validation.
 
 ## Resources
 
