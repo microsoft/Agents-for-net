@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
@@ -55,9 +55,9 @@ namespace CopilotStudioAgentConnector
             string graphApiUrl = $"https://graph.microsoft.com/v1.0/me";
             try
             {
-                using HttpClient client = new();
+                using HttpClient client = Options.HttpClientFactory?.CreateClient() ?? new HttpClient();
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                HttpResponseMessage response = await client.GetAsync(graphApiUrl);
+                using HttpResponseMessage response = await client.GetAsync(graphApiUrl);
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();

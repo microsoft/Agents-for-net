@@ -270,16 +270,22 @@ namespace Microsoft.Agents.Builder.Tests
             adapter.Setup(value => value.SendActivitiesAsync(
                 It.IsAny<ITurnContext>(), It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
                 .Returns<ITurnContext, IActivity[], CancellationToken>((_, activities, _) =>
-                    activities[0].Type == ActivityTypes.Message
-                        ? Task.FromException<ResourceResponse[]>(new ErrorResponseException("Final send timed out.")
+                {
+                    if (activities[0].Type == ActivityTypes.Message)
+                    {
+                        // ChannelServiceAdapterBase clears IDs on new sends, including failed sends.
+                        activities[0].Id = null;
+                        return Task.FromException<ResourceResponse[]>(new ErrorResponseException("Final send timed out.")
                         {
                             Body = new ErrorResponse(new Error
                             {
                                 Code = "ContentStreamNotAllowed",
                                 Message = "Content stream finished due to exceeded streaming time."
                             })
-                        })
-                        : Task.FromResult(new[] { new ResourceResponse(streamId) }));
+                        });
+                    }
+                    return Task.FromResult(new[] { new ResourceResponse(streamId) });
+                });
             adapter.Setup(value => value.UpdateActivityAsync(
                 It.IsAny<ITurnContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
                 .Returns<ITurnContext, IActivity, CancellationToken>((_, activity, token) =>

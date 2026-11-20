@@ -9,6 +9,7 @@ using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,20 +25,20 @@ internal static class GraphClientFactory
     /// Creates a <see cref="Microsoft.Graph.GraphServiceClient"/> that acquires a delegated (user) token via
     /// <see cref="Microsoft.Agents.Builder.App.UserAuth.UserAuthorization"/> for the current turn.
     /// </summary>
-    internal static GraphServiceClient CreateUserGraphClient(UserAuthorization userAuthorization, ITurnContext turnContext, string handlerName, string graphBaseUrl)
+    internal static GraphServiceClient CreateUserGraphClient(UserAuthorization userAuthorization, ITurnContext turnContext, string handlerName, string graphBaseUrl, Func<HttpMessageHandler> handlerFactory = null)
     {
         AssertionHelpers.ThrowIfNull(userAuthorization, nameof(userAuthorization));
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         AssertionHelpers.ThrowIfNullOrEmpty(graphBaseUrl, nameof(graphBaseUrl));
 
-        return new GraphServiceClient(new UserTokenProvider(userAuthorization, turnContext, handlerName), graphBaseUrl);
+        return CreateClient(new UserTokenProvider(userAuthorization, turnContext, handlerName), graphBaseUrl, handlerFactory);
     }
 
     /// <summary>
     /// Creates a <see cref="Microsoft.Graph.GraphServiceClient"/> that acquires an app-only (application) token from the supplied
     /// token connection.
     /// </summary>
-    internal static GraphServiceClient CreateAppGraphClient(Microsoft.Agents.Authentication.IAccessTokenProvider tokenProvider, string graphBaseUrl)
+    internal static GraphServiceClient CreateAppGraphClient(Microsoft.Agents.Authentication.IAccessTokenProvider tokenProvider, string graphBaseUrl, Func<HttpMessageHandler> handlerFactory = null)
     {
         AssertionHelpers.ThrowIfNull(tokenProvider, nameof(tokenProvider));
         AssertionHelpers.ThrowIfNullOrEmpty(graphBaseUrl, nameof(graphBaseUrl));
@@ -48,8 +49,51 @@ internal static class GraphClientFactory
         var resourceUrl = $"{graphUri.Scheme}://{graphUri.Host}";
         var scopes = new List<string> { $"{resourceUrl}/.default" };
 
-        return new GraphServiceClient(new AppTokenProvider(tokenProvider, resourceUrl, scopes), graphBaseUrl);
+        return CreateClient(new AppTokenProvider(tokenProvider, resourceUrl, scopes), graphBaseUrl, handlerFactory);
     }
+
+    private static GraphServiceClient CreateClient(IAuthenticationProvider authentication, string baseUrl, Func<HttpMessageHandler> handlerFactory)
+    {
+        if (handlerFactory == null)
+        {
+            return new GraphServiceClient(authentication, baseUrl);
+        }
+
+        var terminal = handlerFactory();
+        AssertionHelpers.ThrowIfNull(terminal, nameof(handlerFactory));
+        var version = typeof(GraphServiceClient).Assembly.GetName().Version;
+        var options = new GraphClientOptions
+        {
+            GraphServiceLibraryClientVersion = $"{version.Major}.{version.Minor}.{version.Build}",
+            GraphServiceTargetVersion = string.Empty
+        };
+        // Retain Graph's retry, redirect, and telemetry middleware above the injected transport.
+        var client = Microsoft.Graph.GraphClientFactory.Create(
+            Microsoft.Graph.GraphClientFactory.CreateDefaultHandlers(options),
+            finalHandler: terminal);
+        return new GraphServiceClient(new OwnedRequestAdapter(authentication, client), baseUrl);
+    }
+
+    private sealed class OwnedRequestAdapter : BaseGraphRequestAdapter
+    {
+        private readonly HttpClient _client;
+
+        internal OwnedRequestAdapter(IAuthenticationProvider authentication, HttpClient client)
+            : base(authentication, httpClient: client)
+        {
+            _client = client;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _client.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+    }
+
 }
 
 class UserTokenProvider(UserAuthorization userAuthorization, ITurnContext turnContext, string handlerName) : IAuthenticationProvider

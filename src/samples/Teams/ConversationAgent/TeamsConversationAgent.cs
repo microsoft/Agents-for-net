@@ -5,7 +5,6 @@ using Microsoft.Agents.Authentication;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.App.Proactive;
 using Microsoft.Agents.Builder.State;
-using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Agents.Extensions.MSTeams;
@@ -15,6 +14,8 @@ using Microsoft.Agents.Extensions.MSTeams.Teams;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -239,20 +240,13 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options, ILo
                 ?? throw new InvalidOperationException("The Teams API returned an empty conversation member.");
             await turnContext.SendActivityAsync($"You are: {member.Name}.", cancellationToken: cancellationToken);
         }
-        catch (ErrorResponseException e)
+        catch (HttpRequestException e) when (e.StatusCode == HttpStatusCode.NotFound)
         {
-            if (e.Body.Error.Code.Equals("MemberNotFoundInConversation", StringComparison.OrdinalIgnoreCase))
-            {
-                await turnContext.SendActivityAsync("Member not found.", cancellationToken: cancellationToken);
-                return;
-            }
-            else
-            {
-                throw;
-            }
+            await turnContext.SendActivityAsync("Member not found.", cancellationToken: cancellationToken);
+            return;
         }
 
-        var graphClient = TeamsExtension.GetGraphClient(turnContext);
+        using var graphClient = TeamsExtension.GetGraphClient(turnContext);
         var me = await graphClient.Me.GetAsync(cancellationToken: cancellationToken);
         await turnContext.SendActivityAsync($"Graph thinks you are: {me?.DisplayName}.", cancellationToken: cancellationToken);
     }
@@ -357,17 +351,10 @@ public partial class TeamsConversationAgent(AgentApplicationOptions options, ILo
 
             await turnContext.SendActivityAsync(MessageFactory.Attachment(adaptiveCardAttachment), cancellationToken);
         }
-        catch (ErrorResponseException e)
+        catch (HttpRequestException e) when (e.StatusCode == HttpStatusCode.NotFound)
         {
-            if (e.Body.Error.Code.Equals("MemberNotFoundInConversation", StringComparison.OrdinalIgnoreCase))
-            {
-                await turnContext.SendActivityAsync("Member not found.", cancellationToken: cancellationToken);
-                return;
-            }
-            else
-            {
-                throw;
-            }
+            await turnContext.SendActivityAsync("Member not found.", cancellationToken: cancellationToken);
+            return;
         }
     }
 

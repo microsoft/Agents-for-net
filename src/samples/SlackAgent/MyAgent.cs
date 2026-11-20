@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.App;
@@ -25,6 +25,7 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
             {
                 await turnContext.SendActivityAsync(MessageFactory.Text("Hello and Welcome!"), cancellationToken);
             }
+
         }
     }
 
@@ -35,65 +36,56 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     {
         var channelData = turnContext.Activity.ChannelData;
 
-        var message = $$"""
+        var message = new
         {
-            "channel": "{{channelData.Channel}}",
-            "text": "You said: {{turnContext.Activity.Text}}",
-            "thread_ts": "{{channelData.ThreadTs}}"
-        }
-        """;
+            channel = channelData.Channel,
+            text = $"You said: {turnContext.Activity.Text}",
+            thread_ts = channelData.ThreadTs
+        };
 
         await turnContext.Client.CallAsync("chat.postMessage", message, channelData.ApiToken, cancellationToken);
     }
-    
+
     [SlackEventRoute]
     public async Task OnSlackEventAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var channelData = turnContext.Activity.ChannelData;
 
-        var message = $$"""
+        var message = new
         {
-            "channel": "{{channelData.Channel}}",
-            "text": "Agent got: {{turnContext.Activity.Name}}"
-        }
-        """;
+            channel = channelData.Channel,
+            text = $"Agent got: {turnContext.Activity.Name}"
+        };
 
         await turnContext.Client.CallAsync("chat.postMessage", message, channelData.ApiToken, cancellationToken);
     }
-    
+
     [SlackMessageRoute("-buttons")]
     public async Task OnSlackButtonsAsync(ISlackTurnContext turnContext, ITurnState turnState, CancellationToken cancellationToken)
     {
         var channelData = turnContext.Activity.ChannelData;
-        var buttons = $$"""
+        var buttons = new
         {
-            "channel": "{{channelData.Channel}}",
-            "thread_ts": "{{channelData.ThreadTs}}",
-            "blocks": [
+            channel = channelData.Channel,
+            thread_ts = channelData.ThreadTs,
+            blocks = new object[]
+            {
+                new
                 {
-                    "type": "section",
-                    "text": { "type": "mrkdwn", "text": "Pick an option:" },
+                    type = "section",
+                    text = new { type = "mrkdwn", text = "Pick an option:" }
                 },
+                new
                 {
-                    "type": "actions",
-                    "elements": [
-                        {
-                            "type": "button",
-                            "text": { "type": "plain_text", "text": "Yes" },
-                            "action_id": "button_yes",
-                            "value": "yes",
-                        },
-                        {
-                            "type": "button",
-                            "text": { "type": "plain_text", "text": "No" },
-                            "action_id": "button_no",
-                            "value": "no",
-                        },
-                    ],
-                },
-            ],
-        }
-        """;
+                    type = "actions",
+                    elements = new[]
+                    {
+                        new { type = "button", text = new { type = "plain_text", text = "Yes" }, action_id = "button_yes", value = "yes" },
+                        new { type = "button", text = new { type = "plain_text", text = "No" }, action_id = "button_no", value = "no" }
+                    }
+                }
+            }
+        };
 
         await turnContext.Client.CallAsync("chat.postMessage", buttons, channelData.ApiToken, cancellationToken);
     }
@@ -171,13 +163,12 @@ public partial class MyAgent(AgentApplicationOptions options) : AgentApplication
     public async Task OnSlackFeedbackLoopAsync(ISlackTurnContext turnContext, ITurnState turnState, FeedbackData feedbackData, CancellationToken cancellationToken)
     {
         var channelData = turnContext.Activity.ChannelData;
-        var message = $$"""
+        var message = new
         {
-            "channel": "{{channelData.Channel}}",
-            "text": "Agent got feedback: {{feedbackData?.ActionValue?.Reaction}}",
-            "thread_ts": "{{channelData.ThreadTs}}"
-        }
-        """;
+            channel = channelData.Channel,
+            text = $"Agent got feedback: {feedbackData?.ActionValue?.Reaction}",
+            thread_ts = channelData.ThreadTs
+        };
 
         await turnContext.Client.CallAsync("chat.postMessage", message, channelData.ApiToken, cancellationToken);
     }

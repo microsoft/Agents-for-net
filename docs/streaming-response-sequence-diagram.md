@@ -206,6 +206,7 @@ sequenceDiagram
 - **EndStreamTimeout** — defaults to 2 minutes for queue draining during `EndStreamAsync` / `ResetAsync`, not total stream lifetime. If the queue doesn't drain in time, returns `Timeout`. This does not guarantee that an already pending transport send has completed or been canceled.
 - **ResetAsync** — allows reusing `StreamingResponse` for multiple streams in the same turn (waits for current stream to end first).
 - **Client timeout fallback** — a Teams timeout error switches to non-streaming mode and updates the existing stream activity with the final message. A timeout during the final send immediately updates the already-composed payload, preserving metadata and attachments without recomposing or duplicating them; failed final recovery returns `Error`. The M365 Copilot proactive timeout path later sends the final content as a normal message even if a timeout notification fails. A reset invalidates the previous stream's pending fallback.
+- **Recovery activity ID** — final-send recovery restores the original stream ID before updating, because a send adapter may clear the outgoing activity's ID before its HTTP request fails.
 - **M365 keep-alive clock** — the 35-second check is measured from stream start or the last informative update while the queue is empty. Ordinary text chunks and intermediate text sends do not reset this clock.
 - **No final payload means no send** — on a non-streaming channel, `EndStreamAsync` sends only when text, a `FinalMessage`, or prior updates exist.
 
