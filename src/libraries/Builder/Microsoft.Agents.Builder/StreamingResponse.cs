@@ -353,9 +353,18 @@ namespace Microsoft.Agents.Builder
 
         /// <inheritdoc/>
         public Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default)
-            => EndStreamAsync(null, cancellationToken);
+            => EndStreamCoreAsync(null, cancellationToken);
 
-        internal async Task<StreamingResponseResult> EndStreamAsync(
+        /// <inheritdoc/>
+        public Task<StreamingResponseResult> EndStreamAsync(
+            Func<IActivity, CancellationToken, Task<ResourceResponse>> finalActivitySender,
+            CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(finalActivitySender, nameof(finalActivitySender));
+            return EndStreamCoreAsync(finalActivitySender, cancellationToken);
+        }
+
+        private async Task<StreamingResponseResult> EndStreamCoreAsync(
             Func<IActivity, CancellationToken, Task<ResourceResponse>> finalActivitySender,
             CancellationToken cancellationToken)
         {

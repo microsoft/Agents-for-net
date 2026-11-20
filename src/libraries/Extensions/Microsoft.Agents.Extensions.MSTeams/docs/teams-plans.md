@@ -114,7 +114,7 @@ No new use of `IStreamingResponse.FinalMessage` is required. The actual composed
 final activity retains those fields, feedback metadata, and the original
 prompt/thread binding.
 
-Builder's [custom final-delivery overload](../../../../../docs/streaming-response-sequence-diagram.md#custom-final-delivery)
+The [`IStreamingResponse` custom final-delivery overload](../../../../../docs/streaming-response-sequence-diagram.md#custom-final-delivery)
 is a general-purpose capability: only final delivery is replaceable. Ordinary
 send/update hooks cannot reliably distinguish a timeout checkpoint from a final
 message after streaming has been disabled. The overload avoids that ambiguity

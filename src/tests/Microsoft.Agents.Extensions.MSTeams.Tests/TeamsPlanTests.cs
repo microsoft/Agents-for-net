@@ -497,6 +497,51 @@ public partial class TeamsPlanTests
     }
 
     [Fact]
+    public async Task StreamingCompletion_UsesCustomWriterFinalDeliveryContract()
+    {
+        using var environment = new PlanEnvironment();
+        using var cancellation = new CancellationTokenSource();
+        var writer = new Mock<IStreamingResponse>();
+        writer.Setup(response => response.EndStreamAsync(
+            It.IsAny<Func<IActivity, CancellationToken, Task<ResourceResponse>>>(), It.IsAny<CancellationToken>()))
+            .Returns(async (Func<IActivity, CancellationToken, Task<ResourceResponse>> sender, CancellationToken token) =>
+            {
+                Assert.Equal(cancellation.Token, token);
+                await sender(new Activity
+                {
+                    Type = ActivityTypes.Message,
+                    Text = "Custom writer answer.",
+                    Attachments = [new Attachment { ContentType = "text/plain", Content = "attachment" }]
+                }, token);
+                return StreamingResponseResult.Success;
+            });
+        var customContext = new Mock<ITeamsTurnContext> { CallBase = true };
+        var coreContext = customContext.As<ITurnContext>();
+        coreContext.SetupGet(context => context.Activity).Returns(environment.Context.Activity);
+        coreContext.SetupGet(context => context.Services).Returns(environment.Context.Services);
+        coreContext.SetupGet(context => context.StreamingResponse).Returns(writer.Object);
+        coreContext.Setup(context => context.OnSendActivities(It.IsAny<SendActivitiesHandler>()))
+            .Returns((SendActivitiesHandler handler) => environment.Context.OnSendActivities(handler));
+        coreContext.Setup(context => context.SendActivitiesAsync(It.IsAny<IActivity[]>(), It.IsAny<CancellationToken>()))
+            .Returns((IActivity[] activities, CancellationToken token) =>
+                environment.Context.SendActivitiesAsync(activities, token));
+        var plan = new TeamsPlan(customContext.Object, new PlanOptions
+        {
+            ConversationId = "conversation",
+            ReplyToId = "original-prompt"
+        });
+
+        var result = await plan.CompleteStreamingAsync(cancellation.Token);
+
+        Assert.Equal(StreamingResponseResult.Success, result);
+        var final = ProtocolJsonSerializer.ToObject<Activity>(Assert.Single(environment.Requests).Body);
+        Assert.Equal("Custom writer answer.", final.Text);
+        Assert.Equal("original-prompt", final.ReplyToId);
+        Assert.Single(final.Attachments);
+        Assert.Equal("complete", Assert.Single(final.Entities.OfType<PlanInfoEntity>()).PlanType.Value);
+    }
+
+    [Fact]
     public async Task Update_SendsOnlySuppliedStepAndKeepsApplicationVersion()
     {
         using var environment = new PlanEnvironment();

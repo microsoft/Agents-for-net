@@ -211,7 +211,7 @@ sequenceDiagram
 
 ## Custom Final Delivery
 
-The `Microsoft.Agents.Builder.StreamingResponseExtensions.EndStreamAsync` overload
+The `Microsoft.Agents.Builder.IStreamingResponse.EndStreamAsync` overload
 accepts a `Func<IActivity, CancellationToken, Task<ResourceResponse>>` for callers
 that need to own final delivery. It supplies the fully composed final Core
 activity, including text, attachments, citations, labels, feedback, and applicable
@@ -222,9 +222,11 @@ checkpoints remain unchanged.
 The callback owns transport recovery, and its exceptions propagate to the
 ending caller. It is not invoked without a final payload or when ending reports
 `AlreadyEnded` or `NotStarted`, and it is not retained across resets. The overload
-supports the SDK writer; an unsupported custom `IStreamingResponse` implementation
-throws `NotSupportedException`. The original `EndStreamAsync(CancellationToken)`
-and its default error/recovery behavior are unchanged.
+is part of the `IStreamingResponse` contract, so each writer provides its own
+implementation rather than relying on an extension that recognizes the SDK
+writer. A null sender is rejected before the SDK writer consumes the stream.
+The original `EndStreamAsync(CancellationToken)` and its default error/recovery
+behavior are unchanged.
 
 This is a general-purpose output extensibility point. Channel extensions can
 apply their own final-message metadata and transport requirements without

@@ -3,7 +3,6 @@
 
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
-using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -173,12 +172,19 @@ public class StreamingResponseFinalDeliveryTests
     }
 
     [Fact]
-    public async Task UnsupportedCustomWriter_RejectsFinalDeliveryCapability()
+    public async Task NullFinalSender_DoesNotConsumeDefaultCompletion()
     {
-        var writer = new Mock<IStreamingResponse>().Object;
+        var sent = new List<IActivity>();
+        using var context = CreateContext(Channels.Test, activities => sent.AddRange(activities));
+        context.StreamingResponse.QueueTextChunk("Answer.");
 
-        await Assert.ThrowsAsync<NotSupportedException>(() =>
-            writer.EndStreamAsync((_, _) => Task.FromResult(new ResourceResponse("unused"))));
+        var error = await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            context.StreamingResponse.EndStreamAsync(
+                (Func<IActivity, CancellationToken, Task<ResourceResponse>>)null));
+
+        Assert.Equal("finalActivitySender", error.ParamName);
+        Assert.Equal(StreamingResponseResult.Success, await context.StreamingResponse.EndStreamAsync());
+        Assert.Equal("Answer.", Assert.Single(sent).Text);
     }
 
     private static TurnContext CreateContext(string channelId, Action<IActivity[]> onSend = null)
