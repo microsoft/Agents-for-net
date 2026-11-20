@@ -199,6 +199,7 @@ namespace Microsoft.Agents.Builder.Tests
             Enabled = true,
             IncludeDefaultMicrosoftHosts = false,
             AllowPrivateNetworkAddresses = true,
+            AllowHttpForLoopback = true,
             Hosts = new[] { "localhost" }
         });
 
