@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,6 +117,39 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="PlanRequiresTeamsTurn" xml:space="preserve">
+    <value>Plans require a Teams turn.</value>
+  </data>
+  <data name="PlanTargetedPromptNotSupported" xml:space="preserve">
+    <value>Targeted Plans are not supported.</value>
+  </data>
+  <data name="PlanConversationMismatch" xml:space="preserve">
+    <value>Restore a Plan in a continuation for its original conversation.</value>
+  </data>
+  <data name="PlanInvalidReplyChainId" xml:space="preserve">
+    <value>A reply-chain destination cannot be a dot segment.</value>
+  </data>
+  <data name="PlanCompletionMustBeMessage" xml:space="preserve">
+    <value>A Plan completion must be a message activity.</value>
+  </data>
+  <data name="PlanTargetedCompletionNotSupported" xml:space="preserve">
+    <value>Targeted Plan completions are not supported.</value>
+  </data>
+  <data name="PlanCompletionOperationInvalid" xml:space="preserve">
+    <value>A completion message cannot contain a different Plan operation.</value>
+  </data>
+  <data name="PlanConnectorClientMissing" xml:space="preserve">
+    <value>Plan reply-chain delivery requires the current turn's Core IConnectorClient.</value>
+  </data>
+  <data name="PlanReplyChainTransportRequired" xml:space="preserve">
+    <value>Plan reply-chain delivery requires the turn's service-scoped IRestTransport.</value>
+  </data>
+  <data name="PlanReplyChainRequestFailed" xml:space="preserve">
+    <value>Plan reply-chain delivery failed with HTTP {0} ({1}).</value>
+  </data>
+  <data name="PlanInvalidLifecycleOperation" xml:space="preserve">
+    <value>Invalid Plan lifecycle operation.</value>
+  </data>
   <data name="RouteSelectorAlreadyDefined" xml:space="preserve">
     <value>A selector has already been defined for this route. Multiple selectors are not supported. Builder method '{0}'.</value>
     <comment>Raised when using a RouteBuilder and using more than one selector method.</comment>

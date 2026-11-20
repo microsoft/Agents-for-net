@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder;
-using Microsoft.Agents.Connector;
 using Microsoft.Agents.Core;
 using Microsoft.Agents.Core.Errors;
 using Microsoft.Agents.Core.Models;
@@ -20,6 +19,7 @@ using PlanInfoEntity = Microsoft.Agents.Extensions.MSTeams.Models.PlanInfoEntity
 using PlanStep = Microsoft.Teams.Apps.Schema.Entities.PlanStep;
 using PlanType = Microsoft.Teams.Apps.Schema.Entities.PlanType;
 using PlanTypes = Microsoft.Teams.Apps.Schema.Entities.PlanTypes;
+using ErrorHelper = Microsoft.Agents.Extensions.MSTeams.Errors.ErrorHelper;
 
 namespace Microsoft.Agents.Extensions.MSTeams;
 
@@ -36,7 +36,7 @@ namespace Microsoft.Agents.Extensions.MSTeams;
 [Experimental("ExperimentalTeamsPlan")]
 public sealed class TeamsPlan
 {
-    private readonly ITurnContext _turnContext;
+    private readonly TeamsTurnContext _turnContext;
 
     /// <summary>
     /// Binds a Plan to the incoming prompt, or restores a saved binding in a fresh continuation.
@@ -49,22 +49,22 @@ public sealed class TeamsPlan
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         if (turnContext.Activity.ChannelId != Core.Models.Channels.Msteams)
         {
-            throw new ArgumentException("Plans require a Teams turn.", nameof(turnContext));
+            throw ErrorHelper.CreateArgumentException(ErrorHelper.PlanRequiresTeamsTurn, nameof(turnContext));
         }
         if (turnContext.Activity.IsTargetedActivity()
             || (turnContext.Activity.Recipient?.Properties?.TryGetValue("isTargeted", out var targeted) == true
                 && targeted.ValueKind == JsonValueKind.True))
         {
-            throw new ArgumentException("Targeted Plans are not supported.", nameof(turnContext));
+            throw ErrorHelper.CreateArgumentException(ErrorHelper.PlanTargetedPromptNotSupported, nameof(turnContext));
         }
 
-        _turnContext = turnContext;
+        _turnContext = turnContext as TeamsTurnContext ?? new TeamsTurnContext(turnContext);
         Options = options ?? CreateOptions(turnContext.Activity);
         AssertionHelpers.ThrowIfNullOrWhiteSpace(Options.ConversationId, nameof(options));
         AssertionHelpers.ThrowIfNullOrWhiteSpace(Options.ReplyToId, nameof(options));
         if (Options.ConversationId != turnContext.Activity.Conversation?.Id)
         {
-            throw new ArgumentException("Restore a Plan in a continuation for its original conversation.", nameof(options));
+            throw ErrorHelper.CreateArgumentException(ErrorHelper.PlanConversationMismatch, nameof(options));
         }
         if (Options.ReplyChain is { } replyChain)
         {
@@ -114,15 +114,6 @@ public sealed class TeamsPlan
         => SendUpdateAsync(PlanTypes.Error, null, cancellationToken);
 
     /// <summary>
-    /// Builds a fresh Core completion message bound to the original prompt, without sending it.
-    /// </summary>
-    public IActivity Completion() => Bind(new Activity
-    {
-        Type = ActivityTypes.Message,
-        Entities = [new PlanInfoEntity { PlanType = PlanTypes.Complete }]
-    });
-
-    /// <summary>
     /// Completes the Plan by posting a final Core message.
     /// </summary>
     public Task<ResourceResponse> CompleteAsync(string message, CancellationToken cancellationToken = default)
@@ -138,8 +129,11 @@ public sealed class TeamsPlan
     public async Task<ResourceResponse> CompleteAsync(IActivity message, CancellationToken cancellationToken = default)
     {
         var response = await PostAsync(PrepareCompletion(message), completion: true, cancellationToken).ConfigureAwait(false);
-        Sent?.Invoke(this, new TeamsPlanSentEventArgs(response));
-        return response;
+        if (response != null)
+        {
+            Sent?.Invoke(this, new TeamsPlanSentEventArgs(response));
+        }
+        return response ?? new ResourceResponse();
     }
 
     /// <summary>
@@ -172,8 +166,11 @@ public sealed class TeamsPlan
             response = await PostAsync(activity, completion: true, cancellationToken).ConfigureAwait(false);
         }
 
-        Sent?.Invoke(this, new TeamsPlanSentEventArgs(response));
-        return response;
+        if (response != null)
+        {
+            Sent?.Invoke(this, new TeamsPlanSentEventArgs(response));
+        }
+        return response ?? new ResourceResponse();
     }
 
     private static PlanOptions CreateOptions(IActivity activity)
@@ -234,7 +231,7 @@ public sealed class TeamsPlan
         AssertionHelpers.ThrowIfNullOrWhiteSpace(value, parameterName);
         if (value is "." or "..")
         {
-            throw new ArgumentException("A reply-chain destination cannot be a dot segment.", parameterName);
+            throw ErrorHelper.CreateArgumentException(ErrorHelper.PlanInvalidReplyChainId, parameterName);
         }
     }
 
@@ -245,8 +242,11 @@ public sealed class TeamsPlan
             Type = ActivityTypes.Typing,
             Entities = [new PlanInfoEntity { PlanType = operation, Steps = steps?.ToList() }]
         }.Clone();
-        await PostAsync(activity, completion: false, cancellationToken).ConfigureAwait(false);
-        Sent?.Invoke(this, new TeamsPlanSentEventArgs(null));
+        var response = await PostAsync(activity, completion: false, cancellationToken).ConfigureAwait(false);
+        if (response != null)
+        {
+            Sent?.Invoke(this, new TeamsPlanSentEventArgs(null));
+        }
     }
 
     private static IActivity PrepareCompletion(IActivity message)
@@ -254,20 +254,20 @@ public sealed class TeamsPlan
         AssertionHelpers.ThrowIfNull(message, nameof(message));
         if (message.Type != ActivityTypes.Message)
         {
-            throw new ArgumentException("A Plan completion must be a message activity.", nameof(message));
+            throw ErrorHelper.CreateArgumentException(ErrorHelper.PlanCompletionMustBeMessage, nameof(message));
         }
 
         // Cloning materializes untyped entities, so validate targeting on the clone.
         var activity = message.Clone();
         if (activity.IsTargetedActivity())
         {
-            throw new ArgumentException("Targeted Plan completions are not supported.", nameof(message));
+            throw ErrorHelper.CreateArgumentException(ErrorHelper.PlanTargetedCompletionNotSupported, nameof(message));
         }
 
         var plans = activity.Entities?.Where(entity => entity.Type == PlanInfoEntity.EntityName).ToArray() ?? [];
         if (plans.Any(entity => ProtocolJsonSerializer.ToObject<PlanInfoEntity>(entity).PlanType.Value != "complete"))
         {
-            throw new ArgumentException("A completion message cannot contain a different Plan operation.", nameof(message));
+            throw ErrorHelper.CreateArgumentException(ErrorHelper.PlanCompletionOperationInvalid, nameof(message));
         }
         if (plans.Length == 0)
         {
@@ -278,28 +278,30 @@ public sealed class TeamsPlan
         return activity;
     }
 
-    private IActivity Bind(IActivity activity)
+    private ConversationReference GetConversationReference()
     {
         var reference = ProtocolJsonSerializer.ToObject<ConversationReference>(_turnContext.Activity.GetConversationReference());
-        activity.ApplyConversationReference(reference);
-        activity.Conversation.Id = Options.ConversationId;
-        activity.ReplyToId = Options.ReplyToId;
-        activity.Id = null;
-        return activity;
+        reference.Conversation.Id = Options.ConversationId;
+        reference.ActivityId = Options.ReplyToId;
+        return reference;
     }
 
-    private Task<ResourceResponse> PostAsync(IActivity activity, bool completion, CancellationToken cancellationToken)
+    private async Task<ResourceResponse> PostAsync(IActivity activity, bool completion, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Bind(activity);
-        var connector = _turnContext.Services.Get<IConnectorClient>()
-            ?? throw new InvalidOperationException("Plan delivery requires the current turn's Core IConnectorClient.");
-        var streamInfo = activity.GetStreamingEntity();
-        var continuingStream = streamInfo?.StreamType == StreamTypes.Final && !string.IsNullOrEmpty(streamInfo.StreamId);
-        // An established stream continues on the conversation endpoint, even when it started in a thread.
-        return completion && !continuingStream && Options.ReplyChain is { } replyChain
-            ? TeamsPlanTransport.SendReplyChainAsync(connector, replyChain, activity, cancellationToken)
-            : connector.Conversations.SendToConversationAsync(activity, cancellationToken);
+        activity.Id = null;
+        Func<IActivity, CancellationToken, Task<ResourceResponse>>? sendReplyChain = null;
+        if (completion && Options.ReplyChain is { } replyChain)
+        {
+            sendReplyChain = (outgoing, token) =>
+                TeamsPlanTransport.SendReplyChainAsync(_turnContext, replyChain, outgoing, token);
+        }
+        var responses = await _turnContext.SendPlanActivityAsync(
+            activity,
+            GetConversationReference(),
+            sendReplyChain,
+            cancellationToken).ConfigureAwait(false);
+        return responses?.FirstOrDefault();
     }
 }
 

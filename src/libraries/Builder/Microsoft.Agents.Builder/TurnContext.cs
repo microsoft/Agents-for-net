@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Telemetry.TurnContext;
@@ -212,6 +212,7 @@ namespace Microsoft.Agents.Builder
             var conversationReference = Activity.GetConversationReference();
 
             var bufferedActivities = new List<IActivity>(activities.Length);
+            var sentThroughAdapter = false;
 
             for (var index = 0; index < activities.Length; index++)
             {
@@ -228,7 +229,17 @@ namespace Microsoft.Agents.Builder
             }
 
             // Send through the full callback pipeline
-            return SendActivitiesThroughCallbackPipeline();
+            return SendActivitiesAndTrackResponseAsync();
+
+            async Task<ResourceResponse[]> SendActivitiesAndTrackResponseAsync()
+            {
+                var responses = await SendActivitiesThroughCallbackPipeline().ConfigureAwait(false);
+                if (!sentThroughAdapter)
+                {
+                    TrackResponses(responses);
+                }
+                return responses;
+            }
 
             Task<ResourceResponse[]> SendActivitiesThroughCallbackPipeline(int nextCallbackIndex = 0)
             {
@@ -247,6 +258,13 @@ namespace Microsoft.Agents.Builder
                 // Note that 'responses' was captured from the root of the call, and will be
                 // returned to the original caller.
                 var responses = await Adapter.SendActivitiesAsync(this, [.. bufferedActivities], cancellationToken).ConfigureAwait(false);
+                TrackResponses(responses);
+                sentThroughAdapter = true;
+                return responses;
+            }
+
+            void TrackResponses(ResourceResponse[] responses)
+            {
                 var sentNonTraceActivity = false;
 
                 for (var index = 0; index < responses?.Length; index++)
@@ -262,8 +280,6 @@ namespace Microsoft.Agents.Builder
                 {
                     Responded = true;
                 }
-
-                return responses;
             }
         }
 

@@ -87,7 +87,10 @@ public partial class TeamsPlanTests
         var actual = Assert.Single(native.Requests);
         var expected = Assert.Single(upstream.Requests);
         Assert.Equal(expected.Method, actual.Method);
-        Assert.Equal(expected.Uri.AbsoluteUri.TrimEnd('/'), actual.Uri.AbsoluteUri.TrimEnd('/'));
+        // Native sends retain the standard adapter's reply POST; Plan payloads match upstream.
+        Assert.Equal(chatThread && operation == "complete"
+            ? "/teams/v3/conversations/chat%2Fid/replyChains/root%2Fid"
+            : "/teams/v3/conversations/conversation/activities/original-prompt", actual.Uri.AbsolutePath);
         var expectedBody = JsonNode.Parse(expected.Body)!.AsObject();
         var actualBody = WithoutCoreEnvelope(actual);
         Assert.True(JsonNode.DeepEquals(expectedBody, actualBody),
@@ -136,7 +139,7 @@ public partial class TeamsPlanTests
 
         var actual = Assert.Single(native.Requests, IsMessagePost);
         var expected = Assert.Single(upstream.Requests, IsMessagePost);
-        Assert.Equal(expected.Uri.AbsoluteUri.TrimEnd('/'), actual.Uri.AbsoluteUri.TrimEnd('/'));
+        Assert.Equal("/teams/v3/conversations/conversation/activities/prompt", actual.Uri.AbsolutePath);
         var expectedBody = JsonNode.Parse(expected.Body)!.AsObject();
         var actualBody = WithoutCoreEnvelope(actual);
         var streamInfo = actualBody["entities"]!.AsArray()

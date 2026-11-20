@@ -66,6 +66,7 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 - Full Microsoft Teams extensibility: message extensions, task modules, meeting events, channel/team lifecycle, and file consent
 - Aligns its models and public feature surface with the Teams SDK. When the Teams SDK removes a feature, MSTeams removes the corresponding feature rather than maintaining a compatibility implementation. These removals are breaking changes for MSTeams users and may occur in minor or patch releases.
 - Depends on teams.net's `Microsoft.Teams.Apps` NuGet package for Teams schema, API clients, and feature types (e.g. `Microsoft.Teams.Apps.Schema.TeamsChannelData`, `Microsoft.Teams.Apps.Clients.ApiClient`, `Microsoft.Teams.Apps.MessageExtensions.*`); it reimplements only routing on `AgentApplication`
+- Teams helper APIs do not need to mirror the Teams SDK's API design. Prioritize wire compatibility and reuse existing Agents SDK abstractions, including `TeamsTurnContext` and the normal outgoing adapter pipeline.
 - Agent 365 lifecycle events are not handled by the Agents SDK or the MSTeams extension. Use the A365 Agent Extension (`Microsoft.Agents.A365.Notifications`) for these events.
 - Enable with `[TeamsExtension]` attribute on a `partial AgentApplication` subclass — source generator creates a `Teams` property of type `TeamsAgentExtension`
 - Two routing styles: **fluent builders** (`Teams.MessageExtensions.OnQuery(...)`) or **declarative attributes** (`[TeamsQueryRoute("cmdId")]`)
@@ -90,6 +91,13 @@ See `src/samples/EmptyAgent/Program.cs` for the canonical minimal example.
 - Do not add AgentExtension-specific behavior to Agents SDK Core, Builder, or Hosting.
 - Changes outside the extension project must provide a general-purpose extensibility capability.
 - Pull requests making such changes must explain why the extension cannot use existing extensibility points and identify the related Core documentation updates.
+
+### Outgoing activity pipeline
+
+- Send agent and AgentExtension output through `ITurnContext.SendActivityAsync` / `SendActivitiesAsync`; use the corresponding context APIs for updates and deletes.
+- Bypassing `ITurnContext` with direct adapter, `IConnectorClient`, or raw HTTP activity sends is highly discouraged. It skips outgoing hooks such as `OnSendActivities`, transcript logging, response bookkeeping, and potentially adapter delivery-mode handling.
+- If channel-specific addressing or transport cannot use the existing pipeline, add a general-purpose extensibility point rather than bypassing it or manually duplicating selected hooks.
+- Direct activity transport belongs in terminal adapter/connector implementations or deliberately low-level clients. Any intentional exception in higher-level code must be narrowly scoped and explicitly justified.
 
 ### Attachment downloader ownership
 

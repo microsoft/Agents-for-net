@@ -23,11 +23,29 @@ reports what actually happened.
 | `StopAsync()` | POST typing with `planType: "stop"` | Does not cancel application work |
 | `ErrorAsync()` | POST typing with `planType: "error"` | Distinct from marking one step as error |
 | `CompleteAsync(textOrActivity)` | POST message with `planType: "complete"` | Core `ResourceResponse` |
-| `Completion()` | None; builds a fresh Core completion message | Building a template does not complete the Plan |
 | `CompleteStreamingAsync()` | Ends the current writer using a final completion POST | `StreamingResponseResult`; delivery failures propagate |
 
 `Sent` is raised after successful delivery. Its `Response` is null for typing
 acknowledgements and contains the Core response for completion.
+
+All Plan sends, including progress and streamed completion, traverse the turn's
+`OnSendActivities` pipeline. Hooks can transform, replace, add, or suppress
+activities, and `TranscriptLoggerMiddleware` observes the outgoing Plan
+activities. A Teams-owned hook restores the saved original-prompt binding before
+delivery; outer hooks can observe that binding after awaiting `next`.
+If a hook suppresses delivery without returning a response, `Sent` is not raised
+and `CompleteAsync` returns an empty `ResourceResponse`; a writer ending result
+alone is not proof of remote Plan acknowledgement.
+
+The helper uses `TeamsTurnContext` and the existing context send APIs. A Core
+`ITurnContext` passed to the static factory is wrapped by the extension; custom
+contexts need only support the ordinary send and send-hook APIs. There is no new
+Builder send capability. Ordinary Plan output goes through the adapter's normal
+reply-to-activity POST. Only fresh chat-thread completion is intercepted for the
+new `replyChains` REST endpoint. The interceptor is registered at send time so
+previously registered hooks can inspect or suppress that request. Its private
+per-send scope does not capture later sends or another Plan's binding.
+Hosted `Stream` / `ExpectReplies` delivery still uses the normal adapter.
 
 ## Application-controlled steps
 
@@ -72,8 +90,8 @@ For ordinary completion, pass a Core message or text to `CompleteAsync`. A Core
 message can already contain cards, AI metadata, citations, or a completion
 entity; content is preserved without mutating the caller's activity. A typing
 activity, a targeted message, or a non-complete Plan operation is rejected.
-`Completion()` can prepare a message for further composition before passing it
-to `CompleteAsync`; it does not select a custom writer's transport for you.
+Compose the message before calling `CompleteAsync`; the helper supplies the
+completion entity and saved prompt binding.
 
 The extension reuses upstream non-activity Plan step/status/source/binding types.
 It never uses upstream activity DTOs or the upstream `Plan` sender.
@@ -131,6 +149,10 @@ descriptions, sources/icons, prompt binding, conversation/chat completion routes
 and informative/content/final streaming metadata.
 
 This is **Plan-contract equivalence, not byte-for-byte writer equivalence**.
+Native ordinary sends use the existing adapter's reply-to-activity POST, while
+the upstream Plan helper uses a conversation POST. Native destinations are
+asserted independently; endpoint equality is not claimed. The Plan JSON contract
+and original-prompt binding are compared with the real upstream implementation.
 Core includes its normal addressing envelope and empty collections, adds its
 shared final `streamResult`, and may order entities differently. The upstream
 writer also duplicates intermediate `streaminfo` fields into legacy channel
@@ -163,15 +185,16 @@ The helper validates the conversation and uses that fresh turn's service-scoped
 Core connector transport. The options alone do not restore identity, a service
 URL, credentials, workflow state, or completed steps.
 
-Plan typing progress always uses the full conversation destination. An ordinary
-completion in a chat reply chain uses the saved chat/root route; a channel
-completion keeps the full conversation ID, including its thread suffix. The
-final update of an established stream uses the conversation endpoint and its
-existing stream ID rather than creating another reply-chain message. This does
-not enable a general threading API. Targeted Plans are unsupported.
+Ordinary Plan sends retain the full conversation ID and original prompt binding
+through the adapter's reply-to-activity route. A fresh completion in a chat reply
+chain uses the saved chat/root REST route; a channel completion keeps the full
+conversation ID, including its thread suffix. An established stream completes
+through the adapter using its existing stream ID, without a fresh reply-chain
+message. This does not enable a general threading API. Targeted Plans are unsupported.
 
 The presence of chat/root metadata alone does not mean that a prompt is inside
-a thread. A top-level chat message whose own ID equals the root stays top-level.
+a thread. A top-level chat message whose own ID equals the root uses the normal
+adapter path, not the reply-chain REST endpoint.
 Card-button messages, reactions, and message actions use the message they act on
 when determining placement, while the Plan's prompt binding remains the incoming
 activity's own ID.

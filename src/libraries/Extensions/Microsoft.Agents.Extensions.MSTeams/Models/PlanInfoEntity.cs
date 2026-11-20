@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using PlanStep = Microsoft.Teams.Apps.Schema.Entities.PlanStep;
 using PlanType = Microsoft.Teams.Apps.Schema.Entities.PlanType;
+using ErrorHelper = Microsoft.Agents.Extensions.MSTeams.Errors.ErrorHelper;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Models;
 
@@ -38,7 +39,7 @@ public sealed class PlanInfoEntity : Entity
         {
             if (value?.Value is not ("start" or "continue" or "complete" or "stop" or "error"))
             {
-                throw new JsonException("Invalid Plan lifecycle operation.");
+                throw Core.Errors.ExceptionHelper.GenerateException<JsonException>(ErrorHelper.PlanInvalidLifecycleOperation, null);
             }
 
             _planType = value;

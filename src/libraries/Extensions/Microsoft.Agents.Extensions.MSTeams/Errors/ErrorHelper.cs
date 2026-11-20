@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Errors;
+using System;
 
 namespace Microsoft.Agents.Extensions.MSTeams.Errors
 {
@@ -35,5 +36,28 @@ namespace Microsoft.Agents.Extensions.MSTeams.Errors
         // RouteBuilders
         internal static readonly AgentErrorDefinition RouteSelectorAlreadyDefined = new AgentErrorDefinition(-100000, Properties.Resources.RouteSelectorAlreadyDefined, "https://aka.ms/M365AgentsErrorCodes/#-100000");
         internal static readonly AgentErrorDefinition RouteBuilderMissingProperty = new AgentErrorDefinition(-100001, Properties.Resources.RouteBuilderMissingProperty, "https://aka.ms/M365AgentsErrorCodes/#-100001");
+
+        // Plans
+        internal static readonly AgentErrorDefinition PlanRequiresTeamsTurn = new AgentErrorDefinition(-100002, Properties.Resources.PlanRequiresTeamsTurn, "https://aka.ms/M365AgentsErrorCodes/#-100002");
+        internal static readonly AgentErrorDefinition PlanTargetedPromptNotSupported = new AgentErrorDefinition(-100003, Properties.Resources.PlanTargetedPromptNotSupported, "https://aka.ms/M365AgentsErrorCodes/#-100003");
+        internal static readonly AgentErrorDefinition PlanConversationMismatch = new AgentErrorDefinition(-100004, Properties.Resources.PlanConversationMismatch, "https://aka.ms/M365AgentsErrorCodes/#-100004");
+        internal static readonly AgentErrorDefinition PlanInvalidReplyChainId = new AgentErrorDefinition(-100005, Properties.Resources.PlanInvalidReplyChainId, "https://aka.ms/M365AgentsErrorCodes/#-100005");
+        internal static readonly AgentErrorDefinition PlanCompletionMustBeMessage = new AgentErrorDefinition(-100006, Properties.Resources.PlanCompletionMustBeMessage, "https://aka.ms/M365AgentsErrorCodes/#-100006");
+        internal static readonly AgentErrorDefinition PlanTargetedCompletionNotSupported = new AgentErrorDefinition(-100007, Properties.Resources.PlanTargetedCompletionNotSupported, "https://aka.ms/M365AgentsErrorCodes/#-100007");
+        internal static readonly AgentErrorDefinition PlanCompletionOperationInvalid = new AgentErrorDefinition(-100008, Properties.Resources.PlanCompletionOperationInvalid, "https://aka.ms/M365AgentsErrorCodes/#-100008");
+        internal static readonly AgentErrorDefinition PlanConnectorClientMissing = new AgentErrorDefinition(-100009, Properties.Resources.PlanConnectorClientMissing, "https://aka.ms/M365AgentsErrorCodes/#-100009");
+        internal static readonly AgentErrorDefinition PlanReplyChainTransportRequired = new AgentErrorDefinition(-100010, Properties.Resources.PlanReplyChainTransportRequired, "https://aka.ms/M365AgentsErrorCodes/#-100010");
+        internal static readonly AgentErrorDefinition PlanReplyChainRequestFailed = new AgentErrorDefinition(-100011, Properties.Resources.PlanReplyChainRequestFailed, "https://aka.ms/M365AgentsErrorCodes/#-100011");
+        internal static readonly AgentErrorDefinition PlanInvalidLifecycleOperation = new AgentErrorDefinition(-100012, Properties.Resources.PlanInvalidLifecycleOperation, "https://aka.ms/M365AgentsErrorCodes/#-100012");
+
+        internal static ArgumentException CreateArgumentException(AgentErrorDefinition error, string parameterName)
+        {
+            // The shared exception factory's string constructor does not preserve ParamName.
+            return new ArgumentException(error.description, parameterName)
+            {
+                HResult = error.code,
+                HelpLink = error.helplink
+            };
+        }
     }
 }
