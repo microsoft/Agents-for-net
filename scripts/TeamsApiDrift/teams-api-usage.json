@@ -3,6 +3,10 @@
   "package": "Microsoft.Teams.Apps",
   "declaredVersion": "2.2.0",
   "sourceRoot": "src/libraries/Extensions/Microsoft.Agents.Extensions.MSTeams",
+  "sourceReview": {
+    "outcome": "no-usage-metadata-change",
+    "reason": "Graph helpers add an opt-in terminal HTTP handler factory shared with Teams turn wrappers while preserving Graph's default transport and middleware. The changed extension/context code preserves all Microsoft.Teams.Apps receiver, payload, routing, and public return types; only Microsoft.Graph and System.Net.Http transport composition changes, so no Teams API usage or capability mapping changes are required."
+  },
   "compatibilityReviews": [
     {
       "fromVersion": "2.1.0",

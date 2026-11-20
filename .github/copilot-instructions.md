@@ -7,6 +7,14 @@ This is the Microsoft 365 Agents SDK for .NET — a framework for building enter
 **Current State:** Generally Available (GA)  
 **Documentation:** https://learn.microsoft.com/en-us/microsoft-365/agents-sdk/
 
+## Documentation Boundaries
+
+- User-facing documentation for agent developers belongs on Microsoft Learn in `MicrosoftDocs/businessapps-copilot-docs-pr`, under `microsoft-365-agents`, not in this SDK repository.
+- Locate the local Learn documentation checkout before editing those articles. If its location is unknown, ask the user; do not put a replacement guide in this repository.
+- Technical documentation in this repository is for engineers working on the SDK itself, such as architecture, protocol implementation, design, and SDK contributor guidance. It is not the home for instructions on using the SDK to build an agent.
+- Exception: during development, interim agent-developer guidance may live with a sample until the feature matures. Move the mature guidance to Learn.
+- If the audience or destination is uncertain, ask before adding documentation here.
+
 ## Build and Test
 
 ```bash

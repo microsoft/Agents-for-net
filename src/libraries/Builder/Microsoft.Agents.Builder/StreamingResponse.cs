@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
@@ -201,7 +201,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public void AddAttachment(Attachment attachment)
         {
-            AssertionHelpers.ThrowIfNull(attachment, nameof(attachment));            Attachments ??= [];
+            AssertionHelpers.ThrowIfNull(attachment, nameof(attachment));
+            Attachments ??= [];
             Attachments.Add(attachment);
         }
 
@@ -1104,6 +1105,7 @@ namespace Microsoft.Agents.Builder
                             streamInfo.StreamType == StreamTypes.Final)
                         {
                             activity.Entities.Remove(streamInfo);
+                            activity.Id = StreamId;
                             updateFinalMessage = true;
                         }
                     }
