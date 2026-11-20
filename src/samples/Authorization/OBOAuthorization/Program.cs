@@ -1,102 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
-using Microsoft.Agents.CopilotStudio.Client;
-using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.Agents.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
+using OBOAuthorization;
 using System.Net.Http;
-using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddAgentDefaults()
-    .AddAgent(sp =>
-    {
-    const string MCSConversationPropertyName = "MCSConversationId";
-
-    var app = new AgentApplication(sp.GetRequiredService<AgentApplicationOptions>());
-
-    CopilotClient GetClient(ITurnContext turnContext)
-    {
-        var settings = new ConnectionSettings(builder.Configuration.GetSection("CopilotStudioAgent"));
-        string[] scopes = [CopilotClient.ScopeFromSettings(settings)];
-
-        return new CopilotClient(
-            settings,
-            sp.GetService<IHttpClientFactory>()!,
-            tokenProviderFunction: async (s) =>
-            {
-                // In this sample, the Azure Bot OAuth Connection is configured to return an 
-                // exchangeable token, that can be exchange for different scopes.  This can be
-                // done multiple times using different scopes.
-                return await turnContext.ExchangeTurnTokenAsync("mcs", exchangeScopes: scopes);
-            },
-            NullLogger.Instance,
-            "mcs");
-    }
-
-    app.OnMessage("-signout", async (turnContext, turnState, cancellationToken) =>
-    {
-        // Force a user signout to reset the user state
-        // This is needed to reset the token in Azure Bot Services if needed. 
-        // Typically this wouldn't be need in a production Agent.  Made available to assist it starting from scratch for this sample.
-        await app.UserAuthorization.SignOutUserAsync(turnContext, turnState, cancellationToken: cancellationToken);
-        await turnContext.SendActivityAsync("You have signed out", cancellationToken: cancellationToken);
-    }, rank: RouteRank.First);
-
-    // By the time this is called the token is already available via ITurnContext.GetTurnTokenAsync or
-    // ITurnContext.ExchangeTurnTokenAsync.
-    app.AddRoute(RouteBuilder.Create()
-        .WithSelector((turnContext, cancellationToken) => Task.FromResult(true))
-        .WithHandler(async (turnContext, turnState, cancellationToken) =>
-        {
-
-            var mcsConversationId = turnState.Conversation.GetValue<string>(MCSConversationPropertyName);
-            var cpsClient = GetClient(turnContext);
-
-            if (string.IsNullOrEmpty(mcsConversationId))
-            {
-                // Regardless of the Activity  Type, start the conversation.
-                await foreach (IActivity activity in cpsClient.StartConversationAsync(emitStartConversationEvent: true, cancellationToken: cancellationToken))
-                {
-                    if (activity.IsType(ActivityTypes.Message))
-                    {
-                        await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
-
-                        // Record the conversationId MCS is sending. It will be used this for subsequent messages.
-                        turnState.Conversation.SetValue(MCSConversationPropertyName, activity.Conversation.Id);
-                    }
-                }
-            }
-            else if (turnContext.Activity.IsType(ActivityTypes.Message))
-            {
-                // Send the Copilot Studio Agent whatever the sent and send the responses back.
-                await foreach (IActivity activity in cpsClient.AskQuestionAsync(turnContext.Activity.Text, mcsConversationId, cancellationToken))
-                {
-                    if (activity.IsType(ActivityTypes.Message))
-                    {
-                        await turnContext.SendActivityAsync(activity.Text, cancellationToken: cancellationToken);
-                    }
-                }
-            }
-        })
-        .Build()
-    );
-
-    // Called when the OAuth flow fails
-    app.UserAuthorization.OnUserSignInFailure(async (turnContext, turnState, handlerName, response, initiatingActivity, cancellationToken) =>
-    {
-        await turnContext.SendActivityAsync($"SignIn failed with '{handlerName}': {response.Cause}/{response.Error!.Message}", cancellationToken: cancellationToken);
-    });
-
-    return app;
-    })
+    .AddAgent(sp => OboAgentFactory.Create(
+        sp.GetRequiredService<AgentApplicationOptions>(),
+        sp.GetRequiredService<IHttpClientFactory>(),
+        builder.Configuration))
     .AddAgentAuthorization(b => b.AddAgentAspNetAuthentication());
 
 // Register IStorage.  For development, MemoryStorage is suitable.

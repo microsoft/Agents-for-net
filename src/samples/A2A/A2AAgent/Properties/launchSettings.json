@@ -4,9 +4,23 @@
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "A2AAdapterOptions__GrpcUrl": "https://localhost:3979/"
       },
       "applicationUrl": "https://localhost:3979;http://localhost:3978"
+    },
+    "A2AAgent-h2c": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Kestrel__Endpoints__Http__Url": "http://localhost:3978",
+        "Kestrel__Endpoints__Http__Protocols": "Http1",
+        "Kestrel__Endpoints__Grpc__Url": "http://localhost:3980",
+        "Kestrel__Endpoints__Grpc__Protocols": "Http2",
+        "A2AAdapterOptions__GrpcUrl": "http://localhost:3980/"
+      },
+      "applicationUrl": "http://localhost:3978;http://localhost:3980"
     }
   }
 }

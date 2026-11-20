@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -12,8 +12,14 @@ namespace Microsoft.Agents.Builder.App.Proactive
     /// <remarks>Apply this attribute to methods that are intended to handle continuation of conversations,
     /// such as in conversational bots or workflow systems. The attribute identifies the delegate responsible for
     /// handling the continuation and optionally specifies a route segment to distinguish between different conversation
-    /// paths. This attribute can be inherited by derived classes.</remarks>
+    /// paths. This attribute can be inherited by derived classes.
+    /// The handler accepts an <see cref="Microsoft.Agents.Builder.ITurnContext"/> or a specialized context
+    /// supplied by a registered <see cref="Microsoft.Agents.Builder.AgentExtension"/>, an
+    /// <see cref="Microsoft.Agents.Builder.State.ITurnState"/>, and a
+    /// <see cref="System.Threading.CancellationToken"/>, and returns a <see cref="System.Threading.Tasks.Task"/>.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Method, Inherited = true)]
+    [RouteHandlerType(typeof(RouteHandler))]
     public class ContinueConversationAttribute : Attribute
     {
         public const string DefaultKey = "";

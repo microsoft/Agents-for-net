@@ -32,11 +32,23 @@
     <ItemGroup>
       <ProjectReference Include="..\..\libraries\Builder\Microsoft.Agents.Builder.Testing\Microsoft.Agents.Builder.Testing.csproj" />
       <ProjectReference Include="..\..\samples\EmptyAgent\EmptyAgent.csproj" Aliases="global,AuthenticationSample" />
+      <ProjectReference Include="..\..\samples\Teams\ConversationAgent\ConversationAgent.csproj" />
+      <ProjectReference Include="..\..\samples\Teams\MessageExtensions\MessageExtensions.csproj" />
+      <ProjectReference Include="..\..\samples\Teams\TaskModules\TaskModules.csproj" />
       <ProjectReference Include="..\..\samples\SemanticKernel\WeatherAgent\WeatherAgent.csproj" />
       <ProjectReference Include="..\..\samples\A365LoopTest\A365LoopTest.csproj" />
+      <ProjectReference Include="..\..\samples\SlackAgent\SlackAgent.csproj" />
+      <ProjectReference Include="..\..\samples\HandlingAttachments\HandlingAttachments.csproj" />
+      <ProjectReference Include="..\..\samples\StreamingMessageAgent\StreamingMessageAgent.csproj" />
+      <ProjectReference Include="..\..\samples\Authorization\AutoSignIn\AutoSignIn.csproj" />
+      <ProjectReference Include="..\..\samples\Authorization\OBOAuthorization\OBOAuthorization.csproj" />
+      <ProjectReference Include="..\..\samples\CopilotStudioAgentConnector\CopilotStudioAgentConnector.csproj" />
+      <ProjectReference Include="..\..\samples\AgentToAgent\Agent1\Agent1.csproj" />
+      <ProjectReference Include="..\..\samples\AgentToAgent\StreamingAgent1\StreamingAgent1.csproj" />
     </ItemGroup>
 
 	<ItemGroup>
+		<None Include="..\..\samples\HandlingAttachments\Resources\*.png" Link="Resources\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
 		<None Update="Resources\*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
