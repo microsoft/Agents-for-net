@@ -171,6 +171,7 @@ The extension composes the Agent Card from several sources:
    security requirements;
 1. `A2ASkill` registrations contribute skills and their route-level security
    requirements;
+1. registered protocol-extension contributors supply their extension declarations;
 1. `IAgentCardHandler`, when implemented, receives the composed card for final
    customization; and
 1. the extension validates the final card before returning it to the client.
@@ -942,13 +943,100 @@ ends. Use the [proactive APIs](#continue-an-a2a-task-proactively) to resume a
 task instead. Keep native response code in A2A-specific routes so that shared
 handlers remain channel-independent.
 
+## Advanced: Add a protocol extension
+
+Most agents only need skills, message routes, and the SDK's built-in extensions.
+Use a custom protocol extension when cooperating clients and servers need an
+additional protocol contract, not as a replacement for normal agent routing.
+Custom contributions are optional and cannot replace SDK-owned extensions such
+as In-Task Authorization.
+
+Register a contributor through dependency injection before building the host:
+
+```csharp
+using Microsoft.Agents.Extensions.A2A;
+using Microsoft.Agents.Extensions.A2A.ProtocolExtensions;
+
+builder.Services.AddA2AProtocolExtension<DebateExtension>();
+```
+
+The single-type overload is for a single-agent application. In a multi-agent
+host, register support explicitly for the mapped agent:
+
+```csharp
+builder.Services.AddA2AProtocolExtension<MyAgent, DebateExtension>();
+```
+
+Contributors implement `IA2AProtocolExtensionContributor.Register`. For example:
+
+```csharp
+public sealed class DebateExtension : IA2AProtocolExtensionContributor
+{
+    public void Register(A2AProtocolExtensionBuilder builder)
+    {
+        var extension = builder.RegisterExtension(new A2A.AgentExtension
+        {
+            Uri = "https://example.org/extensions/debate/v1",
+            Description = "A contrived debate mode and continuation operation.",
+            Required = false,
+        });
+        var resume = builder.Map<ResumeRequest, ResumeResult>(
+            extension,
+            new A2A.A2AOperationId("https://example.org/operations#resume-debate"),
+            HandleResumeAsync,
+            DebateJsonContext.Default.ResumeRequest,
+            DebateJsonContext.Default.ResumeResult);
+        builder.JsonRpc.Map("debate/resume", resume);
+        builder.Http.Map(HttpMethods.Post, "/debate:resume", resume, ReadResumeRequestAsync);
+    }
+}
+```
+
+The [runnable ProtocolExtensionAgent sample](../ProtocolExtensionAgent/README.md)
+provides the request/result types, source-generated JSON context, validators, and
+handlers. `RegisterExtension` also supports declaration-only extensions: omit the
+operation and bindings if the extension only affects standard A2A operations.
+The declaration includes URI, description, required status, and optional JSON
+object parameters.
+
+An optional `canActivate` callback on `RegisterExtension` receives the current
+`HttpContext` and cancellation token. It is evaluated once per requested
+supported extension. Returning `false` declines activation for that request.
+The callback also works for native gRPC through its ASP.NET Core HTTP context;
+availability is not an authorization grant.
+
+Each agent and application host owns its finalized registry. All contributors
+run before finalization, and repeated registration of the same contributor for
+the same agent is ignored. Duplicate declarations, operation IDs, and transport
+bindings fail at startup rather than replacing earlier registrations.
+Contributors are singletons; resolve request-scoped services from the operation
+context or availability-policy HTTP context, not their constructors.
+The lower-level HTTP helpers do not construct the default agent during mapping.
+If `IAgent` is registered through a factory and contributors need agent-type
+scoping, use `MapA2AApplicationEndpoints` instead.
+
+The same registry controls JSON-RPC, HTTP+JSON, Agent Card declarations, and
+native gRPC. A registered operation is automatically available through the
+generic gRPC custom-operation service when the agent declares a root gRPC
+interface. No separate gRPC support list or dedicated protobuf service is needed.
+Existing one-root-agent gRPC hosting constraints still apply.
+
+The upstream negotiation model remains authoritative. Standard unary and
+streaming routes read the current request's activation snapshot:
+
+```csharp
+bool active = turnContext.Client.RequestContext.ExtensionActivation?
+    .ActivatedExtensions.Contains("https://example.org/extensions/debate/v1") == true;
+```
+
+Extension-owned operations cannot execute unless their owner is active.
+Registered declarations are composed before `IAgentCardHandler.GetAgentCard`
+and checked again after customization, including signed-card consistency.
+Agent Cards cannot advertise unregistered protocol support.
+
 ## Current preview limitations
 
-- The server extension implements the Agents SDK in-task authorization
-  extension; arbitrary third-party A2A protocol extensions are not yet
-  dynamically registered.
-- The mapped A2A transports are JSON-RPC and HTTP+JSON, not gRPC. Extended Agent
-  Cards are not supported.
+- Extended Agent Cards are not supported.
 - Proactive sends and continuations require an existing nonterminal task and,
   outside an active turn, a registered push destination. A2A does not support
   `CreateConversation`, `UpdateActivity`, or `DeleteActivity`.
@@ -959,9 +1047,9 @@ handlers remain channel-independent.
   A2A task.
 - `ITurnState.User` requires a usable user identity. Application tokens and
   anonymous requests do not provide one.
-- Only one root gRPC agent/interface is supported per application. Existing
-  JSON-RPC and HTTP+JSON helpers resolve the registered `IAgent`; multiple
-  independent HTTP agents in one host are not supported.
+- Only one root gRPC agent/interface is supported per application.
+  `MapA2AApplicationEndpoints` selects each declared agent for HTTP and JSON-RPC;
+  the lower-level `MapA2AJsonRpc` and `MapA2AHttp` helpers use the default `IAgent`.
 
 ## Further reading
 

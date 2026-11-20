@@ -31,10 +31,11 @@ internal sealed class A2AAgentCardComposer
     public async Task<A2AProtocolAgentCard> ComposeAsync(
         A2AProtocolAgentCard hostDefaults,
         IAgent agent,
-        A2AExtensionRegistration inTaskAuthorization)
+        A2ACustomOperationRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(hostDefaults);
         ArgumentNullException.ThrowIfNull(agent);
+        ArgumentNullException.ThrowIfNull(registry);
 
         var optionsSection = _configuration?.GetSection("AgentApplication:A2A:AgentCard");
         ValidateProtectedConfiguration(optionsSection);
@@ -60,14 +61,14 @@ internal sealed class A2AAgentCardComposer
             AddGlobalRequirement(hostDefaults, authorizationsByHandler);
         }
         AddSkills(hostDefaults, agent, authorizationsByHandler);
-        hostDefaults = AddProtocolExtensions(hostDefaults, authorizations, inTaskAuthorization);
+        hostDefaults = AddProtocolExtensions(hostDefaults, authorizations, registry);
 
         if (agent is IAgentCardHandler agentCardHandler)
         {
             hostDefaults = await agentCardHandler.GetAgentCard(hostDefaults).ConfigureAwait(false);
         }
 
-        hostDefaults = AddProtocolExtensions(hostDefaults, authorizations, inTaskAuthorization);
+        hostDefaults = AddProtocolExtensions(hostDefaults, authorizations, registry);
         ValidateCard(hostDefaults);
         return hostDefaults;
     }
@@ -132,14 +133,28 @@ internal sealed class A2AAgentCardComposer
     private static A2AProtocolAgentCard AddProtocolExtensions(
         A2AProtocolAgentCard agentCard,
         IReadOnlyList<A2AAuthorizationMetadata> authorizations,
-        A2AExtensionRegistration inTaskAuthorization)
+        A2ACustomOperationRegistry registry)
     {
-        if (!authorizations.Any(authorization => authorization.Mode == A2AUserAuthorizationMode.InTask))
+        var inTaskAuthorization = authorizations.Any(authorization => authorization.Mode == A2AUserAuthorizationMode.InTask);
+        foreach (var extension in registry.Extensions.Values)
         {
-            return agentCard;
+            if (extension.Uri != InTaskAuthorizationExtension.Uri
+                || inTaskAuthorization
+                || agentCard.Capabilities?.Extensions?.Any(declaration => declaration?.Uri == extension.Uri) == true)
+            {
+                agentCard = extension.EnsureAgentCardDeclaration(agentCard);
+            }
         }
 
-        return inTaskAuthorization.EnsureAgentCardDeclaration(agentCard);
+        foreach (var declaration in agentCard.Capabilities?.Extensions ?? [])
+        {
+            if (declaration?.Uri == null || !registry.Extensions.ContainsKey(declaration.Uri))
+            {
+                throw new InvalidOperationException(
+                    $"Agent Card extension '{declaration?.Uri ?? "<null>"}' has no registered protocol support. Register it with AddA2AProtocolExtension.");
+            }
+        }
+        return agentCard;
     }
 
     private void AddGlobalRequirement(A2AProtocolAgentCard agentCard, Dictionary<string, A2AAuthorizationMetadata> authorizations)

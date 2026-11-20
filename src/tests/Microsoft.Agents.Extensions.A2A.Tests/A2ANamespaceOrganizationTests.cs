@@ -108,6 +108,8 @@ public class A2ANamespaceOrganizationTests
             "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode",
             "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationSettings",
             "Microsoft.Agents.Extensions.A2A.Integration.A2AServiceRegistrar",
+            "Microsoft.Agents.Extensions.A2A.ProtocolExtensions.A2AProtocolExtensionBuilder",
+            "Microsoft.Agents.Extensions.A2A.ProtocolExtensions.IA2AProtocolExtensionContributor",
             "Microsoft.Agents.Extensions.A2A.Storage.BlobTaskStore",
         ];
 

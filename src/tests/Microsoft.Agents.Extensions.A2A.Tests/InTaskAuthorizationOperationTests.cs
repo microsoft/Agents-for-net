@@ -50,12 +50,4 @@ public class InTaskAuthorizationOperationTests
 
         Assert.NotNull(bindingBuilder.Build(registry));
     }
-
-    [Fact]
-    public void SharedDispatch_UsesSimplifiedRegistryAndBindings()
-    {
-        Assert.NotNull(A2AServiceExtensions.Dispatch.Registry);
-        Assert.NotNull(A2AServiceExtensions.Dispatch.JsonRpcBindings);
-        Assert.NotNull(A2AServiceExtensions.Dispatch.HttpBindings);
-    }
 }

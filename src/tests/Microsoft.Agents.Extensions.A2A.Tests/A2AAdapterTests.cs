@@ -1907,7 +1907,8 @@ public class A2AAdapterTests
             return agent;
         });
         var requestContext = negotiated
-            ? await A2AServiceExtensions.Dispatch.Registry.NegotiateExtensionsAsync([InTaskAuthorizationExtension.Uri])
+            ? await new Microsoft.Agents.Extensions.A2A.ProtocolExtensions.A2AProtocolExtensionRegistry(null, [])
+                .GetDispatch(record.Agent.GetType()).Registry.NegotiateExtensionsAsync([InTaskAuthorizationExtension.Uri])
             : null;
         var request = new SendMessageRequest
         {
