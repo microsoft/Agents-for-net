@@ -17,6 +17,7 @@ using Microsoft.Graph;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -94,6 +95,16 @@ public class TeamsAgentExtension : AgentExtension
     /// Teams File Consent features.
     /// </summary>
     public FileConsent FileConsent { get; }
+
+    /// <summary>
+    /// Creates an experimental, prompt-bound Plan using Core activities and the current turn's transport.
+    /// </summary>
+    /// <param name="turnContext">The current Teams turn.</param>
+    /// <param name="options">A saved binding, or null to bind to the incoming activity's own ID.</param>
+    /// <returns>A Plan helper. Creating it sends nothing.</returns>
+    [Experimental("ExperimentalTeamsPlan")]
+    public static TeamsPlan CreatePlan(ITurnContext turnContext, Microsoft.Teams.Apps.PlanOptions? options = null)
+        => new(turnContext, options);
 
     /// <summary>
     /// Gets the Teams API client for the specified turn context.

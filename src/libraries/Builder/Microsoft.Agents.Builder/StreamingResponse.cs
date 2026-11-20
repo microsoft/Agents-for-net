@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Builder.Errors;
@@ -45,7 +45,7 @@ namespace Microsoft.Agents.Builder
         // Teams failed to accept streaming messages. 
         private const string BadArgument = "BadArgument";
         private const string TeamsStreamNotAllowed = "streaming api is not enabled";
-                
+
         private readonly TurnContext _context;
         private int _nextSequence = 1;
         private bool _ended = false;
@@ -201,7 +201,8 @@ namespace Microsoft.Agents.Builder
         /// <inheritdoc/>
         public void AddAttachment(Attachment attachment)
         {
-            AssertionHelpers.ThrowIfNull(attachment, nameof(attachment));            Attachments ??= [];
+            AssertionHelpers.ThrowIfNull(attachment, nameof(attachment));
+            Attachments ??= [];
             Attachments.Add(attachment);
         }
 
@@ -351,10 +352,25 @@ namespace Microsoft.Agents.Builder
         }
 
         /// <inheritdoc/>
-        public async Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default)
+        public Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default)
+            => EndStreamCoreAsync(null, cancellationToken);
+
+        /// <inheritdoc/>
+        public Task<StreamingResponseResult> EndStreamAsync(
+            Func<IActivity, CancellationToken, Task<ResourceResponse>> finalActivitySender,
+            CancellationToken cancellationToken = default)
+        {
+            AssertionHelpers.ThrowIfNull(finalActivitySender, nameof(finalActivitySender));
+            return EndStreamCoreAsync(finalActivitySender, cancellationToken);
+        }
+
+        private async Task<StreamingResponseResult> EndStreamCoreAsync(
+            Func<IActivity, CancellationToken, Task<ResourceResponse>> finalActivitySender,
+            CancellationToken cancellationToken)
         {
             if (!IsStreamingChannel)
             {
+                object streamLifetime;
                 lock (this)
                 {
                     if (_ended)
@@ -363,11 +379,18 @@ namespace Microsoft.Agents.Builder
                     }
 
                     _ended = true;
+                    streamLifetime = _streamLifetime;
                 }
 
                 // Timer isn't running for non-streaming channels.  Just send the Message buffer as a message.
                 if (UpdatesSent() > 0 || FinalMessage != null || !string.IsNullOrWhiteSpace(Message))
                 {
+                    if (finalActivitySender != null)
+                    {
+                        return await DeliverFinalActivityAsync(
+                            CreateFinalMessage(), finalActivitySender, streamLifetime,
+                            StreamingResponseResult.Success, cancellationToken).ConfigureAwait(false);
+                    }
                     if (_streamTimedOut)
                     {
                         await UpdateActivityAsync(CreateFinalMessage(), cancellationToken).ConfigureAwait(false);
@@ -436,6 +459,11 @@ namespace Microsoft.Agents.Builder
 
                 if (finalActivity != null)
                 {
+                    if (finalActivitySender != null)
+                    {
+                        return await DeliverFinalActivityAsync(
+                            finalActivity, finalActivitySender, streamLifetime, result, cancellationToken).ConfigureAwait(false);
+                    }
                     if (_streamTimedOut)
                     {
                         await UpdateActivityAsync(finalActivity, cancellationToken).ConfigureAwait(false);
@@ -452,6 +480,32 @@ namespace Microsoft.Agents.Builder
 
                 return result;
             }
+        }
+
+        private async Task<StreamingResponseResult> DeliverFinalActivityAsync(
+            IActivity activity,
+            Func<IActivity, CancellationToken, Task<ResourceResponse>> sender,
+            object streamLifetime,
+            StreamingResponseResult result,
+            CancellationToken cancellationToken)
+        {
+            lock (this)
+            {
+                if (!ReferenceEquals(streamLifetime, _streamLifetime))
+                {
+                    return StreamingResponseResult.AlreadyEnded;
+                }
+
+                if (!string.IsNullOrEmpty(StreamId) && activity.GetStreamingEntity() is StreamInfo streamInfo)
+                {
+                    activity.Id = StreamId;
+                    streamInfo.StreamId = StreamId;
+                }
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            await sender(activity, cancellationToken).ConfigureAwait(false);
+            return result;
         }
 
         /// <inheritdoc/>
@@ -1159,7 +1213,7 @@ namespace Microsoft.Agents.Builder
                 }
                 catch (Exception ex)
                 {
-                    if ( ex is ErrorResponseException errorResponse)
+                    if (ex is ErrorResponseException errorResponse)
                     {
                         var errorMessage = errorResponse?.Body?.Error?.Message ?? "None";
                         _context?.Adapter?.Logger?.LogWarning(

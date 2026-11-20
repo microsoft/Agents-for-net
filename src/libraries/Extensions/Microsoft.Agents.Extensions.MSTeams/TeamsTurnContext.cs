@@ -9,6 +9,8 @@ using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
 using Microsoft.Graph;
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,6 +18,10 @@ namespace Microsoft.Agents.Extensions.MSTeams;
 
 public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
 {
+    private static readonly AsyncLocal<PlanSendScope?> ActivePlanSend = new();
+    private readonly object _planHookLock = new();
+    private bool _planBindingHookRegistered;
+
     public TeamsTurnContext(ITurnContext turnContext) : base(turnContext)
     {
     }
@@ -26,6 +32,103 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
 
     /// <inheritdoc/>
     public Microsoft.Teams.Apps.Clients.ApiClient Client => _turnContext.Services.Get<Microsoft.Teams.Apps.Clients.ApiClient>();
+
+    /// <inheritdoc/>
+    [Experimental("ExperimentalTeamsPlan")]
+    public TeamsPlan CreatePlan(Microsoft.Teams.Apps.PlanOptions? options = null)
+        => TeamsAgentExtension.CreatePlan(this, options);
+
+    [Experimental("ExperimentalTeamsPlan")]
+    internal async Task<ResourceResponse[]> SendPlanActivityAsync(
+        IActivity activity,
+        ConversationReference reference,
+        Func<IActivity, CancellationToken, Task<ResourceResponse>>? sendReplyChain,
+        CancellationToken cancellationToken)
+    {
+        lock (_planHookLock)
+        {
+            if (!_planBindingHookRegistered)
+            {
+                OnSendActivities((context, activities, next) =>
+                {
+                    if (ActivePlanSend.Value is { } scope && ReferenceEquals(scope.Context, this))
+                    {
+                        foreach (var outgoing in activities.Where(HasPlanInfo))
+                        {
+                            outgoing.ApplyConversationReference(scope.Reference);
+                        }
+                    }
+                    return next();
+                });
+                _planBindingHookRegistered = true;
+            }
+        }
+
+        var previous = ActivePlanSend.Value;
+        var send = new PlanSendScope(this, reference);
+        ActivePlanSend.Value = send;
+        try
+        {
+            if (sendReplyChain != null && NeedsReplyChain(activity)
+                && _turnContext.Activity.DeliveryMode is not (DeliveryModes.Stream or DeliveryModes.ExpectReplies))
+            {
+                // Append at send time so previously registered outgoing hooks can inspect or suppress the REST call.
+                lock (_planHookLock)
+                {
+                    OnSendActivities(async (context, activities, next) =>
+                    {
+                        if (!ReferenceEquals(ActivePlanSend.Value, send)
+                            || context.Activity.DeliveryMode is DeliveryModes.Stream or DeliveryModes.ExpectReplies
+                            || !activities.Any(NeedsReplyChain))
+                        {
+                            return await next().ConfigureAwait(false);
+                        }
+
+                        var responses = new ResourceResponse[activities.Count];
+                        for (var index = 0; index < activities.Count; index++)
+                        {
+                            var outgoing = activities[index];
+                            if (NeedsReplyChain(outgoing))
+                            {
+                                outgoing.Id = null;
+                                responses[index] = await sendReplyChain(outgoing, cancellationToken).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                var ordinary = await context.Adapter.SendActivitiesAsync(
+                                    context, [outgoing], cancellationToken).ConfigureAwait(false);
+                                responses[index] = ordinary?.FirstOrDefault() ?? new ResourceResponse();
+                            }
+                            outgoing.Id = responses[index].Id;
+                        }
+                        return responses;
+                    });
+                }
+            }
+
+            return await SendActivitiesAsync([activity], cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ActivePlanSend.Value = previous;
+        }
+
+        static bool HasPlanInfo(IActivity outgoing)
+            => outgoing.Entities?.Any(entity => entity.Type == Models.PlanInfoEntity.EntityName) == true;
+
+        static bool NeedsReplyChain(IActivity outgoing)
+        {
+            var stream = outgoing.GetStreamingEntity();
+            return outgoing.Type == ActivityTypes.Message && HasPlanInfo(outgoing)
+                && !(stream?.StreamType == StreamTypes.Final && !string.IsNullOrEmpty(stream.StreamId));
+        }
+    }
+
+    private sealed class PlanSendScope(TeamsTurnContext context, ConversationReference reference)
+    {
+        internal TeamsTurnContext Context { get; } = context;
+        internal ConversationReference Reference { get; } = reference;
+    }
 
     /// <inheritdoc/>
     public override Task<ResourceResponse> SendActivityAsync(

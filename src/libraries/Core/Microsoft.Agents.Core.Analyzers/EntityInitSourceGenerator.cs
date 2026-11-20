@@ -39,9 +39,12 @@ namespace Microsoft.Agents.Core.Analyzers
                     if (entityType is null)
                         return null;
 
-                    return typeSymbol.InheritsFrom(entityType)
-                        ? typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                        : null;
+                    if (!typeSymbol.InheritsFrom(entityType))
+                        return null;
+
+                    var typeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                    var registration = $"[assembly: {EntityInitAssemblyAttributeFullName}(typeof({typeName}))]";
+                    return typeSymbol.WithExperimentalDiagnosticSuppression(registration);
                 })
                 .Where(static x => x is not null)
                 .Collect()
@@ -55,8 +58,7 @@ namespace Microsoft.Agents.Core.Analyzers
                 if (types.IsDefaultOrEmpty)
                     return;
 
-                var entityAttributes = string.Join("\r\n", types.Distinct().Select(x =>
-                    $"[assembly: {EntityInitAssemblyAttributeFullName}(typeof({x}))]"));
+                var entityAttributes = string.Join("\n", types.Distinct());
                 spc.AddSource("EntityInitAssemblyAttribute.g.cs", SourceText.From(entityAttributes, Encoding.UTF8));
             });
         }

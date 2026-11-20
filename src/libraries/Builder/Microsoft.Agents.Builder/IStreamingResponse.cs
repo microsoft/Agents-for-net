@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Agents.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -154,6 +155,27 @@ namespace Microsoft.Agents.Builder
         /// such as Success, AlreadyEnded, Timeout, or Error.
         /// </returns>
         Task<StreamingResponseResult> EndStreamAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Ends the stream using a custom sender for its fully composed final activity.
+        /// </summary>
+        /// <remarks>
+        /// The sender receives the final text, attachments, citations, labels, feedback, and applicable
+        /// streaming identifiers. It owns final delivery and recovery; exceptions propagate to the
+        /// ending caller. Intermediate sends and timeout checkpoints retain their normal behavior.
+        /// The sender is not invoked when no final activity is produced or the stream has already ended,
+        /// and it is not retained for subsequent streams.
+        /// Queue draining is bounded by <see cref="Microsoft.Agents.Builder.IStreamingResponse.EndStreamTimeout"/>.
+        /// Use <see cref="Microsoft.Agents.Builder.IStreamingResponse.EndStreamAsync(System.Threading.CancellationToken)"/>
+        /// for the default delivery and recovery behavior.
+        /// </remarks>
+        /// <param name="finalActivitySender">The asynchronous final-activity sender.</param>
+        /// <param name="cancellationToken">The cancellation token for final delivery.</param>
+        /// <returns>The result of ending the stream.</returns>
+        /// <exception cref="System.ArgumentNullException">The final-activity sender is null.</exception>
+        Task<StreamingResponseResult> EndStreamAsync(
+            Func<IActivity, CancellationToken, Task<ResourceResponse>> finalActivitySender,
+            CancellationToken cancellationToken = default);
 
         bool IsStreamStarted();
 

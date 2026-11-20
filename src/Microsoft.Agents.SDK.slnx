@@ -90,6 +90,7 @@
   <Folder Name="/Samples/Teams/">
     <Project Path="samples/Teams/ConversationAgent/ConversationAgent.csproj" />
     <Project Path="samples/Teams/MessageExtensions/MessageExtensions.csproj" />
+    <Project Path="samples/Teams/PlansAgent/PlansAgent.csproj" />
     <Project Path="samples/Teams/TaskModules/TaskModules.csproj" />
   </Folder>
   <Folder Name="/Tests/">

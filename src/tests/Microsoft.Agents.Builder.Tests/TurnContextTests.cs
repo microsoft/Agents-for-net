@@ -546,8 +546,25 @@ namespace Microsoft.Agents.Builder.Tests
         {
             var adapter = new SimpleAdapter();
             var context = new TurnContext(adapter, new Activity());
-           
+
             await Assert.ThrowsAsync<ArgumentException>(async () => await context.SendActivitiesAsync([]));
+        }
+
+        [Fact]
+        public async Task InterceptedSend_AssignsIdAndMarksResponded()
+        {
+            var context = new TurnContext(
+                new SimpleAdapter((IActivity[] _) => throw new InvalidOperationException("The default transport must not run.")),
+                new Activity { Id = "prompt", Conversation = new ConversationAccount(id: "conversation") });
+            context.OnSendActivities((turn, activities, next) =>
+                Task.FromResult(new[] { new ResourceResponse("intercepted") }));
+            var activity = new Activity { Type = ActivityTypes.Message, Text = "Answer." };
+
+            var response = await context.SendActivityAsync(activity);
+
+            Assert.Equal("intercepted", response.Id);
+            Assert.Equal("intercepted", activity.Id);
+            Assert.True(context.Responded);
         }
 
         /*

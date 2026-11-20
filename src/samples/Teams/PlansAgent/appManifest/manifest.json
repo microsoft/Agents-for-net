@@ -1,0 +1,36 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.29/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.29",
+  "version": "1.0.0",
+  "id": "<<AAD_APP_CLIENT_ID>>",
+  "developer": {
+    "name": "Microsoft",
+    "websiteUrl": "https://example.azurewebsites.net",
+    "privacyUrl": "https://example.azurewebsites.net/privacy",
+    "termsOfUseUrl": "https://example.azurewebsites.net/termsofuse"
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "name": {
+    "short": "Teams Plans (Experimental)",
+    "full": "Experimental Teams Plans"
+  },
+  "description": {
+    "short": "Application-driven Plan progress and streamed demonstration responses.",
+    "full": "Demonstrates experimental Teams Plan lifecycle events, step revisions, sources, and streamed completion."
+  },
+  "accentColor": "#FFFFFF",
+  "bots": [
+    {
+      "botId": "<<AAD_APP_CLIENT_ID>>",
+      "scopes": ["personal", "team", "groupChat"],
+      "isNotificationOnly": false,
+      "supportsFiles": false
+    }
+  ],
+  "supportsChannelFeatures": "tier1",
+  "permissions": ["identity"],
+  "validDomains": ["<<BOT_DOMAIN>>"]
+}

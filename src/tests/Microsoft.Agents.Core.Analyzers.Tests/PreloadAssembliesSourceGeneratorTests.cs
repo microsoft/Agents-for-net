@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
@@ -106,6 +106,37 @@ namespace Microsoft.Agents.Core.Analyzers.Tests
             var text = GeneratedText(RunGenerator(reference));
 
             Assert.Contains("typeof(global::Ext.Entities.CustomEntity)", text);
+        }
+
+        [Fact]
+        public void ExperimentalEntity_IsPreloadedWithLocallySuppressedDiagnostic()
+        {
+            var reference = CreateReferencedAssembly("Ext.Preview", """
+                namespace Ext.Preview
+                {
+                    [System.Diagnostics.CodeAnalysis.Experimental("PreviewEntity001")]
+                    public class PreviewEntity : Microsoft.Agents.Core.Models.Entity
+                    {
+                        public PreviewEntity() : base("preview") { }
+                    }
+
+                    public class StableEntity : Microsoft.Agents.Core.Models.Entity
+                    {
+                        public StableEntity() : base("stable") { }
+                    }
+                }
+                """);
+
+            var text = GeneratedText(RunGenerator(reference)).ReplaceLineEndings("\n");
+
+            Assert.Contains("""
+                #pragma warning disable PreviewEntity001
+                typeof(global::Ext.Preview.PreviewEntity),
+                #pragma warning restore PreviewEntity001
+                """, text);
+            Assert.Contains("typeof(global::Ext.Preview.StableEntity)", text);
+            Assert.DoesNotContain(CSharpSyntaxTree.ParseText(text).GetDiagnostics(),
+                diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
         }
 
         [Fact]
