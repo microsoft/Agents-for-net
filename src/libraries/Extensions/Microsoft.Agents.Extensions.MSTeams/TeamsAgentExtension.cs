@@ -16,7 +16,9 @@ using Microsoft.Agents.Extensions.MSTeams.Teams;
 using Microsoft.Graph;
 using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
+using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -58,6 +60,7 @@ public class TeamsAgentExtension : AgentExtension
         {
             if (turnContext.Activity.ChannelId == ChannelId)
             {
+                turnContext.Services.Set(this);
                 // Set the TeamsApiClient in the turn context for use in handlers.
                 await turnContext.SetTeamsApiClient(_agentApplication, cancellationToken).ConfigureAwait(false);
             }
@@ -96,6 +99,18 @@ public class TeamsAgentExtension : AgentExtension
     public FileConsent FileConsent { get; }
 
     /// <summary>
+    /// Gets or sets an optional factory for the terminal <see cref="System.Net.Http.HttpMessageHandler"/>
+    /// used by Graph clients created by this extension and its turn contexts.
+    /// </summary>
+    /// <remarks>
+    /// Configure before processing turns and return a fresh handler for each invocation.
+    /// Graph middleware and token acquisition remain enabled. When <see langword="null"/>,
+    /// Graph retains its native transport, including its redirect and decompression settings.
+    /// Returned Graph clients own their handlers and should be disposed when finished.
+    /// </remarks>
+    public Func<HttpMessageHandler>? GraphHttpMessageHandlerFactory { get; set; }
+
+    /// <summary>
     /// Gets the Teams API client for the specified turn context.
     /// </summary>
     /// <param name="turnContext">The turn context.</param>
@@ -120,7 +135,7 @@ public class TeamsAgentExtension : AgentExtension
     public GraphServiceClient GetGraphClient(ITurnContext turnContext, string handlerName = null, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
     {
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
-        return GraphClientFactory.CreateUserGraphClient(_agentApplication.UserAuthorization, turnContext, handlerName, graphBaseUrl);
+        return GraphClientFactory.CreateUserGraphClient(_agentApplication.UserAuthorization, turnContext, handlerName, graphBaseUrl, GraphHttpMessageHandlerFactory);
     }
 
     /// <summary>
@@ -143,7 +158,7 @@ public class TeamsAgentExtension : AgentExtension
     {
         AssertionHelpers.ThrowIfNull(turnContext, nameof(turnContext));
         var tokenProvider = GetConnections().GetTokenProvider(turnContext.Identity, turnContext.Activity);
-        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl);
+        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl, GraphHttpMessageHandlerFactory);
     }
 
     /// <summary>
@@ -164,7 +179,7 @@ public class TeamsAgentExtension : AgentExtension
     {
         AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
         var tokenProvider = GetConnections().GetConnection(connectionName);
-        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl);
+        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl, GraphHttpMessageHandlerFactory);
     }
 
     private IConnections GetConnections()

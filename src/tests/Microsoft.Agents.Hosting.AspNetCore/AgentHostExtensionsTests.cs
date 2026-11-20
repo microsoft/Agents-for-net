@@ -1,8 +1,16 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Agents.Authentication;
+using Microsoft.Agents.Builder;
+using Microsoft.Agents.Builder.App;
+using Microsoft.Agents.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Moq;
@@ -80,6 +88,40 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var builder = CreateBuilder(Environments.Production);
 
             Assert.Throws<ArgumentNullException>(() => builder.Object.AddAgentAuthorization(null));
+        }
+
+        [Fact]
+        public async Task AddAgentM365AttachmentDownloader_BindsInlineImagesWithoutTeamsExtension()
+        {
+            var builder = CreateBuilder(Environments.Development);
+            var connections = new Mock<IConnections>(MockBehavior.Strict);
+            var httpFactory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+            builder.Object.Services.AddSingleton(connections.Object);
+            builder.Object.Services.AddSingleton(httpFactory.Object);
+            builder.Object.Services.AddLogging();
+            builder.Object.AddAgentM365AttachmentDownloader();
+            using var services = builder.Object.Services.BuildServiceProvider();
+            var downloader = Assert.Single(services.GetRequiredService<IList<IInputFileDownloader>>());
+            var context = new Mock<ITurnContext>();
+            context.SetupGet(value => value.Activity).Returns(new Activity
+            {
+                ChannelId = Channels.Msteams,
+                ServiceUrl = "https://files.contoso.com/amer/",
+                Attachments =
+                [
+                    new Attachment
+                    {
+                        ContentType = "image/png",
+                        ContentUrl = "https://evil.example/amer/v3/attachments/pic-1/views/original"
+                    }
+                ]
+            });
+
+            var result = await downloader.DownloadFilesAsync(context.Object, null, CancellationToken.None);
+
+            Assert.Empty(result);
+            connections.VerifyNoOtherCalls();
+            httpFactory.VerifyNoOtherCalls();
         }
     }
 }

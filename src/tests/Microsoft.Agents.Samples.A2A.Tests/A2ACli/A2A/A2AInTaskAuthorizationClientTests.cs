@@ -42,11 +42,11 @@ public class A2AInTaskAuthorizationClientTests
         using var httpClient = new HttpClient(handler);
         httpClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "agent-jwt");
-        var client = A2AInTaskAuthorizationClient.Create(
+        using A2AClientConnection connection = Program.CreateClient(
             CreateAgentCard(ProtocolBindingNames.JsonRpc),
             httpClient,
-            tokenProvider.Object,
             new Uri("https://agent.example/a2a"));
+        var client = A2AInTaskAuthorizationClient.Create(connection, httpClient, tokenProvider.Object);
 
         AgentTask? result = await client.ResumeIfRequiredAsync(CreateAuthRequiredTask(), CancellationToken.None);
 
@@ -67,6 +67,55 @@ public class A2AInTaskAuthorizationClientTests
         Assert.Equal("task-1", body.RootElement.GetProperty("params").GetProperty("taskId").GetString());
     }
 
+    [Theory]
+    [InlineData("JSONRPC")]
+    [InlineData("HTTP+JSON")]
+    [InlineData("GRPC")]
+    public async Task ResumeIfRequiredAsync_NonLoopbackPlaintext_DoesNotSendTaskCredential(string binding)
+    {
+        var tokens = new Mock<IA2AAccessTokenProvider>(MockBehavior.Strict);
+        var handler = new RecordingHandler();
+        using var httpClient = new HttpClient(handler);
+        AgentCard card = CreateAgentCard(binding);
+        card.SupportedInterfaces[0].Url = "http://agent.example/";
+        using A2AClientConnection connection = Program.CreateClient(card, httpClient, new Uri("http://agent.example/"));
+        var client = A2AInTaskAuthorizationClient.Create(connection, httpClient, tokens.Object);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => client.ResumeIfRequiredAsync(CreateAuthRequiredTask(), CancellationToken.None));
+
+        Assert.Contains("plaintext", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(handler.Request);
+    }
+
+    [Fact]
+    public async Task ResumeIfRequiredAsync_UsesSelectedHttpJsonInsteadOfFirstAdvertisedBinding()
+    {
+        var tokenProvider = new Mock<IA2AAccessTokenProvider>();
+        tokenProvider.Setup(provider => provider.GetAccessTokenAsync(
+                It.IsAny<A2AAgentCardAuthentication>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("task-token");
+        var handler = new RecordingHandler();
+        using var httpClient = new HttpClient(handler);
+        AgentCard card = CreateAgentCard(ProtocolBindingNames.JsonRpc);
+        card.SupportedInterfaces.Add(new AgentInterface
+        {
+            ProtocolBinding = ProtocolBindingNames.HttpJson,
+            Url = "https://agent.example/http-json/",
+        });
+        using A2AClientConnection connection = Program.CreateClient(
+            card, httpClient, new Uri("https://agent.example/"), A2ATransport.HttpJson);
+        var client = A2AInTaskAuthorizationClient.Create(connection, httpClient, tokenProvider.Object);
+
+        AgentTask? result = await client.ResumeIfRequiredAsync(CreateAuthRequiredTask(), CancellationToken.None);
+
+        Assert.Equal(TaskState.Completed, result!.Status.State);
+        Assert.Equal("https://agent.example/http-json/tasks/task-1:auth-response", handler.Request!.RequestUri!.AbsoluteUri);
+        using JsonDocument body = JsonDocument.Parse(handler.Body!);
+        Assert.Equal("task-1", body.RootElement.GetProperty("taskId").GetString());
+        Assert.False(body.RootElement.TryGetProperty("method", out _));
+    }
+
     [Fact]
     public async Task ResumeIfRequiredAsync_HandlesConsecutiveAuthorizationRequests()
     {
@@ -84,11 +133,11 @@ public class A2AInTaskAuthorizationClientTests
             });
         var handler = new ConsecutiveAuthorizationHandler();
         using var httpClient = new HttpClient(handler);
-        var client = A2AInTaskAuthorizationClient.Create(
+        using A2AClientConnection connection = Program.CreateClient(
             CreateAgentCard(ProtocolBindingNames.JsonRpc),
             httpClient,
-            tokenProvider.Object,
             new Uri("https://agent.example/a2a"));
+        var client = A2AInTaskAuthorizationClient.Create(connection, httpClient, tokenProvider.Object);
 
         AgentTask? result = await client.ResumeIfRequiredAsync(
             CreateAuthRequiredTask("auth-1", "agent.read"),
@@ -110,11 +159,11 @@ public class A2AInTaskAuthorizationClientTests
             .ReturnsAsync("procured-token");
         var handler = new RepeatedAuthorizationHandler();
         using var httpClient = new HttpClient(handler);
-        var client = A2AInTaskAuthorizationClient.Create(
+        using A2AClientConnection connection = Program.CreateClient(
             CreateAgentCard(ProtocolBindingNames.JsonRpc),
             httpClient,
-            tokenProvider.Object,
             new Uri("https://agent.example/a2a"));
+        var client = A2AInTaskAuthorizationClient.Create(connection, httpClient, tokenProvider.Object);
 
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => client.ResumeIfRequiredAsync(CreateAuthRequiredTask(), CancellationToken.None));
@@ -163,11 +212,11 @@ public class A2AInTaskAuthorizationClientTests
             new Uri("https://agent.example"));
         var handler = new RecordingHandler();
         using var httpClient = new HttpClient(handler);
-        var client = A2AInTaskAuthorizationClient.Create(
+        using A2AClientConnection connection = Program.CreateClient(
             CreateAgentCard(ProtocolBindingNames.JsonRpc),
             httpClient,
-            tokenProvider,
             new Uri("https://agent.example/a2a"));
+        var client = A2AInTaskAuthorizationClient.Create(connection, httpClient, tokenProvider);
 
         AgentTask? result = await client.ResumeIfRequiredAsync(
             CreateAuthRequiredTask(

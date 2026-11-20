@@ -251,7 +251,7 @@ namespace Microsoft.Agents.Builder.Dialogs
             }
 
             IActivity eocActivity = null;
-            if (activity.DeliveryMode == DeliveryModes.ExpectReplies && response.Body.Activities != null && response.Body.Activities.Any())
+            if (activity.DeliveryMode == DeliveryModes.ExpectReplies && response.Body.Activities != null && response.Body.Activities.Count > 0)
             {
                 // Track sent invoke responses, so more than one is not sent.
                 bool sentInvokeResponse = false;

@@ -46,9 +46,43 @@ namespace Microsoft.Agents.Extensions.MSTeams.Tests
         {
             var activity = new Activity { ChannelData = JsonSerializer.SerializeToElement(new { meeting = new { id = "meeting123" } }) };
 
-            var meetingId = activity.TeamsGetMeetingInfo().Id;
+            var meeting = activity.TeamsGetMeetingInfo();
 
-            Assert.Equal("meeting123", meetingId);
+            Assert.NotNull(meeting);
+            Assert.Equal("meeting123", meeting.Id);
+        }
+
+        [Fact]
+        public void TeamsGetMeetingInfo_ShouldReturnMeetingIdFromTypedChannelData()
+        {
+            var activity = new TeamsActivity
+            {
+                ChannelData = JsonSerializer.Deserialize<TeamsChannelData>("""{"meeting":{"id":"meeting123"}}""")
+            };
+
+            var meeting = activity.TeamsGetMeetingInfo();
+
+            Assert.NotNull(meeting);
+            Assert.Equal("meeting123", meeting.Id);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("{}")]
+        [InlineData("""{"meeting":null}""")]
+        public void TeamsGetMeetingInfo_ShouldReturnNullWhenMeetingDataIsAbsent(string channelData)
+        {
+            var activity = new Activity
+            {
+                ChannelData = channelData == null ? null : JsonSerializer.Deserialize<JsonElement>(channelData)
+            };
+            var typedActivity = new TeamsActivity
+            {
+                ChannelData = channelData == null ? null : JsonSerializer.Deserialize<TeamsChannelData>(channelData)
+            };
+
+            Assert.Null(activity.TeamsGetMeetingInfo());
+            Assert.Null(typedActivity.TeamsGetMeetingInfo());
         }
 
         [Fact]

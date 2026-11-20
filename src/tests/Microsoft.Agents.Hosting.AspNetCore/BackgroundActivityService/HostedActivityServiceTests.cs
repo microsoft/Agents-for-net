@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
@@ -159,6 +160,86 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             await record.Service.StopAsync(token);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task ExecuteAsync_ImmediateCompletion_ShouldNotRetainWorkItem(bool processingFails)
+        {
+            var services = new ServiceCollection();
+            services.AddSingleton<IAgent>(new DefaultAgent());
+            await using var provider = services.BuildServiceProvider();
+            var adapter = new Mock<IChannelAdapter>();
+            var processActivity = adapter.Setup(a => a.ProcessActivityAsync(
+                It.IsAny<ClaimsIdentity>(),
+                It.IsAny<IActivity>(),
+                It.IsAny<AgentCallbackHandler>(),
+                It.IsAny<CancellationToken>()));
+            if (processingFails)
+            {
+                processActivity.ThrowsAsync(new InvalidOperationException("Test processing failure."));
+            }
+            else
+            {
+                processActivity.ReturnsAsync(new InvokeResponse { Status = 200 });
+            }
+
+            var completed = new TaskCompletionSource<InvokeResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var workItem = new ActivityWithClaims
+            {
+                Activity = new Activity(ActivityTypes.Invoke),
+                ClaimsIdentity = new ClaimsIdentity(),
+                ChannelAdapter = adapter.Object,
+                OnComplete = response =>
+                {
+                    completed.TrySetResult(response);
+                    return Task.CompletedTask;
+                }
+            };
+            var waitingForNext = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var noMoreWork = new TaskCompletionSource<ActivityWithClaims>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var dequeued = 0;
+            var queue = new Mock<IActivityTaskQueue>();
+            queue
+                .Setup(q => q.WaitForActivityAsync(It.IsAny<CancellationToken>()))
+                .Returns((CancellationToken token) =>
+                {
+                    if (Interlocked.Increment(ref dequeued) == 1)
+                    {
+                        return Task.FromResult(workItem);
+                    }
+
+                    waitingForNext.TrySetResult();
+                    return noMoreWork.Task.WaitAsync(token);
+                });
+            var configuration = new ConfigurationBuilder().Build();
+            using var service = new TestHostedActivityService(provider, configuration, queue.Object);
+            using var stopping = new CancellationTokenSource();
+
+            // Force completion cleanup to run before registration on the old implementation.
+            var worker = Task.Factory.StartNew(
+                () => service.RunAsync(stopping.Token),
+                CancellationToken.None,
+                TaskCreationOptions.None,
+                new InlineTaskScheduler()).Unwrap();
+            try
+            {
+                await waitingForNext.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                var response = await completed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                Assert.Equal(processingFails ? 500 : 200, response.Status);
+
+                var field = typeof(HostedActivityService).GetField(
+                    "_activitiesProcessing", BindingFlags.Instance | BindingFlags.NonPublic);
+                var tracked = (ConcurrentDictionary<ActivityWithClaims, Task>)field.GetValue(service);
+                Assert.Empty(tracked);
+            }
+            finally
+            {
+                stopping.Cancel();
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                    () => worker.WaitAsync(TimeSpan.FromSeconds(10)));
+            }
+        }
+
         [Fact]
         public async Task ExecuteAsync_WithDefaultOptions_ShouldResolveAndDisposeDependencyPerActivity()
         {
@@ -242,6 +323,50 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             var probe = Assert.Single(collector.Resolved);
             Assert.True(probe.IsDisposed);
             Assert.Equal(1, completionCount);
+        }
+
+        [Fact]
+        public async Task StopAsync_ShouldWaitForAsyncScopedDisposal()
+        {
+            var releaseDisposal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var probe = new AsyncScopedProbe { ContinueDisposal = releaseDisposal.Task };
+            var services = new ServiceCollection();
+            services.AddSingleton(new AsyncProbeCollector());
+            services.AddScoped(_ => probe);
+            services.AddTransient<IAgent, AsyncProbeAgent>();
+            await using var provider = services.BuildServiceProvider();
+            var queue = new ActivityTaskQueue();
+            var adapter = new Mock<IChannelAdapter>();
+            adapter
+                .Setup(a => a.ProcessActivityAsync(
+                    It.IsAny<ClaimsIdentity>(),
+                    It.IsAny<IActivity>(),
+                    It.IsAny<AgentCallbackHandler>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new InvokeResponse());
+            var configuration = new ConfigurationBuilder().Build();
+            using var service = new HostedActivityService(
+                provider, configuration, queue, null, new HostedActivityServiceOptions(configuration));
+            queue.QueueBackgroundActivity(new ClaimsIdentity(), adapter.Object, new Activity());
+
+            try
+            {
+                await service.StartAsync(CancellationToken.None);
+                await probe.DisposalStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                var stopping = service.StopAsync(CancellationToken.None);
+
+                Assert.False(stopping.IsCompleted);
+                Assert.False(probe.IsDisposed);
+
+                releaseDisposal.TrySetResult();
+                await stopping.WaitAsync(TimeSpan.FromSeconds(10));
+                Assert.True(probe.IsDisposed);
+            }
+            finally
+            {
+                releaseDisposal.TrySetResult();
+                await service.StopAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
+            }
         }
 
         [Fact]
@@ -446,6 +571,25 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
             return new(service, queue, bot, adapter, logger);
         }
 
+        private sealed class TestHostedActivityService : HostedActivityService
+        {
+            public TestHostedActivityService(IServiceProvider provider, IConfiguration configuration, IActivityTaskQueue queue)
+                : base(provider, configuration, queue, null, new HostedActivityServiceOptions(configuration))
+            {
+            }
+
+            public Task RunAsync(CancellationToken cancellationToken) => base.ExecuteAsync(cancellationToken);
+        }
+
+        private sealed class InlineTaskScheduler : TaskScheduler
+        {
+            protected override IEnumerable<Task> GetScheduledTasks() => Array.Empty<Task>();
+
+            protected override void QueueTask(Task task) => TryExecuteTask(task);
+
+            protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued) => TryExecuteTask(task);
+        }
+
         private record Record(
             HostedActivityService Service,
             ActivityTaskQueue Queue,
@@ -514,10 +658,15 @@ namespace Microsoft.Agents.Hosting.AspNetCore.Tests
         {
             public bool IsDisposed { get; private set; }
 
-            public ValueTask DisposeAsync()
+            public TaskCompletionSource DisposalStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            public Task ContinueDisposal { get; set; } = Task.CompletedTask;
+
+            public async ValueTask DisposeAsync()
             {
+                DisposalStarted.TrySetResult();
+                await ContinueDisposal;
                 IsDisposed = true;
-                return ValueTask.CompletedTask;
             }
         }
 

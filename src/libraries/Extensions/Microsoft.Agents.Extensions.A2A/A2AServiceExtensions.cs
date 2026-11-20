@@ -1,20 +1,26 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using A2A;
 using A2A.AspNetCore;
+using A2A.Grpc.AspNetCore;
+using Grpc.AspNetCore.Server;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Extensions.A2A.Errors;
+using Microsoft.Agents.Extensions.A2A.Hosting;
 using Microsoft.Agents.Extensions.A2A.Pipeline;
 using Microsoft.Agents.Hosting.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -46,18 +52,51 @@ public static class A2AServiceExtensions
     /// <param name="services">The service collection to receive the A2A adapter services.</param>
     public static void AddA2AAdapter(this IServiceCollection services)
     {
-        services.TryAddSingleton(sp => ActivatorUtilities.CreateInstance<A2AAdapter>(sp));
+        if (services.Any(service => service.ServiceType == typeof(A2AAdapter)))
+        {
+            return;
+        }
+
+        services.AddA2AAgent<A2AAdapter.AgentHandlerProxy>(new global::A2A.AgentCard
+        {
+            Capabilities = new AgentCapabilities { Streaming = true, PushNotifications = true },
+            DefaultInputModes = ["application/json"],
+            DefaultOutputModes = ["application/json"],
+            Skills = [],
+        });
+        services.TryAddSingleton(sp => new A2AAdapter(
+            sp.GetRequiredService<ITaskStore>(),
+            sp.GetRequiredService<ILoggerFactory>(),
+            sp.GetRequiredService<ChannelEventNotifier>(),
+            sp.GetService<A2AAdapterOptions>(),
+            sp.GetService<IConfiguration>(),
+            (A2AServer)sp.GetRequiredService<IA2ARequestHandler>()));
+        services.TryAddSingleton<A2AGrpcRequestInterceptor>();
+        services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IStartupFilter, A2AGrpcEndpointValidationStartupFilter>());
+        services.AddA2AGrpc(new A2AGrpcExtensionOptions(Dispatch.Registry));
+        services.Configure<GrpcServiceOptions>(options =>
+        {
+            if (!options.Interceptors.Any(registration => registration.Type == typeof(A2AGrpcRequestInterceptor)))
+            {
+                options.Interceptors.Add<A2AGrpcRequestInterceptor>();
+            }
+        });
     }
 
     /// <summary>
-    /// This adds HTTP endpoints for all AgentApplications defined in the calling assembly. Each
+    /// Adds declared A2A transport endpoints for all AgentApplications defined in the calling assembly. Each
     /// AgentApplication must have been registered with <c>AddAgent&lt;TAgent&gt;</c>.
     /// </summary>
     /// <param name="endpoints">The endpoint route builder to configure.</param>
     /// <param name="requireAuth">Whether mapped endpoints require authorization. When <see langword="null"/>, uses the configured agent authorization policy.</param>
     /// <param name="defaultPath">The default A2A endpoint path for a single agent without an interface attribute.</param>
     /// <returns>The mapped endpoint group for additional configuration.</returns>
-    /// <exception cref="InvalidOperationException">The calling assembly and service provider contain no <see cref="AgentApplication"/>, or an agent in a multi-agent application lacks an <see cref="AgentInterfaceAttribute"/>.</exception>
+    /// <remarks>
+    /// Native gRPC interfaces must declare <c>/</c> and cannot be mounted inside a prefixed route group.
+    /// Only one gRPC agent can be mapped per application. Public HTTP Agent Card discovery remains available.
+    /// </remarks>
+    /// <exception cref="System.InvalidOperationException">No <see cref="Microsoft.Agents.Builder.App.AgentApplication"/> is available, a multi-agent application lacks a <see cref="Microsoft.Agents.Builder.App.AgentInterfaceAttribute"/>, or gRPC interfaces compete for the root or declare a prefix.</exception>
     public static IEndpointConventionBuilder MapA2AApplicationEndpoints(
         this IEndpointRouteBuilder endpoints,
         bool? requireAuth = null,
@@ -80,38 +119,55 @@ public static class A2AServiceExtensions
         }
 
         var allAgents = ResolveAgentTypes(Assembly.GetCallingAssembly(), endpoints.ServiceProvider);
-
-        foreach (var agent in allAgents)
+        var agentInterfaces = allAgents.Select(agent => (
+            Agent: agent,
+            Interfaces: ResolveAgentInterfaces(agent, allAgents.Count, defaultPath))).ToArray();
+        var grpcInterfaces = agentInterfaces.SelectMany(agent => agent.Interfaces
+            .Where(agentInterface => agentInterface.Protocol == A2AAgentTransportProtocol.Grpc)
+            .Select(agentInterface => (agent.Agent, Interface: agentInterface))).ToArray();
+        if (grpcInterfaces.Any(agent => agent.Interface.Path != "/"))
         {
-            var interfaces = ResolveAgentInterfaces(agent, allAgents.Count, defaultPath);
+            throw new InvalidOperationException(
+                "A2A gRPC interfaces must use the root path '/'. Path prefixes are not supported.");
+        }
+        if (grpcInterfaces.Length > 1)
+        {
+            throw new InvalidOperationException(
+                "Only one A2A gRPC interface can be mapped at the application root. Use separate applications for multiple gRPC agents.");
+        }
 
+        foreach (var (agent, interfaces) in agentInterfaces)
+        {
             foreach (var agentInterface in interfaces)
             {
-                if (agentInterface.Protocol != A2AAgentTransportProtocol.JsonRpc && agentInterface.Protocol != A2AAgentTransportProtocol.HttpJson)
-                {
-                    continue;
-                }
-
                 if (agentInterface.Protocol == A2AAgentTransportProtocol.JsonRpc)
                 {
                     a2aGroup.MapJsonRpcMethods(agentInterface.Path);
                     a2aGroup.MapGet($"{agentInterface.Path}/.well-known/agent-card.json", (HttpRequest request, HttpResponse response, [FromServices] A2AAdapter adapter, [FromServices] IAgent agent, CancellationToken cancellationToken) =>
                     {
                         return adapter.ProcessAgentCardAsync(request, response, agent, agentInterface.Path, cancellationToken);
-                    });
+                    }).AllowAnonymous();
                 }
                 else if (agentInterface.Protocol == A2AAgentTransportProtocol.HttpJson)
                 {
                     a2aGroup.MapHttpMethods(agentInterface.Path);
                 }
+                else if (agentInterface.Protocol == A2AAgentTransportProtocol.Grpc)
+                {
+                    var metadata = new A2AGrpcEndpointMetadata(agent);
+                    a2aGroup.MapGrpcA2A().WithMetadata(metadata);
+                    a2aGroup.MapGrpcA2ACustomOperations().WithMetadata(metadata);
+                }
             }
 
         }
 
-        a2aGroup.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, [FromServices] A2AAdapter adapter, [FromServices] IAgent agent, CancellationToken cancellationToken) =>
+        var discoveryAgent = grpcInterfaces.SingleOrDefault().Agent;
+        a2aGroup.MapGet(".well-known/agent-card.json", (HttpRequest request, HttpResponse response, [FromServices] A2AAdapter adapter, CancellationToken cancellationToken) =>
         {
+            var agent = A2AGrpcEndpointMetadata.ResolveAgent(request.HttpContext.RequestServices, discoveryAgent);
             return adapter.ProcessAgentCardAsync(request, response, agent, defaultPath, cancellationToken);
-        });
+        }).AllowAnonymous();
 
         return a2aGroup;
     }
@@ -206,8 +262,22 @@ public static class A2AServiceExtensions
     {
         var adapter = invocationContext.HttpContext.RequestServices.GetRequiredService<A2AAdapter>();
         var agent = invocationContext.HttpContext.RequestServices.GetRequiredService<IAgent>();
-        using var scope = adapter.BeginRequest(invocationContext.HttpContext, agent);
-        return await next(invocationContext).ConfigureAwait(false);
+        var scope = adapter.BeginRequest(invocationContext.HttpContext, agent);
+        try
+        {
+            var result = await next(invocationContext).ConfigureAwait(false);
+            if (result is IResult httpResult)
+            {
+                return new A2AAdapter.RequestScopedResult(httpResult, scope);
+            }
+            scope.Dispose();
+            return result;
+        }
+        catch
+        {
+            scope.Dispose();
+            throw;
+        }
     }
 
     private static A2AEndpointDispatch CreateDispatch()
@@ -261,7 +331,8 @@ public static class A2AServiceExtensions
         routeGroup.MapGet(
             $"{prefixPath}/card",
             async (HttpRequest request, HttpResponse response, [FromServices] A2AAdapter adapter, [FromServices] IAgent agent, CancellationToken cancellationToken) =>
-                await adapter.ProcessAgentCardAsync(request, response, agent, prefixPath, cancellationToken));
+                await adapter.ProcessAgentCardAsync(request, response, agent, prefixPath, cancellationToken))
+            .AllowAnonymous();
         var operationGroup = routeGroup.MapGroup("");
         operationGroup.AddEndpointFilter(UseRequestContextAsync);
         operationGroup.MapHttpA2A(

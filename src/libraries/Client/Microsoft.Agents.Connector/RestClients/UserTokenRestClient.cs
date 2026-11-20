@@ -87,7 +87,10 @@ namespace Microsoft.Agents.Connector.RestClients
 
         private string CacheKey(string userId, string connectionName, ChannelId channelId)
         {
-            return $"{_appId}-{userId}-{connectionName}-{channelId?.Channel}";
+            var channel = channelId?.Channel;
+            // Length-prefix components so separator characters cannot alias another identity.
+            return FormattableString.Invariant(
+                $"{_appId?.Length ?? 0}:{_appId}{userId?.Length ?? 0}:{userId}{connectionName?.Length ?? 0}:{connectionName}{channel?.Length ?? 0}:{channel}");
         }
 
         /// <inheritdoc/>
