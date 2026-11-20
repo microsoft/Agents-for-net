@@ -11,3 +11,4 @@ compatibility wrappers for the previous namespace layout.
 
 - [Microsoft 365 Agents SDK documentation](https://learn.microsoft.com/microsoft-365/agents-sdk/)
 - [Releases](https://github.com/microsoft/Agents-for-net/releases)
+- [A2A developer guide](../../../samples/A2A/A2AAgent/A2A-DEVELOPER-GUIDE.md)
