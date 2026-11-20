@@ -13,12 +13,12 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.Builder.Testing.Http;
-using Microsoft.Agents.Samples.A2ACli;
 using Microsoft.Agents.Samples.A2ACli.A2A;
 using Microsoft.Agents.Samples.A2ACli.OAuth;
 using Microsoft.Agents.Samples.A2ACli.OAuth.Configuration;
 using Microsoft.Agents.Samples.A2ACli.OAuth.Registration;
 using Microsoft.Agents.Samples.A2ACli.OAuth.Tokens;
+using A2ACliProgram = Microsoft.Agents.Samples.A2ACli.Program;
 using A2AProtocol = global::A2A;
 using GraphProfileClient = A2AAgentSample::A2AAgent.GraphProfileClient;
 
@@ -266,7 +266,7 @@ public class A2AClientHttpSimulationTests
         using var transport = http.CreateClient();
 
         A2AProtocol.AgentCard card = await new A2AProtocol.A2ACardResolver(new Uri("https://a2a.example.test/"), transport).GetAgentCardAsync();
-        using A2AClientConnection connection = Program.CreateClient(card, transport, new Uri("https://a2a.example.test/"));
+        using A2AClientConnection connection = A2ACliProgram.CreateClient(card, transport, new Uri("https://a2a.example.test/"));
         A2AProtocol.SendMessageResponse response = await connection.Client.SendMessageAsync(CreateRequest());
 
         Assert.Equal("task-42", response.Task!.Id);
@@ -291,7 +291,7 @@ public class A2AClientHttpSimulationTests
                 });
             });
         using var transport = http.CreateClient();
-        using A2AClientConnection connection = Program.CreateClient(CreateCard(), transport, new Uri("https://a2a.example.test/"));
+        using A2AClientConnection connection = A2ACliProgram.CreateClient(CreateCard(), transport, new Uri("https://a2a.example.test/"));
 
         var failure = await Assert.ThrowsAsync<A2AProtocol.A2AException>(() => connection.Client.SendMessageAsync(CreateRequest()));
 
