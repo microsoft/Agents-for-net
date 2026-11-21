@@ -20,6 +20,7 @@ namespace A2AAgent;
 [AgentInterface(AgentTransportProtocol.ActivityProtocol, "/api/messages")]
 [AgentInterface(A2AAgentTransportProtocol.JsonRpc, "/a2a")]
 [AgentInterface(A2AAgentTransportProtocol.HttpJson, "/a2a")]
+[AgentInterface(A2AAgentTransportProtocol.Grpc, "/")]
 public partial class MyAgent : AgentApplication
 {
     private const string MultiTurnCountKey = "MultiTurnCount";

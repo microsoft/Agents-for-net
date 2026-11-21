@@ -7,7 +7,7 @@ authentication provider, OAuth endpoints, or scopes.
 At startup, the client:
 
 1. Resolves the agent's public Agent Card anonymously.
-1. Selects a JSON-RPC or HTTP+JSON interface on the configured agent origin.
+1. Selects a JSON-RPC, HTTP+JSON, or gRPC interface on the configured agent origin.
 1. Uses the Agent Card's skill examples to predict the skill for each message.
 1. Evaluates the selected skill's security requirements and OAuth metadata.
 1. Acquires a token when the selected requirement matches a configured local
@@ -31,6 +31,8 @@ The startup options are:
 
 ```text
 --agent <url>
+--agent-client-id <id>
+--transport auto|jsonrpc|http-json|grpc
 --auth-mode none|delegated|app
 --history
 --use-push-notifications
@@ -38,7 +40,17 @@ The startup options are:
 --help
 ```
 
-`--agent` overrides `A2A:AgentUrl` from configuration.
+`--agent` overrides `A2A:AgentUrl` from configuration. It is always an HTTP(S)
+Agent Card discovery URL, including when the selected request transport is gRPC.
+`--transport` overrides `A2A:Transport`, which defaults to `auto`.
+`--agent-client-id` overrides
+`Authentication:Providers:entra:Registrations:agent:ClientId`. When connecting
+to the A2AAgent sample, use the Agent App Registration's application (client) ID.
+
+In `auto` mode, the first supported, valid interface in Agent Card order is
+selected. An explicit transport must be available on the configured origin.
+Messaging and in-task authorization use that same selection; a failed send is
+never retried automatically over another transport.
 
 While the client is running:
 
@@ -53,6 +65,56 @@ Authorization Code flow. `app` requires a Client Credentials flow.
 
 Changing authentication mode drops any task awaiting continuation so a task is
 not resumed using a different authentication selection.
+
+## gRPC
+
+Select gRPC explicitly, or use `auto` when the Agent Card lists gRPC first:
+
+```powershell
+dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- `
+  --agent https://agent.example.com --transport grpc
+```
+
+The advertised gRPC target may be `host:port` (TLS by default) or an explicit
+HTTP(S) URL. It must identify the root service, without a path prefix, query,
+fragment, or user information. Standard gRPC method paths are fixed;
+`GrpcChannel` does not use a URL prefix to route calls.
+
+The target must have the same scheme, host, and effective port as `--agent`.
+A different listener port is a different origin, even on the same host.
+Point discovery at the gRPC authority rather than trusting a card-advertised
+foreign destination. Redirects are disabled.
+
+Native gRPC requires HTTP/2 and a proxy that preserves streaming and trailers.
+TLS listeners can negotiate HTTP/2. For explicit loopback plaintext development,
+use an HTTP/2-only listener and select `grpc`, so card discovery also uses
+HTTP/2 prior knowledge:
+
+```powershell
+dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- `
+  --agent http://localhost:3979 --transport grpc
+```
+
+The server must expose its public well-known Agent Card on that listener.
+Keep a separate HTTP/1 listener if other development clients require it.
+The CLI never disables TLS certificate validation; trust the development
+certificate when using HTTPS.
+
+Authentication modes, automatic skill selection, attachments, task continuation,
+history, and response rendering work the same over gRPC. Agent access tokens are
+resolved for every request, so changing `:auth` does not leave a token captured
+in the channel. Credentials over plaintext are permitted only on loopback.
+
+In-task authorization uses the generated `A2AExtensionService` envelope with
+operation ID `<extension-uri>#auth-response`. Extension activation and the
+task-scoped delegated token are call metadata; the delegated token is not put
+in the JSON payload or substituted for the agent's bearer token. Repeated
+challenge IDs are rejected, while consecutive distinct challenges can resume.
+
+Standard and extension calls share one channel, disposed on console exit or
+startup failure. Ctrl+C cancels active calls. Extension RPC failures are
+recoverable in the console and display only the gRPC status, not raw server
+details or metadata. Push notification callbacks remain HTTP.
 
 ## Push notifications
 
@@ -85,18 +147,25 @@ transport mechanisms.
 The client loads configuration in this order:
 
 1. `appsettings.json`
+1. `appsettings.Development.json` for Debug builds, or
+   `appsettings.Production.json` for non-Debug builds (optional)
 1. Environment variables prefixed with `A2ACLI_`
 1. .NET user secrets
 
-Values loaded later override values loaded earlier. Command-line `--agent`
-overrides the configured agent URL.
+Values loaded later override values loaded earlier. Command-line `--agent`,
+`--agent-client-id`, and `--transport` override their configured values.
+
+The optional JSON file is selected by the CLI's build configuration, not an
+environment variable. Create these files beside `appsettings.json`; they are
+ignored by Git and copied to the build and publish output when present.
 
 The configuration has two top-level areas:
 
 ```json
 {
   "A2A": {
-    "AgentUrl": "https://agent.example.com/a2a"
+    "AgentUrl": "https://agent.example.com/a2a",
+    "Transport": "auto"
   },
   "Authentication": {
     "Providers": {
@@ -109,19 +178,19 @@ The configuration has two top-level areas:
           "offline_access"
         ],
         "Registrations": {
-          "delegated": {
+          "agent": {
             "GrantTypes": [
               "DeviceCode",
               "AuthorizationCode"
             ],
-            "ClientId": "<public-client-id>",
+            "ClientId": "<agent-client-id>",
             "RedirectUri": "http://localhost:8400/callback/"
           },
-          "application": {
+          "a2aclient": {
             "GrantTypes": [
               "ClientCredentials"
             ],
-            "ClientId": "<confidential-client-id>",
+            "ClientId": "<a2aclient-client-id>",
             "ClientSecret": "<store-outside-source-control>",
             "TokenEndpointAuthenticationMethod": "ClientSecretPost"
           }
@@ -156,9 +225,19 @@ The configuration has two top-level areas:
 
 | Property | Purpose |
 |---|---|
-| `AgentUrl` | Base URL used to resolve the public Agent Card. Must be an absolute URI. The `--agent` option overrides it. |
+| `AgentUrl` | HTTP(S) base URL used to resolve the public Agent Card. The `--agent` option overrides it. |
+| `Transport` | `auto` (default), `jsonrpc`, `http-json`, or `grpc`. The `--transport` option overrides it. |
 
 ### `Authentication:Providers`
+
+The Entra sample registrations identify which app registration to use:
+
+- `agent` uses the **Agent App Registration's** client ID for Device Code or
+  Authorization Code user sign-in. For A2AAgent, this is the same client ID used
+  by `TokenValidation:Audiences` and `Connections:ServiceConnection:Settings:ClientId`.
+- `a2aclient` uses the **client app registration's** client ID and secret for
+  app-only Client Credentials requests. It is not needed for A2AAgent's
+  `-me-agentcard` or `-me-intask` commands.
 
 `Providers` is a dictionary of local OAuth provider policies. The Agent Card
 still discovers the advertised flow, scopes, metadata URL, and OAuth
@@ -286,25 +365,31 @@ constructing `OAuth21DcrCredentialProvider`.
 ## Keep credentials outside `appsettings.json`
 
 The committed `appsettings.json` contains placeholders only. Store local
-credentials with .NET user secrets:
+credentials in the optional build-specific JSON file, environment variables,
+or .NET user secrets:
 
 ```powershell
-dotnet user-secrets set "Authentication:Providers:entra:Registrations:delegated:ClientId" "<client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
-dotnet user-secrets set "Authentication:Providers:entra:Registrations:application:ClientId" "<client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
-dotnet user-secrets set "Authentication:Providers:entra:Registrations:application:ClientSecret" "<client-secret>" --project src\samples\A2A\A2ACli\A2ACli.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:agent:ClientId" "<agent-client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:a2aclient:ClientId" "<a2aclient-client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
+dotnet user-secrets set "Authentication:Providers:entra:Registrations:a2aclient:ClientSecret" "<client-secret>" --project src\samples\A2A\A2ACli\A2ACli.csproj
 dotnet user-secrets set "Authentication:Providers:browser-oauth:Registrations:browser:ClientId" "<client-id>" --project src\samples\A2A\A2ACli\A2ACli.csproj
 ```
 
 These configuration paths use local provider and registration IDs. Do not
-replace `entra`, `application`, or `browser-oauth` with an Agent Card scheme
+replace `entra`, `agent`, `a2aclient`, or `browser-oauth` with an Agent Card scheme
 name.
+
+For existing local configuration, rename registration paths from `delegated`
+to `agent` and from `application` to `a2aclient`, including user secrets and
+environment variables. Remove obsolete entries so they do not create extra
+registrations.
 
 Environment variables use the `A2ACLI_` prefix and `__` for configuration
 section separators:
 
 ```powershell
 $env:A2ACLI_A2A__AgentUrl = "https://agent.example.com/a2a"
-$env:A2ACLI_Authentication__Providers__entra__Registrations__delegated__ClientId = "<client-id>"
+$env:A2ACLI_Authentication__Providers__entra__Registrations__agent__ClientId = "<agent-client-id>"
 $env:A2ACLI_Authentication__Providers__entra__AllowedAuthorities__0 = "https://login.microsoftonline.com"
 ```
 
@@ -377,7 +462,7 @@ trust endpoints under `https://identity.example.com/tenant`.
 
 This check occurs before the client sends credentials.
 
-Agent API access tokens are also restricted to the configured agent origin.
+Agent access tokens are also restricted to the configured agent origin.
 The client refuses to send them to another origin or over plaintext HTTP,
 except for HTTP loopback addresses used during local development.
 

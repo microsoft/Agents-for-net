@@ -3,6 +3,8 @@
 
 using Microsoft.Agents.Core.Models;
 using Microsoft.Agents.Core.Serialization;
+using System;
+using System.Text;
 using Xunit;
 
 namespace Microsoft.Agents.Model.Tests
@@ -73,5 +75,83 @@ namespace Microsoft.Agents.Model.Tests
             Assert.NotNull(mention.Mentioned);
             Assert.Equal("Id1", mention.Mentioned.Id);
         }
+
+        [Theory]
+        [InlineData("Plain text", "Plain text")]
+        [InlineData("<at>Tom</at>", "Tom ")]
+        [InlineData("Hi <AT id='123'>Tom</aT>!", "Hi Tom !")]
+        [InlineData("<at>Tom</at><at>John</at>", "Tom John ")]
+        [InlineData("<at>Tom</at>\t<at>John</at>\n", "Tom\tJohn\n")]
+        [InlineData("<at></at>", " ")]
+        [InlineData("<at id='x>y'>Tom</at>", "y'>Tom ")]
+        public void NormalizeMentions_PreservesFlatTagOutput(string input, string expected)
+        {
+            var activity = new Activity(ActivityTypes.Message) { Text = input };
+
+            activity.NormalizeMentions(removeMention: false);
+
+            Assert.Equal(expected, activity.Text);
+        }
+
+        [Theory]
+        [InlineData("<at")]
+        [InlineData("<at>Tom")]
+        [InlineData("Tom</at>")]
+        [InlineData("<at>Tom</at> <at>John")]
+        [InlineData("<at>Tom</at> </at>")]
+        [InlineData("<at>Outer<at>Inner</at>Tail</at>")]
+        [InlineData("<at>Tom</at> </at >")]
+        public void NormalizeMentions_PreservesInvalidTagStructure(string input)
+        {
+            var activity = new Activity(ActivityTypes.Message) { Text = input };
+
+            activity.NormalizeMentions(removeMention: false);
+
+            Assert.Equal(input, activity.Text);
+        }
+
+        [Theory]
+        [InlineData(" <at>Tom</at> ", "Tom")]
+        [InlineData("<at>Outer<at>Inner</at>Tail</at>", "<at>Outer<at>Inner</at>Tail</at>")]
+        public void NormalizeMentions_NormalizesAndTrimsMentionEntities(string input, string expected)
+        {
+            var mention = new Mention(new ChannelAccount("user"), input, "mention");
+            var activity = new Activity(ActivityTypes.Message)
+            {
+                Text = "Plain text",
+                Entities = [mention]
+            };
+
+            activity.NormalizeMentions(removeMention: false);
+
+            Assert.Equal("Plain text", activity.Text);
+            Assert.Equal(expected, mention.Text);
+        }
+
+#if NET8_0_OR_GREATER
+        [Fact]
+        public void NormalizeMentions_RepeatedTags_HasBoundedAllocations()
+        {
+            const int tagCount = 1024;
+            var inputBuilder = new StringBuilder();
+            var expectedBuilder = new StringBuilder();
+            for (int i = 0; i < tagCount; i++)
+            {
+                inputBuilder.Append("<at>x</at>");
+                expectedBuilder.Append("x ");
+            }
+            var input = inputBuilder.ToString();
+            var expected = expectedBuilder.ToString();
+            var activity = new Activity(ActivityTypes.Message) { Text = input };
+            new Activity(ActivityTypes.Message) { Text = "<at>x</at>" }.NormalizeMentions(removeMention: false);
+
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            activity.NormalizeMentions(removeMention: false);
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+            Assert.Equal(expected, activity.Text);
+            Assert.InRange(allocated, 0L, (long)input.Length * 16 + 65536);
+        }
+#endif
     }
 }

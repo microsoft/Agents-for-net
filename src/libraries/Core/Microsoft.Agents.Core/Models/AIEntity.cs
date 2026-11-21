@@ -251,6 +251,12 @@ namespace Microsoft.Agents.Core.Models
         public string AtType = "CreativeWork";
 
         /// <summary>
+        /// Optional identifier for the sensitivity metadata.
+        /// </summary>
+        [JsonPropertyName("@id")]
+        public string? AtId { get; set; }
+
+        /// <summary>
         /// Sensitivity description of the content.
         /// </summary>
         public string? Description { get; set; }
@@ -261,7 +267,7 @@ namespace Microsoft.Agents.Core.Models
         public string? Name { get; set; }
 
         /// <summary>
-        /// Optional. Ignored in Teams
+        /// Optional priority of the sensitivity metadata, interpreted by the receiving client.
         /// </summary>
         public int Position { get; set; }
 

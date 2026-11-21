@@ -133,14 +133,16 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
     /// <inheritdoc/>
     public GraphServiceClient GetGraphClient(string handlerName = null, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
     {
-        return GraphClientFactory.CreateUserGraphClient(GetUserAuthorization(), this, handlerName, graphBaseUrl);
+        return GraphClientFactory.CreateUserGraphClient(GetUserAuthorization(), this, handlerName, graphBaseUrl,
+            _turnContext.Services.Get<TeamsAgentExtension>()?.GraphHttpMessageHandlerFactory);
     }
 
     /// <inheritdoc/>
     public GraphServiceClient GetAppGraphClient(string graphBaseUrl = "https://graph.microsoft.com/v1.0")
     {
         var tokenProvider = GetConnections().GetTokenProvider(Identity, Activity);
-        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl);
+        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl,
+            _turnContext.Services.Get<TeamsAgentExtension>()?.GraphHttpMessageHandlerFactory);
     }
 
     /// <inheritdoc/>
@@ -148,7 +150,8 @@ public class TeamsTurnContext : TurnContextWrapper, ITeamsTurnContext
     {
         AssertionHelpers.ThrowIfNullOrEmpty(connectionName, nameof(connectionName));
         var tokenProvider = GetConnections().GetConnection(connectionName);
-        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl);
+        return GraphClientFactory.CreateAppGraphClient(tokenProvider, graphBaseUrl,
+            _turnContext.Services.Get<TeamsAgentExtension>()?.GraphHttpMessageHandlerFactory);
     }
 
     private UserAuthorization GetUserAuthorization()

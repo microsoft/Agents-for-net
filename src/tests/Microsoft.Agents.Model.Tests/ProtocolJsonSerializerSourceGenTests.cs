@@ -127,6 +127,23 @@ namespace Microsoft.Agents.Model.Tests
         }
 
         [Fact]
+        public void AIEntity_NestedSensitivityIds_RoundTripViaSourceGen()
+        {
+            const string input =
+                """
+                {"usageInfo":{"@id":"urn:example:message-label"},"citation":[{"position":1,"appearance":{"name":"Source","usageInfo":{"@id":"urn:example:citation-label"}}}]}
+                """;
+
+            var entity = JsonSerializer.Deserialize(input, CoreJsonContext.Default.AIEntity);
+            using var json = JsonDocument.Parse(JsonSerializer.Serialize(entity, CoreJsonContext.Default.AIEntity));
+            Assert.True(json.RootElement.GetProperty("usageInfo").TryGetProperty("@id", out var messageId));
+            Assert.Equal("urn:example:message-label", messageId.GetString());
+            Assert.True(json.RootElement.GetProperty("citation")[0].GetProperty("appearance")
+                .GetProperty("usageInfo").TryGetProperty("@id", out var citationId));
+            Assert.Equal("urn:example:citation-label", citationId.GetString());
+        }
+
+        [Fact]
         public void ConversationParameters_Members_IReadOnlyList_Deserializes()
         {
             // ConversationParameters.Members is IReadOnlyList<ChannelAccount>

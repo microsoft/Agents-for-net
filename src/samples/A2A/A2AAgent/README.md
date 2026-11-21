@@ -29,10 +29,12 @@ OAuth configuration, see the [A2A developer guide](A2A-DEVELOPER-GUIDE.md).
 | `-proactive-store` | Stores a conversation for externally triggered task updates. | Anonymous |
 | `-proactive` | Returns an unstored conversation for full proactive continuations. | Anonymous |
 | `-a2a` | Sends a native A2A message through `IA2ATurnContext.Client`. | Anonymous |
-| `-me-agentcard` | Acquires a delegated Agent API token before the request, exchanges it for Microsoft Graph `User.Read`, and returns the caller's profile. | Agent Card OAuth |
-| `-me-intask` | Requests a delegated Agent API token after the task starts, exchanges it for Microsoft Graph `User.Read`, and returns the caller's profile. | In-Task OAuth |
+| `-me-agentcard` | Acquires a delegated token for the agent before the request, exchanges it for Microsoft Graph `User.Read`, and returns the caller's profile. | Agent Card OAuth |
+| `-me-intask` | Requests a delegated token for the agent after the task starts, exchanges it for Microsoft Graph `User.Read`, and returns the caller's profile. | In-Task OAuth |
 
-The A2A endpoints are available at `http://localhost:3978/a2a` by default.
+JSON-RPC and HTTP+JSON are available at `http://localhost:3978/a2a` by default.
+The default launch profile also exposes native gRPC at `https://localhost:3979/`
+and advertises that separate listener in the Agent Card.
 
 ## Run anonymously
 
@@ -51,6 +53,57 @@ dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- --agent http://loca
 Send ordinary text, `-stream`, or `-multi`. The shipped placeholders leave token
 validation disabled during local development, so the anonymous scenarios work
 without Microsoft Entra configuration.
+
+## Run with native gRPC
+
+`MyAgent` declares `JsonRpc`, `HttpJson`, and `Grpc` interfaces. The same
+`app.MapA2AApplicationEndpoints(requireAuth: false)` maps all three; no additional
+gRPC registration or mapping is needed in application code.
+
+For the default TLS listener, trust the .NET development certificate:
+
+```powershell
+dotnet dev-certs https --trust
+dotnet run --project src\samples\A2A\A2AAgent\A2AAgent.csproj --launch-profile A2AAgent
+```
+
+Discover the public card at `http://localhost:3978/.well-known/agent-card.json`
+or `http://localhost:3978/a2a/.well-known/agent-card.json`. Select its `GRPC`
+interface with protocol version `1.0` and connect to `https://localhost:3979/`.
+TLS negotiates HTTP/2 for gRPC while existing HTTP/1 routes remain available.
+
+For local plaintext HTTP/2, use the separate development profile:
+
+```powershell
+dotnet run --project src\samples\A2A\A2AAgent\A2AAgent.csproj --launch-profile A2AAgent-h2c
+```
+
+This keeps discovery, JSON-RPC, HTTP+JSON, and Activity Protocol routes on
+`http://localhost:3978` and adds an **HTTP/2-only** gRPC listener at
+`http://localhost:3980/`. Plaintext `Http1AndHttp2` does not negotiate native
+HTTP/2. A client fetching discovery directly from the HTTP/2-only listener must
+also explicitly use HTTP/2.
+
+Both profiles set `A2AAdapterOptions__GrpcUrl` to the actual gRPC listener.
+For other deployments, configure `A2AAdapterOptions:GrpcUrl` with an absolute
+HTTP(S) root address, without credentials, prefixes, query strings, or fragments.
+If omitted, the card uses the discovery request's scheme and authority.
+The option changes the advertised target only; configure Kestrel and proxies
+separately. Proxies must preserve HTTP/2, streaming, authentication metadata, and
+gRPC trailers. Use TLS outside trusted local development.
+
+The fixed gRPC method paths require `[AgentInterface(A2AAgentTransportProtocol.Grpc,
+"/")]`. Prefixes (including enclosing route groups), multiple gRPC agents, and
+duplicate mappings fail at startup. Do not separately call `MapGrpcA2A`.
+Unary, streaming, subscription, retrieval, and cancellation calls share the
+existing A2A server and task store across all bindings.
+
+Authentication uses the same ASP.NET Core validation and route-scoped
+authorization as HTTP. A raw bearer metadata value is not a validated
+credential. The shared operation registry also exposes in-task `auth-response`
+through upstream's generic `A2AExtensionService.InvokeExtensionOperation` RPC;
+see the [developer guide](A2A-DEVELOPER-GUIDE.md#grpc-authentication-and-protocol-extensions).
+Extended Agent Cards remain unsupported.
 
 ## Continue a task proactively
 
@@ -172,7 +225,6 @@ Task storage, push registrations, and conversation storage in this sample are in
 lost on restart. Task continuation coordination is process-local, not a distributed lock.
 The proactive HTTP endpoints require authentication outside Development. Do not expose anonymous
 Development triggers publicly; production hosts must authorize which callers may update each task.
-
 ## View telemetry
 
 The sample exports Agents SDK and `a2a-dotnet` traces, metrics, and logs over
@@ -184,7 +236,7 @@ before starting the agent to inspect telemetry from the `A2A` and
 ## Configure the authenticated sample
 
 The Graph profile skills use two `A2AUserAuthorization` handlers with the same
-Device Code flow, Agent API scope, scope enforcement, and Microsoft Graph OBO
+Device Code flow, agent scope, scope enforcement, and Microsoft Graph OBO
 exchange:
 
 - `graph-agentcard` uses `RequestToken`. Its OAuth scheme and the
@@ -197,18 +249,19 @@ exchange:
   `Authorization` header remains available for the request-authentication JWT.
 
 Both handlers validate the delegated JWT against every configured
-`RequiredScopes` value before OBO and exchange the validated Agent API token
+`RequiredScopes` value before OBO and exchange the validated agent token
 through `ServiceConnection` for Microsoft Graph `User.Read`.
 
-### Register the Agent API application
+### Configure the Agent App Registration
 
-1. Create a single-tenant Microsoft Entra app registration for the Agent API.
-1. Set `requestedAccessTokenVersion` to `2`.
+1. Create a single-tenant Microsoft Entra app registration for the agent.
+1. In **Manifest**, set `api.requestedAccessTokenVersion` to `2` so issued
+   access tokens use the GUID audience expected by `TokenValidation:Audiences`.
 1. In **Expose an API**, publish
    `api://botid-<agent-client-id>/access_as_user`.
 1. Add the delegated Microsoft Graph permission `User.Read`.
 1. Grant the consent required by your tenant.
-1. Under **Authentication** > **Advanced settings**, set **Allow public client
+1. Under **Authentication** > **Settings**, set **Allow public client
    flows** to **Yes** so the sample client can use Device Code authentication.
    This sets `isFallbackPublicClient` to `true` in the app manifest. If it
    remains disabled, Entra returns `AADSTS7000218` asking for a
@@ -218,15 +271,18 @@ through `ServiceConnection` for Microsoft Graph `User.Read`.
 
 ### Configure the agent
 
+Configure `TokenValidation` and `Connections:ServiceConnection` as you would for
+any other Agents SDK agent, using the Agent App Registration.
+
 In `appsettings.json`:
 
-- replace `{{ClientId}}` in `TokenValidation:Audiences` and the Agent API scope;
+- replace `{{ClientId}}` in `TokenValidation:Audiences` and the agent scope;
 - replace `{{TenantId}}` in `TokenValidation:TenantId` and the connection authority;
-- configure `Connections:ServiceConnection` for the Agent API application; and
+- configure `Connections:ServiceConnection` for the Agent App Registration; and
 - place real secrets in user secrets or another secure configuration provider, not
   in the committed settings file.
 
-The relevant authorization configuration is:
+The relevant user authorization handler configuration is:
 
 ```json
 "AgentApplication": {
@@ -244,7 +300,7 @@ The relevant authorization configuration is:
               "DeviceAuthorizationUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/devicecode",
               "TokenUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token",
               "Scopes": {
-                "api://botid-{{ClientId}}/access_as_user": "Access the A2A Agent API as the signed-in user."
+                "api://botid-{{ClientId}}/access_as_user": "Access the A2A agent as the signed-in user."
               }
             }
           },
@@ -265,7 +321,7 @@ The relevant authorization configuration is:
               "DeviceAuthorizationUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/devicecode",
               "TokenUrl": "https://login.microsoftonline.com/{{TenantId}}/oauth2/v2.0/token",
               "Scopes": {
-                "api://botid-{{ClientId}}/access_as_user": "Access the A2A Agent API as the signed-in user."
+                "api://botid-{{ClientId}}/access_as_user": "Access the A2A agent as the signed-in user."
               }
             }
           },
@@ -282,11 +338,11 @@ The relevant authorization configuration is:
 ```
 
 In `OAuthFlows.DeviceCode.Scopes`, `{{ClientId}}` is the application (client)
-ID of the **A2AAgent's Entra app registration**. It is
+ID of the **Agent App Registration**. It is
 the same app registration where `access_as_user` is defined under **Expose an
 API**, and the same ID used by `TokenValidation:Audiences`. It is not the
-A2ACli's client ID or a Microsoft Graph application ID. The resulting Agent
-API scope URI is:
+A2ACli's client app registration ID or a Microsoft Graph application ID. The
+resulting scope URI is:
 `api://botid-<A2AAgent-client-id>/access_as_user`.
 
 `A2AAgentStartup` enables token validation in Development only after
@@ -307,10 +363,17 @@ the exchange before the protected route runs.
 
 Configure the [A2ACli sample](../A2ACli/README.md) with:
 
-- `Authentication:Providers:entra:Registrations:delegated:ClientId` set to the
-  Agent API client ID.
+- `Authentication:Providers:entra:Registrations:agent:ClientId` set to the
+  Agent App Registration's application (client) ID.
 
-The Agent API registration itself must be used as the public client for this
+Alternatively, pass the client ID on the command line:
+
+```powershell
+dotnet run --project src\samples\A2A\A2ACli\A2ACli.csproj -- `
+  --agent http://localhost:3978/a2a --agent-client-id <agent-client-id>
+```
+
+The Agent App Registration itself must be used as the public client for this
 sample so the inbound token satisfies the SDK's OBO exchange checks.
 Configure the tenant ID in this agent's `DeviceAuthorizationUrl` and `TokenUrl`;
 the client uses the endpoints advertised by the authorization metadata. The
@@ -324,7 +387,7 @@ authorization, send:
 -me-agentcard
 ```
 
-The client matches the advertised skill, acquires the Agent API token from its
+The client matches the advertised skill, acquires the agent token from its
 security requirement, and sends the token in the request's `Authorization`
 header.
 
@@ -335,7 +398,7 @@ To exercise the Agents SDK In-Task authorization extension, send:
 ```
 
 The client receives the task-scoped OAuth flow in the auth-required status,
-acquires an Agent API token, and calls `auth-response` with that token in the
+acquires a token for the agent, and calls `auth-response` with that token in the
 `x-a2a-intask-authorization` header. The normal `Authorization` header remains
 reserved for the JWT that authenticates the A2A request.
 
@@ -343,7 +406,7 @@ Expected failures:
 
 - A token acquired by a different public-client registration is not exchangeable
   by this sample.
-- A Microsoft Graph token cannot be sent directly to the Agent API because its
+- A Microsoft Graph token cannot be sent directly to the agent because its
   audience is incorrect.
 
 ## Further reading
