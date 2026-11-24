@@ -12,10 +12,17 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Agents.Extensions.A2A.ProtocolExtensions.InTaskAuthorization;
 
-internal static class InTaskAuthorizationOperation
+internal sealed class InTaskAuthorizationOperation : IA2AProtocolExtensionContributor
 {
     private static readonly A2AOperationId OperationId =
         new(InTaskAuthorizationExtension.AuthResponseOperationId);
+
+    public void Register(A2AProtocolExtensionBuilder builder)
+    {
+        var registration = AddOperation(builder.Operations);
+        AddJsonRpcBinding(builder.JsonRpc, registration.Operation);
+        AddHttpBinding(builder.Http, registration.Operation);
+    }
 
     internal static InTaskAuthorizationRegistration AddOperation(
         A2ACustomOperationRegistryBuilder builder)

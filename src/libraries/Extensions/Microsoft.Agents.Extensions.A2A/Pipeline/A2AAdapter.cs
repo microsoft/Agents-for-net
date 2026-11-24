@@ -66,6 +66,7 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
     private readonly string _agentCardCacheControl;
     private readonly IConfiguration _configuration;
     private readonly Uri _grpcUrl;
+    private readonly A2AProtocolExtensionRegistry _protocolExtensions;
 
     /// <summary>
     /// Initializes an adapter with an in-memory A2A task store.
@@ -94,6 +95,7 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
     /// <param name="options">The optional A2A adapter options.</param>
     /// <param name="configuration">The optional configuration used to compose Agent Cards.</param>
     /// <param name="server">The shared server used for task execution and push delivery.</param>
+    /// <param name="protocolExtensions">The host's agent-scoped protocol-extension registries.</param>
     /// <exception cref="ArgumentNullException"><paramref name="taskStore"/> is <see langword="null"/>.</exception>
     public A2AAdapter(
         ITaskStore taskStore,
@@ -101,7 +103,8 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
         ChannelEventNotifier a2aNotifier = null,
         A2AAdapterOptions options = null,
         IConfiguration configuration = null,
-        A2AServer server = null)
+        A2AServer server = null,
+        A2AProtocolExtensionRegistry protocolExtensions = null)
         : base(loggerFactory.CreateLogger<A2AAdapter>())
     {
         AssertionHelpers.ThrowIfNull(taskStore, nameof(taskStore));
@@ -137,6 +140,7 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
         _agentCardCacheControl = $"public, max-age={(long)Math.Ceiling(adapterOptions.AgentCardCacheMaxAge.TotalSeconds)}";
         _configuration = configuration;
         _grpcUrl = adapterOptions.GrpcUrl;
+        _protocolExtensions = protocolExtensions ?? new A2AProtocolExtensionRegistry(null, []);
         _supportsPushNotifications = server != null;
         _server = server ?? new A2AServerWithoutExtendedAgentCard(
             new AgentHandlerProxy(), _taskStore, _a2aNotifier, _a2aServerLogger, _a2aServerOptions);
@@ -169,11 +173,12 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
         var scope = BeginRequest(httpRequest.HttpContext, agent);
         try
         {
-            var result = await global::A2A.AspNetCore.A2AJsonRpcProcessor.ProcessRequestAsync(
+            var dispatch = _protocolExtensions.GetDispatch(agent.GetType());
+            var result = await global::A2A.AspNetCore.A2AJsonRpcProcessor.ProcessRequestWithExtensionsAsync(
                 RequestHandlerProxy,
                 httpRequest,
-                A2AServiceExtensions.Dispatch.Registry,
-                A2AServiceExtensions.Dispatch.JsonRpcBindings,
+                dispatch.Extensions,
+                dispatch.JsonRpcBindings,
                 cancellationToken).ConfigureAwait(false);
             return new RequestScopedResult(result, scope);
         }
@@ -267,7 +272,7 @@ internal class A2AAdapter : ChannelAdapter, IAsyncDisposable
         }
 
         agentCard = await new A2AAgentCardComposer(_configuration)
-            .ComposeAsync(agentCard, agent, A2AServiceExtensions.Dispatch.InTaskAuthorization.Extension)
+            .ComposeAsync(agentCard, agent, _protocolExtensions.GetDispatch(agent.GetType()).Registry)
             .ConfigureAwait(false);
 
         var json = ProtocolJsonSerializer.ToJson(agentCard);
