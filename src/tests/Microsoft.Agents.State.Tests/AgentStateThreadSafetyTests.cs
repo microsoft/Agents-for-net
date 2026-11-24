@@ -284,7 +284,7 @@ namespace Microsoft.Agents.State.Tests
         }
 
         [Fact]
-        public async Task State_OverlappingTurns_WithoutLoadedVersion_ShouldPreserveUpsertBehavior()
+        public async Task State_OverlappingTurns_BeforeFirstSave_ShouldRejectStaleSave()
         {
             var storage = new MemoryStorage();
             var slowTurnState = new ConversationState(storage);
@@ -299,13 +299,13 @@ namespace Microsoft.Agents.State.Tests
             fastTurnState.SetValue("lastWriter", "fast");
 
             await fastTurnState.SaveChangesAsync(fastTurnContext);
-            await slowTurnState.SaveChangesAsync(slowTurnContext);
+            await Assert.ThrowsAsync<EtagException>(() => slowTurnState.SaveChangesAsync(slowTurnContext));
 
             var persistedState = new ConversationState(storage);
             var verificationContext = TestUtilities.CreateEmptyContext();
             await persistedState.LoadAsync(verificationContext);
 
-            Assert.Equal("slow", persistedState.GetValue<string>("lastWriter"));
+            Assert.Equal("fast", persistedState.GetValue<string>("lastWriter"));
         }
 
         [Fact]
@@ -401,6 +401,44 @@ namespace Microsoft.Agents.State.Tests
             await state.SaveChangesAsync(context);
 
             Assert.Equal(firstVersion, expectedVersion);
+        }
+
+        [Fact]
+        public async Task State_FirstWriteWithoutReturnedVersion_ShouldUpsertOnNextSave()
+        {
+            var modes = new List<StorageWriteMode>();
+            var storage = new Mock<IStorageV2>();
+            storage.Setup(s => s.ReadAsync(It.IsAny<IReadOnlyList<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((IReadOnlyList<string> keys, CancellationToken _) =>
+                    new Dictionary<string, StorageReadResult>
+                    {
+                        [keys[0]] = new StorageReadResult { Key = keys[0], Status = StorageOperationStatus.NotFound },
+                    });
+            storage.Setup(s => s.WriteAsync(
+                    It.IsAny<IReadOnlyDictionary<string, object>>(),
+                    It.IsAny<StorageWriteOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .Callback((IReadOnlyDictionary<string, object> _, StorageWriteOptions options, CancellationToken _) =>
+                    modes.Add(options.Mode))
+                .ReturnsAsync((IReadOnlyDictionary<string, object> changes, StorageWriteOptions _, CancellationToken _) =>
+                    new Dictionary<string, StorageWriteResult>
+                    {
+                        [changes.Keys.Single()] = new StorageWriteResult
+                        {
+                            Key = changes.Keys.Single(),
+                            Status = StorageOperationStatus.Succeeded,
+                        },
+                    });
+
+            var state = new ConversationState(storage.Object);
+            var context = TestUtilities.CreateEmptyContext();
+            await state.LoadAsync(context);
+            state.SetValue("first", "value1");
+            await state.SaveChangesAsync(context);
+            state.SetValue("second", "value2");
+            await state.SaveChangesAsync(context);
+
+            Assert.Equal(new[] { StorageWriteMode.CreateOnly, StorageWriteMode.Upsert }, modes);
         }
 
         [Fact]
