@@ -1,0 +1,66 @@
+# Focused Agents SDK checks for the official ACTS runner.
+# Adapted from a2aproject/a2a-itk/scenarios/acts/core-operations.acts.yaml
+# under the Apache License, Version 2.0; see ../itk/A2A-ITK-LICENSE.txt.
+# Unlike the current upstream corpus, these send requests include Message.messageId.
+acts_version: "1.0"
+spec_version: "1.0"
+metadata:
+  title: "Agents SDK A2A task integration"
+  description: "Completed-task send/get checks with protocol-valid message IDs"
+suites:
+  - id: agents-sdk-task-integration
+    name: Agents SDK task integration
+    tests:
+      - id: AGENT-SEND-001
+        name: SendMessage completes a task
+        level: must
+        requires_behaviors: ["tck-complete-task"]
+        steps:
+          - id: send
+            operation: send_message
+            params:
+              message:
+                role: ROLE_USER
+                messageId: "agents-sdk-send-001"
+                parts:
+                  - text: "tck-complete-task hello world"
+            expect:
+              status: 200
+              body:
+                task:
+                  id:
+                    type: string
+                  status:
+                    state: TASK_STATE_COMPLETED
+
+      - id: AGENT-GET-001
+        name: GetTask returns the completed task
+        level: must
+        requires_behaviors: ["tck-complete-task"]
+        steps:
+          - id: send
+            operation: send_message
+            params:
+              message:
+                role: ROLE_USER
+                messageId: "agents-sdk-get-001"
+                parts:
+                  - text: "tck-complete-task for get"
+            capture:
+              taskId: "task.id"
+            expect:
+              status: 200
+              body:
+                task:
+                  status:
+                    state: TASK_STATE_COMPLETED
+          - id: get
+            operation: get_task
+            params:
+              id: "{{send.taskId}}"
+            expect:
+              status: 200
+              body:
+                id: "{{send.taskId}}"
+                status:
+                  state: TASK_STATE_COMPLETED

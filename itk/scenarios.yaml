@@ -1,0 +1,14 @@
+# Supplemental Agents SDK integration coverage, not the a2a-dotnet protocol suite.
+# Keep this set small and non-gating until results have been reviewed.
+tests:
+  - schema: traversal/v1
+    name: Agents SDK A2A - v1 send_message
+    tier: nightly
+    roles:
+      sut: current
+      peers:
+        - {sdk: python, line: v10}
+    topology: star
+    transports: [jsonrpc, http_json]
+    behavior: send_message
+    streaming_variants: [false]
