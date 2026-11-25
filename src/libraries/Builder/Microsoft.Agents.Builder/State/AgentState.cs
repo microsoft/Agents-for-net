@@ -222,6 +222,7 @@ namespace Microsoft.Agents.Builder.State
                 }
 
                 _cachedAgentState.Version = readResult.Status == StorageOperationStatus.Succeeded ? readResult.Version : null;
+                _cachedAgentState.IsNew = readResult.Status == StorageOperationStatus.NotFound;
                 turnContext.StackState.Set<CachedAgentState>(Name, _cachedAgentState);
             }
         }
@@ -274,7 +275,12 @@ namespace Microsoft.Agents.Builder.State
                             }
                             else
                             {
-                                writeResults = await _storage.WriteAsync(readOnlyChanges, new StorageWriteOptions(), cancellationToken).ConfigureAwait(false);
+                                // A missing record needs an atomic first write; an existing versionless record keeps upsert behavior.
+                                var writeMode = cachedState.IsNew ? StorageWriteMode.CreateOnly : StorageWriteMode.Upsert;
+                                writeResults = await _storage.WriteAsync(
+                                    readOnlyChanges,
+                                    new StorageWriteOptions { Mode = writeMode },
+                                    cancellationToken).ConfigureAwait(false);
                             }
 
                             var writeResult = writeResults[key];
@@ -284,6 +290,7 @@ namespace Microsoft.Agents.Builder.State
                             }
 
                             cachedState.Version = writeResult.Version;
+                            cachedState.IsNew = false;
                         }
                         else
                         {
@@ -338,6 +345,7 @@ namespace Microsoft.Agents.Builder.State
                 if (cachedState != null)
                 {
                     cachedState.Version = null;
+                    cachedState.IsNew = true;
                     cachedState.Hash = CachedAgentState.ComputeHash(cachedState.State);
                 }
             }
@@ -501,6 +509,8 @@ namespace Microsoft.Agents.Builder.State
             internal string Key { get; set; }
 
             internal string Version { get; set; }
+
+            internal bool IsNew { get; set; }
 
             internal static string ComputeHash(object obj)
             {

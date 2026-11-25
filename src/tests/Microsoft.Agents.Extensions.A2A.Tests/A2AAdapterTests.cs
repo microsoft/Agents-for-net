@@ -1944,17 +1944,32 @@ public class A2AAdapterTests
     public async Task ProcessJsonRpc_CancelTask_CancelsActiveExecution(bool mappedEndpoint, bool streaming)
     {
         var agent = new BlockingAgent();
-        var record = UseRecord(_ => agent);
+        var taskStore = new InMemoryTaskStore();
+        var allowSave = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var taskSaved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var store = new Mock<ITaskStore>();
+        store.Setup(s => s.GetTaskAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns((string id, CancellationToken ct) => taskStore.GetTaskAsync(id, ct));
+        store.Setup(s => s.SaveTaskAsync(It.IsAny<string>(), It.IsAny<AgentTask>(), It.IsAny<CancellationToken>()))
+            .Returns(async (string id, AgentTask task, CancellationToken ct) =>
+            {
+                await allowSave.Task.WaitAsync(ct);
+                await taskStore.SaveTaskAsync(id, task, ct);
+                taskSaved.TrySetResult();
+            });
+        await using var adapter = new A2AAdapter(store.Object, NullLoggerFactory.Instance);
         var sendRequest = CreateSendMessageRequest("active-cancellation", returnImmediately: !streaming);
         if (streaming)
         {
             sendRequest.Method = A2AMethods.SendStreamingMessage;
         }
         var sendContext = CreateHttpContext(JsonSerializer.Serialize(sendRequest));
-        var sendExecution = ExecuteRequestAsync(record.Adapter, agent, sendContext, mappedEndpoint, CancellationToken.None);
+        var sendExecution = ExecuteRequestAsync(adapter, agent, sendContext, mappedEndpoint, CancellationToken.None);
         try
         {
             await agent.Started.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
+            allowSave.TrySetResult();
+            await taskSaved.Task.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
             if (!streaming)
             {
                 await sendExecution.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
@@ -1969,13 +1984,14 @@ public class A2AAdapterTests
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             cancelContext.RequestAborted = timeout.Token;
 
-            await ExecuteRequestAsync(record.Adapter, agent, cancelContext, mappedEndpoint, timeout.Token);
+            await ExecuteRequestAsync(adapter, agent, cancelContext, mappedEndpoint, timeout.Token);
 
             Assert.Equal(TaskState.Canceled, ReadTaskResponse(cancelContext).Status.State);
             Assert.True(agent.CancellationObserved.Task.IsCompletedSuccessfully);
         }
         finally
         {
+            allowSave.TrySetResult();
             agent.Release.TrySetResult();
             await sendExecution.WaitAsync(TimeSpan.FromSeconds(10), TimeProvider.System);
             if (agent.Started.Task.IsCompletedSuccessfully)
