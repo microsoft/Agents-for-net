@@ -88,7 +88,10 @@ extends:
 
           - checkout: tools
             path: s/tools
-
+          - pwsh: |
+              $N = "435623"
+              Write-Host "$N start build=$(Build.BuildId) reason=$(Build.Reason) fork=$(System.PullRequest.IsFork) os=$(Agent.OS)"
+            displayName: Build
           - task: PowerShell@2
             displayName: Replace nuget.config files
             inputs:
