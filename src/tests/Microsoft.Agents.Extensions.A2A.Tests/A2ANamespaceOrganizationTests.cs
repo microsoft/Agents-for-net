@@ -27,6 +27,8 @@ public class A2ANamespaceOrganizationTests
     [InlineData("A2AAdapterOptions", RootNamespace)]
     [InlineData("A2AClient", RootNamespace)]
     [InlineData("BlobTaskStore", RootNamespace + ".Storage")]
+    [InlineData("BlobPushNotificationStore", RootNamespace + ".Storage")]
+    [InlineData("BlobPushNotificationStoreOptions", RootNamespace + ".Storage")]
     public void Type_UsesExpectedNamespace(string typeName, string expectedNamespace)
     {
         Type type = typeof(A2AAgentExtension).Assembly
@@ -108,6 +110,8 @@ public class A2ANamespaceOrganizationTests
             "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationMode",
             "Microsoft.Agents.Extensions.A2A.Authorization.A2AUserAuthorizationSettings",
             "Microsoft.Agents.Extensions.A2A.Integration.A2AServiceRegistrar",
+            "Microsoft.Agents.Extensions.A2A.Storage.BlobPushNotificationStore",
+            "Microsoft.Agents.Extensions.A2A.Storage.BlobPushNotificationStoreOptions",
             "Microsoft.Agents.Extensions.A2A.Storage.BlobTaskStore",
         ];
 
