@@ -44,5 +44,19 @@
       "upstreamTypes": ["Microsoft.Teams.Apps.MessageActivity", "Microsoft.Teams.Apps.MessageReaction"],
       "adoptionPolicy": "review-internal-additions"
     }
-  }
+  },
+  "experimentalApis": [
+    {
+      "diagnosticId": "ExperimentalTeamsSocketMode",
+      "symbol": "Microsoft.Teams.Apps.SocketMode.SocketModeObserver",
+      "support": "intentionally-unsupported",
+      "reason": "The MSTeams extension does not implement Socket Mode."
+    },
+    {
+      "diagnosticId": "ExperimentalTeamsSocketMode",
+      "symbol": "Microsoft.Teams.Apps.SocketMode.SocketModeOptions",
+      "support": "intentionally-unsupported",
+      "reason": "The MSTeams extension does not implement Socket Mode."
+    }
+  ]
 }

@@ -181,6 +181,10 @@ public static class MetadataValidator
                 Add(findings, CapabilitiesStaleRule, path, $"Capability {name} must include owners, an adoptionPolicy, and at least one upstream namespace or type.", "Repair the malformed capability mapping.", name);
             }
         }
+        foreach (var error in ExperimentalApiSupport.ValidateScopes(document))
+        {
+            Add(findings, CapabilitiesStaleRule, path, error, "Repair the experimentalApis entries.");
+        }
         foreach (var usage in manifest.Usages.Where(item => !string.IsNullOrWhiteSpace(item.UpstreamSymbol)))
         {
             if (FindingClassifier.MatchCapability(usage.UpstreamSymbol, document).Value is null)

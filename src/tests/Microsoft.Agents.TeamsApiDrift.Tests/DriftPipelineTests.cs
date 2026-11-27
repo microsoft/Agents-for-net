@@ -10,6 +10,93 @@ namespace Microsoft.Agents.TeamsApiDrift.Tests;
 public sealed class DriftPipelineTests
 {
     [Fact]
+    public void ExperimentalAnnotationsAreReadFromCompiledMetadata()
+    {
+        using var stream = File.OpenRead(typeof(DriftPipelineTests).Assembly.Location);
+        using var pe = new PEReader(stream);
+        var api = AssemblyMetadataReader.ReadPublicApi(pe.GetMetadataReader());
+        var type = Assert.Single(api, item => item.Name.EndsWith(".ExperimentalMetadataFixture", StringComparison.Ordinal));
+        Assert.Equal("ExperimentalFixtureType", type.ExperimentalDiagnosticId);
+        Assert.Null(Assert.Single(type.Members, member => member.Name == "Inherited").ExperimentalDiagnosticId);
+        Assert.Equal("ExperimentalFixtureMember", Assert.Single(type.Members, member => member.Name == "Annotated").ExperimentalDiagnosticId);
+    }
+
+    [Fact]
+    public void ExperimentalAnnotationChangesPreserveFrameworkAndEffectiveMemberStatus()
+    {
+        var inherited = Symbol("Contoso.Settings", Member("Read")) with { ExperimentalDiagnosticId = "ExperimentalSettings" };
+        var changed = inherited with { Members = [inherited.Members[0] with { ExperimentalDiagnosticId = "ExperimentalRead" }] };
+        var comparison = ApiComparer.Compare(Model("1.0.0", inherited, inherited), Model("2.0.0", inherited, changed));
+
+        var item = Assert.Single(comparison.Changes);
+        Assert.Equal("experimental-status-changed", item.Kind);
+        Assert.Equal("Read", item.Member);
+        Assert.Equal("ExperimentalSettings", item.BeforeExperimentalDiagnosticId);
+        Assert.Equal("ExperimentalRead", item.AfterExperimentalDiagnosticId);
+        Assert.Equal(new[] { "net10.0" }, item.TargetFrameworks);
+
+        var stable = inherited with { ExperimentalDiagnosticId = null };
+        var removals = ApiComparer.Compare(Model("1.0.0", inherited, stable),
+            Model("2.0.0", inherited with { Members = [] }, stable with { Members = [] })).Changes;
+        Assert.Equal(2, removals.Count);
+        Assert.All(removals, removal => Assert.Equal("member-removed", removal.Kind));
+        Assert.Equal(new[] { "net8.0" }, Assert.Single(removals, removal => removal.BeforeExperimentalDiagnosticId is not null).TargetFrameworks);
+    }
+
+    [Fact]
+    public void ExperimentalSupportIsScopedToTheMatchingApi()
+    {
+        var change = new ApiChange("MTAPI-0001", "member-added", "Contoso.Settings", "Other", null,
+            "System.Void Other()", "non-breaking", ["net10.0"], [], AfterExperimentalDiagnosticId: "ExperimentalSettings");
+        var comparison = new ApiComparison(1, PackageConstants.PackageId, "1.0.0", "2.0.0", true, [change]);
+        var capabilities = new CapabilityDocument
+        {
+            ExperimentalApis = [new("ExperimentalSettings", "Contoso.Settings", "Read", "supported", "The extension calls Read.")]
+        };
+        var result = ExperimentalApiSupport.Assess(comparison, capabilities, new(), null);
+        Assert.Equal("unclassified", Assert.Single(result![change.Id]).Support);
+
+        var collected = new CollectedUsage(1, PackageConstants.PackageId, "fixture.dll", [new("Contoso.Settings", ["Other"], "internal-only")]);
+        result = ExperimentalApiSupport.Assess(comparison, capabilities, new(), collected);
+        Assert.Equal("supported", Assert.Single(result![change.Id]).Support);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WholeTypeChangesReportExplicitlyExperimentalMembers(bool added)
+    {
+        const string diagnosticId = "ExperimentalRead";
+        var symbol = Symbol("Contoso.Settings", Member("Read") with { ExperimentalDiagnosticId = diagnosticId }, Member("Stable"));
+        ApiModel Package(string version, params ApiSymbolModel[] symbols) =>
+            new(1, PackageConstants.PackageId, version, [new("net10.0", "fixture.dll", symbols)]);
+        var comparison = added ? ApiComparer.Compare(Package("1"), Package("2", symbol)) : ApiComparer.Compare(Package("1", symbol), Package("2"));
+        Assert.Equal(2, comparison.Changes.Count);
+        Assert.Equal(added ? "symbol-added" : "symbol-removed", Assert.Single(comparison.Changes, change => change.Member is null).Kind);
+        var member = Assert.Single(comparison.Changes, change => change.Member is not null);
+        Assert.Equal("Read", member.Member);
+        Assert.Equal(added ? "member-added" : "member-removed", member.Kind);
+        Assert.Equal(added ? null : diagnosticId, member.BeforeExperimentalDiagnosticId);
+        Assert.Equal(added ? diagnosticId : null, member.AfterExperimentalDiagnosticId);
+        var capabilities = new CapabilityDocument
+        {
+            ExperimentalApis = [new(diagnosticId, symbol.Name, member.Member, "supported", "The extension uses this API.")]
+        };
+        var assessments = ExperimentalApiSupport.Assess(comparison, capabilities, new(), null);
+        Assert.Equal("supported", Assert.Single(Assert.Single(assessments!).Value).Support);
+    }
+
+    [Fact]
+    public void ExperimentalScopeValidationRejectsDuplicatesAndInvalidDecisions()
+    {
+        var definition = new ExperimentalApiScope("ExperimentalSettings", "Contoso.Settings", null, "supported", "Existing handler.");
+        var document = new CapabilityDocument { ExperimentalApis = [definition, definition, definition with { Support = "unclassified", Reason = "" }] };
+        var errors = ExperimentalApiSupport.ValidateScopes(document);
+        Assert.Equal(2, errors.Count);
+        Assert.Contains(errors, error => error.StartsWith("Duplicate", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void PackageSourcesDefaultToNuGetOrg()
     {
         var source = Assert.Single(PackageApiService.ResolveSources([], null));
@@ -355,6 +442,15 @@ public sealed class DriftPipelineTests
         new("net10.0", "lib/net10.0/test.dll", [net10])
     ]);
     private static UsageManifest Manifest(params UsageEntry[] entries) => new() { DeclaredVersion = "2.1.0", Usages = [.. entries] };
+}
+
+[System.Diagnostics.CodeAnalysis.Experimental("ExperimentalFixtureType")]
+public sealed class ExperimentalMetadataFixture
+{
+    public string Inherited => "";
+
+    [System.Diagnostics.CodeAnalysis.Experimental("ExperimentalFixtureMember")]
+    public string Annotated => "";
 }
 
 public readonly struct OperatorFixture

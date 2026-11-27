@@ -19,7 +19,8 @@ public sealed record ApiSymbolModel(
     IReadOnlyList<string> Interfaces,
     IReadOnlyList<string> GenericConstraints,
     bool Obsolete,
-    IReadOnlyList<ApiMemberModel> Members);
+    IReadOnlyList<ApiMemberModel> Members,
+    string? ExperimentalDiagnosticId = null);
 
 public sealed record ApiMemberModel(
     string Key,
@@ -27,7 +28,8 @@ public sealed record ApiMemberModel(
     string Kind,
     string Accessibility,
     string Signature,
-    bool Obsolete);
+    bool Obsolete,
+    string? ExperimentalDiagnosticId = null);
 
 public sealed record ApiComparison(
     int SchemaVersion,
@@ -46,7 +48,9 @@ public sealed record ApiChange(
     string? After,
     string Compatibility,
     IReadOnlyList<string> TargetFrameworks,
-    IReadOnlyList<string> Evidence);
+    IReadOnlyList<string> Evidence,
+    string? BeforeExperimentalDiagnosticId = null,
+    string? AfterExperimentalDiagnosticId = null);
 
 public sealed class UsageManifest
 {
@@ -85,7 +89,10 @@ public sealed class CapabilityDocument
     public string Package { get; set; } = PackageConstants.PackageId;
     public Dictionary<string, Capability> Capabilities { get; set; } = [];
     public SourceReview? SourceReview { get; set; }
+    public IReadOnlyList<ExperimentalApiScope>? ExperimentalApis { get; set; }
 }
+
+public sealed record ExperimentalApiScope(string DiagnosticId, string Symbol, string? Member, string Support, string Reason);
 
 public sealed class SourceReview
 {
