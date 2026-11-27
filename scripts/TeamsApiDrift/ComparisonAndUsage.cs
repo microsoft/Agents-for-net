@@ -30,7 +30,11 @@ public static class ApiComparer
             CompareFramework(oldFramework, newFramework, raw);
         }
 
-        var changes = raw.GroupBy(change => new { change.Kind, change.Symbol, change.Member, change.Before, change.After, change.Compatibility })
+        var changes = raw.GroupBy(change => new
+            {
+                change.Kind, change.Symbol, change.Member, change.Before, change.After, change.Compatibility,
+                change.BeforeExperimentalDiagnosticId, change.AfterExperimentalDiagnosticId
+            })
             .Select(group => new
             {
                 group.Key,
@@ -41,7 +45,8 @@ public static class ApiComparer
             .ThenBy(item => item.Key.Kind, StringComparer.Ordinal)
             .Select((item, index) => new ApiChange(
                 $"MTAPI-{index + 1:0000}", item.Key.Kind, item.Key.Symbol, item.Key.Member,
-                item.Key.Before, item.Key.After, item.Key.Compatibility, item.Frameworks, ["normalized-api-model"]))
+                item.Key.Before, item.Key.After, item.Key.Compatibility, item.Frameworks, ["normalized-api-model"],
+                item.Key.BeforeExperimentalDiagnosticId, item.Key.AfterExperimentalDiagnosticId))
             .ToArray();
         return new ApiComparison(1, PackageConstants.PackageId, before.Version, after.Version, changes.Length > 0, changes);
     }
@@ -57,29 +62,37 @@ public static class ApiComparer
             if (oldSymbol is null || newSymbol is null)
             {
                 changes.Add(new RawChange(oldSymbol is null ? "symbol-added" : "symbol-removed", symbolName, null,
-                    oldSymbol?.Kind, newSymbol?.Kind, oldSymbol is null ? "non-breaking" : "breaking", before.TargetFramework));
+                    oldSymbol?.Kind, newSymbol?.Kind, oldSymbol is null ? "non-breaking" : "breaking", before.TargetFramework,
+                    oldSymbol?.ExperimentalDiagnosticId, newSymbol?.ExperimentalDiagnosticId));
                 continue;
             }
 
-            AddIfChanged(changes, "symbol-kind-changed", symbolName, null, oldSymbol.Kind, newSymbol.Kind, "breaking", before.TargetFramework);
-            AddIfChanged(changes, "accessibility-changed", symbolName, null, oldSymbol.Accessibility, newSymbol.Accessibility, "potentially-breaking", before.TargetFramework);
-            AddIfChanged(changes, "base-type-changed", symbolName, null, oldSymbol.BaseType, newSymbol.BaseType, "potentially-breaking", before.TargetFramework);
-            AddIfChanged(changes, "interfaces-changed", symbolName, null, Join(oldSymbol.Interfaces), Join(newSymbol.Interfaces), "potentially-breaking", before.TargetFramework);
-            AddIfChanged(changes, "generic-constraints-changed", symbolName, null, Join(oldSymbol.GenericConstraints), Join(newSymbol.GenericConstraints), "potentially-breaking", before.TargetFramework);
-            if (oldSymbol.Obsolete != newSymbol.Obsolete)
+            void AddSymbolChange(string kind, string? oldValue, string? newValue, string compatibility)
             {
-                changes.Add(new RawChange(newSymbol.Obsolete ? "deprecation-added" : "deprecation-removed", symbolName, null,
-                    oldSymbol.Obsolete.ToString(), newSymbol.Obsolete.ToString(), "unknown", before.TargetFramework));
+                if (!string.Equals(oldValue, newValue, StringComparison.Ordinal))
+                {
+                    changes.Add(new RawChange(kind, symbolName, null, oldValue, newValue, compatibility, before.TargetFramework,
+                        oldSymbol.ExperimentalDiagnosticId, newSymbol.ExperimentalDiagnosticId));
+                }
             }
 
-            CompareMembers(symbolName, oldSymbol.Kind, oldSymbol.Members, newSymbol.Members, before.TargetFramework, changes);
+            AddSymbolChange("symbol-kind-changed", oldSymbol.Kind, newSymbol.Kind, "breaking");
+            AddSymbolChange("accessibility-changed", oldSymbol.Accessibility, newSymbol.Accessibility, "potentially-breaking");
+            AddSymbolChange("base-type-changed", oldSymbol.BaseType, newSymbol.BaseType, "potentially-breaking");
+            AddSymbolChange("interfaces-changed", Join(oldSymbol.Interfaces), Join(newSymbol.Interfaces), "potentially-breaking");
+            AddSymbolChange("generic-constraints-changed", Join(oldSymbol.GenericConstraints), Join(newSymbol.GenericConstraints), "potentially-breaking");
+            AddSymbolChange(newSymbol.Obsolete ? "deprecation-added" : "deprecation-removed",
+                oldSymbol.Obsolete.ToString(), newSymbol.Obsolete.ToString(), "unknown");
+            AddSymbolChange("experimental-status-changed", oldSymbol.ExperimentalDiagnosticId, newSymbol.ExperimentalDiagnosticId, "potentially-breaking");
+
+            CompareMembers(oldSymbol, newSymbol, before.TargetFramework, changes);
         }
     }
 
-    private static void CompareMembers(string symbol, string symbolKind, IReadOnlyList<ApiMemberModel> before, IReadOnlyList<ApiMemberModel> after, string framework, List<RawChange> changes)
+    private static void CompareMembers(ApiSymbolModel before, ApiSymbolModel after, string framework, List<RawChange> changes)
     {
-        var oldGroups = before.GroupBy(member => $"{member.Kind}:{member.Name}").ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
-        var newGroups = after.GroupBy(member => $"{member.Kind}:{member.Name}").ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+        var oldGroups = before.Members.GroupBy(member => $"{member.Kind}:{member.Name}").ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+        var newGroups = after.Members.GroupBy(member => $"{member.Kind}:{member.Name}").ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
         foreach (var groupName in oldGroups.Keys.Union(newGroups.Keys).Order(StringComparer.Ordinal))
         {
             oldGroups.TryGetValue(groupName, out var oldMembers);
@@ -87,51 +100,62 @@ public static class ApiComparer
             oldMembers ??= [];
             newMembers ??= [];
             var memberName = groupName[(groupName.IndexOf(':') + 1)..];
+
+            void AddMemberChange(string kind, ApiMemberModel? oldMember, ApiMemberModel? newMember, string? oldValue, string? newValue, string compatibility)
+            {
+                changes.Add(new RawChange(kind, before.Name, memberName, oldValue, newValue, compatibility, framework,
+                    ExperimentalId(oldMember, before), ExperimentalId(newMember, after)));
+            }
+
             if (oldMembers.Length == 1 && newMembers.Length == 1 && oldMembers[0].Key != newMembers[0].Key)
             {
-                var changeKind = symbolKind == "enum" && oldMembers[0].Kind == "field"
+                var changeKind = before.Kind == "enum" && oldMembers[0].Kind == "field"
                     ? "enum-value-changed"
                     : WithoutNullability(oldMembers[0].Signature) == WithoutNullability(newMembers[0].Signature)
                         ? "nullability-changed"
                         : "member-signature-changed";
-                changes.Add(new RawChange(
-                    changeKind,
-                    symbol, memberName, oldMembers[0].Signature, newMembers[0].Signature, "potentially-breaking", framework));
+                AddMemberChange(changeKind, oldMembers[0], newMembers[0], oldMembers[0].Signature, newMembers[0].Signature, "potentially-breaking");
                 continue;
             }
             foreach (var member in oldMembers.Where(old => newMembers.All(current => current.Key != old.Key)))
             {
-                changes.Add(new RawChange("member-removed", symbol, memberName, member.Signature, null, "breaking", framework));
+                AddMemberChange("member-removed", member, null, member.Signature, null, "breaking");
             }
             foreach (var member in newMembers.Where(current => oldMembers.All(old => old.Key != current.Key)))
             {
-                changes.Add(new RawChange("member-added", symbol, memberName, null, member.Signature, "non-breaking", framework));
+                AddMemberChange("member-added", null, member, null, member.Signature, "non-breaking");
             }
 
             foreach (var oldMember in oldMembers)
             {
                 var matching = newMembers.FirstOrDefault(member => member.Key == oldMember.Key);
-                if (matching is not null && oldMember.Obsolete != matching.Obsolete)
+                if (matching is null)
                 {
-                    changes.Add(new RawChange(matching.Obsolete ? "deprecation-added" : "deprecation-removed", symbol, memberName,
-                        oldMember.Obsolete.ToString(), matching.Obsolete.ToString(), "unknown", framework));
+                    continue;
                 }
-                if (matching is not null && oldMember.Accessibility != matching.Accessibility)
+
+                if (oldMember.Obsolete != matching.Obsolete)
                 {
-                    changes.Add(new RawChange("member-accessibility-changed", symbol, memberName,
-                        oldMember.Accessibility, matching.Accessibility, "potentially-breaking", framework));
+                    AddMemberChange(matching.Obsolete ? "deprecation-added" : "deprecation-removed", oldMember, matching,
+                        oldMember.Obsolete.ToString(), matching.Obsolete.ToString(), "unknown");
+                }
+                if (oldMember.Accessibility != matching.Accessibility)
+                {
+                    AddMemberChange("member-accessibility-changed", oldMember, matching,
+                        oldMember.Accessibility, matching.Accessibility, "potentially-breaking");
+                }
+                var oldId = ExperimentalId(oldMember, before);
+                var newId = ExperimentalId(matching, after);
+                if (oldMember.ExperimentalDiagnosticId != matching.ExperimentalDiagnosticId && oldId != newId)
+                {
+                    AddMemberChange("experimental-status-changed", oldMember, matching, oldId, newId, "potentially-breaking");
                 }
             }
         }
     }
 
-    private static void AddIfChanged(List<RawChange> changes, string kind, string symbol, string? member, string? before, string? after, string compatibility, string framework)
-    {
-        if (!string.Equals(before, after, StringComparison.Ordinal))
-        {
-            changes.Add(new RawChange(kind, symbol, member, before, after, compatibility, framework));
-        }
-    }
+    private static string? ExperimentalId(ApiMemberModel? member, ApiSymbolModel symbol)
+        => member is null ? null : member.ExperimentalDiagnosticId ?? symbol.ExperimentalDiagnosticId;
 
     private static string Join(IEnumerable<string> values) => string.Join("; ", values);
 
@@ -141,7 +165,8 @@ public static class ApiComparer
         return index < 0 ? signature : signature[..index];
     }
 
-    private sealed record RawChange(string Kind, string Symbol, string? Member, string? Before, string? After, string Compatibility, string Framework);
+    private sealed record RawChange(string Kind, string Symbol, string? Member, string? Before, string? After, string Compatibility,
+        string Framework, string? BeforeExperimentalDiagnosticId = null, string? AfterExperimentalDiagnosticId = null);
 }
 
 public static partial class AssemblyUsageCollector

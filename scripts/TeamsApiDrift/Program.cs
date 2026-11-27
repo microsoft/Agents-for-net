@@ -257,11 +257,7 @@ internal static class Program
         // No package changes still produces a validated empty review without an AI call.
         if (input.Comparison.Changes.Count == 0 || options.HasFlag("--defer"))
         {
-            var decisions = input.Comparison.Changes.Select(change => new ImpactDecision(change.Id, "needs-human-review", "uncertain",
-                "Automated repository review is unavailable for fork pull requests; a maintainer must review this candidate.", [],
-                ImpactReviewPipeline.RequiresAdoptionAssessment(change) ? new("needs-product-decision",
-                    "Automated adoption assessment is unavailable for fork pull requests; a maintainer must evaluate this addition.") : null)).ToArray();
-            ToolJson.Write(options.Required("--empty-review"), new ImpactReview(1, input.ReviewId, input.Comparison.FromVersion, input.Comparison.ToVersion, decisions));
+            ToolJson.Write(options.Required("--empty-review"), ImpactReviewPipeline.CreateDeferredReview(input));
         }
 
         Console.Error.WriteLine($"Summary: Prepared implementation review of {input.Comparison.Changes.Count} API changes; {input.Files.Count} full source/test/document files; commit {input.Commit}.");

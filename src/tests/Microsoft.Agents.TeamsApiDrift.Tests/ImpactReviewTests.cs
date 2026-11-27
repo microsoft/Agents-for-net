@@ -10,6 +10,92 @@ public sealed class ImpactReviewTests
     private const string Test = "src/tests/Microsoft.Agents.Extensions.MSTeams.Tests/MapperTests.cs";
     private const string Implementation = "    internal static string? Map(Settings value) => value.Name?.Trim();";
     private const string Assertion = "    public void NullIsHandled() { Assert.Null(Map(new Settings { Name = null })); }";
+    private const string ExperimentalId = "ExperimentalSettings";
+
+    [Fact]
+    public void UnsupportedExperimentalRemovalStaysVisibleAndUsesNormalCompatibilityRules()
+    {
+        var scope = new ExperimentalApiScope(ExperimentalId, "Contoso.Settings", null, "intentionally-unsupported", "Socket transport is excluded.");
+        using var fixture = new Fixture(unused: true, experimentalId: ExperimentalId, removeMember: true, scope: scope);
+        var change = Assert.Single(fixture.Input.Comparison.Changes);
+        Assert.Equal("member-removed", change.Kind);
+        Assert.Equal(ExperimentalId, change.BeforeExperimentalDiagnosticId);
+        Assert.Null(change.AfterExperimentalDiagnosticId);
+        Assert.Equal("intentionally-unsupported", Assert.Single(fixture.Input.ExperimentalApis![change.Id]).Support);
+
+        var result = fixture.Validate(fixture.Review("safe", "unused"));
+        Assert.True(result.CanProceed, string.Join(" ", result.Errors));
+        var report = ImpactReviewPipeline.Render(fixture.Input, result);
+        Assert.Contains("Contoso.Settings.Name", report);
+        Assert.Contains("intentionally-unsupported", report);
+    }
+
+    [Fact]
+    public void UnsupportedAdditionDoesNotReceiveAnAdoptionRecommendation()
+    {
+        var scope = new ExperimentalApiScope(ExperimentalId, "Contoso.Settings", "Extra", "intentionally-unsupported", "The extension excludes this optional operation.");
+        using var fixture = new Fixture(additionKind: "member-added", experimentalId: ExperimentalId, scope: scope);
+        var review = fixture.Review("safe", "unused");
+        var decision = Assert.Single(review.Decisions);
+        Assert.False(fixture.Validate(review with { Decisions = [decision with
+        {
+            Adoption = new("recommend-adoption", "A proposed new operation.")
+        }] }).Valid);
+        Assert.True(fixture.Validate(review with { Decisions = [decision with
+        {
+            Adoption = new("no-adoption-needed", "The operation is outside the extension's supported scope.")
+        }] }).CanProceed);
+    }
+
+    [Fact]
+    public void RecordedUseOverridesExclusionAndSupportedRemovalRequiresBehaviorEvidence()
+    {
+        var scope = new ExperimentalApiScope(ExperimentalId, "Contoso.Settings", null, "intentionally-unsupported", "An older scope decision.");
+        using var fixture = new Fixture(publicExposure: true, experimentalId: ExperimentalId, removeMember: true, scope: scope);
+        var review = fixture.Review("needs-adaptation", "used");
+        var decision = Assert.Single(review.Decisions);
+        var support = Assert.Single(fixture.Input.ExperimentalApis![decision.ChangeId]);
+        Assert.Equal("supported", support.Support);
+        Assert.Contains("conflicts", support.Reason);
+        Assert.False(fixture.Validate(review).Valid);
+
+        var regression = fixture.Validate(review with { Decisions = [decision with
+        {
+            ExperimentalBehavior = new("established", "The cited mapping calls the removed member.")
+        }] });
+        Assert.True(regression.Valid, string.Join(" ", regression.Errors));
+        Assert.False(regression.CanProceed);
+
+        var unresolved = decision with { ExperimentalBehavior = new("unresolved", "The replacement's behavior is not established.") };
+        Assert.False(fixture.Validate(review with { Decisions = [unresolved with { Verdict = "safe" }] }).Valid);
+        var humanReview = fixture.Validate(review with { Decisions = [unresolved with { Verdict = "needs-human-review" }] });
+        Assert.True(humanReview.Valid, string.Join(" ", humanReview.Errors));
+        Assert.False(humanReview.CanProceed);
+    }
+
+    [Fact]
+    public void AdvisoryCoverageGapDoesNotBlockAnOtherwiseSafeReview()
+    {
+        using var fixture = new Fixture(experimentalId: ExperimentalId);
+        var review = fixture.Review();
+        var result = fixture.Validate(review with { Decisions = [Assert.Single(review.Decisions) with
+        {
+            ExperimentalBehavior = new("established", "Null responses are covered by the cited mapper test.", "No dedicated advisory mapper check.")
+        }] });
+        Assert.True(result.CanProceed, string.Join(" ", result.Errors));
+        Assert.Contains("Advisory coverage gap: No dedicated advisory mapper check.", ImpactReviewPipeline.Render(fixture.Input, result));
+    }
+
+    [Fact]
+    public void DeferredReviewForSupportedExperimentalApiIsValidAndRequiresHumanReview()
+    {
+        using var fixture = new Fixture(experimentalId: ExperimentalId);
+        var review = ImpactReviewPipeline.CreateDeferredReview(fixture.Input);
+        Assert.Equal("unresolved", Assert.Single(review.Decisions).ExperimentalBehavior?.Outcome);
+        var result = fixture.Validate(review);
+        Assert.True(result.Valid, string.Join(" ", result.Errors));
+        Assert.False(result.CanProceed);
+    }
 
     [Fact]
     public void SafeReviewResolvesQuoteLocationsAndPassesGate()
@@ -444,13 +530,16 @@ public sealed class ImpactReviewTests
         private readonly ApiModel _before;
         private readonly ApiModel _after;
         private readonly UsageManifest _manifest;
+        private readonly CapabilityDocument _capabilities = new();
         private readonly TestSummary _checks;
         public CollectedUsage? OriginalCollected { get; }
         public string Repository => Path.Combine(_root, "repo");
         public string Workspace => Path.Combine(_root, "snapshot");
         public ImpactReviewInput Input { get; }
 
-        public Fixture(bool publicExposure = false, bool unused = false, bool noChanges = false, string? failedCheck = null, bool sourceHints = false, string? additionKind = null)
+        public Fixture(bool publicExposure = false, bool unused = false, bool noChanges = false, string? failedCheck = null,
+            bool sourceHints = false, string? additionKind = null, string? experimentalId = null, bool removeMember = false,
+            ExperimentalApiScope? scope = null)
         {
             Directory.CreateDirectory(Repository);
             Write(Source, "// fixture\n" + Implementation + "\n// repeated\n// repeated\n");
@@ -462,10 +551,11 @@ public sealed class ImpactReviewTests
             ImpactReviewPipeline.Git(Repository, "-c", "user.name=ReviewTest", "-c", "user.email=review@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=" + Path.Combine(_root, "no-hooks"), "commit", "-qm", "fixture");
             var before = new ApiMemberModel("property:Name", "Name", "property", "public", "System.String Name [nullability:01]", false);
             var after = before with { Key = "property:Name:nullable", Signature = "System.String Name [nullability:02]" };
-            ApiModel Model(string version, ApiMemberModel member) => new(1, PackageConstants.PackageId, version,
-                new[] { "net8.0", "net10.0" }.Select(tfm => new FrameworkApiModel(tfm, "fixture.dll", [new("Contoso.Settings", "class", "public", null, [], [], false, [member])])).ToArray());
+            ApiModel Model(string version, ApiMemberModel? member) => new(1, PackageConstants.PackageId, version,
+                new[] { "net8.0", "net10.0" }.Select(tfm => new FrameworkApiModel(tfm, "fixture.dll",
+                    [new("Contoso.Settings", "class", "public", null, [], [], false, member is null ? [] : [member], experimentalId)])).ToArray());
             _before = Model("1.0.0", before);
-            _after = Model("2.0.0", noChanges ? before : after);
+            _after = Model("2.0.0", removeMember ? null : noChanges ? before : after);
             if (additionKind is not null)
             {
                 var baseline = Model("2.0.0", before);
@@ -483,6 +573,7 @@ public sealed class ImpactReviewTests
                 };
             }
             _manifest = new() { DeclaredVersion = "2.0.0", Usages = unused ? [] : [new() { UpstreamSymbol = "Contoso.Settings", Members = ["Name"], Files = [Source], Exposure = publicExposure ? "publicly-exposed" : "internal-only" }] };
+            if (scope is not null) _capabilities.ExperimentalApis = [scope];
             var checks = new[] { "tool", "compare", "build", "drift-tests", "collect", "manifest", "contract-net8", "contract-net10", "boundary-net8", "boundary-net10" }.ToDictionary(name => name, _ => "success");
             if (failedCheck is not null) checks[failedCheck] = "failure";
             _checks = new(1, checks);
@@ -492,7 +583,7 @@ public sealed class ImpactReviewTests
             Input = Prepare();
         }
 
-        public ImpactReviewInput Prepare() => ImpactReviewPipeline.Prepare(Repository, Workspace, ApiComparer.Compare(_before, _after), _manifest, new(), OriginalCollected, _checks, _before, _after);
+        public ImpactReviewInput Prepare() => ImpactReviewPipeline.Prepare(Repository, Workspace, ApiComparer.Compare(_before, _after), _manifest, _capabilities, OriginalCollected, _checks, _before, _after);
         public ImpactReview Review(string verdict = "safe", string usage = "used") => new(1, Input.ReviewId, "1.0.0", "2.0.0",
             Input.Comparison.Changes.Select(change => new ImpactDecision(change.Id, verdict, usage, "Specific implementation and test reasoning.", [new(Source, Implementation), new(Test, Assertion)])).ToArray());
         public ImpactValidation Validate(ImpactReview review) => ImpactReviewPipeline.Validate(review, Input, Workspace, Repository);

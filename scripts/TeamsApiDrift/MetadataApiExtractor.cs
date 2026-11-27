@@ -226,7 +226,7 @@ internal static class AssemblyMetadataReader
                 signature += $" = {literal}";
             }
 
-            members.Add(Member("field", fieldName, fieldAccessibility, signature, HasObsolete(reader, field.GetCustomAttributes())));
+            members.Add(Member(reader, "field", fieldName, fieldAccessibility, signature, field.GetCustomAttributes()));
         }
 
         foreach (var methodHandle in definition.GetMethods())
@@ -255,7 +255,7 @@ internal static class AssemblyMetadataReader
                 signature += $" where {string.Join("; ", methodConstraints)}";
             }
 
-            members.Add(Member("method", methodName, methodAccessibility, signature, HasObsolete(reader, method.GetCustomAttributes())));
+            members.Add(Member(reader, "method", methodName, methodAccessibility, signature, method.GetCustomAttributes()));
         }
 
         foreach (var propertyHandle in definition.GetProperties())
@@ -275,7 +275,7 @@ internal static class AssemblyMetadataReader
                 ? $"{decoded.ReturnType} {propertyName} {accessorText}"
                 : $"{decoded.ReturnType} {propertyName}[{string.Join(", ", decoded.ParameterTypes)}] {accessorText}";
             signature = WithNullability(signature, nullableContext, Nullability(reader, property.GetCustomAttributes()));
-            members.Add(Member("property", propertyName, accessibilityValue, signature, HasObsolete(reader, property.GetCustomAttributes())));
+            members.Add(Member(reader, "property", propertyName, accessibilityValue, signature, property.GetCustomAttributes()));
         }
 
         foreach (var eventHandle in definition.GetEvents())
@@ -291,7 +291,7 @@ internal static class AssemblyMetadataReader
             var eventName = reader.GetString(eventDefinition.Name);
             var signature = WithNullability($"{provider.Format(eventDefinition.Type)} {eventName}", nullableContext,
                 Nullability(reader, eventDefinition.GetCustomAttributes()));
-            members.Add(Member("event", eventName, accessibilityValue, signature, HasObsolete(reader, eventDefinition.GetCustomAttributes())));
+            members.Add(Member(reader, "event", eventName, accessibilityValue, signature, eventDefinition.GetCustomAttributes()));
         }
 
         return new ApiSymbolModel(
@@ -302,11 +302,14 @@ internal static class AssemblyMetadataReader
             interfaces,
             constraints,
             HasObsolete(reader, definition.GetCustomAttributes()),
-            members.OrderBy(member => member.Key, StringComparer.Ordinal).ToArray());
+            members.OrderBy(member => member.Key, StringComparer.Ordinal).ToArray(),
+            TypeExperimentalDiagnosticId(reader, handle));
     }
 
-    private static ApiMemberModel Member(string kind, string name, string accessibility, string signature, bool obsolete)
-        => new($"{kind}:{name}:{signature}", name, kind, accessibility, signature, obsolete);
+    private static ApiMemberModel Member(MetadataReader reader, string kind, string name, string accessibility,
+        string signature, CustomAttributeHandleCollection attributes)
+        => new($"{kind}:{name}:{signature}", name, kind, accessibility, signature,
+            HasObsolete(reader, attributes), ExperimentalDiagnosticId(reader, attributes));
 
     private static IReadOnlyList<string> ReadParameters(MetadataReader reader, MethodDefinition method, ImmutableArray<string> parameterTypes)
     {
@@ -391,6 +394,44 @@ internal static class AssemblyMetadataReader
 
     private static bool HasObsolete(MetadataReader reader, CustomAttributeHandleCollection attributes)
         => attributes.Any(handle => AttributeTypeName(reader, reader.GetCustomAttribute(handle).Constructor) == "System.ObsoleteAttribute");
+
+    private static string? TypeExperimentalDiagnosticId(MetadataReader reader, TypeDefinitionHandle handle)
+    {
+        while (!handle.IsNil)
+        {
+            var type = reader.GetTypeDefinition(handle);
+            if (ExperimentalDiagnosticId(reader, type.GetCustomAttributes()) is { } diagnosticId)
+            {
+                return diagnosticId;
+            }
+
+            handle = type.GetDeclaringType();
+        }
+
+        return null;
+    }
+
+    private static string? ExperimentalDiagnosticId(MetadataReader reader, CustomAttributeHandleCollection attributes)
+    {
+        foreach (var handle in attributes)
+        {
+            var attribute = reader.GetCustomAttribute(handle);
+            if (AttributeTypeName(reader, attribute.Constructor) != "System.Diagnostics.CodeAnalysis.ExperimentalAttribute")
+            {
+                continue;
+            }
+
+            var value = reader.GetBlobReader(attribute.Value);
+            if (value.ReadUInt16() != 1 || value.ReadSerializedString() is not { Length: > 0 } diagnosticId)
+            {
+                throw new InvalidDataException("ExperimentalAttribute is missing a valid diagnostic ID.");
+            }
+
+            return diagnosticId;
+        }
+
+        return null;
+    }
 
     private static string WithNullability(string signature, params string[] annotations)
     {

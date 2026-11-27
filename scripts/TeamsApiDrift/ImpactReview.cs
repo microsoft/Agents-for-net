@@ -13,13 +13,17 @@ public sealed record ReviewArtifact(string Path, string ContentHash);
 
 public sealed record ImpactReviewInput(int SchemaVersion, string ReviewId, string Commit, ApiComparison Comparison,
     UsageManifest UsageManifest, CapabilityDocument Capabilities, CollectedUsage? CollectedUsage,
-    TestSummary Checks, IReadOnlyList<ReviewFile> Files, IReadOnlyList<ReviewArtifact> Artifacts, int UnmappedSourceFileCount = 0);
+    TestSummary Checks, IReadOnlyList<ReviewFile> Files, IReadOnlyList<ReviewArtifact> Artifacts, int UnmappedSourceFileCount = 0,
+    IReadOnlyDictionary<string, IReadOnlyList<ExperimentalApiAssessment>>? ExperimentalApis = null);
 
 public sealed record ReviewCitation(string Path, string? Quote = null, int? StartLine = null, int? EndLine = null);
 
 public sealed record AdoptionAssessment(string Outcome, string Reason);
 
-public sealed record ImpactDecision(string ChangeId, string Verdict, string Usage, string Reason, IReadOnlyList<ReviewCitation> Evidence, AdoptionAssessment? Adoption = null);
+public sealed record ExperimentalBehaviorAssessment(string Outcome, string Reason, string? AdvisoryCoverageGap = null);
+
+public sealed record ImpactDecision(string ChangeId, string Verdict, string Usage, string Reason, IReadOnlyList<ReviewCitation> Evidence,
+    AdoptionAssessment? Adoption = null, ExperimentalBehaviorAssessment? ExperimentalBehavior = null);
 
 public sealed record ImpactReview(int SchemaVersion, string ReviewId, string FromVersion, string ToVersion, IReadOnlyList<ImpactDecision> Decisions);
 
@@ -74,7 +78,8 @@ public static class ImpactReviewPipeline
     }
 
     private static string[] SourcePaths(string root) => Git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard").Split('\0', StringSplitOptions.RemoveEmptyEntries)
-        .Where(path => (path.StartsWith("src/", StringComparison.Ordinal) || path.StartsWith("docs/", StringComparison.Ordinal) || !path.Contains('/')) &&
+        .Where(path => (path.StartsWith("src/", StringComparison.Ordinal) || path.StartsWith("docs/", StringComparison.Ordinal) ||
+            path == "scripts/TeamsApiDrift/behaviors.json" || !path.Contains('/')) &&
             Extensions.Contains(System.IO.Path.GetExtension(path)) && System.IO.Path.GetFileName(path) is not ("AGENTS.md" or "CLAUDE.md" or "SKILL.md"))
         .Order(StringComparer.Ordinal).ToArray();
 
@@ -143,6 +148,12 @@ public static class ImpactReviewPipeline
             throw new InvalidDataException("API models do not reproduce the supplied comparison.");
         }
 
+        var scopeErrors = ExperimentalApiSupport.ValidateScopes(capabilities);
+        if (scopeErrors.Count > 0)
+        {
+            throw new InvalidDataException(string.Join(" ", scopeErrors));
+        }
+
         var root = System.IO.Path.GetFullPath(repositoryRoot);
         var destination = System.IO.Path.GetFullPath(workspace);
         // Never overwrite a checkout, a previous snapshot, or a symlink destination.
@@ -190,7 +201,8 @@ public static class ImpactReviewPipeline
 
         var navigation = SnapshotUsage(collected, files);
         var input = new ImpactReviewInput(1, "", Git(root, "rev-parse", "HEAD").Trim(), comparison, manifest, capabilities,
-            navigation.Usage, checks, files, artifacts, navigation.Unmapped);
+            navigation.Usage, checks, files, artifacts, navigation.Unmapped,
+            ExperimentalApiSupport.Assess(comparison, capabilities, manifest, navigation.Usage));
         input = input with { ReviewId = Id(input) };
         ToolJson.Write(System.IO.Path.Combine(destination, "review-input.json"), input);
 
@@ -230,6 +242,18 @@ public static class ImpactReviewPipeline
         };
 
         return JsonSerializer.Deserialize<ImpactReview>(json, options) ?? throw new InvalidDataException("Empty impact review.");
+    }
+
+    internal static ImpactReview CreateDeferredReview(ImpactReviewInput input)
+    {
+        var decisions = input.Comparison.Changes.Select(change => new ImpactDecision(change.Id, "needs-human-review", "uncertain",
+            "Automated repository review is unavailable for fork pull requests; a maintainer must review this candidate.", [],
+            RequiresAdoptionAssessment(change) ? new("needs-product-decision",
+                "Automated adoption assessment is unavailable for fork pull requests; a maintainer must evaluate this addition.") : null,
+            input.ExperimentalApis?.GetValueOrDefault(change.Id)?.Any(api => api.Support == ExperimentalApiSupport.Supported) == true
+                ? new("unresolved", "A maintainer must assess compatibility and behavior for this supported experimental API.")
+                : null)).ToArray();
+        return new(1, input.ReviewId, input.Comparison.FromVersion, input.Comparison.ToVersion, decisions);
     }
 
     public static ImpactValidation Validate(ImpactReview review, ImpactReviewInput input, string workspace, string repositoryRoot)
@@ -358,10 +382,11 @@ public static class ImpactReviewPipeline
                 }
             }
 
-            var knownUse = input.UsageManifest.Usages.Any(use => use.UpstreamSymbol == change.Symbol &&
-                (change.Member is null || use.Members.Count == 0 || use.Members.Contains(change.Member, StringComparer.Ordinal))) ||
-                input.CollectedUsage?.Usages.Any(use => use.UpstreamSymbol == change.Symbol &&
-                    (change.Member is null || use.Members.Contains(change.Member, StringComparer.Ordinal))) == true;
+            var knownUse = ExperimentalApiSupport.HasRecordedUse(change, input.UsageManifest, input.CollectedUsage);
+            var experimentalApis = input.ExperimentalApis?.GetValueOrDefault(change.Id) ?? [];
+            var supportedExperimental = experimentalApis.Count > 0 &&
+                (decision.Usage == "used" || experimentalApis.Any(api => api.Support == ExperimentalApiSupport.Supported));
+            ValidateExperimentalDecision(change, decision, experimentalApis, supportedExperimental, errors);
 
             if (decision.Usage == "unused" && knownUse)
             {
@@ -383,7 +408,8 @@ public static class ImpactReviewPipeline
                     errors.Add($"Uncertain usage cannot be safe: {change.Id}.");
                 }
 
-                if ((knownUse || decision.Usage == "used") && !citations.Any(citation => citation.Path.StartsWith(TestsRoot, StringComparison.Ordinal) && citation.Path.EndsWith(".cs", StringComparison.Ordinal)))
+                if ((knownUse || decision.Usage == "used" || supportedExperimental) &&
+                    !citations.Any(citation => citation.Path.StartsWith(TestsRoot, StringComparison.Ordinal) && citation.Path.EndsWith(".cs", StringComparison.Ordinal)))
                 {
                     errors.Add($"Safe consumed changes require test evidence: {change.Id}.");
                 }
@@ -399,6 +425,34 @@ public static class ImpactReviewPipeline
             resolved.Count(decision => CompleteAdoption(decision.Adoption) && decision.Adoption!.Outcome == "needs-product-decision"));
 
         return new(1, errors.Count == 0, errors.Count == 0 && summary.NeedsAdaptation == 0 && summary.NeedsHumanReview == 0 && ChecksPassed(input.Checks), summary, errors, resolved);
+    }
+
+    private static void ValidateExperimentalDecision(ApiChange change, ImpactDecision decision,
+        IReadOnlyList<ExperimentalApiAssessment> apis, bool supported, List<string> errors)
+    {
+        if (supported)
+        {
+            if (decision.ExperimentalBehavior is not { } behavior ||
+                behavior.Outcome is not ("established" or "unaffected" or "unresolved") ||
+                string.IsNullOrWhiteSpace(behavior.Reason))
+            {
+                errors.Add($"Supported experimental API changes require a behavior assessment: {change.Id}.");
+            }
+            else if (behavior.Outcome == "unresolved" && decision.Verdict != "needs-human-review")
+            {
+                errors.Add($"Unresolved experimental compatibility evidence requires human review: {change.Id}.");
+            }
+        }
+        else if (decision.ExperimentalBehavior is not null)
+        {
+            errors.Add($"Experimental behavior assessment requires evidence of support or use: {change.Id}.");
+        }
+
+        if (decision.Usage == "unused" && apis.Count > 0 && apis.All(api => api.Support == ExperimentalApiSupport.Unsupported) &&
+            (RequiresAdoptionAssessment(change) || decision.Adoption is not null) && decision.Adoption?.Outcome != "no-adoption-needed")
+        {
+            errors.Add($"Adoption assessments for unused, intentionally unsupported experimental APIs must use no-adoption-needed: {change.Id}.");
+        }
     }
 
     private static ReviewCitation ResolveCitation(ReviewCitation citation, ImpactReviewInput input, string workspace)
@@ -499,6 +553,36 @@ public static class ImpactReviewPipeline
         var assessments = validation.Decisions.Where(decision => decision.Adoption is not null).GroupBy(decision => decision.Adoption!).ToArray();
         lines.AddRange(assessments.Length == 0 ? ["No adoption assessments recorded."] : assessments.Select(group =>
             $"- **{Cell(group.Key.Outcome ?? "Missing outcome")}** — {string.Join(", ", group.Select(decision => decision.ChangeId))}: {Cell(group.Key.Reason ?? "Missing reasoning")}"));
+        if (input.ExperimentalApis is { Count: > 0 } experimental)
+        {
+            lines.AddRange(["", "## Experimental APIs", ""]);
+            var decisionsByChange = validation.Decisions.ToLookup(decision => decision.ChangeId, StringComparer.Ordinal);
+            foreach (var change in input.Comparison.Changes.Where(change => experimental.ContainsKey(change.Id)))
+            {
+                var subject = change.Member is null ? change.Symbol : $"{change.Symbol}.{change.Member}";
+                lines.Add($"- {change.Id} {Cell(subject)} ({Cell(string.Join(", ", change.TargetFrameworks))})");
+                foreach (var api in experimental[change.Id])
+                {
+                    lines.Add($"  - {Cell(api.DiagnosticId)}: **{Cell(api.Support)}**. {Cell(api.Reason)}");
+                }
+
+                foreach (var decision in decisionsByChange[change.Id])
+                {
+                    if (decision.Usage == "used" && experimental[change.Id].Any(api => api.Support != ExperimentalApiSupport.Supported))
+                    {
+                        lines.Add("  - The review found current usage. See the implementation evidence in the compatibility finding.");
+                    }
+                    if (decision.ExperimentalBehavior is { } behavior)
+                    {
+                        lines.Add($"  - Behavior ({Cell(behavior.Outcome ?? "missing")}): {Cell(behavior.Reason ?? "Missing reasoning")}");
+                        if (!string.IsNullOrWhiteSpace(behavior.AdvisoryCoverageGap))
+                        {
+                            lines.Add($"  - Advisory coverage gap: {Cell(behavior.AdvisoryCoverageGap)}");
+                        }
+                    }
+                }
+            }
+        }
         lines.AddRange(["", "## Validation errors", ""]);
         lines.AddRange(validation.Errors.Count == 0 ? ["None."] : validation.Errors.Select(error => $"- {Cell(error)}"));
         lines.AddRange(["", "## Independent check outcomes", ""]);
