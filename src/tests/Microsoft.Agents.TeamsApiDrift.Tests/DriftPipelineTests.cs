@@ -61,6 +61,31 @@ public sealed class DriftPipelineTests
         Assert.Equal("supported", Assert.Single(result![change.Id]).Support);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WholeTypeChangesReportExplicitlyExperimentalMembers(bool added)
+    {
+        const string diagnosticId = "ExperimentalRead";
+        var symbol = Symbol("Contoso.Settings", Member("Read") with { ExperimentalDiagnosticId = diagnosticId }, Member("Stable"));
+        ApiModel Package(string version, params ApiSymbolModel[] symbols) =>
+            new(1, PackageConstants.PackageId, version, [new("net10.0", "fixture.dll", symbols)]);
+        var comparison = added ? ApiComparer.Compare(Package("1"), Package("2", symbol)) : ApiComparer.Compare(Package("1", symbol), Package("2"));
+        Assert.Equal(2, comparison.Changes.Count);
+        Assert.Equal(added ? "symbol-added" : "symbol-removed", Assert.Single(comparison.Changes, change => change.Member is null).Kind);
+        var member = Assert.Single(comparison.Changes, change => change.Member is not null);
+        Assert.Equal("Read", member.Member);
+        Assert.Equal(added ? "member-added" : "member-removed", member.Kind);
+        Assert.Equal(added ? null : diagnosticId, member.BeforeExperimentalDiagnosticId);
+        Assert.Equal(added ? diagnosticId : null, member.AfterExperimentalDiagnosticId);
+        var capabilities = new CapabilityDocument
+        {
+            ExperimentalApis = [new(diagnosticId, symbol.Name, member.Member, "supported", "The extension uses this API.")]
+        };
+        var assessments = ExperimentalApiSupport.Assess(comparison, capabilities, new(), null);
+        Assert.Equal("supported", Assert.Single(Assert.Single(assessments!).Value).Support);
+    }
+
     [Fact]
     public void ExperimentalScopeValidationRejectsDuplicatesAndInvalidDecisions()
     {

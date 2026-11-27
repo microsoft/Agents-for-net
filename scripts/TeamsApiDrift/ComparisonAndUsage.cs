@@ -64,6 +64,15 @@ public static class ApiComparer
                 changes.Add(new RawChange(oldSymbol is null ? "symbol-added" : "symbol-removed", symbolName, null,
                     oldSymbol?.Kind, newSymbol?.Kind, oldSymbol is null ? "non-breaking" : "breaking", before.TargetFramework,
                     oldSymbol?.ExperimentalDiagnosticId, newSymbol?.ExperimentalDiagnosticId));
+                var symbol = newSymbol ?? oldSymbol!;
+                var added = oldSymbol is null;
+                foreach (var member in symbol.Members.Where(member => member.ExperimentalDiagnosticId is not null))
+                {
+                    changes.Add(new RawChange(added ? "member-added" : "member-removed", symbolName, member.Name,
+                        added ? null : member.Signature, added ? member.Signature : null,
+                        added ? "non-breaking" : "breaking", before.TargetFramework,
+                        added ? null : member.ExperimentalDiagnosticId, added ? member.ExperimentalDiagnosticId : null));
+                }
                 continue;
             }
 
